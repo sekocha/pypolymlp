@@ -1,0 +1,103 @@
+#!/usr/bin/env python
+import numpy as np
+import re
+import xml.etree.ElementTree as ET
+from collections import defaultdict
+
+class Vasprun:
+
+    def __init__(self, name):
+        self._root = ET.parse(name).getroot()
+
+    def get_energy(self):
+        e = self._root.find('calculation').find('energy')
+        return float(e[1].text)
+
+    def get_energy_smearing_delta(self):
+        e = self._root.find('calculation').find('energy')
+        return float(e[2].text)
+
+    def get_forces(self):
+        f = self._root.find(".//*[@name='forces']")
+        return self.__varray_to_nparray(f).T
+
+    def get_stress(self): # unit: kbar
+        f = self._root.find(".//*[@name='stress']")
+        return self.__varray_to_nparray(f)
+
+    def get_properties(self):
+        property_dict = dict()
+        property_dict['energy'] = self.get_energy()
+        property_dict['force'] = self.get_forces()
+        property_dict['stress'] = self.get_stress()
+        return property_dict
+
+    def get_structure(self, valence=False, key=None):
+        st = self._root.find(".//*[@name='finalpos']")
+        st1  = st.find(".//*[@name='basis']")
+        st2  = st.find(".//*[@name='positions']")
+        st3  = st.find(".//*[@name='volume']")
+        st4  = self._root.findall(".//*[@name='atomtypes']/set/rc")
+        st5  = self._root.findall(".//*[@name='atoms']/set/rc")
+
+        structure_dict = dict()
+        structure_dict['axis'] = self.__varray_to_nparray(st1).T
+        structure_dict['positions'] = self.__varray_to_nparray(st2).T
+        structure_dict['volume'] = float(st3.text)
+
+        tmp1 = self.__read_rc_set(st4)
+        structure_dict['n_atoms'] = [int(x) for x in list(np.array(tmp1)[:,0])]
+
+        tmp2 = self.__read_rc_set(st5)
+        structure_dict['elements'] = list(np.array(tmp2)[:,0])
+        structure_dict['elements'] = ['Zr' if e == 'r' else e 
+                                     for e in structure_dict['elements']]
+        structure_dict['types'] = [int(x)-1 for x in list(np.array(tmp2)[:,1])]
+
+        if valence:
+            valence_dict = dict()
+            for d in tmp1:
+                valence_dict[d[1]] = float(d[3])
+            structure_dict['valence'] = [dict_valence[e] for e in self.elements]
+
+        if key is not None:
+            return structure_dict[key]
+        return structure_dict
+
+    def __varray_to_nparray(self, varray):
+        nparray = [[float(x) for x in v1.text.split()] for v1 in varray]
+        nparray = np.array(nparray)
+        return nparray
+
+    def __read_rc_set(self, obj):
+        rc_set = []
+        for rc in obj:
+            c_set = [c.text.replace(" ", "") for c in rc.findall('c')]
+            rc_set.append(c_set)
+        return rc_set
+
+def parse_vaspruns(vaspruns):
+
+    kbar_to_eV = 1 / 1602.1766208
+    dft_dict = defaultdict(list)
+    for vasp in vaspruns:
+        v = Vasprun(vasp)
+        property_dict = v.get_properties()
+        structure_dict = v.get_structure()
+
+        dft_dict['energy'].append(property_dict['energy'])
+        force_ravel = np.ravel(property_dict['force'], order='F')
+        dft_dict['force'].extend(force_ravel)
+
+        sigma = property_dict['stress'] * structure_dict['volume'] * kbar_to_eV
+        s = [sigma[0][0], sigma[1][1], sigma[2][2],
+             sigma[0][1], sigma[1][2], sigma[2][0]]
+        dft_dict['stress'].extend(s)
+        dft_dict['structures'].append(structure_dict)
+
+    dft_dict['energy'] = np.array(dft_dict['energy'])
+    dft_dict['force'] = np.array(dft_dict['force'])
+    dft_dict['stress'] = np.array(dft_dict['stress'])
+    return dft_dict
+        
+ 
