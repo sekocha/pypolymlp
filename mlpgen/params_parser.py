@@ -53,40 +53,40 @@ class ParamsParser:
         model['feature_type'] = self.parser.get_params('feature_type',
                                                        default='gtinv')
 
-        params_gtinv = dict()
+        gtinv_dict = dict()
         if model['feature_type'] == 'gtinv':
-            params_gtinv['order'] = self.parser.get_params('gtinv_order',
-                                                           default=3,
-                                                           dtype=int)
-            size = params_gtinv['order'] - 1
+            gtinv_dict['order'] = self.parser.get_params('gtinv_order',
+                                                         default=3,
+                                                         dtype=int)
+            size = gtinv_dict['order'] - 1
             d_maxl = [2 for i in range(size)]
-            params_gtinv['max_l'] = self.parser.get_params('gtinv_maxl',
-                                                           size=size,
-                                                           default=d_maxl,
-                                                           dtype=int,
-                                                           return_array=True)
-            if len(params_gtinv['max_l']) < size:
-                size_gap = size - len(params_gtinv['max_l'])
+            gtinv_dict['max_l'] = self.parser.get_params('gtinv_maxl',
+                                                         size=size,
+                                                         default=d_maxl,
+                                                         dtype=int,
+                                                         return_array=True)
+            if len(gtinv_dict['max_l']) < size:
+                size_gap = size - len(gtinv_dict['max_l'])
                 for i in range(size_gap):
-                    params_gtinv['max_l'].append(2)
+                    gtinv_dict['max_l'].append(2)
 
             gtinv_sym = [False for i in range(size)]
-            rgi = mlpcpp.Readgtinv(params_gtinv['order'],
-                                   params_gtinv['max_l'],
+            rgi = mlpcpp.Readgtinv(gtinv_dict['order'],
+                                   gtinv_dict['max_l'],
                                    gtinv_sym,
                                    n_type)
-            params_gtinv['lm_seq'] = rgi.get_lm_seq()
-            params_gtinv['l_comb'] = rgi.get_l_comb()
-            params_gtinv['lm_coeffs'] = rgi.get_lm_coeffs()
-            model['max_l'] = max(params_gtinv['max_l'])
+            gtinv_dict['lm_seq'] = rgi.get_lm_seq()
+            gtinv_dict['l_comb'] = rgi.get_l_comb()
+            gtinv_dict['lm_coeffs'] = rgi.get_lm_coeffs()
+            model['max_l'] = max(gtinv_dict['max_l'])
         else:
-            params_gtinv['order'] = 0
-            params_gtinv['max_l'] = []
-            params_gtinv['lm_seq'] = []
-            params_gtinv['l_comb'] = []
-            params_gtinv['lm_coeffs'] = []
+            gtinv_dict['order'] = 0
+            gtinv_dict['max_l'] = []
+            gtinv_dict['lm_seq'] = []
+            gtinv_dict['l_comb'] = []
+            gtinv_dict['lm_coeffs'] = []
             model['max_l'] = 0
-        model['gtinv'] = params_gtinv
+        model['gtinv'] = gtinv_dict
 
         model['pair_type'] = 'gaussian'
         d_params1 = [1.0,1.0,1]
@@ -118,9 +118,6 @@ class ParamsParser:
                                                 default=d_alpha)
         return reg
 
-    def get_params(self):
-        return self.params_dict
-
     def __get_vaspruns(self):
         train = self.parser.get_params('train_data',default=None)
         test = self.parser.get_params('test_data',default=None)
@@ -130,4 +127,7 @@ class ParamsParser:
         data['test'] = glob.glob(test)
         return data
  
+    def get_params(self):
+        return self.params_dict
+
 

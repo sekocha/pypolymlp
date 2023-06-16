@@ -98,6 +98,11 @@ def parse_vaspruns(vaspruns):
     dft_dict['energy'] = np.array(dft_dict['energy'])
     dft_dict['force'] = np.array(dft_dict['force'])
     dft_dict['stress'] = np.array(dft_dict['stress'])
+
+    elements_size = [len(st['elements']) for st in dft_dict['structures']]
+    elements = dft_dict['structures'][np.argmax(elements_size)]['elements']
+    dft_dict['elements'] = sorted(set(elements), key=elements.index)
+    
     return dft_dict
         
  

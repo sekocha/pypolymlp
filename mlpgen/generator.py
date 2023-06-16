@@ -9,6 +9,7 @@ from polymlp_generator.mlpgen.features import Features
 from polymlp_generator.mlpgen.precondition import Precondition
 from polymlp_generator.mlpgen.regression import Regression
 from polymlp_generator.mlpgen.io_potential import save_mlp_lammps
+from polymlp_generator.mlpgen.io_potential import load_mlp_lammps
 
 
 """
@@ -112,20 +113,21 @@ if __name__ == '__main__':
 
     reg = Regression(reg_dict, params_dict)
     coeffs, scales = reg.ridge()
+    mlp = reg.get_best_model()
 
     """
-    pot_e = reg_e.ridge_seq(alpha_min=alpha_min,
-                            alpha_max=alpha_max,
-                            n_alpha=n_alpha)
+    pot_e = reg.ridge_seq(alpha_min=alpha_min,
+                          alpha_max=alpha_max,
+                          n_alpha=n_alpha)
     """
-    alpha = reg.get_best_alpha()
-    pred_train, pred_test = reg.get_predictions()
     
     print('  regression: best model')
-    print('  - alpha = ', alpha)
+    print('  - alpha = ', mlp['alpha'])
 
     save_mlp_lammps(params_dict, coeffs, scales, elements)
 
+    
+    #pred_train = mlp['predictions']['train']
 
 #    print(' elapsed time (electrostatic)   =', '{:.3f}'.format(t2-t1), '(s)')
 #    print(' elapsed time (features)        =', '{:.3f}'.format(t3-t2), '(s)')
