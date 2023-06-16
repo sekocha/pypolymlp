@@ -9,7 +9,9 @@ from polymlp_generator.mlpgen.features import Features
 from polymlp_generator.mlpgen.precondition import Precondition
 from polymlp_generator.mlpgen.regression import Regression
 from polymlp_generator.mlpgen.io_potential import save_mlp_lammps
-from polymlp_generator.mlpgen.io_potential import load_mlp_lammps
+
+from polymlp_generator.mlpgen.accuracy import compute_error
+from polymlp_generator.mlpgen.accuracy import write_error_yaml
 
 
 """
@@ -113,7 +115,8 @@ if __name__ == '__main__':
 
     reg = Regression(reg_dict, params_dict)
     coeffs, scales = reg.ridge()
-    mlp = reg.get_best_model()
+    mlp_dict = reg.get_best_model()
+    save_mlp_lammps(params_dict, coeffs, scales, elements)
 
     """
     pot_e = reg.ridge_seq(alpha_min=alpha_min,
@@ -122,12 +125,24 @@ if __name__ == '__main__':
     """
     
     print('  regression: best model')
-    print('  - alpha = ', mlp['alpha'])
+    print('    alpha: ', mlp_dict['alpha'])
 
-    save_mlp_lammps(params_dict, coeffs, scales, elements)
+    error_dict = dict()
+    error_dict['train'] = compute_error(reg_dict, 
+                                        dft_dict, 
+                                        params_dict, 
+                                        mlp_dict, 
+                                        key='train')
+    error_dict['test'] = compute_error(reg_dict, 
+                                       dft_dict, 
+                                       params_dict, 
+                                       mlp_dict, 
+                                       key='test')
 
-    
-    #pred_train = mlp['predictions']['train']
+    write_error_yaml(error_dict)
+    """
+    print yaml file.
+    """
 
 #    print(' elapsed time (electrostatic)   =', '{:.3f}'.format(t2-t1), '(s)')
 #    print(' elapsed time (features)        =', '{:.3f}'.format(t3-t2), '(s)')
@@ -136,13 +151,10 @@ if __name__ == '__main__':
 #    print(' elapsed time (prediction)      =', '{:.3f}'.format(t6-t5), '(s)')
 #    print(' elapsed time (print files)     =', '{:.3f}'.format(t7-t6), '(s)')
 
-##        if args.sequential == False:
-#            error = EstimatePredictionError(data_train, 
-#                                            data_test, 
-#                                            pred_train, 
-#                                            pred_test)
-#        else: 
+""" 
+    seq. error
 #            error = EstimatePredictionErrorFromPot(data_train, 
 #                                                   data_test,
 #                                                   pot_e)
+"""
 

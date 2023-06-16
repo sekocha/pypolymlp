@@ -32,12 +32,14 @@ class Precondition:
             self.nf, self.ns = 0, 0
 
         self.y = np.zeros(self.n_data)
+        self.w = np.ones(self.n_data)
 
         self.__apply_atomic_energy()
         self.__apply_scale(scaler=scaler)
         self.__apply_weight(weight_stress=weight_stress)
 
         reg_dict['y'] = self.y
+        reg_dict['weight'] = self.w
 
     def __apply_atomic_energy(self):
 
@@ -57,10 +59,9 @@ class Precondition:
             self.scaler = StandardScaler(with_mean=False).fit(self.x[:self.ne])
 
         '''
-            correctly-working version 
+            correctly-working simple version 
                 self.x /= self.scaler.scale_
         '''
-        #numba_support.mat_divide_vec(self.x, self.scaler.scale_)
         numba_support.mat_prod_vec(self.x, 
                                    np.reciprocal(self.scaler.scale_),
                                    axis=1)
@@ -94,6 +95,7 @@ class Precondition:
         weight_e[e_per_atom > 0.0] = 0.1
 
         self.y[ebegin:eend] = weight_e * energy
+        self.w[ebegin:eend] = weight_e
         numba_support.mat_prod_vec(self.x[ebegin:eend], weight_e, axis=0)
 
         if self.params_dict['include_force']:
@@ -104,6 +106,7 @@ class Precondition:
             weight_f = np.minimum(w1, np.ones(len(w1)))
 
             self.y[fbegin:fend] = weight_f * force
+            self.w[fbegin:fend] = weight_f
             numba_support.mat_prod_vec(self.x[fbegin:fend], weight_f, axis=0)
 
             if self.params_dict['include_stress']:
@@ -113,11 +116,13 @@ class Precondition:
                 weight_s = np.minimum(w1, np.ones(len(w1))) * weight_stress
 
                 self.y[sbegin:send] = weight_s * stress
+                self.w[sbegin:send] = weight_s
                 numba_support.mat_prod_vec(self.x[sbegin:send], 
                                            weight_s, axis=0)
             else:
                 self.x[sbegin:send,:] = 0.0
                 self.y[sbegin:send] = 0.0
+                self.w[sbegin:send] = 0.0
 
         return 0
 

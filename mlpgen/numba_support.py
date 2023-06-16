@@ -2,19 +2,6 @@
 import numpy as np
 from numba import njit, prange
 
-#@njit(parallel=True, fastmath=True)
-#def mat_divide_vec(mat1, vec1, axis=0):
-#    if axis == 0:
-#        for i in prange(mat1.shape[1]):
-#            val1 = vec1[i]
-#            for j in prange(mat1.shape[0]):
-#                mat1[j,i] /= val1
-#    elif axis == 1:
-#        for i in prange(mat1.shape[0]):
-#            val1 = vec1[i]
-#            for j in prange(mat1.shape[1]):
-#                mat1[i,j] /= val1
-
 @njit(parallel=True, fastmath=True)
 def mat_prod_vec(mat1, vec1, axis=0):
     if axis == 0:
@@ -29,7 +16,7 @@ def mat_prod_vec(mat1, vec1, axis=0):
             val1 = vec1[i]
             for j in prange(mat1.shape[0]):
                 mat1[j,i] *= val1
-
+"""
 
 #@njit(parallel=True, fastmath=True)
 #def mat_prod(mat1, val1):
@@ -92,4 +79,4 @@ def mat_prod_vec(mat1, vec1, axis=0):
 #        mat1[i] += mat2[i]
 #    return mat1
 #
-#
+"""#

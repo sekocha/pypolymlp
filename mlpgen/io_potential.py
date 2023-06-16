@@ -12,6 +12,7 @@ def print_param(dict1, key, fstream, prefix=''):
     print(str(dict1[key]), '#', prefix + key, file=fstream)
 
 def print_array1d(array, fstream, comment='', fmt=None):
+
     for obj in array:
         if fmt is not None:
             print(fmt.format(obj), end=' ', file=fstream)
@@ -20,7 +21,7 @@ def print_array1d(array, fstream, comment='', fmt=None):
     print('#', comment, file=fstream)
 
 def save_mlp_lammps(params_dict, coeffs, scales, elements,
-                        filename='mlp.lammps'):
+                    filename='polymlp.lammps'):
 
     f = open(filename, 'w')
     print_array1d(elements, f, comment='elements')
@@ -61,7 +62,7 @@ def __read_var(f, dtype=int, return_list=False):
         return [dtype(v) for v in l]
     return dtype(l[0])
 
-def load_mlp_lammps(filename='mlp.lammps'):
+def load_mlp_lammps(filename='polymlp.lammps'):
 
     '''
     params_dict, mlp_dict = load_mlp_lammps(filename='mlp.lammps')

@@ -123,8 +123,8 @@ class ParamsParser:
         test = self.parser.get_params('test_data',default=None)
 
         data = dict()
-        data['train'] = glob.glob(train)
-        data['test'] = glob.glob(test)
+        data['train'] = sorted(glob.glob(train))
+        data['test'] = sorted(glob.glob(test))
         return data
  
     def get_params(self):
