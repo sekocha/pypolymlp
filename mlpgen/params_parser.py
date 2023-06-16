@@ -80,12 +80,12 @@ class ParamsParser:
             params_gtinv['lm_coeffs'] = rgi.get_lm_coeffs()
             model['max_l'] = max(params_gtinv['max_l'])
         else:
-            params_gtinv['order'] = None
-            params_gtinv['max_l'] = None
-            params_gtinv['lm_seq'] = None
-            params_gtinv['l_comb'] = None
-            params_gtinv['lm_coeffs'] = None
-            model['max_l'] = None
+            params_gtinv['order'] = 0
+            params_gtinv['max_l'] = []
+            params_gtinv['lm_seq'] = []
+            params_gtinv['l_comb'] = []
+            params_gtinv['lm_coeffs'] = []
+            model['max_l'] = 0
         model['gtinv'] = params_gtinv
 
         model['pair_type'] = 'gaussian'

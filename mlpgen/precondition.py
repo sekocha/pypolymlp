@@ -4,6 +4,10 @@ import numpy as np
 from sklearn.preprocessing import StandardScaler
 import polymlp_generator.mlpgen.numba_support as numba_support
 
+# todo: multiple datasets
+# todo: for alloy including end-members
+# todo: sequential estimation
+
 class Precondition:
 
     def __init__(self, 
@@ -33,9 +37,6 @@ class Precondition:
         self.__apply_scale(scaler=scaler)
         self.__apply_weight(weight_stress=weight_stress)
 
-        # todo: atomic energy
-        # todo: multiple datasets
-        # todo: for alloy including end-members
         reg_dict['y'] = self.y
 
     def __apply_atomic_energy(self):
@@ -44,13 +45,9 @@ class Precondition:
         structures = self.dft_dict['structures']
         atom_e = self.params_dict['atomic_energy']
 
-        coh_energy_array = []
-        for e, st in zip(energy, structures):
-            coh_e = e
-            for na, ea in zip(st['n_atoms'], atom_e):
-                coh_e = coh_e - na * ea
-            coh_energy_array.append(coh_e)
-        self.dft_dict['energy'] = np.array(coh_energy_array)
+        coh_energy = [e - np.dot(st['n_atoms'], atom_e) 
+                      for e, st in zip(energy, structures)]
+        self.dft_dict['energy'] = np.array(coh_energy)
 
     def __apply_scale(self, scaler=None):
 
@@ -85,7 +82,6 @@ class Precondition:
         n_total_atoms = [sum(st['n_atoms']) 
                          for st in self.dft_dict['structures']]
         e_per_atom = energy / np.array(n_total_atoms)
-        #print(e_per_atom)
 
         # todo: should be examined
         min_e = np.min(e_per_atom)
@@ -117,7 +113,8 @@ class Precondition:
                 weight_s = np.minimum(w1, np.ones(len(w1))) * weight_stress
 
                 self.y[sbegin:send] = weight_s * stress
-                numba_support.mat_prod_vec(self.x[sbegin:send], weight_s, axis=0)
+                numba_support.mat_prod_vec(self.x[sbegin:send], 
+                                           weight_s, axis=0)
             else:
                 self.x[sbegin:send,:] = 0.0
                 self.y[sbegin:send] = 0.0
@@ -148,8 +145,7 @@ class Precondition:
 
     def print_data_shape(self, header='training data size'):
 
-        print(' ', header)
-        print('  X (all) :', self.x.shape)
+        print('  ' + header + ':', self.x.shape)
         print('   - n (energy) =', self.ne)
         print('   - n (force)  =', self.nf)
         print('   - n (stress) =', self.ns)
