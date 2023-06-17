@@ -37,17 +37,29 @@ def print_error(error_dict, key='train'):
         print('    rmse_stress:', 
                "{0:13.7f}".format(error_dict['stress'] * 1000), '(meV/atom)')
 
-def compute_error(reg_dict, dft_dict, params_dict, mlp_dict, key='train'):
+def compute_error(dft_dict, 
+                  params_dict, 
+                  predictions_all,
+                  weights_all,
+                  first_indices,
+                  output_key='train'):
 
-    predictions_all = mlp_dict['predictions'][key]
-    weights_all = reg_dict['weight']
+    if 'include_force' in dft_dict:
+        include_force = dft_dict['include_force']
+    else:
+        include_force = params_dict['include_force']
+
+    if include_force == False:
+        include_stress = False
+    else:
+        include_stress = params_dict['include_force']
 
     n_data = len(predictions_all)
-    if params_dict['include_force']:
-        ebegin, fbegin, sbegin = reg_dict['first_indices'][0]
-        eend, fend, send = sbegin, n_data, fbegin
-    else:
-        ebegin, eend = 0, n_data
+    ebegin, fbegin, sbegin = first_indices
+    eend = ebegin + len(dft_dict['energy'])
+    if include_force:
+        fend = fbegin + len(dft_dict['force'])
+        send = sbegin + len(dft_dict['stress'])
 
     n_total_atoms = [sum(st['n_atoms'])
                      for st in dft_dict['structures']]
@@ -59,13 +71,13 @@ def compute_error(reg_dict, dft_dict, params_dict, mlp_dict, key='train'):
                                             return_values=True)
 
     rmse_f, rmse_s = None, None
-    if params_dict['include_force']:
+    if include_force:
         rmse_f = __compute_rmse(dft_dict['force'],
                                 predictions_all,
                                 weights_all,
                                 fbegin, fend)
 
-    if params_dict['include_stress']:
+    if include_stress:
         stress_unit = 'eV'
         if stress_unit == 'eV':
             normalize = np.repeat(n_total_atoms, 6)
@@ -83,10 +95,10 @@ def compute_error(reg_dict, dft_dict, params_dict, mlp_dict, key='train'):
     error_dict['energy'] = rmse_e
     error_dict['force'] = rmse_f
     error_dict['stress'] = rmse_s
-    print_error(error_dict, key=key)
+    print_error(error_dict, key=output_key)
 
     os.makedirs('predictions', exist_ok=True)
-    np.savetxt('predictions/energy.' + key + '.dat', 
+    np.savetxt('predictions/energy.' + output_key + '.dat', 
                 np.array([true_e, pred_e, (true_e - pred_e)*1000]).T,
                 header='DFT(eV/atom), MLP(eV/atom), DFT-MLP(meV/atom)', 
                 fmt='%.10f')

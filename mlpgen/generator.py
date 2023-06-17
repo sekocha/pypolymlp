@@ -115,34 +115,29 @@ if __name__ == '__main__':
     mlp_dict = reg.get_best_model()
     save_mlp_lammps(params_dict, coeffs, scales, elements)
 
-    """
-    sequential regression
-    reg.ridge_seq()
-    """
     print('  regression: best model')
     print('    alpha: ', mlp_dict['alpha'])
 
     t4 = time.time()
     error_dict = dict()
-    error_dict['train'] = compute_error(train_reg_dict, 
-                                        train_dft_dict, 
+    indices = train_reg_dict['first_indices'][0]
+    error_dict['train'] = compute_error(train_dft_dict, 
                                         params_dict, 
-                                        mlp_dict, 
-                                        key='train')
-    error_dict['test'] = compute_error(test_reg_dict, 
-                                       test_dft_dict, 
+                                        mlp_dict['predictions']['train'],
+                                        train_reg_dict['weight'],
+                                        indices, 
+                                        output_key='train')
+    indices = test_reg_dict['first_indices'][0]
+    error_dict['test'] = compute_error(test_dft_dict, 
                                        params_dict, 
-                                       mlp_dict, 
-                                       key='test')
+                                       mlp_dict['predictions']['test'],
+                                       test_reg_dict['weight'],
+                                       indices,
+                                       output_key='test')
     write_error_yaml(error_dict)
 
     print('  elapsed_time:')
     print('    features:          ', '{:.3f}'.format(t2-t1), '(s)')
     print('    scaling, weighting:', '{:.3f}'.format(t3-t2), '(s)')
     print('    regression:        ', '{:.3f}'.format(t4-t3), '(s)')
-
-    """ 
-    sequential regression error
-    error = EstimatePredictionErrorFromPot(data_train, data_test, pot_e)
-    """
 

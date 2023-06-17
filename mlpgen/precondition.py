@@ -21,8 +21,8 @@ def apply_atomic_energy(dft_dict, params_dict):
 def __set_weight_energy_data(energy, total_n_atoms, min_e=None):
 
     # todo: more appropriate procedure for finding weight values
+    e_per_atom = energy / total_n_atoms
     if min_e is None:
-        e_per_atom = energy / total_n_atoms
         min_e = np.min(e_per_atom)
     e_th1, e_th2 = min_e * 0.75, min_e * 0.50
     
@@ -50,7 +50,8 @@ def apply_weight_percentage(x, y, w,
                             dft_dict, 
                             params_dict, 
                             first_indices, 
-                            weight_stress=0.1):
+                            weight_stress=0.1,
+                            min_e=None):
 
     ebegin, fbegin, sbegin = first_indices
     eend = ebegin + len(dft_dict['energy'])
@@ -59,7 +60,12 @@ def apply_weight_percentage(x, y, w,
         send = sbegin + len(dft_dict['stress'])
 
     energy = dft_dict['energy']
-    weight_e = __set_weight_energy_data(energy, dft_dict['total_n_atoms'])
+    weight_e = __set_weight_energy_data(energy, 
+                                        dft_dict['total_n_atoms'], 
+                                        min_e=min_e)
+    if 'weight' in dft_dict:
+        weight_e *= dft_dict['weight']
+
     w[ebegin:eend] = weight_e
     y[ebegin:eend] = weight_e * energy
     numba_support.mat_prod_vec(x[ebegin:eend], weight_e, axis=0)
@@ -67,13 +73,19 @@ def apply_weight_percentage(x, y, w,
     if params_dict['include_force']:
         force = dft_dict['force']
         weight_f = __set_weight_force_data(force)
+        if 'weight' in dft_dict:
+            weight_f *= dft_dict['weight']
         w[fbegin:fend] = weight_f
         y[fbegin:fend] = weight_f * force
         numba_support.mat_prod_vec(x[fbegin:fend], weight_f, axis=0)
 
         if params_dict['include_stress']:
             stress = dft_dict['stress']
-            weight_s = __set_weight_stress_data(stress, weight_stress)
+            if 'weight' in dft_dict:
+                weight_const = weight_stress * dft_dict['weight']
+            else:
+                weight_const = weight_stress
+            weight_s = __set_weight_stress_data(stress, weight_const)
             w[sbegin:send] = weight_s
             y[sbegin:send] = weight_s * stress
             numba_support.mat_prod_vec(x[sbegin:send], weight_s, axis=0)
