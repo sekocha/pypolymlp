@@ -10,27 +10,16 @@ class InputParser:
         lines = f.readlines() 
         f.close()
 
+        self.train, self.test = [], []
         self.__data = dict()
         for line in lines:
             d = line.split()
             if len(d) > 1:
-                if 'data_append' in d[0]: 
-                    tag = d[0].replace('_append','')
-                    if tag in self.__data:
-                        self.__data[tag].append(d[1])
-                        self.__data[tag+'_force'].append(d[2])
-                        self.__data[tag+'_weight'].append(d[3])
-                    else:
-                        self.__data[tag] = [d[1]]
-                        self.__data[tag+'_force'] = [d[2]]
-                        self.__data[tag+'_weight'] = [d[3]]
-                elif 'data' in d[0]: 
-                    if d[0] in self.__data:
-                        self.__data[d[0]].extend(d[1:])
-                    else:
-                        self.__data[d[0]] = d[1:]
-                else:
-                    self.__data[d[0]] = d[1:]
+                self.__data[d[0]] = d[1:]
+                if 'train_data' == d[0]:
+                    self.train.append(d[1:])
+                elif 'test_data' == d[0]:
+                    self.test.append(d[1:])
 
     def get_params(self, 
                    tag, 
@@ -66,4 +55,28 @@ class InputParser:
     def get_sequence(self, tag, default=None):
         params = self.get_params(tag, size=3, default=default, dtype=str)
         return np.linspace(float(params[0]), float(params[1]), int(params[2]))
+
+    def get_train(self):
+        return self.train
+
+    def get_test(self):
+        return self.test
+
+    """
+    if 'data_append' in d[0]: 
+        tag = d[0].replace('_append','')
+        if tag in self.__data:
+            self.__data[tag].append(d[1])
+            self.__data[tag+'_force'].append(d[2])
+            self.__data[tag+'_weight'].append(d[3])
+        else:
+            self.__data[tag] = [d[1]]
+            self.__data[tag+'_force'] = [d[2]]
+            self.__data[tag+'_weight'] = [d[3]]
+    elif 'data' in d[0]: 
+        if d[0] in self.__data:
+            self.__data[d[0]].extend(d[1:])
+        else:
+            self.__data[d[0]] = d[1:]
+    """
 

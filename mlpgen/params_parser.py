@@ -4,6 +4,7 @@ import os
 import sys
 import glob
 import itertools
+from distutils.util import strtobool
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/../c++/lib')
 import mlpcpp
@@ -11,7 +12,7 @@ from polymlp_generator.common.input_parser import InputParser
 
 class ParamsParser:
 
-    def __init__(self, filename):
+    def __init__(self, filename, multiple_datasets=False):
 
         self.parser = InputParser(filename)
 
@@ -22,19 +23,24 @@ class ParamsParser:
         params['include_force'] = self.parser.get_params('include_force', 
                                                          default=True, 
                                                          dtype=bool)
-        params['include_stress'] = self.parser.get_params('include_stress', 
-                                                          default=True,  
-                                                          dtype=bool)
+        if params['include_force']:
+            params['include_stress'] = self.parser.get_params('include_stress', 
+                                                              default=True,  
+                                                              dtype=bool)
+        else:
+            params['include_stress'] = False
+
+        self.n_type = params['n_type']
+        self.include_force = params['include_force']
+
         params['model'] = self.__get_potential_model_params(params['n_type'])
-
-
-#        self.di.fmt_vaspruns = p.get_params('fmt_vaspruns', 
-#                                            default='order', 
-#                                            dtype=str)
-#
         params['atomic_energy'] = self.__get_atomic_energy(params['n_type'])
         params['reg'] = self.__get_regression_params()
-        params['dft'] = self.__get_vaspruns()
+
+        if multiple_datasets:
+            params['dft'] = self.__get_multiple_vasprun_sets()
+        else:
+            params['dft'] = self.__get_single_vasprun_set()
 
         self.params_dict = params
 
@@ -111,6 +117,7 @@ class ParamsParser:
         return atom_e
 
     def __get_regression_params(self):
+
         reg = dict()
         reg['method'] = 'ridge'
         d_alpha = [-3,1,5]
@@ -118,7 +125,8 @@ class ParamsParser:
                                                 default=d_alpha)
         return reg
 
-    def __get_vaspruns(self):
+    def __get_single_vasprun_set(self):
+
         train = self.parser.get_params('train_data',default=None)
         test = self.parser.get_params('test_data',default=None)
 
@@ -126,7 +134,58 @@ class ParamsParser:
         data['train'] = sorted(glob.glob(train))
         data['test'] = sorted(glob.glob(test))
         return data
- 
+
+    def __get_multiple_vasprun_sets(self):
+
+        train = self.parser.get_train()
+        test = self.parser.get_test()
+
+        for params in train:
+            shortage = []
+            if len(params) < 2:
+                shortage.append('True')
+            if len(params) < 3:
+                shortage.append(1.0)
+            if len(params) < 4:
+                for i in range(self.n_type):
+                    shortage.append(i)
+            params.extend(shortage)
+
+        for params in test:
+            shortage = []
+            if len(params) < 2:
+                shortage.append('True')
+            if len(params) < 3:
+                shortage.append(1.0)
+            if len(params) < 4:
+                for i in range(self.n_type):
+                    shortage.append(i)
+            params.extend(shortage)
+
+        if self.include_force == False:
+            for params in train:
+                params[1] = 'False'
+            for params in test:
+                params[1] = 'False'
+
+        data = dict()
+        data['train'], data['test'] = dict(), dict()
+        for params in train:
+            set_id = params[0]
+            data['train'][set_id] = dict()
+            data['train'][set_id]['vaspruns'] = sorted(glob.glob(set_id))
+            data['train'][set_id]['include_force'] = strtobool(params[1])
+            data['train'][set_id]['weight'] = float(params[2])
+            data['train'][set_id]['atomtypes'] = [int(i) for i in params[3:]]
+        for params in test:
+            set_id = params[0]
+            data['test'][set_id] = dict()
+            data['test'][set_id]['vaspruns'] = sorted(glob.glob(set_id))
+            data['test'][set_id]['include_force'] = strtobool(params[1])
+            data['test'][set_id]['weight'] = float(params[2])
+            data['test'][set_id]['atomtypes'] = [int(i) for i in params[3:]]
+        return data
+
     def get_params(self):
         return self.params_dict
 

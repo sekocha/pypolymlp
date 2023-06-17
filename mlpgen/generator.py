@@ -2,6 +2,7 @@
 import numpy as np
 import argparse
 import signal
+import time
 
 from polymlp_generator.common.vasp import parse_vaspruns
 from polymlp_generator.mlpgen.params_parser import ParamsParser
@@ -38,11 +39,10 @@ from polymlp_generator.mlpgen.accuracy import write_error_yaml
         - method
         - alpha
       - dft
-        - train
-        - test
+        - train (vasprun locations)
+        - test (vasprun locations)
 
-    Variables in dft_dict:
-      - train
+    Variables in dft_dict (train_dft_dict, test_dft_dict):
         - energy
         - force
         - stress
@@ -54,19 +54,14 @@ from polymlp_generator.mlpgen.accuracy import write_error_yaml
             - types
             - elements
           - ...
-      - test
-        - ...
+        - elements
+        - total_n_atoms
 
     Variables in reg_dict
-      - train
         - x
         - y
         - first_indices [(ebegin, fbegin, sbegin), ...]
-      - test
-        - x
-        - y
-        - first_indices [(ebegin, fbegin, sbegin), ...]
-      - scaler
+        - scaler
 
 """
 
@@ -84,77 +79,70 @@ if __name__ == '__main__':
     p = ParamsParser(args.infile)
     params_dict = p.get_params()
 
-    dft_dict = dict()
-    dft_dict['train'] = parse_vaspruns(params_dict['dft']['train'])
-    dft_dict['test'] = parse_vaspruns(params_dict['dft']['test'])
-    elements = dft_dict['train']['elements']
+    train_dft_dict, test_dft_dict = dict(), dict()
+    train_dft_dict = parse_vaspruns(params_dict['dft']['train'])
+    test_dft_dict = parse_vaspruns(params_dict['dft']['test'])
+    elements = train_dft_dict['elements']
 
-    reg_dict = dict()
-    reg_dict['train'], reg_dict['test'] = dict(), dict()
+    t1 = time.time()
+    train_reg_dict, test_reg_dict = dict(), dict()
+    features_train = Features(params_dict, train_dft_dict['structures'])
+    train_reg_dict['x'] = features_train.get_x()
+    train_reg_dict['first_indices'] = features_train.get_first_indices()
 
-    features_train = Features(params_dict, dft_dict['train']['structures'])
-    reg_dict['train']['x'] = features_train.get_x()
-    reg_dict['train']['first_indices'] = features_train.get_first_indices()
+    features_test = Features(params_dict, test_dft_dict['structures'])
+    test_reg_dict['x'] = features_test.get_x()
+    test_reg_dict['first_indices'] = features_test.get_first_indices()
 
-    features_test = Features(params_dict, dft_dict['test']['structures'])
-    reg_dict['test']['x'] = features_test.get_x()
-    reg_dict['test']['first_indices'] = features_test.get_first_indices()
-
-    pre_train = Precondition(reg_dict['train'], 
-                             dft_dict['train'], 
+    t2 = time.time()
+    pre_train = Precondition(train_reg_dict, 
+                             train_dft_dict, 
                              params_dict, 
-                             scaler=None)
+                             scales=None)
     pre_train.print_data_shape(header='training data size')
-    reg_dict['scaler'] = pre_train.get_scaler()
+    train_reg_dict = pre_train.get_updated_regression_dict()
 
-    pre_test = Precondition(reg_dict['test'], 
-                            dft_dict['test'], 
+    pre_test = Precondition(test_reg_dict, 
+                            test_dft_dict, 
                             params_dict, 
-                            scaler=reg_dict['scaler'])
+                            scales=train_reg_dict['scales'])
     pre_test.print_data_shape(header='test data size')
+    test_reg_dict = pre_test.get_updated_regression_dict()
 
-    reg = Regression(reg_dict, params_dict)
+    t3 = time.time()
+    reg = Regression(train_reg_dict, test_reg_dict, params_dict)
     coeffs, scales = reg.ridge()
     mlp_dict = reg.get_best_model()
     save_mlp_lammps(params_dict, coeffs, scales, elements)
 
     """
-    pot_e = reg.ridge_seq(alpha_min=alpha_min,
-                          alpha_max=alpha_max,
-                          n_alpha=n_alpha)
+    sequential regression
+    reg.ridge_seq()
     """
-    
     print('  regression: best model')
     print('    alpha: ', mlp_dict['alpha'])
 
+    t4 = time.time()
     error_dict = dict()
-    error_dict['train'] = compute_error(reg_dict, 
-                                        dft_dict, 
+    error_dict['train'] = compute_error(train_reg_dict, 
+                                        train_dft_dict, 
                                         params_dict, 
                                         mlp_dict, 
                                         key='train')
-    error_dict['test'] = compute_error(reg_dict, 
-                                       dft_dict, 
+    error_dict['test'] = compute_error(test_reg_dict, 
+                                       test_dft_dict, 
                                        params_dict, 
                                        mlp_dict, 
                                        key='test')
-
     write_error_yaml(error_dict)
-    """
-    print yaml file.
-    """
 
-#    print(' elapsed time (electrostatic)   =', '{:.3f}'.format(t2-t1), '(s)')
-#    print(' elapsed time (features)        =', '{:.3f}'.format(t3-t2), '(s)')
-#    print(' elapsed time (scaling, weight) =', '{:.3f}'.format(t4-t3), '(s)')
-#    print(' elapsed time (regression)      =', '{:.3f}'.format(t5-t4), '(s)')
-#    print(' elapsed time (prediction)      =', '{:.3f}'.format(t6-t5), '(s)')
-#    print(' elapsed time (print files)     =', '{:.3f}'.format(t7-t6), '(s)')
+    print('  elapsed_time:')
+    print('    features:          ', '{:.3f}'.format(t2-t1), '(s)')
+    print('    scaling, weighting:', '{:.3f}'.format(t3-t2), '(s)')
+    print('    regression:        ', '{:.3f}'.format(t4-t3), '(s)')
 
-""" 
-    seq. error
-#            error = EstimatePredictionErrorFromPot(data_train, 
-#                                                   data_test,
-#                                                   pot_e)
-"""
+    """ 
+    sequential regression error
+    error = EstimatePredictionErrorFromPot(data_train, data_test, pot_e)
+    """
 

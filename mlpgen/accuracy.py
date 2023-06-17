@@ -40,18 +40,18 @@ def print_error(error_dict, key='train'):
 def compute_error(reg_dict, dft_dict, params_dict, mlp_dict, key='train'):
 
     predictions_all = mlp_dict['predictions'][key]
-    weights_all = reg_dict[key]['weight']
+    weights_all = reg_dict['weight']
 
     n_data = len(predictions_all)
     if params_dict['include_force']:
-        ebegin, fbegin, sbegin = reg_dict[key]['first_indices'][0]
+        ebegin, fbegin, sbegin = reg_dict['first_indices'][0]
         eend, fend, send = sbegin, n_data, fbegin
     else:
         ebegin, eend = 0, n_data
 
     n_total_atoms = [sum(st['n_atoms'])
-                     for st in dft_dict[key]['structures']]
-    rmse_e, true_e, pred_e = __compute_rmse(dft_dict[key]['energy'],
+                     for st in dft_dict['structures']]
+    rmse_e, true_e, pred_e = __compute_rmse(dft_dict['energy'],
                                             predictions_all,
                                             weights_all,
                                             ebegin, eend,
@@ -60,7 +60,7 @@ def compute_error(reg_dict, dft_dict, params_dict, mlp_dict, key='train'):
 
     rmse_f, rmse_s = None, None
     if params_dict['include_force']:
-        rmse_f = __compute_rmse(dft_dict[key]['force'],
+        rmse_f = __compute_rmse(dft_dict['force'],
                                 predictions_all,
                                 weights_all,
                                 fbegin, fend)
@@ -71,9 +71,9 @@ def compute_error(reg_dict, dft_dict, params_dict, mlp_dict, key='train'):
             normalize = np.repeat(n_total_atoms, 6)
         elif stress_unit == 'GPa':
             eV_to_GPa = 160.21766208
-            volumes = [st['volume'] for st in dft_dict[key]['structures']]
+            volumes = [st['volume'] for st in dft_dict['structures']]
             normalize = np.repeat(volumes, 6)/eV_to_GPa
-        rmse_s = __compute_rmse(dft_dict[key]['stress'],
+        rmse_s = __compute_rmse(dft_dict['stress'],
                                 predictions_all,
                                 weights_all,
                                 sbegin, send,
@@ -100,8 +100,10 @@ def write_error_yaml(error_dict, filename='polymlp_error.yaml'):
     for key, dict1 in error_dict.items():
         print('- dataset:', key, file=f)
         print('  rmse_energy: ', dict1['energy'] * 1000, file=f)
-        print('  rmse_force:  ', dict1['force'], file=f)
-        print('  rmse_stress: ', dict1['stress'] * 1000, file=f)
+        if dict1['force'] is not None:
+            print('  rmse_force:  ', dict1['force'], file=f)
+        if dict1['stress'] is not None:
+            print('  rmse_stress: ', dict1['stress'] * 1000, file=f)
         print('', file=f)
 
     print('units:', file=f)

@@ -14,10 +14,8 @@ class Features:
                  print_memory=True,
                  element_swap=False):  
 
-        # for single dataset
         n_st_dataset = [len(structures)]
         force_dataset = [params_dict['include_force']]
-        ##
 
         axis_array = [st['axis'] for st in structures]
         positions_c_array = [np.dot(st['axis'], st['positions']) 

@@ -102,7 +102,9 @@ def parse_vaspruns(vaspruns):
     elements_size = [len(st['elements']) for st in dft_dict['structures']]
     elements = dft_dict['structures'][np.argmax(elements_size)]['elements']
     dft_dict['elements'] = sorted(set(elements), key=elements.index)
-    
+
+    dft_dict['total_n_atoms'] = np.array([sum(st['n_atoms']) 
+                                         for st in dft_dict['structures']])
     return dft_dict
         
  

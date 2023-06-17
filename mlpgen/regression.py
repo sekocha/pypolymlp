@@ -7,19 +7,21 @@ from polymlp_generator.common.math_functions import rmse
 
 class Regression:
 
-    def __init__(self, reg_dict, params_dict):
+    def __init__(self, train_reg_dict, test_reg_dict, params_dict):
 
-        self.reg_dict = reg_dict
         self.params_dict = params_dict
-
-        self.vtrain = reg_dict['train']
-        self.vtest = reg_dict['test']
+        self.vtrain = train_reg_dict
+        self.vtest = test_reg_dict
 
         self.best_model = dict()
-        self.best_model['scales'] = self.scales = reg_dict['scaler'].scale_
+        self.best_model['scales'] = self.scales \
+                                  = train_reg_dict['scales']
 
     def get_best_model(self):
-        # keys: coeffs, rmse, alpha, predictions (train, test)
+        """
+        best_model:
+            keys: coeffs, rmse, alpha, predictions (train, test)
+        """
         return self.best_model
 
     def ridge(self, iprint=True):
@@ -180,10 +182,12 @@ class Regression:
         v1 = np.dot(coefs, np.dot(xtx, coefs))
         v2 = - 2 * np.dot(coefs, xty)
         return (v1 + v2 + y_sq_norm) / size
+
+    self.size_train = sum([d.get_data_size() for d in data_train.dbatches])
+    self.size_test = sum([d.get_data_size() for d in data_test.dbatches])
+
     """
 
-#        self.size_train = sum([d.get_data_size() for d in data_train.dbatches])
-#        self.size_test = sum([d.get_data_size() for d in data_test.dbatches])
 
 
 

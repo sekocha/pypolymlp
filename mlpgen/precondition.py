@@ -4,9 +4,85 @@ import numpy as np
 from sklearn.preprocessing import StandardScaler
 import polymlp_generator.mlpgen.numba_support as numba_support
 
-# todo: multiple datasets
 # todo: for alloy including end-members
 # todo: sequential estimation
+
+def apply_atomic_energy(dft_dict, params_dict):
+
+    energy = dft_dict['energy']
+    structures = dft_dict['structures']
+    atom_e = params_dict['atomic_energy']
+
+    coh_energy = [e - np.dot(st['n_atoms'], atom_e) 
+                 for e, st in zip(energy, structures)]
+    dft_dict['energy'] = np.array(coh_energy)
+    return dft_dict
+
+def __set_weight_energy_data(energy, total_n_atoms, min_e=None):
+
+    # todo: more appropriate procedure for finding weight values
+    if min_e is None:
+        e_per_atom = energy / total_n_atoms
+        min_e = np.min(e_per_atom)
+    e_th1, e_th2 = min_e * 0.75, min_e * 0.50
+    
+    weight_e = np.ones(len(energy))
+    weight_e[e_per_atom > e_th1] = 0.5
+    weight_e[e_per_atom > e_th2] = 0.3
+    weight_e[e_per_atom > 0.0] = 0.1
+    return weight_e
+
+def __set_weight_force_data(force):
+
+    log1 = np.log10(np.abs(force))
+    w1 = np.array([pow(10, -v) for v in log1])
+    weight_f = np.minimum(w1, np.ones(len(w1)))
+    return weight_f
+
+def __set_weight_stress_data(stress, weight_stress):
+
+    log1 = np.log10(np.abs(stress))
+    w1 = np.array([pow(5, -v) for v in log1])
+    weight_s = np.minimum(w1, np.ones(len(w1))) * weight_stress
+    return weight_s
+
+def apply_weight_percentage(x, y, w, 
+                            dft_dict, 
+                            params_dict, 
+                            first_indices, 
+                            weight_stress=0.1):
+
+    ebegin, fbegin, sbegin = first_indices
+    eend = ebegin + len(dft_dict['energy'])
+    if params_dict['include_force']:
+        fend = fbegin + len(dft_dict['force'])
+        send = sbegin + len(dft_dict['stress'])
+
+    energy = dft_dict['energy']
+    weight_e = __set_weight_energy_data(energy, dft_dict['total_n_atoms'])
+    w[ebegin:eend] = weight_e
+    y[ebegin:eend] = weight_e * energy
+    numba_support.mat_prod_vec(x[ebegin:eend], weight_e, axis=0)
+
+    if params_dict['include_force']:
+        force = dft_dict['force']
+        weight_f = __set_weight_force_data(force)
+        w[fbegin:fend] = weight_f
+        y[fbegin:fend] = weight_f * force
+        numba_support.mat_prod_vec(x[fbegin:fend], weight_f, axis=0)
+
+        if params_dict['include_stress']:
+            stress = dft_dict['stress']
+            weight_s = __set_weight_stress_data(stress, weight_stress)
+            w[sbegin:send] = weight_s
+            y[sbegin:send] = weight_s * stress
+            numba_support.mat_prod_vec(x[sbegin:send], weight_s, axis=0)
+        else:
+            x[sbegin:send,:] = 0.0
+            y[sbegin:send] = 0.0
+            w[sbegin:send] = 0.0
+    return x, y, w
+
 
 class Precondition:
 
@@ -14,139 +90,62 @@ class Precondition:
                  reg_dict, 
                  dft_dict,
                  params_dict,
-                 scaler=None, 
+                 scales=None, 
                  weight_stress=0.1): 
 
         self.x = reg_dict['x']
-        self.first_indices = reg_dict['first_indices']
+        self.first_indices = reg_dict['first_indices'][0] # single dataset
+
+        self.reg_dict = reg_dict
         self.dft_dict = dft_dict
         self.params_dict = params_dict
 
         self.n_data, self.n_features = self.x.shape
+        self.y = np.zeros(self.n_data)
+        self.w = np.ones(self.n_data)
+        self.scales = None
+
         if params_dict['include_force']:
-            self.ne = self.first_indices[0][2]
-            self.ns = self.first_indices[0][1] - self.ne
+            self.ne = self.first_indices[2]
+            self.ns = self.first_indices[1] - self.ne
             self.nf = self.n_data - self.ne - self.ns
         else:
             self.ne = self.n_data
             self.nf, self.ns = 0, 0
 
-        self.y = np.zeros(self.n_data)
-        self.w = np.ones(self.n_data)
-
-        self.__apply_atomic_energy()
-        self.__apply_scale(scaler=scaler)
+        self.dft_dict = apply_atomic_energy(self.dft_dict, self.params_dict)
+        self.__apply_scales(scales=scales)
         self.__apply_weight(weight_stress=weight_stress)
 
-        reg_dict['y'] = self.y
-        reg_dict['weight'] = self.w
+        self.reg_dict['x'] = self.x
+        self.reg_dict['y'] = self.y
+        self.reg_dict['weight'] = self.w
+        self.reg_dict['scales'] = self.scales
 
-    def __apply_atomic_energy(self):
+    def __apply_scales(self, scales=None):
 
-        energy = self.dft_dict['energy']
-        structures = self.dft_dict['structures']
-        atom_e = self.params_dict['atomic_energy']
-
-        coh_energy = [e - np.dot(st['n_atoms'], atom_e) 
-                      for e, st in zip(energy, structures)]
-        self.dft_dict['energy'] = np.array(coh_energy)
-
-    def __apply_scale(self, scaler=None):
-
-        if scaler is not None:
-            self.scaler = scaler
+        if scales is not None:
+            self.scales = scales
         else:
-            self.scaler = StandardScaler(with_mean=False).fit(self.x[:self.ne])
+            scaler = StandardScaler(with_mean=False).fit(self.x[:self.ne])
+            self.scales = scaler.scale_
 
         '''
             correctly-working simple version 
                 self.x /= self.scaler.scale_
         '''
-        numba_support.mat_prod_vec(self.x, 
-                                   np.reciprocal(self.scaler.scale_),
-                                   axis=1)
+        numba_support.mat_prod_vec(self.x, np.reciprocal(self.scales), axis=1)
 
     def __apply_weight(self, weight_stress=0.1):
 
-        self.__apply_weight_percentage(weight_stress=weight_stress)
-        #self.apply_given_weight(weight_stress=weight_stress)
-
-    def __apply_weight_percentage(self, weight_stress=0.1):
-
-        if self.params_dict['include_force']:
-            ebegin, fbegin, sbegin = self.first_indices[0]
-            eend, fend, send = sbegin, self.n_data, fbegin
-        else:
-            ebegin, eend = 0, self.ne
-
-        energy = self.dft_dict['energy']
-        n_total_atoms = [sum(st['n_atoms']) 
-                         for st in self.dft_dict['structures']]
-        e_per_atom = energy / np.array(n_total_atoms)
-
-        # todo: should be examined
-        min_e = np.min(e_per_atom)
-        e_th1 = min_e * 0.75
-        e_th2 = min_e * 0.50
-        
-        weight_e = np.ones(len(energy))
-        weight_e[e_per_atom > e_th1] = 0.5
-        weight_e[e_per_atom > e_th2] = 0.3
-        weight_e[e_per_atom > 0.0] = 0.1
-
-        self.y[ebegin:eend] = weight_e * energy
-        self.w[ebegin:eend] = weight_e
-        numba_support.mat_prod_vec(self.x[ebegin:eend], weight_e, axis=0)
-
-        if self.params_dict['include_force']:
-            force = self.dft_dict['force']
-
-            log1 = np.log10(np.abs(force))
-            w1 = np.array([pow(10, -v) for v in log1])
-            weight_f = np.minimum(w1, np.ones(len(w1)))
-
-            self.y[fbegin:fend] = weight_f * force
-            self.w[fbegin:fend] = weight_f
-            numba_support.mat_prod_vec(self.x[fbegin:fend], weight_f, axis=0)
-
-            if self.params_dict['include_stress']:
-                stress = self.dft_dict['stress']
-                log1 = np.log10(np.abs(stress))
-                w1 = np.array([pow(5, -v) for v in log1])
-                weight_s = np.minimum(w1, np.ones(len(w1))) * weight_stress
-
-                self.y[sbegin:send] = weight_s * stress
-                self.w[sbegin:send] = weight_s
-                numba_support.mat_prod_vec(self.x[sbegin:send], 
-                                           weight_s, axis=0)
-            else:
-                self.x[sbegin:send,:] = 0.0
-                self.y[sbegin:send] = 0.0
-                self.w[sbegin:send] = 0.0
-
-        return 0
-
-    """
-    # todo: for multiple datasets
-    def apply_given_weight(self, d, weight_stress=0.1):
-
-        ebegin, eend, fbegin, fend, sbegin, send = d.get_array_indices()
-        self.y[ebegin:eend] = d.weight * d.model_e
-        if math.isclose(d.weight, 1.0) == False:
-            numba_support.mat_prod(self.x[ebegin:eend], d.weight)
-        if d.wforce == True:
-            self.y[fbegin:fend] = d.weight * d.model_f
-            if math.isclose(d.weight, 1.0) == False:
-                numba_support.mat_prod(self.x[fbegin:fend], d.weight)
-            if d.wstress == True:
-                w1 = d.weight * weight_stress
-                numba_support.mat_prod(self.x[sbegin:send], w1)
-                self.y[sbegin:send] = w1 * d.model_s
-            else:
-                self.x[sbegin:send,:] = 0.0
-                self.y[sbegin:send] = 0.0
-        return 0
-    """
+        res = apply_weight_percentage(self.x, 
+                                      self.y, 
+                                      self.w, 
+                                      self.dft_dict, 
+                                      self.params_dict,
+                                      self.first_indices, 
+                                      weight_stress=weight_stress)
+        self.x, self.y, self.w = res
 
     def print_data_shape(self, header='training data size'):
 
@@ -155,9 +154,9 @@ class Precondition:
         print('   - n (force)  =', self.nf)
         print('   - n (stress) =', self.ns)
 
-    def get_x(self):
-        return self.x
-    def get_y(self):
-        return self.y
-    def get_scaler(self):
-        return self.scaler
+    def get_scales(self):
+        return self.scales
+
+    def get_updated_regression_dict(self):
+        return self.reg_dict
+
