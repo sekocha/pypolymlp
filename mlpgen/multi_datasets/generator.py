@@ -173,7 +173,9 @@ if __name__ == '__main__':
                                                    weights,
                                                    indices,
                                                    output_key=output_key)
-    write_error_yaml(error_dict)
+
+    write_error_yaml(error_dict['train'])
+    write_error_yaml(error_dict['test'], initialize=False)
 
     print('  elapsed_time:')
     print('    features:          ', '{:.3f}'.format(t2-t1), '(s)')

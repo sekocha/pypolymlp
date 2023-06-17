@@ -105,10 +105,21 @@ def compute_error(dft_dict,
 
     return error_dict
 
-def write_error_yaml(error_dict, filename='polymlp_error.yaml'):
+def write_error_yaml(error_dict, 
+                     filename='polymlp_error.yaml',
+                     initialize=True):
 
-    f = open(filename, 'w')
-    print('prediction_errors:', file=f)
+    if initialize:
+        f = open(filename, 'w')
+        print('units:', file=f)
+        print('  energy: meV/atom', file=f)
+        print('  force:  eV/angstrom', file=f)
+        print('  stress: meV/atom', file=f)
+        print('', file=f)
+        print('prediction_errors:', file=f)
+        f.close()
+ 
+    f = open(filename, 'a')
     for key, dict1 in error_dict.items():
         print('- dataset:', key, file=f)
         print('  rmse_energy: ', dict1['energy'] * 1000, file=f)
@@ -117,11 +128,5 @@ def write_error_yaml(error_dict, filename='polymlp_error.yaml'):
         if dict1['stress'] is not None:
             print('  rmse_stress: ', dict1['stress'] * 1000, file=f)
         print('', file=f)
-
-    print('units:', file=f)
-    print('  energy: meV/atom', file=f)
-    print('  force:  eV/angstrom', file=f)
-    print('  stress: meV/atom', file=f)
-    print('', file=f)
     f.close()
     
