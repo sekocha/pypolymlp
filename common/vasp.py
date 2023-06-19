@@ -75,3 +75,58 @@ class Vasprun:
             rc_set.append(c_set)
         return rc_set
 
+
+class Poscar:
+
+    def __init__(self, filename, selective_dynamics=False):
+
+        self.structure = dict()
+
+        f = open(filename, 'r')
+        lines = f.readlines()
+        f.close()
+
+        self.structure['comment'] = lines[0]
+
+        axis_const = float(lines[1].split()[0])
+        axis1 = [float(x) for x in lines[2].split()[0:3]]
+        axis2 = [float(x) for x in lines[3].split()[0:3]]
+        axis3 = [float(x) for x in lines[4].split()[0:3]]
+        self.structure['axis'] = np.c_[axis1, axis2, axis3] * axis_const
+
+        if (len(re.findall(r'[a-z,A-Z]+', lines[5])) > 0):
+            uniq_elements = lines[5].split()
+            self.structure['n_atoms'] = [int(x) for x in lines[6].split()]
+            n_line = 7 
+        else:
+            uniq_elements = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+            self.structure['n_atoms'] = [int(x) for x in lines[5].split()]
+            n_line = 6
+
+        self.structure['elements'] = []
+        self.structure['types'] = []
+        for i, n in enumerate(self.structure['n_atoms']):
+            for j in range(n):
+                self.structure['types'].append(i)
+                self.structure['elements'].append(uniq_elements[i])
+
+        if selective_dynamics:
+            sd = lines[begin_nline]
+            n_line += 1
+
+        coord_type = lines[n_line].split()[0]
+        n_line += 1
+
+        positions = []
+        for i in range(sum(self.structure['n_atoms'])):
+            pos = [float(x) for x in lines[n_line].split()[0:3]]
+            positions.append(pos)
+            n_line += 1
+        self.structure['positions'] = np.array(positions).T
+
+        self.structure['volume'] = np.linalg.det(self.structure['axis'])
+
+    def get_structure(self):
+        return self.structure
+
+

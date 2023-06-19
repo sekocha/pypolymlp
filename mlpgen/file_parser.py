@@ -14,7 +14,9 @@ from polymlp_generator.common.vasp import Vasprun
 
 class ParamsParser:
 
-    def __init__(self, filename, multiple_datasets=False):
+    def __init__(self, filename, 
+                 multiple_datasets=False, 
+                 parse_vasprun_locations=True):
 
         self.parser = InputParser(filename)
 
@@ -39,10 +41,11 @@ class ParamsParser:
         params['atomic_energy'] = self.__get_atomic_energy(params['n_type'])
         params['reg'] = self.__get_regression_params()
 
-        if multiple_datasets:
-            params['dft'] = self.__get_multiple_vasprun_sets()
-        else:
-            params['dft'] = self.__get_single_vasprun_set()
+        if parse_vasprun_locations:
+            if multiple_datasets:
+                params['dft'] = self.__get_multiple_vasprun_sets()
+            else:
+                params['dft'] = self.__get_single_vasprun_set()
 
         params['elements'] = self.parser.get_params('elements',
                                                      size=params['n_type'],
