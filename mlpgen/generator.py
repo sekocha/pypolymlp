@@ -85,8 +85,6 @@ if __name__ == '__main__':
                                     element_order=elements)
     test_dft_dict = parse_vaspruns(params_dict['dft']['test'],
                                    element_order=elements)
-    train_dft_dict['include_force'] = params_dict['include_force']
-    test_dft_dict['include_force'] = params_dict['include_force']
 
     t1 = time.time()
     train_reg_dict, test_reg_dict = dict(), dict()

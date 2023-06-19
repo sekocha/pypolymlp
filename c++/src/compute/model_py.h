@@ -30,7 +30,12 @@
 #include "compute/neighbor.h"
 #include "compute/model_single.h"
 
+
 #include <Eigen/Core>
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
+
+namespace py = pybind11;
 
 class ModelPy {
 
@@ -47,26 +52,13 @@ class ModelPy {
 
     public: 
 
-    ModelPy(const vector3d& axis, 
+    ModelPy(const py::dict& params_dict,
+            const vector3d& axis, 
             const vector3d& positions_c,
             const vector2i& types, 
-            const int& n_type,
-            const bool& force,
-            const vector2d& params,
-            const double& cutoff,
-            const std::string& pair_type,
-            const std::string& des_type,
-            const int& model_type,
-            const int& maxp,
-            const int& maxl,
-            const vector3i& lm_array,
-            const vector2i& l_comb,
-            const vector2d& lm_coeffs,
             const vector1i& n_st_dataset,
             const std::vector<bool>& force_dataset,
-            const vector1i& n_atoms_all,
-            const bool& print_memory,
-            const bool& element_swap);
+            const vector1i& n_atoms_all);
 
     ~ModelPy();
 

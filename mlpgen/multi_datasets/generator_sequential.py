@@ -7,14 +7,15 @@ import time
 from polymlp_generator.common.vasp import parse_vaspruns
 from polymlp_generator.mlpgen.params_parser import ParamsParser
 
-from polymlp_generator.mlpgen.multi_datasets.features import Features
-from polymlp_generator.mlpgen.multi_datasets.precondition import Precondition
+from polymlp_generator.mlpgen.multi_datasets.features_sequential \
+                                            import FeaturesSequential
+
 from polymlp_generator.mlpgen.regression import Regression
 from polymlp_generator.mlpgen.io_potential import save_mlp_lammps
 
 from polymlp_generator.mlpgen.accuracy import compute_error
+from polymlp_generator.mlpgen.accuracy import compute_predictions
 from polymlp_generator.mlpgen.accuracy import write_error_yaml
-
 
 """
     Variables in params_dict:
@@ -111,64 +112,43 @@ if __name__ == '__main__':
         test_dft_dict[set_id].update(dict1)
 
     t1 = time.time()
-    train_reg_dict, test_reg_dict = dict(), dict()
-
-    features_train = Features(params_dict, train_dft_dict)
-    train_reg_dict['x'] = features_train.get_x()
-    train_reg_dict['first_indices'] = features_train.get_first_indices()
-
-    features_test = Features(params_dict, test_dft_dict)
-    test_reg_dict['x'] = features_test.get_x()
-    test_reg_dict['first_indices'] = features_test.get_first_indices()
+    features_train = FeaturesSequential(params_dict, train_dft_dict)
+    train_reg_dict = features_train.get_updated_regression_dict()
+    features_test = FeaturesSequential(params_dict, 
+                                       test_dft_dict,
+                                       scales=train_reg_dict['scales'])
+    test_reg_dict = features_test.get_updated_regression_dict()
 
     t2 = time.time()
-    pre_train = Precondition(train_reg_dict, 
-                             train_dft_dict, 
-                             params_dict, 
-                             scales=None)
-    pre_train.print_data_shape(header='training data size')
-    train_reg_dict = pre_train.get_updated_regression_dict()
-
-    pre_test = Precondition(test_reg_dict,
-                            test_dft_dict,
-                            params_dict,
-                            scales=train_reg_dict['scales'])
-    pre_test.print_data_shape(header='test data size')
-    test_reg_dict = pre_test.get_updated_regression_dict()
-
-    t3 = time.time()
     reg = Regression(train_reg_dict, test_reg_dict, params_dict)
-    coeffs, scales = reg.ridge()
+    coeffs, scales = reg.ridge_seq()
     mlp_dict = reg.get_best_model()
     save_mlp_lammps(params_dict, coeffs, scales, elements)
 
-    """
-    sequential regression
-    reg.ridge_seq()
-    """
     print('  regression: best model')
     print('    alpha: ', mlp_dict['alpha'])
 
-    t4 = time.time()
+    t3 = time.time()
     error_dict = dict()
     error_dict['train'], error_dict['test'] = dict(), dict()
-    for (set_id, dft_dict), indices in zip(train_dft_dict.items(), 
-                                           train_reg_dict['first_indices']):
-        predictions = mlp_dict['predictions']['train']
-        weights = train_reg_dict['weight']
+    for set_id, dft_dict in train_dft_dict.items():
         output_key = '.'.join(set_id.split('*')[0].split('/')[:-1])
+        predictions, weights, indices = compute_predictions(params_dict, 
+                                                            dft_dict, 
+                                                            coeffs, 
+                                                            scales)
         error_dict['train'][set_id] = compute_error(dft_dict, 
                                                     params_dict, 
                                                     predictions, 
                                                     weights,
                                                     indices,
                                                     output_key=output_key)
-
-    for (set_id, dft_dict), indices in zip(test_dft_dict.items(), 
-                                           test_reg_dict['first_indices']):
-        predictions = mlp_dict['predictions']['test']
-        weights = test_reg_dict['weight']
+    for set_id, dft_dict in test_dft_dict.items():
         output_key = '.'.join(set_id.split('*')[0].split('/')[:-1])
+        predictions, weights, indices = compute_predictions(params_dict, 
+                                                            dft_dict, 
+                                                            coeffs, 
+                                                            scales)
         error_dict['test'][set_id] = compute_error(dft_dict, 
                                                    params_dict, 
                                                    predictions, 
@@ -178,14 +158,11 @@ if __name__ == '__main__':
 
     write_error_yaml(error_dict['train'])
     write_error_yaml(error_dict['test'], initialize=False)
+    t4 = time.time()
 
     print('  elapsed_time:')
-    print('    features:          ', '{:.3f}'.format(t2-t1), '(s)')
-    print('    scaling, weighting:', '{:.3f}'.format(t3-t2), '(s)')
-    print('    regression:        ', '{:.3f}'.format(t4-t3), '(s)')
+    print('    features + weighting: ', '{:.3f}'.format(t2-t1), '(s)')
+    print('    regression:           ', '{:.3f}'.format(t3-t2), '(s)')
+    print('    predictions:          ', '{:.3f}'.format(t4-t3), '(s)')
 
-    """ 
-    sequential regression error
-    error = EstimatePredictionErrorFromPot(data_train, data_test, pot_e)
-    """
 

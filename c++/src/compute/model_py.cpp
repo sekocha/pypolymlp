@@ -25,33 +25,39 @@
 
 #include "model_py.h"
 
-ModelPy::ModelPy(const vector3d& axis, 
+ModelPy::ModelPy(const py::dict& params_dict,
+                 const vector3d& axis, 
                  const vector3d& positions_c,
                  const vector2i& types, 
-                 const int& n_type,
-                 const bool& force,
-                 const vector2d& params,
-                 const double& cutoff,
-                 const std::string& pair_type,
-                 const std::string& des_type,
-                 const int& model_type,
-                 const int& maxp,
-                 const int& maxl,
-                 const vector3i& lm_array,
-                 const vector2i& l_comb,
-                 const vector2d& lm_coeffs,
                  const vector1i& n_st_dataset,
                  const std::vector<bool>& force_dataset,
-                 const vector1i& n_atoms_all,
-                 const bool& print_memory,
-                 const bool& element_swap){
+                 const vector1i& n_atoms_all){
 
+    const int n_type = params_dict["n_type"].cast<int>();
+    const bool& element_swap = params_dict["element_swap"].cast<bool>();
+    const bool& print_memory = params_dict["print_memory"].cast<bool>();
+
+    const py::dict& model = params_dict["model"].cast<py::dict>();
+    const auto& pair_params = model["pair_params"].cast<vector2d>();
+    const double& cutoff = model["cutoff"].cast<double>();
+    const std::string& pair_type = model["pair_type"].cast<std::string>();
+    const std::string& feature_type = model["feature_type"].cast<std::string>();
+    const int& model_type = model["model_type"].cast<int>();
+    const int& maxp = model["max_p"].cast<int>();
+    const int& maxl = model["max_l"].cast<int>();
+
+    const py::dict& gtinv = model["gtinv"].cast<py::dict>();
+    const auto& lm_array = gtinv["lm_seq"].cast<vector3i>();
+    const auto& l_comb = gtinv["l_comb"].cast<vector2i>();
+    const auto& lm_coeffs = gtinv["lm_coeffs"].cast<vector2d>();
+
+    const bool force = false;
     struct feature_params fp = {n_type,
                                 force,
-                                params,
+                                pair_params,
                                 cutoff,
                                 pair_type,
-                                des_type,
+                                feature_type,
                                 model_type,
                                 maxp,
                                 maxl,

@@ -26,26 +26,13 @@
 PYBIND11_MODULE(mlpcpp, m) {
 
     py::class_<ModelPy>(m, "PotentialModel")
-        .def(py::init<const vector3d&,
+        .def(py::init<const py::dict&,
+                      const vector3d&,
                       const vector3d&,
                       const vector2i&,
-                      const int&, 
-                      const bool&,
-                      const vector2d&,
-                      const double&,
-                      const std::string&,
-                      const std::string&,
-                      const int&,
-                      const int&,
-                      const int&,
-                      const vector3i&,
-                      const vector2i&,
-                      const vector2d&,
                       const vector1i&,
                       const std::vector<bool>&,
-                      const vector1i&,
-                      const bool&,
-                      const bool&>())
+                      const vector1i&>())
         .def("get_x", &ModelPy::get_x, 
                 py::return_value_policy::reference_internal)
         .def("get_fbegin", &ModelPy::get_fbegin, 

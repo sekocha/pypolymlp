@@ -1,5 +1,6 @@
 #!/usr/bin/env python 
 import numpy as np
+from math import sqrt
 from scipy.linalg.lapack import get_lapack_funcs
 from sklearn.linear_model import LassoLars
 
@@ -34,6 +35,17 @@ class Regression:
                                                   coefs_array,
                                                   iprint=iprint)
 
+        return best_model['coeffs'], self.scales
+
+    def ridge_seq(self, iprint=True):
+
+        alphas = [pow(10, a) for a in self.params_dict['reg']['alpha']]
+        coefs_array = self.__ridge_fit(A=self.vtrain['xtx'],
+                                       Xy=self.vtrain['xty'],
+                                       alphas=alphas)
+        best_model = self.__ridge_model_selection_seq(alphas, 
+                                                      coefs_array,
+                                                      iprint=iprint)
         return best_model['coeffs'], self.scales
 
     def __ridge_fit(self, X=None, y=None, A=None, Xy=None, alphas=[1e-3,1e-1]):
@@ -96,6 +108,48 @@ class Regression:
                       '{:f}'.format(rmse1), '{:f}'.format(rmse2))
 
         return self.best_model
+
+    def __ridge_model_selection_seq(self, 
+                                    alpha_array, 
+                                    coefs_array, 
+                                    iprint=True):
+        
+        # computing rmse using xtx, xty and y_sq
+        rmse_train_array, rmse_test_array = [], []
+        for coefs in coefs_array.T:
+            mse_train = self.__compute_mse(self.vtrain['xtx'],
+                                           self.vtrain['xty'],
+                                           self.vtrain['y_sq_norm'],
+                                           self.vtrain['total_n_data'],
+                                           coefs)
+            mse_test = self.__compute_mse(self.vtest['xtx'],
+                                          self.vtest['xty'],
+                                          self.vtest['y_sq_norm'],
+                                          self.vtest['total_n_data'],
+                                          coefs)
+            rmse_train_array.append(sqrt(mse_train))
+            rmse_test_array.append(sqrt(mse_test))
+
+        idx = np.argmin(rmse_test_array)
+        self.best_model['rmse'] = rmse_test_array[idx]
+        self.best_model['coeffs'] = coefs_array[:,idx]
+        self.best_model['alpha'] = alpha_array[idx]
+  
+        if iprint == True:
+            print('  regression: model selection ...')
+            for a, rmse1, rmse2 in zip(alpha_array, 
+                                       rmse_train_array, 
+                                       rmse_test_array):
+                print('  - alpha =', '{:f}'.format(a), 
+                      ': rmse (train, test) =', 
+                      '{:f}'.format(rmse1), '{:f}'.format(rmse2))
+
+        return self.best_model
+
+    def __compute_mse(self, xtx, xty, y_sq_norm, size, coefs):
+        v1 = np.dot(coefs, np.dot(xtx, coefs))
+        v2 = - 2 * np.dot(coefs, xty)
+        return (v1 + v2 + y_sq_norm) / size
 
     def lasso(self, iprint=True):
 

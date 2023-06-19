@@ -4,9 +4,6 @@ import numpy as np
 from sklearn.preprocessing import StandardScaler
 import polymlp_generator.mlpgen.numba_support as numba_support
 
-# todo: for alloy including end-members
-# todo: sequential estimation
-
 def apply_atomic_energy(dft_dict, params_dict):
 
     energy = dft_dict['energy']
