@@ -76,7 +76,25 @@ class Vasprun:
             rc_set.append(c_set)
         return rc_set
 
-def parse_vaspruns(vaspruns):
+def permute_atoms(st, element_order):
+
+    positions, n_atoms, elements, types = [], [], [], []
+    for atomtype, ele in enumerate(element_order):
+        ids = np.where(np.array(st['elements']) == ele)[0]
+        n_match = len(ids)
+        positions.extend(st['positions'][:,ids].T)
+        n_atoms.append(n_match)
+        elements.extend([ele for _ in range(n_match)])
+        types.extend([atomtype for _ in range(n_match)])
+    positions = np.array(positions).T
+
+    st['positions'] = positions
+    st['n_atoms'] = n_atoms
+    st['elements'] = elements
+    st['types'] = types
+    return st
+
+def parse_vaspruns(vaspruns, element_order=None):
 
     kbar_to_eV = 1 / 1602.1766208
     dft_dict = defaultdict(list)
@@ -105,6 +123,11 @@ def parse_vaspruns(vaspruns):
 
     dft_dict['total_n_atoms'] = np.array([sum(st['n_atoms']) 
                                          for st in dft_dict['structures']])
+
+    if element_order is not None:
+        for st in dft_dict['structures']:
+            st = permute_atoms(st, element_order)
+        
     return dft_dict
         
  

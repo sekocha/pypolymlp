@@ -52,7 +52,7 @@ def compute_error(dft_dict,
     if include_force == False:
         include_stress = False
     else:
-        include_stress = params_dict['include_force']
+        include_stress = params_dict['include_stress']
 
     n_data = len(predictions_all)
     ebegin, fbegin, sbegin = first_indices

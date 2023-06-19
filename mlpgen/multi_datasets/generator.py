@@ -97,16 +97,17 @@ if __name__ == '__main__':
 
     p = ParamsParser(args.infile, multiple_datasets=True)
     params_dict = p.get_params()
+    elements = params_dict['elements']
 
     train_dft_dict, test_dft_dict = dict(), dict()
     for set_id, dict1 in params_dict['dft']['train'].items():
-        train_dft_dict[set_id] = parse_vaspruns(dict1['vaspruns'])
+        train_dft_dict[set_id] = parse_vaspruns(dict1['vaspruns'], 
+                                                element_order=elements)
         train_dft_dict[set_id].update(dict1)
-        # todo : must be revised
-        elements = train_dft_dict[set_id]['elements']
 
     for set_id, dict1 in params_dict['dft']['test'].items():
-        test_dft_dict[set_id] = parse_vaspruns(dict1['vaspruns'])
+        test_dft_dict[set_id] = parse_vaspruns(dict1['vaspruns'],
+                                               element_order=elements)
         test_dft_dict[set_id].update(dict1)
 
     t1 = time.time()

@@ -78,11 +78,15 @@ if __name__ == '__main__':
 
     p = ParamsParser(args.infile)
     params_dict = p.get_params()
+    elements = params_dict['elements']
 
     train_dft_dict, test_dft_dict = dict(), dict()
-    train_dft_dict = parse_vaspruns(params_dict['dft']['train'])
-    test_dft_dict = parse_vaspruns(params_dict['dft']['test'])
-    elements = train_dft_dict['elements']
+    train_dft_dict = parse_vaspruns(params_dict['dft']['train'],
+                                    element_order=elements)
+    test_dft_dict = parse_vaspruns(params_dict['dft']['test'],
+                                   element_order=elements)
+    train_dft_dict['include_force'] = params_dict['include_force']
+    test_dft_dict['include_force'] = params_dict['include_force']
 
     t1 = time.time()
     train_reg_dict, test_reg_dict = dict(), dict()

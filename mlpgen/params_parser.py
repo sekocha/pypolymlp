@@ -42,6 +42,12 @@ class ParamsParser:
         else:
             params['dft'] = self.__get_single_vasprun_set()
 
+        params['elements'] = self.parser.get_params('elements',
+                                                     size=params['n_type'],
+                                                     default=None,
+                                                     dtype=str,
+                                                     return_array=True)
+ 
         self.params_dict = params
 
     def __get_potential_model_params(self, n_type):
@@ -146,9 +152,6 @@ class ParamsParser:
                 shortage.append('True')
             if len(params) < 3:
                 shortage.append(1.0)
-            if len(params) < 4:
-                for i in range(self.n_type):
-                    shortage.append(i)
             params.extend(shortage)
 
         for params in test:
@@ -157,9 +160,6 @@ class ParamsParser:
                 shortage.append('True')
             if len(params) < 3:
                 shortage.append(1.0)
-            if len(params) < 4:
-                for i in range(self.n_type):
-                    shortage.append(i)
             params.extend(shortage)
 
         if self.include_force == False:
@@ -176,14 +176,12 @@ class ParamsParser:
             data['train'][set_id]['vaspruns'] = sorted(glob.glob(set_id))
             data['train'][set_id]['include_force'] = strtobool(params[1])
             data['train'][set_id]['weight'] = float(params[2])
-            data['train'][set_id]['atomtypes'] = [int(i) for i in params[3:]]
         for params in test:
             set_id = params[0]
             data['test'][set_id] = dict()
             data['test'][set_id]['vaspruns'] = sorted(glob.glob(set_id))
             data['test'][set_id]['include_force'] = strtobool(params[1])
             data['test'][set_id]['weight'] = float(params[2])
-            data['test'][set_id]['atomtypes'] = [int(i) for i in params[3:]]
         return data
 
     def get_params(self):

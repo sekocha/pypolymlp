@@ -52,10 +52,20 @@ def apply_weight_percentage(x, y, w,
                             first_indices, 
                             weight_stress=0.1,
                             min_e=None):
+    
+    if 'include_force' in dft_dict:
+        include_force = dft_dict['include_force']
+    else:
+        include_force = params_dict['include_force']
+
+    if include_force == False:
+        include_stress = False
+    else:
+        include_stress = params_dict['include_stress']
 
     ebegin, fbegin, sbegin = first_indices
     eend = ebegin + len(dft_dict['energy'])
-    if params_dict['include_force']:
+    if include_force:
         fend = fbegin + len(dft_dict['force'])
         send = sbegin + len(dft_dict['stress'])
 
@@ -70,7 +80,7 @@ def apply_weight_percentage(x, y, w,
     y[ebegin:eend] = weight_e * energy
     numba_support.mat_prod_vec(x[ebegin:eend], weight_e, axis=0)
 
-    if params_dict['include_force']:
+    if include_force:
         force = dft_dict['force']
         weight_f = __set_weight_force_data(force)
         if 'weight' in dft_dict:
@@ -79,7 +89,7 @@ def apply_weight_percentage(x, y, w,
         y[fbegin:fend] = weight_f * force
         numba_support.mat_prod_vec(x[fbegin:fend], weight_f, axis=0)
 
-        if params_dict['include_stress']:
+        if include_stress:
             stress = dft_dict['stress']
             if 'weight' in dft_dict:
                 weight_const = weight_stress * dft_dict['weight']
