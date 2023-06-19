@@ -1,6 +1,6 @@
 # A generator of polynomial machine learning potentials
 
-## Development of polynomial MLP from a single training dataset and a single test dataset
+## MLP development using a single training dataset and a single test dataset
 
 ```
 > $(polymlp_generator)/mlpgen/generator.py --in polymlp.in
@@ -32,7 +32,7 @@
 
 ```
 
-## Development of polynomial MLP from multiple training and test datasets
+## MLP development using multiple datasets
 
 ```
 > $(polymlp_generator)/mlpgen/multi_datasets/generator.py --in polymlp.in
@@ -66,7 +66,7 @@
 
 ```
 
-## Development of polynomial MLP using a memory-efficient sequential implementation
+## MLP development using a memory-efficient sequential implementation
 
 ```
 > $(polymlp_generator)/mlpgen/multi_datasets/generator_sequential.py --in polymlp.in
