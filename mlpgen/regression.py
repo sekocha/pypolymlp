@@ -15,8 +15,7 @@ class Regression:
         self.vtest = test_reg_dict
 
         self.best_model = dict()
-        self.best_model['scales'] = self.scales \
-                                  = train_reg_dict['scales']
+        self.best_model['scales'] = self.scales = train_reg_dict['scales']
 
     def get_best_model(self):
         """
@@ -178,70 +177,5 @@ class Regression:
                       '{:f}'.format(rmse_train), '{:f}'.format(rmse_test))
 
         return best_model['coeffs'], self.scales
-
-
-    """    
-    def ridge_seq(self, 
-                  alpha_min=-5.0, 
-                  alpha_max=-2.0, 
-                  n_alpha=10, 
-                  iprint=True):
-
-        alpha_array = np.logspace(alpha_min, alpha_max, num=n_alpha)
-        coefs_array = self.ridge_fit(A=self.vtrain['xtx'],
-                                     Xy=self.vtrain['xty'],
-                                     alpha_array=alpha_array)
-        best_coefs = self.ridge_model_selection_seq(alpha_array, 
-                                                    coefs_array,
-                                                    iprint=iprint)
-        self.pot = Pot(coefs=best_coefs, 
-                       scale=self.scaler, 
-                       di=self.di, 
-                       elements=self.elements)
-        return self.pot
-
-    def ridge_model_selection_seq(self, alpha_array, coefs_array, iprint=True):
-        
-        print(' model selection ...')
-        t1 = time.time()
-        # computing rmse using xtx, xty and y_sq
-        rmse_train_array, rmse_test_array = [], []
-        for coefs in coefs_array.T:
-            mse_train = self.compute_mse(self.vtrain['xtx'],
-                                         self.vtrain['xty'],
-                                         self.vtrain['y_sq_norm'],
-                                         self.size_train,
-                                         coefs)
-            mse_test = self.compute_mse(self.vtest['xtx'],
-                                        self.vtest['xty'],
-                                        self.vtest['y_sq_norm'],
-                                        self.size_test,
-                                        coefs)
-            rmse_train_array.append(sqrt(mse_train))
-            rmse_test_array.append(sqrt(mse_test))
-
-        idx = np.argmin(rmse_test_array)
-        best_coef = coefs_array[:,idx]
-        self.best_alpha = alpha_array[idx]
-
-        if iprint == True:
-            for a, rmse1, rmse2 in zip(alpha_array, 
-                                       rmse_train_array, 
-                                       rmse_test_array):
-                print(' alpha =', a, 'rmse (train, test) =', rmse1, rmse2)
-
-        return best_coef
-
-    def compute_mse(self, xtx, xty, y_sq_norm, size, coefs):
-        v1 = np.dot(coefs, np.dot(xtx, coefs))
-        v2 = - 2 * np.dot(coefs, xty)
-        return (v1 + v2 + y_sq_norm) / size
-
-    self.size_train = sum([d.get_data_size() for d in data_train.dbatches])
-    self.size_test = sum([d.get_data_size() for d in data_test.dbatches])
-
-    """
-
-
 
 

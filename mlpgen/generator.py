@@ -4,8 +4,8 @@ import argparse
 import signal
 import time
 
-from polymlp_generator.common.vasp import parse_vaspruns
-from polymlp_generator.mlpgen.params_parser import ParamsParser
+from polymlp_generator.mlpgen.file_parser import parse_vaspruns
+from polymlp_generator.mlpgen.file_parser import ParamsParser
 from polymlp_generator.mlpgen.features import Features
 from polymlp_generator.mlpgen.precondition import Precondition
 from polymlp_generator.mlpgen.regression import Regression
