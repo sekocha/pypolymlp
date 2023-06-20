@@ -2,7 +2,6 @@
 import numpy as np
 import os
 import sys
-import copy
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/../c++/lib')
 import mlpcpp
@@ -31,20 +30,23 @@ class Sequential:
         xe_sum, xe_sq_sum = None, None
         total_n_data = 0
         for id_dataset, dft_dict in multiple_dft_dicts.items():
-
-            dft_dict_tmp = dict()
-            dft_dict_tmp[id_dataset] = dft_dict
+            dft_dict_tmp = dict({id_dataset: dft_dict})
             features = Features(multiple_params_dicts, 
                                 dft_dict_tmp, 
                                 print_memory=print_memory,
                                 element_swap=element_swap)
 
             x = features.get_x()
-            xe = x[:features.ne]
             first_indices = features.get_first_indices()[0]
             cumulative_n_features = features.get_cumulative_n_features()
 
+            if print_memory:
+                ram = x.shape[1] * x.shape[1] * 8e-9 * 2
+                print(' - memory allocation (for computing X^T * X) =',
+                      '{:.3f}'.format(ram),'(GB)')
+
             if scales is None:
+                xe = x[:features.ne]
                 local1 = np.sum(xe, axis=0)
                 local2 = np.sum(np.square(xe), axis=0)
                 xe_sum = self.__sum_array(xe_sum, local1)
@@ -60,11 +62,6 @@ class Sequential:
                                               single_params_dict, 
                                               first_indices,
                                               min_e=min_e_per_atom)
-            if print_memory:
-                ram = x.shape[1] * x.shape[1] * 8e-9 * 2
-                print(' - memory allocation (for computing X^T * X) =',
-                      '{:.3f}'.format(ram),'(GB)')
-
             xtx1 = np.zeros((x.shape[1], x.shape[1]))
             xty1 = np.zeros(x.shape[1])
 
@@ -86,7 +83,6 @@ class Sequential:
         numba_support.mat_prod_vec(xtx, np.reciprocal(self.scales), axis=0)
         numba_support.mat_prod_vec(xtx, np.reciprocal(self.scales), axis=1)
         xty /= self.scales
-        #xty = numba_support.vec_divide_vec(xty, self.scales)
 
         self.reg_dict = dict()
         self.reg_dict['xtx'] = xtx

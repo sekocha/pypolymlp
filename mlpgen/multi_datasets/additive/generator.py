@@ -4,8 +4,8 @@ import argparse
 import signal
 import time
 
-from pypolymlp.mlpgen.multi_datasets.parser import parse_observations
 from pypolymlp.mlpgen.parser import ParamsParser
+from pypolymlp.mlpgen.multi_datasets.parser import parse_observations
 from pypolymlp.mlpgen.multi_datasets.additive.features import Features
 from pypolymlp.mlpgen.multi_datasets.precondition import Precondition
 from pypolymlp.mlpgen.regression import Regression
@@ -27,11 +27,8 @@ if __name__ == '__main__':
                         help='Input file name')
     args = parser.parse_args()
 
-    multiple_params_dicts = []
-    for infile in args.infile:
-        p = ParamsParser(infile, multiple_datasets=True)
-        params_dict = p.get_params()
-        multiple_params_dicts.append(params_dict)
+    multiple_params_dicts = [ParamsParser(infile, multiple_datasets=True)
+                            .get_params() for infile in args.infile]
     single_params_dict = multiple_params_dicts[0]
     elements = single_params_dict['elements']
 

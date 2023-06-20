@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 import numpy as np
 import os
-import copy
 
 from pypolymlp.common.math_functions import rmse
-from pypolymlp.mlpgen.features import Features
 
 def __compute_rmse(true_values, 
                    pred_values_all, 
@@ -132,18 +130,3 @@ def write_error_yaml(error_dict,
         print('', file=f)
     f.close()
     
-def compute_predictions(params_dict, dft_dict, coeffs, scales):
-
-    params_include_force = copy.copy(params_dict['include_force'])
-    params_dict['include_force'] = dft_dict['include_force']
-    features = Features(params_dict, dft_dict['structures'])
-    params_dict['include_force'] = params_include_force
-    x = features.get_x()
-    indices = features.get_first_indices()[0]
-
-    coeffs_rescale = coeffs / scales
-    predictions = np.dot(x, coeffs_rescale)
-    weights = np.ones(len(predictions))
-
-    return predictions, weights, indices
-

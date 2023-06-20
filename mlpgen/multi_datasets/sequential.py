@@ -40,10 +40,15 @@ class Sequential:
             params_dict['include_force'] = params_include_force
 
             x = features.get_x()
-            xe = x[:len(dft_dict['energy'])]
             first_indices = features.get_first_indices()[0]
 
+            if print_memory:
+                ram = x.shape[1] * x.shape[1] * 8e-9 * 2
+                print(' - memory allocation (for computing X^T * X) =',
+                      '{:.3f}'.format(ram),'(GB)')
+
             if scales is None:
+                xe = x[:features.ne]
                 local1 = np.sum(xe, axis=0)
                 local2 = np.sum(np.square(xe), axis=0)
                 xe_sum = self.__sum_array(xe_sum, local1)
@@ -59,11 +64,6 @@ class Sequential:
                                               params_dict, 
                                               first_indices,
                                               min_e=min_e_per_atom)
-            if print_memory:
-                ram = x.shape[1] * x.shape[1] * 8e-9 * 2
-                print(' - memory allocation (for computing X^T * X) =',
-                      '{:.3f}'.format(ram),'(GB)')
-
             xtx1 = np.zeros((x.shape[1], x.shape[1]))
             xty1 = np.zeros(x.shape[1])
 
@@ -85,7 +85,6 @@ class Sequential:
         numba_support.mat_prod_vec(xtx, np.reciprocal(self.scales), axis=0)
         numba_support.mat_prod_vec(xtx, np.reciprocal(self.scales), axis=1)
         xty /= self.scales
-        #xty = numba_support.vec_divide_vec(xty, self.scales)
 
         self.reg_dict = dict()
         self.reg_dict['xtx'] = xtx

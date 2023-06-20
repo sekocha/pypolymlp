@@ -101,17 +101,6 @@ if __name__ == '__main__':
 
     train_dft_dict, test_dft_dict = parse_observations(params_dict)
 
-    #train_dft_dict, test_dft_dict = dict(), dict()
-    #for set_id, dict1 in params_dict['dft']['train'].items():
-    #    train_dft_dict[set_id] = parse_vaspruns(dict1['vaspruns'], 
-    #                                            element_order=elements)
-    #    train_dft_dict[set_id].update(dict1)
-
-    #for set_id, dict1 in params_dict['dft']['test'].items():
-    #    test_dft_dict[set_id] = parse_vaspruns(dict1['vaspruns'],
-    #                                           element_order=elements)
-    #    test_dft_dict[set_id].update(dict1)
-
     t1 = time.time()
     features_train = Features(params_dict, train_dft_dict)
     train_reg_dict = features_train.get_regression_dict()

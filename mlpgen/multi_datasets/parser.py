@@ -3,20 +3,6 @@ import numpy as np
 
 from pypolymlp.mlpgen.parser import parse_vaspruns
 
-#from pypolymlp.mlpgen.file_parser import ParamsParser
-
-#def parse_params_observations(multiple_infiles):
-#
-#    multiple_params_dicts = []
-#    for infile in args.infile:
-#        p = ParamsParser(infile, multiple_datasets=True)
-#        params_dict = p.get_params()
-#        multiple_params_dicts.append(params_dict)
-#    single_params_dict = multiple_params_dicts[0]
-#    elements = single_params_dict['elements']
-#
-#    return single_params_dict, train_dft_dict, test_dft_dict
-    
 def parse_observations(params_dict):
 
     elements = params_dict['elements']
@@ -33,4 +19,3 @@ def parse_observations(params_dict):
     return train_dft_dict, test_dft_dict
 
    
-    

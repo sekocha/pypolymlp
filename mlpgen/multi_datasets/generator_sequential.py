@@ -12,7 +12,7 @@ from pypolymlp.mlpgen.regression import Regression
 from pypolymlp.mlpgen.io_potential import save_mlp_lammps
 
 from pypolymlp.mlpgen.accuracy import compute_error
-from pypolymlp.mlpgen.accuracy import compute_predictions
+from pypolymlp.mlpgen.multi_datasets.accuracy import compute_predictions
 from pypolymlp.mlpgen.accuracy import write_error_yaml
 
 
