@@ -47,8 +47,7 @@ class PyModel {
                    const std::vector<int>& n_atoms_st,
                    std::vector<int>& xf_begin, 
                    std::vector<int>& xs_begin,
-                   std::vector<bool>& force, 
-                   int& n_row);
+                   std::vector<bool>& force);
 
     public: 
 

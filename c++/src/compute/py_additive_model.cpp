@@ -73,16 +73,15 @@ PyAdditiveModel::PyAdditiveModel(const std::vector<py::dict>& params_dict_array,
 
     std::vector<bool> force_st;
     vector1i xf_begin, xs_begin;
-    int total_n_data;
     set_index(n_st_dataset, 
               force_dataset, 
               n_atoms_all, 
               xf_begin, 
               xs_begin, 
-              force_st, 
-              total_n_data);
+              force_st);
 
     const int n_st = axis.size();
+    const int total_n_data = n_data[0] + n_data[1] + n_data[2];
     int n_features(0);
     for (const auto& fp: fp_array){
         Neighbor neigh(axis[0], positions_c[0], types[0], fp.n_type, fp.cutoff);
@@ -154,47 +153,52 @@ PyAdditiveModel::PyAdditiveModel(const std::vector<py::dict>& params_dict_array,
 
 PyAdditiveModel::~PyAdditiveModel(){}
 
-void PyAdditiveModel::set_index(const std::vector<int>& n_data_dataset, 
-                                const std::vector<bool>& force_dataset,
-                                const std::vector<int>& n_atoms_st,
-                                std::vector<int>& xf_begin, 
-                                std::vector<int>& xs_begin,
-                                std::vector<bool>& force, 
-                                int& n_row){
+void PyAdditiveModel::set_index(const std::vector<int>& n_data_dataset,
+                        const std::vector<bool>& force_dataset,
+                        const std::vector<int>& n_atoms_st,
+                        std::vector<int>& xf_begin,
+                        std::vector<int>& xs_begin,
+                        std::vector<bool>& force){
 
-    int n_st = std::accumulate(n_data_dataset.begin(),n_data_dataset.end(),0);
+    const int n_st = std::accumulate(n_data_dataset.begin(),
+                                     n_data_dataset.end(), 0);
+    const int n_datasets = n_data_dataset.size();
 
-    xs_begin_dataset = xf_begin_dataset = vector1i(n_data_dataset.size(), -1);
+    xs_begin_dataset = xf_begin_dataset = vector1i(n_datasets, -1);
     xs_begin = xf_begin = vector1i(n_st, -1);
     force = std::vector<bool>(n_st, false);
-
-    int iforce = n_st, istress = n_st;
-    for (int i = 0; i < n_data_dataset.size(); ++i){
-        if (force_dataset[i] == true) iforce += n_data_dataset[i] * 6;
-    }
-
     n_data = vector1i(3, 0);
     n_data[0] = n_st;
 
-    int n = 0; 
-    n_row = n_st;
-    for (int i = 0; i < n_data_dataset.size(); ++i){
-        if (force_dataset[i] == true){
-            xf_begin_dataset[i] = iforce;
+    int id_st(0), istress(n_st);
+    for (int i = 0; i < n_datasets; ++i){
+        n_data[2] += n_data_dataset[i] * 6;
+        if (force_dataset[i] == true) {
             xs_begin_dataset[i] = istress;
         }
         for (int j = 0; j < n_data_dataset[i]; ++j){
             if (force_dataset[i] == true){
-                xf_begin[n] = iforce;
-                xs_begin[n] = istress;
-                force[n] = true;
-                iforce += 3 * n_atoms_st[n];
+                xs_begin[id_st] = istress;
                 istress += 6;
-                n_row += 6 + 3 * n_atoms_st[n];
-                n_data[1] += 3 * n_atoms_st[n];
-                n_data[2] += 6;
             }
-            ++n;
+            ++id_st;
+        }
+    }
+
+    id_st = 0;
+    int iforce = istress;
+    for (int i = 0; i < n_datasets; ++i){
+        if (force_dataset[i] == true) {
+            xf_begin_dataset[i] = iforce;
+        }
+        for (int j = 0; j < n_data_dataset[i]; ++j){
+            if (force_dataset[i] == true){
+                force[id_st] = true;
+                xf_begin[id_st] = iforce;
+                iforce += 3 * n_atoms_st[id_st];
+                n_data[1] += 3 * n_atoms_st[id_st];
+            }
+            ++id_st;
         }
     }
 }

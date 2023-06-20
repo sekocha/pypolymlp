@@ -47,7 +47,6 @@ if __name__ == '__main__':
         test_dft_dict[set_id].update(dict1)
 
     t1 = time.time()
-
     features_train = Features(multiple_params_dicts, train_dft_dict)
     train_reg_dict = features_train.get_regression_dict()
 
@@ -74,7 +73,7 @@ if __name__ == '__main__':
     coeffs, scales = reg.ridge()
     mlp_dict = reg.get_best_model()
 
-    cumulative_n_features = features_train.get_cumulative_n_features()
+    cumulative_n_features = train_reg_dict['cumulative_n_features']
     for i, params_dict in enumerate(multiple_params_dicts):
         if i == 0:
             begin, end = 0, cumulative_n_features[0]
