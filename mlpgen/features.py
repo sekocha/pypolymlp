@@ -6,6 +6,14 @@ import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/../c++/lib')
 import mlpcpp
 
+def structures_to_mlpcpp_obj(structures):
+    axis_array = [st['axis'] for st in structures]
+    positions_c_array = [np.dot(st['axis'], st['positions'])
+                         for st in structures]
+    types_array = [st['types'] for st in structures]
+    n_atoms_sum_array = [sum(st['n_atoms']) for st in structures]
+    return (axis_array, positions_c_array, types_array, n_atoms_sum_array)
+    
 class Features:
 
     def __init__(self,
@@ -16,12 +24,8 @@ class Features:
 
         n_st_dataset = [len(structures)]
         force_dataset = [params_dict['include_force']]
-
-        axis_array = [st['axis'] for st in structures]
-        positions_c_array = [np.dot(st['axis'], st['positions']) 
-                             for st in structures]
-        types_array = [st['types'] for st in structures]
-        n_atoms_sum_array = [sum(st['n_atoms']) for st in structures]
+        res = structures_to_mlpcpp_obj(structures)
+        axis_array, positions_c_array, types_array, n_atoms_sum_array = res
 
         params_dict['element_swap'] = element_swap
         params_dict['print_memory'] = print_memory
@@ -52,4 +56,3 @@ class Features:
     def get_first_indices(self):
         return list(zip(self.ebegin, self.fbegin, self.sbegin))
 
-    

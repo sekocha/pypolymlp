@@ -5,6 +5,26 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/../c++/lib')
 import mlpcpp
+from polymlp_generator.mlpgen.features import structures_to_mlpcpp_obj
+
+def multiple_dft_dicts_to_mlpcpp_obj(multiple_dft_dicts):
+
+    n_st_dataset, force_dataset = [], []
+    axis_array, positions_c_array = [], []
+    types_array, n_atoms_sum_array = [], []
+
+    for _, dft_dict in multiple_dft_dicts.items():
+        structures = dft_dict['structures']
+        n_st_dataset.append(len(structures))
+        force_dataset.append(dft_dict['include_force'])
+        res = structures_to_mlpcpp_obj(structures)
+        axis_array.extend(res[0])
+        positions_c_array.extend(res[1])
+        types_array.extend(res[2])
+        n_atoms_sum_array.extend(res[3])
+
+    return (axis_array, positions_c_array, types_array,
+            n_atoms_sum_array, n_st_dataset, force_dataset)
 
 class Features:
 
@@ -14,19 +34,9 @@ class Features:
                  print_memory=True,
                  element_swap=False):  
 
-        n_st_dataset, force_dataset = [], []
-        axis_array, positions_c_array = [], []
-        types_array, n_atoms_sum_array = [], []
-
-        for _, dft_dict in multiple_dft_dicts.items():
-            structures = dft_dict['structures']
-            n_st_dataset.append(len(structures))
-            force_dataset.append(dft_dict['include_force'])
-            axis_array.extend([st['axis'] for st in structures])
-            positions_c_array.extend([np.dot(st['axis'], st['positions']) 
-                                      for st in structures])
-            types_array.extend([st['types'] for st in structures])
-            n_atoms_sum_array.extend([sum(st['n_atoms']) for st in structures])
+        res = multiple_dft_dicts_to_mlpcpp_obj(multiple_dft_dicts)
+        axis_array, positions_c_array, types_array, \
+            n_atoms_sum_array, n_st_dataset, force_dataset = res
 
         params_dict['element_swap'] = element_swap
         params_dict['print_memory'] = print_memory

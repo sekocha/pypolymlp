@@ -6,7 +6,7 @@ import time
 
 from polymlp_generator.mlpgen.file_parser import parse_vaspruns
 from polymlp_generator.mlpgen.file_parser import ParamsParser
-from polymlp_generator.mlpgen.multi_datasets.features import Features
+from polymlp_generator.mlpgen.multi_datasets.additive.features import Features
 from polymlp_generator.mlpgen.multi_datasets.precondition import Precondition
 from polymlp_generator.mlpgen.regression import Regression
 from polymlp_generator.mlpgen.io_potential import save_mlp_lammps
@@ -15,96 +15,33 @@ from polymlp_generator.mlpgen.accuracy import compute_error
 from polymlp_generator.mlpgen.accuracy import write_error_yaml
 
 
-"""
-    Variables in params_dict:
-      - n_type
-      - include_force
-      - include_stress
-      - model
-        - cutoff
-        - model_type
-        - max_p
-        - max_l
-        - feature_type
-        - pair_type
-        - pair_params
-        - gtinv
-          - order
-          - max_l
-          - lm_seq
-          - l_comb
-          - lm_coeffs
-      - atomic_energy
-      - reg
-        - method
-        - alpha
-      - dft
-        - train
-            - dataset1
-                - vaspruns 
-                - include_force
-                - weight
-                - atomtype
-            - dataset2
-        - test
-            - ...
-
-    Variables in dft_dict (train_dft_dict, test_dft_dict):
-        multiple_dft_dicts
-        - dataset1
-          dft_dict:
-            - energy
-            - force
-            - stress
-            - structures
-              - structure (1) 
-                - axis
-                - positions
-                - n_atoms
-                - types
-                - elements
-              - ...
-            - vaspruns 
-            - include_force
-            - weight
-            - atomtype
-        - dataset2 ...
-
-    Variables in reg_dict
-      - train
-        - x
-        - y
-        - first_indices [(ebegin, fbegin, sbegin), ...]
-      - test
-        - x
-        - y
-        - first_indices [(ebegin, fbegin, sbegin), ...]
-      - scaler
-
-"""
-
 if __name__ == '__main__':
 
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-i', '--infile', 
+                        nargs='*',
                         type=str, 
-                        default='polymlp.in',
+                        default=['polymlp.in'],
                         help='Input file name')
     args = parser.parse_args()
 
-    p = ParamsParser(args.infile, multiple_datasets=True)
-    params_dict = p.get_params()
-    elements = params_dict['elements']
+    multiple_params_dicts = []
+    for infile in args.infile:
+        p = ParamsParser(infile, multiple_datasets=True)
+        params_dict = p.get_params()
+        multiple_params_dicts.append(params_dict)
+    single_params_dict = multiple_params_dicts[0]
+    elements = single_params_dict['elements']
 
     train_dft_dict, test_dft_dict = dict(), dict()
-    for set_id, dict1 in params_dict['dft']['train'].items():
+    for set_id, dict1 in single_params_dict['dft']['train'].items():
         train_dft_dict[set_id] = parse_vaspruns(dict1['vaspruns'], 
                                                 element_order=elements)
         train_dft_dict[set_id].update(dict1)
 
-    for set_id, dict1 in params_dict['dft']['test'].items():
+    for set_id, dict1 in single_params_dict['dft']['test'].items():
         test_dft_dict[set_id] = parse_vaspruns(dict1['vaspruns'],
                                                element_order=elements)
         test_dft_dict[set_id].update(dict1)
@@ -112,34 +49,45 @@ if __name__ == '__main__':
     t1 = time.time()
     train_reg_dict, test_reg_dict = dict(), dict()
 
-    features_train = Features(params_dict, train_dft_dict)
+    features_train = Features(multiple_params_dicts, train_dft_dict)
     train_reg_dict['x'] = features_train.get_x()
     train_reg_dict['first_indices'] = features_train.get_first_indices()
 
-    features_test = Features(params_dict, test_dft_dict)
+    features_test = Features(multiple_params_dicts, test_dft_dict)
     test_reg_dict['x'] = features_test.get_x()
     test_reg_dict['first_indices'] = features_test.get_first_indices()
 
     t2 = time.time()
     pre_train = Precondition(train_reg_dict, 
                              train_dft_dict, 
-                             params_dict, 
+                             single_params_dict, 
                              scales=None)
     pre_train.print_data_shape(header='training data size')
     train_reg_dict = pre_train.get_updated_regression_dict()
 
     pre_test = Precondition(test_reg_dict,
                             test_dft_dict,
-                            params_dict,
+                            single_params_dict, 
                             scales=train_reg_dict['scales'])
     pre_test.print_data_shape(header='test data size')
     test_reg_dict = pre_test.get_updated_regression_dict()
 
     t3 = time.time()
-    reg = Regression(train_reg_dict, test_reg_dict, params_dict)
+    reg = Regression(train_reg_dict, test_reg_dict, single_params_dict)
     coeffs, scales = reg.ridge()
     mlp_dict = reg.get_best_model()
-    save_mlp_lammps(params_dict, coeffs, scales, elements)
+
+    n_features_array = features_train.get_n_features_array()
+    for i, params_dict in enumerate(multiple_params_dicts):
+        if i == 0:
+            begin, end = 0, n_features_array[0]
+        else:
+            begin, end = n_features_array[i-1], n_features_array[i]
+        save_mlp_lammps(params_dict, 
+                        coeffs[begin:end], 
+                        scales[begin:end], 
+                        elements,
+                        filename='polymlp.lammps.'+str(i+1))
 
     print('  regression: best model')
     print('    alpha: ', mlp_dict['alpha'])
@@ -153,7 +101,7 @@ if __name__ == '__main__':
         weights = train_reg_dict['weight']
         output_key = '.'.join(set_id.split('*')[0].split('/')[:-1])
         error_dict['train'][set_id] = compute_error(dft_dict, 
-                                                    params_dict, 
+                                                    single_params_dict, 
                                                     predictions, 
                                                     weights,
                                                     indices,
@@ -165,7 +113,7 @@ if __name__ == '__main__':
         weights = test_reg_dict['weight']
         output_key = '.'.join(set_id.split('*')[0].split('/')[:-1])
         error_dict['test'][set_id] = compute_error(dft_dict, 
-                                                   params_dict, 
+                                                   single_params_dict, 
                                                    predictions, 
                                                    weights,
                                                    indices,
