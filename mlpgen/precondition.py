@@ -114,23 +114,16 @@ class Precondition:
 
         self.x = reg_dict['x']
         self.first_indices = reg_dict['first_indices'][0] # single dataset
+        self.ne, self.nf, self.ns = reg_dict['n_data']
+        self.n_data, self.n_features = self.x.shape
 
         self.reg_dict = reg_dict
         self.dft_dict = dft_dict
         self.params_dict = params_dict
 
-        self.n_data, self.n_features = self.x.shape
         self.y = np.zeros(self.n_data)
         self.w = np.ones(self.n_data)
         self.scales = None
-
-        if params_dict['include_force']:
-            self.ne = self.first_indices[2]
-            self.ns = self.first_indices[1] - self.ne
-            self.nf = self.n_data - self.ne - self.ns
-        else:
-            self.ne = self.n_data
-            self.nf, self.ns = 0, 0
 
         self.dft_dict = apply_atomic_energy(self.dft_dict, self.params_dict)
         self.__apply_scales(scales=scales)

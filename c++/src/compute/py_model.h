@@ -40,6 +40,7 @@ class PyModel {
 
     Eigen::MatrixXd x_all;
     vector1i xf_begin_dataset, xs_begin_dataset;
+    vector1i n_data;
 
     void set_index(const std::vector<int>& n_data_dataset, 
                    const std::vector<bool>& force_dataset,
@@ -64,6 +65,7 @@ class PyModel {
     Eigen::MatrixXd& get_x();
     const vector1i& get_fbegin() const;
     const vector1i& get_sbegin() const;
+    const vector1i& get_n_data() const;
 
 };
 

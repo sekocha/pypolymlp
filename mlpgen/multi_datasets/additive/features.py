@@ -35,6 +35,7 @@ class Features:
         self.x = obj.get_x()
         self.fbegin, self.sbegin = obj.get_fbegin(), obj.get_sbegin()
         self.cumulative_n_features = obj.get_cumulative_n_features()
+        self.ne, self.nf, self.ns = obj.get_n_data()
 
         self.ebegin, ei = [], 0
         for n in n_st_dataset:
@@ -42,16 +43,22 @@ class Features:
             ei += n
         self.ebegin = np.array(self.ebegin)
 
+        self.reg_dict = dict()
+        self.reg_dict['x'] = self.x
+        self.reg_dict['first_indices'] = list(zip(self.ebegin,
+                                                  self.fbegin,
+                                                  self.sbegin))
+        self.reg_dict['n_data'] = (self.ne, self.nf, self.ns)
+        self.reg_dict['cumulative_n_features'] = self.cumulative_n_features
+
+    def get_regression_dict(self):
+        return self.reg_dict
     def get_x(self):
         return self.x
-    def get_ebegin(self):
-        return self.ebegin
-    def get_fbegin(self):
-        return self.fbegin
-    def get_sbegin(self):
-        return self.sbegin
     def get_first_indices(self):
-        return list(zip(self.ebegin, self.fbegin, self.sbegin))
+        return self.reg_dict['first_indices']
     def get_cumulative_n_features(self):
-        return self.cumulative_n_features
+        return self.reg_dict['cumulative_n_features']
+    def get_n_data(self):
+        return self.reg_dict['n_data']
 

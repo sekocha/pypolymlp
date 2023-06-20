@@ -47,15 +47,12 @@ if __name__ == '__main__':
         test_dft_dict[set_id].update(dict1)
 
     t1 = time.time()
-    train_reg_dict, test_reg_dict = dict(), dict()
 
     features_train = Features(multiple_params_dicts, train_dft_dict)
-    train_reg_dict['x'] = features_train.get_x()
-    train_reg_dict['first_indices'] = features_train.get_first_indices()
+    train_reg_dict = features_train.get_regression_dict()
 
     features_test = Features(multiple_params_dicts, test_dft_dict)
-    test_reg_dict['x'] = features_test.get_x()
-    test_reg_dict['first_indices'] = features_test.get_first_indices()
+    test_reg_dict = features_test.get_regression_dict()
 
     t2 = time.time()
     pre_train = Precondition(train_reg_dict, 

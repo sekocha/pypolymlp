@@ -50,6 +50,7 @@ class Features:
  
         self.x = obj.get_x()
         self.fbegin, self.sbegin = obj.get_fbegin(), obj.get_sbegin()
+        self.ne, self.nf, self.ns = obj.get_n_data()
 
         self.ebegin, ei = [], 0
         for n in n_st_dataset:
@@ -57,15 +58,19 @@ class Features:
             ei += n
         self.ebegin = np.array(self.ebegin)
 
+        self.reg_dict = dict()
+        self.reg_dict['x'] = self.x
+        self.reg_dict['first_indices'] = list(zip(self.ebegin,
+                                                  self.fbegin,
+                                                  self.sbegin))
+        self.reg_dict['n_data'] = (self.ne, self.nf, self.ns)
+
+    def get_regression_dict(self):
+        return self.reg_dict
     def get_x(self):
         return self.x
-    def get_ebegin(self):
-        return self.ebegin
-    def get_fbegin(self):
-        return self.fbegin
-    def get_sbegin(self):
-        return self.sbegin
     def get_first_indices(self):
-        return list(zip(self.ebegin, self.fbegin, self.sbegin))
-
+        return self.reg_dict['first_indices']
+    def get_n_data(self):
+        return self.reg_dict['n_data']
 

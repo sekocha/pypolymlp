@@ -39,6 +39,8 @@ PYBIND11_MODULE(mlpcpp, m) {
                 py::return_value_policy::reference_internal)
         .def("get_sbegin", &PyModel::get_sbegin, 
                 py::return_value_policy::reference_internal)
+        .def("get_n_data", &PyModel::get_n_data, 
+                py::return_value_policy::reference_internal)
         ;
 
     py::class_<PyModelSingleStruct>(m, "PotentialModelSingleStruct")
@@ -66,6 +68,8 @@ PYBIND11_MODULE(mlpcpp, m) {
                 py::return_value_policy::reference_internal)
         .def("get_cumulative_n_features", 
                 &PyAdditiveModel::get_cumulative_n_features, 
+                py::return_value_policy::reference_internal)
+        .def("get_n_data", &PyAdditiveModel::get_n_data, 
                 py::return_value_policy::reference_internal)
         ;
 

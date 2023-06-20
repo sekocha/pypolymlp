@@ -67,14 +67,14 @@ PyModel::PyModel(const py::dict& params_dict,
 
     std::vector<bool> force_st;
     vector1i xf_begin, xs_begin;
-    int n_data;
+    int total_n_data;
     set_index(n_st_dataset, 
               force_dataset, 
               n_atoms_all, 
               xf_begin, 
               xs_begin, 
               force_st, 
-              n_data);
+              total_n_data);
 
     Neighbor neigh(axis[0], positions_c[0], types[0], fp.n_type, fp.cutoff);
     Model mod(neigh.get_dis_array(), 
@@ -88,15 +88,15 @@ PyModel::PyModel(const py::dict& params_dict,
 
     if (print_memory == true){
         std::cout << " matrix shape (X) = (" 
-            << n_data << "," << n_features << ")" << std::endl;
+            << total_n_data << "," << n_features << ")" << std::endl;
         std::cout << std::fixed << std::setprecision(2);
         std::cout << " Estimated memory allocation = " 
-            << double(n_data) * double(n_features) * 8e-9 
+            << double(total_n_data) * double(n_features) * 8e-9 
             << " (GB)" << std::endl;
         std::cout << std::fixed << std::setprecision(10);
     }
 
-    x_all = Eigen::MatrixXd(n_data, n_features);
+    x_all = Eigen::MatrixXd(total_n_data, n_features);
     #ifdef _OPENMP
     #pragma omp parallel for schedule(guided,1)
     #endif
@@ -157,6 +157,9 @@ void PyModel::set_index(const std::vector<int>& n_data_dataset,
         if (force_dataset[i] == true) iforce += n_data_dataset[i] * 6;
     }
 
+    n_data = vector1i(3, 0);
+    n_data[0] = n_st;
+
     int n = 0; 
     n_row = n_st;
     for (int i = 0; i < n_data_dataset.size(); ++i){
@@ -172,6 +175,8 @@ void PyModel::set_index(const std::vector<int>& n_data_dataset,
                 iforce += 3 * n_atoms_st[n];
                 istress += 6;
                 n_row += 6 + 3 * n_atoms_st[n];
+                n_data[1] += 3 * n_atoms_st[n];
+                n_data[2] += 6;
             }
             ++n;
         }
@@ -181,6 +186,7 @@ void PyModel::set_index(const std::vector<int>& n_data_dataset,
 Eigen::MatrixXd& PyModel::get_x(){ return x_all; }
 const vector1i& PyModel::get_fbegin() const{ return xf_begin_dataset; }
 const vector1i& PyModel::get_sbegin() const{ return xs_begin_dataset; }
+const vector1i& PyModel::get_n_data() const{ return n_data; }
 
 
 PyModelSingleStruct::PyModelSingleStruct(const py::dict& params_dict,

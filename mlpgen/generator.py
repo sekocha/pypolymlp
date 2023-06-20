@@ -61,7 +61,8 @@ from polymlp_generator.mlpgen.accuracy import write_error_yaml
         - x
         - y
         - first_indices [(ebegin, fbegin, sbegin), ...]
-        - scaler
+        - n_data (ne, nf, ns)
+        - scales
 
 """
 
@@ -80,21 +81,16 @@ if __name__ == '__main__':
     params_dict = p.get_params()
     elements = params_dict['elements']
 
-    train_dft_dict, test_dft_dict = dict(), dict()
     train_dft_dict = parse_vaspruns(params_dict['dft']['train'],
                                     element_order=elements)
     test_dft_dict = parse_vaspruns(params_dict['dft']['test'],
                                    element_order=elements)
 
     t1 = time.time()
-    train_reg_dict, test_reg_dict = dict(), dict()
     features_train = Features(params_dict, train_dft_dict['structures'])
-    train_reg_dict['x'] = features_train.get_x()
-    train_reg_dict['first_indices'] = features_train.get_first_indices()
-
+    train_reg_dict = features_train.get_regression_dict()
     features_test = Features(params_dict, test_dft_dict['structures'])
-    test_reg_dict['x'] = features_test.get_x()
-    test_reg_dict['first_indices'] = features_test.get_first_indices()
+    test_reg_dict = features_test.get_regression_dict()
 
     t2 = time.time()
     pre_train = Precondition(train_reg_dict, 
