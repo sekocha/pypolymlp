@@ -21,7 +21,7 @@
 
 *****************************************************************************/
 
-#include "compute/model_single.h"
+#include "compute/model.h"
 
 Model::Model(){}
 

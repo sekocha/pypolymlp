@@ -30,9 +30,7 @@
 #include <pybind11/eigen.h>
 
 #include "mlpcpp.h"
-#include "compute/model_py.h"
-#include "compute/model_single_py.h"
-#include "compute/model_charge_py.h"
+#include "compute/py_model.h"
 #include "polymlp/polymlp_read_gtinv.h"
 #include "projector/projector.h"
 #include "longrange/ewald.h"

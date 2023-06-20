@@ -21,44 +21,49 @@
 
 ****************************************************************************/
 
-#ifndef __MODEL_SINGLE_PY
-#define __MODEL_SINGLE_PY
+#ifndef __MULTIPLE_MODELS_PY
+#define __MULTIPLE_MODELS_PY
 
 #include <iomanip> 
 
 #include "mlpcpp.h"
 #include "compute/neighbor.h"
-#include "compute/model_single.h"
+#include "compute/model.h"
 
-class ModelSinglePy{
+#include <Eigen/Core>
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
-    struct feature_params fp;
-    vector1d xe;
+namespace py = pybind11;
+
+class MultipleModelsPy {
+
+    Eigen::MatrixXd x_all;
+    vector1i xf_begin_dataset, xs_begin_dataset;
+
+    void set_index(const std::vector<int>& n_data_dataset, 
+                   const std::vector<bool>& force_dataset,
+                   const std::vector<int>& n_atoms_st,
+                   std::vector<int>& xf_begin, 
+                   std::vector<int>& xs_begin,
+                   std::vector<bool>& force, 
+                   int& n_row);
 
     public: 
 
-    ModelSinglePy(const vector2d& axis,
-                  const vector2d& positions_c,
-                  const vector1i& types,
-                  const int& n_type,
-                  const bool& force,
-                  const vector2d& params,
-                  const double& cutoff,
-                  const std::string& pair_type,
-                  const std::string& des_type,
-                  const int& model_type,
-                  const int& maxp,
-                  const int& maxl,
-                  const vector3i& lm_array,
-                  const vector2i& l_comb,
-                  const vector2d& lm_coeffs,
-                  const bool& element_swap);
+    MultipleModelsPy(const py::dict& params_dict,
+                     const vector3d& axis, 
+                     const vector3d& positions_c,
+                     const vector2i& types, 
+                     const vector1i& n_st_dataset,
+                     const std::vector<bool>& force_dataset,
+                     const vector1i& n_atoms_all);
 
+    ~MultipleModelsPy();
 
-    ~ModelSinglePy();
-
-    const vector1d& get_x() const;
+    Eigen::MatrixXd& get_x();
+    const vector1i& get_fbegin() const;
+    const vector1i& get_sbegin() const;
 
 };
 
-#endif

@@ -25,7 +25,7 @@
 
 PYBIND11_MODULE(mlpcpp, m) {
 
-    py::class_<ModelPy>(m, "PotentialModel")
+    py::class_<PyModel>(m, "PotentialModel")
         .def(py::init<const py::dict&,
                       const vector3d&,
                       const vector3d&,
@@ -33,84 +33,20 @@ PYBIND11_MODULE(mlpcpp, m) {
                       const vector1i&,
                       const std::vector<bool>&,
                       const vector1i&>())
-        .def("get_x", &ModelPy::get_x, 
+        .def("get_x", &PyModel::get_x, 
                 py::return_value_policy::reference_internal)
-        .def("get_fbegin", &ModelPy::get_fbegin, 
+        .def("get_fbegin", &PyModel::get_fbegin, 
                 py::return_value_policy::reference_internal)
-        .def("get_sbegin", &ModelPy::get_sbegin, 
-                py::return_value_policy::reference_internal)
-        ;
-
-    py::class_<ModelPCAPy>(m, "PotentialModelPCA")
-        .def(py::init<const vector3d&,
-                      const vector3d&,
-                      const vector2i&,
-                      const int&, 
-                      const bool&,
-                      const vector2d&,
-                      const double&,
-                      const std::string&,
-                      const std::string&,
-                      const int&,
-                      const int&,
-                      const int&,
-                      const vector3i&,
-                      const vector2i&,
-                      const vector2d&,
-                      const vector1i&,
-                      const std::vector<bool>&,
-                      const vector1i&,
-                      const vector2d&,
-                      const bool&>())
-        .def("get_x", &ModelPCAPy::get_x, 
-                py::return_value_policy::reference_internal)
-        .def("get_fbegin", &ModelPCAPy::get_fbegin, 
-                py::return_value_policy::reference_internal)
-        .def("get_sbegin", &ModelPCAPy::get_sbegin, 
+        .def("get_sbegin", &PyModel::get_sbegin, 
                 py::return_value_policy::reference_internal)
         ;
 
-    py::class_<ModelSinglePy>(m, "PotentialModelSingle")
-        .def(py::init<const vector2d&,
+    py::class_<PyModelSingleStruct>(m, "PotentialModelSingleStruct")
+        .def(py::init<const py::dict&,
                       const vector2d&,
-                      const vector1i&,
-                      const int&, 
-                      const bool&,
                       const vector2d&,
-                      const double&,
-                      const std::string&,
-                      const std::string&,
-                      const int&,
-                      const int&,
-                      const int&,
-                      const vector3i&,
-                      const vector2i&,
-                      const vector2d&,
-                      const bool&>())
-        .def("get_x", &ModelSinglePy::get_x, 
-                py::return_value_policy::reference_internal)
-        ;
-
-    py::class_<ModelForChargePy>(m, "PotentialModelCharge")
-        .def(py::init<const vector3d&,
-                      const vector3d&,
-                      const vector2i&,
-                      const int&, 
-                      const vector2d&,
-                      const double&,
-                      const std::string&,
-                      const std::string&,
-                      const int&,
-                      const int&,
-                      const int&,
-                      const vector3i&,
-                      const vector2i&,
-                      const vector2d&,
-                      const vector1i&,
-                      const bool&>())
-        .def("get_x", &ModelForChargePy::get_x, 
-                py::return_value_policy::reference_internal)
-        .def("get_cbegin", &ModelForChargePy::get_cbegin, 
+                      const vector1i&>())
+        .def("get_x", &PyModelSingleStruct::get_x, 
                 py::return_value_policy::reference_internal)
         ;
 

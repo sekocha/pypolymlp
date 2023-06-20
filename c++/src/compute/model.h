@@ -21,8 +21,8 @@
 
 ****************************************************************************/
 
-#ifndef __MODEL_SINGLE
-#define __MODEL_SINGLE
+#ifndef __MODEL
+#define __MODEL
 
 #include <omp.h>
 #include <algorithm>

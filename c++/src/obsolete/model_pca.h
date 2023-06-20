@@ -37,37 +37,6 @@
 
 namespace py = pybind11;
 
-class ModelPy {
-
-    Eigen::MatrixXd x_all;
-    vector1i xf_begin_dataset, xs_begin_dataset;
-
-    void set_index(const std::vector<int>& n_data_dataset, 
-                   const std::vector<bool>& force_dataset,
-                   const std::vector<int>& n_atoms_st,
-                   std::vector<int>& xf_begin, 
-                   std::vector<int>& xs_begin,
-                   std::vector<bool>& force, 
-                   int& n_row);
-
-    public: 
-
-    ModelPy(const py::dict& params_dict,
-            const vector3d& axis, 
-            const vector3d& positions_c,
-            const vector2i& types, 
-            const vector1i& n_st_dataset,
-            const std::vector<bool>& force_dataset,
-            const vector1i& n_atoms_all);
-
-    ~ModelPy();
-
-    Eigen::MatrixXd& get_x();
-    const vector1i& get_fbegin() const;
-    const vector1i& get_sbegin() const;
-
-};
-
 class ModelPCAPy{
 
     Eigen::MatrixXd x_all;
