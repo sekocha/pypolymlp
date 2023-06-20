@@ -3,8 +3,8 @@ import numpy as np
 import os
 import copy
 
-from polymlp_generator.common.math_functions import rmse
-from polymlp_generator.mlpgen.features import Features
+from pypolymlp.common.math_functions import rmse
+from pypolymlp.mlpgen.features import Features
 
 def __compute_rmse(true_values, 
                    pred_values_all, 

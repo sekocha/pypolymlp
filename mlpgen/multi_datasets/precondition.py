@@ -2,9 +2,9 @@
 import numpy as np
 
 from sklearn.preprocessing import StandardScaler
-import polymlp_generator.mlpgen.numba_support as numba_support
-from polymlp_generator.mlpgen.precondition import apply_atomic_energy
-from polymlp_generator.mlpgen.precondition import apply_weight_percentage
+import pypolymlp.mlpgen.numba_support as numba_support
+from pypolymlp.mlpgen.precondition import apply_atomic_energy
+from pypolymlp.mlpgen.precondition import apply_weight_percentage
 
 
 class Precondition:

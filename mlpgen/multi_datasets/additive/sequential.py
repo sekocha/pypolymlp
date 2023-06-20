@@ -6,42 +6,43 @@ import copy
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/../c++/lib')
 import mlpcpp
-from polymlp_generator.mlpgen.features import Features
-from polymlp_generator.mlpgen.precondition import apply_atomic_energy
-from polymlp_generator.mlpgen.precondition import apply_weight_percentage
-import polymlp_generator.mlpgen.numba_support as numba_support
+from pypolymlp.mlpgen.multi_datasets.additive.features import Features
+from pypolymlp.mlpgen.precondition import apply_atomic_energy
+from pypolymlp.mlpgen.precondition import apply_weight_percentage
+import pypolymlp.mlpgen.numba_support as numba_support
 
-class FeaturesSequential:
+class Sequential:
 
     def __init__(self,
-                 params_dict,
+                 multiple_params_dicts,
                  multiple_dft_dicts, 
                  scales=None,
                  print_memory=True,
                  element_swap=False):  
 
+        single_params_dict = multiple_params_dicts[0]
         self.multiple_dft_dicts = multiple_dft_dicts
-        params_include_force = copy.copy(params_dict['include_force'])
 
         for _, dft_dict in self.multiple_dft_dicts.items():
-            dft_dict = apply_atomic_energy(dft_dict, params_dict)
+            dft_dict = apply_atomic_energy(dft_dict, single_params_dict)
         min_e_per_atom = self.__find_min_energy()
 
         xtx, xty, y_sq_norm = None, None, 0.0
         xe_sum, xe_sq_sum = None, None
         total_n_data = 0
-        for _, dft_dict in multiple_dft_dicts.items():
-            structures = dft_dict['structures']
-            params_dict['include_force'] = dft_dict['include_force']
-            features = Features(params_dict, 
-                                structures, 
+        for id_dataset, dft_dict in multiple_dft_dicts.items():
+
+            dft_dict_tmp = dict()
+            dft_dict_tmp[id_dataset] = dft_dict
+            features = Features(multiple_params_dicts, 
+                                dft_dict_tmp, 
                                 print_memory=print_memory,
                                 element_swap=element_swap)
-            params_dict['include_force'] = params_include_force
 
             x = features.get_x()
-            xe = x[:len(dft_dict['energy'])]
+            xe = x[:features.ne]
             first_indices = features.get_first_indices()[0]
+            cumulative_n_features = features.get_cumulative_n_features()
 
             if scales is None:
                 local1 = np.sum(xe, axis=0)
@@ -56,7 +57,7 @@ class FeaturesSequential:
 
             x, y, w = apply_weight_percentage(x, y, w, 
                                               dft_dict, 
-                                              params_dict, 
+                                              single_params_dict, 
                                               first_indices,
                                               min_e=min_e_per_atom)
             if print_memory:
@@ -93,6 +94,7 @@ class FeaturesSequential:
         self.reg_dict['y_sq_norm'] = y_sq_norm
         self.reg_dict['total_n_data'] = total_n_data
         self.reg_dict['scales'] = self.scales
+        self.reg_dict['cumulative_n_features'] = cumulative_n_features
             
     def __find_min_energy(self):
 

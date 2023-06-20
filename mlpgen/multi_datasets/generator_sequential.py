@@ -4,18 +4,16 @@ import argparse
 import signal
 import time
 
-from polymlp_generator.mlpgen.file_parser import parse_vaspruns
-from polymlp_generator.mlpgen.file_parser import ParamsParser
+from pypolymlp.mlpgen.parser import ParamsParser
+from pypolymlp.mlpgen.multi_datasets.parser import parse_observations
+from pypolymlp.mlpgen.multi_datasets.sequential import Sequential
 
-from polymlp_generator.mlpgen.multi_datasets.features_sequential \
-                                            import FeaturesSequential
+from pypolymlp.mlpgen.regression import Regression
+from pypolymlp.mlpgen.io_potential import save_mlp_lammps
 
-from polymlp_generator.mlpgen.regression import Regression
-from polymlp_generator.mlpgen.io_potential import save_mlp_lammps
-
-from polymlp_generator.mlpgen.accuracy import compute_error
-from polymlp_generator.mlpgen.accuracy import compute_predictions
-from polymlp_generator.mlpgen.accuracy import write_error_yaml
+from pypolymlp.mlpgen.accuracy import compute_error
+from pypolymlp.mlpgen.accuracy import compute_predictions
+from pypolymlp.mlpgen.accuracy import write_error_yaml
 
 
 if __name__ == '__main__':
@@ -33,24 +31,15 @@ if __name__ == '__main__':
     params_dict = p.get_params()
     elements = params_dict['elements']
 
-    train_dft_dict, test_dft_dict = dict(), dict()
-    for set_id, dict1 in params_dict['dft']['train'].items():
-        train_dft_dict[set_id] = parse_vaspruns(dict1['vaspruns'], 
-                                                element_order=elements)
-        train_dft_dict[set_id].update(dict1)
-
-    for set_id, dict1 in params_dict['dft']['test'].items():
-        test_dft_dict[set_id] = parse_vaspruns(dict1['vaspruns'],
-                                               element_order=elements)
-        test_dft_dict[set_id].update(dict1)
+    train_dft_dict, test_dft_dict = parse_observations(params_dict)
 
     t1 = time.time()
-    features_train = FeaturesSequential(params_dict, train_dft_dict)
-    train_reg_dict = features_train.get_updated_regression_dict()
-    features_test = FeaturesSequential(params_dict, 
-                                       test_dft_dict,
-                                       scales=train_reg_dict['scales'])
-    test_reg_dict = features_test.get_updated_regression_dict()
+    seq_train = Sequential(params_dict, train_dft_dict)
+    train_reg_dict = seq_train.get_updated_regression_dict()
+    seq_test = Sequential(params_dict, 
+                          test_dft_dict,
+                          scales=train_reg_dict['scales'])
+    test_reg_dict = seq_test.get_updated_regression_dict()
 
     t2 = time.time()
     reg = Regression(train_reg_dict, test_reg_dict, params_dict)

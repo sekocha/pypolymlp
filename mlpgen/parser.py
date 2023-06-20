@@ -9,8 +9,8 @@ from distutils.util import strtobool
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/../c++/lib')
 import mlpcpp
-from polymlp_generator.common.input_parser import InputParser
-from polymlp_generator.common.vasp import Vasprun
+from pypolymlp.common.input_parser import InputParser
+from pypolymlp.common.vasp import Vasprun
 
 class ParamsParser:
 

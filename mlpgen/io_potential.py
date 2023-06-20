@@ -6,7 +6,7 @@ from distutils.util import strtobool
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/../c++/lib')
 import mlpcpp
-from polymlp_generator.common.table import mass_table
+from pypolymlp.common.table import mass_table
 
 def print_param(dict1, key, fstream, prefix=''):
     print(str(dict1[key]), '#', prefix + key, file=fstream)

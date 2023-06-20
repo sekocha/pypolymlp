@@ -5,7 +5,7 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/../c++/lib')
 import mlpcpp
-from polymlp_generator.mlpgen.multi_datasets.features \
+from pypolymlp.mlpgen.multi_datasets.features \
                                 import multiple_dft_dicts_to_mlpcpp_obj
 
 class Features:

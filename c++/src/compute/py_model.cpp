@@ -157,9 +157,9 @@ void PyModel::set_index(const std::vector<int>& n_data_dataset,
 
     int id_st(0), istress(n_st); 
     for (int i = 0; i < n_datasets; ++i){
-        n_data[2] += n_data_dataset[i] * 6;
         if (force_dataset[i] == true) {
             xs_begin_dataset[i] = istress;
+            n_data[2] += n_data_dataset[i] * 6;
         }
         for (int j = 0; j < n_data_dataset[i]; ++j){
             if (force_dataset[i] == true){

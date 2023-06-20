@@ -3,7 +3,7 @@
 ## MLP development using a single training dataset and a single test dataset
 
 ```
-> $(polymlp_generator)/mlpgen/generator.py --in polymlp.in
+> $(pypolymlp)/mlpgen/generator.py --in polymlp.in
 > cat polymlp.in
 
     n_type 2
@@ -35,7 +35,7 @@
 ## MLP development using multiple datasets
 
 ```
-> $(polymlp_generator)/mlpgen/multi_datasets/generator.py --in polymlp.in
+> $(pypolymlp)/mlpgen/multi_datasets/generator.py --in polymlp.in
 > cat polymlp.in
 
     n_type 2
@@ -69,7 +69,7 @@
 ## MLP development using a memory-efficient sequential implementation
 
 ```
-> $(polymlp_generator)/mlpgen/multi_datasets/generator_sequential.py --in polymlp.in
+> $(pypolymlp)/mlpgen/multi_datasets/generator_sequential.py --in polymlp.in
 
 ```
 
@@ -77,7 +77,7 @@
 ## Computation of structural features
 
 ```
-> $(polymlp_generator)/tools/compute_features.py
+> $(pypolymlp)/tools/compute_features.py
     --infile polymlp.in --poscars poscars/poscar-000*
 
 > cat polymlp.in

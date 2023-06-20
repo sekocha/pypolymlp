@@ -3,12 +3,12 @@ import numpy as np
 import argparse
 import signal
 
-from polymlp_generator.common.vasp import Poscar
-from polymlp_generator.mlpgen.file_parser import ParamsParser
-from polymlp_generator.mlpgen.features import Features
+from pypolymlp.common.vasp import Poscar
+from pypolymlp.mlpgen.parser import ParamsParser
+from pypolymlp.mlpgen.features import Features
 
 """
-> $(polymlp_generator)/tools/compute_features.py 
+> $(pypolymlp)/tools/compute_features.py 
     --infile polymlp.in --poscars poscars/poscar-000*
 
 > cat polymlp.in

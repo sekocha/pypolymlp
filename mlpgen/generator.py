@@ -4,15 +4,15 @@ import argparse
 import signal
 import time
 
-from polymlp_generator.mlpgen.file_parser import parse_vaspruns
-from polymlp_generator.mlpgen.file_parser import ParamsParser
-from polymlp_generator.mlpgen.features import Features
-from polymlp_generator.mlpgen.precondition import Precondition
-from polymlp_generator.mlpgen.regression import Regression
-from polymlp_generator.mlpgen.io_potential import save_mlp_lammps
+from pypolymlp.mlpgen.parser import parse_vaspruns
+from pypolymlp.mlpgen.parser import ParamsParser
+from pypolymlp.mlpgen.features import Features
+from pypolymlp.mlpgen.precondition import Precondition
+from pypolymlp.mlpgen.regression import Regression
+from pypolymlp.mlpgen.io_potential import save_mlp_lammps
 
-from polymlp_generator.mlpgen.accuracy import compute_error
-from polymlp_generator.mlpgen.accuracy import write_error_yaml
+from pypolymlp.mlpgen.accuracy import compute_error
+from pypolymlp.mlpgen.accuracy import write_error_yaml
 
 
 """
