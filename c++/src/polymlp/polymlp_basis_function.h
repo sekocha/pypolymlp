@@ -24,11 +24,6 @@
 #ifndef __POLYMLP_BASIS_FUNCTION_HPP
 #define __POLYMLP_BASIS_FUNCTION_HPP
 
-#include <boost/math/special_functions/bessel.hpp>
-#include <boost/math/special_functions/legendre.hpp>
-#include <boost/math/special_functions/hermite.hpp>
-#include <boost/math/special_functions/laguerre.hpp>
-
 #include "polymlp_mlpcpp.h"
 
 double cosine_cutoff_function(const double& dis, const double& cutoff);
@@ -58,10 +53,6 @@ void cosine_d(const double& dis,
               double& bf_d);
 
 double sine(const double& dis, const double& param1);
-void sine_d(const double& dis, 
-            const double& param1, 
-            double& bf, 
-            double& bf_d);
 
 double polynomial(const double& dis, const double& param1);
 
@@ -126,34 +117,4 @@ void morse_d(const double& dis,
              const double& param2,
              double& bf, 
              double& bf_d);
-
-double bessel(const double& dis, const double& param1);
-
-double neumann(const double& dis, const double& param1);
-
-double sph_bessel(const double& dis, const double& p1, const double& p2);
-
-double sph_neumann(const double& dis, const double& param1);
-
-void bessel_d(const double& dis, 
-              const double& param1, 
-              double& bf, 
-              double& bf_d);
-
-void neumann_d(const double& dis, 
-               const double& param1, 
-               double& bf, 
-               double& bf_d);
-
-void sph_bessel_d(const double& dis, 
-                  const double& param1, 
-                  const double& param2, 
-                  double& bf, 
-                  double& bf_d);
-
-void sph_neumann_d(const double& dis, 
-                   const double& param1, 
-                   double& bf, 
-                   double& bf_d);
-
 #endif

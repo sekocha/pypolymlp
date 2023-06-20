@@ -35,43 +35,13 @@ void get_fn_(const double& dis,
             fn[n] = gauss(dis, fp.params[n][0], fp.params[n][1]) * fc;
         }
     }
+    /*
     else if (fp.pair_type == "sph_bessel"){
         for (int n = 0; n < fp.params.size(); ++n){
             fn[n] = sph_bessel(dis, fp.params[n][0], fp.params[n][1]) * fc;
         }
     }
-    
-    else if (fp.pair_type == "fourier"){
-        for (int n = 0; n < fp.params.size(); ++n){
-            if (fp.params[n][1] == 0)
-                fn[n] = cosine(dis, fp.params[n][0]) * fc;
-            else 
-                fn[n] = sine(dis, fp.params[n][0]) * fc;
-        }
-    }
-    else if (fp.pair_type == "cosine"){
-        for (int n = 0; n < fp.params.size(); ++n){
-            fn[n] = cosine(dis, fp.params[n][0]) * fc;
-        }
-    }
-    else if (fp.pair_type == "sine"){
-        for (int n = 0; n < fp.params.size(); ++n){
-            fn[n] = sine(dis, fp.params[n][0]) * fc;
-        }
-    }
-    else if (fp.pair_type == "mixed"){
-        for (int n = 0; n < fp.params.size(); ++n){
-            if (fp.params[n][2] == 0){
-                fn[n] = gauss(dis, fp.params[n][0], fp.params[n][1]) * fc;
-            }
-            else if (fp.params[n][2] == 1){
-                fn[n] = cosine(dis, fp.params[n][0]) * fc;
-            }
-            else if (fp.params[n][2] == 2){
-                fn[n] = exp1(dis, fp.params[n][0]) * fc;
-            }
-        }
-    }
+    */
 }
 
 void get_fn_(const double& dis, 
@@ -92,6 +62,7 @@ void get_fn_(const double& dis,
             fn_dr[n] = fn_dr_val * fc + fn_val * fc_dr;
         }
     }
+    /*
     else if (fp.pair_type == "sph_bessel"){
         for (int n = 0; n < fp.params.size(); ++n){
             sph_bessel_d(dis, fp.params[n][0], fp.params[n][1],
@@ -100,55 +71,7 @@ void get_fn_(const double& dis,
             fn_dr[n] = fn_dr_val * fc + fn_val * fc_dr;
         }
     }
-    else if (fp.pair_type == "fourier"){
-        for (int n = 0; n < fp.params.size(); ++n){
-            if (fp.params[n][1] == 0){
-                cosine_d(dis, fp.params[n][0], fn_val, fn_dr_val);
-                fn[n] = fn_val * fc;
-                fn_dr[n] = fn_dr_val * fc + fn_val * fc_dr;
-            }
-            else {
-                sine_d(dis, fp.params[n][0], fn_val, fn_dr_val);
-                fn[n] = fn_val * fc;
-                fn_dr[n] = fn_dr_val * fc + fn_val * fc_dr;
-            }
-        }
-    }
-    else if (fp.pair_type == "cosine"){
-        for (int n = 0; n < fp.params.size(); ++n){
-            cosine_d(dis, fp.params[n][0], fn_val, fn_dr_val);
-            fn[n] = fn_val * fc;
-            fn_dr[n] = fn_dr_val * fc + fn_val * fc_dr;
-        }
-    }
-    else if (fp.pair_type == "sine"){
-        for (int n = 0; n < fp.params.size(); ++n){
-            sine_d(dis, fp.params[n][0], fn_val, fn_dr_val);
-            fn[n] = fn_val * fc;
-            fn_dr[n] = fn_dr_val * fc + fn_val * fc_dr;
-        }
-    }
-    else if (fp.pair_type == "mixed"){
-        for (int n = 0; n < fp.params.size(); ++n){
-            if (fp.params[n][2] == 0){
-                gauss_d(dis, fp.params[n][0], fp.params[n][1], 
-                        fn_val, fn_dr_val);
-                fn[n] = fn_val * fc;
-                fn_dr[n] = fn_dr_val * fc + fn_val * fc_dr;
-            }
-            else if (fp.params[n][2] == 1){
-                cosine_d(dis, fp.params[n][0], fn_val, fn_dr_val);
-                fn[n] = fn_val * fc;
-                fn_dr[n] = fn_dr_val * fc + fn_val * fc_dr;
-            }
-            else if (fp.params[n][2] == 2){
-                exp1_d(dis, fp.params[n][0], fn_val, fn_dr_val);
-                fn[n] = fn_val * fc;
-                fn_dr[n] = fn_dr_val * fc + fn_val * fc_dr;
-            }
-        }
-    }
-
+    */
 }
 
 void get_ylm_(const double polar, 
@@ -176,10 +99,20 @@ void get_ylm_(const double r,
 
 vector1d cartesian_to_spherical_(const vector1d& v){
 
+    double r, theta, phi;
+    r = sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+    theta = std::acos(v[2] / r);
+    phi = std::atan2(v[1], v[0]);
+    return vector1d {theta, phi};
+}
+
+/*
+vector1d cartesian_to_spherical_(const vector1d& v){
+
     bg::model::point<long double,3,bg::cs::cartesian> p1(v[0], v[1], v[2]);
     bg::model::point<long double,3,bg::cs::spherical<bg::radian> > p2;
     bg::transform(p1, p2);
     return vector1d {static_cast<double>(bg::get<1>(p2)),
         static_cast<double>(bg::get<0>(p2))}; // theta, phi
 }
-
+*/

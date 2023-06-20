@@ -8,16 +8,15 @@ include_pybind11 = `python3 -m pybind11 --includes`
 include_eigen3 = -I${CONDA_PREFIX}/include/eigen3
 include_arma = -I${CONDA_PREFIX}/include
 include_gsl = -I${CONDA_PREFIX}/include
-include_boost = -I/home/seko/usr/local/boost/include
+#include_boost = -I/home/seko/usr/local/boost/include
 
-INCLUDE = $(include_common) $(include_boost) $(include_arma) \
+INCLUDE = $(include_common) $(include_arma) \
           $(include_gsl) $(include_eigen3) $(include_pybind11)
-
 loader = $(cpp)
 
 libarma = -L/${CONDA_PREFIX}/lib -larmadillo
 libgsl = -L/${CONDA_PREFIX}/lib -lgsl -lgslcblas
-libboost = -L/home/seko/usr/local/boost/lib
+#libboost = -L/home/seko/usr/local/boost/lib
 libomp = -lgomp
 
 libs = $(libarma) $(libboost) $(libgsl) $(libomp)
