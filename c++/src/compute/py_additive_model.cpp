@@ -93,7 +93,7 @@ PyAdditiveModel::PyAdditiveModel(const std::vector<py::dict>& params_dict_array,
                   fp, 
                   element_swap);
         n_features += mod.get_xe_sum().size();
-        n_features_array.emplace_back(n_features);
+        cumulative_n_features.emplace_back(n_features);
     }
 
     if (print_memory == true){
@@ -111,13 +111,13 @@ PyAdditiveModel::PyAdditiveModel(const std::vector<py::dict>& params_dict_array,
     #pragma omp parallel for schedule(guided,1)
     #endif
     for (int i = 0; i < n_st; ++i){
-        for (int n = 0; n < n_features_array.size(); ++n){
+        for (int n = 0; n < cumulative_n_features.size(); ++n){
             struct feature_params fp1 = fp_array[n];
             fp1.force = force_st[i];
 
             int first_index;
             if (n == 0) first_index = 0;
-            else first_index = n_features_array[n-1];
+            else first_index = cumulative_n_features[n-1];
 
             Neighbor neigh(axis[i], 
                            positions_c[i], 
@@ -200,8 +200,8 @@ const vector1i& PyAdditiveModel::get_fbegin() const{ return xf_begin_dataset; }
 
 const vector1i& PyAdditiveModel::get_sbegin() const{ return xs_begin_dataset; }
 
-const vector1i& PyAdditiveModel::get_n_features() const{ 
-    return n_features_array; 
+const vector1i& PyAdditiveModel::get_cumulative_n_features() const{ 
+    return cumulative_n_features; 
 }
 
 

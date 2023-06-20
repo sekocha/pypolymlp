@@ -34,7 +34,7 @@ class Features:
  
         self.x = obj.get_x()
         self.fbegin, self.sbegin = obj.get_fbegin(), obj.get_sbegin()
-        self.n_features_array = obj.get_n_features()
+        self.cumulative_n_features = obj.get_cumulative_n_features()
 
         self.ebegin, ei = [], 0
         for n in n_st_dataset:
@@ -52,6 +52,6 @@ class Features:
         return self.sbegin
     def get_first_indices(self):
         return list(zip(self.ebegin, self.fbegin, self.sbegin))
-    def get_n_features_array(self):
-        return self.n_features_array
+    def get_cumulative_n_features(self):
+        return self.cumulative_n_features
 

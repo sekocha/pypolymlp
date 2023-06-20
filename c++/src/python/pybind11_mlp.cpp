@@ -64,7 +64,8 @@ PYBIND11_MODULE(mlpcpp, m) {
                 py::return_value_policy::reference_internal)
         .def("get_sbegin", &PyAdditiveModel::get_sbegin, 
                 py::return_value_policy::reference_internal)
-        .def("get_n_features", &PyAdditiveModel::get_n_features, 
+        .def("get_cumulative_n_features", 
+                &PyAdditiveModel::get_cumulative_n_features, 
                 py::return_value_policy::reference_internal)
         ;
 

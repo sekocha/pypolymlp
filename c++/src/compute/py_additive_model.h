@@ -40,7 +40,7 @@ class PyAdditiveModel {
 
     Eigen::MatrixXd x_all;
     vector1i xf_begin_dataset, xs_begin_dataset;
-    vector1i n_features_array; 
+    vector1i cumulative_n_features; 
 
     void set_index(const std::vector<int>& n_data_dataset, 
                    const std::vector<bool>& force_dataset,
@@ -65,7 +65,7 @@ class PyAdditiveModel {
     Eigen::MatrixXd& get_x();
     const vector1i& get_fbegin() const;
     const vector1i& get_sbegin() const;
-    const vector1i& get_n_features() const;
+    const vector1i& get_cumulative_n_features() const;
 
 };
 

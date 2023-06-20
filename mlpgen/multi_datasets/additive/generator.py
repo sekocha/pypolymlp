@@ -77,12 +77,12 @@ if __name__ == '__main__':
     coeffs, scales = reg.ridge()
     mlp_dict = reg.get_best_model()
 
-    n_features_array = features_train.get_n_features_array()
+    cumulative_n_features = features_train.get_cumulative_n_features()
     for i, params_dict in enumerate(multiple_params_dicts):
         if i == 0:
-            begin, end = 0, n_features_array[0]
+            begin, end = 0, cumulative_n_features[0]
         else:
-            begin, end = n_features_array[i-1], n_features_array[i]
+            begin, end = cumulative_n_features[i-1], cumulative_n_features[i]
         save_mlp_lammps(params_dict, 
                         coeffs[begin:end], 
                         scales[begin:end], 
