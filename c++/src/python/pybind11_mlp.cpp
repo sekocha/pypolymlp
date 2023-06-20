@@ -50,6 +50,24 @@ PYBIND11_MODULE(mlpcpp, m) {
                 py::return_value_policy::reference_internal)
         ;
 
+    py::class_<PyAdditiveModel>(m, "PotentialAdditiveModel")
+        .def(py::init<const std::vector<py::dict>&,
+                      const vector3d&,
+                      const vector3d&,
+                      const vector2i&,
+                      const vector1i&,
+                      const std::vector<bool>&,
+                      const vector1i&>())
+        .def("get_x", &PyAdditiveModel::get_x, 
+                py::return_value_policy::reference_internal)
+        .def("get_fbegin", &PyAdditiveModel::get_fbegin, 
+                py::return_value_policy::reference_internal)
+        .def("get_sbegin", &PyAdditiveModel::get_sbegin, 
+                py::return_value_policy::reference_internal)
+        .def("get_n_features", &PyAdditiveModel::get_n_features, 
+                py::return_value_policy::reference_internal)
+        ;
+
     py::class_<Readgtinv>(m, "Readgtinv")
         .def(py::init<const int&, 
                       const vector1i&, 

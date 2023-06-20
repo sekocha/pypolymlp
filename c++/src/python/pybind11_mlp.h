@@ -31,6 +31,8 @@
 
 #include "mlpcpp.h"
 #include "compute/py_model.h"
+#include "compute/py_additive_model.h"
+
 #include "polymlp/polymlp_read_gtinv.h"
 #include "projector/projector.h"
 #include "longrange/ewald.h"

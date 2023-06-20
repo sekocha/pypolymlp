@@ -28,7 +28,8 @@ source = polymlp_gtinv_data.o polymlp_read_gtinv.o polymlp_basis_function.o \
          polymlp_functions_interface.o polymlp_model_params.o \
          polymlp_features.o polymlp_potential.o \
          polymlp_mlipkk_spherical_harmonics.o \
-         local.o model.o py_model.o neighbor.o pybind11_mlp.o \
+         local.o model.o py_model.o py_additive_model.o neighbor.o \
+         pybind11_mlp.o \
          projector.o ewald.o compute_features.o
 
 all: mkdir $(addprefix lib/,$(source))
