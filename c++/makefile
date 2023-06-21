@@ -1,21 +1,17 @@
 cpp = g++
 
 cflags = -O3 -fPIC -DNDEBUG -Wno-deprecated -mtune=native -march=native -std=c++11 
-#cflags = -O3 -fPIC -DARMA_NO_DEBUG -DNDEBUG -Wno-deprecated -mtune=native -march=native -std=c++11 
 ompflags = -fopenmp
 
 include_common = -I./src 
 include_pybind11 = `python3 -m pybind11 --includes`
 include_eigen3 = -I${CONDA_PREFIX}/include/eigen3
-#include_arma = -I${CONDA_PREFIX}/include
-
 INCLUDE = $(include_common) $(include_eigen3) $(include_pybind11)
+
 loader = $(cpp)
 
-#libarma = -L/${CONDA_PREFIX}/lib -larmadillo
 libomp = -lgomp
-
-libs = $(libarma) $(libomp)
+libs = $(libomp)
 
 VPATH = src/compute src/polymlp src/python
 

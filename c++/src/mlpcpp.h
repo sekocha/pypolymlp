@@ -27,12 +27,12 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <map>
 #include <array>
 #include <string>
 #include <complex>
 #include <numeric>
 #include <algorithm>
-
 
 #include "polymlp/polymlp_mlpcpp.h"
 
@@ -52,20 +52,4 @@ using vector2dc = std::vector<vector1dc>;
 using vector3dc = std::vector<vector2dc>;
 using vector4dc = std::vector<vector3dc>;
 
-//#include <armadillo>
-/*
-using vector1mat = std::vector<arma::mat>;
-using vector2mat = std::vector<vector1mat>;
-using vector3mat = std::vector<vector2mat>;
-using vector1vec = std::vector<arma::vec>;
-using vector2vec = std::vector<vector1vec>;
-using vector3vec = std::vector<vector2vec>;
-
-using vector1cx_vec = std::vector<arma::cx_vec>;
-using vector2cx_vec = std::vector<vector1cx_vec>;
-using vector3cx_vec = std::vector<vector2cx_vec>;
-using vector1cx_mat = std::vector<arma::cx_mat>;
-using vector2cx_mat = std::vector<vector1cx_mat>;
-using vector3cx_mat = std::vector<vector2cx_mat>;
-*/
 #endif
