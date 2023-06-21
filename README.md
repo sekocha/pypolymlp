@@ -8,17 +8,18 @@
 - numba
 - joblib (if necessary)
 
-- In using Conda package management system
-
+### Conda package management system
 ```
-conda install -c conda-forge pybind11
-conda install -c omnia eigen3
-conda install -c anaconda scikit-learn
-conda install -c numba numba
-conda install -c anaconda joblib
+> conda create -n pypolymlp 
+> conda activate pypolymlp
+> conda install -c conda-forge pybind11
+> conda install -c omnia eigen3
+> conda install -c anaconda scikit-learn
+> conda install -c numba numba
+> conda install -c anaconda joblib
 ```
 
-## Building mlpcpp library
+## Building a shared library (mlpcpp) required for pypolymlp
 
 ```
 > cd $(pypolymlp)/c++
