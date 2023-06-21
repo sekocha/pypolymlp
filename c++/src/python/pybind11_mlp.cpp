@@ -73,6 +73,20 @@ PYBIND11_MODULE(mlpcpp, m) {
                 py::return_value_policy::reference_internal)
         ;
 
+    py::class_<PyFeaturesAttr>(m, "FeaturesAttr")
+        .def(py::init<const py::dict&>())
+        .def("get_radial_ids", &PyFeaturesAttr::get_radial_ids, 
+                py::return_value_policy::reference_internal)
+        .def("get_gtinv_ids", &PyFeaturesAttr::get_gtinv_ids, 
+                py::return_value_policy::reference_internal)
+        .def("get_tcomb_ids", &PyFeaturesAttr::get_tcomb_ids, 
+                py::return_value_policy::reference_internal)
+        .def("get_polynomial_ids", &PyFeaturesAttr::get_polynomial_ids, 
+                py::return_value_policy::reference_internal)
+        .def("get_type_comb_pair", &PyFeaturesAttr::get_type_comb_pair, 
+                py::return_value_policy::reference_internal)
+        ;
+
     py::class_<Readgtinv>(m, "Readgtinv")
         .def(py::init<const int&, 
                       const vector1i&, 

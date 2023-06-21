@@ -13,7 +13,8 @@ def structures_to_mlpcpp_obj(structures):
     types_array = [st['types'] for st in structures]
     n_atoms_sum_array = [sum(st['n_atoms']) for st in structures]
     return (axis_array, positions_c_array, types_array, n_atoms_sum_array)
-    
+
+  
 class Features:
 
     def __init__(self,
@@ -61,4 +62,5 @@ class Features:
         return self.reg_dict['first_indices']
     def get_n_data(self):
         return self.reg_dict['n_data']
+
 
