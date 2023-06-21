@@ -33,7 +33,6 @@
 #include <numeric>
 #include <algorithm>
 
-#include <armadillo>
 
 #include "polymlp/polymlp_mlpcpp.h"
 
@@ -53,6 +52,8 @@ using vector2dc = std::vector<vector1dc>;
 using vector3dc = std::vector<vector2dc>;
 using vector4dc = std::vector<vector3dc>;
 
+//#include <armadillo>
+/*
 using vector1mat = std::vector<arma::mat>;
 using vector2mat = std::vector<vector1mat>;
 using vector3mat = std::vector<vector2mat>;
@@ -66,5 +67,5 @@ using vector3cx_vec = std::vector<vector2cx_vec>;
 using vector1cx_mat = std::vector<arma::cx_mat>;
 using vector2cx_mat = std::vector<vector1cx_mat>;
 using vector3cx_mat = std::vector<vector2cx_mat>;
-
+*/
 #endif

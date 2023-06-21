@@ -86,39 +86,6 @@ PYBIND11_MODULE(mlpcpp, m) {
                 py::return_value_policy::reference_internal)
         ;
 
-    py::class_<Ewald>(m, "Ewald")
-        .def(py::init<const vector2d&,
-                      const vector2d&,
-                      const vector1i&,
-                      const int&,
-                      const double&,
-                      const vector2d&,
-                      const vector1d&,
-                      const double&,
-                      const double&,
-                      const bool&>())
-        .def("get_real_energy", &Ewald::get_real_energy,
-            py::return_value_policy::reference_internal)
-        .def("get_reciprocal_energy", &Ewald::get_reciprocal_energy,
-            py::return_value_policy::reference_internal)
-        .def("get_self_energy", &Ewald::get_self_energy,
-            py::return_value_policy::reference_internal)
-        .def("get_energy", &Ewald::get_energy, 
-            py::return_value_policy::reference_internal)
-        .def("get_force", &Ewald::get_force_vector1d, 
-            py::return_value_policy::reference_internal)
-        .def("get_real_force", &Ewald::get_real_force_vector1d, 
-            py::return_value_policy::reference_internal)
-        .def("get_reciprocal_force", &Ewald::get_reciprocal_force_vector1d, 
-            py::return_value_policy::reference_internal)
-        .def("get_stress", &Ewald::get_stress_vector1d, 
-            py::return_value_policy::reference_internal)
-        .def("get_real_stress", &Ewald::get_real_stress_vector1d, 
-            py::return_value_policy::reference_internal)
-        .def("get_reciprocal_stress", &Ewald::get_reciprocal_stress_vector1d, 
-            py::return_value_policy::reference_internal)
-        ;
-
 }
 
 

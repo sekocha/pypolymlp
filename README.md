@@ -1,5 +1,30 @@
 # A generator of polynomial machine learning potentials
 
+## Required libraries and python modules
+
+- Eigen3
+- pybind11
+- scikit-learn
+- numba
+- joblib (if necessary)
+
+- In using Conda package management system
+
+```
+conda install -c conda-forge pybind11
+conda install -c omnia eigen3
+conda install -c anaconda scikit-learn
+conda install -c numba numba
+conda install -c anaconda joblib
+```
+
+## Building mlpcpp library
+
+```
+> cd $(pypolymlp)/c++
+> make
+```
+
 ## MLP development using a single training dataset and a single test dataset
 
 ```

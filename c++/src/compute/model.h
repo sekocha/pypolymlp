@@ -31,11 +31,6 @@
 #include "compute/local.h"
 #include "polymlp/polymlp_model_params.h"
 
-//#pragma omp declare reduction( + : arma::mat : omp_out += omp_in ) \
-  initializer( omp_priv = omp_orig )
-//#pragma omp declare reduction( + : arma::vec : omp_out += omp_in ) \
-  initializer( omp_priv = omp_orig )
-
 class Model{
 
     int n_atom, n_type, model_type, maxp; 

@@ -33,7 +33,6 @@
 #include "compute/py_model.h"
 #include "compute/py_additive_model.h"
 #include "polymlp/polymlp_read_gtinv.h"
-#include "longrange/ewald.h"
 
 namespace py = pybind11;
 
