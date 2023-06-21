@@ -1,6 +1,6 @@
-cpp = g++
+cpp = ${CONDA_PREFIX}/bin/g++
 
-cflags = -O3 -fPIC -DNDEBUG -Wno-deprecated -mtune=native -march=native -std=c++11 
+cflags = -O3 -fPIC -Wno-deprecated -std=c++11
 ompflags = -fopenmp
 
 include_common = -I./src 
