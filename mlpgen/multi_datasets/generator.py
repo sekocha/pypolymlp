@@ -14,7 +14,6 @@ from pypolymlp.mlpgen.regression import Regression
 from pypolymlp.mlpgen.io_potential import save_mlp_lammps
 from pypolymlp.mlpgen.accuracy import compute_error
 from pypolymlp.mlpgen.accuracy import write_error_yaml
-from pypolymlp.mlpgen.features_attr import get_features_attr
 from pypolymlp.mlpgen.features_attr import write_polymlp_params_yaml
 
 
@@ -163,13 +162,7 @@ if __name__ == '__main__':
 
     write_error_yaml(error_dict['train'])
     write_error_yaml(error_dict['test'], initialize=False)
-
-    features_attr, polynomial_attr, atomtype_pair_dict \
-                            = get_features_attr(params_dict)
-    write_polymlp_params_yaml(features_attr, 
-                              polynomial_attr, 
-                              atomtype_pair_dict, 
-                              params_dict)
+    write_polymlp_params_yaml(params_dict)
 
     print('  elapsed_time:')
     print('    features:          ', '{:.3f}'.format(t2-t1), '(s)')

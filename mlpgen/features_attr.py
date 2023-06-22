@@ -1,10 +1,9 @@
 #!/usr/bin/env python 
 import numpy as np
-import argparse
-from collections import defaultdict
-
 import os
 import sys
+import argparse
+from collections import defaultdict
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/../c++/lib')
 import mlpcpp
@@ -33,13 +32,13 @@ def get_features_attr(params_dict, element_swap=False):
 
     return features_attr, polynomial_attr, atomtype_pair_dict
 
-def write_polymlp_params_yaml(features_attr, 
-                              polynomial_attr, 
-                              atomtype_pair_dict,
-                              params_dict,
+def write_polymlp_params_yaml(params_dict,
                               filename='polymlp_params.yaml'):
 
     f = open(filename, 'w')
+
+    features_attr, polynomial_attr, atomtype_pair_dict \
+                            = get_features_attr(params_dict)
 
     elements = np.array(params_dict['elements'])
     print('radial_params:', file=f)
@@ -104,14 +103,6 @@ if __name__ == '__main__':
                         help='Input file name')
     args = parser.parse_args()
 
-    p = ParamsParser(args.infile)
-    params_dict = p.get_params()
-    elements = params_dict['elements']
-
-    features_attr, polynomial_attr, atomtype_pair_dict \
-                            = get_features_attr(params_dict)
-    write_polymlp_params_yaml(features_attr, 
-                              polynomial_attr, 
-                              atomtype_pair_dict, 
-                              params_dict)
+    params_dict = ParamsParser(args.infile).get_params()
+    write_polymlp_params_yaml(params_dict)
 

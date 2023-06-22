@@ -13,6 +13,7 @@ from pypolymlp.mlpgen.multi_datasets.additive.io_potential \
                                             import save_multiple_mlp_lammps
 from pypolymlp.mlpgen.accuracy import compute_error
 from pypolymlp.mlpgen.accuracy import write_error_yaml
+from pypolymlp.mlpgen.features_attr import write_polymlp_params_yaml
 
 
 if __name__ == '__main__':
@@ -99,6 +100,10 @@ if __name__ == '__main__':
 
     write_error_yaml(error_dict['train'])
     write_error_yaml(error_dict['test'], initialize=False)
+
+    for i, params_dict in enumerate(multiple_params_dicts):
+        filename = 'polymlp_params'+str(i+1)+'.yaml'
+        write_polymlp_params_yaml(params_dict, filename=filename)
 
     print('  elapsed_time:')
     print('    features:          ', '{:.3f}'.format(t2-t1), '(s)')

@@ -15,6 +15,7 @@ from pypolymlp.mlpgen.multi_datasets.additive.accuracy \
                                             import compute_predictions
 from pypolymlp.mlpgen.accuracy import compute_error
 from pypolymlp.mlpgen.accuracy import write_error_yaml
+from pypolymlp.mlpgen.features_attr import write_polymlp_params_yaml
 
 if __name__ == '__main__':
 
@@ -87,9 +88,13 @@ if __name__ == '__main__':
                                                    indices,
                                                    output_key=output_key)
 
+    t4 = time.time()
     write_error_yaml(error_dict['train'])
     write_error_yaml(error_dict['test'], initialize=False)
-    t4 = time.time()
+
+    for i, params_dict in enumerate(multiple_params_dicts):
+        filename = 'polymlp_params'+str(i+1)+'.yaml'
+        write_polymlp_params_yaml(params_dict, filename=filename)
 
     print('  elapsed_time:')
     print('    features + weighting: ', '{:.3f}'.format(t2-t1), '(s)')
