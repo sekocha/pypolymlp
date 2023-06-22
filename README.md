@@ -174,3 +174,10 @@
     gaussian_params2 0.0 7.0 8
 
 ```
+
+## Structure dataset generation using a random-displacement procedure
+
+```
+> $(pypolymlp)/stgen/structure_generator.py -p ideals/poscar-\* --n_structures 50 5 --max_disp 0.5 1.5
+
+```
