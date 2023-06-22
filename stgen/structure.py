@@ -37,6 +37,24 @@ def make_supercell(unitcell, size):
 
     return supercell
 
+def permute_atoms(st, type_order):
+
+    positions, n_atoms, elements, types = [], [], [], []
+    for atomtype, type1 in enumerate(type_order):
+        ids = np.where(np.array(st['types']) == type1)[0]
+        n_match = len(ids)
+        positions.extend(st['positions'][:,ids].T)
+        n_atoms.append(n_match)
+        elements.extend(np.array(st['elements'])[ids])
+        types.extend([atomtype for _ in range(n_match)])
+    positions = np.array(positions).T
+
+    st['positions'] = positions
+    st['n_atoms'] = n_atoms
+    st['elements'] = elements
+    st['types'] = types
+    return st
+
 def print_poscar_tofile(st, filename='poscar_pypolymlp', 
                         header=None,
                         print_zero_atom=True):

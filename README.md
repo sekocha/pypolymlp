@@ -178,6 +178,6 @@
 ## Structure dataset generation using a random-displacement procedure
 
 ```
-> $(pypolymlp)/stgen/structure_generator.py -p ideals/poscar-\* --n_structures 50 5 --max_disp 0.5 1.5
+> $(pypolymlp)/stgen/structure_generator.py -p ideals/poscar-* --n_structures 50 5 --max_disp 0.5 1.5
 
 ```
