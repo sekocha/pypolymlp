@@ -6,6 +6,10 @@ import time
 
 from pypolymlp.mlpgen.parser import ParamsParser
 from pypolymlp.mlpgen.multi_datasets.parser import parse_observations
+from pypolymlp.mlpgen.multi_datasets.additive.parser \
+                                            import set_common_params_dict
+from pypolymlp.mlpgen.multi_datasets.additive.parser import print_common_params
+
 from pypolymlp.mlpgen.multi_datasets.additive.features import Features
 from pypolymlp.mlpgen.multi_datasets.precondition import Precondition
 from pypolymlp.mlpgen.regression import Regression
@@ -30,10 +34,10 @@ if __name__ == '__main__':
 
     multiple_params_dicts = [ParamsParser(infile, multiple_datasets=True)
                             .get_params() for infile in args.infile]
-    single_params_dict = multiple_params_dicts[0]
-    elements = single_params_dict['elements']
+    common_params_dict = set_common_params_dict(multiple_params_dicts)
+    print_common_params(common_params_dict, infile=args.infile[0])
 
-    train_dft_dict, test_dft_dict = parse_observations(single_params_dict)
+    train_dft_dict, test_dft_dict = parse_observations(common_params_dict)
 
     t1 = time.time()
     features_train = Features(multiple_params_dicts, train_dft_dict)
@@ -45,28 +49,27 @@ if __name__ == '__main__':
     t2 = time.time()
     pre_train = Precondition(train_reg_dict, 
                              train_dft_dict, 
-                             single_params_dict, 
+                             common_params_dict, 
                              scales=None)
     pre_train.print_data_shape(header='training data size')
     train_reg_dict = pre_train.get_updated_regression_dict()
 
     pre_test = Precondition(test_reg_dict,
                             test_dft_dict,
-                            single_params_dict, 
+                            common_params_dict, 
                             scales=train_reg_dict['scales'])
     pre_test.print_data_shape(header='test data size')
     test_reg_dict = pre_test.get_updated_regression_dict()
 
     t3 = time.time()
-    reg = Regression(train_reg_dict, test_reg_dict, single_params_dict)
+    reg = Regression(train_reg_dict, test_reg_dict, common_params_dict)
     coeffs, scales = reg.ridge()
     mlp_dict = reg.get_best_model()
 
     save_multiple_mlp_lammps(multiple_params_dicts, 
                              train_reg_dict['cumulative_n_features'],
                              coeffs, 
-                             scales,
-                             elements)
+                             scales)
 
     print('  regression: best model')
     print('    alpha: ', mlp_dict['alpha'])
@@ -80,7 +83,7 @@ if __name__ == '__main__':
         weights = train_reg_dict['weight']
         output_key = '.'.join(set_id.split('*')[0].split('/')[:-1])
         error_dict['train'][set_id] = compute_error(dft_dict, 
-                                                    single_params_dict, 
+                                                    common_params_dict, 
                                                     predictions, 
                                                     weights,
                                                     indices,
@@ -92,7 +95,7 @@ if __name__ == '__main__':
         weights = test_reg_dict['weight']
         output_key = '.'.join(set_id.split('*')[0].split('/')[:-1])
         error_dict['test'][set_id] = compute_error(dft_dict, 
-                                                   single_params_dict, 
+                                                   common_params_dict, 
                                                    predictions, 
                                                    weights,
                                                    indices,

@@ -6,6 +6,10 @@ import time
 
 from pypolymlp.mlpgen.parser import ParamsParser
 from pypolymlp.mlpgen.multi_datasets.parser import parse_observations
+from pypolymlp.mlpgen.multi_datasets.additive.parser \
+                                            import set_common_params_dict
+from pypolymlp.mlpgen.multi_datasets.additive.parser import print_common_params
+
 from pypolymlp.mlpgen.multi_datasets.additive.sequential import Sequential
 from pypolymlp.mlpgen.regression import Regression
 from pypolymlp.mlpgen.multi_datasets.additive.io_potential \
@@ -31,10 +35,10 @@ if __name__ == '__main__':
 
     multiple_params_dicts = [ParamsParser(infile, multiple_datasets=True)
                             .get_params() for infile in args.infile]
-    single_params_dict = multiple_params_dicts[0]
-    elements = single_params_dict['elements']
+    common_params_dict = set_common_params_dict(multiple_params_dicts)
+    print_common_params(common_params_dict, infile=args.infile[0])
 
-    train_dft_dict, test_dft_dict = parse_observations(single_params_dict)
+    train_dft_dict, test_dft_dict = parse_observations(common_params_dict)
 
     t1 = time.time()
     seq_train = Sequential(multiple_params_dicts, train_dft_dict)
@@ -45,15 +49,14 @@ if __name__ == '__main__':
     test_reg_dict = seq_test.get_updated_regression_dict()
 
     t2 = time.time()
-    reg = Regression(train_reg_dict, test_reg_dict, single_params_dict)
+    reg = Regression(train_reg_dict, test_reg_dict, common_params_dict)
     coeffs, scales = reg.ridge_seq()
     mlp_dict = reg.get_best_model()
 
     save_multiple_mlp_lammps(multiple_params_dicts,
                              train_reg_dict['cumulative_n_features'],
                              coeffs,
-                             scales,
-                             elements)
+                             scales)
 
     print('  regression: best model')
     print('    alpha: ', mlp_dict['alpha'])
@@ -69,7 +72,7 @@ if __name__ == '__main__':
                                           coeffs, 
                                           scales)
         error_dict['train'][set_id] = compute_error(dft_dict, 
-                                                    single_params_dict, 
+                                                    common_params_dict, 
                                                     predictions, 
                                                     weights,
                                                     indices,
@@ -82,7 +85,7 @@ if __name__ == '__main__':
                                               coeffs, 
                                               scales)
         error_dict['test'][set_id] = compute_error(dft_dict, 
-                                                   single_params_dict, 
+                                                   common_params_dict, 
                                                    predictions, 
                                                    weights,
                                                    indices,

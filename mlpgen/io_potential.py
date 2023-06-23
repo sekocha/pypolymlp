@@ -20,11 +20,10 @@ def print_array1d(array, fstream, comment='', fmt=None):
             print(obj, end=' ', file=fstream)
     print('#', comment, file=fstream)
 
-def save_mlp_lammps(params_dict, coeffs, scales, elements,
-                    filename='polymlp.lammps'):
+def save_mlp_lammps(params_dict, coeffs, scales, filename='polymlp.lammps'):
 
     f = open(filename, 'w')
-    print_array1d(elements, f, comment='elements')
+    print_array1d(params_dict['elements'], f, comment='elements')
     model_dict = params_dict['model']
     print_param(model_dict, 'cutoff', f)
     print_param(model_dict, 'pair_type', f)
@@ -49,7 +48,7 @@ def save_mlp_lammps(params_dict, coeffs, scales, elements,
         print("{0:15.15f}".format(obj[0]), "{0:15.15f}".format(obj[1]), 
               '# pair func. params', file=f)
         
-    mass = [mass_table()[ele] for ele in elements]
+    mass = [mass_table()[ele] for ele in params_dict['elements']]
     print_array1d(mass, f, comment='atomic mass', fmt="{0:15.15e}")
     print('False # electrostatic', file=f)
     f.close()

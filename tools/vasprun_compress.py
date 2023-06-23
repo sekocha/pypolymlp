@@ -45,5 +45,5 @@ def convert(vasprun):
 
 if __name__ == '__main__':
     vaspruns = sys.argv[1:]
-    res = Parallel(n_jobs=4)(delayed(convert)(vasp) for vasp in vaspruns)
+    res = Parallel(n_jobs=9)(delayed(convert)(vasp) for vasp in vaspruns)
 

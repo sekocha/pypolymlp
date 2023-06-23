@@ -25,12 +25,13 @@ class InputParser:
                    tag, 
                    size=1, 
                    default=None, 
+                   required=False,
                    dtype=str,
                    return_array=False):
         try:
             params = list(self.__data[tag])
         except:
-            if default is None:
+            if required:
                 raise KeyError(' Tag', name, 'is not found.')
             return default
 

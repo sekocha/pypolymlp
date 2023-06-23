@@ -6,8 +6,7 @@ from pypolymlp.mlpgen.io_potential import save_mlp_lammps
 def save_multiple_mlp_lammps(multiple_params_dicts, 
                              cumulative_n_features,
                              coeffs, 
-                             scales,
-                             elements):
+                             scales):
 
     for i, params_dict in enumerate(multiple_params_dicts):
         if i == 0:
@@ -18,7 +17,6 @@ def save_multiple_mlp_lammps(multiple_params_dicts,
         save_mlp_lammps(params_dict,
                         coeffs[begin:end],
                         scales[begin:end],
-                        elements,
                         filename='polymlp.lammps.'+str(i+1))
 
 

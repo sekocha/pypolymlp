@@ -50,9 +50,14 @@ class ParamsParser:
         params['elements'] = self.parser.get_params('elements',
                                                      size=params['n_type'],
                                                      default=None,
+                                                     required=True,
                                                      dtype=str,
                                                      return_array=True)
- 
+        rearrange = self.parser.get_params('rearrange_by_elements',
+                                            default=True,
+                                            dtype=bool)
+        params['element_order'] = params['elements'] if rearrange else None
+
         self.params_dict = params
 
     def __get_potential_model_params(self, n_type):

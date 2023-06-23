@@ -84,11 +84,19 @@ PyAdditiveModel::PyAdditiveModel(const std::vector<py::dict>& params_dict_array,
     const int total_n_data = n_data[0] + n_data[1] + n_data[2];
     int n_features(0);
     for (const auto& fp: fp_array){
-        Neighbor neigh(axis[0], positions_c[0], types[0], fp.n_type, fp.cutoff);
+
+        std::set<int> uniq_types(types[0].begin(), types[0].end());
+
+        vector1i types_mod = modify_types(types[0], 
+                                          uniq_types.size(), 
+                                          fp.n_type);
+
+        Neighbor neigh(axis[0], positions_c[0], types_mod, 
+                       fp.n_type, fp.cutoff);
         Model mod(neigh.get_dis_array(), 
                   neigh.get_diff_array(),
                   neigh.get_atom2_array(), 
-                  types[0], 
+                  types_mod, 
                   fp, 
                   element_swap);
         n_features += mod.get_xe_sum().size();
@@ -110,6 +118,7 @@ PyAdditiveModel::PyAdditiveModel(const std::vector<py::dict>& params_dict_array,
     #pragma omp parallel for schedule(guided,1)
     #endif
     for (int i = 0; i < n_st; ++i){
+        std::set<int> uniq_types(types[i].begin(), types[i].end());
         for (int n = 0; n < cumulative_n_features.size(); ++n){
             struct feature_params fp1 = fp_array[n];
             fp1.force = force_st[i];
@@ -118,15 +127,18 @@ PyAdditiveModel::PyAdditiveModel(const std::vector<py::dict>& params_dict_array,
             if (n == 0) first_index = 0;
             else first_index = cumulative_n_features[n-1];
 
+            vector1i types_mod = modify_types(types[i], 
+                                              uniq_types.size(), 
+                                              fp1.n_type);
             Neighbor neigh(axis[i], 
                            positions_c[i], 
-                           types[i], 
+                           types_mod, 
                            fp1.n_type, 
                            fp1.cutoff);
             Model mod(neigh.get_dis_array(), 
                       neigh.get_diff_array(),
                       neigh.get_atom2_array(), 
-                      types[i], 
+                      types_mod, 
                       fp1, 
                       element_swap);
 
@@ -153,12 +165,23 @@ PyAdditiveModel::PyAdditiveModel(const std::vector<py::dict>& params_dict_array,
 
 PyAdditiveModel::~PyAdditiveModel(){}
 
+vector1i PyAdditiveModel::modify_types(const std::vector<int>& types_orig,
+                                       const int n_type_orig,
+                                       const int n_type){
+    vector1i types_mod;
+    if (n_type == 1 and n_type != n_type_orig){
+        types_mod = vector1i(types_orig.size(), 0);
+    }
+    else types_mod = types_orig;
+    return types_mod;
+}
+
 void PyAdditiveModel::set_index(const std::vector<int>& n_data_dataset,
-                        const std::vector<bool>& force_dataset,
-                        const std::vector<int>& n_atoms_st,
-                        std::vector<int>& xf_begin,
-                        std::vector<int>& xs_begin,
-                        std::vector<bool>& force){
+                                const std::vector<bool>& force_dataset,
+                                const std::vector<int>& n_atoms_st,
+                                std::vector<int>& xf_begin,
+                                std::vector<int>& xs_begin,
+                                std::vector<bool>& force){
 
     const int n_st = std::accumulate(n_data_dataset.begin(),
                                      n_data_dataset.end(), 0);

@@ -98,7 +98,6 @@ if __name__ == '__main__':
 
     p = ParamsParser(args.infile, multiple_datasets=True)
     params_dict = p.get_params()
-    elements = params_dict['elements']
 
     train_dft_dict, test_dft_dict = parse_observations(params_dict)
 
@@ -128,7 +127,7 @@ if __name__ == '__main__':
     reg = Regression(train_reg_dict, test_reg_dict, params_dict)
     coeffs, scales = reg.ridge()
     mlp_dict = reg.get_best_model()
-    save_mlp_lammps(params_dict, coeffs, scales, elements)
+    save_mlp_lammps(params_dict, coeffs, scales)
 
     print('  regression: best model')
     print('    alpha: ', mlp_dict['alpha'])

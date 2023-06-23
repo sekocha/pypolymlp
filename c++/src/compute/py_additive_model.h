@@ -49,6 +49,9 @@ class PyAdditiveModel {
                    std::vector<int>& xs_begin,
                    std::vector<bool>& force);
 
+    vector1i modify_types(const std::vector<int>& types_orig,
+                          const int n_type_orig,
+                          const int n_type);
     public: 
 
     PyAdditiveModel(const std::vector<py::dict>& params_dict_array,
