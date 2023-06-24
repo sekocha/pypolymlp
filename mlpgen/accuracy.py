@@ -16,6 +16,8 @@ def __compute_rmse(true_values,
     weight = weight_all[begin_id:end_id]
 
     pred = pred_values / weight
+    print(weight)
+
     if normalize is None:
         true = true_values
     else:

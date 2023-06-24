@@ -104,8 +104,8 @@ def load_mlp_lammps(filename='polymlp.lammps'):
         model_dict['max_l'] = 0
         
     n_coeffs = __read_var(f)
-    mlp_dict['coeffs'] = __read_var(f, float, return_list=True)
-    mlp_dict['scales'] = __read_var(f, float, return_list=True)
+    mlp_dict['coeffs'] = np.array(__read_var(f, float, return_list=True))
+    mlp_dict['scales'] = np.array(__read_var(f, float, return_list=True))
 
     n_pair_params = __read_var(f)
     model_dict['pair_params'] = []
