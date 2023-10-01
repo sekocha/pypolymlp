@@ -16,7 +16,6 @@ def __compute_rmse(true_values,
     weight = weight_all[begin_id:end_id]
 
     pred = pred_values / weight
-    print(weight)
 
     if normalize is None:
         true = true_values
@@ -99,11 +98,15 @@ def compute_error(dft_dict,
     error_dict['stress'] = rmse_s
     print_error(error_dict, key=output_key)
 
+    filenames = dft_dict['filenames']
+    outdata = np.array([true_e, pred_e, (true_e - pred_e) * 1000]).T
+
     os.makedirs('predictions', exist_ok=True)
-    np.savetxt('predictions/energy.' + output_key + '.dat', 
-                np.array([true_e, pred_e, (true_e - pred_e)*1000]).T,
-                header='DFT(eV/atom), MLP(eV/atom), DFT-MLP(meV/atom)', 
-                fmt='%.10f')
+    f = open('predictions/energy.' + output_key + '.dat', 'w')
+    print('# DFT(eV/atom), MLP(eV/atom), DFT-MLP(meV/atom)', file=f)
+    for d, name in zip(outdata, filenames):
+        print(d[0], d[1], d[2], name, file=f)
+    f.close()
 
     return error_dict
 

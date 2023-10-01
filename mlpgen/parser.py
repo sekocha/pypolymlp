@@ -249,6 +249,8 @@ def parse_vaspruns(vaspruns, element_order=None):
         for st in dft_dict['structures']:
             st = permute_atoms(st, element_order)
 
+    dft_dict['filenames'] = vaspruns
+
     return dft_dict
 
 

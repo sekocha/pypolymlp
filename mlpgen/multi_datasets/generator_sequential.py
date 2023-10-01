@@ -54,7 +54,8 @@ if __name__ == '__main__':
     error_dict = dict()
     error_dict['train'], error_dict['test'] = dict(), dict()
     for set_id, dft_dict in train_dft_dict.items():
-        output_key = '.'.join(set_id.split('*')[0].split('/')[:-1])
+        output_key = '.'.join(set_id.split('*')[0].split('/')[:-1])\
+                        .replace('..','')
         predictions, weights, indices = compute_predictions(params_dict, 
                                                             dft_dict, 
                                                             coeffs, 
@@ -66,7 +67,8 @@ if __name__ == '__main__':
                                                     indices,
                                                     output_key=output_key)
     for set_id, dft_dict in test_dft_dict.items():
-        output_key = '.'.join(set_id.split('*')[0].split('/')[:-1])
+        output_key = '.'.join(set_id.split('*')[0].split('/')[:-1])\
+                        .replace('..','')
         predictions, weights, indices = compute_predictions(params_dict, 
                                                             dft_dict, 
                                                             coeffs, 

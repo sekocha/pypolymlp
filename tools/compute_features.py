@@ -6,6 +6,7 @@ import signal
 from pypolymlp.common.vasp import Poscar
 from pypolymlp.mlpgen.parser import ParamsParser
 from pypolymlp.mlpgen.features import Features
+from pypolymlp.mlpgen.io_potential import load_mlp_lammps
 
 """
 > $(pypolymlp)/tools/compute_features.py 
@@ -28,7 +29,27 @@ from pypolymlp.mlpgen.features import Features
     gaussian_params2 0.0 7.0 8
 
 """
+def compute_from_polymlp_lammps(pot, poscars, return_mlp_dict=True):
 
+    params_dict, mlp_dict = load_mlp_lammps(filename=pot)
+    params_dict['include_force'] = False
+    params_dict['include_stress'] = False
+
+    structures = [Poscar(f).get_structure() for f in poscars]
+    features = Features(params_dict, structures, print_memory=False)
+    if return_mlp_dict:
+        return features.get_x(), mlp_dict
+    return features.get_x()
+
+def compute_from_infile(infile, poscars):
+    p = ParamsParser(infile, parse_vasprun_locations=False)
+    params_dict = p.get_params()
+    params_dict['include_force'] = False
+    params_dict['include_stress'] = False
+
+    structures = [Poscar(f).get_structure() for f in poscars]
+    features = Features(params_dict, structures, print_memory=False)
+    return features.get_x()
 
 if __name__ == '__main__':
 
@@ -42,18 +63,26 @@ if __name__ == '__main__':
                         help='poscar files')
     parser.add_argument('-i', '--infile', 
                         type=str, 
-                        default='polymlp.in',
+                        default=None,
                         help='Input parameter settings')
+    parser.add_argument('--pot', 
+                        type=str, 
+                        default=None,
+                        help='Input parameter settings (polymlp.lammps)')
     args = parser.parse_args()
 
-    p = ParamsParser(args.infile, parse_vasprun_locations=False)
-    params_dict = p.get_params()
-    params_dict['include_force'] = False
-    params_dict['include_stress'] = False
+    if args.infile is not None:
+        p = ParamsParser(args.infile, parse_vasprun_locations=False)
+        params_dict = p.get_params()
+        params_dict['include_force'] = False
+        params_dict['include_stress'] = False
 
-    structures = [Poscar(f).get_structure() for f in args.poscars]
-    features = Features(params_dict, structures, print_memory=False)
-    x = features.get_x()
+        structures = [Poscar(f).get_structure() for f in args.poscars]
+        features = Features(params_dict, structures, print_memory=False)
+        x = features.get_x()
+    elif args.pot is not None:
+        x = compute_from_polymlp_lammps(args.pot, args.poscars, 
+                                        return_mlp_dict=False)
 
     print(' feature size =', x.shape)
     np.save('features', x)

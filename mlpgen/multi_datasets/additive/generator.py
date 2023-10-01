@@ -81,7 +81,8 @@ if __name__ == '__main__':
                                            train_reg_dict['first_indices']):
         predictions = mlp_dict['predictions']['train']
         weights = train_reg_dict['weight']
-        output_key = '.'.join(set_id.split('*')[0].split('/')[:-1])
+        output_key = '.'.join(set_id.split('*')[0].split('/')[:-1])\
+                        .replace('..','')
         error_dict['train'][set_id] = compute_error(dft_dict, 
                                                     common_params_dict, 
                                                     predictions, 
@@ -93,7 +94,8 @@ if __name__ == '__main__':
                                            test_reg_dict['first_indices']):
         predictions = mlp_dict['predictions']['test']
         weights = test_reg_dict['weight']
-        output_key = '.'.join(set_id.split('*')[0].split('/')[:-1])
+        output_key = '.'.join(set_id.split('*')[0].split('/')[:-1])\
+                        .replace('..','')
         error_dict['test'][set_id] = compute_error(dft_dict, 
                                                    common_params_dict, 
                                                    predictions, 
