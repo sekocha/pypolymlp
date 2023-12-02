@@ -28,11 +28,54 @@ ModelParams::ModelParams(const struct feature_params& fp){
 
     n_type = fp.n_type;
 
-    // must be extended to more than ternary systems
     // Setting two elements in one array such as {0,1}, ... is unavailable.
     // If using such a setting, codes for computing features should be revised.
-    if (n_type == 1) type_comb_pair = {{{0}}};
-    else if (n_type == 2) type_comb_pair = {{{0}, {}}, {{1}, {0}}, {{}, {1}}};
+
+    if (n_type == 1) {
+        type_comb_pair = {{{0}}};
+    }
+    else if (n_type == 2) {
+        type_comb_pair = {{{0}, {}}, 
+                          {{1}, {0}}, 
+                          {{}, {1}}};
+    }
+    else if (n_type == 3) {
+        type_comb_pair = {{{0}, {}, {}}, 
+                          {{1}, {0}, {}}, 
+                          {{2}, {}, {0}}, 
+                          {{}, {1}, {}}, 
+                          {{}, {2}, {1}}, 
+                          {{}, {}, {2}}};
+    }
+    else if (n_type == 4) {
+        type_comb_pair = {{{0}, {}, {}, {}}, 
+                          {{1}, {0}, {}, {}}, 
+                          {{2}, {}, {0}, {}}, 
+                          {{3}, {}, {}, {0}}, 
+                          {{}, {1}, {}, {}}, 
+                          {{}, {2}, {1}, {}}, 
+                          {{}, {3}, {}, {1}}, 
+                          {{}, {}, {2}, {}}, 
+                          {{}, {}, {3}, {2}}, 
+                          {{}, {}, {}, {3}}};
+    }
+    else if (n_type == 5) {
+        type_comb_pair = {{{0}, {}, {}, {}, {}}, 
+                          {{1}, {0}, {}, {}, {}}, 
+                          {{2}, {}, {0}, {}, {}}, 
+                          {{3}, {}, {}, {0}, {}}, 
+                          {{4}, {}, {}, {}, {0}}, 
+                          {{}, {1}, {}, {}, {}}, 
+                          {{}, {2}, {1}, {}, {}}, 
+                          {{}, {3}, {}, {1}, {}}, 
+                          {{}, {4}, {}, {}, {1}}, 
+                          {{}, {}, {2}, {}, {}}, 
+                          {{}, {}, {3}, {2}, {}}, 
+                          {{}, {}, {4}, {}, {2}}, 
+                          {{}, {}, {}, {3}, {}},
+                          {{}, {}, {}, {4}, {3}},
+                          {{}, {}, {}, {}, {4}}};
+    }
 
     n_type_comb = type_comb_pair.size();
     initial_setting(fp);

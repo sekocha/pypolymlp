@@ -9,7 +9,6 @@ def apply_atomic_energy(dft_dict, params_dict):
     energy = dft_dict['energy']
     structures = dft_dict['structures']
     atom_e = params_dict['atomic_energy']
-
     coh_energy = [e - np.dot(st['n_atoms'], atom_e) 
                  for e, st in zip(energy, structures)]
     dft_dict['energy'] = np.array(coh_energy)

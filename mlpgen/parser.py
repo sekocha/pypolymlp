@@ -197,9 +197,10 @@ class ParamsParser:
     def get_params(self):
         return self.params_dict
 
-def permute_atoms(st, element_order):
+def permute_atoms(st, force, element_order):
 
     positions, n_atoms, elements, types = [], [], [], []
+    force_permute = []
     for atomtype, ele in enumerate(element_order):
         ids = np.where(np.array(st['elements']) == ele)[0]
         n_match = len(ids)
@@ -207,13 +208,15 @@ def permute_atoms(st, element_order):
         n_atoms.append(n_match)
         elements.extend([ele for _ in range(n_match)])
         types.extend([atomtype for _ in range(n_match)])
+        force_permute.extend(force[:,ids].T)
     positions = np.array(positions).T
+    force_permute = np.array(force_permute).T
 
     st['positions'] = positions
     st['n_atoms'] = n_atoms
     st['elements'] = elements
     st['types'] = types
-    return st
+    return st, force_permute
 
 def parse_vaspruns(vaspruns, element_order=None):
 
@@ -223,6 +226,12 @@ def parse_vaspruns(vaspruns, element_order=None):
         v = Vasprun(vasp)
         property_dict = v.get_properties()
         structure_dict = v.get_structure()
+
+        if element_order is not None:
+            structure_dict, property_dict['force'] \
+                    = permute_atoms(structure_dict, 
+                                    property_dict['force'], 
+                                    element_order)
 
         dft_dict['energy'].append(property_dict['energy'])
         force_ravel = np.ravel(property_dict['force'], order='F')
@@ -244,11 +253,6 @@ def parse_vaspruns(vaspruns, element_order=None):
 
     dft_dict['total_n_atoms'] = np.array([sum(st['n_atoms'])
                                          for st in dft_dict['structures']])
-
-    if element_order is not None:
-        for st in dft_dict['structures']:
-            st = permute_atoms(st, element_order)
-
     dft_dict['filenames'] = vaspruns
 
     return dft_dict
