@@ -4,6 +4,7 @@ import argparse
 import signal
 import time
 
+from pypolymlp.common.interface_phono3py import parse_phono3py_yaml
 from pypolymlp.mlpgen.parser import parse_vaspruns
 from pypolymlp.mlpgen.parser import ParamsParser
 from pypolymlp.mlpgen.features import Features
@@ -81,10 +82,25 @@ if __name__ == '__main__':
     p = ParamsParser(args.infile)
     params_dict = p.get_params()
 
-    train_dft_dict = parse_vaspruns(params_dict['dft']['train'],
+    if params_dict['dataset_type'] == 'vasp':
+        train_dft_dict = parse_vaspruns(params_dict['dft']['train'],
                                     element_order=params_dict['element_order'])
-    test_dft_dict = parse_vaspruns(params_dict['dft']['test'],
-                                   element_order=params_dict['element_order'])
+        test_dft_dict = parse_vaspruns(params_dict['dft']['test'],
+                                    element_order=params_dict['element_order'])
+    elif params_dict['dataset_type'] == 'phono3py':
+        train_dft_dict = parse_phono3py_yaml(
+            params_dict['dft']['train']['phono3py_yaml'],
+            params_dict['dft']['train']['energy'],
+            element_order=params_dict['element_order'],
+            select_ids=params_dict['dft']['train']['indices']
+        )
+        test_dft_dict = parse_phono3py_yaml(
+            params_dict['dft']['test']['phono3py_yaml'],
+            params_dict['dft']['test']['energy'],
+            element_order=params_dict['element_order'],
+            select_ids=params_dict['dft']['test']['indices']
+        )
+
 
     t1 = time.time()
     features_train = Features(params_dict, train_dft_dict['structures'])

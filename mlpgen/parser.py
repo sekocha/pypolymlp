@@ -41,11 +41,16 @@ class ParamsParser:
         params['atomic_energy'] = self.__get_atomic_energy(params['n_type'])
         params['reg'] = self.__get_regression_params()
 
-        if parse_vasprun_locations:
+        ''' DFT data locations'''
+        params['dataset_type'] = self.parser.get_params('dataset_type',
+                                                        default='vasp')
+        if params['dataset_type'] == 'vasp':
             if multiple_datasets:
                 params['dft'] = self.__get_multiple_vasprun_sets()
             else:
                 params['dft'] = self.__get_single_vasprun_set()
+        elif params['dataset_type'] == 'phono3py':
+            params['dft'] = self.__get_phono3py_set()
 
         params['elements'] = self.parser.get_params('elements',
                                                      size=params['n_type'],
@@ -141,6 +146,7 @@ class ParamsParser:
                                                 default=d_alpha)
         return reg
 
+
     def __get_single_vasprun_set(self):
 
         train = self.parser.get_params('train_data',default=None)
@@ -192,6 +198,37 @@ class ParamsParser:
             data['test'][set_id]['vaspruns'] = sorted(glob.glob(set_id))
             data['test'][set_id]['include_force'] = strtobool(params[1])
             data['test'][set_id]['weight'] = float(params[2])
+        return data
+
+    def __get_phono3py_set(self):
+
+        ''' format: 
+            phono3py_train_data phono3py_params.yaml.xz energies.dat
+            phono3py_test_data phono3py_params.yaml.xz energies.dat
+            phono3py_train_data phono3py_params.yaml.xz energies.dat 0 200
+            phono3py_train_data phono3py_params.yaml.xz energies.dat 950 1000
+        '''
+        train = self.parser.get_params('phono3py_train_data', 
+                                        size=4,
+                                        default=None)
+        test = self.parser.get_params('phono3py_test_data',
+                                       size=4, 
+                                       default=None)
+        data = dict()
+        data['train'] = dict()
+        data['test'] = dict()
+        data['train']['phono3py_yaml'] = train[0]
+        data['train']['energy'] = train[1]
+        if len(train) > 2:
+            data['train']['indices'] = np.arange(int(train[2]), int(train[3]))
+        else:
+            data['train']['indices'] = None
+        data['test']['phono3py_yaml'] = test[0]
+        data['test']['energy'] = test[1]
+        if len(test) > 2:
+            data['test']['indices'] = np.arange(int(test[2]), int(test[3]))
+        else:
+            data['test']['indices'] = None
         return data
 
     def get_params(self):
