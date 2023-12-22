@@ -4,14 +4,14 @@ import argparse
 import signal
 import time
 
+from pypolymlp.common.parser_polymlp_params import ParamsParser
+from pypolymlp.common.io_polymlp import save_mlp_lammps
 
-from pypolymlp.mlpgen.parser import ParamsParser
 from pypolymlp.mlpgen.multi_datasets.parser import parse_observations
 from pypolymlp.mlpgen.multi_datasets.features import Features
 from pypolymlp.mlpgen.multi_datasets.precondition import Precondition
 
 from pypolymlp.mlpgen.regression import Regression
-from pypolymlp.mlpgen.io_potential import save_mlp_lammps
 from pypolymlp.mlpgen.accuracy import compute_error
 from pypolymlp.mlpgen.accuracy import write_error_yaml
 from pypolymlp.mlpgen.features_attr import write_polymlp_params_yaml

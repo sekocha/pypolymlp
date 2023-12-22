@@ -63,21 +63,4 @@ class InputParser:
     def get_test(self):
         return self.test
 
-    """
-    if 'data_append' in d[0]: 
-        tag = d[0].replace('_append','')
-        if tag in self.__data:
-            self.__data[tag].append(d[1])
-            self.__data[tag+'_force'].append(d[2])
-            self.__data[tag+'_weight'].append(d[3])
-        else:
-            self.__data[tag] = [d[1]]
-            self.__data[tag+'_force'] = [d[2]]
-            self.__data[tag+'_weight'] = [d[3]]
-    elif 'data' in d[0]: 
-        if d[0] in self.__data:
-            self.__data[d[0]].extend(d[1:])
-        else:
-            self.__data[d[0]] = d[1:]
-    """
 

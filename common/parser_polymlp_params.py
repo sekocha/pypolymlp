@@ -9,8 +9,10 @@ from distutils.util import strtobool
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/../c++/lib')
 import mlpcpp
-from pypolymlp.common.input_parser import InputParser
-from pypolymlp.common.vasp import Vasprun
+
+from pypolymlp.common.parser_infile import InputParser
+from pypolymlp.common.interface_vasp import Vasprun
+from pypolymlp.common.utils import permute_atoms
 
 class ParamsParser:
 
@@ -233,65 +235,3 @@ class ParamsParser:
 
     def get_params(self):
         return self.params_dict
-
-def permute_atoms(st, force, element_order):
-
-    positions, n_atoms, elements, types = [], [], [], []
-    force_permute = []
-    for atomtype, ele in enumerate(element_order):
-        ids = np.where(np.array(st['elements']) == ele)[0]
-        n_match = len(ids)
-        positions.extend(st['positions'][:,ids].T)
-        n_atoms.append(n_match)
-        elements.extend([ele for _ in range(n_match)])
-        types.extend([atomtype for _ in range(n_match)])
-        force_permute.extend(force[:,ids].T)
-    positions = np.array(positions).T
-    force_permute = np.array(force_permute).T
-
-    st['positions'] = positions
-    st['n_atoms'] = n_atoms
-    st['elements'] = elements
-    st['types'] = types
-    return st, force_permute
-
-def parse_vaspruns(vaspruns, element_order=None):
-
-    kbar_to_eV = 1 / 1602.1766208
-    dft_dict = defaultdict(list)
-    for vasp in vaspruns:
-        v = Vasprun(vasp)
-        property_dict = v.get_properties()
-        structure_dict = v.get_structure()
-
-        if element_order is not None:
-            structure_dict, property_dict['force'] \
-                    = permute_atoms(structure_dict, 
-                                    property_dict['force'], 
-                                    element_order)
-
-        dft_dict['energy'].append(property_dict['energy'])
-        force_ravel = np.ravel(property_dict['force'], order='F')
-        dft_dict['force'].extend(force_ravel)
-
-        sigma = property_dict['stress'] * structure_dict['volume'] * kbar_to_eV
-        s = [sigma[0][0], sigma[1][1], sigma[2][2],
-             sigma[0][1], sigma[1][2], sigma[2][0]]
-        dft_dict['stress'].extend(s)
-        dft_dict['structures'].append(structure_dict)
-
-    dft_dict['energy'] = np.array(dft_dict['energy'])
-    dft_dict['force'] = np.array(dft_dict['force'])
-    dft_dict['stress'] = np.array(dft_dict['stress'])
-
-    elements_size = [len(st['elements']) for st in dft_dict['structures']]
-    elements = dft_dict['structures'][np.argmax(elements_size)]['elements']
-    dft_dict['elements'] = sorted(set(elements), key=elements.index)
-
-    dft_dict['total_n_atoms'] = np.array([sum(st['n_atoms'])
-                                         for st in dft_dict['structures']])
-    dft_dict['filenames'] = vaspruns
-
-    return dft_dict
-
-

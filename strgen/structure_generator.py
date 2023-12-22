@@ -5,8 +5,8 @@ import os
 import random
 
 from pypolymlp.common.vasp import Poscar
-from pypolymlp.stgen.structure import make_supercell
-from pypolymlp.stgen.structure import print_poscar_tofile
+from pypolymlp.strgen.structure import make_supercell
+from pypolymlp.strgen.structure import print_poscar_tofile
 
 class StructureGenerator:
 

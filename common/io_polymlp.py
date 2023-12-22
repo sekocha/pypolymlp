@@ -6,7 +6,7 @@ from distutils.util import strtobool
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/../c++/lib')
 import mlpcpp
-from pypolymlp.common.table import mass_table
+from pypolymlp.common.utils import mass_table
 
 def print_param(dict1, key, fstream, prefix=''):
     print(str(dict1[key]), '#', prefix + key, file=fstream)
@@ -19,6 +19,22 @@ def print_array1d(array, fstream, comment='', fmt=None):
         else:
             print(obj, end=' ', file=fstream)
     print('#', comment, file=fstream)
+
+def save_multiple_mlp_lammps(multiple_params_dicts,
+                             cumulative_n_features,
+                             coeffs,
+                             scales):
+
+    for i, params_dict in enumerate(multiple_params_dicts):
+        if i == 0:
+            begin, end = 0, cumulative_n_features[0]
+        else:
+            begin, end = cumulative_n_features[i-1], cumulative_n_features[i]
+
+        save_mlp_lammps(params_dict,
+                        coeffs[begin:end],
+                        scales[begin:end],
+                        filename='polymlp.lammps.'+str(i+1))
 
 def save_mlp_lammps(params_dict, coeffs, scales, filename='polymlp.lammps'):
 

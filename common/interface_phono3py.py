@@ -106,8 +106,3 @@ if __name__ == '__main__':
                                     select_ids=range(200))
     print(dft_dict['filenames'])
 
-
-
-        
-
-

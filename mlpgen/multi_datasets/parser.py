@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import numpy as np
 
-from pypolymlp.mlpgen.parser import parse_vaspruns
+from pypolymlp.common.interface_vasp import parse_vaspruns
 
 def parse_observations(params_dict):
 
