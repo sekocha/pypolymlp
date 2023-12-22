@@ -1,0 +1,5 @@
+# List of prototype structures and structure files are fetched from ~/database/icsd/data-20160509/2-structure_type_20220425
+
+#for i in {1-all,2-alloy,2-ionic,3-alloy,3-ionic};do cp ~/database/icsd/data-20160509/2-structure_type_20220425/ele"$i"/summary_nonequiv $i;done
+# cp -r ~/database/icsd/data-20160509/2-structure_type_20220425/ele* .
+
