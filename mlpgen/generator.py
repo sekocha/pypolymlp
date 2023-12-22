@@ -4,10 +4,10 @@ import argparse
 import signal
 import time
 
-from pypolymlp.common.interface_phono3py import parse_phono3py_yaml
-from pypolymlp.common.interface_vasp import parse_vaspruns
-from pypolymlp.common.parser_polymlp_params import ParamsParser
-from pypolymlp.common.io_polymlp import save_mlp_lammps
+from pypolymlp.core.interface_phono3py import parse_phono3py_yaml
+from pypolymlp.core.interface_vasp import parse_vaspruns
+from pypolymlp.core.parser_polymlp_params import ParamsParser
+from pypolymlp.core.io_polymlp import save_mlp_lammps
 
 from pypolymlp.mlpgen.features import Features
 from pypolymlp.mlpgen.precondition import Precondition

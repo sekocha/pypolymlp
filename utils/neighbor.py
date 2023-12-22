@@ -7,8 +7,8 @@ import itertools
 import numpy.matlib
 from scipy.spatial.distance import cdist
 
-from pypolymlp.common.interface_vasp import Poscar
-from pypolymlp.common.interface_vasp import Vasprun
+from pypolymlp.core.interface_vasp import Poscar
+from pypolymlp.core.interface_vasp import Vasprun
 
 def __find_trans(axis, cutoff):
 

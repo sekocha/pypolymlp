@@ -4,7 +4,7 @@ from math import sqrt
 from scipy.linalg.lapack import get_lapack_funcs
 from sklearn.linear_model import LassoLars
 
-from pypolymlp.common.utils import rmse
+from pypolymlp.core.utils import rmse
 
 class Regression:
 

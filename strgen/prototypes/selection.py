@@ -5,7 +5,7 @@ import argparse
 import itertools
 import copy
 
-from pypolymlp.common.interface_vasp import Poscar
+from pypolymlp.core.interface_vasp import Poscar
 from pypolymlp.strgen.structure import permute_atoms
 from pypolymlp.strgen.structure import print_poscar_tofile
 

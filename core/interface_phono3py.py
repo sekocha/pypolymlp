@@ -5,7 +5,7 @@ from collections import defaultdict
 from collections import Counter
 
 import phono3py
-from pypolymlp.common.utils import permute_atoms
+from pypolymlp.core.utils import permute_atoms
 
 
 def parse_phono3py_yaml(yaml_filename, 

@@ -4,7 +4,7 @@ import argparse
 import os
 import random
 
-from pypolymlp.common.vasp import Poscar
+from pypolymlp.core.vasp import Poscar
 from pypolymlp.strgen.structure import make_supercell
 from pypolymlp.strgen.structure import print_poscar_tofile
 

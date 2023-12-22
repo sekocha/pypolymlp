@@ -3,9 +3,9 @@ import numpy as np
 import argparse
 import signal
 
-from pypolymlp.common.interface_vasp import Poscar
-from pypolymlp.common.io_polymlp import load_mlp_lammps
-from pypolymlp.common.parser_polymlp_params import ParamsParser
+from pypolymlp.core.interface_vasp import Poscar
+from pypolymlp.core.io_polymlp import load_mlp_lammps
+from pypolymlp.core.parser_polymlp_params import ParamsParser
 
 from pypolymlp.mlpgen.features import Features
 

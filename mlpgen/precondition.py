@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import numpy as np
-
 from sklearn.preprocessing import StandardScaler
+
 import pypolymlp.mlpgen.numba_support as numba_support
 
 def apply_atomic_energy(dft_dict, params_dict):

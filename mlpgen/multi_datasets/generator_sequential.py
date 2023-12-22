@@ -4,8 +4,8 @@ import argparse
 import signal
 import time
 
-from pypolymlp.common.parser_polymlp_params import ParamsParser
-from pypolymlp.common.io_polymlp import save_mlp_lammps
+from pypolymlp.core.parser_polymlp_params import ParamsParser
+from pypolymlp.core.io_polymlp import save_mlp_lammps
 
 from pypolymlp.mlpgen.multi_datasets.parser import parse_observations
 from pypolymlp.mlpgen.multi_datasets.sequential import Sequential

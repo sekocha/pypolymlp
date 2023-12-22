@@ -2,7 +2,7 @@
 import numpy as np
 import os
 
-from pypolymlp.common.utils import rmse
+from pypolymlp.core.utils import rmse
 
 def __compute_rmse(true_values, 
                    pred_values_all, 
