@@ -21,7 +21,7 @@ def parse_phono3py_yaml(yaml_filename,
     ph3 = Phono3pyYaml(yaml_filename)
     disps, forces = ph3.get_phonon_dataset()
     st_data = ph3.get_structure_dataset()
-    axis, positions, n_atoms, elements, types, positions_all = st_data
+    axis, positions, n_atoms, elements, types, volume, positions_all = st_data
     if energies_filename is not None:
         energies = np.loadtxt(energies_filename)[1:,1]
     else:
@@ -45,6 +45,7 @@ def parse_phono3py_yaml(yaml_filename,
         st_dict['n_atoms'] = n_atoms
         st_dict['elements'] = elements
         st_dict['types'] = types
+        st_dict['volume'] = volume
 
         if element_order is not None:
             st_dict, forces_iter = permute_atoms(st_dict,
@@ -64,6 +65,10 @@ def parse_phono3py_yaml(yaml_filename,
     if return_displacements:
         return dft_dict, disps
     return dft_dict
+
+def parse_structures_from_phono3py_yaml(phono3py_yaml):
+    dft_dict = parse_phono3py_yaml(phono3py_yaml, return_displacements=False)
+    return dft_dict['structures']
 
 class Phono3pyYaml:
 
@@ -86,7 +91,7 @@ class Phono3pyYaml:
         elements_count = Counter(self.elements)
         self.n_atoms = [elements_count[ele] for ele in elements_uniq]
         self.types = [i for i, n in enumerate(self.n_atoms) for _ in range(n)]
-
+        self.volume = ph3.supercell.volume
 
     def get_phonon_dataset(self):
         ''' displacements: (n_samples, 3, n_atom)
@@ -97,7 +102,7 @@ class Phono3pyYaml:
     def get_structure_dataset(self):
         ''' positions_all: (n_samples, 3, n_atom)'''
         return (self.axis, self.positions, self.n_atoms, 
-                self.elements, self.types, self.positions_all)
+                self.elements, self.types, self.volume, self.positions_all)
 
 
 if __name__ == '__main__':
