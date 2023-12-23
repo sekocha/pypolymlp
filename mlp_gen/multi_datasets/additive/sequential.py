@@ -8,7 +8,6 @@ import mlpcpp
 from pypolymlp.mlp_gen.multi_datasets.additive.features import Features
 from pypolymlp.mlp_gen.precondition import apply_atomic_energy
 from pypolymlp.mlp_gen.precondition import apply_weight_percentage
-import pypolymlp.mlp_gen.numba_support as numba_support
 
 class Sequential:
 
@@ -42,7 +41,7 @@ class Sequential:
 
             if print_memory:
                 ram = x.shape[1] * x.shape[1] * 8e-9 * 2
-                print(' - memory allocation (for computing X^T * X) =',
+                print(' - memory allocation (for computing X^T @ X) =',
                       '{:.3f}'.format(ram),'(GB)')
 
             if scales is None:
@@ -62,12 +61,8 @@ class Sequential:
                                               single_params_dict, 
                                               first_indices,
                                               min_e=min_e_per_atom)
-            xtx1 = np.zeros((x.shape[1], x.shape[1]))
-            xty1 = np.zeros(x.shape[1])
-
-            np.dot(x.T, x, out=xtx1)
-            np.dot(x.T, y, out=xty1)
-
+            xtx1 = x.T @ x
+            xty1 = x.T @ y
             xtx = self.__sum_array(xtx, xtx1)
             xty = self.__sum_array(xty, xty1)
             y_sq_norm += np.dot(y, y)
@@ -80,8 +75,12 @@ class Sequential:
         else:
             self.scales = scales
 
+        xtx /= self.scales[:, np.newaxis]
+        xtx /= self.scales[np.newaxis, :]
+        ''' numba version
         numba_support.mat_prod_vec(xtx, np.reciprocal(self.scales), axis=0)
         numba_support.mat_prod_vec(xtx, np.reciprocal(self.scales), axis=1)
+        '''
         xty /= self.scales
 
         self.reg_dict = dict()

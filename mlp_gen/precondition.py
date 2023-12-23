@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 import numpy as np
 
-import pypolymlp.mlp_gen.numba_support as numba_support
-
 def apply_atomic_energy(dft_dict, params_dict):
 
     energy = dft_dict['energy']
@@ -73,7 +71,12 @@ def apply_weight_percentage(x, y, w,
 
     w[ebegin:eend] = weight_e
     y[ebegin:eend] = weight_e * energy
+    
+    x[ebegin:eend] *= weight_e[:, np.newaxis]
+    ''' numba version 
+    import pypolymlp.mlp_gen.numba_support as numba_support
     numba_support.mat_prod_vec(x[ebegin:eend], weight_e, axis=0)
+    '''
 
     if include_force:
         force = dft_dict['force']
@@ -82,7 +85,10 @@ def apply_weight_percentage(x, y, w,
             weight_f *= dft_dict['weight']
         w[fbegin:fend] = weight_f
         y[fbegin:fend] = weight_f * force
+        x[fbegin:fend] *= weight_f[:, np.newaxis]
+        ''' numba version 
         numba_support.mat_prod_vec(x[fbegin:fend], weight_f, axis=0)
+        '''
 
         if include_stress:
             stress = dft_dict['stress']
@@ -93,7 +99,10 @@ def apply_weight_percentage(x, y, w,
             weight_s = __set_weight_stress_data(stress, weight_const)
             w[sbegin:send] = weight_s
             y[sbegin:send] = weight_s * stress
+            x[sbegin:send] *= weight_s[:, np.newaxis]
+            ''' numba version 
             numba_support.mat_prod_vec(x[sbegin:send], weight_s, axis=0)
+            '''
         else:
             x[sbegin:send,:] = 0.0
             y[sbegin:send] = 0.0
@@ -139,10 +148,11 @@ class Precondition:
         else:
             self.scales = np.std(self.x[:self.ne], axis=0)
 
-        ''' correctly-working simple version 
-              self.x /= self.scaler.scale_
+        self.x /= self.scales
+        ''' correctly-working numba version 
+            numba_support.mat_prod_vec(self.x, np.reciprocal(self.scales), 
+                                       axis=1)
         '''
-        numba_support.mat_prod_vec(self.x, np.reciprocal(self.scales), axis=1)
 
     def __apply_weight(self, weight_stress=0.1):
 

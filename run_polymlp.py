@@ -123,4 +123,6 @@ if __name__ == '__main__':
         print(' feature size =', x.shape)
         np.save('features.npy', x)
 
+    ''' todo: args.strgen should be implemented.'''
+
 

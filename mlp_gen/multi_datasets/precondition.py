@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import numpy as np
 
-import pypolymlp.mlp_gen.numba_support as numba_support
 from pypolymlp.mlp_gen.precondition import apply_atomic_energy
 from pypolymlp.mlp_gen.precondition import apply_weight_percentage
 
@@ -61,10 +60,10 @@ class Precondition:
         else:
             self.scales = np.std(self.x[:self.ne], axis=0)
 
-        ''' correctly-working simple version 
-              self.x /= self.scaler.scale_
-        '''
+        self.x /= self.scales
+        ''' correctly-working numba version
         numba_support.mat_prod_vec(self.x, np.reciprocal(self.scales), axis=1)
+        '''
 
     def __apply_weight(self, weight_stress=0.1, min_e=None):
 
