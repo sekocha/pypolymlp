@@ -3,7 +3,7 @@ import numpy as np
 import argparse
 import signal
 
-from pypolymlp.core.interface_vasp import Poscar
+from pypolymlp.core.interface_vasp import parse_structures_from_poscars
 from pypolymlp.core.io_polymlp import load_mlp_lammps
 from pypolymlp.core.parser_polymlp_params import ParamsParser
 
@@ -88,7 +88,7 @@ if __name__ == '__main__':
                         help='Input parameter settings (polymlp.lammps)')
     args = parser.parse_args()
 
-    structures = [Poscar(f).get_structure() for f in args.poscars]
+    structures = parse_structures_from_poscars(args.poscars)
     if args.infile is not None:
         x = compute_from_infile(args.infile, structures)
     elif args.pot is not None:
