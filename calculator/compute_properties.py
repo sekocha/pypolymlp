@@ -7,6 +7,7 @@ from pypolymlp.core.interface_vasp import parse_structures_from_poscars
 from pypolymlp.core.interface_vasp import parse_structures_from_vaspruns
 
 def compute_energies(pot, st_dicts):
+
     x, mlp_dict = compute_from_polymlp_lammps(pot, st_dicts, 
                                               force=False,
                                               stress=False)
@@ -14,6 +15,7 @@ def compute_energies(pot, st_dicts):
     return x @ coeffs
 
 def compute_properties(pot, st_dicts):
+
     features, mlp_dict = compute_from_polymlp_lammps(pot, st_dicts, 
                                                      force=True,
                                                      stress=True,
@@ -43,6 +45,7 @@ def compute_properties(pot, st_dicts):
     return (energies, forces, stresses)
 
 def convert_stresses_in_gpa(stresses, st_dicts):
+
     volumes = np.array([st['volume'] for st in st_dicts])
     stresses_gpa = np.zeros(stresses.shape)
     for i in range(6):

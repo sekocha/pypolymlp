@@ -70,6 +70,39 @@ def parse_structures_from_phono3py_yaml(phono3py_yaml):
     dft_dict = parse_phono3py_yaml(phono3py_yaml, return_displacements=False)
     return dft_dict['structures']
 
+def convert_disps_to_positions(disps, axis, positions):
+    ''' disps: (n_str, n_atom, 3)'''
+    displacements = disps.transpose((0,2,1))  # Angstrom
+    axis_inv = np.linalg.inv(axis)
+    positions_all = np.array([positions + (axis_inv @ d)
+                              for d in displacements])
+    return positions_all
+
+def get_structures_from_multiple_positions(positions_all, 
+                                           axis, n_atoms, 
+                                           jlements, types, volume):
+    ''' positions_all: (n_str, 3, n_atom)'''
+    st_dicts = []
+    for positions_iter in zip(positions_all):
+        st_dict = dict()
+        st_dict['axis'] = axis
+        st_dict['positions'] = positions_iter
+        st_dict['n_atoms'] = n_atoms
+        st_dict['elements'] = elements
+        st_dict['types'] = types
+        st_dict['volume'] = volume
+        st_dicts.append(st_dict)
+    return st_dicts
+
+def get_structures_from_displacements(disps, axis, n_atoms, 
+                                      elements, types, volume):
+    ''' disps: (n_str, n_atom, 3)'''
+    positions_all = convert_disps_to_positions(disps, axis, positions)
+    st_dicts = get_structures_from_multiple_positions(positions_all, 
+                                                      axis, n_atoms, 
+                                                      elements, types, volume)
+    return st_dicts
+
 class Phono3pyYaml:
 
     def __init__(self, yaml_filename):
@@ -78,14 +111,15 @@ class Phono3pyYaml:
             positions_all: (n_samples, 3, n_atom)
         '''
         ph3 = phono3py.load(yaml_filename, produce_fc=False, log_level=1)
-        self.displacements = ph3.displacements.transpose((0,2,1))  # Angstrom
-        self.forces = ph3.forces.transpose((0,2,1))  # eV/Angstrom
         self.axis = ph3.supercell.cell.T
         self.positions = ph3.supercell.scaled_positions.T
-        axis_inv = np.linalg.inv(self.axis)
-        self.positions_all = np.array([self.positions + (axis_inv @ d)
-                             for d in self.displacements])
         self.elements = ph3.supercell.symbols
+
+        self.positions_all = convert_disps_to_positions(ph3.displacements, 
+                                                        self.axis, 
+                                                        self.positions)
+        self.displacements = ph3.displacements.transpose((0,2,1))  # Angstrom
+        self.forces = ph3.forces.transpose((0,2,1))  # eV/Angstrom
 
         elements_uniq = sorted(set(self.elements), key=self.elements.index)
         elements_count = Counter(self.elements)
