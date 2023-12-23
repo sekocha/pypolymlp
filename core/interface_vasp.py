@@ -251,3 +251,17 @@ class Chg:
     def get_volume(self):
         return self.vol
 
+
+def read_doscar(name):
+    f = open(name)
+    lines = f.readlines()
+    f.close()
+
+    e_fermi = float(lines[5].split()[3])
+    dos = []
+    for l in lines[6:]:
+        str1 = l.split()[:2]
+        vals = [float(str1[0]) - e_fermi, float(str1[1])]
+        dos.append(vals)
+    return np.array(dos)
+

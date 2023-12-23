@@ -4,15 +4,12 @@ import os
 import sys
 import glob
 import itertools
-from collections import defaultdict
 from distutils.util import strtobool
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/../c++/lib')
 import mlpcpp
 
 from pypolymlp.core.parser_infile import InputParser
-from pypolymlp.core.interface_vasp import Vasprun
-from pypolymlp.core.utils import permute_atoms
 
 class ParamsParser:
 

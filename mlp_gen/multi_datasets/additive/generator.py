@@ -21,20 +21,10 @@ from pypolymlp.mlp_gen.multi_datasets.additive.params_utils import (
 )
 
 
-if __name__ == '__main__':
-
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--infile', 
-                        nargs='*',
-                        type=str, 
-                        default=['polymlp.in'],
-                        help='Input file name')
-    args = parser.parse_args()
+def run_generator_additive(infiles):
 
     multiple_params_dicts = [ParamsParser(infile, multiple_datasets=True)
-                            .get_params() for infile in args.infile]
+                            .get_params() for infile in infiles]
     common_params_dict = set_common_params_dict(multiple_params_dicts)
     print_common_params(common_params_dict, infile=args.infile[0])
 
@@ -115,5 +105,20 @@ if __name__ == '__main__':
     print('    features:          ', '{:.3f}'.format(t2-t1), '(s)')
     print('    scaling, weighting:', '{:.3f}'.format(t3-t2), '(s)')
     print('    regression:        ', '{:.3f}'.format(t4-t3), '(s)')
+
+
+if __name__ == '__main__':
+
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-i', '--infile', 
+                        nargs='*',
+                        type=str, 
+                        default=['polymlp.in'],
+                        help='Input file name')
+    args = parser.parse_args()
+
+    run_generator_additive(args.infile)
 
 

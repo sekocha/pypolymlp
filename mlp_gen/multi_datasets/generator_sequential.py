@@ -16,19 +16,9 @@ from pypolymlp.mlp_gen.multi_datasets.accuracy import compute_predictions
 from pypolymlp.mlp_gen.accuracy import write_error_yaml
 from pypolymlp.mlp_gen.features_attr import write_polymlp_params_yaml
 
+def run_sequential_generator_multiple_datasets(infile):
 
-if __name__ == '__main__':
-
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--infile', 
-                        type=str, 
-                        default='polymlp.in',
-                        help='Input file name')
-    args = parser.parse_args()
-
-    p = ParamsParser(args.infile, multiple_datasets=True)
+    p = ParamsParser(infile, multiple_datasets=True)
     params_dict = p.get_params()
 
     train_dft_dict, test_dft_dict = parse_observations(params_dict)
@@ -89,4 +79,19 @@ if __name__ == '__main__':
     print('    features + weighting: ', '{:.3f}'.format(t2-t1), '(s)')
     print('    regression:           ', '{:.3f}'.format(t3-t2), '(s)')
     print('    predictions:          ', '{:.3f}'.format(t4-t3), '(s)')
+
+
+if __name__ == '__main__':
+
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-i', '--infile', 
+                        type=str, 
+                        default='polymlp.in',
+                        help='Input file name')
+    args = parser.parse_args()
+
+    run_sequential_generator_multiple_datasets(args.infile)
+
 

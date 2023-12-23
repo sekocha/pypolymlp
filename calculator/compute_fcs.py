@@ -6,9 +6,9 @@ import time
 from pypolymlp.core.interface_phono3py import parse_phono3py_yaml_fcs
 from pypolymlp.calculator.compute_properties import compute_properties
 
-from lammps_api.sscha.branch.basis_set_O2 import run_fc2, recover_fc2
-from lammps_api.sscha.branch.basis_set_O3 import run_fc3, recover_fc3
-from lammps_api.sscha.branch.solver_O2O3 import run_solver_sparse_O2O3
+from pypolymlp.symfc_dev.basis_set_O2 import run_fc2, recover_fc2
+from pypolymlp.symfc_dev.basis_set_O3 import run_fc3, recover_fc3
+from pypolymlp.symfc_dev.solver_O2O3 import run_solver_sparse_O2O3
 
 from phono3py.file_IO import write_fc2_to_hdf5, write_fc3_to_hdf5
 
@@ -18,7 +18,7 @@ def compute_fcs(pot, phono3py_yaml=None):
     if phono3py_yaml is not None:
         supercell_phonopy, disps, st_dicts = parse_phono3py_yaml_fcs(
                                                 phono3py_yaml
-                                            )
+                                             )
     else:
         pass
         '''
@@ -88,3 +88,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     compute_fcs(args.pot, phono3py_yaml=args.phono3py_yaml)
+

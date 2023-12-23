@@ -68,18 +68,9 @@ from pypolymlp.mlp_gen.features_attr import write_polymlp_params_yaml
 
 """
 
-if __name__ == '__main__':
+def run_generator_single_dataset(infile):
 
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--infile', 
-                        type=str, 
-                        default='polymlp.in',
-                        help='Input file name')
-    args = parser.parse_args()
-
-    p = ParamsParser(args.infile)
+    p = ParamsParser(infile)
     params_dict = p.get_params()
 
     if params_dict['dataset_type'] == 'vasp':
@@ -158,3 +149,15 @@ if __name__ == '__main__':
     print('    scaling, weighting:', '{:.3f}'.format(t3-t2), '(s)')
     print('    regression:        ', '{:.3f}'.format(t4-t3), '(s)')
 
+if __name__ == '__main__':
+
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-i', '--infile', 
+                        type=str, 
+                        default='polymlp.in',
+                        help='Input file name')
+    args = parser.parse_args()
+
+    run_generator_single_dataset(args.infile)

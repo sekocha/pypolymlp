@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import numpy as np
 import sys
-from joblib import Parallel, delayed
+import argparse
 
 from xml.etree import ElementTree as ET
 from xml.dom import minidom
@@ -44,6 +44,23 @@ def convert(vasprun):
     return True
 
 if __name__ == '__main__':
-    vaspruns = sys.argv[1:]
-    res = Parallel(n_jobs=9)(delayed(convert)(vasp) for vasp in vaspruns)
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--vaspruns', 
+                        nargs='*',
+                        type=str, 
+                        help='vasprun.xml files')
+    parser.add_argument('--n_jobs', 
+                        type=int, 
+                        default=1,
+                        help='number of parallel jobs')
+    args = parser.parse_args()
+
+    if n_jobs == 1:
+        for vasp in args.vaspruns:
+            convert(vasp)
+    else:
+        from joblib import Parallel, delayed
+        res = Parallel(n_jobs=args.n_jobs)(delayed(convert)(vasp) 
+                                    for vasp in args.vaspruns)
 

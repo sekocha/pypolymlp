@@ -2,7 +2,6 @@
 import numpy as np
 from math import sqrt
 from scipy.linalg.lapack import get_lapack_funcs
-from sklearn.linear_model import LassoLars
 
 from pypolymlp.core.utils import rmse
 
@@ -152,6 +151,7 @@ class Regression:
 
     def lasso(self, iprint=True):
 
+        from sklearn.linear_model import LassoLars
         alphas = [pow(10, a) for a in self.params_dict['reg']['alpha']]
 
         best_rmse = 1e10

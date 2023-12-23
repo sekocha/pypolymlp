@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import numpy as np
-from sklearn.preprocessing import StandardScaler
 
 import pypolymlp.mlp_gen.numba_support as numba_support
 
@@ -138,12 +137,10 @@ class Precondition:
         if scales is not None:
             self.scales = scales
         else:
-            scaler = StandardScaler(with_mean=False).fit(self.x[:self.ne])
-            self.scales = scaler.scale_
+            self.scales = np.std(self.x[:self.ne], axis=0)
 
-        '''
-            correctly-working simple version 
-                self.x /= self.scaler.scale_
+        ''' correctly-working simple version 
+              self.x /= self.scaler.scale_
         '''
         numba_support.mat_prod_vec(self.x, np.reciprocal(self.scales), axis=1)
 
