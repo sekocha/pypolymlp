@@ -12,7 +12,7 @@
 - spglib (optional)
 - joblib (optional)
 
-### Conda package management system
+## Conda package management system
 ```
 > conda create -n pypolymlp 
 > conda activate pypolymlp
@@ -69,13 +69,15 @@
     include_force True
     include_stress True
 
-## MLP development using a memory-efficient sequential implementation
+```
+
+### MLP development using a memory-efficient sequential implementation
 
 ```
 > $(pypolymlp)/run_polymlp.py -i polymlp.in --sequential
 ```
 
-## MLP development using additive models
+### MLP development using additive models
 
 ```
 > $(pypolymlp)/run_polymlp.py -i polymlp1.in polymlp2.in (--sequential)
@@ -124,7 +126,10 @@
     gaussian_params2 0.0 3.0 4
     
 ```
-## Computation of properties (energies, forces, and stress tensors)
+
+## Calculators
+
+### Computation of properties (energies, forces, and stress tensors)
 
 ```
 > $(pypolymlp)/run_polymlp.py --properties --pot polymlp.lammps --poscars */POSCAR
@@ -132,14 +137,14 @@
 > $(pypolymlp)/run_polymlp.py --properties --pot polymlp.lammps --phono3py_yaml phono3py_params_wurtzite_AgI.yaml.xz
 ```
 
-## Computation of polynomial structural features
+### Computation of polynomial structural features
 
 ```
 > $(pypolymlp)/run_polymlp.py --features --pot polymlp.lammps --poscars */POSCAR
 > $(pypolymlp)/run_polymlp.py --features -i polymlp.in --poscars */POSCAR
 ```
 
-## Computation of force constants 
+### Computation of force constants 
 (phonopy, phono3py, and symfc are required.)
 
 ```
