@@ -6,10 +6,10 @@ from collections import defaultdict
 import phono3py
 from pypolymlp.core.utils import permute_atoms
 from pypolymlp.utils.phonopy_utils import phonopy_cell_to_st_dict
-
+from pypolymlp.utils.displacements_utils import convert_disps_to_positions
 
 def parse_phono3py_yaml(yaml_filename, 
-                        energies_filename=None, 
+                        energies_filename=None,
                         element_order=None,
                         select_ids=None,
                         return_displacements=False):
@@ -64,13 +64,6 @@ def parse_phono3py_yaml(yaml_filename,
     if return_displacements:
         return dft_dict, disps
     return dft_dict
-
-''' not restricted to phono3py'''
-def convert_disps_to_positions(disps, axis, positions):
-    ''' disps: (n_str, 3, n_atoms) # Angstrom'''
-    axis_inv = np.linalg.inv(axis)
-    positions_all = np.array([positions + (axis_inv @ d) for d in disps])
-    return positions_all
 
 ''' not restricted to phono3py'''
 def get_structures_from_multiple_positions(st_dict, positions_all):

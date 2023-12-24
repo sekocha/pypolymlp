@@ -1,6 +1,13 @@
 #!/usr/bin/env python
 import numpy as np
 
+def convert_disps_to_positions(disps, axis, positions):
+
+    ''' disps: (n_str, 3, n_atoms) # Angstrom'''
+    axis_inv = np.linalg.inv(axis)
+    positions_all = np.array([positions + (axis_inv @ d) for d in disps])
+    return positions_all
+
 def generate_random_displacements(st_dict, 
                                   n_samples=100, 
                                   displacements=0.03):
@@ -9,8 +16,7 @@ def generate_random_displacements(st_dict,
     positions = st_dict['positions']
     disps = (np.random.rand(n_samples, 3, positions.shape[1]) - 0.5)
     disps = (2.0 * displacements) * disps
-    axis_inv = np.linalg.inv(axis)
-    positions_all = np.array([positions + (axis_inv @ d) for d in disps])
+    positions_all = convert_disps_to_positions(disps, axis, positions)
 
     st_dicts = []
     for positions_iter in positions_all:
@@ -25,4 +31,4 @@ def generate_random_displacements(st_dict,
 
     return disps, st_dicts
 
-   
+
