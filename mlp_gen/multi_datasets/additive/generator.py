@@ -26,7 +26,7 @@ def run_generator_additive(infiles):
     multiple_params_dicts = [ParamsParser(infile, multiple_datasets=True)
                             .get_params() for infile in infiles]
     common_params_dict = set_common_params_dict(multiple_params_dicts)
-    print_common_params(common_params_dict, infile=args.infile[0])
+    print_common_params(common_params_dict, infile=infiles[0])
 
     train_dft_dict, test_dft_dict = parse_observations(common_params_dict)
 
