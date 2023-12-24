@@ -4,7 +4,7 @@ import argparse
 
 import spglib 
 from pypolymlp.core.interface_vasp import Poscar
-from pypolymlp.utils.structure_io import print_poscar, write_poscar_file
+from pypolymlp.utils.vasp_utils import print_poscar, write_poscar_file
 
 class SymCell:
 

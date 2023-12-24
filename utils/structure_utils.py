@@ -67,6 +67,7 @@ def write_poscar_file(st_dict, filename='poscar_pypolymlp', header=None):
               "{0:15.15f}".format(float(n[2])), file=f)
 
 def refine_positions(st_dict, tol=1e-13):
+
     positions = st_dict['positions']
     positions -= np.floor(positions)
     positions[np.where(positions > 1-tol)] -= 1.0
@@ -74,6 +75,7 @@ def refine_positions(st_dict, tol=1e-13):
     return st_dict
 
 def reset_types(st_dict):
+
     st_dict['types'] = [i for i, n1 in enumerate(st_dict['n_atoms'])
                           for n2 in range(n1)]
     return st_dict
@@ -85,3 +87,5 @@ def get_reciprocal_axis(st_dict=None,axis=None):
     if axis is None:
         axis = st_dict['axis']
     return 2 * pi * np.linalg.inv(axis).T
+
+

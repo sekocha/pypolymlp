@@ -22,8 +22,8 @@ def compute_properties(pot, st_dicts):
                                                      return_features_obj=True,
                                                      return_mlp_dict=True)
     '''
-    energies: unit: eV/supercell
-    forces: unit: eV/angstrom
+    energies: unit: eV/supercell (n_str)
+    forces: unit: eV/angstrom (n_str, 3, n_atom)
     stresses: (n_str, 6) in the order of xx, yy, zz, xy, yz, zx
                 unit: eV/supercell
     '''
@@ -39,7 +39,7 @@ def compute_properties(pot, st_dicts):
     begin_ptr = f_ptr
     for n_atom in features.get_n_atoms_sums():
         end_ptr = begin_ptr + n_atom * 3
-        forces.append(predictions[begin_ptr:end_ptr].reshape((-1,3)))
+        forces.append(predictions[begin_ptr:end_ptr].reshape((-1,3)).T)
         begin_ptr = end_ptr
 
     return (energies, forces, stresses)

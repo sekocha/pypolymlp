@@ -2,10 +2,10 @@
 import numpy as np
 import sys
 from collections import defaultdict
+from collections import Counter
 
 import phono3py
 from pypolymlp.core.utils import permute_atoms
-from pypolymlp.utils.phonopy_utils import phonopy_cell_to_st_dict
 
 
 def parse_phono3py_yaml(yaml_filename, 
@@ -20,8 +20,8 @@ def parse_phono3py_yaml(yaml_filename,
     '''
     ph3 = Phono3pyYaml(yaml_filename)
     disps, forces = ph3.get_phonon_dataset()
-    st_dict, positions_all = ph3.get_structure_dataset()
-
+    st_data = ph3.get_structure_dataset()
+    axis, positions, n_atoms, elements, types, volume, positions_all = st_data
     if energies_filename is not None:
         energies = np.loadtxt(energies_filename)[1:,1]
     else:
@@ -39,19 +39,20 @@ def parse_phono3py_yaml(yaml_filename,
     dft_dict['stress'] = np.zeros(forces.shape[0] * 6)
 
     for positions_iter, forces_iter in zip(positions_all, forces):
-        st = dict()
-        st['axis'] = st_dict['axis']
-        st['positions'] = positions_iter
-        st['n_atoms'] = st_dict['n_atoms']
-        st['elements'] = st_dict['elements']
-        st['types'] = st_dict['types']
-        st['volume'] = st_dict['volume']
+        st_dict = dict()
+        st_dict['axis'] = axis
+        st_dict['positions'] = positions_iter
+        st_dict['n_atoms'] = n_atoms
+        st_dict['elements'] = elements
+        st_dict['types'] = types
+        st_dict['volume'] = volume
 
         if element_order is not None:
-            st, forces_iter = permute_atoms(st, forces_iter, element_order)
-
+            st_dict, forces_iter = permute_atoms(st_dict,
+                                                 forces_iter,
+                                                 element_order)
         dft_dict['force'].extend(forces_iter.T.reshape(-1))
-        dft_dict['structures'].append(st)
+        dft_dict['structures'].append(st_dict)
     dft_dict['force'] = np.array(dft_dict['force'])
 
     elements_rep = dft_dict['structures'][0]['elements']
@@ -65,42 +66,46 @@ def parse_phono3py_yaml(yaml_filename,
         return dft_dict, disps
     return dft_dict
 
-''' not restricted to phono3py'''
 def convert_disps_to_positions(disps, axis, positions):
+
     ''' disps: (n_str, 3, n_atoms) # Angstrom'''
     axis_inv = np.linalg.inv(axis)
     positions_all = np.array([positions + (axis_inv @ d) for d in disps])
     return positions_all
 
-''' not restricted to phono3py'''
-def get_structures_from_multiple_positions(st_dict, positions_all):
+def get_structures_from_multiple_positions(positions_all, 
+                                           axis, n_atoms, 
+                                           elements, types, volume):
     ''' positions_all: (n_str, 3, n_atom)'''
     st_dicts = []
     for positions_iter in positions_all:
-        st = dict()
-        st['axis'] = st_dict['axis']
-        st['positions'] = positions_iter
-        st['n_atoms'] = st_dict['n_atoms']
-        st['elements'] = st_dict['elements']
-        st['types'] = st_dict['types']
-        st['volume'] = st_dict['volume']
-        st_dicts.append(st)
+        st_dict = dict()
+        st_dict['axis'] = axis
+        st_dict['positions'] = positions_iter
+        st_dict['n_atoms'] = n_atoms
+        st_dict['elements'] = elements
+        st_dict['types'] = types
+        st_dict['volume'] = volume
+        st_dicts.append(st_dict)
     return st_dicts
 
-''' not restricted to phono3py'''
-def get_structures_from_displacements(disps, st_dict):
+def get_structures_from_displacements(disps, axis, n_atoms, 
+                                      elements, types, volume):
     ''' disps: (n_str, 3, n_atoms)'''
-    positions_all = convert_disps_to_positions(disps, 
-                                               st_dict['axis'], 
-                                               st_dict['positions'])
-    st_dicts = get_structures_from_multiple_positions(st_dict, positions_all)
+    positions_all = convert_disps_to_positions(disps, axis, positions)
+    st_dicts = get_structures_from_multiple_positions(positions_all, 
+                                                      axis, n_atoms, 
+                                                      elements, types, volume)
     return st_dicts
 
 def parse_structures_from_phono3py_yaml(phono3py_yaml):
 
     ph3 = Phono3pyYaml(phono3py_yaml)
-    st_dict, positions_all = ph3.get_structure_dataset()
-    st_dicts = get_structures_from_multiple_positions(st_dict, positions_all)
+    st_data = ph3.get_structure_dataset()
+    axis, positions, n_atoms, elements, types, volume, positions_all = st_data
+    st_dicts = get_structures_from_multiple_positions(positions_all, 
+                                                      axis, n_atoms, 
+                                                      elements, types, volume)
     return st_dicts
 
 def parse_phono3py_yaml_fcs(phono3py_yaml):
@@ -110,8 +115,11 @@ def parse_phono3py_yaml_fcs(phono3py_yaml):
     '''
     ph3 = Phono3pyYaml(phono3py_yaml)
     disps, _ = ph3.get_phonon_dataset()
-    st_dict, positions_all = ph3.get_structure_dataset()
-    st_dicts = get_structures_from_multiple_positions(st_dict, positions_all)
+    st_data = ph3.get_structure_dataset()
+    axis, positions, n_atoms, elements, types, volume, positions_all = st_data
+    st_dicts = get_structures_from_multiple_positions(positions_all, 
+                                                      axis, n_atoms, 
+                                                      elements, types, volume)
     return ph3.supercell, disps, st_dicts
 
 
@@ -124,15 +132,22 @@ class Phono3pyYaml:
         '''
         ph3 = phono3py.load(yaml_filename, produce_fc=False, log_level=1)
         self.supercell = ph3.supercell
-        self.st_dict = phonopy_cell_to_st_dict(ph3.supercell)
+        self.axis = ph3.supercell.cell.T
+        self.positions = ph3.supercell.scaled_positions.T
+        self.elements = ph3.supercell.symbols
+
         self.displacements = ph3.displacements.transpose((0,2,1))  # Angstrom
         self.forces = ph3.forces.transpose((0,2,1))  # eV/Angstrom
 
-        self.positions_all = convert_disps_to_positions(
-                self.displacements, 
-                self.st_dict['axis'], 
-                self.st_dict['positions']
-        )
+        self.positions_all = convert_disps_to_positions(self.displacements, 
+                                                        self.axis, 
+                                                        self.positions)
+
+        elements_uniq = sorted(set(self.elements), key=self.elements.index)
+        elements_count = Counter(self.elements)
+        self.n_atoms = [elements_count[ele] for ele in elements_uniq]
+        self.types = [i for i, n in enumerate(self.n_atoms) for _ in range(n)]
+        self.volume = ph3.supercell.volume
 
     def get_phonon_dataset(self):
         ''' displacements: (n_samples, 3, n_atom)
@@ -141,8 +156,9 @@ class Phono3pyYaml:
         return (self.displacements, self.forces)
 
     def get_structure_dataset(self):
-        ''' positions_all: (n_samples, 3, n_atom) '''
-        return (self.st_dict, self.positions_all)
+        ''' positions_all: (n_samples, 3, n_atom)'''
+        return (self.axis, self.positions, self.n_atoms, 
+                self.elements, self.types, self.volume, self.positions_all)
 
 
 if __name__ == '__main__':

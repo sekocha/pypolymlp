@@ -3,6 +3,10 @@ import numpy as np
 import argparse
 import signal
 
+from pypolymlp.core.parser_polymlp_params import ParamsParser
+from pypolymlp.mlp_gen.generator import (
+        run_generator_single_dataset
+)
 from pypolymlp.mlp_gen.multi_datasets.generator import (
         run_generator_multiple_datasets
 )
@@ -70,16 +74,23 @@ if __name__ == '__main__':
                         help='phono3py.yaml file')
     args = parser.parse_args()
 
+
+
     if (args.features == False and args.properties == False 
         and args.force_constants == False):
         if len(args.infile) == 1:
             infile = args.infile[0]
-            if args.sequential:
-                print('Mode: Sequential regression')
-                run_sequential_generator_multiple_datasets(infile)
-            else:
+            params_dict = ParamsParser(infile).get_params()
+            if params_dict['dataset_type'] == 'phono3py':
                 print('Mode: Regression')
-                run_generator_multiple_datasets(infile)
+                run_generator_single_dataset(infile)
+            else:
+                if args.sequential:
+                    print('Mode: Sequential regression')
+                    run_sequential_generator_multiple_datasets(infile)
+                else:
+                    print('Mode: Regression')
+                    run_generator_multiple_datasets(infile)
         else:
             if args.sequential:
                 print('Mode: Sequential regression (additive model)')
