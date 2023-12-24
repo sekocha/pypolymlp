@@ -2,21 +2,28 @@
 
 ## Required libraries and python modules
 
+- numpy
+- scipy
 - Eigen3
 - pybind11
-- scikit-learn
-- numba
-- joblib (if necessary)
+- phonopy (if using phonon detasets and/or computing force constants)
+- phono3py (if using phonon detasets and/or computing force constants)
+- symfc (if computing force constants)
+- spglib (optional)
+- joblib (optional)
 
 ### Conda package management system
 ```
 > conda create -n pypolymlp 
 > conda activate pypolymlp
+
 > conda install -c conda-forge pybind11
 > conda install -c omnia eigen3
-> conda install -c anaconda scikit-learn
-> conda install -c numba numba
+(optional)
 > conda install -c anaconda joblib
+> conda install -c conda-forge phonopy
+> conda install -c conda-forge phono3py
+> conda install -c conda-forge spglib
 ```
 
 ## Building a shared library (mlpcpp) required for pypolymlp
@@ -26,10 +33,10 @@
 > make
 ```
 
-## MLP development using a single training dataset and a single test dataset
+## MLP development 
 
 ```
-> $(pypolymlp)/mlpgen/generator.py --in polymlp.in
+> $(pypolymlp)/run_polymlp.py -i polymlp.in
 > cat polymlp.in
 
     n_type 2
@@ -53,35 +60,7 @@
     train_data vaspruns/train/vasprun-*.xml.polymlp
     test_data vaspruns/test/vasprun-*.xml.polymlp
 
-    include_force True
-    include_stress True
-
-```
-
-## MLP development using multiple datasets
-
-```
-> $(pypolymlp)/mlpgen/multi_datasets/generator.py --in polymlp.in
-> cat polymlp.in
-
-    n_type 2
-    elements Mg O
-    
-    feature_type gtinv
-    cutoff 8.0
-    model_type 3
-    max_p 2
-    
-    gtinv_order 3
-    gtinv_maxl 4 4
-    
-    gaussian_params1 1.0 1.0 1
-    gaussian_params2 0.0 7.0 8
-    
-    reg_alpha_params -3 1 5
-    
-    atomic_energy -0.00040000 -1.85321219
-    
+    (if using multiple datasets)
     train_data vaspruns/train1/vasprun-*.xml.polymlp
     train_data vaspruns/train2/vasprun-*.xml.polymlp
     test_data vaspruns/test1/vasprun-*.xml.polymlp
@@ -90,21 +69,16 @@
     include_force True
     include_stress True
 
-```
-
 ## MLP development using a memory-efficient sequential implementation
 
 ```
-> $(pypolymlp)/mlpgen/multi_datasets/generator_sequential.py --in polymlp.in
-
+> $(pypolymlp)/run_polymlp.py -i polymlp.in --sequential
 ```
 
 ## MLP development using additive models
 
 ```
-> $(pypolymlp)/mlpgen/multi_datasets/additive/generator.py --in polymlp1.in polymlp2.in
-> $(pypolymlp)/mlpgen/multi_datasets/additive/generator_sequential.py --in polymlp1.in polymlp2.in
-
+> $(pypolymlp)/run_polymlp.py -i polymlp1.in polymlp2.in (--sequential)
 > cat polymlp1.in
 
     n_type 2
@@ -150,34 +124,32 @@
     gaussian_params2 0.0 3.0 4
     
 ```
-
-## Computation of structural features
+## Computation of properties (energies, forces, and stress tensors)
 
 ```
-> $(pypolymlp)/tools/compute_features.py
-    --infile polymlp.in --poscars poscars/poscar-000*
+> $(pypolymlp)/run_polymlp.py --properties --pot polymlp.lammps --poscars */POSCAR
+> $(pypolymlp)/run_polymlp.py --properties --pot polymlp.lammps --vaspruns vaspruns/vasprun.xml.polymlp.*
+> $(pypolymlp)/run_polymlp.py --properties --pot polymlp.lammps --phono3py_yaml phono3py_params_wurtzite_AgI.yaml.xz
+```
 
-> cat polymlp.in
+## Computation of polynomial structural features
 
-    n_type 2
-    elements Mg O
+```
+> $(pypolymlp)/run_polymlp.py --features --pot polymlp.lammps --poscars */POSCAR
+> $(pypolymlp)/run_polymlp.py --features -i polymlp.in --poscars */POSCAR
+```
 
-    feature_type gtinv
-    cutoff 8.0
-    model_type 3
-    max_p 2
+## Computation of force constants 
+(phonopy, phono3py, and symfc are required.)
 
-    gtinv_order 3
-    gtinv_maxl 4 4
-
-    gaussian_params1 1.0 1.0 1
-    gaussian_params2 0.0 7.0 8
+```
+> $(pypolymlp)/run_polymlp.py --force_constants --pot polymlp.lammps --phono3py_yaml phono3py_params_wurtzite_AgI.yaml.xz
 
 ```
 
-## Structure dataset generation using a random-displacement procedure
+## Generation of random structures 
 
 ```
-> $(pypolymlp)/stgen/structure_generator.py -p ideals/poscar-* --n_structures 50 5 --max_disp 0.5 1.5
+> $(pypolymlp)/str_gen/structure_generator.py -p ideals/poscar-* --n_structures 50 5 --max_disp 0.5 1.5
 
 ```
