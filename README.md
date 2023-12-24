@@ -68,7 +68,6 @@
 
     include_force True
     include_stress True
-
 ```
 
 ### MLP development using a memory-efficient sequential implementation
@@ -124,7 +123,6 @@
     
     gaussian_params1 1.0 1.0 1
     gaussian_params2 0.0 3.0 4
-    
 ```
 
 ## Calculators
@@ -149,12 +147,10 @@
 
 ```
 > $(pypolymlp)/run_polymlp.py --force_constants --pot polymlp.lammps --phono3py_yaml phono3py_params_wurtzite_AgI.yaml.xz
-
 ```
 
 ## Generation of random structures 
 
 ```
 > $(pypolymlp)/str_gen/structure_generator.py -p ideals/poscar-* --n_structures 50 5 --max_disp 0.5 1.5
-
 ```
