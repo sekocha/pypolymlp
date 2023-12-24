@@ -91,11 +91,26 @@ if __name__ == '__main__':
     '''
     energies, forces, stresses = compute_properties(args.pot, structures)
     stresses_gpa = convert_stresses_in_gpa(stresses, structures)
-    np.set_printoptions(suppress=True)
 
-    print(energies)
-    #print(stresses_gpa)
-    #for f in forces:
-    #    print(f)
+    np.set_printoptions(suppress=True)
+    np.save('polymlp_energies.npy', energies)
+    np.save('polymlp_forces.npy', forces)
+    np.save('polymlp_stress_tensors.npy', stresses_gpa)
+
+    if len(forces) == 1:
+        print(' energy =', energies[0], '(eV/cell)')
+        print(' forces =')
+        for i, f in enumerate(forces[0].T):
+            print('  - atom', i, ":", f)
+        stress = stresses_gpa[0]
+        print(' stress tensors =')
+        print('  - xx, yy, zz:', stress[0:3])
+        print('  - xy, yz, zx:', stress[3:6])
+        print('---------')
+        print(' polymlp_energies.npy, polymlp_forces.npy,',
+              'and polymlp_stress_tensors.npy are generated.')
+    else:
+        print(' polymlp_energies.npy, polymlp_forces.npy,',
+              'and polymlp_stress_tensors.npy are generated.')
 
 
