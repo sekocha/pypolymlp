@@ -25,10 +25,6 @@ class StructureOperations:
             self.elements = structure.elements
             self.types = structure.types
 
-#        elif format_init == 'lammps':
-#        elif format_init == 'poscar_class':
-#        elif format_init == 'lammps_class':
-
     def expand(self, eps=1.0):
         eps1 = pow(eps, 0.3333333333333)
         self.axis *= eps1
