@@ -5,9 +5,7 @@ import sys
 import argparse
 from collections import defaultdict
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/../c++/lib')
-import mlpcpp
-
+from pypolymlp.cxx.lib import mlpcpp
 from pypolymlp.core.parser_polymlp_params import ParamsParser
 
 def get_features_attr(params_dict, element_swap=False):

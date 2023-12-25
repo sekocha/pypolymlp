@@ -6,9 +6,7 @@ import glob
 import itertools
 from distutils.util import strtobool
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/../c++/lib')
-import mlpcpp
-
+from pypolymlp.cxx.lib import mlpcpp
 from pypolymlp.core.parser_infile import InputParser
 
 class ParamsParser:

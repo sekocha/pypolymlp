@@ -30,7 +30,7 @@ from pypolymlp.calculator.compute_properties import convert_stresses_in_gpa
 from pypolymlp.calculator.compute_properties import compute_properties
 
 
-if __name__ == '__main__':
+def run():
 
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
@@ -157,3 +157,5 @@ if __name__ == '__main__':
 
     ''' todo: args.strgen should be implemented.'''
 
+if __name__ == '__main__':
+    run()

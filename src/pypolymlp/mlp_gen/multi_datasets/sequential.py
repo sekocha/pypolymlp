@@ -4,8 +4,7 @@ import os
 import sys
 import copy
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/../c++/lib')
-import mlpcpp
+from pypolymlp.cxx.lib import mlpcpp
 
 from pypolymlp.mlp_gen.features import Features
 from pypolymlp.mlp_gen.precondition import apply_atomic_energy

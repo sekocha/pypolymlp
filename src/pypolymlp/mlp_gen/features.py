@@ -3,8 +3,7 @@ import numpy as np
 import os
 import sys
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/../c++/lib')
-import mlpcpp
+from pypolymlp.cxx.lib import mlpcpp
 
 def structures_to_mlpcpp_obj(structures):
     axis_array = [st['axis'] for st in structures]

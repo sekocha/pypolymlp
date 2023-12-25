@@ -4,9 +4,7 @@ import os
 import sys
 from distutils.util import strtobool
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/../c++/lib')
-import mlpcpp
-
+from pypolymlp.cxx.lib import mlpcpp
 from pypolymlp.core.utils import mass_table
 
 def print_param(dict1, key, fstream, prefix=''):

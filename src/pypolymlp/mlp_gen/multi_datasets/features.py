@@ -3,9 +3,7 @@ import numpy as np
 import os
 import sys
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/../c++/lib')
-import mlpcpp
-
+from pypolymlp.cxx.lib import mlpcpp
 from pypolymlp.mlp_gen.features import structures_to_mlpcpp_obj
 
 def multiple_dft_dicts_to_mlpcpp_obj(multiple_dft_dicts):
