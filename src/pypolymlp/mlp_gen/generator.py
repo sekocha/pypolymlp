@@ -4,6 +4,8 @@ import argparse
 import signal
 import time
 
+import pypolymlp.core.interface_vasp
+print(pypolymlp.core.interface_vasp.__file__)
 from pypolymlp.core.interface_vasp import parse_vaspruns
 from pypolymlp.core.parser_polymlp_params import ParamsParser
 from pypolymlp.core.io_polymlp import save_mlp_lammps
