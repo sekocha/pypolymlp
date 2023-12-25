@@ -84,32 +84,63 @@ def remove(st_dict, idx):
     st_dict['types'] = np.delete(st_dict['types'], range(begin, end))
     return st_dict
 
-'''
-def element_permutation(self, order=None, index1=None, index2=None):
+def reorder(st_dict, order=None, index1=None, index2=None):
 
-        if order is None:
-            order = list(range(len(self.n_atoms)))
-            order[index1], order[index2] = order[index2], order[index1]
+    if order is None:
+        order = list(range(len(st_dict['n_atoms'])))
+        order[index1], order[index2] = order[index2], order[index1]
 
-        positions, n_atoms, types, elements = [], [], [], []
-        for i in order:
-            begin = int(np.sum(self.n_atoms[:i]))
-            end = int(begin+self.n_atoms[i])
-            n_atoms.append(self.n_atoms[i])
-            positions.extend(self.positions.T[begin:end])
-            types.extend(self.types[begin:end])
-            elements.extend(self.elements[begin:end])
+    positions, n_atoms, types, elements = [], [], [], []
+    for i in order:
+        n_atoms.append(st_dict['n_atoms'][i])
+        begin = int(np.sum(st_dict['n_atoms'][:i]))
+        end = int(begin + st_dict['n_atoms'][i])
+        positions.extend(st_dict['positions'].T[begin:end])
+        elements.extend(st_dict['elements'][begin:end])
+        types.extend(st_dict['types'][begin:end])
 
-        self.n_atoms, self.types = n_atoms, types
-        self.elements = elements
-        self.positions = np.array(positions).T
-'''
+    st_dict['n_atoms'] = np.array(n_atoms)
+    st_dict['elements'] = np.array(elements)
+    st_dict['types'] = np.array(types)
+    st_dict['positions'] = np.array(positions).T
+    return st_dict
+
+def swap_elements(st_dict, order=None, index1=None, index2=None):
+    ''' Orders of element and type orders are fixed. 
+        Orders of positions, n_atoms are swapped.'''
+    if order is None:
+        order = list(range(len(st_dict['n_atoms'])))
+        order[index1], order[index2] = order[index2], order[index1]
+
+    uniq_ele = []
+    for i, n in enumerate(st_dict['n_atoms']):
+        begin = int(np.sum(st_dict['n_atoms'][:i]))
+        uniq_ele.append(st_dict['elements'][begin])
+
+    positions, n_atoms, types, elements = [], [], [], []
+    for t, i in enumerate(order):
+        n_atoms.append(st_dict['n_atoms'][i])
+        begin = int(np.sum(st_dict['n_atoms'][:i]))
+        end = int(begin + st_dict['n_atoms'][i])
+        positions.extend(st_dict['positions'].T[begin:end])
+
+        elements.extend([uniq_ele[t] for n in range(st_dict['n_atoms'][i])])
+        types.extend([t for n in range(st_dict['n_atoms'][i])])
+
+    st_dict['n_atoms'] = np.array(n_atoms)
+    st_dict['elements'] = np.array(elements)
+    st_dict['types'] = np.array(types)
+    st_dict['positions'] = np.array(positions).T
+    return st_dict
+
 
 if __name__ == '__main__':
 
     st_dict = Poscar(sys.argv[1]).get_structure()
     st_dict = supercell_diagonal(st_dict)
-    st_dict = remove(st_dict, 1)
+    #st_dict = remove(st_dict, 1)
+    #st_dict = reorder(st_dict, order=[1,0])
+    st_dict = swap_elements(st_dict, order=[1,0])
     print_poscar(st_dict)
 
 
