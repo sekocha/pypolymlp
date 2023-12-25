@@ -15,7 +15,7 @@ setup(
     description="This is the pypolymlp module.",
     author="Atsuto Seko",
     author_email="seko@cms.mtl.kyoto-u.ac.jp",
-    install_requires=["numpy", "scipy", "phonopy", "spglib"],
+    install_requires=["numpy", "scipy"],
     provides=["pypolymlp"],
     platforms=["all"],
     entry_points={
