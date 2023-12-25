@@ -251,7 +251,6 @@ class Chg:
     def get_volume(self):
         return self.vol
 
-
 def read_doscar(name):
     f = open(name)
     lines = f.readlines()
@@ -264,4 +263,14 @@ def read_doscar(name):
         vals = [float(str1[0]) - e_fermi, float(str1[1])]
         dos.append(vals)
     return np.array(dos)
+
+def parse_energy_volume(vaspruns):
+    
+    ev_data = []
+    for vasprun_file in vaspruns:
+        vasp = Vasprun(vasprun_file)
+        energy = vasp.get_energy()
+        vol = vasp.get_structure()['volume']
+        ev_data.append([vol, energy])
+    return np.array(ev_data)
 
