@@ -9,8 +9,8 @@
 
 - numpy
 - scipy
-- Eigen3
-- pybind11
+- Eigen3 (if building pypolymlp)
+- pybind11 (if building pypolymlp)
 - phonopy (if using phonon datasets and/or computing force constants)
 - phono3py (if using phonon datasets and/or computing force constants)
 - symfc (if computing force constants)

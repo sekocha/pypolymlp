@@ -1,12 +1,15 @@
 """Setup script."""
 import setuptools
 from setuptools import setup
-import os
+import os, glob
 import shutil
 
 ''' temporary codes '''
 os.makedirs('./build/bdist.linux-x86_64/wheel/pypolymlp/cxx/lib', exist_ok=True)
-shutil.copy('./src/pypolymlp/cxx/lib/libmlpcpp.so', './build/bdist.linux-x86_64/wheel/pypolymlp/cxx/lib')
+for file1 in glob.glob('./src/pypolymlp/cxx/lib/*.so'):
+    shutil.copy(file1, './build/bdist.linux-x86_64/wheel/pypolymlp/cxx/lib')
+
+#shutil.copy('./src/pypolymlp/cxx/lib/libmlpcpp.so', './build/bdist.linux-x86_64/wheel/pypolymlp/cxx/lib')
 
 setup(
     name="pypolymlp",

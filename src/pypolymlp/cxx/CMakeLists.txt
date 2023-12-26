@@ -21,22 +21,30 @@ set ( SRC_FILES
 )
 message(STATUS ${CMAKE_SOURCE_DIR})
 
-add_library(mlpcpp SHARED ${SRC_FILES})
-
-target_compile_options(mlpcpp PUBLIC -O3 -Wno-deprecated -fopenmp)
-target_compile_features(mlpcpp PUBLIC cxx_std_11)
-
 find_package(pybind11 REQUIRED)
 find_package(Eigen3 REQUIRED) # not found
 
-target_include_directories(mlpcpp
+#add_library(mlpcpp SHARED ${SRC_FILES})
+
+set ( PYBIND11_PYTHON_VERSION 
+    3.8 3.9 3.10 3.11
+)
+pybind11_add_module(libmlpcpp ${SRC_FILES})
+
+target_compile_options(libmlpcpp PUBLIC -O3 -Wno-deprecated -fopenmp)
+target_compile_features(libmlpcpp PUBLIC cxx_std_11)
+
+target_include_directories(libmlpcpp
   PUBLIC ${CMAKE_SOURCE_DIR}/src
   PUBLIC ${pybind11_INCLUDE_DIRS}
   PUBLIC ${Eigen3_INCLUDE_DIRS}
   PUBLIC $ENV{CONDA_PREFIX}/include/eigen3
   )
 
-target_link_libraries(mlpcpp PUBLIC -lgomp)
+target_link_libraries(libmlpcpp PUBLIC -lgomp)
 
-install(TARGETS mlpcpp LIBRARY DESTINATION ${CMAKE_SOURCE_DIR}/lib)
+install( TARGETS libmlpcpp 
+    COMPONENT python
+    LIBRARY DESTINATION ${CMAKE_SOURCE_DIR}/lib
+)
 
