@@ -4,7 +4,7 @@ import os
 import sys
 from distutils.util import strtobool
 
-from pypolymlp.cxx.lib import mlpcpp
+from pypolymlp.cxx.lib import libmlpcpp
 from pypolymlp.core.utils import mass_table
 
 def print_param(dict1, key, fstream, prefix=''):
@@ -102,10 +102,10 @@ def load_mlp_lammps(filename='polymlp.lammps'):
         gtinv_dict['order'] = __read_var(f)
         gtinv_dict['max_l'] = __read_var(f, return_list=True)
         gtinv_dict['sym'] = __read_var(f, strtobool, return_list=True)
-        rgi = mlpcpp.Readgtinv(gtinv_dict['order'],
-                               gtinv_dict['max_l'],
-                               gtinv_dict['sym'],
-                               params_dict['n_type'])
+        rgi = libmlpcpp.Readgtinv(gtinv_dict['order'],
+                                  gtinv_dict['max_l'],
+                                  gtinv_dict['sym'],
+                                  params_dict['n_type'])
         gtinv_dict['lm_seq'] = rgi.get_lm_seq()
         gtinv_dict['l_comb'] = rgi.get_l_comb()
         gtinv_dict['lm_coeffs'] = rgi.get_lm_coeffs()

@@ -25,7 +25,7 @@ source = polymlp_gtinv_data.o polymlp_read_gtinv.o polymlp_basis_function.o \
 all: mkdir $(addprefix lib/,$(source))
 
 	$(loader) $(ldflags) -shared $(addprefix lib/,$(source)) \
-        -o lib/mlpcpp.so $(libs)
+        -o lib/libmlpcpp.so $(libs)
 
 mkdir: 
 	@if [ ! -d lib ]; then \

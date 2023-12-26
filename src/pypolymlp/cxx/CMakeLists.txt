@@ -38,6 +38,5 @@ target_include_directories(mlpcpp
 
 target_link_libraries(mlpcpp PUBLIC -lgomp)
 
-
-
+install(TARGETS mlpcpp LIBRARY DESTINATION ${CMAKE_SOURCE_DIR}/lib)
 

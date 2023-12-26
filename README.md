@@ -11,8 +11,8 @@
 - scipy
 - Eigen3
 - pybind11
-- phonopy (if using phonon detasets and/or computing force constants)
-- phono3py (if using phonon detasets and/or computing force constants)
+- phonopy (if using phonon datasets and/or computing force constants)
+- phono3py (if using phonon datasets and/or computing force constants)
 - symfc (if computing force constants)
 - spglib (optional)
 - joblib (optional)
@@ -32,12 +32,23 @@ conda install numpy scipy
 > conda install -c conda-forge spglib
 ```
 
-## Building a shared library (mlpcpp) required for pypolymlp
+## Building a shared library (libmlpcpp.so)
 
 ```
 > cd $(pypolymlp)/src/pypolymlp/cxx
 > make
 ```
+or
+```
+> (conda install -c anaconda cmake)
+
+> cd $(pypolymlp)/src/pypolymlp/cxx
+> cmake -S . -B build
+> cmake --build build
+> cd build
+> make install
+```
+
 
 ## Install pypolymlp using pip
 

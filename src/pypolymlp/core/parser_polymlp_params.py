@@ -6,7 +6,7 @@ import glob
 import itertools
 from distutils.util import strtobool
 
-from pypolymlp.cxx.lib import mlpcpp
+from pypolymlp.cxx.lib import libmlpcpp
 from pypolymlp.core.parser_infile import InputParser
 
 class ParamsParser:
@@ -95,10 +95,10 @@ class ParamsParser:
                     gtinv_dict['max_l'].append(2)
 
             gtinv_sym = [False for i in range(size)]
-            rgi = mlpcpp.Readgtinv(gtinv_dict['order'],
-                                   gtinv_dict['max_l'],
-                                   gtinv_sym,
-                                   n_type)
+            rgi = libmlpcpp.Readgtinv(gtinv_dict['order'],
+                                      gtinv_dict['max_l'],
+                                      gtinv_sym,
+                                      n_type)
             gtinv_dict['lm_seq'] = rgi.get_lm_seq()
             gtinv_dict['l_comb'] = rgi.get_l_comb()
             gtinv_dict['lm_coeffs'] = rgi.get_lm_coeffs()

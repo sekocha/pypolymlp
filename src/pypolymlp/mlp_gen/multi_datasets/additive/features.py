@@ -3,7 +3,7 @@ import numpy as np
 import os
 import sys
 
-from pypolymlp.cxx.lib import mlpcpp
+from pypolymlp.cxx.lib import libmlpcpp
 from pypolymlp.mlp_gen.multi_datasets.features import (
     multiple_dft_dicts_to_mlpcpp_obj
 )
@@ -24,13 +24,13 @@ class Features:
             params_dict['element_swap'] = element_swap
             params_dict['print_memory'] = print_memory
 
-        obj = mlpcpp.PotentialAdditiveModel(multiple_params_dicts,
-                                            axis_array, 
-                                            positions_c_array, 
-                                            types_array, 
-                                            n_st_dataset, 
-                                            force_dataset, 
-                                            n_atoms_sum_array)
+        obj = libmlpcpp.PotentialAdditiveModel(multiple_params_dicts,
+                                               axis_array, 
+                                               positions_c_array, 
+                                               types_array, 
+                                               n_st_dataset, 
+                                               force_dataset, 
+                                               n_atoms_sum_array)
  
         self.x = obj.get_x()
         self.fbegin, self.sbegin = obj.get_fbegin(), obj.get_sbegin()

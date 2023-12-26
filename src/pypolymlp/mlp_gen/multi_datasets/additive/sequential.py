@@ -3,7 +3,6 @@ import numpy as np
 import os
 import sys
 
-from pypolymlp.cxx.lib import mlpcpp
 from pypolymlp.mlp_gen.multi_datasets.additive.features import Features
 from pypolymlp.mlp_gen.precondition import apply_atomic_energy
 from pypolymlp.mlp_gen.precondition import apply_weight_percentage

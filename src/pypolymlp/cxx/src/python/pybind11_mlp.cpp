@@ -23,7 +23,7 @@
 
 #include "pybind11_mlp.h"
 
-PYBIND11_MODULE(mlpcpp, m) {
+PYBIND11_MODULE(libmlpcpp, m) {
 
     py::class_<PyModel>(m, "PotentialModel")
         .def(py::init<const py::dict&,

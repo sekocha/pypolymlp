@@ -5,13 +5,13 @@ import sys
 import argparse
 from collections import defaultdict
 
-from pypolymlp.cxx.lib import mlpcpp
+from pypolymlp.cxx.lib import libmlpcpp
 from pypolymlp.core.parser_polymlp_params import ParamsParser
 
 def get_features_attr(params_dict, element_swap=False):
 
     params_dict['element_swap'] = element_swap
-    obj = mlpcpp.FeaturesAttr(params_dict)
+    obj = libmlpcpp.FeaturesAttr(params_dict)
 
     type_comb_pair = obj.get_type_comb_pair()
     atomtype_pair_dict = defaultdict(list)
