@@ -12,11 +12,27 @@ from pypolymlp.utils.phonopy_utils import (
 from pypolymlp.utils.displacements_utils import generate_random_displacements
 
 from pypolymlp.calculator.compute_properties import compute_properties
-from pypolymlp.symfc_dev.basis_set_O2 import run_fc2, recover_fc2
-from pypolymlp.symfc_dev.basis_set_O3 import run_fc3, recover_fc3
-from pypolymlp.symfc_dev.solver_O2O3 import run_solver_sparse_O2O3
+from symfc.basis_sets.basis_sets_O2 import FCBasisSetO2
+from symfc.basis_sets.basis_sets_O3 import FCBasisSetO3
+from symfc.solvers.solver_O2O3 import run_solver_sparse_O2O3
 
 from phono3py.file_IO import write_fc2_to_hdf5, write_fc3_to_hdf5
+
+def recover_fc2(coefs, compress_mat, compress_eigvecs, N):
+    n_a = compress_mat.shape[0] // (9*N)
+    fc2 = compress_eigvecs @ coefs
+    fc2 = (compress_mat @ fc2).reshape((n_a,N,3,3))
+    #fc2 = compress_eigvecs @ coefs
+    #fc2 = (compress_mat @ fc2).reshape((N,N,3,3))
+    return fc2
+
+def recover_fc3(coefs, compress_mat, compress_eigvecs, N):
+    #fc3 = compress_eigvecs @ coefs
+    #fc3 = (compress_mat @ fc3).reshape((N,N,N,3,3,3))
+    n_a = compress_mat.shape[0] // (27*(N**2))
+    fc3 = compress_eigvecs @ coefs
+    fc3 = (compress_mat @ fc3).reshape((n_a,N,N,3,3,3))
+    return fc3
 
 def compute_fcs(pot, 
                 phono3py_yaml=None, 
@@ -50,9 +66,16 @@ def compute_fcs(pot,
     forces = forces.reshape((n_data, -1))
 
     ''' Constructing fc2 basis and fc3 basis '''
-    compress_mat_fc2, compress_eigvecs_fc2 = run_fc2(supercell, mkl=False)
+
+    fc2_basis = FCBasisSetO2(supercell, use_mkl=False).run()
+    compress_mat_fc2 = fc2_basis.compression_matrix
+    compress_eigvecs_fc2 = fc2_basis.basis_set
+    #compress_mat_fc2, compress_eigvecs_fc2 = run_fc2(supercell, mkl=False)
     t1 = time.time()
-    compress_mat_fc3, compress_eigvecs_fc3  = run_fc3(supercell, mkl=True)
+    fc3_basis = FCBasisSetO3(supercell, use_mkl=True).run()
+    compress_mat_fc3 = fc3_basis.compression_matrix
+    compress_eigvecs_fc3 = fc3_basis.basis_set
+    #compress_mat_fc3, compress_eigvecs_fc3  = run_fc3(supercell, mkl=True)
     t2 = time.time()
     print(' elapsed time (basis fc3) =', t2-t1)
 

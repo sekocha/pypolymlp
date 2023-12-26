@@ -38,7 +38,7 @@ def run():
     parser.add_argument('-i', '--infile', 
                         nargs='*',
                         type=str, 
-                        default=['polymlp.in'],
+                        default=None,
                         help='Input file name')
     parser.add_argument('--sequential', 
                         action='store_true',
@@ -75,8 +75,7 @@ def run():
 
 
 
-    if (args.features == False and args.properties == False 
-        and args.force_constants == False):
+    if args.infile is not None:
         if len(args.infile) == 1:
             infile = args.infile[0]
             params_dict = ParamsParser(infile).get_params()
@@ -137,12 +136,12 @@ def run():
             print(' polymlp_energies.npy, polymlp_forces.npy,',
                   'and polymlp_stress_tensors.npy are generated.')
 
-    if args.force_constants:
+    elif args.force_constants:
         from pypolymlp.calculator.compute_fcs import compute_fcs
         print('Mode: Force constant calculations')
         compute_fcs(args.pot, phono3py_yaml=args.phono3py_yaml)
 
-    if args.features:
+    elif args.features:
         print('Mode: Feature matrix calculations')
         structures = parse_structures_from_poscars(args.poscars)
         if args.pot is not None:
