@@ -30,7 +30,7 @@ conda install numpy scipy
 ## Building a shared library (mlpcpp) required for pypolymlp
 
 ```
-> cd $(pypolymlp)/cxx
+> cd $(pypolymlp)/src/pypolymlp/cxx
 > make
 ```
 
