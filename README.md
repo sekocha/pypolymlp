@@ -17,7 +17,7 @@
 - spglib (optional)
 - joblib (optional)
 
-## Installing pypolymlp using pip
+## Installing pypolymlp using pip package
 
 - Intel Linux
 - Compatible with python 3.9, 3.10, and 3.11
