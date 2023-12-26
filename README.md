@@ -1,5 +1,10 @@
 # A generator of polynomial machine learning potentials
 
+## Polynomial machine learning potentials
+
+- [Polynomial machine learning potential repository](http://cms.mtl.kyoto-u.ac.jp/seko/mlp-repository/index.html)
+- [A. Seko, J. Appl. Phys. 133, 011101 (2023)](https://doi.org/10.1063/5.0129045)
+
 ## Required libraries and python modules
 
 - numpy
