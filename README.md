@@ -17,7 +17,19 @@
 - spglib (optional)
 - joblib (optional)
 
-## Conda package management system
+## Installing pypolymlp using pip
+
+- Intel Linux
+- Compatible with python 3.9, 3.10, and 3.11
+
+```
+> pip install $(pypolymlp)/dist/pypolymlp-0.1-py3-none-any.whl
+```
+
+## Manually installing pypolymlp
+
+### Conda package management system
+
 ```
 > conda create -n pypolymlp 
 > conda activate pypolymlp
@@ -32,7 +44,7 @@ conda install numpy scipy
 > conda install -c conda-forge spglib
 ```
 
-## Building a shared library (libmlpcpp.so)
+### Building a shared library (libmlpcpp)
 
 ```
 > cd $(pypolymlp)/src/pypolymlp/cxx
@@ -49,8 +61,7 @@ or
 > make install
 ```
 
-
-## Install pypolymlp using pip
+### Install pypolymlp using pip
 
 ```
 > cd $(pypolymlp)
