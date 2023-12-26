@@ -17,6 +17,7 @@
 > conda create -n pypolymlp 
 > conda activate pypolymlp
 
+conda install numpy scipy
 > conda install -c conda-forge pybind11
 > conda install -c omnia eigen3
 (optional)
@@ -29,14 +30,21 @@
 ## Building a shared library (mlpcpp) required for pypolymlp
 
 ```
-> cd $(pypolymlp)/c++
+> cd $(pypolymlp)/cxx
 > make
+```
+
+## Install pypolymlp using pip
+
+```
+> cd $(pypolymlp)
+> pip install .
 ```
 
 ## MLP development 
 
 ```
-> $(pypolymlp)/run_polymlp.py -i polymlp.in
+> pypolymlp -i polymlp.in
 > cat polymlp.in
 
     n_type 2
@@ -73,13 +81,13 @@
 ### MLP development using a memory-efficient sequential implementation
 
 ```
-> $(pypolymlp)/run_polymlp.py -i polymlp.in --sequential
+> pypolymlp -i polymlp.in --sequential
 ```
 
 ### MLP development using additive models
 
 ```
-> $(pypolymlp)/run_polymlp.py -i polymlp1.in polymlp2.in (--sequential)
+> pypolymlp -i polymlp1.in polymlp2.in (--sequential)
 > cat polymlp1.in
 
     n_type 2
@@ -130,27 +138,28 @@
 ### Computation of properties (energies, forces, and stress tensors)
 
 ```
-> $(pypolymlp)/run_polymlp.py --properties --pot polymlp.lammps --poscars */POSCAR
-> $(pypolymlp)/run_polymlp.py --properties --pot polymlp.lammps --vaspruns vaspruns/vasprun.xml.polymlp.*
-> $(pypolymlp)/run_polymlp.py --properties --pot polymlp.lammps --phono3py_yaml phono3py_params_wurtzite_AgI.yaml.xz
+> pypolymlp --properties --pot polymlp.lammps --poscars */POSCAR
+> pypolymlp --properties --pot polymlp.lammps --vaspruns vaspruns/vasprun.xml.polymlp.*
+> pypolymlp --properties --pot polymlp.lammps --phono3py_yaml phono3py_params_wurtzite_AgI.yaml.xz
 ```
 
 ### Computation of polynomial structural features
 
 ```
-> $(pypolymlp)/run_polymlp.py --features --pot polymlp.lammps --poscars */POSCAR
-> $(pypolymlp)/run_polymlp.py --features -i polymlp.in --poscars */POSCAR
+> pypolymlp --features --pot polymlp.lammps --poscars */POSCAR
+> pypolymlp --features -i polymlp.in --poscars */POSCAR
 ```
 
 ### Computation of force constants 
 (phonopy, phono3py, and symfc are required.)
 
 ```
-> $(pypolymlp)/run_polymlp.py --force_constants --pot polymlp.lammps --phono3py_yaml phono3py_params_wurtzite_AgI.yaml.xz
+> pypolymlp --force_constants --pot polymlp.lammps --phono3py_yaml phono3py_params_wurtzite_AgI.yaml.xz
 ```
-
+<!--
 ## Generation of random structures 
 
 ```
 > $(pypolymlp)/str_gen/structure_generator.py -p ideals/poscar-* --n_structures 50 5 --max_disp 0.5 1.5
 ```
+-->
