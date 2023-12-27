@@ -34,14 +34,13 @@
 > conda create -n pypolymlp 
 > conda activate pypolymlp
 
-conda install numpy scipy
+> conda install numpy scipy
 > conda install -c conda-forge pybind11
-> conda install -c omnia eigen3
+> conda install -c conda-forge eigen
 (optional)
-> conda install -c anaconda joblib
-> conda install -c conda-forge phonopy
-> conda install -c conda-forge phono3py
 > conda install -c conda-forge spglib
+> conda install -c conda-forge phonopy phono3py
+> conda install -c conda-forge joblib
 ```
 
 ### Building a shared library (libmlpcpp)
