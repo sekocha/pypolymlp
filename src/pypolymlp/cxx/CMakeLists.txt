@@ -22,9 +22,11 @@ set ( SRC_FILES
 message(STATUS ${CMAKE_SOURCE_DIR})
 
 find_package(pybind11 REQUIRED)
-find_package(Eigen3 REQUIRED) # not found
 
-#add_library(mlpcpp SHARED ${SRC_FILES})
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
+find_package(Eigen3 REQUIRED)
+include_directories(${EIGEN3_INCLUDE_DIR})
+message(STATUS ${Eigen3_INCLUDE_DIRS})
 
 set ( PYBIND11_PYTHON_VERSION 
     3.8 3.9 3.10 3.11
@@ -38,7 +40,8 @@ target_include_directories(libmlpcpp
   PUBLIC ${CMAKE_SOURCE_DIR}/src
   PUBLIC ${pybind11_INCLUDE_DIRS}
   PUBLIC ${Eigen3_INCLUDE_DIRS}
-  PUBLIC $ENV{CONDA_PREFIX}/include/eigen3
+  PUBLIC ${EIGEN_INCLUDE}
+  #PUBLIC $ENV{CONDA_PREFIX}/include/eigen3
   )
 
 target_link_libraries(libmlpcpp PUBLIC -lgomp)
