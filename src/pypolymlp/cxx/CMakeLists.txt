@@ -26,7 +26,7 @@ find_package(pybind11 REQUIRED)
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
 find_package(Eigen3 REQUIRED)
 include_directories(${EIGEN3_INCLUDE_DIR})
-message(STATUS ${Eigen3_INCLUDE_DIRS})
+message(STATUS ${EIGEN3_INCLUDE_DIR})
 
 set ( PYBIND11_PYTHON_VERSION 
     3.8 3.9 3.10 3.11
@@ -39,9 +39,7 @@ target_compile_features(libmlpcpp PUBLIC cxx_std_11)
 target_include_directories(libmlpcpp
   PUBLIC ${CMAKE_SOURCE_DIR}/src
   PUBLIC ${pybind11_INCLUDE_DIRS}
-  PUBLIC ${Eigen3_INCLUDE_DIRS}
-  PUBLIC ${EIGEN_INCLUDE}
-  #PUBLIC $ENV{CONDA_PREFIX}/include/eigen3
+  PUBLIC ${EIGEN3_INCLUDE_DIR}
   )
 
 target_link_libraries(libmlpcpp PUBLIC -lgomp)
