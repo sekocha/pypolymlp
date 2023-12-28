@@ -12,10 +12,18 @@ from pypolymlp.utils.yaml_utils import save_cells
 def run_strgen_phonon(filename, 
                       supercell_size=[2,2,2],
                       n_samples=20,
-                      displacements=0.03):
+                      displacements=0.03,
+                      use_phonopy=True):
 
     unitcell = Poscar(filename).get_structure()
-    supercell = supercell_diagonal(unitcell, size=supercell_size)
+    if use_phonopy:
+        from pypolymlp.utils.phonopy_utils import phonopy_supercell
+        supercell = phonopy_supercell(unitcell, 
+                                      supercell_diag=supercell_size,
+                                      return_phonopy=False)
+    else:
+        supercell = supercell_diagonal(unitcell, size=supercell_size)
+
     _, st_dicts = generate_random_displacements(supercell, 
                                                 n_samples=n_samples,
                                                 displacements=displacements)

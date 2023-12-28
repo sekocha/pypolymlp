@@ -66,8 +66,6 @@ def compute_fcs(pot,
     elif phono3py_yaml is not None:
         supercell, disps, st_dicts = parse_phono3py_yaml_fcs(phono3py_yaml)
 
-    print(supercell)
-
     ''' disps: (n_str, 3, n_atom) --> (n_str, n_atom, 3)'''
     disps = disps.transpose((0,2,1)) 
 
@@ -75,7 +73,6 @@ def compute_fcs(pot,
     ''' forces: (n_str, 3, n_atom) --> (n_str, n_atom, 3)'''
     _, forces, _ = compute_properties(pot, st_dicts)
     forces = np.array(forces).transpose((0,2,1)) 
-    print(forces)
     t2 = time.time()
     print(' elapsed time (computing forces) =', t2-t1)
 
@@ -84,17 +81,16 @@ def compute_fcs(pot,
     forces = forces.reshape((n_data, -1))
 
     ''' Constructing fc2 basis and fc3 basis '''
-
+    t1 = time.time()
     fc2_basis = FCBasisSetO2(supercell, use_mkl=False).run()
     compress_mat_fc2 = fc2_basis.compression_matrix
     compress_eigvecs_fc2 = fc2_basis.basis_set
 
-    t1 = time.time()
     fc3_basis = FCBasisSetO3(supercell, use_mkl=True).run()
     compress_mat_fc3 = fc3_basis.compression_matrix
     compress_eigvecs_fc3 = fc3_basis.basis_set
     t2 = time.time()
-    print(' elapsed time (basis fc3) =', t2-t1)
+    print(' elapsed time (basis sets for fc2 and fc3) =', t2-t1)
 
     ''' Solving fc3 using run_solver_sparse '''
     print('-----')
@@ -109,8 +105,6 @@ def compute_fcs(pot,
                                                   batch_size=200)
     t2 = time.time()
     print(' elapsed time (solve fc2 + fc3) =', t2-t1)
-    print(coefs_fc2)
-    print(coefs_fc3)
 
     fc2 = recover_fc2(coefs_fc2, compress_mat_fc2, compress_eigvecs_fc2, N)
     fc3 = recover_fc3(coefs_fc3, compress_mat_fc3, compress_eigvecs_fc3, N)

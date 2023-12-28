@@ -68,30 +68,6 @@ def parse_phono3py_yaml(yaml_filename,
         return dft_dict, disps
     return dft_dict
 
-#''' not restricted to phono3py'''
-#def get_structures_from_multiple_positions(st_dict, positions_all):
-#    ''' positions_all: (n_str, 3, n_atom)'''
-#    st_dicts = []
-#    for positions_iter in positions_all:
-#        st = dict()
-#        st['axis'] = st_dict['axis']
-#        st['positions'] = positions_iter
-#        st['n_atoms'] = st_dict['n_atoms']
-#        st['elements'] = st_dict['elements']
-#        st['types'] = st_dict['types']
-#        st['volume'] = st_dict['volume']
-#        st_dicts.append(st)
-#    return st_dicts
-#
-#''' not restricted to phono3py'''
-#def get_structures_from_displacements(disps, st_dict):
-#    ''' disps: (n_str, 3, n_atoms)'''
-#    positions_all = convert_disps_to_positions(disps, 
-#                                               st_dict['axis'], 
-#                                               st_dict['positions'])
-#    st_dicts = get_structures_from_multiple_positions(st_dict, positions_all)
-#    return st_dicts
-
 def parse_structures_from_phono3py_yaml(phono3py_yaml):
 
     ph3 = Phono3pyYaml(phono3py_yaml)
@@ -129,6 +105,7 @@ class Phono3pyYaml:
                 self.st_dict['axis'], 
                 self.st_dict['positions']
         )
+        print(ph3.unitcell)
 
     def get_phonon_dataset(self):
         ''' displacements: (n_samples, 3, n_atom)
