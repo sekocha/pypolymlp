@@ -1,15 +1,20 @@
 #!/usr/bin/env python 
 import numpy as np
 import argparse
+import signal
 import time
 
 from pypolymlp.core.interface_phono3py import parse_phono3py_yaml_fcs
 from pypolymlp.core.interface_vasp import Poscar
+from pypolymlp.utils.yaml_utils import load_cells
 from pypolymlp.utils.phonopy_utils import (
         phonopy_supercell,
         phonopy_cell_to_st_dict,
+        st_dict_to_phonopy_cell,
 )
-from pypolymlp.utils.displacements_utils import generate_random_displacements
+from pypolymlp.utils.displacements_utils import (
+    generate_random_const_displacements
+)
 
 from pypolymlp.calculator.compute_properties import compute_properties
 from symfc.basis_sets.basis_sets_O2 import FCBasisSetO2
@@ -38,22 +43,7 @@ def recover_fc3(coefs, compress_mat, compress_eigvecs, N):
     fc3 = (compress_mat @ fc3).reshape((n_a,N,N,3,3,3))
     return fc3
 
-def compute_fcs(pot, 
-                phono3py_yaml=None, 
-                st_dict=None, 
-                supercell_matrix=None,
-                n_samples=100,
-                displacements=0.03):
-
-    if phono3py_yaml is not None:
-        supercell, disps, st_dicts = parse_phono3py_yaml_fcs(phono3py_yaml)
-    elif st_dict is not None:
-        supercell = phonopy_supercell(st_dict, supercell_matrix)
-        disps, st_dicts = generate_random_displacements(
-                phonopy_cell_to_st_dict(supercell),
-                n_samples=n_samples,
-                displacements=displacements
-        )
+def compute_fcs_from_dataset(pot, supercell, disps, st_dicts):
 
     ''' disps: (n_str, 3, n_atom) --> (n_str, n_atom, 3)'''
     disps = disps.transpose((0,2,1)) 
@@ -70,17 +60,17 @@ def compute_fcs(pot,
     forces = forces.reshape((n_data, -1))
 
     ''' Constructing fc2 basis and fc3 basis '''
-
+    t1 = time.time()
     fc2_basis = FCBasisSetO2(supercell, use_mkl=False).run()
     compress_mat_fc2 = fc2_basis.compression_matrix
     compress_eigvecs_fc2 = fc2_basis.basis_set
 
-    t1 = time.time()
-    fc3_basis = FCBasisSetO3(supercell, use_mkl=True).run()
+    fc3_basis = FCBasisSetO3(supercell, use_mkl=False).run()
+    #fc3_basis = FCBasisSetO3(supercell, use_mkl=True).run()
     compress_mat_fc3 = fc3_basis.compression_matrix
     compress_eigvecs_fc3 = fc3_basis.basis_set
     t2 = time.time()
-    print(' elapsed time (basis fc3) =', t2-t1)
+    print(' elapsed time (basis sets for fc2 and fc3) =', t2-t1)
 
     ''' Solving fc3 using run_solver_sparse '''
     print('-----')
@@ -102,21 +92,68 @@ def compute_fcs(pot,
     write_fc3_to_hdf5(fc3)
 
 
+def compute_fcs_from_structure(pot, 
+                               unitcell_dict=None, 
+                               supercell_dict=None, 
+                               supercell_matrix=None,
+                               n_samples=100,
+                               displacements=0.03):
+
+    if supercell_dict is not None:
+        supercell = st_dict_to_phonopy_cell(supercell_dict)
+    elif unitcell_dict is not None:
+        supercell = phonopy_supercell(unitcell_dict, supercell_matrix)
+        supercell_dict = phonopy_cell_to_st_dict(supercell)
+
+    disps, st_dicts = generate_random_const_displacements(
+            supercell_dict,
+            n_samples=n_samples,
+            displacements=displacements
+    )
+    compute_fcs_from_dataset(pot, supercell, disps, st_dicts)
+
+def compute_fcs_phono3py_dataset(pot, 
+                                 phono3py_yaml=None, 
+                                 use_phonon_dataset=False,
+                                 n_samples=None,
+                                 displacements=0.03):
+
+    supercell, disps, st_dicts = parse_phono3py_yaml_fcs(
+            phono3py_yaml,
+            use_phonon_dataset=use_phonon_dataset
+    )
+
+    if n_samples is not None:
+        supercell_dict = phonopy_cell_to_st_dict(supercell)
+        disps, st_dicts = generate_random_const_displacements(
+                supercell_dict,
+                n_samples=n_samples,
+                displacements=displacements
+        )
+
+    compute_fcs_from_dataset(pot, supercell, disps, st_dicts)
+
+
 if __name__ == '__main__':
 
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
     parser = argparse.ArgumentParser()
     parser.add_argument('--pot',
                         type=str,
                         default='polymlp.lammps',
                         help='polymlp file')
-    parser.add_argument('--phono3py_yaml',
+    parser.add_argument('--yaml',
                         type=str,
                         default=None,
-                        help='phono3py_yaml files')
+                        help='polymlp_str.yaml file')
     parser.add_argument('--poscar',
                         type=str,
                         default=None,
                         help='poscar')
+    parser.add_argument('--phono3py_yaml',
+                        type=str,
+                        default=None,
+                        help='phono3py_yaml files')
     parser.add_argument('--n_samples',
                         type=int,
                         default=None,
@@ -132,15 +169,23 @@ if __name__ == '__main__':
                         help='random displacement (in Angstrom)')
     args = parser.parse_args()
 
-    if args.poscar is not None:
-        st_dict = Poscar(args.poscar).get_structure()
+    if args.yaml is not None:
+        _, supercell_dict = load_cells(filename=args.yaml)
+        unitcell_dict = None
+        supercell_matrix = None
+    elif args.poscar is not None:
+        unitcell_dict = Poscar(args.poscar).get_structure()
+        supercell_matrix = np.diag(args.supercell)
+        supercell_dict = None
     else:
-        st_dict = None
+        unitcell_dict = None
+        supercell_matrix = None
+        supercell_dict = None
 
-    supercell_matrix = np.diag(args.supercell)
     compute_fcs(args.pot, 
                 phono3py_yaml=args.phono3py_yaml, 
-                st_dict=st_dict, 
+                unitcell_dict=unitcell_dict, 
+                supercell_dict=supercell_dict,
                 supercell_matrix=supercell_matrix,
                 n_samples=args.n_samples,
                 displacements=args.disp)

@@ -1,0 +1,11 @@
+n_type 3
+feature_type gtinv
+gaussian_params1 1.0 1.0 1
+gaussian_params2 0.0 11.0 15
+cutoff 12.0
+model_type 3
+max_p 3
+gtinv_order 2
+gtinv_maxl 4 
+reg_alpha_params -3 1 5
+include_stress False

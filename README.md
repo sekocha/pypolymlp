@@ -34,14 +34,13 @@
 > conda create -n pypolymlp 
 > conda activate pypolymlp
 
-conda install numpy scipy
+> conda install numpy scipy
 > conda install -c conda-forge pybind11
-> conda install -c omnia eigen3
+> conda install -c conda-forge eigen
 (optional)
-> conda install -c anaconda joblib
-> conda install -c conda-forge phonopy
-> conda install -c conda-forge phono3py
 > conda install -c conda-forge spglib
+> conda install -c conda-forge phonopy phono3py
+> conda install -c conda-forge joblib
 ```
 
 ### Building a shared library (libmlpcpp)
@@ -178,11 +177,21 @@ or
 ```
 
 ### Computation of force constants 
-(phonopy, phono3py, and symfc are required.)
 
+(phonopy, phono3py, and symfc are required.)
 ```
-> pypolymlp --force_constants --pot polymlp.lammps --phono3py_yaml phono3py_params_wurtzite_AgI.yaml.xz
+> pypolymlp --force_constants --pot polymlp.lammps --phono3py_yaml phono3py_params_wurtzite_AlN.yaml.xz
+> pypolymlp --force_constants --pot polymlp.lammps --str_yaml polymlp_str.yaml --fc_n_samples 1000
+> pypolymlp --force_constants --pot polymlp.lammps --poscar POSCAR-unitcell --supercell 3 3 2 --fc_n_samples 1000
 ```
+
+### Phonon calculations
+
+(phonopy is required.)
+```
+> pypolymlp --phonon --pot polymlp.lammps --poscar POSCAR-unitcell --supercell 3 3 2
+```
+
 <!--
 ## Generation of random structures 
 

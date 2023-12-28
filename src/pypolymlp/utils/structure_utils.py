@@ -71,6 +71,7 @@ def supercell_diagonal(st_dict, size=[2,2,2]):
         positions_new.extend(pos_new)
     supercell['positions'] = np.array(positions_new).T
 
+    supercell['supercell_matrix'] = supercell_matrix
     return supercell
 
 def remove(st_dict, idx):

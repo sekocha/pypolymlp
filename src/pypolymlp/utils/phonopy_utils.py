@@ -29,9 +29,22 @@ def phonopy_cell_to_st_dict(ph_cell):
 
     return st_dict
 
-def phonopy_supercell(st_dict, supercell_matrix):
+def phonopy_supercell(st_dict, 
+                      supercell_matrix=None, 
+                      supercell_diag=None,
+                      return_phonopy=True):
+
+    if supercell_diag is not None:
+        supercell_matrix = np.diag(supercell_diag) 
 
     unitcell = st_dict_to_phonopy_cell(st_dict)
-    return Phonopy(unitcell, supercell_matrix).supercell
+    supercell = Phonopy(unitcell, supercell_matrix).supercell
+    if return_phonopy:
+        return supercell
+
+    supercell_dict = phonopy_cell_to_st_dict(supercell)
+    supercell_dict['supercell_matrix'] = supercell_matrix
+    return supercell_dict
+
 
 
