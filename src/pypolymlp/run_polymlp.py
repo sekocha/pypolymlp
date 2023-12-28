@@ -28,6 +28,9 @@ from pypolymlp.calculator.compute_features import (
 )
 from pypolymlp.calculator.compute_properties import convert_stresses_in_gpa
 from pypolymlp.calculator.compute_properties import compute_properties
+from pypolymlp.core.interface_vasp import Poscar
+from pypolymlp.utils.yaml_utils import load_cells
+
 
 
 def run():
@@ -52,6 +55,9 @@ def run():
     parser.add_argument('--force_constants', 
                         action='store_true',
                         help='Mode: Force constant calculation')
+    parser.add_argument('--phonon', 
+                        action='store_true',
+                        help='Mode: Phonon calculation')
 
     parser.add_argument('--pot',
                         type=str,
@@ -71,8 +77,51 @@ def run():
                         type=str,
                         default=None,
                         help='phono3py.yaml file')
-    args = parser.parse_args()
 
+    parser.add_argument('--poscar',
+                        type=str,
+                        default=None,
+                        help='poscar')
+    parser.add_argument('--supercell',
+                        nargs=3,
+                        type=int,
+                        default=None,
+                        help='Supercell size (diagonal components)')
+    parser.add_argument('--str_yaml',
+                        type=str,
+                        default=None,
+                        help='polymlp_str.yaml file')
+
+    parser.add_argument('--fc_n_samples',
+                        type=int,
+                        default=None,
+                        help='Number of random displacement samples')
+    parser.add_argument('--disp',
+                        type=float,
+                        default=0.03,
+                        help='Displacement (in Angstrom)')
+
+    parser.add_argument('--ph_mesh',
+                        type=int,
+                        nargs=3,
+                        default=[10,10,10],
+                        help='k-mesh used for phonon calculation')
+    parser.add_argument('--ph_tmin',
+                        type=float,
+                        default=100,
+                        help='Temperature (min)')
+    parser.add_argument('--ph_tmax',
+                        type=float,
+                        default=1000,
+                        help='Temperature (max)')
+    parser.add_argument('--ph_tstep',
+                        type=float,
+                        default=100,
+                        help='Temperature (step)')
+    parser.add_argument('--ph_pdos',
+                        action='store_true',
+                        help='Compute phonon PDOS')
+    args = parser.parse_args()
 
 
     if args.infile is not None:
@@ -139,7 +188,47 @@ def run():
     elif args.force_constants:
         from pypolymlp.calculator.compute_fcs import compute_fcs
         print('Mode: Force constant calculations')
-        compute_fcs(args.pot, phono3py_yaml=args.phono3py_yaml)
+
+        if args.str_yaml is not None:
+            _, supercell_dict = load_cells(filename=args.str_yaml)
+            unitcell_dict = None
+            supercell_matrix = None
+        elif args.poscar is not None:
+            unitcell_dict = Poscar(args.poscar).get_structure()
+            supercell_matrix = np.diag(args.supercell)
+            supercell_dict = None
+        else:
+            unitcell_dict = None
+            supercell_matrix = None
+            supercell_dict = None
+    
+        compute_fcs(args.pot,
+                    phono3py_yaml=args.phono3py_yaml,
+                    unitcell_dict=unitcell_dict,
+                    supercell_dict=supercell_dict,
+                    supercell_matrix=supercell_matrix,
+                    n_samples=args.fc_n_samples,
+                    displacements=args.disp)
+
+    elif args.phonon:
+        from pypolymlp.calculator.compute_phonon import PolymlpPhonon
+        print('Mode: Phonon calculations')
+
+        if args.str_yaml is not None:
+            unitcell_dict, supercell_dict = load_cells(filename=args.str_yaml)
+            supercell_matrix = supercell_dict['supercell_matrix']
+        elif args.poscar is not None:
+            unitcell_dict = Poscar(args.poscar).get_structure()
+            supercell_matrix = np.diag(args.supercell)
+
+        ph = PolymlpPhonon(args.pot, unitcell_dict, supercell_matrix)
+        ph.produce_force_constants(displacements=args.disp)
+        ph.compute_properties(mesh=args.ph_mesh,
+                              t_min=args.ph_tmin,
+                              t_max=args.ph_tmax,
+                              t_step=args.ph_tstep,
+                              pdos=args.ph_pdos)
+        
 
     elif args.features:
         print('Mode: Feature matrix calculations')
