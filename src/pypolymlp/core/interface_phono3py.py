@@ -15,13 +15,14 @@ def parse_phono3py_yaml(yaml_filename,
                         energies_filename=None,
                         element_order=None,
                         select_ids=None,
-                        return_displacements=False):
+                        return_displacements=False,
+                        use_phonon_dataset=False):
     ''' yaml_filename: phono3py yaml file
         energies_filename: first line gives the energy of perfect supercell
 
         phono3py.yaml must be composed of datasets for a fixed composition.
     '''
-    ph3 = Phono3pyYaml(yaml_filename)
+    ph3 = Phono3pyYaml(yaml_filename, use_phonon_dataset=use_phonon_dataset)
     disps, forces = ph3.get_phonon_dataset()
     st_dict, positions_all = ph3.get_structure_dataset()
 
@@ -75,12 +76,12 @@ def parse_structures_from_phono3py_yaml(phono3py_yaml):
     st_dicts = get_structures_from_multiple_positions(st_dict, positions_all)
     return st_dicts
 
-def parse_phono3py_yaml_fcs(phono3py_yaml):
+def parse_phono3py_yaml_fcs(phono3py_yaml, use_phonon_dataset=False):
 
     ''' disps: (n_str, 3, n_atoms)
         forces: (n_str, 3, n_atoms)
     '''
-    ph3 = Phono3pyYaml(phono3py_yaml)
+    ph3 = Phono3pyYaml(phono3py_yaml, use_phonon_dataset=use_phonon_dataset)
     disps, _ = ph3.get_phonon_dataset()
     st_dict, positions_all = ph3.get_structure_dataset()
     st_dicts = get_structures_from_multiple_positions(st_dict, positions_all)
@@ -89,23 +90,30 @@ def parse_phono3py_yaml_fcs(phono3py_yaml):
 
 class Phono3pyYaml:
 
-    def __init__(self, yaml_filename):
+    def __init__(self, yaml_filename, use_phonon_dataset=False):
         ''' displacements: (n_samples, 3, n_atom)
             forces: (n_samples, 3, n_atom)
             positions_all: (n_samples, 3, n_atom)
         '''
         ph3 = phono3py.load(yaml_filename, produce_fc=False, log_level=1)
-        self.supercell = ph3.supercell
-        self.st_dict = phonopy_cell_to_st_dict(ph3.supercell)
-        self.displacements = ph3.displacements.transpose((0,2,1))  # Angstrom
-        self.forces = ph3.forces.transpose((0,2,1))  # eV/Angstrom
+        if use_phonon_dataset == False:
+            self.supercell = ph3.supercell
+            self.st_dict = phonopy_cell_to_st_dict(ph3.supercell)
+            self.displacements = ph3.displacements.transpose((0,2,1))
+            self.forces = ph3.forces.transpose((0,2,1)) 
+        else:
+            self.supercell = ph3.phonon_supercell
+            self.st_dict = phonopy_cell_to_st_dict(self.supercell)
+            self.displacements = ph3.phonon_dataset['displacements']
+            self.displacements = self.displacements.transpose((0,2,1))
+            self.forces = ph3.phonon_dataset['forces']
+            self.forces = self.forces.transpose((0,2,1))
 
         self.positions_all = convert_disps_to_positions(
                 self.displacements, 
                 self.st_dict['axis'], 
                 self.st_dict['positions']
         )
-        print(ph3.unitcell)
 
     def get_phonon_dataset(self):
         ''' displacements: (n_samples, 3, n_atom)

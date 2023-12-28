@@ -43,28 +43,7 @@ def recover_fc3(coefs, compress_mat, compress_eigvecs, N):
     fc3 = (compress_mat @ fc3).reshape((n_a,N,N,3,3,3))
     return fc3
 
-def compute_fcs(pot, 
-                phono3py_yaml=None, 
-                unitcell_dict=None, 
-                supercell_dict=None, 
-                supercell_matrix=None,
-                n_samples=100,
-                displacements=0.03):
-
-    if supercell_dict is not None or unitcell_dict is not None:
-        if supercell_dict is not None:
-            supercell = st_dict_to_phonopy_cell(supercell_dict)
-        elif unitcell_dict is not None:
-            supercell = phonopy_supercell(unitcell_dict, supercell_matrix)
-            supercell_dict = phonopy_cell_to_st_dict(supercell)
-
-        disps, st_dicts = generate_random_const_displacements(
-                supercell_dict,
-                n_samples=n_samples,
-                displacements=displacements
-        )
-    elif phono3py_yaml is not None:
-        supercell, disps, st_dicts = parse_phono3py_yaml_fcs(phono3py_yaml)
+def compute_fcs_from_dataset(pot, supercell, disps, st_dicts):
 
     ''' disps: (n_str, 3, n_atom) --> (n_str, n_atom, 3)'''
     disps = disps.transpose((0,2,1)) 
@@ -86,7 +65,8 @@ def compute_fcs(pot,
     compress_mat_fc2 = fc2_basis.compression_matrix
     compress_eigvecs_fc2 = fc2_basis.basis_set
 
-    fc3_basis = FCBasisSetO3(supercell, use_mkl=True).run()
+    fc3_basis = FCBasisSetO3(supercell, use_mkl=False).run()
+    #fc3_basis = FCBasisSetO3(supercell, use_mkl=True).run()
     compress_mat_fc3 = fc3_basis.compression_matrix
     compress_eigvecs_fc3 = fc3_basis.basis_set
     t2 = time.time()
@@ -110,6 +90,48 @@ def compute_fcs(pot,
     fc3 = recover_fc3(coefs_fc3, compress_mat_fc3, compress_eigvecs_fc3, N)
     write_fc2_to_hdf5(fc2)
     write_fc3_to_hdf5(fc3)
+
+
+def compute_fcs_from_structure(pot, 
+                               unitcell_dict=None, 
+                               supercell_dict=None, 
+                               supercell_matrix=None,
+                               n_samples=100,
+                               displacements=0.03):
+
+    if supercell_dict is not None:
+        supercell = st_dict_to_phonopy_cell(supercell_dict)
+    elif unitcell_dict is not None:
+        supercell = phonopy_supercell(unitcell_dict, supercell_matrix)
+        supercell_dict = phonopy_cell_to_st_dict(supercell)
+
+    disps, st_dicts = generate_random_const_displacements(
+            supercell_dict,
+            n_samples=n_samples,
+            displacements=displacements
+    )
+    compute_fcs_from_dataset(pot, supercell, disps, st_dicts)
+
+def compute_fcs_phono3py_dataset(pot, 
+                                 phono3py_yaml=None, 
+                                 use_phonon_dataset=False,
+                                 n_samples=None,
+                                 displacements=0.03):
+
+    supercell, disps, st_dicts = parse_phono3py_yaml_fcs(
+            phono3py_yaml,
+            use_phonon_dataset=use_phonon_dataset
+    )
+
+    if n_samples is not None:
+        supercell_dict = phonopy_cell_to_st_dict(supercell)
+        disps, st_dicts = generate_random_const_displacements(
+                supercell_dict,
+                n_samples=n_samples,
+                displacements=displacements
+        )
+
+    compute_fcs_from_dataset(pot, supercell, disps, st_dicts)
 
 
 if __name__ == '__main__':

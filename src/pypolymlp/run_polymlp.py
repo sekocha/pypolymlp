@@ -186,29 +186,36 @@ def run():
                   'and polymlp_stress_tensors.npy are generated.')
 
     elif args.force_constants:
-        from pypolymlp.calculator.compute_fcs import compute_fcs
+        from pypolymlp.calculator.compute_fcs import (
+            compute_fcs_from_structure,
+            compute_fcs_phono3py_dataset,
+        )
         print('Mode: Force constant calculations')
 
-        if args.str_yaml is not None:
-            _, supercell_dict = load_cells(filename=args.str_yaml)
-            unitcell_dict = None
-            supercell_matrix = None
-        elif args.poscar is not None:
-            unitcell_dict = Poscar(args.poscar).get_structure()
-            supercell_matrix = np.diag(args.supercell)
-            supercell_dict = None
+        if args.phono3py_yaml is not None:
+            compute_fcs_phono3py_dataset(args.pot,
+                                         phono3py_yaml=args.phono3py_yaml,
+                                         use_phonon_dataset=True,
+                                         n_samples=args.fc_n_samples,
+                                         displacements=args.disp)
+
+
         else:
-            unitcell_dict = None
-            supercell_matrix = None
-            supercell_dict = None
-    
-        compute_fcs(args.pot,
-                    phono3py_yaml=args.phono3py_yaml,
-                    unitcell_dict=unitcell_dict,
-                    supercell_dict=supercell_dict,
-                    supercell_matrix=supercell_matrix,
-                    n_samples=args.fc_n_samples,
-                    displacements=args.disp)
+            if args.str_yaml is not None:
+                _, supercell_dict = load_cells(filename=args.str_yaml)
+                unitcell_dict = None
+                supercell_matrix = None
+            elif args.poscar is not None:
+                unitcell_dict = Poscar(args.poscar).get_structure()
+                supercell_matrix = np.diag(args.supercell)
+                supercell_dict = None
+   
+            compute_fcs_from_structure(args.pot,
+                                       unitcell_dict=unitcell_dict,
+                                       supercell_dict=supercell_dict,
+                                       supercell_matrix=supercell_matrix,
+                                       n_samples=args.fc_n_samples,
+                                       displacements=args.disp)
 
     elif args.phonon:
         from pypolymlp.calculator.compute_phonon import PolymlpPhonon
@@ -228,7 +235,6 @@ def run():
                               t_max=args.ph_tmax,
                               t_step=args.ph_tstep,
                               pdos=args.ph_pdos)
-        
 
     elif args.features:
         print('Mode: Feature matrix calculations')
