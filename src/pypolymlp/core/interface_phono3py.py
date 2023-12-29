@@ -102,6 +102,7 @@ class Phono3pyYaml:
             self.displacements = ph3.displacements.transpose((0,2,1))
             self.forces = ph3.forces.transpose((0,2,1)) 
         else:
+            print('Using phono3py.phonon_*** dataset')
             self.supercell = ph3.phonon_supercell
             self.st_dict = phonopy_cell_to_st_dict(self.supercell)
             self.displacements = ph3.phonon_dataset['displacements']

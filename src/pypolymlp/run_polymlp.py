@@ -195,7 +195,7 @@ def run():
         if args.phono3py_yaml is not None:
             compute_fcs_phono3py_dataset(args.pot,
                                          phono3py_yaml=args.phono3py_yaml,
-                                         use_phonon_dataset=True,
+                                         use_phonon_dataset=False,
                                          n_samples=args.fc_n_samples,
                                          displacements=args.disp)
 

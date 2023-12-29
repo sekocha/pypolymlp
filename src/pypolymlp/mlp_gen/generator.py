@@ -86,16 +86,15 @@ def run_generator_single_dataset(infile):
             params_dict['dft']['train']['energy'],
             element_order=params_dict['element_order'],
             select_ids=params_dict['dft']['train']['indices'],
-            use_phonon_dataset=True
+            use_phonon_dataset=False
         )
         test_dft_dict = parse_phono3py_yaml(
             params_dict['dft']['test']['phono3py_yaml'],
             params_dict['dft']['test']['energy'],
             element_order=params_dict['element_order'],
             select_ids=params_dict['dft']['test']['indices'],
-            use_phonon_dataset=True
+            use_phonon_dataset=False
         )
-
 
     t1 = time.time()
     features_train = Features(params_dict, train_dft_dict['structures'])
