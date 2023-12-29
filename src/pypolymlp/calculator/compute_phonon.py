@@ -14,7 +14,6 @@ from pypolymlp.utils.phonopy_utils import (
 )
 from pypolymlp.calculator.compute_properties import compute_properties
 
-
 class PolymlpPhonon:
 
     def __init__(self, pot, unitcell_dict=None, supercell_matrix=None):
