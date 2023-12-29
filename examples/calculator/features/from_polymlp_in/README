@@ -1,0 +1,1 @@
+pypolymlp --features -i polymlp.in --poscars poscars/poscar-0*

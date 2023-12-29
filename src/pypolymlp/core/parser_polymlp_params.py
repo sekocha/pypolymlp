@@ -41,13 +41,14 @@ class ParamsParser:
         ''' DFT data locations'''
         params['dataset_type'] = self.parser.get_params('dataset_type',
                                                         default='vasp')
-        if params['dataset_type'] == 'vasp':
-            if multiple_datasets:
-                params['dft'] = self.__get_multiple_vasprun_sets()
-            else:
-                params['dft'] = self.__get_single_vasprun_set()
-        elif params['dataset_type'] == 'phono3py':
-            params['dft'] = self.__get_phono3py_set()
+        if parse_vasprun_locations:
+            if params['dataset_type'] == 'vasp':
+                if multiple_datasets:
+                    params['dft'] = self.__get_multiple_vasprun_sets()
+                else:
+                    params['dft'] = self.__get_single_vasprun_set()
+            elif params['dataset_type'] == 'phono3py':
+                params['dft'] = self.__get_phono3py_set()
 
         params['elements'] = self.parser.get_params('elements',
                                                      size=params['n_type'],

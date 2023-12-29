@@ -1,0 +1,146 @@
+units:
+  energy: meV/atom
+  force:  eV/angstrom
+  stress: meV/atom
+
+prediction_errors:
+- dataset: ../../vaspruns/train-eqm-Ti1/vasprun-*.xml.polymlp
+  rmse_energy:  37.20655933449717
+  rmse_force:   0.17065954103517245
+
+- dataset: ../../vaspruns/train-disp-Ti1/vasprun-*.xml.polymlp
+  rmse_energy:  26.285310545893182
+  rmse_force:   0.23932316649936558
+
+- dataset: ../../vaspruns/train-disp-Ti2/vasprun-*.xml.polymlp
+  rmse_energy:  42.51795918488169
+  rmse_force:   0.4840155137001374
+
+- dataset: ../../vaspruns/train-ld-Ti1/vasprun-*.xml.polymlp
+  rmse_energy:  103.81940903418145
+  rmse_force:   0.2769941315638471
+
+- dataset: ../../vaspruns/train-ld-Ti2/vasprun-*.xml.polymlp
+  rmse_energy:  275.9166564951372
+  rmse_force:   0.34028626723377087
+
+- dataset: ../../vaspruns/train-disp-large-Ti1/vasprun-*.xml.polymlp
+  rmse_energy:  31.14506425951007
+  rmse_force:   0.33957228639084586
+
+- dataset: ../../vaspruns/train-disp-large-Ti2/vasprun-*.xml.polymlp
+  rmse_energy:  1427.5637986158422
+  rmse_force:   105.10974184077295
+
+- dataset: ../../vaspruns/train-eqm-Pb1/vasprun-*.xml.polymlp
+  rmse_energy:  7.2666440336925
+  rmse_force:   0.026147783005518843
+
+- dataset: ../../vaspruns/train-eqm-Pb2/vasprun-*.xml.polymlp
+  rmse_energy:  10.233933729836941
+  rmse_force:   0.09607743850298997
+
+- dataset: ../../vaspruns/train-disp-Pb1/vasprun-*.xml.polymlp
+  rmse_energy:  6.402859923607136
+  rmse_force:   0.05055287714393399
+
+- dataset: ../../vaspruns/train-disp-Pb2/vasprun-*.xml.polymlp
+  rmse_energy:  17.138677222401828
+  rmse_force:   0.12814736441739785
+
+- dataset: ../../vaspruns/train-ld-Pb1/vasprun-*.xml.polymlp
+  rmse_energy:  46.20046781519424
+  rmse_force:   0.12308285163571396
+
+- dataset: ../../vaspruns/train-ld-Pb2/vasprun-*.xml.polymlp
+  rmse_energy:  77.4458001347446
+  rmse_force:   0.13076603981440016
+
+- dataset: ../../vaspruns/train-disp-large-Pb1/vasprun-*.xml.polymlp
+  rmse_energy:  11.153294779270208
+  rmse_force:   0.09984951640691268
+
+- dataset: ../../vaspruns/train-disp-large-Pb2/vasprun-*.xml.polymlp
+  rmse_energy:  46.297468013828535
+  rmse_force:   0.7123044840350663
+
+- dataset: ../../vaspruns/train-disp1/vasprun-*.xml.polymlp
+  rmse_energy:  12.253708586617947
+  rmse_force:   0.156480437341036
+
+- dataset: ../../vaspruns/train-disp2/vasprun-*.xml.polymlp
+  rmse_energy:  628.4082069494166
+  rmse_force:   115.09697425639102
+
+- dataset: ../../vaspruns/train-eqm1/vasprun-*.xml.polymlp
+  rmse_energy:  11.733227299127584
+  rmse_force:   0.042089662134703325
+
+- dataset: ../../vaspruns/test-eqm-Ti1/vasprun-*.xml.polymlp
+  rmse_energy:  27.262616060448483
+  rmse_force:   0.11138757884749671
+
+- dataset: ../../vaspruns/test-disp-Ti1/vasprun-*.xml.polymlp
+  rmse_energy:  27.602885665309902
+  rmse_force:   0.23094867365131336
+
+- dataset: ../../vaspruns/test-disp-Ti2/vasprun-*.xml.polymlp
+  rmse_energy:  73.88377708565021
+  rmse_force:   0.5347331673424379
+
+- dataset: ../../vaspruns/test-ld-Ti1/vasprun-*.xml.polymlp
+  rmse_energy:  113.68007968201243
+  rmse_force:   0.27822693564261775
+
+- dataset: ../../vaspruns/test-ld-Ti2/vasprun-*.xml.polymlp
+  rmse_energy:  285.6013159426008
+  rmse_force:   0.33077375465775427
+
+- dataset: ../../vaspruns/test-disp-large-Ti1/vasprun-*.xml.polymlp
+  rmse_energy:  28.50410900626903
+  rmse_force:   0.32127616449009333
+
+- dataset: ../../vaspruns/test-disp-large-Ti2/vasprun-*.xml.polymlp
+  rmse_energy:  1024.2547636155023
+  rmse_force:   73.39033853105443
+
+- dataset: ../../vaspruns/test-eqm-Pb1/vasprun-*.xml.polymlp
+  rmse_energy:  5.304935847080364
+  rmse_force:   0.02104268378553052
+
+- dataset: ../../vaspruns/test-disp-Pb1/vasprun-*.xml.polymlp
+  rmse_energy:  6.316819346115406
+  rmse_force:   0.05014835887087793
+
+- dataset: ../../vaspruns/test-disp-Pb2/vasprun-*.xml.polymlp
+  rmse_energy:  17.61431901323757
+  rmse_force:   0.11308857658022241
+
+- dataset: ../../vaspruns/test-ld-Pb1/vasprun-*.xml.polymlp
+  rmse_energy:  51.03651561492516
+  rmse_force:   0.11681620670227608
+
+- dataset: ../../vaspruns/test-ld-Pb2/vasprun-*.xml.polymlp
+  rmse_energy:  79.51979159562849
+  rmse_force:   0.12920753842753635
+
+- dataset: ../../vaspruns/test-disp-large-Pb1/vasprun-*.xml.polymlp
+  rmse_energy:  10.810643724430214
+  rmse_force:   0.10129691605103108
+
+- dataset: ../../vaspruns/test-disp-large-Pb2/vasprun-*.xml.polymlp
+  rmse_energy:  40.383898171656995
+  rmse_force:   0.5711768154771478
+
+- dataset: ../../vaspruns/test-disp1/vasprun-*.xml.polymlp
+  rmse_energy:  11.338267289157963
+  rmse_force:   0.15496367423942997
+
+- dataset: ../../vaspruns/test-disp2/vasprun-*.xml.polymlp
+  rmse_energy:  873.3695252133629
+  rmse_force:   76.41679544153583
+
+- dataset: ../../vaspruns/test-eqm1/vasprun-*.xml.polymlp
+  rmse_energy:  9.882190771599111
+  rmse_force:   0.07754515561229096
+
