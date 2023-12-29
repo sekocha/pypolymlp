@@ -61,7 +61,7 @@ def run():
 
     parser.add_argument('--pot',
                         type=str,
-                        default='polymlp.lammps',
+                        default=None,
                         help='polymlp file')
     parser.add_argument('--poscars',
                         nargs='*',
@@ -124,7 +124,7 @@ def run():
     args = parser.parse_args()
 
 
-    if args.infile is not None:
+    if args.infile is not None and args.features == False:
         if len(args.infile) == 1:
             infile = args.infile[0]
             params_dict = ParamsParser(infile).get_params()

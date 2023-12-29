@@ -65,8 +65,8 @@ def compute_fcs_from_dataset(pot, supercell, disps, st_dicts):
     compress_mat_fc2 = fc2_basis.compression_matrix
     compress_eigvecs_fc2 = fc2_basis.basis_set
 
-    fc3_basis = FCBasisSetO3(supercell, use_mkl=False).run()
-    #fc3_basis = FCBasisSetO3(supercell, use_mkl=True).run()
+    #fc3_basis = FCBasisSetO3(supercell, use_mkl=False).run()
+    fc3_basis = FCBasisSetO3(supercell, use_mkl=True).run()
     compress_mat_fc3 = fc3_basis.compression_matrix
     compress_eigvecs_fc3 = fc3_basis.basis_set
     t2 = time.time()

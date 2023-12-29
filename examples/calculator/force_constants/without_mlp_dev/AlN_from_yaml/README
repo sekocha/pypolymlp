@@ -1,0 +1,1 @@
+pypolymlp --force_constants --pot polymlp.lammps --str_yaml polymlp_str.yaml --fc_n_samples 2000 
