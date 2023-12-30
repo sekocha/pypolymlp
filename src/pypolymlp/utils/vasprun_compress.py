@@ -56,7 +56,7 @@ if __name__ == '__main__':
                         help='number of parallel jobs')
     args = parser.parse_args()
 
-    if n_jobs == 1:
+    if args.n_jobs == 1:
         for vasp in args.vaspruns:
             convert(vasp)
     else:

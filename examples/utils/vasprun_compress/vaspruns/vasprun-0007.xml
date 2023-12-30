@@ -1,0 +1,2255 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<modeling>
+ <generator>
+  <i name="program" type="string">vasp </i>
+  <i name="version" type="string">6.3.2  </i>
+  <i name="subversion" type="string">27Jun22 (build Apr 17 2023 15:11:21) complex                          parallel </i>
+  <i name="platform" type="string">LinuxIFC </i>
+  <i name="date" type="string">2023 06 27 </i>
+  <i name="time" type="string">11:20:41 </i>
+ </generator>
+ <incar>
+  <i type="string" name="PREC">Accurate</i>
+  <i type="int" name="IALGO">    38</i>
+  <i type="logical" name="ADDGRID"> T  </i>
+  <i type="int" name="NELMIN">     5</i>
+  <i type="int" name="IBRION">    -1</i>
+  <i name="EDIFF">      0.00000001</i>
+  <i type="int" name="ISYM">     0</i>
+  <i name="ENCUT">    500.00000000</i>
+  <i type="logical" name="LREAL"> F  </i>
+  <i type="int" name="ISMEAR">     0</i>
+  <i name="SIGMA">      0.01000000</i>
+  <i type="logical" name="LWAVE"> F  </i>
+  <i type="logical" name="LCHARG"> F  </i>
+ </incar>
+ <primitive_cell>
+  <structure name="primitive_cell" >
+   <crystal>
+    <varray name="basis" >
+     <v>       9.33300000       0.00000000       0.00000000 </v>
+     <v>      -4.66650000       8.08261509       0.00000000 </v>
+     <v>       0.00000000       0.00000000       9.95600000 </v>
+    </varray>
+    <i name="volume">    751.03132438 </i>
+    <varray name="rec_basis" >
+     <v>       0.10714668       0.06186117       0.00000000 </v>
+     <v>       0.00000000       0.12372233       0.00000000 </v>
+     <v>       0.00000000       0.00000000       0.10044194 </v>
+    </varray>
+   </crystal>
+   <varray name="positions" >
+    <v>       0.11021825       0.22344840       0.99800543 </v>
+    <v>       0.44485422       0.22009705       0.00252333 </v>
+    <v>       0.77525128       0.21961677       0.00228815 </v>
+    <v>       0.11243522       0.55457660       0.00283190 </v>
+    <v>       0.44117939       0.55437016       0.00184479 </v>
+    <v>       0.77850196       0.55775239       0.00287772 </v>
+    <v>       0.11297409       0.88705347       0.00072868 </v>
+    <v>       0.44380882       0.88848146       0.00344197 </v>
+    <v>       0.78080494       0.88876001       0.00129268 </v>
+    <v>       0.10866131       0.22064404       0.49823508 </v>
+    <v>       0.44169455       0.22299329       0.50069536 </v>
+    <v>       0.77563975       0.22291718       0.49864886 </v>
+    <v>       0.10803723       0.55244965       0.50130453 </v>
+    <v>       0.44533079       0.55493252       0.50322450 </v>
+    <v>       0.77978242       0.55385275       0.50049974 </v>
+    <v>       0.11191122       0.89230099       0.49964659 </v>
+    <v>       0.44367374       0.88811972       0.50339995 </v>
+    <v>       0.78106530       0.88907109       0.50075618 </v>
+    <v>       0.22138793       0.11182589       0.25321212 </v>
+    <v>       0.55469007       0.10951746       0.25319502 </v>
+    <v>       0.89216648       0.11168345       0.25147448 </v>
+    <v>       0.21941088       0.44396180       0.25224132 </v>
+    <v>       0.55465694       0.44711100       0.25060080 </v>
+    <v>       0.88627020       0.44523125       0.24963837 </v>
+    <v>       0.22433940       0.77790000       0.24816033 </v>
+    <v>       0.55895847       0.78025139       0.24951326 </v>
+    <v>       0.88868983       0.77869856       0.25332727 </v>
+    <v>       0.22328588       0.10911471       0.74882606 </v>
+    <v>       0.55587072       0.11121123       0.75347630 </v>
+    <v>       0.88951058       0.10852095       0.74927880 </v>
+    <v>       0.22522904       0.44539520       0.74878542 </v>
+    <v>       0.55197281       0.44209191       0.74988866 </v>
+    <v>       0.88736120       0.44381002       0.75321792 </v>
+    <v>       0.22364416       0.77605556       0.74887926 </v>
+    <v>       0.55605749       0.77485549       0.75072915 </v>
+    <v>       0.88632711       0.77815698       0.75200170 </v>
+    <v>       0.11159825       0.21933926       0.30894833 </v>
+    <v>       0.44319961       0.22220891       0.31230631 </v>
+    <v>       0.77624838       0.22123512       0.30678796 </v>
+    <v>       0.10836148       0.55499618       0.30765143 </v>
+    <v>       0.44686634       0.55914184       0.31003125 </v>
+    <v>       0.77734371       0.55634419       0.31236580 </v>
+    <v>       0.11140581       0.88647252       0.30772373 </v>
+    <v>       0.44413793       0.88558269       0.30899459 </v>
+    <v>       0.77788499       0.88595943       0.30840652 </v>
+    <v>       0.11305516       0.22437397       0.80720916 </v>
+    <v>       0.44779876       0.22414892       0.80825693 </v>
+    <v>       0.77842885       0.22534153       0.81091895 </v>
+    <v>       0.11377408       0.55860516       0.81087166 </v>
+    <v>       0.44381354       0.55479835       0.80658520 </v>
+    <v>       0.78044174       0.55863570       0.81083590 </v>
+    <v>       0.10871931       0.88962755       0.80810412 </v>
+    <v>       0.44595781       0.89157870       0.81159594 </v>
+    <v>       0.77728536       0.89167982       0.81042780 </v>
+    <v>       0.22176511       0.11407176       0.05946187 </v>
+    <v>       0.55577202       0.10841189       0.05806868 </v>
+    <v>       0.88544604       0.10845424       0.06023172 </v>
+    <v>       0.22334899       0.44680373       0.05719992 </v>
+    <v>       0.55273170       0.44449076       0.05812719 </v>
+    <v>       0.89210223       0.44731237       0.05858938 </v>
+    <v>       0.22023325       0.77555046       0.05725914 </v>
+    <v>       0.55924560       0.77979344       0.05980825 </v>
+    <v>       0.89233386       0.78059073       0.05906407 </v>
+    <v>       0.22262838       0.11105540       0.55654027 </v>
+    <v>       0.55641774       0.10861096       0.56054505 </v>
+    <v>       0.89047225       0.11478299       0.55989648 </v>
+    <v>       0.22408109       0.44268656       0.56020103 </v>
+    <v>       0.55466843       0.44666939       0.55800789 </v>
+    <v>       0.89219741       0.44472715       0.55998627 </v>
+    <v>       0.22290657       0.77556071       0.55778910 </v>
+    <v>       0.55546308       0.77537195       0.56157045 </v>
+    <v>       0.89220177       0.77822426       0.55877740 </v>
+   </varray>
+  </structure>
+  <varray name="primitive_index" >
+   <v type="int" >        1 </v>
+   <v type="int" >        2 </v>
+   <v type="int" >        3 </v>
+   <v type="int" >        4 </v>
+   <v type="int" >        5 </v>
+   <v type="int" >        6 </v>
+   <v type="int" >        7 </v>
+   <v type="int" >        8 </v>
+   <v type="int" >        9 </v>
+   <v type="int" >       10 </v>
+   <v type="int" >       11 </v>
+   <v type="int" >       12 </v>
+   <v type="int" >       13 </v>
+   <v type="int" >       14 </v>
+   <v type="int" >       15 </v>
+   <v type="int" >       16 </v>
+   <v type="int" >       17 </v>
+   <v type="int" >       18 </v>
+   <v type="int" >       19 </v>
+   <v type="int" >       20 </v>
+   <v type="int" >       21 </v>
+   <v type="int" >       22 </v>
+   <v type="int" >       23 </v>
+   <v type="int" >       24 </v>
+   <v type="int" >       25 </v>
+   <v type="int" >       26 </v>
+   <v type="int" >       27 </v>
+   <v type="int" >       28 </v>
+   <v type="int" >       29 </v>
+   <v type="int" >       30 </v>
+   <v type="int" >       31 </v>
+   <v type="int" >       32 </v>
+   <v type="int" >       33 </v>
+   <v type="int" >       34 </v>
+   <v type="int" >       35 </v>
+   <v type="int" >       36 </v>
+   <v type="int" >       37 </v>
+   <v type="int" >       38 </v>
+   <v type="int" >       39 </v>
+   <v type="int" >       40 </v>
+   <v type="int" >       41 </v>
+   <v type="int" >       42 </v>
+   <v type="int" >       43 </v>
+   <v type="int" >       44 </v>
+   <v type="int" >       45 </v>
+   <v type="int" >       46 </v>
+   <v type="int" >       47 </v>
+   <v type="int" >       48 </v>
+   <v type="int" >       49 </v>
+   <v type="int" >       50 </v>
+   <v type="int" >       51 </v>
+   <v type="int" >       52 </v>
+   <v type="int" >       53 </v>
+   <v type="int" >       54 </v>
+   <v type="int" >       55 </v>
+   <v type="int" >       56 </v>
+   <v type="int" >       57 </v>
+   <v type="int" >       58 </v>
+   <v type="int" >       59 </v>
+   <v type="int" >       60 </v>
+   <v type="int" >       61 </v>
+   <v type="int" >       62 </v>
+   <v type="int" >       63 </v>
+   <v type="int" >       64 </v>
+   <v type="int" >       65 </v>
+   <v type="int" >       66 </v>
+   <v type="int" >       67 </v>
+   <v type="int" >       68 </v>
+   <v type="int" >       69 </v>
+   <v type="int" >       70 </v>
+   <v type="int" >       71 </v>
+   <v type="int" >       72 </v>
+  </varray>
+ </primitive_cell>
+ <kpoints>
+  <generation param="Gamma">
+   <v type="int" name="divisions">       2        2        2 </v>
+   <v name="usershift">      0.00000000       0.00000000       0.50000000 </v>
+   <v name="genvec1">      0.50000000       0.00000000       0.00000000 </v>
+   <v name="genvec2">      0.00000000       0.50000000       0.00000000 </v>
+   <v name="genvec3">      0.00000000       0.00000000       0.50000000 </v>
+   <v name="shift">      0.00000000       0.00000000       0.50000000 </v>
+  </generation>
+  <varray name="kpointlist" >
+   <v>       0.00000000       0.00000000       0.25000000 </v>
+   <v>       0.50000000      -0.00000000       0.25000000 </v>
+   <v>       0.00000000       0.50000000       0.25000000 </v>
+   <v>       0.50000000       0.50000000       0.25000000 </v>
+  </varray>
+  <varray name="weights" >
+   <v>       0.25000000 </v>
+   <v>       0.25000000 </v>
+   <v>       0.25000000 </v>
+   <v>       0.25000000 </v>
+  </varray>
+ </kpoints>
+ <parameters>
+  <separator name="general" >
+   <i type="string" name="SYSTEM">unknown system</i>
+   <i type="logical" name="LCOMPAT"> F  </i>
+  </separator>
+  <separator name="electronic" >
+   <i type="string" name="PREC">accura</i>
+   <i name="ENMAX">    500.00000000</i>
+   <i name="ENAUG">    555.01100000</i>
+   <i name="EDIFF">      0.00000001</i>
+   <i type="int" name="IALGO">    38</i>
+   <i type="int" name="IWAVPR">    10</i>
+   <i type="int" name="NBANDS">   184</i>
+   <i type="int" name="NBANDSLOW">    -1</i>
+   <i type="int" name="NBANDSHIGH">    -1</i>
+   <i name="NELECT">    288.00000000</i>
+   <i type="int" name="TURBO">     0</i>
+   <i type="int" name="IRESTART">     0</i>
+   <i type="int" name="NREBOOT">     0</i>
+   <i type="int" name="NMIN">     0</i>
+   <i name="EREF">      0.00000000</i>
+   <separator name="electronic smearing" >
+    <i type="int" name="ISMEAR">     0</i>
+    <i name="SIGMA">      0.01000000</i>
+    <i name="KSPACING">      0.50000000</i>
+    <i type="logical" name="KGAMMA"> T  </i>
+    <i type="logical" name="KBLOWUP"> T  </i>
+   </separator>
+   <separator name="electronic projectors" >
+    <i type="logical" name="LREAL"> F  </i>
+    <v name="ROPT">      0.00000000      0.00000000</v>
+    <i type="int" name="LMAXPAW">  -100</i>
+    <i type="int" name="LMAXMIX">     2</i>
+    <i type="logical" name="NLSPLINE"> F  </i>
+   </separator>
+   <separator name="electronic startup" >
+    <i type="int" name="ISTART">     0</i>
+    <i type="int" name="ICHARG">     2</i>
+    <i type="int" name="INIWAV">     1</i>
+   </separator>
+   <separator name="electronic spin" >
+    <i type="int" name="ISPIN">     1</i>
+    <i type="logical" name="LNONCOLLINEAR"> F  </i>
+    <v name="MAGMOM">      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000
+      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000
+      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000
+      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000      1.00000000</v>
+    <i name="NUPDOWN">     -1.00000000</i>
+    <i type="logical" name="LSORBIT"> F  </i>
+    <v name="SAXIS">      0.00000000      0.00000000      1.00000000</v>
+    <i type="logical" name="LSPIRAL"> F  </i>
+    <v name="QSPIRAL">      0.00000000      0.00000000      0.00000000</v>
+    <i type="logical" name="LZEROZ"> F  </i>
+   </separator>
+   <separator name="electronic exchange-correlation" >
+    <i type="logical" name="LASPH"> F  </i>
+    <i type="logical" name="LMETAGGA"> F  </i>
+   </separator>
+   <separator name="electronic convergence" >
+    <i type="int" name="NELM">    60</i>
+    <i type="int" name="NELMDL">     0</i>
+    <i type="int" name="NELMIN">     5</i>
+    <i name="ENINI">    500.00000000</i>
+    <separator name="electronic convergence detail" >
+     <i type="logical" name="LDIAG"> T  </i>
+     <i type="logical" name="LSUBROT"> F  </i>
+     <i name="WEIMIN">      0.00000000</i>
+     <i name="EBREAK">      0.00000000</i>
+     <i name="DEPER">      0.30000000</i>
+     <i type="int" name="NRMM">     4</i>
+     <i name="TIME">      0.40000000</i>
+    </separator>
+   </separator>
+   <separator name="electronic mixer" >
+    <i name="AMIX">      0.40000000</i>
+    <i name="BMIX">      1.00000000</i>
+    <i name="AMIN">      0.10000000</i>
+    <i name="AMIX_MAG">      1.60000000</i>
+    <i name="BMIX_MAG">      1.00000000</i>
+    <separator name="electronic mixer details" >
+     <i type="int" name="IMIX">     4</i>
+     <i type="logical" name="MIXFIRST"> F  </i>
+     <i type="int" name="MAXMIX">   -45</i>
+     <i name="WC">    100.00000000</i>
+     <i type="int" name="INIMIX">     1</i>
+     <i type="int" name="MIXPRE">     1</i>
+     <i type="int" name="MREMOVE">     5</i>
+    </separator>
+   </separator>
+   <separator name="electronic dipolcorrection" >
+    <i type="logical" name="LDIPOL"> F  </i>
+    <i type="logical" name="LMONO"> F  </i>
+    <i type="int" name="IDIPOL">     0</i>
+    <i name="EPSILON">      1.00000000</i>
+    <v name="DIPOL">   -100.00000000   -100.00000000   -100.00000000</v>
+    <i name="EFIELD">      0.00000000</i>
+   </separator>
+  </separator>
+  <separator name="grids" >
+   <i type="int" name="NGX">    70</i>
+   <i type="int" name="NGY">    70</i>
+   <i type="int" name="NGZ">    80</i>
+   <i type="int" name="NGXF">   140</i>
+   <i type="int" name="NGYF">   140</i>
+   <i type="int" name="NGZF">   160</i>
+   <i type="logical" name="ADDGRID"> T  </i>
+  </separator>
+  <separator name="ionic" >
+   <i type="int" name="NSW">     0</i>
+   <i type="int" name="IBRION">    -1</i>
+   <i type="int" name="MDALGO">     0</i>
+   <i type="int" name="ISIF">     2</i>
+   <i name="PSTRESS">      0.00000000</i>
+   <i name="EDIFFG">      0.00000010</i>
+   <i type="int" name="NFREE">     0</i>
+   <i name="POTIM">      0.50000000</i>
+   <i name="SMASS">     -3.00000000</i>
+   <i name="SCALEE">      1.00000000</i>
+  </separator>
+  <separator name="ionic md" >
+   <i name="TEBEG">      0.00010000</i>
+   <i name="TEEND">      0.00010000</i>
+   <i type="int" name="NBLOCK">     1</i>
+   <i type="int" name="KBLOCK">     1</i>
+   <i type="int" name="NPACO">   256</i>
+   <i name="APACO">     10.00000000</i>
+  </separator>
+  <separator name="symmetry" >
+   <i type="int" name="ISYM">     0</i>
+   <i name="SYMPREC">      0.00001000</i>
+  </separator>
+  <separator name="dos" >
+   <i type="int" name="LORBIT">     0</i>
+   <v name="RWIGS">     -1.00000000     -1.00000000</v>
+   <i type="int" name="NEDOS">   301</i>
+   <i name="EMIN">     10.00000000</i>
+   <i name="EMAX">    -10.00000000</i>
+   <i name="EFERMI">      0.00000000</i>
+  </separator>
+  <separator name="writing" >
+   <i type="int" name="NWRITE">     2</i>
+   <i type="logical" name="LWAVE"> F  </i>
+   <i type="logical" name="LDOWNSAMPLE"> F  </i>
+   <i type="logical" name="LCHARG"> F  </i>
+   <i type="logical" name="LPARD"> F  </i>
+   <i type="logical" name="LVTOT"> F  </i>
+   <i type="logical" name="LVHAR"> F  </i>
+   <i type="logical" name="LELF"> F  </i>
+   <i type="logical" name="LOPTICS"> F  </i>
+   <v name="STM">      0.00000000      0.00000000      0.00000000      0.00000000      0.00000000      0.00000000      0.00000000</v>
+  </separator>
+  <separator name="performance" >
+   <i type="int" name="NPAR">     4</i>
+   <i type="int" name="NSIM">     4</i>
+   <i type="int" name="NBLK">    -1</i>
+   <i type="logical" name="LPLANE"> T  </i>
+   <i type="logical" name="LSCALAPACK"> T  </i>
+   <i type="logical" name="LSCAAWARE"> F  </i>
+   <i type="logical" name="LSCALU"> F  </i>
+   <i type="logical" name="LASYNC"> F  </i>
+   <i type="logical" name="LORBITALREAL"> F  </i>
+  </separator>
+  <separator name="miscellaneous" >
+   <i type="int" name="IDIOT">     3</i>
+   <i type="int" name="PHON_NSTRUCT">    -1</i>
+   <i type="logical" name="LMUSIC"> F  </i>
+   <v name="POMASS">     26.98100000     14.00100000</v>
+   <v name="DARWINR">      0.00000000      0.00000000</v>
+   <v name="DARWINV">      1.00000000      1.00000000</v>
+   <i type="logical" name="LCORR"> T  </i>
+  </separator>
+  <i type="logical" name="GGA_COMPAT"> T  </i>
+  <i type="logical" name="LBERRY"> F  </i>
+  <i type="int" name="ICORELEVEL">     0</i>
+  <i type="logical" name="LDAU"> F  </i>
+  <i type="int" name="I_CONSTRAINED_M">     0</i>
+  <separator name="electronic exchange-correlation" >
+   <i type="string" name="GGA">--</i>
+   <i type="int" name="VOSKOWN">     0</i>
+   <i type="logical" name="LHFCALC"> F  </i>
+   <i type="string" name="PRECFOCK"></i>
+   <i type="logical" name="LSYMGRAD"> F  </i>
+   <i type="logical" name="LHFONE"> F  </i>
+   <i type="logical" name="LRHFCALC"> F  </i>
+   <i type="logical" name="LTHOMAS"> F  </i>
+   <i type="logical" name="LMODELHF"> F  </i>
+   <i type="logical" name="LFOCKACE"> F  </i>
+   <i name="ENCUT4O">     -1.00000000</i>
+   <i type="int" name="EXXOEP">     0</i>
+   <i type="int" name="FOURORBIT">     0</i>
+   <i name="AEXX">      0.00000000</i>
+   <i name="HFALPHA">      0.00000000</i>
+   <i name="MCALPHA">      0.00000000</i>
+   <i name="ALDAX">      1.00000000</i>
+   <i name="AGGAX">      1.00000000</i>
+   <i name="ALDAC">      1.00000000</i>
+   <i name="AGGAC">      1.00000000</i>
+   <i type="int" name="NKREDX">     1</i>
+   <i type="int" name="NKREDY">     1</i>
+   <i type="int" name="NKREDZ">     1</i>
+   <i type="logical" name="SHIFTRED"> F  </i>
+   <i type="logical" name="ODDONLY"> F  </i>
+   <i type="logical" name="EVENONLY"> F  </i>
+   <i type="int" name="LMAXFOCK">     0</i>
+   <i type="int" name="NMAXFOCKAE">     0</i>
+   <i type="logical" name="LFOCKAEDFT"> F  </i>
+   <i name="HFSCREEN">      0.00000000</i>
+   <i name="HFSCREENC">      0.00000000</i>
+   <i type="int" name="NBANDSGWLOW">     0</i>
+  </separator>
+  <separator name="vdW DFT" >
+   <i type="logical" name="LUSE_VDW"> F  </i>
+   <i name="Zab_VDW">     -0.84910000</i>
+   <i name="PARAM1">      0.12340000</i>
+   <i name="PARAM2">      1.00000000</i>
+   <i name="PARAM3">      0.00000000</i>
+  </separator>
+  <separator name="model GW" >
+   <i type="int" name="MODEL_GW">     0</i>
+   <i name="MODEL_EPS0">      6.25859437</i>
+   <i name="MODEL_ALPHA">      1.00000000</i>
+  </separator>
+  <separator name="linear response parameters" >
+   <i type="logical" name="LEPSILON"> F  </i>
+   <i type="logical" name="LRPA"> F  </i>
+   <i type="logical" name="LNABLA"> F  </i>
+   <i type="logical" name="LVEL"> F  </i>
+   <i name="CSHIFT">      0.10000000</i>
+   <i name="OMEGAMAX">     -1.00000000</i>
+   <i name="DEG_THRESHOLD">      0.00200000</i>
+   <i name="RTIME">     -0.10000000</i>
+   <i name="WPLASMAI">      0.00000000</i>
+   <v name="DFIELD">      0.00000000      0.00000000      0.00000000</v>
+   <v name="WPLASMA">      0.00000000      0.00000000      0.00000000      0.00000000      0.00000000      0.00000000      0.00000000      0.00000000      0.00000000</v>
+  </separator>
+  <separator name="orbital magnetization" >
+   <i type="logical" name="NUCIND"> F  </i>
+   <v name="MAGPOS">      0.00000000      0.00000000      0.00000000</v>
+   <i type="logical" name="LNICSALL"> T  </i>
+   <i type="logical" name="ORBITALMAG"> F  </i>
+   <i type="logical" name="LMAGBLOCH"> F  </i>
+   <i type="logical" name="LCHIMAG"> F  </i>
+   <i type="logical" name="LGAUGE"> T  </i>
+   <i type="int" name="MAGATOM">     0</i>
+   <v name="MAGDIPOL">      0.00000000      0.00000000      0.00000000</v>
+   <v name="AVECCONST">      0.00000000      0.00000000      0.00000000</v>
+  </separator>
+  <separator name="response functions" >
+   <i type="logical" name="LFINITE_TEMPERATURE"> F  </i>
+   <i type="logical" name="LADDER"> F  </i>
+   <i type="logical" name="LRPAFORCE"> F  </i>
+   <i type="logical" name="LFXC"> F  </i>
+   <i type="logical" name="LHARTREE"> T  </i>
+   <i type="int" name="IBSE">     0</i>
+   <v type="int" name="KPOINT">    -1     0     0     0</v>
+   <i type="logical" name="LTCTC"> F  </i>
+   <i type="logical" name="LTCTE"> F  </i>
+   <i type="logical" name="LTETE"> F  </i>
+   <i type="logical" name="LTRIPLET"> F  </i>
+   <i type="logical" name="LFXCEPS"> F  </i>
+   <i type="logical" name="LFXHEG"> F  </i>
+   <i type="int" name="NATURALO">     2</i>
+   <i type="logical" name="LHOLEGF"> F  </i>
+   <i type="logical" name="L2ORDER"> F  </i>
+   <i type="logical" name="LDMP1"> F  </i>
+   <i type="logical" name="LMP2LT"> F  </i>
+   <i type="logical" name="LSMP2LT"> F  </i>
+   <i type="logical" name="LGWLF"> F  </i>
+   <i name="ENCUTGW">     -2.00000000</i>
+   <i name="ENCUTGWSOFT">     -2.00000000</i>
+   <i name="ENCUTLF">     -1.00000000</i>
+   <i type="logical" name="LESF_SPLINES"> F  </i>
+   <i type="int" name="LMAXMP2">    -1</i>
+   <i name="SCISSOR">      0.00000000</i>
+   <i type="int" name="NOMEGA">     0</i>
+   <i type="int" name="NOMEGAR">     0</i>
+   <i type="int" name="NBANDSGW">    -1</i>
+   <i type="int" name="NBANDSO">    -1</i>
+   <i type="int" name="NBANDSV">    -1</i>
+   <i type="int" name="NELMGW">     1</i>
+   <i type="int" name="NELMHF">     1</i>
+   <i type="int" name="DIM">     3</i>
+   <i type="int" name="IESPILON">     4</i>
+   <i type="int" name="ANTIRES">     0</i>
+   <i name="OMEGAMAX">    -30.00000000</i>
+   <i name="OMEGAMIN">    -30.00000000</i>
+   <i name="OMEGATL">   -200.00000000</i>
+   <i type="int" name="OMEGAGRID">     0</i>
+   <i name="CSHIFT">     -0.10000000</i>
+   <i type="logical" name="LSELFENERGY"> F  </i>
+   <i type="logical" name="LSPECTRAL"> F  </i>
+   <i type="logical" name="LSPECTRALGW"> F  </i>
+   <i type="logical" name="LSINGLES"> F  </i>
+   <i type="logical" name="LFERMIGW"> F  </i>
+   <i type="logical" name="ODDONLYGW"> F  </i>
+   <i type="logical" name="EVENONLYGW"> F  </i>
+   <i type="int" name="NKREDLFX">     1</i>
+   <i type="int" name="NKREDLFY">     1</i>
+   <i type="int" name="NKREDLFZ">     1</i>
+   <i type="int" name="MAXMEM">  2800</i>
+   <i type="int" name="TELESCOPE">     0</i>
+   <i type="int" name="NTAUPAR">    -1</i>
+   <i type="int" name="NOMEGAPAR">    -1</i>
+   <i name="DAMP_NEWTON">      0.80000001</i>
+   <i name="LAMBDA">      1.00000000</i>
+  </separator>
+  <separator name="External order field" >
+   <i name="OFIELD_KAPPA">      0.00000000</i>
+   <v name="OFIELD_K">      0.00000000      0.00000000      0.00000000</v>
+   <i name="OFIELD_Q6_NEAR">      0.00000000</i>
+   <i name="OFIELD_Q6_FAR">      0.00000000</i>
+   <i name="OFIELD_A">      0.00000000</i>
+  </separator>
+  <separator name="optional k-points parameters" >
+   <i type="int" name="KPOINTS_OPT_MODE">     1</i>
+   <i type="logical" name="LKPOINTS_OPT"> F  </i>
+  </separator>
+ </parameters>
+ <atominfo>
+  <atoms>      72 </atoms>
+  <types>       2 </types>
+  <array name="atoms" >
+   <dimension dim="1">ion</dimension>
+   <field type="string">element</field>
+   <field type="int">atomtype</field>
+   <set>
+    <rc><c>Al</c><c>   1</c></rc>
+    <rc><c>Al</c><c>   1</c></rc>
+    <rc><c>Al</c><c>   1</c></rc>
+    <rc><c>Al</c><c>   1</c></rc>
+    <rc><c>Al</c><c>   1</c></rc>
+    <rc><c>Al</c><c>   1</c></rc>
+    <rc><c>Al</c><c>   1</c></rc>
+    <rc><c>Al</c><c>   1</c></rc>
+    <rc><c>Al</c><c>   1</c></rc>
+    <rc><c>Al</c><c>   1</c></rc>
+    <rc><c>Al</c><c>   1</c></rc>
+    <rc><c>Al</c><c>   1</c></rc>
+    <rc><c>Al</c><c>   1</c></rc>
+    <rc><c>Al</c><c>   1</c></rc>
+    <rc><c>Al</c><c>   1</c></rc>
+    <rc><c>Al</c><c>   1</c></rc>
+    <rc><c>Al</c><c>   1</c></rc>
+    <rc><c>Al</c><c>   1</c></rc>
+    <rc><c>Al</c><c>   1</c></rc>
+    <rc><c>Al</c><c>   1</c></rc>
+    <rc><c>Al</c><c>   1</c></rc>
+    <rc><c>Al</c><c>   1</c></rc>
+    <rc><c>Al</c><c>   1</c></rc>
+    <rc><c>Al</c><c>   1</c></rc>
+    <rc><c>Al</c><c>   1</c></rc>
+    <rc><c>Al</c><c>   1</c></rc>
+    <rc><c>Al</c><c>   1</c></rc>
+    <rc><c>Al</c><c>   1</c></rc>
+    <rc><c>Al</c><c>   1</c></rc>
+    <rc><c>Al</c><c>   1</c></rc>
+    <rc><c>Al</c><c>   1</c></rc>
+    <rc><c>Al</c><c>   1</c></rc>
+    <rc><c>Al</c><c>   1</c></rc>
+    <rc><c>Al</c><c>   1</c></rc>
+    <rc><c>Al</c><c>   1</c></rc>
+    <rc><c>Al</c><c>   1</c></rc>
+    <rc><c>N </c><c>   2</c></rc>
+    <rc><c>N </c><c>   2</c></rc>
+    <rc><c>N </c><c>   2</c></rc>
+    <rc><c>N </c><c>   2</c></rc>
+    <rc><c>N </c><c>   2</c></rc>
+    <rc><c>N </c><c>   2</c></rc>
+    <rc><c>N </c><c>   2</c></rc>
+    <rc><c>N </c><c>   2</c></rc>
+    <rc><c>N </c><c>   2</c></rc>
+    <rc><c>N </c><c>   2</c></rc>
+    <rc><c>N </c><c>   2</c></rc>
+    <rc><c>N </c><c>   2</c></rc>
+    <rc><c>N </c><c>   2</c></rc>
+    <rc><c>N </c><c>   2</c></rc>
+    <rc><c>N </c><c>   2</c></rc>
+    <rc><c>N </c><c>   2</c></rc>
+    <rc><c>N </c><c>   2</c></rc>
+    <rc><c>N </c><c>   2</c></rc>
+    <rc><c>N </c><c>   2</c></rc>
+    <rc><c>N </c><c>   2</c></rc>
+    <rc><c>N </c><c>   2</c></rc>
+    <rc><c>N </c><c>   2</c></rc>
+    <rc><c>N </c><c>   2</c></rc>
+    <rc><c>N </c><c>   2</c></rc>
+    <rc><c>N </c><c>   2</c></rc>
+    <rc><c>N </c><c>   2</c></rc>
+    <rc><c>N </c><c>   2</c></rc>
+    <rc><c>N </c><c>   2</c></rc>
+    <rc><c>N </c><c>   2</c></rc>
+    <rc><c>N </c><c>   2</c></rc>
+    <rc><c>N </c><c>   2</c></rc>
+    <rc><c>N </c><c>   2</c></rc>
+    <rc><c>N </c><c>   2</c></rc>
+    <rc><c>N </c><c>   2</c></rc>
+    <rc><c>N </c><c>   2</c></rc>
+    <rc><c>N </c><c>   2</c></rc>
+   </set>
+  </array>
+  <array name="atomtypes" >
+   <dimension dim="1">type</dimension>
+   <field type="int">atomspertype</field>
+   <field type="string">element</field>
+   <field>mass</field>
+   <field>valence</field>
+   <field type="string">pseudopotential</field>
+   <set>
+    <rc><c>  36</c><c>Al</c><c>     26.98100000</c><c>      3.00000000</c><c>  PAW Al 17Apr2000                      </c></rc>
+    <rc><c>  36</c><c>N </c><c>     14.00100000</c><c>      5.00000000</c><c>  PAW N 21Mar2012                       </c></rc>
+   </set>
+  </array>
+ </atominfo>
+ <structure name="initialpos" >
+  <crystal>
+   <varray name="basis" >
+    <v>       9.33300000       0.00000000       0.00000000 </v>
+    <v>      -4.66650000       8.08261509       0.00000000 </v>
+    <v>       0.00000000       0.00000000       9.95600000 </v>
+   </varray>
+   <i name="volume">    751.03132438 </i>
+   <varray name="rec_basis" >
+    <v>       0.10714668       0.06186117       0.00000000 </v>
+    <v>       0.00000000       0.12372233       0.00000000 </v>
+    <v>       0.00000000       0.00000000       0.10044194 </v>
+   </varray>
+  </crystal>
+  <varray name="positions" >
+   <v>       0.11021825       0.22344840       0.99800543 </v>
+   <v>       0.44485422       0.22009705       0.00252333 </v>
+   <v>       0.77525128       0.21961677       0.00228815 </v>
+   <v>       0.11243522       0.55457660       0.00283190 </v>
+   <v>       0.44117939       0.55437016       0.00184479 </v>
+   <v>       0.77850196       0.55775239       0.00287772 </v>
+   <v>       0.11297409       0.88705347       0.00072868 </v>
+   <v>       0.44380882       0.88848146       0.00344197 </v>
+   <v>       0.78080494       0.88876001       0.00129268 </v>
+   <v>       0.10866131       0.22064404       0.49823508 </v>
+   <v>       0.44169455       0.22299329       0.50069536 </v>
+   <v>       0.77563975       0.22291718       0.49864886 </v>
+   <v>       0.10803723       0.55244965       0.50130453 </v>
+   <v>       0.44533079       0.55493252       0.50322450 </v>
+   <v>       0.77978242       0.55385275       0.50049974 </v>
+   <v>       0.11191122       0.89230099       0.49964659 </v>
+   <v>       0.44367374       0.88811972       0.50339995 </v>
+   <v>       0.78106530       0.88907109       0.50075618 </v>
+   <v>       0.22138793       0.11182589       0.25321212 </v>
+   <v>       0.55469007       0.10951746       0.25319502 </v>
+   <v>       0.89216648       0.11168345       0.25147448 </v>
+   <v>       0.21941088       0.44396180       0.25224132 </v>
+   <v>       0.55465694       0.44711100       0.25060080 </v>
+   <v>       0.88627020       0.44523125       0.24963837 </v>
+   <v>       0.22433940       0.77790000       0.24816033 </v>
+   <v>       0.55895847       0.78025139       0.24951326 </v>
+   <v>       0.88868983       0.77869856       0.25332727 </v>
+   <v>       0.22328588       0.10911471       0.74882606 </v>
+   <v>       0.55587072       0.11121123       0.75347630 </v>
+   <v>       0.88951058       0.10852095       0.74927880 </v>
+   <v>       0.22522904       0.44539520       0.74878542 </v>
+   <v>       0.55197281       0.44209191       0.74988866 </v>
+   <v>       0.88736120       0.44381002       0.75321792 </v>
+   <v>       0.22364416       0.77605556       0.74887926 </v>
+   <v>       0.55605749       0.77485549       0.75072915 </v>
+   <v>       0.88632711       0.77815698       0.75200170 </v>
+   <v>       0.11159825       0.21933926       0.30894833 </v>
+   <v>       0.44319961       0.22220891       0.31230631 </v>
+   <v>       0.77624838       0.22123512       0.30678796 </v>
+   <v>       0.10836148       0.55499618       0.30765143 </v>
+   <v>       0.44686634       0.55914184       0.31003125 </v>
+   <v>       0.77734371       0.55634419       0.31236580 </v>
+   <v>       0.11140581       0.88647252       0.30772373 </v>
+   <v>       0.44413793       0.88558269       0.30899459 </v>
+   <v>       0.77788499       0.88595943       0.30840652 </v>
+   <v>       0.11305516       0.22437397       0.80720916 </v>
+   <v>       0.44779876       0.22414892       0.80825693 </v>
+   <v>       0.77842885       0.22534153       0.81091895 </v>
+   <v>       0.11377408       0.55860516       0.81087166 </v>
+   <v>       0.44381354       0.55479835       0.80658520 </v>
+   <v>       0.78044174       0.55863570       0.81083590 </v>
+   <v>       0.10871931       0.88962755       0.80810412 </v>
+   <v>       0.44595781       0.89157870       0.81159594 </v>
+   <v>       0.77728536       0.89167982       0.81042780 </v>
+   <v>       0.22176511       0.11407176       0.05946187 </v>
+   <v>       0.55577202       0.10841189       0.05806868 </v>
+   <v>       0.88544604       0.10845424       0.06023172 </v>
+   <v>       0.22334899       0.44680373       0.05719992 </v>
+   <v>       0.55273170       0.44449076       0.05812719 </v>
+   <v>       0.89210223       0.44731237       0.05858938 </v>
+   <v>       0.22023325       0.77555046       0.05725914 </v>
+   <v>       0.55924560       0.77979344       0.05980825 </v>
+   <v>       0.89233386       0.78059073       0.05906407 </v>
+   <v>       0.22262838       0.11105540       0.55654027 </v>
+   <v>       0.55641774       0.10861096       0.56054505 </v>
+   <v>       0.89047225       0.11478299       0.55989648 </v>
+   <v>       0.22408109       0.44268656       0.56020103 </v>
+   <v>       0.55466843       0.44666939       0.55800789 </v>
+   <v>       0.89219741       0.44472715       0.55998627 </v>
+   <v>       0.22290657       0.77556071       0.55778910 </v>
+   <v>       0.55546308       0.77537195       0.56157045 </v>
+   <v>       0.89220177       0.77822426       0.55877740 </v>
+  </varray>
+ </structure>
+ <calculation>
+  <scstep>
+   <time name="dav">    5.17    5.18</time>
+   <time name="total">    5.50    5.50</time>
+   <energy>
+    <i name="alphaZ">    276.56824604 </i>
+    <i name="ewald"> -10654.09826775 </i>
+    <i name="hartreedc">  -2117.74483540 </i>
+    <i name="XCdc">   -187.68303875 </i>
+    <i name="pawpsdc">   9706.72761341 </i>
+    <i name="pawaedc">  -8638.20414018 </i>
+    <i name="eentropy">     -0.00036387 </i>
+    <i name="bandstr">   1361.72978989 </i>
+    <i name="atom">  11435.50177475 </i>
+    <i name="e_fr_energy">   1182.79677813 </i>
+    <i name="e_wo_entrp">   1182.79714200 </i>
+    <i name="e_0_energy">   1182.79696006 </i>
+   </energy>
+  </scstep>
+  <scstep>
+   <time name="dav">    6.07    6.08</time>
+   <time name="total">    6.07    6.08</time>
+   <energy>
+    <i name="e_fr_energy">   -553.35965762 </i>
+    <i name="e_wo_entrp">   -553.35965762 </i>
+    <i name="e_0_energy">   -553.35965762 </i>
+   </energy>
+  </scstep>
+  <scstep>
+   <time name="dav">    5.77    5.78</time>
+   <time name="total">    5.77    5.78</time>
+   <energy>
+    <i name="e_fr_energy">   -679.48801801 </i>
+    <i name="e_wo_entrp">   -679.48801801 </i>
+    <i name="e_0_energy">   -679.48801801 </i>
+   </energy>
+  </scstep>
+  <scstep>
+   <time name="dav">    5.77    5.77</time>
+   <time name="total">    5.77    5.77</time>
+   <energy>
+    <i name="e_fr_energy">   -681.45071370 </i>
+    <i name="e_wo_entrp">   -681.45071370 </i>
+    <i name="e_0_energy">   -681.45071370 </i>
+   </energy>
+  </scstep>
+  <scstep>
+   <time name="dav">    5.68    5.69</time>
+   <time name="total">    6.16    6.16</time>
+   <energy>
+    <i name="e_fr_energy">   -681.49463509 </i>
+    <i name="e_wo_entrp">   -681.49463509 </i>
+    <i name="e_0_energy">   -681.49463509 </i>
+   </energy>
+  </scstep>
+  <scstep>
+   <time name="dav">    5.66    5.66</time>
+   <time name="total">    6.45    6.46</time>
+   <energy>
+    <i name="e_fr_energy">   -592.56137997 </i>
+    <i name="e_wo_entrp">   -592.56137997 </i>
+    <i name="e_0_energy">   -592.56137997 </i>
+   </energy>
+  </scstep>
+  <scstep>
+   <time name="dav">    5.76    5.76</time>
+   <time name="total">    6.55    6.56</time>
+   <energy>
+    <i name="e_fr_energy">   -591.38870707 </i>
+    <i name="e_wo_entrp">   -591.38870707 </i>
+    <i name="e_0_energy">   -591.38870707 </i>
+   </energy>
+  </scstep>
+  <scstep>
+   <time name="dav">    5.61    5.62</time>
+   <time name="total">    6.41    6.42</time>
+   <energy>
+    <i name="e_fr_energy">   -590.38862988 </i>
+    <i name="e_wo_entrp">   -590.38862988 </i>
+    <i name="e_0_energy">   -590.38862988 </i>
+   </energy>
+  </scstep>
+  <scstep>
+   <time name="dav">    5.91    5.92</time>
+   <time name="total">    6.71    6.72</time>
+   <energy>
+    <i name="e_fr_energy">   -590.34051730 </i>
+    <i name="e_wo_entrp">   -590.34051730 </i>
+    <i name="e_0_energy">   -590.34051730 </i>
+   </energy>
+  </scstep>
+  <scstep>
+   <time name="dav">    5.74    5.74</time>
+   <time name="total">    6.53    6.54</time>
+   <energy>
+    <i name="e_fr_energy">   -590.34212586 </i>
+    <i name="e_wo_entrp">   -590.34212586 </i>
+    <i name="e_0_energy">   -590.34212586 </i>
+   </energy>
+  </scstep>
+  <scstep>
+   <time name="dav">    5.68    5.69</time>
+   <time name="total">    6.48    6.49</time>
+   <energy>
+    <i name="e_fr_energy">   -590.34106630 </i>
+    <i name="e_wo_entrp">   -590.34106630 </i>
+    <i name="e_0_energy">   -590.34106630 </i>
+   </energy>
+  </scstep>
+  <scstep>
+   <time name="dav">    5.74    5.75</time>
+   <time name="total">    6.54    6.55</time>
+   <energy>
+    <i name="e_fr_energy">   -590.34110258 </i>
+    <i name="e_wo_entrp">   -590.34110258 </i>
+    <i name="e_0_energy">   -590.34110258 </i>
+   </energy>
+  </scstep>
+  <scstep>
+   <time name="dav">    5.66    5.67</time>
+   <time name="total">    6.45    6.46</time>
+   <energy>
+    <i name="e_fr_energy">   -590.34108036 </i>
+    <i name="e_wo_entrp">   -590.34108036 </i>
+    <i name="e_0_energy">   -590.34108036 </i>
+   </energy>
+  </scstep>
+  <scstep>
+   <time name="dav">    5.64    5.65</time>
+   <time name="total">    6.44    6.45</time>
+   <energy>
+    <i name="e_fr_energy">   -590.34108236 </i>
+    <i name="e_wo_entrp">   -590.34108236 </i>
+    <i name="e_0_energy">   -590.34108236 </i>
+   </energy>
+  </scstep>
+  <scstep>
+   <time name="dav">    5.66    5.67</time>
+   <time name="total">    6.46    6.47</time>
+   <energy>
+    <i name="e_fr_energy">   -590.34108083 </i>
+    <i name="e_wo_entrp">   -590.34108083 </i>
+    <i name="e_0_energy">   -590.34108083 </i>
+   </energy>
+  </scstep>
+  <scstep>
+   <time name="dav">    5.64    5.64</time>
+   <time name="total">    6.43    6.44</time>
+   <energy>
+    <i name="e_fr_energy">   -590.34108094 </i>
+    <i name="e_wo_entrp">   -590.34108094 </i>
+    <i name="e_0_energy">   -590.34108094 </i>
+   </energy>
+  </scstep>
+  <scstep>
+   <time name="dav">    5.66    5.67</time>
+   <time name="total">    6.46    6.47</time>
+   <energy>
+    <i name="e_fr_energy">   -590.34108104 </i>
+    <i name="e_wo_entrp">   -590.34108104 </i>
+    <i name="e_0_energy">   -590.34108104 </i>
+   </energy>
+  </scstep>
+  <scstep>
+   <time name="dav">    6.03    6.03</time>
+   <time name="total">    6.83    6.84</time>
+   <energy>
+    <i name="e_fr_energy">   -590.34108093 </i>
+    <i name="e_wo_entrp">   -590.34108093 </i>
+    <i name="e_0_energy">   -590.34108093 </i>
+   </energy>
+  </scstep>
+  <scstep>
+   <time name="dav">    5.69    5.69</time>
+   <time name="total">    6.49    6.50</time>
+   <energy>
+    <i name="e_fr_energy">   -590.34108091 </i>
+    <i name="e_wo_entrp">   -590.34108091 </i>
+    <i name="e_0_energy">   -590.34108091 </i>
+   </energy>
+  </scstep>
+  <scstep>
+   <time name="dav">    3.86    3.86</time>
+   <time name="total">    4.18    4.19</time>
+   <energy>
+    <i name="alphaZ">    276.56824604 </i>
+    <i name="ewald"> -10654.09826775 </i>
+    <i name="hartreedc">  -2762.93816071 </i>
+    <i name="XCdc">   -131.81592912 </i>
+    <i name="pawpsdc">  26503.91198829 </i>
+    <i name="pawaedc"> -25454.76255301 </i>
+    <i name="eentropy">     -0.00000000 </i>
+    <i name="bandstr">    197.29182061 </i>
+    <i name="atom">  11435.50177475 </i>
+    <i name="e_fr_energy">   -590.34108091 </i>
+    <i name="e_wo_entrp">   -590.34108091 </i>
+    <i name="e_0_energy">   -590.34108091 </i>
+   </energy>
+  </scstep>
+  <structure>
+   <crystal>
+    <varray name="basis" >
+     <v>       9.33300000       0.00000000       0.00000000 </v>
+     <v>      -4.66650000       8.08261509       0.00000000 </v>
+     <v>       0.00000000       0.00000000       9.95600000 </v>
+    </varray>
+    <i name="volume">    751.03132438 </i>
+    <varray name="rec_basis" >
+     <v>       0.10714668       0.06186117       0.00000000 </v>
+     <v>       0.00000000       0.12372233       0.00000000 </v>
+     <v>       0.00000000       0.00000000       0.10044194 </v>
+    </varray>
+   </crystal>
+   <varray name="positions" >
+    <v>       0.11021825       0.22344840       0.99800543 </v>
+    <v>       0.44485422       0.22009705       0.00252333 </v>
+    <v>       0.77525128       0.21961677       0.00228815 </v>
+    <v>       0.11243522       0.55457660       0.00283190 </v>
+    <v>       0.44117939       0.55437016       0.00184479 </v>
+    <v>       0.77850196       0.55775239       0.00287772 </v>
+    <v>       0.11297409       0.88705347       0.00072868 </v>
+    <v>       0.44380882       0.88848146       0.00344197 </v>
+    <v>       0.78080494       0.88876001       0.00129268 </v>
+    <v>       0.10866131       0.22064404       0.49823508 </v>
+    <v>       0.44169455       0.22299329       0.50069536 </v>
+    <v>       0.77563975       0.22291718       0.49864886 </v>
+    <v>       0.10803723       0.55244965       0.50130453 </v>
+    <v>       0.44533079       0.55493252       0.50322450 </v>
+    <v>       0.77978242       0.55385275       0.50049974 </v>
+    <v>       0.11191122       0.89230099       0.49964659 </v>
+    <v>       0.44367374       0.88811972       0.50339995 </v>
+    <v>       0.78106530       0.88907109       0.50075618 </v>
+    <v>       0.22138793       0.11182589       0.25321212 </v>
+    <v>       0.55469007       0.10951746       0.25319502 </v>
+    <v>       0.89216648       0.11168345       0.25147448 </v>
+    <v>       0.21941088       0.44396180       0.25224132 </v>
+    <v>       0.55465694       0.44711100       0.25060080 </v>
+    <v>       0.88627020       0.44523125       0.24963837 </v>
+    <v>       0.22433940       0.77790000       0.24816033 </v>
+    <v>       0.55895847       0.78025139       0.24951326 </v>
+    <v>       0.88868983       0.77869856       0.25332727 </v>
+    <v>       0.22328588       0.10911471       0.74882606 </v>
+    <v>       0.55587072       0.11121123       0.75347630 </v>
+    <v>       0.88951058       0.10852095       0.74927880 </v>
+    <v>       0.22522904       0.44539520       0.74878542 </v>
+    <v>       0.55197281       0.44209191       0.74988866 </v>
+    <v>       0.88736120       0.44381002       0.75321792 </v>
+    <v>       0.22364416       0.77605556       0.74887926 </v>
+    <v>       0.55605749       0.77485549       0.75072915 </v>
+    <v>       0.88632711       0.77815698       0.75200170 </v>
+    <v>       0.11159825       0.21933926       0.30894833 </v>
+    <v>       0.44319961       0.22220891       0.31230631 </v>
+    <v>       0.77624838       0.22123512       0.30678796 </v>
+    <v>       0.10836148       0.55499618       0.30765143 </v>
+    <v>       0.44686634       0.55914184       0.31003125 </v>
+    <v>       0.77734371       0.55634419       0.31236580 </v>
+    <v>       0.11140581       0.88647252       0.30772373 </v>
+    <v>       0.44413793       0.88558269       0.30899459 </v>
+    <v>       0.77788499       0.88595943       0.30840652 </v>
+    <v>       0.11305516       0.22437397       0.80720916 </v>
+    <v>       0.44779876       0.22414892       0.80825693 </v>
+    <v>       0.77842885       0.22534153       0.81091895 </v>
+    <v>       0.11377408       0.55860516       0.81087166 </v>
+    <v>       0.44381354       0.55479835       0.80658520 </v>
+    <v>       0.78044174       0.55863570       0.81083590 </v>
+    <v>       0.10871931       0.88962755       0.80810412 </v>
+    <v>       0.44595781       0.89157870       0.81159594 </v>
+    <v>       0.77728536       0.89167982       0.81042780 </v>
+    <v>       0.22176511       0.11407176       0.05946187 </v>
+    <v>       0.55577202       0.10841189       0.05806868 </v>
+    <v>       0.88544604       0.10845424       0.06023172 </v>
+    <v>       0.22334899       0.44680373       0.05719992 </v>
+    <v>       0.55273170       0.44449076       0.05812719 </v>
+    <v>       0.89210223       0.44731237       0.05858938 </v>
+    <v>       0.22023325       0.77555046       0.05725914 </v>
+    <v>       0.55924560       0.77979344       0.05980825 </v>
+    <v>       0.89233386       0.78059073       0.05906407 </v>
+    <v>       0.22262838       0.11105540       0.55654027 </v>
+    <v>       0.55641774       0.10861096       0.56054505 </v>
+    <v>       0.89047225       0.11478299       0.55989648 </v>
+    <v>       0.22408109       0.44268656       0.56020103 </v>
+    <v>       0.55466843       0.44666939       0.55800789 </v>
+    <v>       0.89219741       0.44472715       0.55998627 </v>
+    <v>       0.22290657       0.77556071       0.55778910 </v>
+    <v>       0.55546308       0.77537195       0.56157045 </v>
+    <v>       0.89220177       0.77822426       0.55877740 </v>
+   </varray>
+  </structure>
+  <varray name="forces" >
+   <v>       0.02430885      -0.18023412       0.08682593 </v>
+   <v>      -0.34195801       0.26891333      -0.35917330 </v>
+   <v>       0.33406477       0.50983434      -0.27816368 </v>
+   <v>      -0.35077070       0.17418519      -0.71602666 </v>
+   <v>       0.48479751       0.49838967      -0.47162831 </v>
+   <v>       0.01927528      -0.12851496      -0.39066541 </v>
+   <v>      -0.46866809       0.60583396      -0.28442270 </v>
+   <v>       0.30115243      -0.27943170      -0.56457666 </v>
+   <v>      -0.35894340       0.06725017      -0.11075186 </v>
+   <v>       0.31816989       0.38155252       0.52534976 </v>
+   <v>       0.79653253       0.01117379       0.18569446 </v>
+   <v>       0.30355340      -0.10296902       0.25158339 </v>
+   <v>       0.72047765       0.43168369      -0.28256941 </v>
+   <v>      -0.34681893       0.33949919      -0.61549507 </v>
+   <v>      -0.34152096       0.26905911       0.35271747 </v>
+   <v>       0.62979151      -0.80781102      -0.07682999 </v>
+   <v>       0.37752335      -0.25872489      -0.40419892 </v>
+   <v>      -0.53650602      -0.11539085       0.05858891 </v>
+   <v>       0.55233484      -0.42133965      -0.70571394 </v>
+   <v>      -0.24184377      -0.07234788      -0.35503383 </v>
+   <v>      -0.58317887      -0.37362290      -0.35559329 </v>
+   <v>       0.53204133       0.28807165      -0.27801403 </v>
+   <v>       0.12461159      -0.28673300       0.07742438 </v>
+   <v>       0.23532683      -0.03210025      -0.10507339 </v>
+   <v>      -0.26295214      -0.22087239       0.27829395 </v>
+   <v>      -0.21093538      -0.37367088       0.08808625 </v>
+   <v>       0.48414358      -0.26128616      -0.56089942 </v>
+   <v>      -0.22573568       0.33962485       0.20686182 </v>
+   <v>       0.33454522       0.05130725      -0.35257199 </v>
+   <v>      -0.46276733       0.89572684       0.26790787 </v>
+   <v>      -0.71362935      -0.05868795       0.21430464 </v>
+   <v>       0.67314624       0.56950269       0.06179718 </v>
+   <v>       0.43335758       0.44583422      -0.07569082 </v>
+   <v>      -0.36883437       0.40364639       0.25113387 </v>
+   <v>      -0.48152589       0.63108087       0.18576175 </v>
+   <v>       0.38430841       0.06151734      -0.24668278 </v>
+   <v>      -0.49476860       0.59165781       0.18318489 </v>
+   <v>       0.21291006       0.12877805      -0.53055018 </v>
+   <v>       0.28595573       0.15722730       0.35932780 </v>
+   <v>       0.17152266      -0.13061906       0.29730018 </v>
+   <v>      -0.44684815      -0.43088701       0.00713826 </v>
+   <v>      -0.04320888      -0.17039754      -0.56289583 </v>
+   <v>      -0.08954143       0.41824033       0.23926932 </v>
+   <v>      -0.07444308       0.45365810       0.18841629 </v>
+   <v>      -0.09628391       0.80146824       0.49208680 </v>
+   <v>       0.08337938      -0.39088963       0.10046246 </v>
+   <v>      -0.47321862      -0.44003738       0.29611667 </v>
+   <v>       0.36272069      -0.59732516      -0.00166842 </v>
+   <v>       0.04710205      -0.58957845      -0.18487313 </v>
+   <v>       0.17650753       0.03795865       0.70497570 </v>
+   <v>      -0.60124876      -0.43168929      -0.12436985 </v>
+   <v>       0.58810893      -0.14147045       0.11758665 </v>
+   <v>       0.10334323      -0.57400078      -0.15084369 </v>
+   <v>       0.28420080      -0.47981951      -0.07420069 </v>
+   <v>       0.32247729      -0.41631449       0.14933842 </v>
+   <v>      -0.51297982       0.31297394       0.75996588 </v>
+   <v>       0.51313477       0.53798879       0.04522567 </v>
+   <v>      -0.10713218      -0.60164050       0.76388535 </v>
+   <v>       0.51951095      -0.03495907       0.38200601 </v>
+   <v>      -0.52412958      -0.55259513       0.29030686 </v>
+   <v>       0.43977982       0.30814267       0.50928702 </v>
+   <v>      -0.28883668      -0.40092572      -0.13593372 </v>
+   <v>      -0.10231294      -0.37896756       0.44316723 </v>
+   <v>      -0.31656926       0.09981592       0.36716844 </v>
+   <v>      -0.57662049       0.48922147      -0.08416276 </v>
+   <v>      -0.08713341      -0.60487766      -0.43218438 </v>
+   <v>      -0.45986736      -0.00914878      -0.52264658 </v>
+   <v>       0.77842910      -0.49424950       0.36686756 </v>
+   <v>      -0.72367994      -0.37808506       0.14660358 </v>
+   <v>      -0.43181859       0.20216746       0.16058762 </v>
+   <v>       0.17570423       0.49709347      -0.24694964 </v>
+   <v>      -0.38101949      -0.05786391       0.17844807 </v>
+  </varray>
+  <varray name="stress" >
+   <v>     -33.35181263       2.35911195      -1.21890192 </v>
+   <v>       2.35911195     -32.98070806      -2.43710766 </v>
+   <v>      -1.21890195      -2.43710767     -42.91894782 </v>
+  </varray>
+  <energy>
+   <i name="e_fr_energy">   -590.34108091 </i>
+   <i name="e_wo_entrp">   -590.34108091 </i>
+   <i name="e_0_energy">   -590.34108091 </i>
+  </energy>
+  <time name="totalsc">  138.74  138.88</time>
+  <eigenvalues>
+   <array>
+    <dimension dim="1">band</dimension>
+    <dimension dim="2">kpoint</dimension>
+    <dimension dim="3">spin</dimension>
+    <field>eigene</field>
+    <field>occ</field>
+    <set>
+     <set comment="spin 1">
+      <set comment="kpoint 1">
+       <r>   -9.0864    1.0000 </r>
+       <r>   -8.6120    1.0000 </r>
+       <r>   -7.9089    1.0000 </r>
+       <r>   -7.8591    1.0000 </r>
+       <r>   -7.8415    1.0000 </r>
+       <r>   -7.8253    1.0000 </r>
+       <r>   -7.8090    1.0000 </r>
+       <r>   -7.7974    1.0000 </r>
+       <r>   -7.7501    1.0000 </r>
+       <r>   -7.4911    1.0000 </r>
+       <r>   -7.4847    1.0000 </r>
+       <r>   -7.4534    1.0000 </r>
+       <r>   -7.4393    1.0000 </r>
+       <r>   -7.4243    1.0000 </r>
+       <r>   -7.4137    1.0000 </r>
+       <r>   -7.0484    1.0000 </r>
+       <r>   -6.9477    1.0000 </r>
+       <r>   -6.9263    1.0000 </r>
+       <r>   -6.8944    1.0000 </r>
+       <r>   -6.8755    1.0000 </r>
+       <r>   -6.8695    1.0000 </r>
+       <r>   -6.8534    1.0000 </r>
+       <r>   -6.6289    1.0000 </r>
+       <r>   -6.5849    1.0000 </r>
+       <r>   -6.5721    1.0000 </r>
+       <r>   -6.5418    1.0000 </r>
+       <r>   -6.5119    1.0000 </r>
+       <r>   -6.5027    1.0000 </r>
+       <r>   -6.4820    1.0000 </r>
+       <r>   -6.4574    1.0000 </r>
+       <r>   -6.4254    1.0000 </r>
+       <r>   -6.4186    1.0000 </r>
+       <r>   -6.3922    1.0000 </r>
+       <r>   -6.3837    1.0000 </r>
+       <r>   -6.3592    1.0000 </r>
+       <r>   -6.3471    1.0000 </r>
+       <r>    0.0743    1.0000 </r>
+       <r>    0.8340    1.0000 </r>
+       <r>    0.8524    1.0000 </r>
+       <r>    0.8636    1.0000 </r>
+       <r>    0.8814    1.0000 </r>
+       <r>    0.8895    1.0000 </r>
+       <r>    0.9165    1.0000 </r>
+       <r>    0.9877    1.0000 </r>
+       <r>    1.0039    1.0000 </r>
+       <r>    1.0075    1.0000 </r>
+       <r>    1.0164    1.0000 </r>
+       <r>    1.0325    1.0000 </r>
+       <r>    1.0469    1.0000 </r>
+       <r>    1.0644    1.0000 </r>
+       <r>    1.0793    1.0000 </r>
+       <r>    1.1077    1.0000 </r>
+       <r>    1.1246    1.0000 </r>
+       <r>    1.1315    1.0000 </r>
+       <r>    1.1542    1.0000 </r>
+       <r>    1.4200    1.0000 </r>
+       <r>    1.4261    1.0000 </r>
+       <r>    1.4455    1.0000 </r>
+       <r>    1.4509    1.0000 </r>
+       <r>    1.4721    1.0000 </r>
+       <r>    1.4936    1.0000 </r>
+       <r>    1.5515    1.0000 </r>
+       <r>    1.5794    1.0000 </r>
+       <r>    1.5884    1.0000 </r>
+       <r>    1.7883    1.0000 </r>
+       <r>    1.8184    1.0000 </r>
+       <r>    1.8255    1.0000 </r>
+       <r>    1.8370    1.0000 </r>
+       <r>    1.8478    1.0000 </r>
+       <r>    1.8564    1.0000 </r>
+       <r>    1.8695    1.0000 </r>
+       <r>    1.8742    1.0000 </r>
+       <r>    1.8892    1.0000 </r>
+       <r>    1.9111    1.0000 </r>
+       <r>    2.4181    1.0000 </r>
+       <r>    2.4345    1.0000 </r>
+       <r>    2.4613    1.0000 </r>
+       <r>    2.4753    1.0000 </r>
+       <r>    2.4827    1.0000 </r>
+       <r>    2.5055    1.0000 </r>
+       <r>    2.5262    1.0000 </r>
+       <r>    2.5458    1.0000 </r>
+       <r>    3.2601    1.0000 </r>
+       <r>    3.2656    1.0000 </r>
+       <r>    3.5736    1.0000 </r>
+       <r>    3.5890    1.0000 </r>
+       <r>    3.5924    1.0000 </r>
+       <r>    3.6092    1.0000 </r>
+       <r>    3.6204    1.0000 </r>
+       <r>    3.6439    1.0000 </r>
+       <r>    3.6772    1.0000 </r>
+       <r>    3.7967    1.0000 </r>
+       <r>    3.8317    1.0000 </r>
+       <r>    3.8378    1.0000 </r>
+       <r>    3.8602    1.0000 </r>
+       <r>    4.0154    1.0000 </r>
+       <r>    4.0370    1.0000 </r>
+       <r>    4.0493    1.0000 </r>
+       <r>    4.0543    1.0000 </r>
+       <r>    4.0793    1.0000 </r>
+       <r>    4.0933    1.0000 </r>
+       <r>    4.3400    1.0000 </r>
+       <r>    4.3602    1.0000 </r>
+       <r>    4.3692    1.0000 </r>
+       <r>    4.3824    1.0000 </r>
+       <r>    4.3997    1.0000 </r>
+       <r>    4.4177    1.0000 </r>
+       <r>    4.7958    1.0000 </r>
+       <r>    4.8079    1.0000 </r>
+       <r>    4.8202    1.0000 </r>
+       <r>    4.8308    1.0000 </r>
+       <r>    4.8472    1.0000 </r>
+       <r>    4.8561    1.0000 </r>
+       <r>    4.8623    1.0000 </r>
+       <r>    4.8708    1.0000 </r>
+       <r>    4.8834    1.0000 </r>
+       <r>    4.8861    1.0000 </r>
+       <r>    4.9004    1.0000 </r>
+       <r>    4.9073    1.0000 </r>
+       <r>    4.9261    1.0000 </r>
+       <r>    4.9349    1.0000 </r>
+       <r>    4.9545    1.0000 </r>
+       <r>    4.9642    1.0000 </r>
+       <r>    5.0267    1.0000 </r>
+       <r>    5.0453    1.0000 </r>
+       <r>    5.0574    1.0000 </r>
+       <r>    5.0900    1.0000 </r>
+       <r>    5.1179    1.0000 </r>
+       <r>    5.1259    1.0000 </r>
+       <r>    5.1522    1.0000 </r>
+       <r>    5.1671    1.0000 </r>
+       <r>    5.1978    1.0000 </r>
+       <r>    5.2130    1.0000 </r>
+       <r>    5.2626    1.0000 </r>
+       <r>    5.2690    1.0000 </r>
+       <r>    5.2910    1.0000 </r>
+       <r>    5.3057    1.0000 </r>
+       <r>    5.3231    1.0000 </r>
+       <r>    5.3326    1.0000 </r>
+       <r>    5.4643    1.0000 </r>
+       <r>    5.4774    1.0000 </r>
+       <r>    5.5939    1.0000 </r>
+       <r>    5.6648    1.0000 </r>
+       <r>    5.6838    1.0000 </r>
+       <r>   10.4127    0.0000 </r>
+       <r>   11.0109    0.0000 </r>
+       <r>   11.0641    0.0000 </r>
+       <r>   11.3393    0.0000 </r>
+       <r>   11.3488    0.0000 </r>
+       <r>   11.3676    0.0000 </r>
+       <r>   11.3803    0.0000 </r>
+       <r>   11.4334    0.0000 </r>
+       <r>   11.4627    0.0000 </r>
+       <r>   11.6961    0.0000 </r>
+       <r>   11.7245    0.0000 </r>
+       <r>   11.7409    0.0000 </r>
+       <r>   11.7677    0.0000 </r>
+       <r>   11.7975    0.0000 </r>
+       <r>   11.8320    0.0000 </r>
+       <r>   11.8486    0.0000 </r>
+       <r>   12.0872    0.0000 </r>
+       <r>   12.0930    0.0000 </r>
+       <r>   12.1018    0.0000 </r>
+       <r>   12.1253    0.0000 </r>
+       <r>   12.1969    0.0000 </r>
+       <r>   12.2310    0.0000 </r>
+       <r>   12.3548    0.0000 </r>
+       <r>   12.3841    0.0000 </r>
+       <r>   12.4071    0.0000 </r>
+       <r>   12.4341    0.0000 </r>
+       <r>   12.4615    0.0000 </r>
+       <r>   12.4875    0.0000 </r>
+       <r>   12.4978    0.0000 </r>
+       <r>   12.5068    0.0000 </r>
+       <r>   12.5329    0.0000 </r>
+       <r>   12.6338    0.0000 </r>
+       <r>   13.6454    0.0000 </r>
+       <r>   13.7489    0.0000 </r>
+       <r>   13.7611    0.0000 </r>
+       <r>   13.7880    0.0000 </r>
+       <r>   13.8099    0.0000 </r>
+       <r>   13.8581    0.0000 </r>
+       <r>   13.9974    0.0000 </r>
+       <r>   14.0303    0.0000 </r>
+      </set>
+      <set comment="kpoint 2">
+       <r>   -8.7501    1.0000 </r>
+       <r>   -8.7229    1.0000 </r>
+       <r>   -8.2947    1.0000 </r>
+       <r>   -8.2780    1.0000 </r>
+       <r>   -8.0999    1.0000 </r>
+       <r>   -8.0879    1.0000 </r>
+       <r>   -7.7080    1.0000 </r>
+       <r>   -7.7004    1.0000 </r>
+       <r>   -7.5363    1.0000 </r>
+       <r>   -7.5165    1.0000 </r>
+       <r>   -7.2201    1.0000 </r>
+       <r>   -7.1917    1.0000 </r>
+       <r>   -7.1579    1.0000 </r>
+       <r>   -7.1420    1.0000 </r>
+       <r>   -7.0897    1.0000 </r>
+       <r>   -7.0565    1.0000 </r>
+       <r>   -7.0241    1.0000 </r>
+       <r>   -6.9441    1.0000 </r>
+       <r>   -6.9258    1.0000 </r>
+       <r>   -6.8997    1.0000 </r>
+       <r>   -6.8824    1.0000 </r>
+       <r>   -6.8425    1.0000 </r>
+       <r>   -6.8163    1.0000 </r>
+       <r>   -6.7859    1.0000 </r>
+       <r>   -6.6307    1.0000 </r>
+       <r>   -6.5981    1.0000 </r>
+       <r>   -6.5742    1.0000 </r>
+       <r>   -6.5533    1.0000 </r>
+       <r>   -6.5267    1.0000 </r>
+       <r>   -6.4938    1.0000 </r>
+       <r>   -6.4736    1.0000 </r>
+       <r>   -6.3865    1.0000 </r>
+       <r>   -6.3444    1.0000 </r>
+       <r>   -6.3129    1.0000 </r>
+       <r>   -6.3012    1.0000 </r>
+       <r>   -6.2687    1.0000 </r>
+       <r>    0.0880    1.0000 </r>
+       <r>    0.2885    1.0000 </r>
+       <r>    0.4352    1.0000 </r>
+       <r>    0.4524    1.0000 </r>
+       <r>    0.5390    1.0000 </r>
+       <r>    0.5540    1.0000 </r>
+       <r>    0.5801    1.0000 </r>
+       <r>    0.5867    1.0000 </r>
+       <r>    0.6070    1.0000 </r>
+       <r>    0.7634    1.0000 </r>
+       <r>    0.7787    1.0000 </r>
+       <r>    0.7999    1.0000 </r>
+       <r>    0.8224    1.0000 </r>
+       <r>    0.9335    1.0000 </r>
+       <r>    0.9509    1.0000 </r>
+       <r>    0.9654    1.0000 </r>
+       <r>    0.9808    1.0000 </r>
+       <r>    1.0827    1.0000 </r>
+       <r>    1.1000    1.0000 </r>
+       <r>    1.3772    1.0000 </r>
+       <r>    1.3861    1.0000 </r>
+       <r>    1.4505    1.0000 </r>
+       <r>    1.6145    1.0000 </r>
+       <r>    1.6301    1.0000 </r>
+       <r>    1.6655    1.0000 </r>
+       <r>    1.6722    1.0000 </r>
+       <r>    1.6892    1.0000 </r>
+       <r>    1.7057    1.0000 </r>
+       <r>    1.9968    1.0000 </r>
+       <r>    2.0167    1.0000 </r>
+       <r>    2.4442    1.0000 </r>
+       <r>    2.4549    1.0000 </r>
+       <r>    2.6072    1.0000 </r>
+       <r>    2.6207    1.0000 </r>
+       <r>    2.6334    1.0000 </r>
+       <r>    2.6474    1.0000 </r>
+       <r>    2.6589    1.0000 </r>
+       <r>    2.6812    1.0000 </r>
+       <r>    2.7742    1.0000 </r>
+       <r>    2.9107    1.0000 </r>
+       <r>    2.9311    1.0000 </r>
+       <r>    2.9342    1.0000 </r>
+       <r>    2.9517    1.0000 </r>
+       <r>    3.0817    1.0000 </r>
+       <r>    3.1088    1.0000 </r>
+       <r>    3.1207    1.0000 </r>
+       <r>    3.1506    1.0000 </r>
+       <r>    3.1607    1.0000 </r>
+       <r>    3.1814    1.0000 </r>
+       <r>    3.5388    1.0000 </r>
+       <r>    3.5653    1.0000 </r>
+       <r>    3.5760    1.0000 </r>
+       <r>    3.5871    1.0000 </r>
+       <r>    3.6333    1.0000 </r>
+       <r>    3.6519    1.0000 </r>
+       <r>    3.7349    1.0000 </r>
+       <r>    3.7412    1.0000 </r>
+       <r>    3.8263    1.0000 </r>
+       <r>    3.9234    1.0000 </r>
+       <r>    3.9454    1.0000 </r>
+       <r>    3.9682    1.0000 </r>
+       <r>    4.0580    1.0000 </r>
+       <r>    4.0803    1.0000 </r>
+       <r>    4.1486    1.0000 </r>
+       <r>    4.1613    1.0000 </r>
+       <r>    4.1754    1.0000 </r>
+       <r>    4.2261    1.0000 </r>
+       <r>    4.2486    1.0000 </r>
+       <r>    4.2655    1.0000 </r>
+       <r>    4.2770    1.0000 </r>
+       <r>    4.2877    1.0000 </r>
+       <r>    4.3052    1.0000 </r>
+       <r>    4.3246    1.0000 </r>
+       <r>    4.3814    1.0000 </r>
+       <r>    4.3927    1.0000 </r>
+       <r>    4.4039    1.0000 </r>
+       <r>    4.4176    1.0000 </r>
+       <r>    4.5273    1.0000 </r>
+       <r>    4.5494    1.0000 </r>
+       <r>    4.6088    1.0000 </r>
+       <r>    4.6147    1.0000 </r>
+       <r>    4.6327    1.0000 </r>
+       <r>    4.6500    1.0000 </r>
+       <r>    4.6561    1.0000 </r>
+       <r>    4.6817    1.0000 </r>
+       <r>    4.7233    1.0000 </r>
+       <r>    4.8286    1.0000 </r>
+       <r>    4.8854    1.0000 </r>
+       <r>    4.8982    1.0000 </r>
+       <r>    4.9148    1.0000 </r>
+       <r>    4.9391    1.0000 </r>
+       <r>    4.9746    1.0000 </r>
+       <r>    4.9901    1.0000 </r>
+       <r>    5.0848    1.0000 </r>
+       <r>    5.1031    1.0000 </r>
+       <r>    5.1242    1.0000 </r>
+       <r>    5.1265    1.0000 </r>
+       <r>    5.1450    1.0000 </r>
+       <r>    5.1575    1.0000 </r>
+       <r>    5.1737    1.0000 </r>
+       <r>    5.2635    1.0000 </r>
+       <r>    5.2940    1.0000 </r>
+       <r>    5.3786    1.0000 </r>
+       <r>    5.4129    1.0000 </r>
+       <r>    5.5556    1.0000 </r>
+       <r>    5.5903    1.0000 </r>
+       <r>    5.6573    1.0000 </r>
+       <r>    5.6796    1.0000 </r>
+       <r>   10.7578    0.0000 </r>
+       <r>   11.2684    0.0000 </r>
+       <r>   11.4381    0.0000 </r>
+       <r>   11.4425    0.0000 </r>
+       <r>   11.4670    0.0000 </r>
+       <r>   11.5068    0.0000 </r>
+       <r>   11.5489    0.0000 </r>
+       <r>   11.5775    0.0000 </r>
+       <r>   11.5910    0.0000 </r>
+       <r>   11.6201    0.0000 </r>
+       <r>   11.6807    0.0000 </r>
+       <r>   11.7115    0.0000 </r>
+       <r>   11.7355    0.0000 </r>
+       <r>   11.7849    0.0000 </r>
+       <r>   12.1836    0.0000 </r>
+       <r>   12.2177    0.0000 </r>
+       <r>   12.3321    0.0000 </r>
+       <r>   12.3743    0.0000 </r>
+       <r>   12.4205    0.0000 </r>
+       <r>   12.4758    0.0000 </r>
+       <r>   12.5088    0.0000 </r>
+       <r>   12.5441    0.0000 </r>
+       <r>   12.5774    0.0000 </r>
+       <r>   12.6125    0.0000 </r>
+       <r>   12.7357    0.0000 </r>
+       <r>   12.8194    0.0000 </r>
+       <r>   12.8968    0.0000 </r>
+       <r>   12.9286    0.0000 </r>
+       <r>   13.0016    0.0000 </r>
+       <r>   13.0566    0.0000 </r>
+       <r>   13.1588    0.0000 </r>
+       <r>   13.2455    0.0000 </r>
+       <r>   13.2730    0.0000 </r>
+       <r>   13.3003    0.0000 </r>
+       <r>   13.5088    0.0000 </r>
+       <r>   13.5458    0.0000 </r>
+       <r>   14.2988    0.0000 </r>
+       <r>   14.3333    0.0000 </r>
+       <r>   14.3748    0.0000 </r>
+       <r>   14.4331    0.0000 </r>
+      </set>
+      <set comment="kpoint 3">
+       <r>   -8.7537    1.0000 </r>
+       <r>   -8.7191    1.0000 </r>
+       <r>   -8.2992    1.0000 </r>
+       <r>   -8.2742    1.0000 </r>
+       <r>   -8.0996    1.0000 </r>
+       <r>   -8.0869    1.0000 </r>
+       <r>   -7.7097    1.0000 </r>
+       <r>   -7.6982    1.0000 </r>
+       <r>   -7.5509    1.0000 </r>
+       <r>   -7.5018    1.0000 </r>
+       <r>   -7.2155    1.0000 </r>
+       <r>   -7.1769    1.0000 </r>
+       <r>   -7.1708    1.0000 </r>
+       <r>   -7.1386    1.0000 </r>
+       <r>   -7.0991    1.0000 </r>
+       <r>   -7.0602    1.0000 </r>
+       <r>   -7.0300    1.0000 </r>
+       <r>   -6.9578    1.0000 </r>
+       <r>   -6.9116    1.0000 </r>
+       <r>   -6.9008    1.0000 </r>
+       <r>   -6.8821    1.0000 </r>
+       <r>   -6.8435    1.0000 </r>
+       <r>   -6.8107    1.0000 </r>
+       <r>   -6.7859    1.0000 </r>
+       <r>   -6.6196    1.0000 </r>
+       <r>   -6.5953    1.0000 </r>
+       <r>   -6.5713    1.0000 </r>
+       <r>   -6.5473    1.0000 </r>
+       <r>   -6.5394    1.0000 </r>
+       <r>   -6.5051    1.0000 </r>
+       <r>   -6.4669    1.0000 </r>
+       <r>   -6.3868    1.0000 </r>
+       <r>   -6.3508    1.0000 </r>
+       <r>   -6.3085    1.0000 </r>
+       <r>   -6.2925    1.0000 </r>
+       <r>   -6.2771    1.0000 </r>
+       <r>    0.0907    1.0000 </r>
+       <r>    0.2923    1.0000 </r>
+       <r>    0.4283    1.0000 </r>
+       <r>    0.4649    1.0000 </r>
+       <r>    0.5366    1.0000 </r>
+       <r>    0.5588    1.0000 </r>
+       <r>    0.5690    1.0000 </r>
+       <r>    0.5891    1.0000 </r>
+       <r>    0.6079    1.0000 </r>
+       <r>    0.7662    1.0000 </r>
+       <r>    0.7773    1.0000 </r>
+       <r>    0.8004    1.0000 </r>
+       <r>    0.8193    1.0000 </r>
+       <r>    0.9245    1.0000 </r>
+       <r>    0.9533    1.0000 </r>
+       <r>    0.9624    1.0000 </r>
+       <r>    0.9799    1.0000 </r>
+       <r>    1.0779    1.0000 </r>
+       <r>    1.1059    1.0000 </r>
+       <r>    1.3679    1.0000 </r>
+       <r>    1.3902    1.0000 </r>
+       <r>    1.4552    1.0000 </r>
+       <r>    1.5983    1.0000 </r>
+       <r>    1.6342    1.0000 </r>
+       <r>    1.6735    1.0000 </r>
+       <r>    1.6761    1.0000 </r>
+       <r>    1.6928    1.0000 </r>
+       <r>    1.7049    1.0000 </r>
+       <r>    1.9957    1.0000 </r>
+       <r>    2.0101    1.0000 </r>
+       <r>    2.4444    1.0000 </r>
+       <r>    2.4540    1.0000 </r>
+       <r>    2.6047    1.0000 </r>
+       <r>    2.6125    1.0000 </r>
+       <r>    2.6309    1.0000 </r>
+       <r>    2.6410    1.0000 </r>
+       <r>    2.6730    1.0000 </r>
+       <r>    2.6878    1.0000 </r>
+       <r>    2.7686    1.0000 </r>
+       <r>    2.9193    1.0000 </r>
+       <r>    2.9282    1.0000 </r>
+       <r>    2.9390    1.0000 </r>
+       <r>    2.9520    1.0000 </r>
+       <r>    3.0832    1.0000 </r>
+       <r>    3.1073    1.0000 </r>
+       <r>    3.1339    1.0000 </r>
+       <r>    3.1421    1.0000 </r>
+       <r>    3.1615    1.0000 </r>
+       <r>    3.1759    1.0000 </r>
+       <r>    3.5453    1.0000 </r>
+       <r>    3.5639    1.0000 </r>
+       <r>    3.5696    1.0000 </r>
+       <r>    3.5900    1.0000 </r>
+       <r>    3.6335    1.0000 </r>
+       <r>    3.6702    1.0000 </r>
+       <r>    3.7315    1.0000 </r>
+       <r>    3.7460    1.0000 </r>
+       <r>    3.8183    1.0000 </r>
+       <r>    3.9186    1.0000 </r>
+       <r>    3.9661    1.0000 </r>
+       <r>    3.9721    1.0000 </r>
+       <r>    4.0352    1.0000 </r>
+       <r>    4.0972    1.0000 </r>
+       <r>    4.1481    1.0000 </r>
+       <r>    4.1524    1.0000 </r>
+       <r>    4.1985    1.0000 </r>
+       <r>    4.2301    1.0000 </r>
+       <r>    4.2531    1.0000 </r>
+       <r>    4.2591    1.0000 </r>
+       <r>    4.2688    1.0000 </r>
+       <r>    4.2860    1.0000 </r>
+       <r>    4.2977    1.0000 </r>
+       <r>    4.3352    1.0000 </r>
+       <r>    4.3740    1.0000 </r>
+       <r>    4.3917    1.0000 </r>
+       <r>    4.3995    1.0000 </r>
+       <r>    4.4306    1.0000 </r>
+       <r>    4.5187    1.0000 </r>
+       <r>    4.5690    1.0000 </r>
+       <r>    4.6008    1.0000 </r>
+       <r>    4.6105    1.0000 </r>
+       <r>    4.6274    1.0000 </r>
+       <r>    4.6461    1.0000 </r>
+       <r>    4.6551    1.0000 </r>
+       <r>    4.6689    1.0000 </r>
+       <r>    4.7065    1.0000 </r>
+       <r>    4.8269    1.0000 </r>
+       <r>    4.8841    1.0000 </r>
+       <r>    4.8982    1.0000 </r>
+       <r>    4.9107    1.0000 </r>
+       <r>    4.9366    1.0000 </r>
+       <r>    4.9735    1.0000 </r>
+       <r>    5.0001    1.0000 </r>
+       <r>    5.0835    1.0000 </r>
+       <r>    5.1129    1.0000 </r>
+       <r>    5.1189    1.0000 </r>
+       <r>    5.1311    1.0000 </r>
+       <r>    5.1355    1.0000 </r>
+       <r>    5.1637    1.0000 </r>
+       <r>    5.1755    1.0000 </r>
+       <r>    5.2655    1.0000 </r>
+       <r>    5.2788    1.0000 </r>
+       <r>    5.3730    1.0000 </r>
+       <r>    5.4219    1.0000 </r>
+       <r>    5.5747    1.0000 </r>
+       <r>    5.5812    1.0000 </r>
+       <r>    5.6506    1.0000 </r>
+       <r>    5.6846    1.0000 </r>
+       <r>   10.7587    0.0000 </r>
+       <r>   11.2750    0.0000 </r>
+       <r>   11.4220    0.0000 </r>
+       <r>   11.4444    0.0000 </r>
+       <r>   11.4901    0.0000 </r>
+       <r>   11.5100    0.0000 </r>
+       <r>   11.5464    0.0000 </r>
+       <r>   11.5644    0.0000 </r>
+       <r>   11.5887    0.0000 </r>
+       <r>   11.6575    0.0000 </r>
+       <r>   11.6731    0.0000 </r>
+       <r>   11.6951    0.0000 </r>
+       <r>   11.7469    0.0000 </r>
+       <r>   11.7758    0.0000 </r>
+       <r>   12.1769    0.0000 </r>
+       <r>   12.2462    0.0000 </r>
+       <r>   12.2967    0.0000 </r>
+       <r>   12.3647    0.0000 </r>
+       <r>   12.4030    0.0000 </r>
+       <r>   12.4557    0.0000 </r>
+       <r>   12.5266    0.0000 </r>
+       <r>   12.5541    0.0000 </r>
+       <r>   12.5671    0.0000 </r>
+       <r>   12.6188    0.0000 </r>
+       <r>   12.7397    0.0000 </r>
+       <r>   12.8365    0.0000 </r>
+       <r>   12.8845    0.0000 </r>
+       <r>   12.9508    0.0000 </r>
+       <r>   13.0072    0.0000 </r>
+       <r>   13.0624    0.0000 </r>
+       <r>   13.1561    0.0000 </r>
+       <r>   13.2332    0.0000 </r>
+       <r>   13.2584    0.0000 </r>
+       <r>   13.3110    0.0000 </r>
+       <r>   13.5035    0.0000 </r>
+       <r>   13.5502    0.0000 </r>
+       <r>   14.3120    0.0000 </r>
+       <r>   14.3604    0.0000 </r>
+       <r>   14.3737    0.0000 </r>
+       <r>   14.4618    0.0000 </r>
+      </set>
+      <set comment="kpoint 4">
+       <r>   -8.7602    1.0000 </r>
+       <r>   -8.7122    1.0000 </r>
+       <r>   -8.3104    1.0000 </r>
+       <r>   -8.2590    1.0000 </r>
+       <r>   -8.1109    1.0000 </r>
+       <r>   -8.0819    1.0000 </r>
+       <r>   -7.7163    1.0000 </r>
+       <r>   -7.6827    1.0000 </r>
+       <r>   -7.5529    1.0000 </r>
+       <r>   -7.4996    1.0000 </r>
+       <r>   -7.2230    1.0000 </r>
+       <r>   -7.1954    1.0000 </r>
+       <r>   -7.1557    1.0000 </r>
+       <r>   -7.1412    1.0000 </r>
+       <r>   -7.1034    1.0000 </r>
+       <r>   -7.0643    1.0000 </r>
+       <r>   -7.0275    1.0000 </r>
+       <r>   -6.9377    1.0000 </r>
+       <r>   -6.9180    1.0000 </r>
+       <r>   -6.9006    1.0000 </r>
+       <r>   -6.8741    1.0000 </r>
+       <r>   -6.8547    1.0000 </r>
+       <r>   -6.8099    1.0000 </r>
+       <r>   -6.7820    1.0000 </r>
+       <r>   -6.6208    1.0000 </r>
+       <r>   -6.6059    1.0000 </r>
+       <r>   -6.5714    1.0000 </r>
+       <r>   -6.5500    1.0000 </r>
+       <r>   -6.5396    1.0000 </r>
+       <r>   -6.4925    1.0000 </r>
+       <r>   -6.4707    1.0000 </r>
+       <r>   -6.3766    1.0000 </r>
+       <r>   -6.3563    1.0000 </r>
+       <r>   -6.3222    1.0000 </r>
+       <r>   -6.2884    1.0000 </r>
+       <r>   -6.2692    1.0000 </r>
+       <r>    0.0892    1.0000 </r>
+       <r>    0.2818    1.0000 </r>
+       <r>    0.4202    1.0000 </r>
+       <r>    0.4671    1.0000 </r>
+       <r>    0.5452    1.0000 </r>
+       <r>    0.5691    1.0000 </r>
+       <r>    0.5808    1.0000 </r>
+       <r>    0.5875    1.0000 </r>
+       <r>    0.5970    1.0000 </r>
+       <r>    0.7733    1.0000 </r>
+       <r>    0.7870    1.0000 </r>
+       <r>    0.8075    1.0000 </r>
+       <r>    0.8162    1.0000 </r>
+       <r>    0.9394    1.0000 </r>
+       <r>    0.9490    1.0000 </r>
+       <r>    0.9550    1.0000 </r>
+       <r>    0.9677    1.0000 </r>
+       <r>    1.0757    1.0000 </r>
+       <r>    1.1003    1.0000 </r>
+       <r>    1.3726    1.0000 </r>
+       <r>    1.3838    1.0000 </r>
+       <r>    1.4774    1.0000 </r>
+       <r>    1.6022    1.0000 </r>
+       <r>    1.6449    1.0000 </r>
+       <r>    1.6587    1.0000 </r>
+       <r>    1.6697    1.0000 </r>
+       <r>    1.6772    1.0000 </r>
+       <r>    1.6948    1.0000 </r>
+       <r>    1.9891    1.0000 </r>
+       <r>    2.0068    1.0000 </r>
+       <r>    2.4411    1.0000 </r>
+       <r>    2.4657    1.0000 </r>
+       <r>    2.5981    1.0000 </r>
+       <r>    2.6100    1.0000 </r>
+       <r>    2.6471    1.0000 </r>
+       <r>    2.6517    1.0000 </r>
+       <r>    2.6691    1.0000 </r>
+       <r>    2.6771    1.0000 </r>
+       <r>    2.7563    1.0000 </r>
+       <r>    2.9071    1.0000 </r>
+       <r>    2.9234    1.0000 </r>
+       <r>    2.9402    1.0000 </r>
+       <r>    2.9566    1.0000 </r>
+       <r>    3.0905    1.0000 </r>
+       <r>    3.1132    1.0000 </r>
+       <r>    3.1241    1.0000 </r>
+       <r>    3.1498    1.0000 </r>
+       <r>    3.1646    1.0000 </r>
+       <r>    3.1858    1.0000 </r>
+       <r>    3.5366    1.0000 </r>
+       <r>    3.5546    1.0000 </r>
+       <r>    3.5856    1.0000 </r>
+       <r>    3.5953    1.0000 </r>
+       <r>    3.6374    1.0000 </r>
+       <r>    3.6591    1.0000 </r>
+       <r>    3.7336    1.0000 </r>
+       <r>    3.7429    1.0000 </r>
+       <r>    3.8212    1.0000 </r>
+       <r>    3.9292    1.0000 </r>
+       <r>    3.9473    1.0000 </r>
+       <r>    3.9636    1.0000 </r>
+       <r>    4.0549    1.0000 </r>
+       <r>    4.0899    1.0000 </r>
+       <r>    4.1405    1.0000 </r>
+       <r>    4.1561    1.0000 </r>
+       <r>    4.1877    1.0000 </r>
+       <r>    4.2454    1.0000 </r>
+       <r>    4.2485    1.0000 </r>
+       <r>    4.2619    1.0000 </r>
+       <r>    4.2838    1.0000 </r>
+       <r>    4.2913    1.0000 </r>
+       <r>    4.3118    1.0000 </r>
+       <r>    4.3446    1.0000 </r>
+       <r>    4.3796    1.0000 </r>
+       <r>    4.3903    1.0000 </r>
+       <r>    4.4005    1.0000 </r>
+       <r>    4.4285    1.0000 </r>
+       <r>    4.5371    1.0000 </r>
+       <r>    4.5478    1.0000 </r>
+       <r>    4.5980    1.0000 </r>
+       <r>    4.6154    1.0000 </r>
+       <r>    4.6235    1.0000 </r>
+       <r>    4.6514    1.0000 </r>
+       <r>    4.6580    1.0000 </r>
+       <r>    4.6719    1.0000 </r>
+       <r>    4.7021    1.0000 </r>
+       <r>    4.8265    1.0000 </r>
+       <r>    4.8704    1.0000 </r>
+       <r>    4.9068    1.0000 </r>
+       <r>    4.9262    1.0000 </r>
+       <r>    4.9393    1.0000 </r>
+       <r>    4.9703    1.0000 </r>
+       <r>    5.0068    1.0000 </r>
+       <r>    5.0934    1.0000 </r>
+       <r>    5.1038    1.0000 </r>
+       <r>    5.1105    1.0000 </r>
+       <r>    5.1344    1.0000 </r>
+       <r>    5.1453    1.0000 </r>
+       <r>    5.1533    1.0000 </r>
+       <r>    5.1630    1.0000 </r>
+       <r>    5.2486    1.0000 </r>
+       <r>    5.2942    1.0000 </r>
+       <r>    5.3817    1.0000 </r>
+       <r>    5.4007    1.0000 </r>
+       <r>    5.5350    1.0000 </r>
+       <r>    5.5900    1.0000 </r>
+       <r>    5.6519    1.0000 </r>
+       <r>    5.6878    1.0000 </r>
+       <r>   10.7597    0.0000 </r>
+       <r>   11.2561    0.0000 </r>
+       <r>   11.4036    0.0000 </r>
+       <r>   11.4635    0.0000 </r>
+       <r>   11.4854    0.0000 </r>
+       <r>   11.5296    0.0000 </r>
+       <r>   11.5493    0.0000 </r>
+       <r>   11.5708    0.0000 </r>
+       <r>   11.6076    0.0000 </r>
+       <r>   11.6497    0.0000 </r>
+       <r>   11.6711    0.0000 </r>
+       <r>   11.7049    0.0000 </r>
+       <r>   11.7519    0.0000 </r>
+       <r>   11.7802    0.0000 </r>
+       <r>   12.1928    0.0000 </r>
+       <r>   12.2268    0.0000 </r>
+       <r>   12.3051    0.0000 </r>
+       <r>   12.3702    0.0000 </r>
+       <r>   12.4281    0.0000 </r>
+       <r>   12.4572    0.0000 </r>
+       <r>   12.5041    0.0000 </r>
+       <r>   12.5260    0.0000 </r>
+       <r>   12.5664    0.0000 </r>
+       <r>   12.6053    0.0000 </r>
+       <r>   12.7598    0.0000 </r>
+       <r>   12.8048    0.0000 </r>
+       <r>   12.8685    0.0000 </r>
+       <r>   12.9570    0.0000 </r>
+       <r>   12.9909    0.0000 </r>
+       <r>   13.0518    0.0000 </r>
+       <r>   13.1771    0.0000 </r>
+       <r>   13.2606    0.0000 </r>
+       <r>   13.2748    0.0000 </r>
+       <r>   13.3160    0.0000 </r>
+       <r>   13.5102    0.0000 </r>
+       <r>   13.5424    0.0000 </r>
+       <r>   14.3220    0.0000 </r>
+       <r>   14.3604    0.0000 </r>
+       <r>   14.3767    0.0000 </r>
+       <r>   14.4518    0.0000 </r>
+      </set>
+     </set>
+    </set>
+   </array>
+  </eigenvalues>
+  <separator name="orbital magnetization" >
+   <v name="MAGDIPOLOUT">      0.00000000      0.00000000      0.00000000</v>
+  </separator>
+  <dos>
+   <i name="efermi">      5.80681891 </i>
+   <total>
+    <array>
+     <dimension dim="1">gridpoints</dimension>
+     <dimension dim="2">spin</dimension>
+     <field>energy</field>
+     <field>total</field>
+     <field>integrated</field>
+     <set>
+      <set comment="spin 1">
+       <r>   -10.2638     0.0000     0.0000 </r>
+       <r>   -10.1775     0.0000     0.0000 </r>
+       <r>   -10.0911     0.0000     0.0000 </r>
+       <r>   -10.0048     0.0000     0.0000 </r>
+       <r>    -9.9185     0.0000     0.0000 </r>
+       <r>    -9.8321     0.0000     0.0000 </r>
+       <r>    -9.7458     0.0000     0.0000 </r>
+       <r>    -9.6594     0.0000     0.0000 </r>
+       <r>    -9.5731     0.0000     0.0000 </r>
+       <r>    -9.4867     0.0000     0.0000 </r>
+       <r>    -9.4004     0.0000     0.0000 </r>
+       <r>    -9.3141     0.0000     0.0000 </r>
+       <r>    -9.2277     0.0000     0.0000 </r>
+       <r>    -9.1414     0.0000     0.0000 </r>
+       <r>    -9.0550     5.7908     0.5000 </r>
+       <r>    -8.9687     0.0000     0.5000 </r>
+       <r>    -8.8823     0.0000     0.5000 </r>
+       <r>    -8.7960     0.0000     0.5000 </r>
+       <r>    -8.7097    31.9786     3.2611 </r>
+       <r>    -8.6233     0.3138     3.5271 </r>
+       <r>    -8.5370     5.4770     4.0000 </r>
+       <r>    -8.4506     0.0000     4.0000 </r>
+       <r>    -8.3643     0.0000     4.0000 </r>
+       <r>    -8.2779    21.9817     5.8980 </r>
+       <r>    -8.1916     5.7693     7.0000 </r>
+       <r>    -8.1052     7.1931     7.6211 </r>
+       <r>    -8.0189    17.3019    10.0000 </r>
+       <r>    -7.9326     0.0024    10.0002 </r>
+       <r>    -7.8462    12.8374    11.1086 </r>
+       <r>    -7.7599    17.8520    13.0422 </r>
+       <r>    -7.6735    39.4888    16.4517 </r>
+       <r>    -7.5872     0.0000    16.5000 </r>
+       <r>    -7.5008    29.3611    19.0351 </r>
+       <r>    -7.4145    30.5572    22.1865 </r>
+       <r>    -7.3282     0.0000    22.5000 </r>
+       <r>    -7.2418     0.0289    22.5025 </r>
+       <r>    -7.1555    47.3919    26.5945 </r>
+       <r>    -7.0691    36.6570    30.1942 </r>
+       <r>    -6.9828    33.9295    33.5001 </r>
+       <r>    -6.8964    61.1043    38.7761 </r>
+       <r>    -6.8101    62.4707    44.9176 </r>
+       <r>    -6.7238    17.3687    47.0000 </r>
+       <r>    -6.6374     1.7493    47.1510 </r>
+       <r>    -6.5511    76.7076    53.7742 </r>
+       <r>    -6.4647    70.9902    60.7288 </r>
+       <r>    -6.3784    39.1466    64.4550 </r>
+       <r>    -6.2920    56.3621    69.8686 </r>
+       <r>    -6.2057    17.2669    72.0000 </r>
+       <r>    -6.1194     0.0000    72.0000 </r>
+       <r>    -6.0330     0.0000    72.0000 </r>
+       <r>    -5.9467     0.0000    72.0000 </r>
+       <r>    -5.8603     0.0000    72.0000 </r>
+       <r>    -5.7740     0.0000    72.0000 </r>
+       <r>    -5.6876     0.0000    72.0000 </r>
+       <r>    -5.6013     0.0000    72.0000 </r>
+       <r>    -5.5149     0.0000    72.0000 </r>
+       <r>    -5.4286     0.0000    72.0000 </r>
+       <r>    -5.3423     0.0000    72.0000 </r>
+       <r>    -5.2559     0.0000    72.0000 </r>
+       <r>    -5.1696     0.0000    72.0000 </r>
+       <r>    -5.0832     0.0000    72.0000 </r>
+       <r>    -4.9969     0.0000    72.0000 </r>
+       <r>    -4.9105     0.0000    72.0000 </r>
+       <r>    -4.8242     0.0000    72.0000 </r>
+       <r>    -4.7379     0.0000    72.0000 </r>
+       <r>    -4.6515     0.0000    72.0000 </r>
+       <r>    -4.5652     0.0000    72.0000 </r>
+       <r>    -4.4788     0.0000    72.0000 </r>
+       <r>    -4.3925     0.0000    72.0000 </r>
+       <r>    -4.3061     0.0000    72.0000 </r>
+       <r>    -4.2198     0.0000    72.0000 </r>
+       <r>    -4.1335     0.0000    72.0000 </r>
+       <r>    -4.0471     0.0000    72.0000 </r>
+       <r>    -3.9608     0.0000    72.0000 </r>
+       <r>    -3.8744     0.0000    72.0000 </r>
+       <r>    -3.7881     0.0000    72.0000 </r>
+       <r>    -3.7017     0.0000    72.0000 </r>
+       <r>    -3.6154     0.0000    72.0000 </r>
+       <r>    -3.5291     0.0000    72.0000 </r>
+       <r>    -3.4427     0.0000    72.0000 </r>
+       <r>    -3.3564     0.0000    72.0000 </r>
+       <r>    -3.2700     0.0000    72.0000 </r>
+       <r>    -3.1837     0.0000    72.0000 </r>
+       <r>    -3.0973     0.0000    72.0000 </r>
+       <r>    -3.0110     0.0000    72.0000 </r>
+       <r>    -2.9246     0.0000    72.0000 </r>
+       <r>    -2.8383     0.0000    72.0000 </r>
+       <r>    -2.7520     0.0000    72.0000 </r>
+       <r>    -2.6656     0.0000    72.0000 </r>
+       <r>    -2.5793     0.0000    72.0000 </r>
+       <r>    -2.4929     0.0000    72.0000 </r>
+       <r>    -2.4066     0.0000    72.0000 </r>
+       <r>    -2.3202     0.0000    72.0000 </r>
+       <r>    -2.2339     0.0000    72.0000 </r>
+       <r>    -2.1476     0.0000    72.0000 </r>
+       <r>    -2.0612     0.0000    72.0000 </r>
+       <r>    -1.9749     0.0000    72.0000 </r>
+       <r>    -1.8885     0.0000    72.0000 </r>
+       <r>    -1.8022     0.0000    72.0000 </r>
+       <r>    -1.7158     0.0000    72.0000 </r>
+       <r>    -1.6295     0.0000    72.0000 </r>
+       <r>    -1.5432     0.0000    72.0000 </r>
+       <r>    -1.4568     0.0000    72.0000 </r>
+       <r>    -1.3705     0.0000    72.0000 </r>
+       <r>    -1.2841     0.0000    72.0000 </r>
+       <r>    -1.1978     0.0000    72.0000 </r>
+       <r>    -1.1114     0.0000    72.0000 </r>
+       <r>    -1.0251     0.0000    72.0000 </r>
+       <r>    -0.9388     0.0000    72.0000 </r>
+       <r>    -0.8524     0.0000    72.0000 </r>
+       <r>    -0.7661     0.0000    72.0000 </r>
+       <r>    -0.6797     0.0000    72.0000 </r>
+       <r>    -0.5934     0.0000    72.0000 </r>
+       <r>    -0.5070     0.0000    72.0000 </r>
+       <r>    -0.4207     0.0000    72.0000 </r>
+       <r>    -0.3343     0.0000    72.0000 </r>
+       <r>    -0.2480     0.0000    72.0000 </r>
+       <r>    -0.1617     0.0000    72.0000 </r>
+       <r>    -0.0753     0.0000    72.0000 </r>
+       <r>     0.0110     0.0000    72.0000 </r>
+       <r>     0.0974    20.9215    73.8064 </r>
+       <r>     0.1837     0.0000    74.0000 </r>
+       <r>     0.2701     0.3099    74.0268 </r>
+       <r>     0.3564    17.0626    75.5000 </r>
+       <r>     0.4427    16.9366    76.9624 </r>
+       <r>     0.5291    18.2312    78.6182 </r>
+       <r>     0.6154    83.9544    85.8671 </r>
+       <r>     0.7018     0.0000    86.0000 </r>
+       <r>     0.7881    31.7490    88.7413 </r>
+       <r>     0.8745    52.2467    93.5574 </r>
+       <r>     0.9608    58.9494    98.6790 </r>
+       <r>     1.0471    48.2395   103.7498 </r>
+       <r>     1.1335    60.8180   109.2550 </r>
+       <r>     1.2198     5.7812   110.0000 </r>
+       <r>     1.3062     0.0000   110.0000 </r>
+       <r>     1.3925    30.8057   112.6599 </r>
+       <r>     1.4789    43.0358   116.7159 </r>
+       <r>     1.5652    11.4554   117.9983 </r>
+       <r>     1.6515    46.2358   122.0035 </r>
+       <r>     1.7379    68.3992   128.0000 </r>
+       <r>     1.8242    13.1005   129.1311 </r>
+       <r>     1.9106    37.2558   132.7347 </r>
+       <r>     1.9969    11.9078   134.0282 </r>
+       <r>     2.0833    16.7070   136.0000 </r>
+       <r>     2.1696     0.0000   136.0000 </r>
+       <r>     2.2559     0.0000   136.0000 </r>
+       <r>     2.3423     0.0000   136.0000 </r>
+       <r>     2.4286     6.9530   136.6003 </r>
+       <r>     2.5150    57.3224   141.9824 </r>
+       <r>     2.6013    19.1622   143.6824 </r>
+       <r>     2.6877    81.3741   151.6114 </r>
+       <r>     2.7740    13.0967   153.1308 </r>
+       <r>     2.8604     0.0000   153.5000 </r>
+       <r>     2.9467    53.1202   158.0866 </r>
+       <r>     3.0330     5.3211   159.5000 </r>
+       <r>     3.1194    37.0463   162.6987 </r>
+       <r>     3.2057    57.7746   168.4986 </r>
+       <r>     3.2921    11.5811   169.5000 </r>
+       <r>     3.3784     0.0000   169.5000 </r>
+       <r>     3.4648     0.0000   169.5000 </r>
+       <r>     3.5511    17.9901   171.0533 </r>
+       <r>     3.6374    87.2627   179.0657 </r>
+       <r>     3.7238    29.4590   182.1443 </r>
+       <r>     3.8101    39.8222   185.5827 </r>
+       <r>     3.8965    33.6268   188.5005 </r>
+       <r>     3.9828    51.5490   192.9514 </r>
+       <r>     4.0692    40.7475   196.5183 </r>
+       <r>     4.1555    51.4078   201.0064 </r>
+       <r>     4.2418    32.7245   204.8268 </r>
+       <r>     4.3282    89.7315   212.9517 </r>
+       <r>     4.4145    94.6932   221.2858 </r>
+       <r>     4.5009    11.4079   223.0029 </r>
+       <r>     4.5872    35.2241   226.0443 </r>
+       <r>     4.6736    94.6197   234.2165 </r>
+       <r>     4.7599    22.4425   236.5000 </r>
+       <r>     4.8462    43.5028   240.2562 </r>
+       <r>     4.9326   101.6219   249.3216 </r>
+       <r>     5.0189    56.3807   255.0442 </r>
+       <r>     5.1053    48.9297   259.2926 </r>
+       <r>     5.1916   109.7987   269.5868 </r>
+       <r>     5.2780    36.6438   273.1646 </r>
+       <r>     5.3643    35.2222   276.5686 </r>
+       <r>     5.4507    34.1065   279.5135 </r>
+       <r>     5.5370    14.9893   280.8077 </r>
+       <r>     5.6233    34.7203   284.0000 </r>
+       <r>     5.7097    46.3185   287.9993 </r>
+       <r>     5.7960     0.0000   288.0000 </r>
+       <r>     5.8824     0.0000   288.0000 </r>
+       <r>     5.9687     0.0000   288.0000 </r>
+       <r>     6.0551     0.0000   288.0000 </r>
+       <r>     6.1414     0.0000   288.0000 </r>
+       <r>     6.2277     0.0000   288.0000 </r>
+       <r>     6.3141     0.0000   288.0000 </r>
+       <r>     6.4004     0.0000   288.0000 </r>
+       <r>     6.4868     0.0000   288.0000 </r>
+       <r>     6.5731     0.0000   288.0000 </r>
+       <r>     6.6595     0.0000   288.0000 </r>
+       <r>     6.7458     0.0000   288.0000 </r>
+       <r>     6.8321     0.0000   288.0000 </r>
+       <r>     6.9185     0.0000   288.0000 </r>
+       <r>     7.0048     0.0000   288.0000 </r>
+       <r>     7.0912     0.0000   288.0000 </r>
+       <r>     7.1775     0.0000   288.0000 </r>
+       <r>     7.2639     0.0000   288.0000 </r>
+       <r>     7.3502     0.0000   288.0000 </r>
+       <r>     7.4365     0.0000   288.0000 </r>
+       <r>     7.5229     0.0000   288.0000 </r>
+       <r>     7.6092     0.0000   288.0000 </r>
+       <r>     7.6956     0.0000   288.0000 </r>
+       <r>     7.7819     0.0000   288.0000 </r>
+       <r>     7.8683     0.0000   288.0000 </r>
+       <r>     7.9546     0.0000   288.0000 </r>
+       <r>     8.0410     0.0000   288.0000 </r>
+       <r>     8.1273     0.0000   288.0000 </r>
+       <r>     8.2136     0.0000   288.0000 </r>
+       <r>     8.3000     0.0000   288.0000 </r>
+       <r>     8.3863     0.0000   288.0000 </r>
+       <r>     8.4727     0.0000   288.0000 </r>
+       <r>     8.5590     0.0000   288.0000 </r>
+       <r>     8.6454     0.0000   288.0000 </r>
+       <r>     8.7317     0.0000   288.0000 </r>
+       <r>     8.8180     0.0000   288.0000 </r>
+       <r>     8.9044     0.0000   288.0000 </r>
+       <r>     8.9907     0.0000   288.0000 </r>
+       <r>     9.0771     0.0000   288.0000 </r>
+       <r>     9.1634     0.0000   288.0000 </r>
+       <r>     9.2498     0.0000   288.0000 </r>
+       <r>     9.3361     0.0000   288.0000 </r>
+       <r>     9.4224     0.0000   288.0000 </r>
+       <r>     9.5088     0.0000   288.0000 </r>
+       <r>     9.5951     0.0000   288.0000 </r>
+       <r>     9.6815     0.0000   288.0000 </r>
+       <r>     9.7678     0.0000   288.0000 </r>
+       <r>     9.8542     0.0000   288.0000 </r>
+       <r>     9.9405     0.0000   288.0000 </r>
+       <r>    10.0268     0.0000   288.0000 </r>
+       <r>    10.1132     0.0000   288.0000 </r>
+       <r>    10.1995     0.0000   288.0000 </r>
+       <r>    10.2859     0.0000   288.0000 </r>
+       <r>    10.3722     0.0000   288.0000 </r>
+       <r>    10.4586     5.7908   288.5000 </r>
+       <r>    10.5449     0.0000   288.5000 </r>
+       <r>    10.6313     0.0000   288.5000 </r>
+       <r>    10.7176     0.0000   288.5000 </r>
+       <r>    10.8039    17.3725   290.0000 </r>
+       <r>    10.8903     0.0000   290.0000 </r>
+       <r>    10.9766     0.0000   290.0000 </r>
+       <r>    11.0630     8.3293   290.7192 </r>
+       <r>    11.1493     0.0000   291.0000 </r>
+       <r>    11.2357     0.0113   291.0010 </r>
+       <r>    11.3220    17.4035   292.5037 </r>
+       <r>    11.4083    27.6034   294.8870 </r>
+       <r>    11.4947    56.0595   299.8537 </r>
+       <r>    11.5810    50.7667   304.4123 </r>
+       <r>    11.6674    36.0964   307.7252 </r>
+       <r>    11.7537    54.3722   313.2093 </r>
+       <r>    11.8401    34.5211   316.4933 </r>
+       <r>    11.9264     5.1261   317.0000 </r>
+       <r>    12.0127     0.0000   317.0000 </r>
+       <r>    12.0991    12.1980   318.0532 </r>
+       <r>    12.1854    15.5983   319.8469 </r>
+       <r>    12.2718    33.5714   323.0000 </r>
+       <r>    12.3581    22.6577   324.9564 </r>
+       <r>    12.4445    50.8818   329.5085 </r>
+       <r>    12.5308    62.4740   334.9439 </r>
+       <r>    12.6171    41.0310   339.0582 </r>
+       <r>    12.7035     5.7363   340.0000 </r>
+       <r>    12.7898    17.4704   341.5085 </r>
+       <r>    12.8762    22.9710   343.4918 </r>
+       <r>    12.9625    26.7131   345.8676 </r>
+       <r>    13.0489    20.3007   347.7528 </r>
+       <r>    13.1352    10.6383   349.0010 </r>
+       <r>    13.2216    17.6523   350.5252 </r>
+       <r>    13.3079    42.0902   354.1594 </r>
+       <r>    13.3942     5.0583   355.0000 </r>
+       <r>    13.4806     0.0037   355.0003 </r>
+       <r>    13.5669    34.6789   357.9946 </r>
+       <r>    13.6533     5.0252   358.4339 </r>
+       <r>    13.7396     0.5481   358.5473 </r>
+       <r>    13.8260    22.5482   360.4942 </r>
+       <r>    13.9123     5.7908   361.0000 </r>
+       <r>    13.9986     3.3121   361.2860 </r>
+       <r>    14.0850     5.7908   362.0000 </r>
+       <r>    14.1713     0.0000   362.0000 </r>
+       <r>    14.2577     0.0000   362.0000 </r>
+       <r>    14.3440    22.9007   363.9773 </r>
+       <r>    14.4304    30.8699   366.6756 </r>
+       <r>    14.5167    11.5747   368.0000 </r>
+       <r>    14.6030     0.0000   368.0000 </r>
+       <r>    14.6894     0.0000   368.0000 </r>
+       <r>    14.7757     0.0000   368.0000 </r>
+       <r>    14.8621     0.0000   368.0000 </r>
+       <r>    14.9484     0.0000   368.0000 </r>
+       <r>    15.0348     0.0000   368.0000 </r>
+       <r>    15.1211     0.0000   368.0000 </r>
+       <r>    15.2074     0.0000   368.0000 </r>
+       <r>    15.2938     0.0000   368.0000 </r>
+       <r>    15.3801     0.0000   368.0000 </r>
+       <r>    15.4665     0.0000   368.0000 </r>
+       <r>    15.5528     0.0000   368.0000 </r>
+       <r>    15.6392     0.0000   368.0000 </r>
+      </set>
+     </set>
+    </array>
+   </total>
+  </dos>
+ </calculation>
+ <structure name="finalpos" >
+  <crystal>
+   <varray name="basis" >
+    <v>       9.33300000       0.00000000       0.00000000 </v>
+    <v>      -4.66650000       8.08261509       0.00000000 </v>
+    <v>       0.00000000       0.00000000       9.95600000 </v>
+   </varray>
+   <i name="volume">    751.03132438 </i>
+   <varray name="rec_basis" >
+    <v>       0.10714668       0.06186117       0.00000000 </v>
+    <v>       0.00000000       0.12372233       0.00000000 </v>
+    <v>       0.00000000       0.00000000       0.10044194 </v>
+   </varray>
+  </crystal>
+  <varray name="positions" >
+   <v>       0.11021825       0.22344840       0.99800543 </v>
+   <v>       0.44485422       0.22009705       0.00252333 </v>
+   <v>       0.77525128       0.21961677       0.00228815 </v>
+   <v>       0.11243522       0.55457660       0.00283190 </v>
+   <v>       0.44117939       0.55437016       0.00184479 </v>
+   <v>       0.77850196       0.55775239       0.00287772 </v>
+   <v>       0.11297409       0.88705347       0.00072868 </v>
+   <v>       0.44380882       0.88848146       0.00344197 </v>
+   <v>       0.78080494       0.88876001       0.00129268 </v>
+   <v>       0.10866131       0.22064404       0.49823508 </v>
+   <v>       0.44169455       0.22299329       0.50069536 </v>
+   <v>       0.77563975       0.22291718       0.49864886 </v>
+   <v>       0.10803723       0.55244965       0.50130453 </v>
+   <v>       0.44533079       0.55493252       0.50322450 </v>
+   <v>       0.77978242       0.55385275       0.50049974 </v>
+   <v>       0.11191122       0.89230099       0.49964659 </v>
+   <v>       0.44367374       0.88811972       0.50339995 </v>
+   <v>       0.78106530       0.88907109       0.50075618 </v>
+   <v>       0.22138793       0.11182589       0.25321212 </v>
+   <v>       0.55469007       0.10951746       0.25319502 </v>
+   <v>       0.89216648       0.11168345       0.25147448 </v>
+   <v>       0.21941088       0.44396180       0.25224132 </v>
+   <v>       0.55465694       0.44711100       0.25060080 </v>
+   <v>       0.88627020       0.44523125       0.24963837 </v>
+   <v>       0.22433940       0.77790000       0.24816033 </v>
+   <v>       0.55895847       0.78025139       0.24951326 </v>
+   <v>       0.88868983       0.77869856       0.25332727 </v>
+   <v>       0.22328588       0.10911471       0.74882606 </v>
+   <v>       0.55587072       0.11121123       0.75347630 </v>
+   <v>       0.88951058       0.10852095       0.74927880 </v>
+   <v>       0.22522904       0.44539520       0.74878542 </v>
+   <v>       0.55197281       0.44209191       0.74988866 </v>
+   <v>       0.88736120       0.44381002       0.75321792 </v>
+   <v>       0.22364416       0.77605556       0.74887926 </v>
+   <v>       0.55605749       0.77485549       0.75072915 </v>
+   <v>       0.88632711       0.77815698       0.75200170 </v>
+   <v>       0.11159825       0.21933926       0.30894833 </v>
+   <v>       0.44319961       0.22220891       0.31230631 </v>
+   <v>       0.77624838       0.22123512       0.30678796 </v>
+   <v>       0.10836148       0.55499618       0.30765143 </v>
+   <v>       0.44686634       0.55914184       0.31003125 </v>
+   <v>       0.77734371       0.55634419       0.31236580 </v>
+   <v>       0.11140581       0.88647252       0.30772373 </v>
+   <v>       0.44413793       0.88558269       0.30899459 </v>
+   <v>       0.77788499       0.88595943       0.30840652 </v>
+   <v>       0.11305516       0.22437397       0.80720916 </v>
+   <v>       0.44779876       0.22414892       0.80825693 </v>
+   <v>       0.77842885       0.22534153       0.81091895 </v>
+   <v>       0.11377408       0.55860516       0.81087166 </v>
+   <v>       0.44381354       0.55479835       0.80658520 </v>
+   <v>       0.78044174       0.55863570       0.81083590 </v>
+   <v>       0.10871931       0.88962755       0.80810412 </v>
+   <v>       0.44595781       0.89157870       0.81159594 </v>
+   <v>       0.77728536       0.89167982       0.81042780 </v>
+   <v>       0.22176511       0.11407176       0.05946187 </v>
+   <v>       0.55577202       0.10841189       0.05806868 </v>
+   <v>       0.88544604       0.10845424       0.06023172 </v>
+   <v>       0.22334899       0.44680373       0.05719992 </v>
+   <v>       0.55273170       0.44449076       0.05812719 </v>
+   <v>       0.89210223       0.44731237       0.05858938 </v>
+   <v>       0.22023325       0.77555046       0.05725914 </v>
+   <v>       0.55924560       0.77979344       0.05980825 </v>
+   <v>       0.89233386       0.78059073       0.05906407 </v>
+   <v>       0.22262838       0.11105540       0.55654027 </v>
+   <v>       0.55641774       0.10861096       0.56054505 </v>
+   <v>       0.89047225       0.11478299       0.55989648 </v>
+   <v>       0.22408109       0.44268656       0.56020103 </v>
+   <v>       0.55466843       0.44666939       0.55800789 </v>
+   <v>       0.89219741       0.44472715       0.55998627 </v>
+   <v>       0.22290657       0.77556071       0.55778910 </v>
+   <v>       0.55546308       0.77537195       0.56157045 </v>
+   <v>       0.89220177       0.77822426       0.55877740 </v>
+  </varray>
+ </structure>
+</modeling>

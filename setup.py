@@ -24,6 +24,7 @@ setup(
     entry_points={
         'console_scripts': [
             'pypolymlp=pypolymlp.run_polymlp:run',
+            'pypolymlp-utils=pypolymlp.run_polymlp_utils:run',
         ],
     },
     packages=setuptools.find_packages("./src"),

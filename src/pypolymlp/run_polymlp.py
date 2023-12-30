@@ -32,7 +32,6 @@ from pypolymlp.core.interface_vasp import Poscar
 from pypolymlp.utils.yaml_utils import load_cells
 
 
-
 def run():
 
     signal.signal(signal.SIGINT, signal.SIG_DFL)
@@ -249,7 +248,4 @@ def run():
         print(' feature size =', x.shape)
         np.save('features.npy', x)
 
-    ''' todo: args.strgen should be implemented.'''
 
-if __name__ == '__main__':
-    run()

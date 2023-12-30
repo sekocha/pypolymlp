@@ -6,26 +6,10 @@ import yaml
 
 from scipy.spatial import ConvexHull
 
-if __name__ == '__main__':
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-d', '--dirs', 
-                        type=str, 
-                        default='.', 
-                        nargs='*',
-                        help='Parent directory.')
-    parser.add_argument('--force', 
-                        action='store_true',
-                        help='Use rmse (force) to get pareto frontier.')
-    parser.add_argument('--key', 
-                        type=str, 
-                        default=None,
-                        help='Test dataset name or partial string' +
-                             ' used for finding optimal MLPs.')
-    args = parser.parse_args()
+def find_optimal_mlps(dirs, key, use_force=False):
 
     d_array = []
-    for dir_pot in args.dirs:
+    for dir_pot in dirs:
         fname1 = dir_pot + '/polymlp_error.yaml'
         fname2 = dir_pot + '/comp_cost.dat'
         match_d = None
@@ -33,7 +17,7 @@ if __name__ == '__main__':
             print(dir_pot)
             yml_data = yaml.safe_load(open(fname1))
             for d in yml_data['prediction_errors']:
-                if args.key in d['dataset']:
+                if key in d['dataset']:
                     match_d = d
                     break
             
@@ -52,7 +36,7 @@ if __name__ == '__main__':
     os.makedirs('polymlp_opts', exist_ok=True)
     np.savetxt('polymlp_opts/all.dat', d_array, fmt='%s')
     
-    if args.force:
+    if use_force:
         d_target = d_array[:,[0,3]]
     else:
         d_target = d_array[:,[0,2]]
@@ -79,4 +63,25 @@ if __name__ == '__main__':
     d_convex = d_convex[d_convex[:,2].astype(float) < 30]
     
     np.savetxt('polymlp_opts/convexhull.dat', d_convex, fmt='%s')
+
+if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-d', '--dirs', 
+                        type=str, 
+                        default='.', 
+                        nargs='*',
+                        help='Parent directory.')
+    parser.add_argument('--force', 
+                        action='store_true',
+                        help='Use rmse (force) to get pareto frontier.')
+    parser.add_argument('--key', 
+                        type=str, 
+                        default=None,
+                        help='Test dataset name or partial string' +
+                             ' used for finding optimal MLPs.')
+    args = parser.parse_args()
+
+    find_optimal_mlps(args.dirs, args.key, use_force=args.force)
+
 
