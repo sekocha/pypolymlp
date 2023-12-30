@@ -19,10 +19,11 @@ from pypolymlp.utils.dataset.dataset_utils import (
 #    dir1 = prefix + '2021-add/' + suffix1
 #    dir1 = prefix + '2023-go/' + suffix1
 
-
 vaspruns = sys.argv[1:]
 dft_dict = parse_vaspruns(vaspruns)
+
 #train1, train2, test1, test2 = split_two_datasets(dft_dict)
+#train0, test0 = [], []
 train0, train1, train2, test0, test1, test2 = split_three_datasets(dft_dict)
 
 print( ' - Subset size (train1):', len(train1))
