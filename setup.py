@@ -9,8 +9,6 @@ os.makedirs('./build/bdist.linux-x86_64/wheel/pypolymlp/cxx/lib', exist_ok=True)
 for file1 in glob.glob('./src/pypolymlp/cxx/lib/*.so'):
     shutil.copy(file1, './build/bdist.linux-x86_64/wheel/pypolymlp/cxx/lib')
 
-#shutil.copy('./src/pypolymlp/cxx/lib/libmlpcpp.so', './build/bdist.linux-x86_64/wheel/pypolymlp/cxx/lib')
-
 setup(
     name="pypolymlp",
     version="0.1",
@@ -23,8 +21,8 @@ setup(
     platforms=["all"],
     entry_points={
         'console_scripts': [
-            'pypolymlp=pypolymlp.run_polymlp:run',
-            'pypolymlp-utils=pypolymlp.run_polymlp_utils:run',
+            'pypolymlp=pypolymlp.api.run_polymlp:run',
+            'pypolymlp-utils=pypolymlp.api.run_polymlp_utils:run',
         ],
     },
     packages=setuptools.find_packages("./src"),
