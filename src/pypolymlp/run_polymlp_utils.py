@@ -3,10 +3,11 @@ import numpy as np
 import argparse
 import signal
 
+from pypolymlp.core.interface_vasp import Poscar
 from pypolymlp.mlp_opt.optimal import find_optimal_mlps
 from pypolymlp.utils.vasprun_compress import convert
 from pypolymlp.utils.dataset.auto_divide import auto_divide
-
+from pypolymlp.utils.vasp_utils import print_poscar, write_poscar_file
 
 def run():
 
@@ -42,6 +43,20 @@ def run():
                         help='Identification key for the dataset ' +
                              'in finding optimal MLPs')
 
+    parser.add_argument('-p', '--poscar',
+                        type=str,
+                        help='poscar file name')
+    parser.add_argument('--symprec',
+                        type=float,
+                        default=1e-4,
+                        help='numerical precision for finding symmetry')
+    parser.add_argument('--refine_cell',
+                        action='store_true',
+                        help='refine cell')
+    parser.add_argument('--space_group',
+                        action='store_true',
+                        help='get space group')
+
     args = parser.parse_args()
 
     if args.vasprun_compress is not None:
@@ -59,9 +74,17 @@ def run():
     elif args.find_optimal is not None:
         find_optimal_mlps(args.find_optimal, args.key)
 
+    elif args.refine_cell or args.space_group:
+        from pypolymlp.utils.spglib_utils import SymCell
+        sc = SymCell(args.poscar, symprec=args.symprec)
+        if args.refine_cell:
+            st_dict = sc.refine_cell()
+            print_poscar(st_dict)
+            write_poscar_file(st_dict)
+        if args.space_group:
+            print(' space_group = ', sc.get_spacegroup())
+
     '''
-    spglib_utils
-    str_gen/run_strgen
-    todo: args.strgen should be implemented.
+    todo: str_gen/run_strgen
     '''
 
