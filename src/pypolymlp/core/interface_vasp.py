@@ -30,10 +30,12 @@ def parse_vaspruns(vaspruns, element_order=None):
              sigma[0][1], sigma[1][2], sigma[2][0]]
         dft_dict['stress'].extend(s)
         dft_dict['structures'].append(structure_dict)
+        dft_dict['volumes'].append(structure_dict['volume'])
 
     dft_dict['energy'] = np.array(dft_dict['energy'])
     dft_dict['force'] = np.array(dft_dict['force'])
     dft_dict['stress'] = np.array(dft_dict['stress'])
+    dft_dict['volumes'] = np.array(dft_dict['volumes'])
 
     elements_size = [len(st['elements']) for st in dft_dict['structures']]
     elements = dft_dict['structures'][np.argmax(elements_size)]['elements']
