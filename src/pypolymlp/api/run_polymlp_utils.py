@@ -8,6 +8,10 @@ from pypolymlp.mlp_opt.optimal import find_optimal_mlps
 from pypolymlp.utils.vasprun_compress import convert
 from pypolymlp.utils.dataset.auto_divide import auto_divide
 from pypolymlp.utils.vasp_utils import print_poscar, write_poscar_file
+from pypolymlp.utils.atomic_energies.atomic_energies import (
+        get_atomic_energies_polymlp_in
+)
+
 
 def run():
 
@@ -30,6 +34,21 @@ def run():
                         default=None,
                         help='Automatic dataset division using ' + 
                              'vasprun.xml files')
+
+    parser.add_argument('--atomic_energy_elements', 
+                        nargs='*',
+                        type=str, 
+                        default=None,
+                        help='Elements for getting atomic energies.')
+    parser.add_argument('--atomic_energy_formula', 
+                        type=str, 
+                        default=None,
+                        help='Compound for getting atomic energies.')
+    parser.add_argument('--atomic_energy_functional', 
+                        type=str, 
+                        default='PBE',
+                        help='Exc functional for getting atomic energies.')
+
 
     parser.add_argument('--find_optimal', 
                         nargs='*',
@@ -70,6 +89,12 @@ def run():
 
     elif args.auto_dataset is not None:
         auto_divide(args.auto_dataset)
+
+    elif (args.atomic_energy_elements is not None 
+        or args.atomic_energy_formula is not None):
+        get_atomic_energies_polymlp_in(elements=args.atomic_energy_elements,
+                                       formula=args.atomic_energy_formula,
+                                       functional=args.atomic_energy_functional)
 
     elif args.find_optimal is not None:
         find_optimal_mlps(args.find_optimal, args.key)
