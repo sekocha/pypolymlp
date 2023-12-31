@@ -12,6 +12,7 @@ set ( SRC_FILES
     src/polymlp/polymlp_mlipkk_spherical_harmonics.cpp
     src/compute/local.cpp
     src/compute/model.cpp
+    src/compute/model_properties.cpp
     src/compute/py_model.cpp
     src/compute/py_properties.cpp
     src/compute/py_additive_model.cpp

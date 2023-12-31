@@ -28,7 +28,8 @@
 
 #include "mlpcpp.h"
 #include "compute/neighbor.h"
-#include "compute/model.h"
+//#include "compute/model.h"
+#include "compute/model_properties.h"
 
 #include <Eigen/Core>
 #include <pybind11/pybind11.h>

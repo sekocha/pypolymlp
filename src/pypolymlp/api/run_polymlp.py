@@ -160,9 +160,9 @@ def run():
             )
             structures = parse_structures_from_phono3py_yaml(args.phono3py_yaml)
 
-        #energies, forces, stresses = compute_properties(args.pot, structures)
-        energies, forces, stresses = compute_properties_slow(args.pot, 
-                                                             structures)
+        energies, forces, stresses = compute_properties(args.pot, structures)
+        #energies, forces, stresses = compute_properties_slow(args.pot, 
+        #                                                     structures)
         stresses_gpa = convert_stresses_in_gpa(stresses, structures)
 
         np.set_printoptions(suppress=True)

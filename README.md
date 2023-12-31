@@ -34,13 +34,11 @@
 > conda create -n pypolymlp 
 > conda activate pypolymlp
 
-> conda install numpy scipy
-> conda install -c conda-forge pybind11
-> conda install -c conda-forge eigen
+> conda install numpy scipy pybind11 eigen cmake
 (optional)
-> conda install -c conda-forge spglib
-> conda install -c conda-forge phonopy phono3py
-> conda install -c conda-forge joblib
+> conda install spglib
+> conda install phono3py
+> conda install joblib
 ```
 
 ### Building a shared library (libmlpcpp)
@@ -56,8 +54,7 @@ or
 > cd $(pypolymlp)/src/pypolymlp/cxx
 > cmake -S . -B build
 > cmake --build build
-> cd build
-> make install
+> cmake --install build
 ```
 
 ### Install pypolymlp using pip

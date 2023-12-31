@@ -24,6 +24,7 @@
 ****************************************************************************/
 
 #include "py_properties.h"
+#include <time.h>
 
 PyProperties::PyProperties(const py::dict& params_dict,
                            const vector1d& coeffs,
@@ -63,9 +64,9 @@ PyProperties::PyProperties(const py::dict& params_dict,
                                 lm_coeffs};
 
     const int n_st = axis.size();
-    e_all = Eigen::VectorXd::Zero(n_st);
+    e_all = Eigen::VectorXd(n_st);
     f_all = vector2d(n_st);
-    s_all = Eigen::MatrixXd::Zero(n_st, 6);
+    s_all = Eigen::MatrixXd(n_st, 6);
 
     #ifdef _OPENMP
     #pragma omp parallel for schedule(guided,1)
@@ -77,32 +78,16 @@ PyProperties::PyProperties(const py::dict& params_dict,
                        types[i], 
                        fp1.n_type, 
                        fp1.cutoff);
-        Model mod(neigh.get_dis_array(), 
-                  neigh.get_diff_array(),
-                  neigh.get_atom2_array(), 
-                  types[i], 
-                  fp1,
-                  element_swap);
-
-        const auto &xe = mod.get_xe_sum();
-        const auto &xf = mod.get_xf_sum();
-        const auto &xs = mod.get_xs_sum();
-
-        for (int k = 0; k < xe.size(); ++k) 
-            e_all(i) += xe[k] * coeffs[k];
-
-        f_all[i] = vector1d(xf.size(), 0.0);
-        for (int j = 0; j < xf.size(); ++j) {
-            for (int k = 0; k < xf[j].size(); ++k){
-                 f_all[i][j] += xf[j][k] * coeffs[k];
-            }
-        }
-
-        for (int j = 0; j < xs.size(); ++j) {
-            for (int k = 0; k < xs[j].size(); ++k){
-                s_all(i, j) += xs[j][k] * coeffs[k];
-            }
-        }
+        ModelProperties mod(neigh.get_dis_array(), 
+                            neigh.get_diff_array(),
+                            neigh.get_atom2_array(), 
+                            types[i], 
+                            coeffs,
+                            fp1,
+                            element_swap);
+        e_all(i) = mod.get_energy();
+        f_all[i] = mod.get_force();
+        for (int j = 0; j < 6; ++j) s_all(i,j) = mod.get_stress()[j];
     }
 }
 

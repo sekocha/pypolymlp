@@ -23,6 +23,7 @@ def compute_properties(pot, st_dicts):
     stresses: (n_str, 6) in the order of xx, yy, zz, xy, yz, zx
                 unit: eV/supercell
     '''
+    print('Properties: Using a memory efficient algorithm')
 
     params_dict, mlp_dict = load_mlp_lammps(filename=pot)
     params_dict['element_swap'] = False
@@ -38,7 +39,14 @@ def compute_properties(pot, st_dicts):
                                         axis_array,
                                         positions_c_array,
                                         types_array)
-    
+    '''
+    PotentialProperties: Return
+    ----------------------------
+    energies = obj.get_e(), (n_str)
+    forces = obj.get_f(), (n_str, n_atom*3) in the order of (n_atom, 3)
+    stresses = obj.get_s(), (n_str, 6) 
+                             in the order of xx, yy, zz, xy, yz, zx
+    '''
     energies, forces, stresses = obj.get_e(), obj.get_f(), obj.get_s()
     forces = [np.array(f).reshape((-1,3)).T for f in forces]
 
@@ -53,18 +61,19 @@ def compute_energies(pot, st_dicts):
     return x @ coeffs
 
 def compute_properties_slow(pot, st_dicts):
-
-    features, mlp_dict = compute_from_polymlp_lammps(pot, st_dicts, 
-                                                     force=True,
-                                                     stress=True,
-                                                     return_features_obj=True,
-                                                     return_mlp_dict=True)
     '''
+    Return
+    ------
     energies: unit: eV/supercell (n_str)
     forces: unit: eV/angstrom (n_str, 3, n_atom)
     stresses: (n_str, 6) in the order of xx, yy, zz, xy, yz, zx
                 unit: eV/supercell
     '''
+    features, mlp_dict = compute_from_polymlp_lammps(pot, st_dicts, 
+                                                     force=True,
+                                                     stress=True,
+                                                     return_features_obj=True,
+                                                     return_mlp_dict=True)
     x = features.get_x()
     coeffs = mlp_dict['coeffs'] / mlp_dict['scales']
     predictions = x @ coeffs
