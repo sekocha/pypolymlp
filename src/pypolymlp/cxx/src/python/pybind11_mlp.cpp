@@ -52,6 +52,20 @@ PYBIND11_MODULE(libmlpcpp, m) {
                 py::return_value_policy::reference_internal)
         ;
 
+    py::class_<PyProperties>(m, "PotentialProperties")
+        .def(py::init<const py::dict&,
+                      const vector1d&,
+                      const vector3d&,
+                      const vector3d&,
+                      const vector2i&>())
+        .def("get_e", &PyProperties::get_e, 
+                py::return_value_policy::reference_internal)
+        .def("get_f", &PyProperties::get_f, 
+                py::return_value_policy::reference_internal)
+        .def("get_s", &PyProperties::get_s, 
+                py::return_value_policy::reference_internal)
+        ;
+
     py::class_<PyAdditiveModel>(m, "PotentialAdditiveModel")
         .def(py::init<const std::vector<py::dict>&,
                       const vector3d&,

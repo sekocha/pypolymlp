@@ -2,10 +2,48 @@
 import numpy as np
 import argparse
 
-from pypolymlp.calculator.compute_features import compute_from_polymlp_lammps
+from pypolymlp.core.io_polymlp import load_mlp_lammps
+from pypolymlp.calculator.compute_features import (
+        update_types,
+        compute_from_polymlp_lammps,
+)
+
 from pypolymlp.core.interface_vasp import parse_structures_from_poscars
 from pypolymlp.core.interface_vasp import parse_structures_from_vaspruns
 
+from pypolymlp.mlp_gen.features import structures_to_mlpcpp_obj
+from pypolymlp.cxx.lib import libmlpcpp
+
+def compute_properties(pot, st_dicts):
+    '''
+    Return
+    ------
+    energies: unit: eV/supercell (n_str)
+    forces: unit: eV/angstrom (n_str, 3, n_atom)
+    stresses: (n_str, 6) in the order of xx, yy, zz, xy, yz, zx
+                unit: eV/supercell
+    '''
+
+    params_dict, mlp_dict = load_mlp_lammps(filename=pot)
+    params_dict['element_swap'] = False
+    coeffs = mlp_dict['coeffs'] / mlp_dict['scales']
+
+    element_order = params_dict['elements']
+    st_dicts = update_types(st_dicts, element_order)
+    axis_array, positions_c_array, types_array, _ \
+                        = structures_to_mlpcpp_obj(st_dicts)
+
+    obj = libmlpcpp.PotentialProperties(params_dict,
+                                        coeffs,
+                                        axis_array,
+                                        positions_c_array,
+                                        types_array)
+    
+    energies, forces, stresses = obj.get_e(), obj.get_f(), obj.get_s()
+    forces = [np.array(f).reshape((-1,3)).T for f in forces]
+
+    return energies, forces, stresses
+ 
 def compute_energies(pot, st_dicts):
 
     x, mlp_dict = compute_from_polymlp_lammps(pot, st_dicts, 
@@ -14,7 +52,7 @@ def compute_energies(pot, st_dicts):
     coeffs = mlp_dict['coeffs'] / mlp_dict['scales']
     return x @ coeffs
 
-def compute_properties(pot, st_dicts):
+def compute_properties_slow(pot, st_dicts):
 
     features, mlp_dict = compute_from_polymlp_lammps(pot, st_dicts, 
                                                      force=True,

@@ -19,7 +19,6 @@ from pypolymlp.utils.dataset.dataset_utils import (
 #    dir1 = prefix + '2021-add/' + suffix1
 #    dir1 = prefix + '2023-go/' + suffix1
 
-#vaspruns = sys.argv[1:]
 def auto_divide(vaspruns):
 
     dft_dict = parse_vaspruns(vaspruns)

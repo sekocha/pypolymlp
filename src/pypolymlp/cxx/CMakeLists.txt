@@ -13,6 +13,7 @@ set ( SRC_FILES
     src/compute/local.cpp
     src/compute/model.cpp
     src/compute/py_model.cpp
+    src/compute/py_properties.cpp
     src/compute/py_additive_model.cpp
     src/compute/neighbor.cpp
     src/compute/py_features_attr.cpp

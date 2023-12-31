@@ -27,7 +27,10 @@ from pypolymlp.calculator.compute_features import (
         compute_from_polymlp_lammps,
 )
 from pypolymlp.calculator.compute_properties import convert_stresses_in_gpa
-from pypolymlp.calculator.compute_properties import compute_properties
+from pypolymlp.calculator.compute_properties import (
+    compute_properties_slow,
+    compute_properties,
+)
 from pypolymlp.core.interface_vasp import Poscar
 from pypolymlp.utils.yaml_utils import load_cells
 
@@ -157,7 +160,9 @@ def run():
             )
             structures = parse_structures_from_phono3py_yaml(args.phono3py_yaml)
 
-        energies, forces, stresses = compute_properties(args.pot, structures)
+        #energies, forces, stresses = compute_properties(args.pot, structures)
+        energies, forces, stresses = compute_properties_slow(args.pot, 
+                                                             structures)
         stresses_gpa = convert_stresses_in_gpa(stresses, structures)
 
         np.set_printoptions(suppress=True)
