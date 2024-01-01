@@ -96,4 +96,3 @@ if __name__ == '__main__':
     print(' number of structures =', n_st)
 
 
-

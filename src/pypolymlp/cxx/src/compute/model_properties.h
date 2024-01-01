@@ -1,6 +1,6 @@
 /****************************************************************************
 
-        Copyright (C) 2020 Atsuto Seko
+        Copyright (C) 2023 Atsuto Seko
                 seko@cms.mtl.kyoto-u.ac.jp
 
         This program is free software; you can redistribute it and/or
@@ -23,9 +23,6 @@
 
 #ifndef __MODEL_PROPERTIES
 #define __MODEL_PROPERTIES
-
-#include <omp.h>
-#include <algorithm>
 
 #include "mlpcpp.h"
 #include "compute/local.h"

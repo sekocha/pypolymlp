@@ -24,11 +24,8 @@
 #ifndef __PYPROPERTIES
 #define __PYPROPERTIES
 
-//#include <iomanip> 
-
 #include "mlpcpp.h"
 #include "compute/neighbor.h"
-//#include "compute/model.h"
 #include "compute/model_properties.h"
 
 #include <Eigen/Core>

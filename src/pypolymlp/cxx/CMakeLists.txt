@@ -21,7 +21,8 @@ set ( SRC_FILES
     src/python/pybind11_mlp.cpp
     src/polymlp/polymlp_gtinv_data.cpp
 )
-message(STATUS ${CMAKE_SOURCE_DIR})
+
+#message(STATUS ${CMAKE_SOURCE_DIR})
 
 find_package(pybind11 REQUIRED)
 
@@ -31,7 +32,7 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 message(STATUS ${EIGEN3_INCLUDE_DIR})
 
 set ( PYBIND11_PYTHON_VERSION 
-    3.8 3.9 3.10 3.11
+    3.9 3.10 3.11
 )
 pybind11_add_module(libmlpcpp ${SRC_FILES})
 

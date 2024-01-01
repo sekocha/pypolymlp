@@ -22,7 +22,6 @@
 *****************************************************************************/
 
 #include "compute/model_properties.h"
-#include "time.h"
 
 ModelProperties::ModelProperties(){}
 

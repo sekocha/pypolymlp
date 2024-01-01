@@ -24,7 +24,6 @@
 ****************************************************************************/
 
 #include "py_properties.h"
-#include <time.h>
 
 PyProperties::PyProperties(const py::dict& params_dict,
                            const vector1d& coeffs,
