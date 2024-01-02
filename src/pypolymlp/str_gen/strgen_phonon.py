@@ -27,11 +27,11 @@ def run_strgen_phonon(filename,
     _, st_dicts = generate_random_displacements(supercell, 
                                                 n_samples=n_samples,
                                                 displacements=displacements)
-    os.makedirs('poscars', exist_ok=True)
-    write_poscar_file(supercell, filename='poscars/poscar-00000')
+    os.makedirs('poscars_phonon', exist_ok=True)
+    write_poscar_file(supercell, filename='poscars_phonon/poscar-00000')
     for i, st in enumerate(st_dicts):
         write_poscar_file(st, 
-                          filename='poscars/poscar-'+str(i+1).zfill(5),
+                          filename='poscars_phonon/poscar-'+str(i+1).zfill(5),
                           header='pypolymlp: disp.-'+str(i+1).zfill(5))
 
     save_cells(unitcell, supercell, filename='polymlp_str.yaml')

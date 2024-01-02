@@ -7,10 +7,17 @@ from pypolymlp.core.interface_vasp import Poscar
 from pypolymlp.utils.structure_utils import supercell_diagonal
 from pypolymlp.utils.vasp_utils import write_poscar_file
 
-def write_structures(st_dicts, output_dir='poscars'):
+def write_structures(st_dicts, base_info, output_dir='poscars'):
 
     os.makedirs(output_dir, exist_ok=True)
     f = open('polymlp_str_samples.yaml', 'w')
+    print('prototypes:', file=f)
+    for base_dict in base_info:
+        print('- id:             ', base_dict['id'], file=f)
+        print('  supercell_size: ', base_dict['size'], file=f)
+        print('  n_atoms:        ', base_dict['n_atoms'], file=f)
+
+
     print('structures:', file=f)
     for i, st in enumerate(st_dicts):
         filename = 'poscars/poscar-' + str(i+1).zfill(5)
@@ -19,7 +26,9 @@ def write_structures(st_dicts, output_dir='poscars'):
         print('- id:', str(i+1).zfill(5), file=f)
         print('  base:', st['base'], file=f)
         print('  mode:', st['mode'], file=f)
+
     f.close()
+
 
 def set_structure_id(st_dicts, poscar, mode):
     for st in st_dicts:
@@ -117,14 +126,31 @@ class StructureGenerator:
             st_array.append(str_rand)
         return st_array
 
+    def print_size(self):
+        print('  supercell size:      ', list(self.size))
+        print('  n_atoms (supercell): ', list(self.supercell['n_atoms']))
+       
+
 def run_strgen(args):
 
     sampled_structures = []
+    base_info = []
     for poscar in args.poscars:
         unitcell = Poscar(poscar).get_structure()
         gen = StructureGenerator(unitcell, natom_ub=args.max_natom)
-        if args.n_structures is not None:
-            st_dicts = gen.random_structure(n_str=args.n_structures, 
+
+        base_dict = dict()
+        base_dict['id'] = poscar
+        base_dict['size'] = list(gen.size)
+        base_dict['n_atoms'] = list(gen.supercell['n_atoms'])
+        base_info.append(base_dict)
+        
+        print('-----------------------') 
+        print('-', poscar) 
+        gen.print_size()
+
+        if args.n_str is not None:
+            st_dicts = gen.random_structure(n_str=args.n_str, 
                                             max_disp=args.max_disp, 
                                             vol_ratio=1.0)
             st_dicts = set_structure_id(st_dicts, poscar, 'standard')
@@ -144,7 +170,7 @@ def run_strgen(args):
             st_dicts = set_structure_id(st_dicts, poscar, 'high density')
             sampled_structures.extend(st_dicts)
 
-    write_structures(sampled_structures)
+    write_structures(sampled_structures, base_info)
 
 
 if __name__ == '__main__':
@@ -159,7 +185,7 @@ if __name__ == '__main__':
                         type=int,
                         default=150, 
                         help='Maximum number of atoms in structures')
-    parser.add_argument('-n','--n_structures',
+    parser.add_argument('-n','--n_str',
                         type=int,
                         default=None,
                         help='Number of structures sampled ' + 
