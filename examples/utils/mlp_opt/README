@@ -1,1 +1,1 @@
-pypolymlp-utils --find_optimal 2-alloy/* --key test-disp1
+pypolymlp-utils --find_optimal Ti-Pb/* --key test-disp1
