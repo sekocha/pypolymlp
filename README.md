@@ -28,7 +28,7 @@
 
 ## Manually installing pypolymlp
 
-### Conda package management system
+1. Conda package management system
 
 ```
 > conda create -n pypolymlp 
@@ -41,7 +41,7 @@
 > conda install joblib
 ```
 
-### Building a shared library (libmlpcpp)
+2. Building a shared library (libmlpcpp)
 
 ```
 > cd $(pypolymlp)/src/pypolymlp/cxx
@@ -55,7 +55,7 @@ or
 > make
 ```
 
-### Install pypolymlp using pip
+3. Install pypolymlp using pip
 
 ```
 > cd $(pypolymlp)
