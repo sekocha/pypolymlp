@@ -239,7 +239,7 @@ Compressed vasprun.xml is generated as vasprun.xml.polymlp.
 A given DFT dataset is automatically divided into some sets, depending on the values of the energy, the forces acting on atoms, and the volume.
 A generated file "polymlp.in.append" can be appended in your polymlp.in, which will be used for developing MLPs. 
 Datasets identified with "train1" and "test1" are composed of structures with low energy and small force values.
-The predictive power for them is more important than the other structures for the successive calculations using polynomial MLPs, so the prediction errors for "train1" and "test1" datasets should be an accuracy measure for polynomial MLPs.
+The predictive power for them is more important than the other structures for the successive calculations using polynomial MLPs, so the prediction errors for "train1" and "test1" datasets should be accuracy measures for polynomial MLPs.
 
 ### Atomic energies
 (Experimental: Only for VASP calculations using PBE and PBEsol functionals)
@@ -247,7 +247,7 @@ The predictive power for them is more important than the other structures for th
 ```
 > pypolymlp-utils --atomic_energy_elements Mg O --atomic_energy_functional PBE
 > pypolymlp-utils --atomic_energy_formula MgO --atomic_energy_functional PBE
-> pypolymlp-utils --atomic_energy_formula Al2O3 --atomic_energy_functional PBEso
+> pypolymlp-utils --atomic_energy_formula Al2O3 --atomic_energy_functional PBEsol
 ```
 
 A standard output can be appended in your polymlp.in, which will be used for developing MLPs. 
