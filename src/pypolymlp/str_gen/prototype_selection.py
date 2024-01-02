@@ -1,29 +1,30 @@
-#!/usr/bin/env python
+#!/usr/bin/env python 
 import numpy as np
 import os, shutil
 import argparse
-#import itertools
-#import copy
+import itertools
+import copy
+from collections import defaultdict
 
-#from pypolymlp.core.interface_vasp import Poscar
-#from pypolymlp.str_gen.structure import permute_atoms
-#from pypolymlp.str_gen.structure import print_poscar_tofile
+from pypolymlp.core.interface_vasp import Poscar
+from pypolymlp.utils.structure_utils import swap_elements
+from pypolymlp.utils.vasp_utils import write_poscar_file
 
-def load_prototypes(n_element=1, target='alloy', screen=False):
+def load_prototypes(n_types=1, target='alloy', screen=False):
 
     list_dir = '/'.join(__file__.split('/')[:-1]) + '/prototypes/'
     if screen:
         list_dir += 'list_icsd_screened/'
     else:
         list_dir += 'list_icsd/'
-    if n_element == 1:
+    if n_types == 1:
         summary = list_dir + '1-all/summary_nonequiv'
-    elif n_element == 2:
+    elif n_types == 2:
         if target == 'alloy':
             summary = list_dir + '2-alloy/summary_nonequiv'
         elif target == 'ionic':
             summary = list_dir + '2-ionic/summary_nonequiv'
-    elif n_element == 3:
+    elif n_types == 3:
         if target == 'alloy':
             summary = list_dir + '3-alloy/summary_nonequiv'
         elif target == 'ionic':
@@ -32,37 +33,108 @@ def load_prototypes(n_element=1, target='alloy', screen=False):
     prototypes = np.loadtxt(summary, delimiter=',', dtype=str, skiprows=1)
     return prototypes
 
-def prototype_selection(n_element=1, target='alloy', screen=False):
+def prototype_selection_element(screen=False):
 
-    prototypes = load_prototypes(n_element=n_element, 
+    prototypes = load_prototypes(n_types=1, screen=screen)
+
+    poscar_dir = '/'.join(__file__.split('/')[:-1]) + '/prototypes/poscars/'
+    output_dir = 'prototypes/'
+    os.makedirs(output_dir, exist_ok=True)
+
+    f = open('polymlp_prototypes.yaml', 'w')
+    print('n_prototype:  ', prototypes.shape[0], file=f)
+    print('target:       ', 'None', file=f)
+    print('screened:     ', screen, file=f)
+    print('', file=f)
+    print('prototypes:', file=f)
+    for prototype in prototypes:
+        poscar = poscar_dir + 'icsd-' + prototype[0]
+        shutil.copy(poscar, output_dir)
+        print('- icsd_collcode:  ', prototype[0], file=f)
+        print('  structure_type: ', prototype[1], file=f)
+        print('  space_group:    ', prototype[-1], file=f)
+        print('', file=f)
+    f.close()
+
+def prototype_selection_alloy(n_types, target='alloy', screen=False):
+
+    prototypes = load_prototypes(n_types=n_types, 
                                  target=target, 
                                  screen=screen)
+    poscar_dir = '/'.join(__file__.split('/')[:-1]) + '/prototypes/poscars/'
+
+    st_dicts = defaultdict(list)
+    for row, prototype in enumerate(prototypes):
+        poscar = poscar_dir + 'icsd-' + prototype[0]
+        st_dict = Poscar(poscar).get_structure()
+        n_atoms = np.array(st_dict['n_atoms'])
+
+        ''' todo: equivalency of site symmetries should be examined.'''
+        orders = []
+        uniq = set()
+        for p1 in itertools.permutations(range(n_types)): 
+            cand = tuple(n_atoms[np.array(p1)])
+            if not cand in uniq:
+                uniq.add(cand)
+                orders.append(p1)
+
+        for order in orders:
+            st_dict_perm = copy.deepcopy(st_dict)
+            st_dict_perm = swap_elements(st_dict_perm, order=order)
+            st_dict_perm['order'] = order
+            st_dicts[row].append(st_dict_perm)
+
+#                match_comp = True
+#                if args.comp is not None:
+#                    n_atoms2 = st_perm['n_atoms']
+#                    comp2 = np.array(n_atoms2) / sum(n_atoms2)
+#                    match_comp = np.allclose(comp2, args.comp)
+#
+#                if match_comp == True:
+#                    order_str = ''.join([str(o) for o in order])
+#                    filename2 = filename + '-' + order_str
+#                    header2 = header + ' : ' + order_str
+#                    print_poscar_tofile(st_perm, 
+#                                        filename=filename2,
+#                                        header=header2)
+#
 
     output_dir = 'prototypes/'
     os.makedirs(output_dir, exist_ok=True)
-    poscar_dir = '/'.join(__file__.split('/')[:-1]) + '/prototypes/poscars/'
+
+    n_str = sum([len(v) for v in st_dicts.values()])
 
     f = open('polymlp_prototypes.yaml', 'w')
-    if n_element == 1:
-        print('n_prototype:', prototypes.shape[0], file=f)
-        print('target:     ', 'None', file=f)
-        print('screened:   ', screen, file=f)
+    print('n_prototype:  ', n_str, file=f)
+    print('target:       ', target, file=f)
+    print('screened:     ', screen, file=f)
+    print('', file=f)
+    print('prototypes:', file=f)
+    for row, strs in st_dicts.items():
+        prototype = prototypes[row]
+        poscar_id = 'icsd-' + prototype[0]
+        for st_dict in strs:
+            p_str = ''.join([str(p) for p in st_dict['order']])
+            filename = output_dir + poscar_id + '-' + p_str
+            header = poscar_id + '-' + p_str
+            write_poscar_file(st_dict, filename=filename, header=header)
+        print('- icsd_collcode:  ', prototype[0], file=f)
+        print('  structure_type: ', prototype[1], file=f)
+        print('  space_group:    ', prototype[-1], file=f)
+        print('  n_structures:   ', len(strs), file=f)
         print('', file=f)
-        print('prototypes:', file=f)
-        for prototype in prototypes:
-            poscar = poscar_dir + 'icsd-' + prototype[0]
-            shutil.copy(poscar, output_dir)
-            print('- icsd_collcode:  ', prototype[0], file=f)
-            print('  structure_type: ', prototype[1], file=f)
-            print('  space_group:    ', prototype[-1], file=f)
-            print('', file=f)
-    else:
-        pass
     f.close()
+
 
 if __name__ == '__main__':
 
-    prototype_selection(n_element=1, target='alloy', screen=True)
+    n_types = 3
+    target = 'alloy' # ionic must be hidden
+
+    if n_types == 1:
+        prototype_selection_element(screen=True)
+    else:
+        prototype_selection_alloy(n_types, target=target, screen=True)
 
 #
 #    parser = argparse.ArgumentParser()

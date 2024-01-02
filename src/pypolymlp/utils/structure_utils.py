@@ -107,7 +107,7 @@ def reorder(st_dict, order=None, index1=None, index2=None):
     return st_dict
 
 def swap_elements(st_dict, order=None, index1=None, index2=None):
-    ''' Orders of element and type orders are fixed. 
+    ''' Orders of element and type are fixed. 
         Orders of positions, n_atoms are swapped.'''
     if order is None:
         order = list(range(len(st_dict['n_atoms'])))
