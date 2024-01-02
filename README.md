@@ -223,4 +223,19 @@ Structures are generated in "poscar_phonon" directory.
 
 3. DFT calculations for structures 
 
-### Structure generation for DFT calculations
+### Compression of vasprun.xml files
+
+```
+> pypolymlp-utils --vasprun_compress vaspruns/vasprun-*.xml
+```
+
+### Automatic division of DFT dataset
+```
+> pypolymlp-utils --auto_dataset dataset1/*/vasprun.xml dataset2/*/vasprun.xml
+```
+A given DFT dataset is automatically divided into some sets, depending on the values of the energy, the forces acting on atoms, and the volume.
+A generated file "polymlp.in.append" can be appended in your polymlp.in, which is used for regression.
+```
+cat polymlp.in.append >> polymlp.in
+```
+
