@@ -23,6 +23,7 @@ setup(
         'console_scripts': [
             'pypolymlp=pypolymlp.api.run_polymlp:run',
             'pypolymlp-utils=pypolymlp.api.run_polymlp_utils:run',
+            'pypolymlp-structure=pypolymlp.api.run_polymlp_str:run',
         ],
     },
     packages=setuptools.find_packages("./src"),
