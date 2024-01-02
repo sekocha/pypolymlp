@@ -45,16 +45,14 @@
 
 ```
 > cd $(pypolymlp)/src/pypolymlp/cxx
-> make
-```
-or
-```
-> (conda install -c anaconda cmake)
-
-> cd $(pypolymlp)/src/pypolymlp/cxx
 > cmake -S . -B build
 > cmake --build build
 > cmake --install build
+```
+or
+```
+> cd $(pypolymlp)/src/pypolymlp/cxx
+> make
 ```
 
 ### Install pypolymlp using pip
@@ -158,7 +156,7 @@ or
 
 ## Calculators
 
-### Computation of properties (energies, forces, and stress tensors)
+### Properties (energies, forces, and stress tensors)
 
 ```
 > pypolymlp --properties --pot polymlp.lammps --poscars */POSCAR
@@ -166,14 +164,14 @@ or
 > pypolymlp --properties --pot polymlp.lammps --phono3py_yaml phono3py_params_wurtzite_AgI.yaml.xz
 ```
 
-### Computation of polynomial structural features
+### Polynomial structural features
 
 ```
 > pypolymlp --features --pot polymlp.lammps --poscars */POSCAR
 > pypolymlp --features -i polymlp.in --poscars */POSCAR
 ```
 
-### Computation of force constants 
+### Force constants 
 
 (phonopy, phono3py, and symfc are required.)
 ```
@@ -217,6 +215,7 @@ Structures are generated in "poscar" directory.
 ```
 
 - Random displacements for phonon calculations
+(phonopy is required.)
 ```
 > pypolymlp-structure --random_phonon --supercell 3 3 2 --n_str 20 --disp 0.03 -p POSCAR
 ```
@@ -224,3 +223,4 @@ Structures are generated in "poscar_phonon" directory.
 
 3. DFT calculations for structures 
 
+### Structure generation for DFT calculations
