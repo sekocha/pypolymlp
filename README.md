@@ -156,33 +156,6 @@ or
     gaussian_params2 0.0 3.0 4
 ```
 
-## Structure generation for DFT calculations
-
-1. Prototype structures 
-```
-> pypolymlp-structure --prototype --n_types 1
-> pypolymlp-structure --prototype --n_types 2 --comp 0.25 0.75
-> pypolymlp-structure --prototype --n_types 3 
-```
-Only alloy structure types are available.
-Selected prototypes are listed in polymlp_prototypes.yaml.
-
-2. Random structure generation
-- Generation from prototype structures
-```
-> pypolymlp-structure --random --poscars prototypes/* --n_str 10 --low_density 2 --high_density 2
-```
-
-- Generation from a given structure
-```
-> pypolymlp-structure --random --poscars POSCAR --n_str 10 --low_density 2 --high_density 2
-```
-
-- Random displacements for phonon calculations
-```
-pypolymlp-structure --random_phonon --supercell 3 3 2 --n_str 20 --disp 0.03 -p
-```
-
 ## Calculators
 
 ### Computation of properties (energies, forces, and stress tensors)
@@ -216,4 +189,38 @@ pypolymlp-structure --random_phonon --supercell 3 3 2 --n_str 20 --disp 0.03 -p
 > pypolymlp --phonon --pot polymlp.lammps --poscar POSCAR-unitcell --supercell 3 3 2
 ```
 
+## Utilities
+
+### Structure generation for DFT calculations
+
+1. Prototype structure selection
+```
+> pypolymlp-structure --prototype --n_types 1
+> pypolymlp-structure --prototype --n_types 2 --comp 0.25 0.75
+> pypolymlp-structure --prototype --n_types 2 --comp 1 3
+> pypolymlp-structure --prototype --n_types 3 
+```
+Only alloy structure types are available. 
+Selected prototypes are listed in polymlp_prototypes.yaml.
+
+2. Random structure generation
+- Generation from prototype structures
+```
+> pypolymlp-structure --random --poscars prototypes/* --n_str 10 --low_density 2 --high_density 2
+```
+Structures for are listed in polymlp_str_samples.yaml. 
+Structures are generated in "poscar" directory.
+
+- Generation from a given structure
+```
+> pypolymlp-structure --random --poscars POSCAR --n_str 10 --low_density 2 --high_density 2
+```
+
+- Random displacements for phonon calculations
+```
+> pypolymlp-structure --random_phonon --supercell 3 3 2 --n_str 20 --disp 0.03 -p POSCAR
+```
+Structures are generated in "poscar_phonon" directory.
+
+3. DFT calculations for structures 
 
