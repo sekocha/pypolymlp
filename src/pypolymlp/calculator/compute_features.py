@@ -41,7 +41,7 @@ def compute_from_polymlp_lammps(pot,
         return features.get_x(), mlp_dict
     return features.get_x()
 
-def compute_from_infile(infile, st_dicts, force=False, stress=False):
+def compute_from_infile(infile, st_dicts, force=None, stress=None):
     """
     > example: $(pypolymlp)/calculator/compute_features.py 
                     --infile polymlp.in --poscars poscars/poscar-000*
@@ -60,8 +60,10 @@ def compute_from_infile(infile, st_dicts, force=False, stress=False):
     """
     p = ParamsParser(infile, parse_vasprun_locations=False)
     params_dict = p.get_params()
-    params_dict['include_force'] = False
-    params_dict['include_stress'] = False
+    if force is not None:
+        params_dict['include_force'] = force
+    if stress is not None:
+        params_dict['include_stress'] = stress
     element_order = params_dict['elements']
 
     st_dicts = update_types(st_dicts, element_order)

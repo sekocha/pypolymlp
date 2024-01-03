@@ -135,7 +135,9 @@ def run():
     args = parser.parse_args()
 
 
-    if args.infile is not None and args.features == False:
+    if ((args.infile is not None and args.features == False)
+        and (args.infile is not None and args.precision == False)):
+
         if len(args.infile) == 1:
             infile = args.infile[0]
             params_dict = ParamsParser(infile).get_params()
@@ -288,7 +290,7 @@ def run():
 
             if args.phono3py_yaml_structure_ids is not None:
                 r1, r2 = args.phono3py_yaml_structure_ids
-                select_ids = np.arange(r1, r2 + 1)
+                select_ids = np.arange(r1, r2)
             else:
                 select_ids = None
 
@@ -302,9 +304,11 @@ def run():
         else:
             infile = args.infile[0]
             x = compute_from_infile(infile, structures)
-
         print(' feature size =', x.shape)
-        np.save('features.npy', x)
+
+        prod = x.T @ x + (0.01 * np.eye(x.shape[1]))
+        prec = np.trace(np.linalg.inv(prod))
+        print(' precision =', prec)
 
 
 
