@@ -69,11 +69,13 @@ def parse_phono3py_yaml(yaml_filename,
         return dft_dict, disps
     return dft_dict
 
-def parse_structures_from_phono3py_yaml(phono3py_yaml):
+def parse_structures_from_phono3py_yaml(phono3py_yaml, select_ids=None):
 
     ph3 = Phono3pyYaml(phono3py_yaml)
     st_dict, positions_all = ph3.get_structure_dataset()
     st_dicts = get_structures_from_multiple_positions(st_dict, positions_all)
+    if select_ids is not None:
+        st_dicts = [st_dicts[i] for i in select_ids]
     return st_dicts
 
 def parse_phono3py_yaml_fcs(phono3py_yaml, use_phonon_dataset=False):

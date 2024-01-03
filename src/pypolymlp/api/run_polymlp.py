@@ -60,6 +60,10 @@ def run():
     parser.add_argument('--phonon', 
                         action='store_true',
                         help='Mode: Phonon calculation')
+    parser.add_argument('--precision', 
+                        action='store_true',
+                        help=('Mode: MLP precision calculation.',
+                              'This uses only features'))
 
     parser.add_argument('--pot',
                         type=str,
@@ -79,6 +83,11 @@ def run():
                         type=str,
                         default=None,
                         help='phono3py.yaml file')
+    parser.add_argument('--phono3py_yaml_structure_ids',
+                        nargs=2,
+                        type=int,
+                        default=None,
+                        help='Structure range in phono3py.yaml file')
 
     parser.add_argument('--poscar',
                         type=str,
@@ -242,7 +251,22 @@ def run():
 
     elif args.features:
         print('Mode: Feature matrix calculations')
-        structures = parse_structures_from_poscars(args.poscars)
+        if args.poscars is not None:
+            structures = parse_structures_from_poscars(args.poscars)
+        elif args.phono3py_yaml is not None:
+            from pypolymlp.core.interface_phono3py import (
+                parse_structures_from_phono3py_yaml
+            )
+            if args.phono3py_yaml_structure_ids is not None:
+                r1, r2 = args.phono3py_yaml_structure_ids
+                select_ids = np.arange(r1, r2 + 1)
+            else:
+                select_ids = None
+
+            structures = parse_structures_from_phono3py_yaml(
+                    args.phono3py_yaml,
+                    select_ids=select_ids)
+
         if args.pot is not None:
             x = compute_from_polymlp_lammps(args.pot, structures,
                                             return_mlp_dict=False)
@@ -252,5 +276,35 @@ def run():
 
         print(' feature size =', x.shape)
         np.save('features.npy', x)
+
+    elif args.precision:
+        print('Mode: Precision calculations')
+        if args.poscars is not None:
+            structures = parse_structures_from_poscars(args.poscars)
+        elif args.phono3py_yaml is not None:
+            from pypolymlp.core.interface_phono3py import (
+                parse_structures_from_phono3py_yaml
+            )
+
+            if args.phono3py_yaml_structure_ids is not None:
+                r1, r2 = args.phono3py_yaml_structure_ids
+                select_ids = np.arange(r1, r2 + 1)
+            else:
+                select_ids = None
+
+            structures = parse_structures_from_phono3py_yaml(
+                    args.phono3py_yaml,
+                    select_ids=select_ids)
+
+        if args.pot is not None:
+            x = compute_from_polymlp_lammps(args.pot, structures,
+                                            return_mlp_dict=False)
+        else:
+            infile = args.infile[0]
+            x = compute_from_infile(infile, structures)
+
+        print(' feature size =', x.shape)
+        np.save('features.npy', x)
+
 
 
