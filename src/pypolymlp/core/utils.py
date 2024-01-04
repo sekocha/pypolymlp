@@ -4,6 +4,23 @@ import numpy as np
 def rmse(y_true, y_pred):
     return np.sqrt(np.mean(np.square(y_true - y_pred)))
 
+def precision(x, alpha=0.0001):
+
+    #std = np.std(x[:50], axis=0)
+    #for col, val in enumerate(std):
+    #    if abs(val) > 1e-15:
+    #        x[:,col] /= val
+
+    prod = x.T @ x 
+    for i in range(x.shape[1]):
+        prod[i,i] += alpha
+
+    var = np.linalg.inv(prod)
+    ave = np.average(x, axis=0)
+    dx = (x - ave)
+    prec = np.mean([x1.T @ var @ x1 for x1 in x])
+    return prec
+
 def permute_atoms(st, force, element_order):
 
     positions, n_atoms, elements, types = [], [], [], []

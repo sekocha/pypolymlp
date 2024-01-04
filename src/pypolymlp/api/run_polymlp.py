@@ -28,12 +28,49 @@ from pypolymlp.calculator.compute_features import (
 )
 from pypolymlp.calculator.compute_properties import convert_stresses_in_gpa
 from pypolymlp.calculator.compute_properties import (
-    compute_properties_slow,
-    compute_properties,
+        compute_properties_slow,
+        compute_properties,
 )
 from pypolymlp.core.interface_vasp import Poscar
 from pypolymlp.utils.yaml_utils import load_cells
+from pypolymlp.core.utils import precision
 
+def set_structures(args):
+
+    if args.poscars is not None:
+        print('Loading POSCAR files:')
+        for p in args.poscars:
+            print('-', p)
+        structures = parse_structures_from_poscars(args.poscars)
+    elif args.vaspruns is not None:
+        print('Loading vasprun.xml files:')
+        for v in args.vaspruns:
+            print('-', v)
+        structures = parse_structures_from_vaspruns(args.vaspruns)
+    elif args.phono3py_yaml is not None:
+        from pypolymlp.core.interface_phono3py import (
+            parse_structures_from_phono3py_yaml
+        )
+        print('Loading', args.phono3py_yaml)
+        if args.phono3py_yaml_structure_ids is not None:
+            r1, r2 = args.phono3py_yaml_structure_ids
+            select_ids = np.arange(r1, r2)
+        else:
+            select_ids = None
+
+        structures = parse_structures_from_phono3py_yaml(
+                args.phono3py_yaml,
+                select_ids=select_ids)
+
+    return structures
+
+def compute_features(structures, args, force=False):
+    if args.pot is not None:
+        return compute_from_polymlp_lammps(args.pot, structures,
+                                           return_mlp_dict=False,
+                                           force=force)
+    infile = args.infile[0]
+    return compute_from_infile(infile, structures, force=force)
 
 def run():
 
@@ -135,9 +172,12 @@ def run():
     args = parser.parse_args()
 
 
-    if ((args.infile is not None and args.features == False)
-        and (args.infile is not None and args.precision == False)):
+    mode_regression = False
+    if args.infile is not None: 
+        if args.features == False and args.precision == False:
+            mode_regression = True
 
+    if mode_regression:
         if len(args.infile) == 1:
             infile = args.infile[0]
             params_dict = ParamsParser(infile).get_params()
@@ -161,19 +201,8 @@ def run():
 
     if args.properties:
         print('Mode: Property calculations')
-        if args.poscars is not None:
-            structures = parse_structures_from_poscars(args.poscars)
-        elif args.vaspruns is not None:
-            structures = parse_structures_from_vaspruns(args.vaspruns)
-        elif args.phono3py_yaml is not None:
-            from pypolymlp.core.interface_phono3py import (
-                parse_structures_from_phono3py_yaml
-            )
-            structures = parse_structures_from_phono3py_yaml(args.phono3py_yaml)
-
+        structures = set_structures(args)
         energies, forces, stresses = compute_properties(args.pot, structures)
-        #energies, forces, stresses = compute_properties_slow(args.pot, 
-        #                                                     structures)
         stresses_gpa = convert_stresses_in_gpa(stresses, structures)
 
         np.set_printoptions(suppress=True)
@@ -194,11 +223,9 @@ def run():
             print('  - xx, yy, zz:', stress[0:3])
             print('  - xy, yz, zx:', stress[3:6])
             print('---------')
-            print(' polymlp_energies.npy, polymlp_forces.npy,',
-                  'and polymlp_stress_tensors.npy are generated.')
-        else:
-            print(' polymlp_energies.npy, polymlp_forces.npy,',
-                  'and polymlp_stress_tensors.npy are generated.')
+
+        print('polymlp_energies.npy, polymlp_forces.npy,',
+                'and polymlp_stress_tensors.npy are generated.')
 
     elif args.force_constants:
         from pypolymlp.calculator.compute_fcs import (
@@ -253,62 +280,17 @@ def run():
 
     elif args.features:
         print('Mode: Feature matrix calculations')
-        if args.poscars is not None:
-            structures = parse_structures_from_poscars(args.poscars)
-        elif args.phono3py_yaml is not None:
-            from pypolymlp.core.interface_phono3py import (
-                parse_structures_from_phono3py_yaml
-            )
-            if args.phono3py_yaml_structure_ids is not None:
-                r1, r2 = args.phono3py_yaml_structure_ids
-                select_ids = np.arange(r1, r2 + 1)
-            else:
-                select_ids = None
-
-            structures = parse_structures_from_phono3py_yaml(
-                    args.phono3py_yaml,
-                    select_ids=select_ids)
-
-        if args.pot is not None:
-            x = compute_from_polymlp_lammps(args.pot, structures,
-                                            return_mlp_dict=False)
-        else:
-            infile = args.infile[0]
-            x = compute_from_infile(infile, structures)
-
+        structures = set_structures(args)
+        x = compute_features(structures, args, force=False)
         print(' feature size =', x.shape)
         np.save('features.npy', x)
+        print('features.npy is generated.')
 
     elif args.precision:
         print('Mode: Precision calculations')
-        if args.poscars is not None:
-            structures = parse_structures_from_poscars(args.poscars)
-        elif args.phono3py_yaml is not None:
-            from pypolymlp.core.interface_phono3py import (
-                parse_structures_from_phono3py_yaml
-            )
-
-            if args.phono3py_yaml_structure_ids is not None:
-                r1, r2 = args.phono3py_yaml_structure_ids
-                select_ids = np.arange(r1, r2)
-            else:
-                select_ids = None
-
-            structures = parse_structures_from_phono3py_yaml(
-                    args.phono3py_yaml,
-                    select_ids=select_ids)
-
-        if args.pot is not None:
-            x = compute_from_polymlp_lammps(args.pot, structures,
-                                            return_mlp_dict=False)
-        else:
-            infile = args.infile[0]
-            x = compute_from_infile(infile, structures)
-        print(' feature size =', x.shape)
-
-        prod = x.T @ x + (0.01 * np.eye(x.shape[1]))
-        prec = np.trace(np.linalg.inv(prod))
-        print(' precision =', prec)
-
+        structures = set_structures(args)
+        x = compute_features(structures, args, force=True)
+        prec = precision(x)
+        print(' precision, size (features):', prec, x.shape)
 
 
