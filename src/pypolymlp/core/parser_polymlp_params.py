@@ -212,21 +212,32 @@ class ParamsParser:
         test = self.parser.get_params('phono3py_test_data',
                                        size=4, 
                                        default=None)
+        phono3py_sample = self.parser.get_params('phono3py_sample',
+                                                 default='sequence')
+
         data = dict()
         data['train'] = dict()
         data['test'] = dict()
         data['train']['phono3py_yaml'] = train[0]
         data['train']['energy'] = train[1]
-        if len(train) > 2:
-            data['train']['indices'] = np.arange(int(train[2]), int(train[3]))
-        else:
-            data['train']['indices'] = None
         data['test']['phono3py_yaml'] = test[0]
         data['test']['energy'] = test[1]
+
+        if len(train) > 2:
+            if phono3py_sample == 'sequence':
+                data['train']['indices'] = np.arange(int(train[2]), 
+                                                     int(train[3]))
+            elif phono3py_sample == 'random':
+                data['train']['indices'] \
+                    = np.random.choice(int(train[2]), size=int(train[3]))
+        else:
+            data['train']['indices'] = None
+
         if len(test) > 2:
             data['test']['indices'] = np.arange(int(test[2]), int(test[3]))
         else:
             data['test']['indices'] = None
+
         return data
 
     def get_params(self):

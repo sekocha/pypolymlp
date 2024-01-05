@@ -3,13 +3,6 @@ cmake_minimum_required(VERSION 3.13)
 project(polymlplib_cmake CXX)
 
 set ( SRC_FILES
-    src/polymlp/polymlp_read_gtinv.cpp
-    src/polymlp/polymlp_basis_function.cpp
-    src/polymlp/polymlp_functions_interface.cpp
-    src/polymlp/polymlp_model_params.cpp
-    src/polymlp/polymlp_features.cpp
-    src/polymlp/polymlp_potential.cpp
-    src/polymlp/polymlp_mlipkk_spherical_harmonics.cpp
     src/compute/local.cpp
     src/compute/model.cpp
     src/compute/model_properties.cpp
@@ -19,6 +12,13 @@ set ( SRC_FILES
     src/compute/neighbor.cpp
     src/compute/py_features_attr.cpp
     src/python/pybind11_mlp.cpp
+    src/polymlp/polymlp_read_gtinv.cpp
+    src/polymlp/polymlp_basis_function.cpp
+    src/polymlp/polymlp_functions_interface.cpp
+    src/polymlp/polymlp_model_params.cpp
+    #src/polymlp/polymlp_features.cpp
+    #src/polymlp/polymlp_potential.cpp
+    src/polymlp/polymlp_mlipkk_spherical_harmonics.cpp
     src/polymlp/polymlp_gtinv_data.cpp
 )
 
