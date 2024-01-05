@@ -113,6 +113,14 @@ class Vasprun:
             return structure_dict[key]
         return structure_dict
 
+    def get_scstep(self):
+        scsteps = self._root.find('calculation').findall('scstep')
+        e_history = []
+        for sc in scsteps:
+            e0 = sc.find('energy').find(".//*[@name='e_0_energy']")
+            e_history.append(float(e0.text))
+        return np.array(e_history)
+
     def __varray_to_nparray(self, varray):
         nparray = [[float(x) for x in v1.text.split()] for v1 in varray]
         nparray = np.array(nparray)
