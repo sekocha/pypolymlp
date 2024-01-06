@@ -68,33 +68,12 @@ from pypolymlp.mlp_gen.features_attr import write_polymlp_params_yaml
 
 """
 
-def run_generator_single_dataset(infile):
-
-    p = ParamsParser(infile)
-    params_dict = p.get_params()
-
-    if params_dict['dataset_type'] == 'vasp':
-        train_dft_dict = parse_vaspruns(params_dict['dft']['train'],
-                                    element_order=params_dict['element_order'])
-        test_dft_dict = parse_vaspruns(params_dict['dft']['test'],
-                                    element_order=params_dict['element_order'])
-    elif params_dict['dataset_type'] == 'phono3py':
-        from pypolymlp.core.interface_phono3py import parse_phono3py_yaml
-
-        train_dft_dict = parse_phono3py_yaml(
-            params_dict['dft']['train']['phono3py_yaml'],
-            params_dict['dft']['train']['energy'],
-            element_order=params_dict['element_order'],
-            select_ids=params_dict['dft']['train']['indices'],
-            use_phonon_dataset=False
-        )
-        test_dft_dict = parse_phono3py_yaml(
-            params_dict['dft']['test']['phono3py_yaml'],
-            params_dict['dft']['test']['energy'],
-            element_order=params_dict['element_order'],
-            select_ids=params_dict['dft']['test']['indices'],
-            use_phonon_dataset=False
-        )
+def run_generator_single_dataset_from_params_and_datasets(
+        params_dict, 
+        train_dft_dict,
+        test_dft_dict,
+        log=True
+):
 
     t1 = time.time()
     features_train = Features(params_dict, train_dft_dict['structures'])
@@ -123,8 +102,9 @@ def run_generator_single_dataset(infile):
     mlp_dict = reg.get_best_model()
     save_mlp_lammps(params_dict, coeffs, scales)
 
-    print('  regression: best model')
-    print('    alpha: ', mlp_dict['alpha'])
+    if log:
+        print('  regression: best model')
+        print('    alpha: ', mlp_dict['alpha'])
 
     t4 = time.time()
     error_dict = dict()
@@ -145,10 +125,60 @@ def run_generator_single_dataset(infile):
     write_error_yaml(error_dict)
     write_polymlp_params_yaml(params_dict)
 
-    print('  elapsed_time:')
-    print('    features:          ', '{:.3f}'.format(t2-t1), '(s)')
-    print('    scaling, weighting:', '{:.3f}'.format(t3-t2), '(s)')
-    print('    regression:        ', '{:.3f}'.format(t4-t3), '(s)')
+    if log:
+        print('  elapsed_time:')
+        print('    features:          ', '{:.3f}'.format(t2-t1), '(s)')
+        print('    scaling, weighting:', '{:.3f}'.format(t3-t2), '(s)')
+        print('    regression:        ', '{:.3f}'.format(t4-t3), '(s)')
+
+    return mlp_dict
+
+
+def run_generator_single_dataset_from_params(params_dict, log=True):
+
+    if params_dict['dataset_type'] == 'vasp':
+        train_dft_dict = parse_vaspruns(
+            params_dict['dft']['train'],
+            element_order=params_dict['element_order']
+        )
+        test_dft_dict = parse_vaspruns(
+            params_dict['dft']['test'],
+            element_order=params_dict['element_order']
+        )
+    elif params_dict['dataset_type'] == 'phono3py':
+        from pypolymlp.core.interface_phono3py import parse_phono3py_yaml
+
+        train_dft_dict = parse_phono3py_yaml(
+            params_dict['dft']['train']['phono3py_yaml'],
+            params_dict['dft']['train']['energy'],
+            element_order=params_dict['element_order'],
+            select_ids=params_dict['dft']['train']['indices'],
+            use_phonon_dataset=False
+        )
+        test_dft_dict = parse_phono3py_yaml(
+            params_dict['dft']['test']['phono3py_yaml'],
+            params_dict['dft']['test']['energy'],
+            element_order=params_dict['element_order'],
+            select_ids=params_dict['dft']['test']['indices'],
+            use_phonon_dataset=False
+        )
+
+    mlp_dict = run_generator_single_dataset_from_params_and_datasets(
+            params_dict, 
+            train_dft_dict,
+            test_dft_dict,
+            log=log
+    )
+    return mlp_dict
+
+
+def run_generator_single_dataset(infile, log=True):
+
+    p = ParamsParser(infile)
+    params_dict = p.get_params()
+    mlp_dict = run_generator_single_dataset_from_params(params_dict, log=log)
+    return mlp_dict
+
 
 if __name__ == '__main__':
 
@@ -162,3 +192,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     run_generator_single_dataset(args.infile)
+
