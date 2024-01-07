@@ -4,11 +4,11 @@ import sys
 
 import phono3py
 from pypolymlp.utils.phonopy_utils import phonopy_cell_to_st_dict
-from pypolymlp.utils.displacements_utils import (
+from pypolymlp.core.displacements import (
         convert_disps_to_positions,
-        get_structures_from_multiple_positions
+        get_structures_from_multiple_positions,
+        set_dft_dict_from_displacement_dataset
 )
-from pypolymlp.core.dataset import set_dft_dict_from_displacement_dataset
 
 def parse_phono3py_yaml(yaml_filename, 
                         energies_filename=None,

@@ -1,7 +1,6 @@
 #!/usr/bin/env python 
 import numpy as np
 import itertools
-from collections import defaultdict
 
 from pypolymlp.mlp_gen.generator import (
     run_generator_single_dataset,
@@ -10,7 +9,7 @@ from pypolymlp.mlp_gen.generator import (
 )
 
 from pypolymlp.cxx.lib import libmlpcpp
-from pypolymlp.utils.displacements_utils import convert_disps_to_positions
+from pypolymlp.core.displacements import convert_disps_to_positions
 
 
 class Pypolymlp:

@@ -4,8 +4,9 @@ import argparse
 import os
 
 from pypolymlp.core.interface_vasp import Poscar
+from pypolymlp.core.displacements import generate_random_displacements
+
 from pypolymlp.utils.structure_utils import supercell_diagonal
-from pypolymlp.utils.displacements_utils import generate_random_displacements
 from pypolymlp.utils.vasp_utils import write_poscar_file
 from pypolymlp.utils.yaml_utils import save_cells
 

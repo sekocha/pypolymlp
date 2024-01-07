@@ -12,9 +12,7 @@ from pypolymlp.utils.phonopy_utils import (
         phonopy_cell_to_st_dict,
         st_dict_to_phonopy_cell,
 )
-from pypolymlp.utils.displacements_utils import (
-    generate_random_const_displacements
-)
+from pypolymlp.core.displacements import generate_random_const_displacements
 
 from pypolymlp.calculator.compute_properties import compute_properties
 from symfc.basis_sets.basis_sets_O2 import FCBasisSetO2

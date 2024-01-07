@@ -11,9 +11,7 @@ from pypolymlp.utils.phonopy_utils import (
         st_dict_to_phonopy_cell,
 )
 
-from pypolymlp.utils.displacements_utils import (
-    generate_random_const_displacements
-)
+from pypolymlp.core.displacements import generate_random_const_displacements
 
 from pypolymlp.calculator.compute_properties import compute_properties
 from pypolymlp.calculator.compute_fcs import recover_fc2, recover_fc3
