@@ -3,15 +3,19 @@ import numpy as np
 from collections import defaultdict
 
 from pypolymlp.core.utils import permute_atoms
-from pypolymlp.utils.structure_utils import refine_positions
 
-def set_dft_dict_from_displacement_dataset(
-        forces, 
-        energies, 
-        positions_all, 
-        st_dict, 
-        element_order=None
-):
+def convert_disps_to_positions(disps, axis, positions):
+    ''' disps: (n_str, 3, n_atoms) # Angstrom'''
+    axis_inv = np.linalg.inv(axis)
+    np.set_printoptions(suppress=True)
+    positions_all = np.array([positions + (axis_inv @ d) for d in disps])
+    return positions_all
+
+def set_dft_dict(forces, 
+                 energies, 
+                 positions_all, 
+                 st_dict, 
+                 element_order=None):
     '''
     Parameters
     ----------
@@ -70,15 +74,6 @@ def get_structures_from_multiple_positions(st_dict, positions_all):
         st['volume'] = st_dict['volume']
         st_dicts.append(st)
     return st_dicts
-
-
-def convert_disps_to_positions(disps, axis, positions):
-
-    ''' disps: (n_str, 3, n_atoms) # Angstrom'''
-    axis_inv = np.linalg.inv(axis)
-    np.set_printoptions(suppress=True)
-    positions_all = np.array([positions + (axis_inv @ d) for d in disps])
-    return positions_all
 
 
 def get_structures_from_displacements(disps, st_dict):

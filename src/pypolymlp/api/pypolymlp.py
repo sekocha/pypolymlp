@@ -9,7 +9,10 @@ from pypolymlp.mlp_gen.generator import (
 )
 
 from pypolymlp.cxx.lib import libmlpcpp
-from pypolymlp.core.displacements import convert_disps_to_positions
+from pypolymlp.core.displacements import (
+    set_dft_dict,
+    convert_disps_to_positions,
+)
 
 
 class Pypolymlp:
@@ -249,13 +252,11 @@ class Pypolymlp:
         positions_all = convert_disps_to_positions(disps,
                                                    st_dict['axis'],
                                                    st_dict['positions'])
-        dft_dict = set_dft_dict_from_displacement_dataset(
-            forces, 
-            energies, 
-            positions_all, 
-            st_dict, 
-            element_order=None
-        )
+        dft_dict = set_dft_dict(forces, 
+                                energies, 
+                                positions_all, 
+                                st_dict, 
+                                element_order=None)
         return dft_dict
 
     def __sequence(self, params):

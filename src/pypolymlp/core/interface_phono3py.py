@@ -5,9 +5,9 @@ import sys
 import phono3py
 from pypolymlp.utils.phonopy_utils import phonopy_cell_to_st_dict
 from pypolymlp.core.displacements import (
+        set_dft_dict,
         convert_disps_to_positions,
         get_structures_from_multiple_positions,
-        set_dft_dict_from_displacement_dataset
 )
 
 def parse_phono3py_yaml(yaml_filename, 
@@ -37,13 +37,11 @@ def parse_phono3py_yaml(yaml_filename,
         energies = energies[select_ids]
         disps = disps[select_ids]
 
-    dft_dict = set_dft_dict_from_displacement_dataset(
-            forces, 
-            energies, 
-            positions_all, 
-            st_dict, 
-            element_order=element_order
-    )
+    dft_dict = set_dft_dict(forces, 
+                            energies, 
+                            positions_all, 
+                            st_dict, 
+                            element_order=element_order)
 
     if return_displacements:
         return dft_dict, disps
