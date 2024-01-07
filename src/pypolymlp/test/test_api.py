@@ -4,7 +4,6 @@ import signal
 import glob
 
 from pypolymlp.api.pypolymlp import Pypolymlp
-from pypolymlp.core.interface_phono3py import Phono3pyYaml
 
 if __name__ == '__main__':
 
@@ -12,8 +11,8 @@ if __name__ == '__main__':
 
     polymlp = Pypolymlp()
 
-    dataset_type = 'vasp'
-#    dataset_type = 'phono3py'
+#    dataset_type = 'vasp'
+    dataset_type = 'phono3py'
 #    dataset_type = 'displacements'
     if dataset_type == 'vasp':
         ''' from parameters and vasprun.xml files'''
@@ -74,6 +73,11 @@ if __name__ == '__main__':
             atomic_energy=[-0.19820116,-0.21203241],
         )
 
+        ''' Parameters (disps, forces, energies, and st_dict) are 
+            Temporarily obtained from phono3py.yaml.xz
+        '''
+        from pypolymlp.core.interface_phono3py import Phono3pyYaml
+
         yaml_file = 'phono3py_params_wurtzite_AgI.yaml.xz'
         energy_dat = 'energies_ltc_wurtzite_AgI_fc3-forces.dat'
 
@@ -89,6 +93,16 @@ if __name__ == '__main__':
         test_forces = forces[380:400]
         test_energies = energies[380:400]
 
+        '''
+        Parameters in polymlp.set_datasets_displacements
+        -------------------------------------------------
+        train_disps: (n_train, 3, n_atoms)
+        train_forces: (n_train, 3, n_atoms)
+        train_energies: (n_train)
+        test_disps: (n_test, 3, n_atom)
+        test_forces: (n_test, 3, n_atom)
+        test_energies: (n_test)
+        '''
         polymlp.set_datasets_displacements(
             train_disps,
             train_forces,

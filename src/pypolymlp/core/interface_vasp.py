@@ -37,9 +37,13 @@ def parse_vaspruns(vaspruns, element_order=None):
     dft_dict['stress'] = np.array(dft_dict['stress'])
     dft_dict['volumes'] = np.array(dft_dict['volumes'])
 
-    elements_size = [len(st['elements']) for st in dft_dict['structures']]
-    elements = dft_dict['structures'][np.argmax(elements_size)]['elements']
-    dft_dict['elements'] = sorted(set(elements), key=elements.index)
+    if element_order is None:
+        elements_size = [len(st['elements']) for st in dft_dict['structures']]
+        elements = dft_dict['structures'][np.argmax(elements_size)]['elements']
+        dft_dict['elements'] = sorted(set(elements), key=elements.index)
+    else:
+        dft_dict['elements'] = element_order
+        print(dft_dict['elements'])
 
     dft_dict['total_n_atoms'] = np.array([sum(st['n_atoms'])
                                          for st in dft_dict['structures']])
