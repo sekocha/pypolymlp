@@ -203,6 +203,7 @@ or
 Only alloy structure types are available. 
 Selected prototypes are listed in polymlp_prototypes.yaml.
 -->
+Prepare prototype structures in POSCAR format.
 
 2. Random structure generation
 - Generation from prototype structures
