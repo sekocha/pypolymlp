@@ -1,0 +1,3 @@
+pypolymlp-utils --atomic_energy_elements Mg O --atomic_energy_functional PBE
+pypolymlp-utils --atomic_energy_formula MgO --atomic_energy_functional PBE
+pypolymlp-utils --atomic_energy_formula Al2O3 --atomic_energy_functional PBEsol

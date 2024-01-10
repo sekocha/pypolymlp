@@ -1,0 +1,1 @@
+pypolymlp-utils --vasprun_compress vaspruns/vasprun-*.xml

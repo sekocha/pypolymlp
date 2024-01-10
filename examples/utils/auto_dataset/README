@@ -1,0 +1,4 @@
+pypolymlp-utils --auto_dataset dataset1/*/vasprun.xml.polymlp dataset2/*/vasprun.xml.polymlp
+
+cat polymlp.in.append >> polymlp.in
+pypolymlp -i polymlp.in

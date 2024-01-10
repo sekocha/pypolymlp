@@ -1,0 +1,22 @@
+feature_type gtinv
+cutoff 6.0
+model_type 3
+max_p 2
+
+gaussian_params1 1.0 1.0 1
+gaussian_params2 0.0 5.0 8
+
+gtinv_order 3
+gtinv_maxl 4 4
+
+reg_alpha_params -3 3 7
+
+include_stress False
+
+
+n_type 2
+elements Al N
+atomic_energy -0.31455471 -3.12561282
+
+train_data vaspruns/train/vasprun.xml.polymlp.*
+test_data vaspruns/test/vasprun.xml.polymlp.*

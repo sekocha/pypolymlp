@@ -1,0 +1,1 @@
+pypolymlp -i polymlp.in --force_constants --pot polymlp.lammps --phono3py_yaml phono3py_params_wurtzite_AgI.yaml.xz

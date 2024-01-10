@@ -1,0 +1,22 @@
+feature_type gtinv
+cutoff 8.0
+model_type 3
+max_p 2
+
+gaussian_params1 1.0 1.0 1
+gaussian_params2 0.0 7.0 10
+
+gtinv_order 3
+gtinv_maxl 4 4
+
+reg_alpha_params -2 3 6
+
+include_stress False
+
+n_type 2
+elements Ag I 
+atomic_energy -0.19820116 -0.21203241 
+
+dataset_type phono3py
+phono3py_train_data phono3py_params_wurtzite_AgI.yaml.xz energies_ltc_wurtzite_AgI_fc3-forces.dat 0 200
+phono3py_test_data phono3py_params_wurtzite_AgI.yaml.xz energies_ltc_wurtzite_AgI_fc3-forces.dat 1980 2000

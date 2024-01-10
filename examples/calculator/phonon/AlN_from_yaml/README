@@ -1,0 +1,1 @@
+pypolymlp --phonon --pot polymlp.lammps --str_yaml polymlp_str.yaml
