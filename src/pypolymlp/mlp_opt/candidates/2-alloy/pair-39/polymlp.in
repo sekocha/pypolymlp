@@ -1,0 +1,9 @@
+n_type 2
+feature_type pair
+gaussian_params1 1.0 1.0 1
+gaussian_params2 0.0 9.0 15
+cutoff 10.0
+model_type 2
+max_p 2
+reg_alpha_params -3 1 5
+include_stress False
