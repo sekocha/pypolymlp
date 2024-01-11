@@ -70,11 +70,11 @@ class Pypolymlp:
             model_type=4,
             max_p=2,
             feature_type='gtinv',
-            gaussian_params1=[1.0,1.0,1],
-            gaussian_params2=[0.0,5.0,7],
-            reg_alpha_params=[-3.0,1.0,5],
+            gaussian_params1=(1.0,1.0,1),
+            gaussian_params2=(0.0,5.0,7),
+            reg_alpha_params=(-3.0,1.0,5),
             gtinv_order=3,
-            gtinv_maxl=[4,4,2,1,1],
+            gtinv_maxl=(4,4,2,1,1),
             atomic_energy=None,
             rearrange_by_elements=True,
         ):
@@ -150,7 +150,7 @@ class Pypolymlp:
             size = gtinv_dict['order'] - 1
             if len(gtinv_maxl) < size:
                 raise ValueError('size (gtinv_maxl) !=', size)
-            gtinv_dict['max_l'] = gtinv_maxl
+            gtinv_dict['max_l'] = list(gtinv_maxl)
             gtinv_sym = [False for i in range(size)]
             rgi = libmlpcpp.Readgtinv(gtinv_dict['order'],
                                       gtinv_dict['max_l'],

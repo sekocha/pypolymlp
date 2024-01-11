@@ -3,12 +3,13 @@ import numpy as np
 import argparse
 import signal
 
+#from pypolymlp.str_gen.prototypes_selection import (
+#    prototype_selection_element,
+#    prototype_selection_alloy,
+#    check_compositions,
+#)
+
 from pypolymlp.core.interface_vasp import Poscar
-from pypolymlp.str_gen.prototypes_selection import (
-    prototype_selection_element,
-    prototype_selection_alloy,
-    check_compositions,
-)
 from pypolymlp.str_gen.strgen import run_strgen
 
 

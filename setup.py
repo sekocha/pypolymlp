@@ -10,13 +10,13 @@ os.makedirs('./build/bdist.linux-x86_64/wheel/pypolymlp/cxx/lib', exist_ok=True)
 for file1 in glob.glob('./src/pypolymlp/cxx/lib/*.so'):
     shutil.copy(file1, './build/bdist.linux-x86_64/wheel/pypolymlp/cxx/lib')
 
-os.makedirs('./build/bdist.linux-x86_64/wheel/pypolymlp/str_gen/prototypes', exist_ok=True)
-shutil.copytree('./src/pypolymlp/str_gen/prototypes/poscars', 
-    './build/bdist.linux-x86_64/wheel/pypolymlp/str_gen/prototypes/poscars',
-    dirs_exist_ok=True)
-shutil.copytree('./src/pypolymlp/str_gen/prototypes/list_icsd', 
-    './build/bdist.linux-x86_64/wheel/pypolymlp/str_gen/prototypes/list_icsd',
-    dirs_exist_ok=True)
+#os.makedirs('./build/bdist.linux-x86_64/wheel/pypolymlp/str_gen/prototypes', exist_ok=True)
+#shutil.copytree('./src/pypolymlp/str_gen/prototypes/poscars', 
+#    './build/bdist.linux-x86_64/wheel/pypolymlp/str_gen/prototypes/poscars',
+#    dirs_exist_ok=True)
+#shutil.copytree('./src/pypolymlp/str_gen/prototypes/list_icsd', 
+#    './build/bdist.linux-x86_64/wheel/pypolymlp/str_gen/prototypes/list_icsd',
+#    dirs_exist_ok=True)
 
 """Temporary codes (End)"""
 
