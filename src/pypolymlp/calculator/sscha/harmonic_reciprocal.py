@@ -51,6 +51,20 @@ class HarmonicReciprocal:
         self.__tp_dict = self.ph.get_thermal_properties_dict()
         return self
 
+    def compute_mesh_properties(self, qmesh=[10,10,10]):
+
+        self.ph.run_mesh(qmesh)
+        self.ph.run_total_dos()
+        self.__mesh_dict = self.ph.get_mesh_dict()
+        return self
+#        os.makedirs('polymlp_phonon', exist_ok=True)
+#        np.savetxt('polymlp_phonon/mesh-qpoints.txt',
+#                    mesh_dict['qpoints'], fmt='%f')
+#        self.ph.write_total_dos(filename="polymlp_phonon/total_dos.dat")
+#        self.ph.write_yaml_thermal_properties(
+#            filename='polymlp_phonon/thermal_properties.yaml'
+#        )
+
     @property
     def force_constants(self):
         ''' (n_atom, n_atom, 3, 3)'''
@@ -65,4 +79,12 @@ class HarmonicReciprocal:
     @property
     def free_energy(self):
         return self.__tp_dict['free_energy'][0]
+
+    @property
+    def frequencies(self):
+        return self.__mesh_dict['frequencies']
+
+    @property
+    def phonopy_object(self):
+        return self.ph
  

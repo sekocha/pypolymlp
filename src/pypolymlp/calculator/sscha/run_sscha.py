@@ -145,6 +145,17 @@ class PolymlpSSCHA:
         norm2 = np.linalg.norm(fc2_init)
         return norm1 / norm2
 
+    def run_frequencies(self, qmesh=[10,10,10]):
+        self.phonopy.force_constants = self.fc2
+        self.phonopy.run_mesh(qmesh)
+        mesh_dict = self.phonopy.get_mesh_dict()
+        return mesh_dict['frequencies']
+
+    def write_dos(self, qmesh=[10,10,10], filename='total_dos.dat'):
+        self.phonopy.force_constants = self.fc2
+        self.phonopy.run_total_dos()
+        self.phonopy.write_total_dos(filename=filename)
+
     def set_initial_force_constants(self, algorithm='harmonic', filename=None):
         if algorithm == 'harmonic':
             print('Initial FCs: Harmonic')
@@ -164,27 +175,20 @@ class PolymlpSSCHA:
             print('Initial FCs: File', filename)
             self.fc2 = read_fc2_from_hdf5(filename)
 
-    def run(self, 
-            t=1000, n_samples=100, qmesh=[10,10,10],
-            n_loop=100, tol=1e-2, mixing=0.5, log=True):
+    def run(self, t=1000, n_samples=100, qmesh=[10,10,10],
+            n_loop=100, tol=1e-2, mixing=0.5):
 
         if self.fc2 is None:
-            self.fc2 = self.ph_recip.produce_harmonic_force_constants()
+            self.fc2 = self.set_initial_force_constants()
 
         n_iter, delta = 1, 100
         while n_iter <= n_loop and delta > tol:
-            if log:
-                print('------------- Iteration :', n_iter, '-------------')
-
-            fc2_update = self.__single_iter(t=t, 
-                                            n_samples=n_samples, 
-                                            qmesh=qmesh)
-            delta = self.__convergence_score(self.fc2, fc2_update)
-            self.fc2 = fc2_update * mixing + self.fc2 * (1 - mixing)
+            print('------------- Iteration :', n_iter, '-------------')
+            fc2_new = self.__single_iter(t=t, n_samples=n_samples, qmesh=qmesh)
+            delta = self.__convergence_score(self.fc2, fc2_new)
+            self.fc2 = fc2_new * mixing + self.fc2 * (1 - mixing)
+            self.__print_progress(delta)
             n_iter += 1
-
-            if log:
-                self.__print_progress(delta)
 
         converge = True if delta < tol else False
         self.__log_dict = {
@@ -194,17 +198,19 @@ class PolymlpSSCHA:
 
     def __print_progress(self, delta):
 
-        print('convergence score:         ', "{:.6f}".format(delta))
+        disp_norms = np.linalg.norm(self.ph_real.displacements, axis=1)
+
+        print('convergence score:      ', "{:.6f}".format(delta))
+        print('displacements:')
+        print('  average disp. (Ang.): ', "{:.6f}".format(np.mean(disp_norms)))
+        print('  max disp. (Ang.):     ', "{:.6f}".format(np.max(disp_norms)))
         print('thermodynamic_properties:')
-        print('- free energy (harmonic)  :',
-            "{:.6f}".format(self.__sscha_dict['harmonic_free_energy']), 
-            '(kJ/mol)')
-        print('  free energy (anharmonic):',
-            "{:.6f}".format(self.__sscha_dict['anharmonic_free_energy']), 
-            '(kJ/mol)')
-        print('  free energy (sscha)     :',
-            "{:.6f}".format(self.__sscha_dict['free_energy']), 
-            '(kJ/mol)')
+        print('  free energy (harmonic, kJ/mol)  :',
+            "{:.6f}".format(self.__sscha_dict['harmonic_free_energy']))
+        print('  free energy (anharmonic, kJ/mol):',
+            "{:.6f}".format(self.__sscha_dict['anharmonic_free_energy']))
+        print('  free energy (sscha, kJ/mol)     :',
+            "{:.6f}".format(self.__sscha_dict['free_energy']))
 
     @property
     def properties(self):
@@ -240,6 +246,9 @@ def run_sscha(unitcell_dict,
 
     sscha.set_initial_force_constants(algorithm=args.init, 
                                       filename=args.init_file)
+    freq = sscha.run_frequencies(qmesh=args.mesh)
+    print('Frequency (min):  ', "{:.6f}".format(np.min(freq)))
+    print('Frequency (max):  ', "{:.6f}".format(np.max(freq)))
 
     for temp in args.temperatures:
         print('************** Temperature:', temp, '**************')
@@ -267,6 +276,10 @@ def run_sscha(unitcell_dict,
                            args,
                            filename=log_dir + 'sscha_results.yaml')
         write_fc2_to_hdf5(sscha.force_constants, filename=log_dir + 'fc2.hdf5')
+        sscha.write_dos(filename=log_dir + 'total_dos.dat')
+        freq = sscha.run_frequencies(qmesh=args.mesh)
+        print('Frequency (min):  ', "{:.6f}".format(np.min(freq)))
+        print('Frequency (max):  ', "{:.6f}".format(np.max(freq)))
 
 
 if __name__ == '__main__':
@@ -280,17 +293,23 @@ if __name__ == '__main__':
             print_parameters,
             print_structure
     )
+    from pypolymlp.calculator.sscha.io import load_sscha_results
 
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', '--poscar', 
                         type=str, 
-                        default='POSCAR',
+                        default=None,
                         help='poscar file (unit cell)')
+    parser.add_argument('--yaml', 
+                        type=str, 
+                        default=None,
+                        help='sscha_results.yaml file for parsing '
+                             'unitcell and supercell size.')
     parser.add_argument('--pot', 
                         type=str, 
-                        default='polymlp.lammps',
+                        default=None,
                         help='polymlp.lammps file')
     parser.add_argument('--supercell',
                         nargs=3,
@@ -301,7 +320,7 @@ if __name__ == '__main__':
                         type=int,
                         nargs=3,
                         default=[10,10,10],
-                        help='k-mesh used for phonon calculation')
+                        help='q-mesh for phonon calculation')
     parser.add_argument('-t', '--temp',
                         type=float,
                         default=None,
@@ -309,24 +328,24 @@ if __name__ == '__main__':
     parser.add_argument('-t_min', '--temp_min',
                         type=float,
                         default=100,
-                        help='Temperature to begin (K)')
+                        help='Lowest temperature (K)')
     parser.add_argument('-t_max', '--temp_max',
                         type=float,
                         default=2000,
-                        help='Temperature to end (K)')
+                        help='Highest temperature (K)')
     parser.add_argument('-t_step', '--temp_step',
                         type=float,
                         default=100,
                         help='Temperature interval (K)')
     parser.add_argument('--tol',
                         type=float,
-                        default=0.005,
+                        default=0.01,
                         help='Tolerance parameter for FC convergence')
     parser.add_argument('--n_samples',
                         type=int,
                         nargs=2,
                         default=None,
-                        help='Number of steps used in ' +
+                        help='Number of steps used in '
                              'iterations and the last iteration')
     parser.add_argument('--max_iter',
                         type=int,
@@ -334,29 +353,33 @@ if __name__ == '__main__':
                         help='Maximum number of iterations')
     parser.add_argument('--ascending_temp',
                         action='store_true',
-                        help='use ascending order of temperatures')
+                        help='Use ascending order of temperatures')
     parser.add_argument('--init',
                         choices=['harmonic','const','random','file'],
                         default='harmonic',
-                        help='initial FCs')
+                        help='Initial FCs')
     parser.add_argument('--init_file',
                         default=None,
-                        help='file name for initial FCs')
+                        help='Location of fc2.hdf5 for initial FCs')
     parser.add_argument('--mixing',
                         type=float,
                         default=0.5,
-                        help='mixing')
+                        help='Mixing parameter')
     args = parser.parse_args()
 
 
-    unitcell_dict = Poscar(args.poscar).get_structure()
-    supercell_matrix = np.diag(args.supercell)
+    if args.poscar is not None:
+        unitcell_dict = Poscar(args.poscar).get_structure()
+        supercell_matrix = np.diag(args.supercell)
+    elif args.yaml is not None:
+        res, struct = load_sscha_results(args.yaml)
+        unitcell_dict, supercell_matrix = struct
+        if args.pot is None:
+            args.pot = res[0]['pot']
 
-    n_atom_supercell = len(unitcell_dict['elements']) \
-                     * np.linalg.det(supercell_matrix)
-
+    n_atom = len(unitcell_dict['elements']) * np.linalg.det(supercell_matrix)
     args = temperature_setting(args)
-    args = n_steps_setting(args, n_atom_supercell)
+    args = n_steps_setting(args, n_atom)
 
     print_parameters(supercell_matrix, args)
     print_structure(unitcell_dict)

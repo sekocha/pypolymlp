@@ -113,9 +113,6 @@ def save_sscha_results(sscha_dict,
     print('properties:', file=f)
     print('  free_energy:', sscha_dict['free_energy'], file=f)
 
-    #print_array1d(sscha_dict['coeffs_fc'], 'coeffs_fc', f, indent_l=2)
-    #print('', file=f)
-
     print('status:', file=f)
     print('  delta_fc: ', log_dict['delta'], file=f)
     print('  converge: ', log_dict['converge'], file=f)
@@ -147,16 +144,16 @@ def load_sscha_results(res_yaml):
     parameters = yaml_data['parameters']
     sscha_dict = yaml_data['properties']
     status_dict = yaml_data['status']
-    logs = yaml_data['logs']
+#    logs = yaml_data['logs']
+    logs = None
 
     unitcell = yaml_data['unitcell']
     unitcell['axis'] = np.array(unitcell['axis']).T
     unitcell['positions'] = np.array(unitcell['positions']).T
 
     supercell_matrix = np.array(yaml_data['supercell_matrix'])
-    print(supercell_matrix)
 
-    return parameters, sscha_dict, status_dict, logs
-
+    return ((parameters, sscha_dict, status_dict, logs),
+            (unitcell, supercell_matrix))
 
 
