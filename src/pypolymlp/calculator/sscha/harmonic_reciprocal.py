@@ -57,13 +57,6 @@ class HarmonicReciprocal:
         self.ph.run_total_dos()
         self.__mesh_dict = self.ph.get_mesh_dict()
         return self
-#        os.makedirs('polymlp_phonon', exist_ok=True)
-#        np.savetxt('polymlp_phonon/mesh-qpoints.txt',
-#                    mesh_dict['qpoints'], fmt='%f')
-#        self.ph.write_total_dos(filename="polymlp_phonon/total_dos.dat")
-#        self.ph.write_yaml_thermal_properties(
-#            filename='polymlp_phonon/thermal_properties.yaml'
-#        )
 
     @property
     def force_constants(self):
