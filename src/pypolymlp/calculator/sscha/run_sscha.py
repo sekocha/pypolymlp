@@ -228,6 +228,22 @@ class PolymlpSSCHA:
         print('  free energy (sscha, kJ/mol)     :',
             "{:.6f}".format(self.__sscha_dict['free_energy']))
 
+    def save_results(self, args):
+    
+        log_dir = './sscha/' + str(self.properties['temperature']) + '/'
+        os.makedirs(log_dir, exist_ok=True)
+        save_sscha_yaml(self, args, filename=log_dir + 'sscha_results.yaml')
+        write_fc2_to_hdf5(self.force_constants, filename=log_dir + 'fc2.hdf5')
+        self.write_dos(filename=log_dir + 'total_dos.dat')
+        freq = self.run_frequencies(qmesh=args.mesh)
+
+        print('-------- sscha runs finished --------')
+        print('Temperature:      ', self.properties['temperature'])
+        print('Free energy:      ', self.properties['free_energy'])
+        print('Convergence:      ', self.logs['converge'])
+        print('Frequency (min):  ', "{:.6f}".format(np.min(freq)))
+        print('Frequency (max):  ', "{:.6f}".format(np.max(freq)))
+
     @property
     def properties(self):
         return self.__sscha_dict
@@ -244,23 +260,6 @@ class PolymlpSSCHA:
     def force_constants(self, fc2):
         ''' (n_atom, n_atom, 3, 3)'''
         self.fc2 = fc2
-
-
-def save_results(sscha, args):
-    
-    log_dir = './sscha/' + str(sscha.properties['temperature']) + '/'
-    os.makedirs(log_dir, exist_ok=True)
-    save_sscha_yaml(sscha, args, filename=log_dir + 'sscha_results.yaml')
-    write_fc2_to_hdf5(sscha.force_constants, filename=log_dir + 'fc2.hdf5')
-    sscha.write_dos(filename=log_dir + 'total_dos.dat')
-    freq = sscha.run_frequencies(qmesh=args.mesh)
-
-    print('-------- sscha runs finished --------')
-    print('Temperature:      ', sscha.properties['temperature'])
-    print('Free energy:      ', sscha.properties['free_energy'])
-    print('Convergence:      ', sscha.logs['converge'])
-    print('Frequency (min):  ', "{:.6f}".format(np.min(freq)))
-    print('Frequency (max):  ', "{:.6f}".format(np.max(freq)))
 
 
 def run_sscha(unitcell_dict, 
@@ -299,10 +298,7 @@ def run_sscha(unitcell_dict,
                   tol=args.tol,
                   mixing=args.mixing,
                   initialize_history=False)
-
-        print(sscha.logs)
-        print(sscha.logs['history'])
-        save_results(sscha, args)
+        sscha.save_results(args)
 
 
 if __name__ == '__main__':

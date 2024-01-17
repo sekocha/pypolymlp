@@ -1,0 +1,1 @@
+python3 ~/git/pypolymlp/src/pypolymlp/calculator/sscha/utils/sampling.py sscha/2000.0/sscha_results.yaml sscha/2000.0/fc2.hdf5 polymlp.lammps
