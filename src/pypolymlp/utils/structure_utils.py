@@ -2,6 +2,7 @@
 import numpy as np
 import argparse
 import itertools
+import copy
 from math import pi
 
 import sys
@@ -37,14 +38,15 @@ def disp(st_dict, eps=0.001):
 
 def isotropic_volume_change(st_dict, eps=1.0):
     eps1 = pow(eps, 0.3333333333333)
-    st_dict['axis'] *= eps1
-    return st_dict
+    st_dict_vol = copy.deepcopy(st_dict)
+    st_dict_vol['axis'] *= eps1
+    return st_dict_vol
 
 def multiple_isotropic_volume_changes(st_dict, 
-                                      eps_min=0.8, eps_max=2.0, n_eps=10):
-    volmin = pow(eps_min, 0.3333333333333)
-    volmax = pow(eps_max, 0.3333333333333)
-    eps_array = np.linspace(volmin, volmax, n_eps)
+                                      eps_min=0.8, 
+                                      eps_max=2.0, 
+                                      n_eps=10):
+    eps_array = np.linspace(eps_min, eps_max, n_eps)
     st_dicts = [isotropic_volume_change(st_dict, eps=eps) for eps in eps_array]
     return st_dicts
 

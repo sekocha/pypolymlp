@@ -311,7 +311,7 @@ if __name__ == '__main__':
             n_steps_setting,
             print_parameters,
             print_structure,
-            load_sscha_yaml
+            Restart,
     )
 
     signal.signal(signal.SIGINT, signal.SIG_DFL)
@@ -391,10 +391,11 @@ if __name__ == '__main__':
         unitcell_dict = Poscar(args.poscar).get_structure()
         supercell_matrix = np.diag(args.supercell)
     elif args.yaml is not None:
-        res, struct = load_sscha_yaml(args.yaml)
-        unitcell_dict, supercell_matrix = struct
+        res = Restart(args.yaml)
+        unitcell_dict = res.unitcell
+        supercell_matrix = res.supercell_matrix
         if args.pot is None:
-            args.pot = res[0]['pot']
+            args.pot = res.mlp
 
     n_atom = len(unitcell_dict['elements']) * np.linalg.det(supercell_matrix)
     args = temperature_setting(args)
