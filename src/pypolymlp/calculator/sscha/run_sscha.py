@@ -1,6 +1,7 @@
 #!/usr/bin/env python 
 import numpy as np
 import os
+from collections import defaultdict
 
 from phonopy import Phonopy
 from symfc.basis_sets.basis_sets_O2 import FCBasisSetO2
@@ -15,7 +16,7 @@ from pypolymlp.utils.phonopy_utils import (
 
 from pypolymlp.calculator.sscha.harmonic_real import HarmonicReal
 from pypolymlp.calculator.sscha.harmonic_reciprocal import HarmonicReciprocal
-from pypolymlp.calculator.sscha.io import save_sscha_results
+from pypolymlp.calculator.sscha.sscha_io import save_sscha_yaml
 
 from phono3py.file_IO import write_fc2_to_hdf5, read_fc2_from_hdf5
 
@@ -40,8 +41,11 @@ class PolymlpSSCHA:
             self.params_dict = params_dict
             self.coeffs = coeffs
 
-        unitcell = st_dict_to_phonopy_cell(unitcell_dict)
-        self.phonopy = Phonopy(unitcell, supercell_matrix)
+        self.unitcell_dict = unitcell_dict
+        self.supercell_matrix = supercell_matrix
+
+        self.unitcell = st_dict_to_phonopy_cell(unitcell_dict)
+        self.phonopy = Phonopy(self.unitcell, supercell_matrix)
         self.supercell = self.phonopy.supercell
         self.n_unitcells = int(round(np.linalg.det(supercell_matrix)))
 
@@ -68,6 +72,7 @@ class PolymlpSSCHA:
         self.fc2 = None
         self.__sscha_dict = None
         self.__log_dict = None
+        self.__history_dict = None
        
     def __recover_fc2(self, coefs):
         compress_mat = self.fc2_basis.compression_matrix
@@ -157,6 +162,7 @@ class PolymlpSSCHA:
         self.phonopy.write_total_dos(filename=filename)
 
     def set_initial_force_constants(self, algorithm='harmonic', filename=None):
+
         if algorithm == 'harmonic':
             print('Initial FCs: Harmonic')
             self.fc2 = self.ph_recip.produce_harmonic_force_constants()
@@ -176,10 +182,14 @@ class PolymlpSSCHA:
             self.fc2 = read_fc2_from_hdf5(filename)
 
     def run(self, t=1000, n_samples=100, qmesh=[10,10,10],
-            n_loop=100, tol=1e-2, mixing=0.5):
+            n_loop=100, tol=1e-2, mixing=0.5,
+            initialize_history=True):
 
         if self.fc2 is None:
             self.fc2 = self.set_initial_force_constants()
+
+        if initialize_history:
+            self.__history_dict = defaultdict(list)
 
         n_iter, delta = 1, 100
         while n_iter <= n_loop and delta > tol:
@@ -187,13 +197,19 @@ class PolymlpSSCHA:
             fc2_new = self.__single_iter(t=t, n_samples=n_samples, qmesh=qmesh)
             delta = self.__convergence_score(self.fc2, fc2_new)
             self.fc2 = fc2_new * mixing + self.fc2 * (1 - mixing)
+
             self.__print_progress(delta)
+            for key in ['free_energy', 'harmonic_potential',
+                        'average_potential', 'anharmonic_free_energy']:
+                self.__history_dict[key].append(self.__sscha_dict[key])
+ 
             n_iter += 1
 
         converge = True if delta < tol else False
         self.__log_dict = {
             'converge': converge,
-            'delta': delta
+            'delta': delta,
+            'history': self.__history_dict,
         }
 
     def __print_progress(self, delta):
@@ -230,6 +246,23 @@ class PolymlpSSCHA:
         self.fc2 = fc2
 
 
+def save_results(sscha, args):
+    
+    log_dir = './sscha/' + str(sscha.properties['temperature']) + '/'
+    os.makedirs(log_dir, exist_ok=True)
+    save_sscha_yaml(sscha, args, filename=log_dir + 'sscha_results.yaml')
+    write_fc2_to_hdf5(sscha.force_constants, filename=log_dir + 'fc2.hdf5')
+    sscha.write_dos(filename=log_dir + 'total_dos.dat')
+    freq = sscha.run_frequencies(qmesh=args.mesh)
+
+    print('-------- sscha runs finished --------')
+    print('Temperature:      ', sscha.properties['temperature'])
+    print('Free energy:      ', sscha.properties['free_energy'])
+    print('Convergence:      ', sscha.logs['converge'])
+    print('Frequency (min):  ', "{:.6f}".format(np.min(freq)))
+    print('Frequency (max):  ', "{:.6f}".format(np.max(freq)))
+
+
 def run_sscha(unitcell_dict, 
               supercell_matrix,
               args,
@@ -264,22 +297,12 @@ def run_sscha(unitcell_dict,
                   qmesh=args.mesh,
                   n_loop=args.max_iter,
                   tol=args.tol,
-                  mixing=args.mixing)
+                  mixing=args.mixing,
+                  initialize_history=False)
 
-        ''' file output'''
-        log_dir = './sscha/' + str(temp) + '/'
-        os.makedirs(log_dir, exist_ok=True)
-        save_sscha_results(sscha.properties, 
-                           sscha.logs, 
-                           unitcell_dict, 
-                           supercell_matrix,
-                           args,
-                           filename=log_dir + 'sscha_results.yaml')
-        write_fc2_to_hdf5(sscha.force_constants, filename=log_dir + 'fc2.hdf5')
-        sscha.write_dos(filename=log_dir + 'total_dos.dat')
-        freq = sscha.run_frequencies(qmesh=args.mesh)
-        print('Frequency (min):  ', "{:.6f}".format(np.min(freq)))
-        print('Frequency (max):  ', "{:.6f}".format(np.max(freq)))
+        print(sscha.logs)
+        print(sscha.logs['history'])
+        save_results(sscha, args)
 
 
 if __name__ == '__main__':
@@ -287,13 +310,13 @@ if __name__ == '__main__':
     import argparse
     import signal
     from pypolymlp.core.interface_vasp import Poscar
-    from pypolymlp.calculator.sscha.io import (
+    from pypolymlp.calculator.sscha.sscha_io import (
             temperature_setting,
             n_steps_setting,
             print_parameters,
-            print_structure
+            print_structure,
+            load_sscha_yaml
     )
-    from pypolymlp.calculator.sscha.io import load_sscha_results
 
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
@@ -349,7 +372,7 @@ if __name__ == '__main__':
                              'iterations and the last iteration')
     parser.add_argument('--max_iter',
                         type=int,
-                        default=50,
+                        default=30,
                         help='Maximum number of iterations')
     parser.add_argument('--ascending_temp',
                         action='store_true',
@@ -372,7 +395,7 @@ if __name__ == '__main__':
         unitcell_dict = Poscar(args.poscar).get_structure()
         supercell_matrix = np.diag(args.supercell)
     elif args.yaml is not None:
-        res, struct = load_sscha_results(args.yaml)
+        res, struct = load_sscha_yaml(args.yaml)
         unitcell_dict, supercell_matrix = struct
         if args.pot is None:
             args.pot = res[0]['pot']
