@@ -12,6 +12,7 @@ from pypolymlp.utils.phonopy_utils import (
 from pypolymlp.utils.structure_utils import isotropic_volume_change
 from pypolymlp.calculator.compute_properties import compute_properties
 
+
 class PolymlpPhonon:
 
     def __init__(self, 
@@ -159,6 +160,7 @@ class PolymlpPhononQHA:
         self.__qha.write_bulk_modulus_temperature(filename=filename)
         filename = output_dir+'/gruneisen-temperature.dat'
         self.__qha.write_gruneisen_temperature(filename=filename)
+
 
 if __name__ == '__main__':
 
