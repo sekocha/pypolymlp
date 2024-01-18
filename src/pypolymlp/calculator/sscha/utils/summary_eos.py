@@ -32,7 +32,7 @@ def write_data_2d(data, stream, temp=None, tag='volume_free_energy'):
         print('- temperature:', temp, file=stream)
     print('  ' + tag + ':', file=stream)
     for d in data:
-        print('  -', d, file=stream)
+        print('  -', list(d), file=stream)
     print('', file=stream)
 
 def write_eos_yaml(eos_fit_array, filename='volume_dependence.yaml'):

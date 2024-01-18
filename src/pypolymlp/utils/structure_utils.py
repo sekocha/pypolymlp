@@ -40,6 +40,7 @@ def isotropic_volume_change(st_dict, eps=1.0):
     eps1 = pow(eps, 0.3333333333333)
     st_dict_vol = copy.deepcopy(st_dict)
     st_dict_vol['axis'] *= eps1
+    st_dict_vol['volume'] *= eps
     return st_dict_vol
 
 def multiple_isotropic_volume_changes(st_dict, 
