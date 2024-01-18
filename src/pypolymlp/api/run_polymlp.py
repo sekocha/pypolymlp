@@ -87,6 +87,9 @@ def run():
     parser.add_argument('--sequential', 
                         action='store_true',
                         help='Use sequential evaluation of X.T @ X')
+    parser.add_argument('--learning_curve', 
+                        action='store_true',
+                        help='Compute learning curve')
     parser.add_argument('--features', 
                         action='store_true',
                         help='Mode: Feature calculation')
@@ -185,11 +188,16 @@ def run():
             params_dict = ParamsParser(infile).get_params()
             if params_dict['dataset_type'] == 'phono3py':
                 print('Mode: Regression')
-                run_generator_single_dataset(infile)
+                run_generator_single_dataset(infile, 
+                    compute_learning_curve=args.learning_curve)
             else:
                 if args.sequential:
                     print('Mode: Sequential regression')
                     run_sequential_generator_multiple_datasets(infile)
+                elif args.learning_curve: 
+                    print('Mode: Regression and learning curve')
+                    run_generator_single_dataset(infile, 
+                                                 compute_learning_curve=True)
                 else:
                     print('Mode: Regression')
                     run_generator_multiple_datasets(infile)

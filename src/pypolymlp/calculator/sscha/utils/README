@@ -1,3 +1,5 @@
 python3 ~/git/pypolymlp/src/pypolymlp/calculator/sscha/utils/distribution.py sscha/2000/sscha_results.yaml sscha/2000/fc2.hdf5 polymlp.lammps
 
 python3 ~/git/pypolymlp/src/pypolymlp/calculator/sscha/utils/summary.py
+
+python3 ~/git/pypolymlp/src/pypolymlp/str_gen/strgen_volume.py --poscar poscar_eqm

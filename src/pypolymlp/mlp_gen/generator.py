@@ -15,64 +15,65 @@ from pypolymlp.mlp_gen.regression import Regression
 from pypolymlp.mlp_gen.accuracy import compute_error
 from pypolymlp.mlp_gen.accuracy import write_error_yaml
 from pypolymlp.mlp_gen.features_attr import write_polymlp_params_yaml
+from pypolymlp.mlp_gen.learning_curve import learning_curve
 
 
 """
-    Variables in params_dict:
-      - n_type
-      - include_force
-      - include_stress
-      - model
-        - cutoff
-        - model_type
-        - max_p
-        - max_l
-        - feature_type
-        - pair_type
-        - pair_params
-        - gtinv
-          - order
-          - max_l
-          - lm_seq
-          - l_comb
-          - lm_coeffs
-      - atomic_energy
-      - reg
-        - method
-        - alpha
-      - dft
-        - train (vasprun locations)
-        - test (vasprun locations)
+Variables in params_dict:
+  - n_type
+  - include_force
+  - include_stress
+  - model
+    - cutoff
+    - model_type
+    - max_p
+    - max_l
+    - feature_type
+    - pair_type
+    - pair_params
+    - gtinv
+      - order
+      - max_l
+      - lm_seq
+      - l_comb
+      - lm_coeffs
+  - atomic_energy
+  - reg
+    - method
+    - alpha
+  - dft
+    - train (vasprun locations)
+    - test (vasprun locations)
 
-    Variables in dft_dict (train_dft_dict, test_dft_dict):
-        - energy
-        - force
-        - stress
-        - structures
-          - structure (1) 
-            - axis
-            - positions
-            - n_atoms
-            - types
-            - elements
-          - ...
+Variables in dft_dict (train_dft_dict, test_dft_dict):
+    - energy
+    - force
+    - stress
+    - structures
+      - structure (1) 
+        - axis
+        - positions
+        - n_atoms
+        - types
         - elements
-        - total_n_atoms
+      - ...
+    - elements
+    - total_n_atoms
 
-    Variables in reg_dict
-        - x
-        - y
-        - first_indices [(ebegin, fbegin, sbegin), ...]
-        - n_data (ne, nf, ns)
-        - scales
-
+Variables in reg_dict
+    - x
+    - y
+    - first_indices [(ebegin, fbegin, sbegin), ...]
+    - n_data (ne, nf, ns)
+    - scales
 """
 
 def run_generator_single_dataset_from_params_and_datasets(
         params_dict, 
         train_dft_dict,
         test_dft_dict,
-        log=True
+        log=True,
+        compute_learning_curve=False,
 ):
 
     t1 = time.time()
@@ -97,6 +98,31 @@ def run_generator_single_dataset_from_params_and_datasets(
     test_reg_dict = pre_test.get_updated_regression_dict()
 
     t3 = time.time()
+
+    if compute_learning_curve:
+        total_n_atoms = train_dft_dict['total_n_atoms']
+        error_all = learning_curve(train_reg_dict,
+                                   test_reg_dict,
+                                   test_dft_dict,
+                                   params_dict,
+                                   total_n_atoms)
+        f = open('polymlp_learning_curve.dat', 'w')
+        print('# n_str, RMSE(energy, meV/atom), '
+                'RMSE(force, eV/ang), RMSE(stress)', file=f)
+        for n_samp, error in error_all:
+            print(n_samp, error['energy']*1000, 
+                          error['force'], 
+                          error['stress'], file=f)
+        f.close()
+
+        if log:
+            print('Learning Curve:')
+            for n_samples, error in error_all:
+                print('- n_samples:   ', n_samples)
+                print('  rmse_energy: ', '{:.8f}'.format(error['energy']*1000))
+                print('  rmse_force:  ', '{:.8f}'.format(error['force']))
+                print('  rmse_stress: ', error['stress'])
+
     reg = Regression(train_reg_dict, test_reg_dict, params_dict)
     coeffs, scales = reg.ridge()
     mlp_dict = reg.get_best_model()
@@ -134,7 +160,11 @@ def run_generator_single_dataset_from_params_and_datasets(
     return mlp_dict
 
 
-def run_generator_single_dataset_from_params(params_dict, log=True):
+def run_generator_single_dataset_from_params(
+    params_dict, 
+    log=True,
+    compute_learning_curve=False,
+):
 
     if params_dict['dataset_type'] == 'vasp':
         train_dft_dict = parse_vaspruns(
@@ -167,16 +197,26 @@ def run_generator_single_dataset_from_params(params_dict, log=True):
             params_dict, 
             train_dft_dict,
             test_dft_dict,
-            log=log
+            log=log,
+            compute_learning_curve=compute_learning_curve,
     )
     return mlp_dict
 
 
-def run_generator_single_dataset(infile, log=True):
+def run_generator_single_dataset(
+    infile, 
+    log=True, 
+    compute_learning_curve=False
+):
 
     p = ParamsParser(infile)
     params_dict = p.get_params()
-    mlp_dict = run_generator_single_dataset_from_params(params_dict, log=log)
+    mlp_dict = run_generator_single_dataset_from_params(
+        params_dict, 
+        log=log,
+        compute_learning_curve=compute_learning_curve,
+    )
+
     return mlp_dict
 
 
