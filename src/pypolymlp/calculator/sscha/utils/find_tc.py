@@ -4,7 +4,7 @@ import argparse
 import yaml
 import sympy
 
-from pypolymlp.calculator.sscha.utils.utils import parse_free_energy_yaml
+from pypolymlp.calculator.sscha.utils.utils import parse_summary_yaml
 
 def get_diff(data1, data2):
     dict1, dict2 = dict(data1), dict(data2)
@@ -50,8 +50,8 @@ if __name__ == '__main__':
                         help='two yaml files')
     args = parser.parse_args()
 
-    ft1 = parse_free_energy_yaml(args.yaml[0])
-    ft2 = parse_free_energy_yaml(args.yaml[0])
+    ft1 = parse_summary_yaml(args.yaml[0])
+    ft2 = parse_summary_yaml(args.yaml[1])
     diff = get_diff(ft1, ft2)
 
     if diff.shape[0] > 1:

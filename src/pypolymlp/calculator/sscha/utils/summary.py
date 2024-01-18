@@ -16,9 +16,7 @@ def write_yaml(data):
 
     f.close()
 
-if __name__ == '__main__':
-
-    yml_files = sorted(glob.glob('./sscha/*/sscha_results.yaml'))
+def get_free_energies(yml_files):
 
     free_energies = []
     for yml in yml_files:
@@ -26,6 +24,15 @@ if __name__ == '__main__':
         f_sum = res.free_energy + res.static_potential
         free_energies.append([res.temperature, f_sum])
     free_energies = np.array(free_energies)
+    return free_energies
 
+def get_restart_objects(yml_files, unit='eV/atom'):
+    return [Restart(yml, unit=unit) for yml in yml_files]
+
+if __name__ == '__main__':
+
+    yml_files = sorted(glob.glob('./sscha/*/sscha_results.yaml'))
+    free_energies = get_free_energies(yml_files)
     write_yaml(free_energies)
     
+
