@@ -1,24 +1,33 @@
 #!/usr/bin/env python 
 import numpy as np
-import argparse
 import os
-import signal
 
-from phonopy import Phonopy
+from phonopy import Phonopy, PhonopyQHA
 
-from pypolymlp.core.interface_vasp import Poscar
-from pypolymlp.utils.yaml_utils import load_cells
+from pypolymlp.core.io_polymlp import load_mlp_lammps
 from pypolymlp.utils.phonopy_utils import (
         phonopy_cell_to_st_dict,
         st_dict_to_phonopy_cell,
 )
+from pypolymlp.utils.structure_utils import isotropic_volume_change
 from pypolymlp.calculator.compute_properties import compute_properties
 
 class PolymlpPhonon:
 
-    def __init__(self, pot, unitcell_dict=None, supercell_matrix=None):
+    def __init__(self, 
+                 unitcell_dict, 
+                 supercell_matrix, 
+                 pot=None, 
+                 params_dict=None, 
+                 coeffs=None):
 
-        self.pot = pot
+        if pot is not None:
+            self.__params_dict, mlp_dict = load_mlp_lammps(filename=pot)
+            self.__coeffs = mlp_dict['coeffs'] / mlp_dict['scales']
+        else:
+            self.__params_dict = params_dict
+            self.__coeffs = coeffs
+
         unitcell = st_dict_to_phonopy_cell(unitcell_dict)
         self.ph = Phonopy(unitcell, supercell_matrix)
 
@@ -29,7 +38,9 @@ class PolymlpPhonon:
         st_dicts = [phonopy_cell_to_st_dict(cell) for cell in supercells]
 
         ''' forces: (n_str, 3, n_atom) --> (n_str, n_atom, 3)'''
-        _, forces, _ = compute_properties(st_dicts, pot=self.pot)
+        _, forces, _ = compute_properties(st_dicts,
+                                          params_dict=self.__params_dict,
+                                          coeffs=self.__coeffs)
         forces = np.array(forces).transpose((0,2,1)) 
         self.ph.set_forces(forces)
         self.ph.produce_force_constants()
@@ -65,8 +76,96 @@ class PolymlpPhonon:
             self.ph.run_projected_dos()
             self.ph.write_projected_dos(filename="polymlp_phonon/proj_dos.dat")
 
+    @property
+    def phonopy(self):
+        return self.ph
+
+
+class PolymlpPhononQHA:
+
+    def __init__(self, unitcell_dict, supercell_matrix, pot=None):
+
+        if pot is not None:
+            self.__params_dict, mlp_dict = load_mlp_lammps(filename=pot)
+            self.__coeffs = mlp_dict['coeffs'] / mlp_dict['scales']
+        else:
+            self.__params_dict = params_dict
+            self.__coeffs = coeffs
+
+        self.__unitcell_dict = unitcell_dict
+        self.__supercell_matrix = supercell_matrix
+
+    def run(self, 
+            eps_min=0.8,
+            eps_max=1.2,
+            eps_int=0.02,
+            mesh=[10,10,10],
+            t_min=0,
+            t_max=1000,
+            t_step=10,
+            disp=0.01):
+        
+        eps_all = np.arange(eps_min, eps_max+0.001, eps_int)
+        unitcells = [isotropic_volume_change(self.__unitcell_dict, eps=eps)
+                    for eps in eps_all]
+        energies, _, _ = compute_properties(unitcells,
+                                            params_dict=self.__params_dict,
+                                            coeffs=self.__coeffs)
+        volumes = np.array([st['volume'] for st in unitcells])
+
+        free_energies, entropies, heat_capacities = [], [], []
+        for unitcell in unitcells:
+            ph = PolymlpPhonon(unitcell, 
+                               self.__supercell_matrix, 
+                               params_dict=self.__params_dict,
+                               coeffs=self.__coeffs)
+            ph.produce_force_constants(displacements=disp)
+
+            phonopy = ph.phonopy
+            phonopy.run_mesh(mesh)
+            phonopy.run_thermal_properties(t_step=t_step, 
+                                           t_max=t_max, 
+                                           t_min=t_min)
+
+            tp_dict = phonopy.get_thermal_properties_dict()
+            temperatures = tp_dict['temperatures']
+            free_energies.append(tp_dict['free_energy'])
+            entropies.append(tp_dict['entropy'])
+            heat_capacities.append(tp_dict['heat_capacity'])
+
+        free_energies = np.array(free_energies).T
+        entropies = np.array(entropies).T
+        heat_capacities = np.array(heat_capacities).T
+        self.__qha = PhonopyQHA(volumes=volumes,
+                                electronic_energies=energies,
+                                temperatures=temperatures,
+                                free_energy=free_energies,
+                                entropy=entropies,
+                                cv=heat_capacities)
+        self.__write_qha()
+
+    def __write_qha(self, output_dir='polymlp_phonon_qha'):
+
+        os.makedirs(output_dir, exist_ok=True)
+        filename = output_dir+'/helmholtz-volume.dat'
+        self.__qha.write_helmholtz_volume(filename=filename)
+        filename = output_dir+'/volume-temperature.dat'
+        self.__qha.write_volume_temperature(filename=filename)
+        filename = output_dir+'/thermal_expansion.dat'
+        self.__qha.write_thermal_expansion(filename=filename)
+        filename = output_dir+'/gibbs-temperature.dat'
+        self.__qha.write_gibbs_temperature(filename=filename)
+        filename = output_dir+'/bulk_modulus-temperature.dat'
+        self.__qha.write_bulk_modulus_temperature(filename=filename)
+        filename = output_dir+'/gruneisen-temperature.dat'
+        self.__qha.write_gruneisen_temperature(filename=filename)
 
 if __name__ == '__main__':
+
+    import argparse
+    import signal
+    from pypolymlp.core.interface_vasp import Poscar
+    from pypolymlp.utils.yaml_utils import load_cells
 
     signal.signal(signal.SIGINT, signal.SIG_DFL)
     parser = argparse.ArgumentParser()
@@ -121,7 +220,7 @@ if __name__ == '__main__':
         unitcell_dict = Poscar(args.poscar).get_structure()
         supercell_matrix = np.diag(args.supercell)
 
-    ph = PolymlpPhonon(args.pot, unitcell_dict, supercell_matrix)
+    ph = PolymlpPhonon(unitcell_dict, supercell_matrix, pot=args.pot)
     ph.produce_force_constants(displacements=args.disp)
     ph.compute_properties(mesh=args.ph_mesh,
                           t_min=args.ph_tmin,
@@ -129,3 +228,6 @@ if __name__ == '__main__':
                           t_step=args.ph_tstep,
                           pdos=args.ph_pdos)
 
+
+    qha = PolymlpPhononQHA(unitcell_dict, supercell_matrix, pot=args.pot)
+    qha.run()

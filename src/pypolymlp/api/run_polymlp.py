@@ -283,7 +283,7 @@ def run():
             unitcell_dict = Poscar(args.poscar).get_structure()
             supercell_matrix = np.diag(args.supercell)
 
-        ph = PolymlpPhonon(args.pot, unitcell_dict, supercell_matrix)
+        ph = PolymlpPhonon(unitcell_dict, supercell_matrix, args.pot)
         ph.produce_force_constants(displacements=args.disp)
         ph.compute_properties(mesh=args.ph_mesh,
                               t_min=args.ph_tmin,
