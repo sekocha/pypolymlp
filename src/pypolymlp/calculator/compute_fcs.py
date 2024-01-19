@@ -99,7 +99,8 @@ def compute_fcs_from_structure(pot=None,
                                supercell_matrix=None,
                                supercell_dict=None, 
                                n_samples=100,
-                               displacements=0.03):
+                               displacements=0.03,
+                               is_plusminus=False):
 
     if supercell_dict is not None:
         supercell = st_dict_to_phonopy_cell(supercell_dict)
@@ -113,7 +114,8 @@ def compute_fcs_from_structure(pot=None,
     disps, st_dicts = generate_random_const_displacements(
             supercell_dict,
             n_samples=n_samples,
-            displacements=displacements
+            displacements=displacements,
+            is_plusminus=is_plusminus,
     )
     compute_fcs_from_dataset(st_dicts, disps, supercell, 
                              pot=pot, params_dict=params_dict, coeffs=coeffs)
@@ -125,7 +127,8 @@ def compute_fcs_phono3py_dataset(pot=None,
                                  phono3py_yaml=None, 
                                  use_phonon_dataset=False,
                                  n_samples=None,
-                                 displacements=0.03):
+                                 displacements=0.03,
+                                 is_plusminus=False):
 
     supercell, disps, st_dicts = parse_phono3py_yaml_fcs(
             phono3py_yaml,
@@ -137,7 +140,8 @@ def compute_fcs_phono3py_dataset(pot=None,
         disps, st_dicts = generate_random_const_displacements(
                 supercell_dict,
                 n_samples=n_samples,
-                displacements=displacements
+                displacements=displacements,
+                is_plusminus=is_plusminus,
         )
 
     compute_fcs_from_dataset(st_dicts, disps, supercell, 

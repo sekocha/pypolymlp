@@ -60,7 +60,8 @@ class PypolymlpFC:
             supercell_matrix=None,
             supercell_dict=None,
             n_samples=500, 
-            displacements=0.03
+            displacements=0.03,
+            is_plusminus=False
     ):
         '''
         Parameters
@@ -86,14 +87,16 @@ class PypolymlpFC:
             supercell_matrix=supercell_matrix,
             supercell_dict=supercell_dict,
             n_samples=n_samples,
-            displacements=displacements
+            displacements=displacements,
+            is_plusminus=is_plusminus,
         )
  
     def compute_fcs_phono3py_yaml(
             self, 
             phono3py_yaml, 
             n_samples=None, 
-            displacements=0.03
+            displacements=0.03,
+            is_plusminus=False
     ):
         '''
         Parameters
@@ -117,7 +120,8 @@ class PypolymlpFC:
             phono3py_yaml=phono3py_yaml,
             use_phonon_dataset=False,
             n_samples=n_samples,
-            displacements=displacements
+            displacements=displacements,
+            is_plusminus=is_plusminus,
         )
         
     @ property

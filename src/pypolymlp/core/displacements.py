@@ -87,14 +87,18 @@ def get_structures_from_displacements(disps, st_dict):
 
 def generate_random_const_displacements(st_dict, 
                                         n_samples=100, 
-                                        displacements=0.03):
+                                        displacements=0.03,
+                                        is_plusminus=False):
 
     positions = st_dict['positions']
     disps = []
     for i in range(n_samples):
-        rand = np.random.rand(3, positions.shape[1]) - 0.5
+        #rand = np.random.rand(3, positions.shape[1]) - 0.5
+        rand = np.random.randn(3, positions.shape[1])
         rand = rand / np.linalg.norm(rand, axis=0)
         disps.append(rand * displacements)
+        if is_plusminus:
+            disps.append(- rand * displacements)
     disps = np.array(disps)
 
     st_dicts = get_structures_from_displacements(disps, st_dict)

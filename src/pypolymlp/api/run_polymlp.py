@@ -149,6 +149,9 @@ def run():
                         type=float,
                         default=0.03,
                         help='Displacement (in Angstrom)')
+    parser.add_argument('--is_plusminus',
+                        action='store_true',
+                        help='Plus-minus displacements will be generated.')
 
     parser.add_argument('--ph_mesh',
                         type=int,
@@ -246,7 +249,8 @@ def run():
                                          phono3py_yaml=args.phono3py_yaml,
                                          use_phonon_dataset=False,
                                          n_samples=args.fc_n_samples,
-                                         displacements=args.disp)
+                                         displacements=args.disp,
+                                         is_plusminus=args.is_plusminus)
 
 
         else:
@@ -264,7 +268,8 @@ def run():
                                        supercell_dict=supercell_dict,
                                        supercell_matrix=supercell_matrix,
                                        n_samples=args.fc_n_samples,
-                                       displacements=args.disp)
+                                       displacements=args.disp,
+                                       is_plusminus=args.is_plusminus)
 
     elif args.phonon:
         from pypolymlp.calculator.compute_phonon import PolymlpPhonon
