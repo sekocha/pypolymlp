@@ -13,6 +13,7 @@ from pypolymlp.core.interface_vasp import parse_structures_from_vaspruns
 
 from pypolymlp.mlp_gen.features import structures_to_mlpcpp_obj
 from pypolymlp.cxx.lib import libmlpcpp
+import time
 
 def compute_properties_slow(st_dicts, pot=None, params_dict=None, coeffs=None):
     '''
@@ -66,21 +67,27 @@ def compute_properties(st_dicts, pot=None, params_dict=None, coeffs=None):
     print('Properties calculations for', len(st_dicts), 
            'structures: Using a fast algorithm')
 
+    t1 = time.time()
     if pot is not None:
         params_dict, mlp_dict = load_mlp_lammps(filename=pot)
         params_dict['element_swap'] = False
         coeffs = mlp_dict['coeffs'] / mlp_dict['scales']
+    t2 = time.time()
 
     element_order = params_dict['elements']
     st_dicts = update_types(st_dicts, element_order)
+    t3 = time.time()
     axis_array, positions_c_array, types_array, _ \
                         = structures_to_mlpcpp_obj(st_dicts)
+    t4 = time.time()
 
     obj = libmlpcpp.PotentialPropertiesFast(params_dict,
                                             coeffs,
                                             axis_array,
                                             positions_c_array,
                                             types_array)
+    t5 = time.time()
+    print(t2-t1, t3-t2, t4-t3, t5-t4)
     '''    
     PotentialProperties: Return
     ----------------------------

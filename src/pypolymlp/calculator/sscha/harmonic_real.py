@@ -4,7 +4,7 @@ import numpy as np
 from phonopy import Phonopy
 from pypolymlp.core.utils import mass_table
 from pypolymlp.core.displacements import get_structures_from_displacements
-from pypolymlp.calculator.compute_properties import compute_properties
+from pypolymlp.calculator.properties import Properties
 
 const_avogadro = 6.02214076e23
 const_planck = 6.62607015e-22
@@ -37,8 +37,7 @@ class HarmonicReal:
         if n_unitcells is not None:
             self.supercell['n_unitcells'] = n_unitcells
 
-        self.__params_dict = params_dict
-        self.__coeffs = coeffs
+        self.prop = Properties(params_dict=params_dict, coeffs=coeffs)
 
         self.__mesh_dict = dict()
         self.__tp_dict = dict()
@@ -47,7 +46,7 @@ class HarmonicReal:
         self.__set_inverse_axis()
         self.__check_n_unitcells()
 
-        self.__e0 = self.compute_polymlp_properties([self.supercell])[0][0]
+        self.__e0 = self.prop.eval(self.supercell)[0]
 
     def __set_mass(self):
         if not 'masses' in self.supercell:
@@ -67,11 +66,7 @@ class HarmonicReal:
         ''' energies: (n_str)
             forces: (n_str, 3, n_atom)
         '''
-        energies, forces, _ = compute_properties(
-                st_dicts,
-                params_dict=self.__params_dict,
-                coeffs=self.__coeffs
-        )
+        energies, forces, _ = self.prop.eval_multiple(st_dicts)
         return np.array(energies), np.array(forces)
 
     def __solve_eigen_equation(self):

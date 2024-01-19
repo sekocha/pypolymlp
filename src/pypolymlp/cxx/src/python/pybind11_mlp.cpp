@@ -73,15 +73,20 @@ PYBIND11_MODULE(libmlpcpp, m) {
 
     py::class_<PyPropertiesFast>(m, "PotentialPropertiesFast")
         .def(py::init<const py::dict&,
-                      const vector1d&,
-                      const vector3d&,
-                      const vector3d&,
-                      const vector2i&>())
+                      const vector1d&>())
+        .def("eval", &PyPropertiesFast::eval)
+        .def("eval_multiple", &PyPropertiesFast::eval_multiple)
         .def("get_e", &PyPropertiesFast::get_e, 
                 py::return_value_policy::reference_internal)
         .def("get_f", &PyPropertiesFast::get_f, 
                 py::return_value_policy::reference_internal)
         .def("get_s", &PyPropertiesFast::get_s, 
+                py::return_value_policy::reference_internal)
+        .def("get_e_array", &PyPropertiesFast::get_e_array, 
+                py::return_value_policy::reference_internal)
+        .def("get_f_array", &PyPropertiesFast::get_f_array, 
+                py::return_value_policy::reference_internal)
+        .def("get_s_array", &PyPropertiesFast::get_s_array, 
                 py::return_value_policy::reference_internal)
         ;
 

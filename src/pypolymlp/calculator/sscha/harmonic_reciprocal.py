@@ -2,7 +2,7 @@
 import numpy as np
 
 from phonopy import Phonopy
-from pypolymlp.calculator.compute_properties import compute_properties
+from pypolymlp.calculator.properties import Properties
 from pypolymlp.utils.phonopy_utils import phonopy_cell_to_st_dict
 
 
@@ -11,8 +11,7 @@ class HarmonicReciprocal:
     def __init__(self, phonopy_obj, params_dict, coeffs, fc2=None):
 
         self.ph = phonopy_obj
-        self.__params_dict = params_dict
-        self.__coeffs = coeffs
+        self.prop = Properties(params_dict=params_dict, coeffs=coeffs)
         self.fc2 = fc2
 
         self.__tp_dict = dict()
@@ -24,12 +23,8 @@ class HarmonicReciprocal:
         ''' energies: (n_str)
             forces: (n_str, 3, n_atom)
         '''
-        energies, forces, _ = compute_properties(
-                st_dicts,
-                params_dict=self.__params_dict,
-                coeffs=self.__coeffs
-        )
-        return energies, forces
+        energies, forces, _ = self.prop.eval_multiple(st_dicts)
+        return np.array(energies), np.array(forces)
 
     def produce_harmonic_force_constants(self, displacements=0.01):
 

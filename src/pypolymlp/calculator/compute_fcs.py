@@ -14,7 +14,7 @@ from pypolymlp.utils.phonopy_utils import (
 )
 from pypolymlp.core.displacements import generate_random_const_displacements
 
-from pypolymlp.calculator.compute_properties import compute_properties
+from pypolymlp.calculator.properties import Properties
 from symfc.basis_sets.basis_sets_O2 import FCBasisSetO2
 from symfc.basis_sets.basis_sets_O3 import FCBasisSetO3
 from symfc.solvers.solver_O2O3 import run_solver_sparse_O2O3
@@ -49,10 +49,8 @@ def compute_fcs_from_dataset(st_dicts, disps, supercell,
 
     t1 = time.time()
     ''' forces: (n_str, 3, n_atom) --> (n_str, n_atom, 3)'''
-    _, forces, _ = compute_properties(st_dicts, 
-                                      pot=pot, 
-                                      params_dict=params_dict, 
-                                      coeffs=coeffs)
+    prop = Properties(pot=pot, params_dict=params_dict, coeffs=coeffs)
+    _, forces, _ = prop.eval_multiple(st_dicts)
     forces = np.array(forces).transpose((0,2,1)) 
     t2 = time.time()
     print(' elapsed time (computing forces) =', t2-t1)

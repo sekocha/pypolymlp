@@ -26,11 +26,7 @@ from pypolymlp.calculator.compute_features import (
         compute_from_infile,
         compute_from_polymlp_lammps,
 )
-from pypolymlp.calculator.compute_properties import convert_stresses_in_gpa
-from pypolymlp.calculator.compute_properties import (
-        compute_properties,
-        compute_properties_slow,
-)
+from pypolymlp.calculator.properties import Properties, convert_stresses_in_gpa
 
 from pypolymlp.core.interface_vasp import Poscar
 from pypolymlp.utils.yaml_utils import load_cells
@@ -212,10 +208,8 @@ def run():
     if args.properties:
         print('Mode: Property calculations')
         structures = set_structures(args)
-        energies, forces, stresses = compute_properties(structures,
-                                                        pot=args.pot)
-        #energies, forces, stresses = compute_properties_slow(structures,
-        #                                                    pot=args.pot)
+        prop = Properties(pot=args.pot)
+        energies, forces, stresses = prop.eval_multiple(structures)
         stresses_gpa = convert_stresses_in_gpa(stresses, structures)
 
         np.set_printoptions(suppress=True)

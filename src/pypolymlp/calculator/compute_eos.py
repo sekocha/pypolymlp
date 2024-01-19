@@ -3,7 +3,7 @@ import numpy as np
 
 from pypolymlp.core.io_polymlp import load_mlp_lammps
 from pypolymlp.utils.structure_utils import isotropic_volume_change
-from pypolymlp.calculator.compute_properties import compute_properties
+from pypolymlp.calculator.properties import Properties
 
 class PolymlpEOS:
 
@@ -14,12 +14,10 @@ class PolymlpEOS:
                  coeffs=None):
 
         if pot is not None:
-            self.__params_dict, mlp_dict = load_mlp_lammps(filename=pot)
-            self.__coeffs = mlp_dict['coeffs'] / mlp_dict['scales']
-        else:
-            self.__params_dict = params_dict
-            self.__coeffs = coeffs
+            params_dict, mlp_dict = load_mlp_lammps(filename=pot)
+            coeffs = mlp_dict['coeffs'] / mlp_dict['scales']
 
+        self.prop = Properties(params_dict=params_dict, coeffs=coeffs)
         self.__unitcell_dict = unitcell_dict
 
         self.__eos_data = None
@@ -56,6 +54,7 @@ class PolymlpEOS:
     def run_eos_fit(self, volumes, energies):
 
         from pymatgen.analysis.eos import EOS
+        print('EOS fitting using Vinet EOS equation')
         eos = EOS(eos_name='vinet')
         eos_fit = eos.fit(volumes, energies)
         self.__b0 = eos_fit.b0_GPa
@@ -63,7 +62,7 @@ class PolymlpEOS:
         self.__v0 = eos_fit.v0
 
         v_min, v_max = min(volumes), max(volumes)
-        extrapolation = (v_max - v_min) * 0.3
+        extrapolation = (v_max - v_min) * 0.1
         v_lb = v_min - extrapolation
         v_ub = v_max + extrapolation
 
@@ -87,9 +86,7 @@ class PolymlpEOS:
         st_dicts = [isotropic_volume_change(self.__unitcell_dict, eps=eps) 
                     for eps in eps_list]
         
-        energies, _, _ = compute_properties(st_dicts, 
-                                            params_dict=self.__params_dict, 
-                                            coeffs=self.__coeffs)
+        energies, _, _ = self.prop.eval_multiple(st_dicts)
         volumes = np.array([st['volume'] for st in st_dicts])
         print(' eps =', np.array(eps_list))
         self.__eos_data = np.array([volumes, energies]).T

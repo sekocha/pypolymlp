@@ -10,7 +10,7 @@ from pypolymlp.utils.phonopy_utils import (
         st_dict_to_phonopy_cell,
 )
 from pypolymlp.utils.structure_utils import isotropic_volume_change
-from pypolymlp.calculator.compute_properties import compute_properties
+from pypolymlp.calculator.properties import Properties
 
 
 class PolymlpPhonon:
@@ -20,14 +20,17 @@ class PolymlpPhonon:
                  supercell_matrix, 
                  pot=None, 
                  params_dict=None, 
-                 coeffs=None):
+                 coeffs=None,
+                 properties=None):
 
-        if pot is not None:
-            self.__params_dict, mlp_dict = load_mlp_lammps(filename=pot)
-            self.__coeffs = mlp_dict['coeffs'] / mlp_dict['scales']
+        if properties is not None:
+            self.prop = properties
         else:
-            self.__params_dict = params_dict
-            self.__coeffs = coeffs
+            if pot is not None:
+                params_dict, mlp_dict = load_mlp_lammps(filename=pot)
+                coeffs = mlp_dict['coeffs'] / mlp_dict['scales']
+
+            self.prop = Properties(params_dict=params_dict, coeffs=coeffs)
 
         unitcell = st_dict_to_phonopy_cell(unitcell_dict)
         self.ph = Phonopy(unitcell, supercell_matrix)
@@ -39,9 +42,7 @@ class PolymlpPhonon:
         st_dicts = [phonopy_cell_to_st_dict(cell) for cell in supercells]
 
         ''' forces: (n_str, 3, n_atom) --> (n_str, n_atom, 3)'''
-        _, forces, _ = compute_properties(st_dicts,
-                                          params_dict=self.__params_dict,
-                                          coeffs=self.__coeffs)
+        _, forces, _ = self.prop.eval_multiple(st_dicts)
         forces = np.array(forces).transpose((0,2,1)) 
         self.ph.set_forces(forces)
         self.ph.produce_force_constants()
@@ -84,7 +85,8 @@ class PolymlpPhonon:
 
 class PolymlpPhononQHA:
 
-    def __init__(self, unitcell_dict, supercell_matrix, pot=None):
+    def __init__(self, unitcell_dict, supercell_matrix, 
+                 pot=None, params_dict=None, coeffs=None):
 
         if pot is not None:
             self.__params_dict, mlp_dict = load_mlp_lammps(filename=pot)
@@ -92,6 +94,9 @@ class PolymlpPhononQHA:
         else:
             self.__params_dict = params_dict
             self.__coeffs = coeffs
+
+        self.prop = Properties(params_dict=self.__params_dict, 
+                               coeffs=self.__coeffs)
 
         self.__unitcell_dict = unitcell_dict
         self.__supercell_matrix = supercell_matrix
@@ -109,17 +114,14 @@ class PolymlpPhononQHA:
         eps_all = np.arange(eps_min, eps_max+0.001, eps_int)
         unitcells = [isotropic_volume_change(self.__unitcell_dict, eps=eps)
                     for eps in eps_all]
-        energies, _, _ = compute_properties(unitcells,
-                                            params_dict=self.__params_dict,
-                                            coeffs=self.__coeffs)
+        energies, _, _ = self.prop.eval_multiple(unitcells)
         volumes = np.array([st['volume'] for st in unitcells])
 
         free_energies, entropies, heat_capacities = [], [], []
         for unitcell in unitcells:
             ph = PolymlpPhonon(unitcell, 
                                self.__supercell_matrix, 
-                               params_dict=self.__params_dict,
-                               coeffs=self.__coeffs)
+                               properties=self.prop)
             ph.produce_force_constants(displacements=disp)
 
             phonopy = ph.phonopy
