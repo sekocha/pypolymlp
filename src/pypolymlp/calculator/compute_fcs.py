@@ -58,15 +58,10 @@ def compute_fcs_from_dataset(st_dicts,
     '''residual forces'''
     supercell_dict = phonopy_cell_to_st_dict(supercell)
     _, residual_forces, _ = prop.eval(supercell_dict)
-    print(residual_forces)
 
     _, forces, _ = prop.eval_multiple(st_dicts)
-
-    print(forces[0][2])
     for f in forces:
         f -= residual_forces
-    print(forces[0][2])
-
     forces = np.array(forces).transpose((0,2,1)) 
     t2 = time.time()
     print(' elapsed time (computing forces) =', t2-t1)
