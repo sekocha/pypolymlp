@@ -58,11 +58,13 @@ class Minimize:
 
     def run(self): 
         options = {
-            'gtol': 1e-3,
+            'gtol': 1e-7,
         }
         self.__res = minimize(self.fun, 
                               self.__x0, 
                               method='CG', 
+                              #method='BFGS', 
+                              #method='Newton-CG', 
                               jac=self.jac,
                               options=options)
         return self
@@ -78,6 +80,10 @@ class Minimize:
     @property
     def residual_forces(self):
         return - self.__res.jac.reshape((-1,3)).T
+
+    @property
+    def n_iter(self):
+        return self.__res.nit
     
    
 if __name__ == '__main__':
@@ -102,6 +108,9 @@ if __name__ == '__main__':
 
     print(minobj.energy)
     print(minobj.residual_forces)
+    print(minobj.n_iter)
+    st_dict = minobj.structure
+    print(st_dict['positions'])
 
 
 

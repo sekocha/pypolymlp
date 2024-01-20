@@ -41,8 +41,12 @@ def recover_fc3(coefs, compress_mat, compress_eigvecs, N):
     fc3 = (compress_mat @ fc3).reshape((n_a,N,N,3,3,3))
     return fc3
 
-def compute_fcs_from_dataset(st_dicts, disps, supercell, 
-                             pot=None, params_dict=None, coeffs=None):
+def compute_fcs_from_dataset(st_dicts, 
+                             disps, 
+                             supercell, 
+                             pot=None, 
+                             params_dict=None, 
+                             coeffs=None):
 
     ''' disps: (n_str, 3, n_atom) --> (n_str, n_atom, 3)'''
     disps = disps.transpose((0,2,1)) 
@@ -50,7 +54,19 @@ def compute_fcs_from_dataset(st_dicts, disps, supercell,
     t1 = time.time()
     ''' forces: (n_str, 3, n_atom) --> (n_str, n_atom, 3)'''
     prop = Properties(pot=pot, params_dict=params_dict, coeffs=coeffs)
+
+    '''residual forces'''
+    supercell_dict = phonopy_cell_to_st_dict(supercell)
+    _, residual_forces, _ = prop.eval(supercell_dict)
+    print(residual_forces)
+
     _, forces, _ = prop.eval_multiple(st_dicts)
+
+    print(forces[0][2])
+    for f in forces:
+        f -= residual_forces
+    print(forces[0][2])
+
     forces = np.array(forces).transpose((0,2,1)) 
     t2 = time.time()
     print(' elapsed time (computing forces) =', t2-t1)

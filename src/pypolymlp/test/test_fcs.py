@@ -19,7 +19,6 @@ from symfc.basis_sets.basis_sets_O2 import FCBasisSetO2
 from symfc.basis_sets.basis_sets_O3 import FCBasisSetO3
 from symfc.solvers.solver_O2O3 import run_solver_sparse_O2O3
 
-
 def compute_fcs_from_dataset(pot, supercell, disps, st_dicts):
 
     ''' disps: (n_str, 3, n_atom) --> (n_str, n_atom, 3)'''
@@ -88,6 +87,8 @@ def compute_fcs_from_structure(pot,
             displacements=displacements
     )
     compute_fcs_from_dataset(pot, supercell, disps, st_dicts)
+
+
 
 def compute_fc_basis(supercell):
 
