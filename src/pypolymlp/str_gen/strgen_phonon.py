@@ -4,7 +4,7 @@ import argparse
 import os
 
 from pypolymlp.core.interface_vasp import Poscar
-from pypolymlp.core.displacements import generate_random_displacements
+from pypolymlp.core.displacements import generate_random_const_displacements
 
 from pypolymlp.utils.structure_utils import supercell_diagonal
 from pypolymlp.utils.vasp_utils import write_poscar_file
@@ -25,9 +25,12 @@ def run_strgen_phonon(filename,
     else:
         supercell = supercell_diagonal(unitcell, size=supercell_size)
 
-    _, st_dicts = generate_random_displacements(supercell, 
-                                                n_samples=n_samples,
-                                                displacements=displacements)
+    _, st_dicts = generate_random_const_displacements(
+            supercell, 
+            n_samples=n_samples,
+            displacements=displacements
+    )
+
     os.makedirs('poscars_phonon', exist_ok=True)
     write_poscar_file(supercell, filename='poscars_phonon/poscar-00000')
     for i, st in enumerate(st_dicts):

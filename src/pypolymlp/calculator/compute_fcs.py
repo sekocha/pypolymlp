@@ -12,9 +12,14 @@ from pypolymlp.utils.phonopy_utils import (
         phonopy_cell_to_st_dict,
         st_dict_to_phonopy_cell,
 )
-from pypolymlp.core.displacements import generate_random_const_displacements
+from pypolymlp.core.displacements import (
+        generate_random_const_displacements,
+        get_structures_from_displacements,
+)
 
 from pypolymlp.calculator.properties import Properties
+from pypolymlp.calculator.str_opt.optimization import Minimize
+
 from symfc.basis_sets.basis_sets_O2 import FCBasisSetO2
 from symfc.basis_sets.basis_sets_O3 import FCBasisSetO3
 from symfc.solvers.solver_O2O3 import run_solver_sparse_O2O3
@@ -46,22 +51,54 @@ def compute_fcs_from_dataset(st_dicts,
                              supercell, 
                              pot=None, 
                              params_dict=None, 
-                             coeffs=None):
+                             coeffs=None,
+                             geometry_optimization=True):
+    '''
+    Parameters
+    ----------
+    disps: Displacements (n_str, 3, n_atom)
+    supercell: Supercell in phonopy format
+    pot or (params_dict and coeffs): polynomal MLP
+    '''
+    if geometry_optimization:
+        print('Running geometry optimization')
+        supercell_dict = phonopy_cell_to_st_dict(supercell)
+        minobj = Minimize(supercell_dict, 
+                          pot=pot, 
+                          params_dict=params_dict, 
+                          coeffs=coeffs)
+        minobj.run(gtol=1e-12)
+        print('Residual forces:')
+        print(minobj.residual_forces.T)
+        print('E0:', minobj.energy)
+        print('n_iter:', minobj.n_iter)
+        print('Fractional coordinate changes:')
+        diff_positions = supercell_dict['positions'] \
+                        - minobj.structure['positions']
+        print(diff_positions.T)
 
-    ''' disps: (n_str, 3, n_atom) --> (n_str, n_atom, 3)'''
-    disps = disps.transpose((0,2,1)) 
+        supercell_dict = minobj.structure
+        supercell = st_dict_to_phonopy_cell(supercell_dict)
+        st_dicts = get_structures_from_displacements(disps, supercell_dict)
 
     t1 = time.time()
-    ''' forces: (n_str, 3, n_atom) --> (n_str, n_atom, 3)'''
     prop = Properties(pot=pot, params_dict=params_dict, coeffs=coeffs)
 
+    print('Computing forces using polymlp')
+    _, forces, _ = prop.eval_multiple(st_dicts)
+
     '''residual forces'''
+    print('Eliminating residual forces')
     supercell_dict = phonopy_cell_to_st_dict(supercell)
     _, residual_forces, _ = prop.eval(supercell_dict)
-
-    _, forces, _ = prop.eval_multiple(st_dicts)
     for f in forces:
         f -= residual_forces
+
+    ''' 
+    disps: (n_str, 3, n_atom) --> (n_str, n_atom, 3)
+    forces: (n_str, 3, n_atom) --> (n_str, n_atom, 3)
+    '''
+    disps = disps.transpose((0,2,1)) 
     forces = np.array(forces).transpose((0,2,1)) 
     t2 = time.time()
     print(' elapsed time (computing forces) =', t2-t1)
@@ -93,6 +130,7 @@ def compute_fcs_from_dataset(st_dicts,
                                                   compress_eigvecs_fc2,
                                                   compress_eigvecs_fc3,
                                                   use_mkl=True,
+                                                  #use_mkl=False,
                                                   batch_size=200)
     t2 = time.time()
     print(' elapsed time (solve fc2 + fc3) =', t2-t1)

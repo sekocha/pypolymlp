@@ -43,7 +43,8 @@ def compute_error(dft_dict,
                   predictions_all,
                   weights_all,
                   first_indices,
-                  output_key='train'):
+                  output_key='train',
+                  log_force=False):
 
     if 'include_force' in dft_dict:
         include_force = dft_dict['include_force']
@@ -107,6 +108,20 @@ def compute_error(dft_dict,
     for d, name in zip(outdata, filenames):
         print(d[0], d[1], d[2], name, file=f)
     f.close()
+
+    if log_force:
+        _, true_f, pred_f = __compute_rmse(dft_dict['force'],
+                                            predictions_all,
+                                            weights_all,
+                                            fbegin, fend,
+                                            return_values=True)
+        outdata = np.array([true_f, pred_f, (true_f - pred_f)]).T
+ 
+        f = open('predictions/force.' + output_key + '.dat', 'w')
+        print('# DFT, MLP, DFT-MLP', file=f)
+        for d in outdata:
+            print(d[0], d[1], d[2], file=f)
+        f.close()
 
     return error_dict
 

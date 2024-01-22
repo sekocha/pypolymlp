@@ -29,6 +29,7 @@ def __set_weight_force_data(force):
 
     log1 = np.log10(np.abs(force))
     w1 = np.array([pow(10, -v) for v in log1])
+    #w1 = np.array([pow(10, -v-4) for v in log1])
     weight_f = np.minimum(w1, np.ones(len(w1)))
     return weight_f
 

@@ -15,9 +15,11 @@ class Phono3pyYamlTest:
         self.supercell = ph3.supercell
         self.displacements = ph3.displacements.transpose((0,2,1))  # Angstrom
         self.forces = ph3.forces.transpose((0,2,1))  # eV/Angstrom
-        print(ph3.phonon_supercell_matrix) 
-        print(ph3.phonon_supercell) 
-        print(ph3.phonon_dataset['forces'].shape)
+        print(self.forces)
+        #print(ph3.phonon_supercell_matrix) 
+        #print(ph3.phonon_supercell) 
+        #print(ph3.phonon_dataset['forces'].shape)
+        print(ph3.unitcell)
 
 
     def get_phonon_dataset(self):

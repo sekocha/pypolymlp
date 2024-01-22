@@ -27,6 +27,7 @@ class Minimize:
         self.__types = cell['types']
         self.__elements = cell['elements']
         self.__axis_inv = np.linalg.inv(cell['axis'])
+        self.__volume = cell['volume']
 
         self.__x0 = (self.__axis @ cell['positions']).T.reshape(-1)
         self.__res = None
@@ -53,18 +54,17 @@ class Minimize:
             'n_atoms': self.__n_atoms,
             'types': self.__types,
             'elements': self.__elements,
+            'volume': self.__volume,
         }
         return st_dict
 
-    def run(self): 
+    def run(self, gtol=1e-7): 
         options = {
-            'gtol': 1e-7,
+            'gtol': gtol,
         }
         self.__res = minimize(self.fun, 
                               self.__x0, 
                               method='CG', 
-                              #method='BFGS', 
-                              #method='Newton-CG', 
                               jac=self.jac,
                               options=options)
         return self
