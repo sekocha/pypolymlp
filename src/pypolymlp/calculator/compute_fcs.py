@@ -26,6 +26,7 @@ from symfc.solvers.solver_O2O3 import run_solver_sparse_O2O3
 
 from phono3py.file_IO import write_fc2_to_hdf5, write_fc3_to_hdf5
 
+
 def recover_fc2(coefs, compress_mat, compress_eigvecs, N):
     ''' if using full compression_matrix
     fc2 = compress_eigvecs @ coefs
@@ -35,6 +36,7 @@ def recover_fc2(coefs, compress_mat, compress_eigvecs, N):
     fc2 = compress_eigvecs @ coefs
     fc2 = (compress_mat @ fc2).reshape((n_a,N,3,3))
     return fc2
+
 
 def recover_fc3(coefs, compress_mat, compress_eigvecs, N):
     ''' if using full compression_matrix
@@ -46,13 +48,14 @@ def recover_fc3(coefs, compress_mat, compress_eigvecs, N):
     fc3 = (compress_mat @ fc3).reshape((n_a,N,N,3,3,3))
     return fc3
 
+
 def compute_fcs_from_dataset(st_dicts, 
                              disps, 
                              supercell, 
                              pot=None, 
                              params_dict=None, 
                              coeffs=None,
-                             geometry_optimization=True):
+                             geometry_optimization=False):
     '''
     Parameters
     ----------
@@ -67,7 +70,7 @@ def compute_fcs_from_dataset(st_dicts,
                           pot=pot, 
                           params_dict=params_dict, 
                           coeffs=coeffs)
-        minobj.run(gtol=1e-12)
+        minobj.run(gtol=1e-6)
         print('Residual forces:')
         print(minobj.residual_forces.T)
         print('E0:', minobj.energy)
@@ -76,10 +79,12 @@ def compute_fcs_from_dataset(st_dicts,
         diff_positions = supercell_dict['positions'] \
                         - minobj.structure['positions']
         print(diff_positions.T)
+        print('Success:', minobj.success)
 
-        supercell_dict = minobj.structure
-        supercell = st_dict_to_phonopy_cell(supercell_dict)
-        st_dicts = get_structures_from_displacements(disps, supercell_dict)
+        if minobj.success:
+            supercell_dict = minobj.structure
+            supercell = st_dict_to_phonopy_cell(supercell_dict)
+            st_dicts = get_structures_from_displacements(disps, supercell_dict)
 
     t1 = time.time()
     prop = Properties(pot=pot, params_dict=params_dict, coeffs=coeffs)

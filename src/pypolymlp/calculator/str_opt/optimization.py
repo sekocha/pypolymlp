@@ -1,11 +1,9 @@
 #!/usr/bin/env python 
 import numpy as np
 
+from scipy.optimize import minimize
 from pypolymlp.core.io_polymlp import load_mlp_lammps
 from pypolymlp.calculator.properties import Properties
-
-from scipy.optimize import minimize
-import time
 
 
 class Minimize:
@@ -17,74 +15,138 @@ class Minimize:
             coeffs = mlp_dict['coeffs'] / mlp_dict['scales']
 
         self.prop = Properties(params_dict=params_dict, coeffs=coeffs)
+        self.st_dict = self.set_structure(cell)
 
         self.__energy = None
         self.__force = None
         self.__stress = None
-
-        self.__axis = cell['axis']
-        self.__n_atoms = cell['n_atoms']
-        self.__types = cell['types']
-        self.__elements = cell['elements']
-        self.__axis_inv = np.linalg.inv(cell['axis'])
-        self.__volume = cell['volume']
-
-        self.__x0 = (self.__axis @ cell['positions']).T.reshape(-1)
+        self.__relax_cell = False
         self.__res = None
 
-    def fun(self, x, args=None):
+    ''' no cell relaxation'''
+    def fun_fix_cell(self, x, args=None):
 
-        st_dict = self.x_to_st_dict(x)
-        self.__energy, self.__force, self.stress = self.prop.eval(st_dict)
+        self.to_st_dict_fix_cell(x)
+        self.__energy, self.__force, _ = self.prop.eval(self.st_dict)
         return self.__energy
 
-    def jac(self, x, args=None):
+    def jac_fix_cell(self, x, args=None):
 
-        derivatives = - self.__force.T.reshape(-1)
+        prod = - self.__force.T @ self.st_dict['axis']
+        derivatives = prod.reshape(-1)
         return derivatives
 
-    def x_to_st_dict(self, x):
+    def to_st_dict_fix_cell(self, x):
 
-        r = x.reshape((-1,3)).T
-        positions = self.__axis_inv @ r
+        self.st_dict['positions'] = x.reshape((-1,3)).T
+        return self.st_dict
 
-        st_dict = {
-            'axis': self.__axis,
-            'positions': positions,
-            'n_atoms': self.__n_atoms,
-            'types': self.__types,
-            'elements': self.__elements,
-            'volume': self.__volume,
-        }
-        return st_dict
+    ''' with cell relaxation'''
+    def fun_relax_cell(self, x, args=None):
 
-    def run(self, gtol=1e-7): 
+        self.to_st_dict_relax_cell(x)
+        (self.__energy, 
+         self.__force, 
+         self.__stress) = self.prop.eval(self.st_dict)
+
+        if self.__energy < -1e8:
+            print('Energy =', self.__energy)
+            raise ValueError('Geometry optimization failed: '
+                              'Huge negative energy value.')
+        return self.__energy
+
+    def jac_relax_cell(self, x, args=None):
+
+        derivatives = np.zeros(len(x))
+        derivatives[:-9] = self.jac_fix_cell(x)
+        sigma = [[self.__stress[0], self.__stress[3], self.__stress[5]],
+                 [self.__stress[3], self.__stress[1], self.__stress[4]],
+                 [self.__stress[5], self.__stress[4], self.__stress[2]]]
+        derivatives_s = - np.array(sigma) @ self.st_dict['axis_inv'].T
+        derivatives[-9:] = derivatives_s.reshape(-1)
+        return derivatives
+
+    def to_st_dict_relax_cell(self, x):
+
+        x_positions, x_cells = x[:-9], x[-9:]
+
+        self.st_dict['axis'] = x_cells.reshape((3,3))
+        self.st_dict['volume'] = np.linalg.det(self.st_dict['axis'])
+        self.st_dict['axis_inv'] = np.linalg.inv(self.st_dict['axis'])
+        self.st_dict['positions'] = x_positions.reshape((-1,3)).T
+        return self.st_dict
+
+    def set_structure(self, cell):
+
+        self.st_dict = cell
+        self.st_dict['axis_inv'] = np.linalg.inv(cell['axis'])
+        self.st_dict['volume'] = np.linalg.det(cell['axis'])
+        return self.st_dict
+
+    def run(self, relax_cell=False, gtol=1e-4, method='BFGS'): 
+        ''' 
+        Parameters
+        ----------
+        method: CG, BFGS, or L-BFGS-B
+        '''
+        print('Using', method, 'method')
+        self.__relax_cell = relax_cell
         options = {
             'gtol': gtol,
+            'disp': True,
         }
-        self.__res = minimize(self.fun, 
+
+        if relax_cell:
+            fun = self.fun_relax_cell
+            jac = self.jac_relax_cell
+            xf = self.st_dict['positions'].T.reshape(-1)
+            xs = self.st_dict['axis'].reshape(-1)
+            self.__x0 = np.concatenate([xf, xs], 0)
+        else:
+            fun = self.fun_fix_cell
+            jac = self.jac_fix_cell
+            self.__x0 = self.st_dict['positions'].T.reshape(-1)
+
+        self.__res = minimize(fun, 
                               self.__x0, 
-                              method='CG', 
-                              jac=self.jac,
+                              method=method,
+                              jac=jac,
                               options=options)
+        self.__x0 = self.__res.x
         return self
 
     @property
     def structure(self):
-        return self.x_to_st_dict(self.__res.x)
+        return self.st_dict
 
     @property
     def energy(self):
         return self.__res.fun
 
     @property
-    def residual_forces(self):
-        return - self.__res.jac.reshape((-1,3)).T
-
-    @property
     def n_iter(self):
         return self.__res.nit
     
+    @property
+    def success(self):
+        return self.__res.success
+
+    @property
+    def residual_forces(self):
+        if self.__relax_cell:
+            residual_f = - self.__res.jac[:-9].reshape((-1,3)).T
+            residual_s = - self.__res.jac[-9:].reshape((3,3))
+            return residual_f, residual_s
+        return - self.__res.jac.reshape((-1,3)).T
+
+    def print_structure(self):
+        print('Axis basis vectors:')
+        for a in self.st_dict['axis'].T:
+            print(' -', list(a))
+        print('Fractional coordinates:')
+        for p, e in zip(self.st_dict['positions'].T, self.st_dict['elements']):
+            print(' -', e, list(p))
+
    
 if __name__ == '__main__':
 
@@ -103,14 +165,22 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     unitcell = Poscar(args.poscar).get_structure()
+
+    print('Fixing cell parameters')
     minobj = Minimize(unitcell, pot=args.pot)
-    minobj.run()
+    minobj.run(gtol=1e-5)
 
-    print(minobj.energy)
-    print(minobj.residual_forces)
-    print(minobj.n_iter)
-    st_dict = minobj.structure
-    print(st_dict['positions'])
+    print(minobj.residual_forces.T)
+    minobj.print_structure()
 
+    print('Relaxing cell parameters')
+    minobj = Minimize(unitcell, pot=args.pot)
+    minobj.run(relax_cell=True, gtol=1e-5)
 
+    res_f, res_s = minobj.residual_forces
+    print('Residuals (force):')
+    print(res_f.T)
+    print('Residuals (stress):')
+    print(res_s)
+    minobj.print_structure()
 
