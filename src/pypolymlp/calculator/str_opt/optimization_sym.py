@@ -7,6 +7,7 @@ from pypolymlp.core.io_polymlp import load_mlp_lammps
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.str_opt.symmetry import (
     construct_basis_fractional_coordinates,
+    basis_cell,
 )
 
 from pypolymlp.utils.structure_utils import refine_positions
@@ -14,36 +15,74 @@ from pypolymlp.calculator.str_opt.metric import metric_to_axis
 
 class MinimizeSym:
     
-    def __init__(self, cell, pot=None, params_dict=None, coeffs=None):
+    def __init__(self, 
+                 cell, 
+                 relax_cell=False,
+                 relax_positions=True,
+                 pot=None, 
+                 params_dict=None, 
+                 coeffs=None):
 
         if pot is not None:
             params_dict, mlp_dict = load_mlp_lammps(filename=pot)
             coeffs = mlp_dict['coeffs'] / mlp_dict['scales']
 
+        self.__relax_cell = relax_cell
+        self.__relax_positions = relax_positions
+
         self.prop = Properties(params_dict=params_dict, coeffs=coeffs)
-        self.st_dict = self.set_structure(cell)
 
         self.__energy = None
         self.__force = None
         self.__stress = None
-        self.__relax_cell = False
         self.__res = None
 
-        try:
-            self.__basis_f \
-                = construct_basis_fractional_coordinates(self.st_dict)
-        except:
-            self.__basis_f = None
+        if relax_cell:
+            self.__basis_metric, self.st_dict = basis_cell(cell)
+        else:
+            self.__basis_metric = None
+            self.st_dict = cell
+
+        self.__basis_f = None
+        self.__split = 0
+        if relax_positions:
+            try:
+                self.__basis_f \
+                    = construct_basis_fractional_coordinates(self.st_dict)
+                self.__split = self.__basis_f.shape[1]
+            except:
+                self.__relax_positions = False
+
+        if self.__relax_cell == False and self.__relax_positions == False:
+            raise ValueError('No degree of freedom to be optimized.')
 
         self.__positions_f0 = copy.deepcopy(self.st_dict['positions'])
+        self.st_dict = self.set_structure(self.st_dict)
 
     def set_structure(self, cell):
 
         self.st_dict = copy.deepcopy(cell)
         self.st_dict['axis_inv'] = np.linalg.inv(cell['axis'])
         self.st_dict['volume'] = np.linalg.det(cell['axis'])
+        x0 = self.set_x0()
         return self.st_dict
 
+    def set_x0(self):
+
+        if self.__relax_cell:
+            xs = self.__basis_metric.T @ self.metric 
+            if self.__relax_positions:
+                xf = np.zeros(self.__basis_f.shape[1])
+                self.__x0 = np.concatenate([xf, xs], 0)
+            else:
+                self.__x0 = xs
+        else:
+            if self.__relax_positions:
+                self.__x0 = np.zeros(self.__basis_f.shape[1])
+            else:
+                raise ValueError('No degree of freedom to be optimized.')
+        return self.__x0
+ 
     ''' no cell relaxation'''
     def fun_fix_cell(self, x, args=None):
 
@@ -83,20 +122,21 @@ class MinimizeSym:
     def jac_relax_cell(self, x, args=None):
 
         derivatives = np.zeros(len(x))
-        if self.__basis_f is not None:
-            derivatives[:-6] = self.jac_fix_cell(x)
-        derivatives[-6:] = self.derivatives_by_metric()
+        if self.__relax_positions:
+            derivatives[:self.__split] = self.jac_fix_cell(x)
+        derivatives[self.__split:] = self.derivatives_by_metric()
         return derivatives
 
     def to_st_dict_relax_cell(self, x):
 
-        x_positions, x_cells = x[:-6], x[-6:]
+        x_positions, x_cells = x[:self.__split], x[self.__split:]
 
-        self.st_dict['axis'] = metric_to_axis(x_cells)
+        metric = self.__basis_metric @ x_cells
+        self.st_dict['axis'] = metric_to_axis(metric)
         self.st_dict['volume'] = np.linalg.det(self.st_dict['axis'])
         self.st_dict['axis_inv'] = np.linalg.inv(self.st_dict['axis'])
 
-        if self.__basis_f is not None:
+        if self.__relax_positions:
             self.st_dict = self.to_st_dict_fix_cell(x_positions)
         return self.st_dict
 
@@ -127,44 +167,28 @@ class MinimizeSym:
 
         derivatives_s = self.derivatives_by_axis()
         derivatives = transform_pinv.T @ derivatives_s
+        derivatives = self.__basis_metric.T @ derivatives
         return derivatives
 
-    def set_x0(self, relax_cell=False):
-        if relax_cell:
-            xs = self.metric
-            if self.__basis_f is not None:
-                xf = np.zeros(self.__basis_f.shape[1])
-                self.__x0 = np.concatenate([xf, xs], 0)
-            else:
-                self.__x0 = xs
-        else:
-            if self.__basis_f is not None:
-                self.__x0 = np.zeros(self.__basis_f.shape[1])
-            else:
-                raise ValueError('No degree of freedom to be optimized.')
-
-        return self.__x0
-        
-    def run(self, relax_cell=False, gtol=1e-4, method='BFGS'): 
+       
+    def run(self, gtol=1e-4, method='BFGS'): 
         ''' 
         Parameters
         ----------
         method: CG, BFGS, or L-BFGS-B
         '''
         print('Using', method, 'method')
-        self.__relax_cell = relax_cell
         options = {
             'gtol': gtol,
             'disp': True,
         }
 
-        if relax_cell:
+        if self.__relax_cell:
             fun = self.fun_relax_cell
             jac = self.jac_relax_cell
         else:
             fun = self.fun_fix_cell
             jac = self.jac_fix_cell
-        self.__x0 = self.set_x0(relax_cell=relax_cell)
 
         print('Number of degrees of freedom:', len(self.__x0))
         self.__res = minimize(fun, 
@@ -201,8 +225,8 @@ class MinimizeSym:
     @property
     def residual_forces(self):
         if self.__relax_cell:
-            residual_f = - self.__res.jac[:-6]
-            residual_s = - self.__res.jac[-6:]
+            residual_f = - self.__res.jac[:self.__split]
+            residual_s = - self.__res.jac[self.__split:]
             return residual_f, residual_s
         return - self.__res.jac
 
@@ -247,13 +271,16 @@ if __name__ == '__main__':
 
     print('---')
     print('Relaxing cell parameters')
-    minobj = MinimizeSym(unitcell, pot=args.pot)
-    minobj.run(relax_cell=True, gtol=1e-5)
+    minobj = MinimizeSym(unitcell, pot=args.pot, relax_cell=True)
+    print('Initial structure')
+    minobj.print_structure()
+    minobj.run(gtol=1e-5)
 
     res_f, res_s = minobj.residual_forces
     print('Residuals (force):')
     print(res_f.T)
     print('Residuals (stress):')
     print(res_s)
+    print('Final structure')
     minobj.print_structure()
 

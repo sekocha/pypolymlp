@@ -1,5 +1,6 @@
 #!/usr/bin/env python 
 import numpy as np
+import copy
 
 from scipy.optimize import minimize
 from pypolymlp.core.io_polymlp import load_mlp_lammps
