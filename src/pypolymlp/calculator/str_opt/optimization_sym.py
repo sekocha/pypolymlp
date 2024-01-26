@@ -38,6 +38,8 @@ class MinimizeSym:
 
         if relax_cell:
             self.__basis_axis, self.st_dict = basis_cell(cell)
+            if not np.allclose(cell['axis'], self.st_dict['axis']):
+                print('- Input structure is standarized by spglib.')
         else:
             self.__basis_axis = None
             self.st_dict = cell
@@ -251,16 +253,19 @@ if __name__ == '__main__':
 
     print('---')
     print('Relaxing cell parameters')
-    minobj = MinimizeSym(unitcell, pot=args.pot, relax_cell=True)
-    print('Initial structure')
-    minobj.print_structure()
-    minobj.run(gtol=1e-5)
+    try:
+        minobj = MinimizeSym(unitcell, pot=args.pot, relax_cell=True)
+        print('Initial structure')
+        minobj.print_structure()
+        minobj.run(gtol=1e-5)
 
-    res_f, res_s = minobj.residual_forces
-    print('Residuals (force):')
-    print(res_f.T)
-    print('Residuals (stress):')
-    print(res_s)
-    print('Final structure')
-    minobj.print_structure()
+        res_f, res_s = minobj.residual_forces
+        print('Residuals (force):')
+        print(res_f.T)
+        print('Residuals (stress):')
+        print(res_s)
+        print('Final structure')
+        minobj.print_structure()
+    except:
+        print('Optimization has failed.')
 
