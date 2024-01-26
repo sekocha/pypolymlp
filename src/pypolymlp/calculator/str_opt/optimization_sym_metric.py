@@ -7,13 +7,13 @@ from pypolymlp.core.io_polymlp import load_mlp_lammps
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.str_opt.symmetry import (
     construct_basis_fractional_coordinates,
-    basis_cell,
+    basis_cell_metric,
 )
 
 from pypolymlp.utils.structure_utils import refine_positions
 from pypolymlp.calculator.str_opt.metric import metric_to_axis
 
-class MinimizeSym:
+class MinimizeSymMetric:
     
     def __init__(self, 
                  cell, 
@@ -38,9 +38,9 @@ class MinimizeSym:
         self.__res = None
 
         if relax_cell:
-            self.__basis_axis, self.st_dict = basis_cell(cell)
+            self.__basis_metric, self.st_dict = basis_cell_metric(cell)
         else:
-            self.__basis_axis = None
+            self.__basis_metric = None
             self.st_dict = cell
 
         self.__basis_f = None
@@ -70,7 +70,7 @@ class MinimizeSym:
     def set_x0(self):
 
         if self.__relax_cell:
-            xs = self.__basis_axis.T @ self.st_dict['axis'].reshape(-1)
+            xs = self.__basis_metric.T @ self.metric 
             if self.__relax_positions:
                 xf = np.zeros(self.__basis_f.shape[1])
                 self.__x0 = np.concatenate([xf, xs], 0)
@@ -124,15 +124,15 @@ class MinimizeSym:
         derivatives = np.zeros(len(x))
         if self.__relax_positions:
             derivatives[:self.__split] = self.jac_fix_cell(x)
-        derivatives[self.__split:] = self.derivatives_by_axis()
+        derivatives[self.__split:] = self.derivatives_by_metric()
         return derivatives
 
     def to_st_dict_relax_cell(self, x):
 
         x_positions, x_cells = x[:self.__split], x[self.__split:]
 
-        axis = self.__basis_axis @ x_cells
-        self.st_dict['axis'] = axis.reshape((3,3))
+        metric = self.__basis_metric @ x_cells
+        self.st_dict['axis'] = metric_to_axis(metric)
         self.st_dict['volume'] = np.linalg.det(self.st_dict['axis'])
         self.st_dict['axis_inv'] = np.linalg.inv(self.st_dict['axis'])
 
@@ -146,8 +146,31 @@ class MinimizeSym:
                  [self.__stress[3], self.__stress[1], self.__stress[4]],
                  [self.__stress[5], self.__stress[4], self.__stress[2]]]
         derivatives_s = - np.array(sigma) @ self.st_dict['axis_inv'].T
-        return self.__basis_axis.T @ derivatives_s.reshape(-1)
+        return derivatives_s.T.reshape(-1)
 
+    def derivatives_by_metric(self):
+
+        axis = self.st_dict['axis']
+        transform = np.zeros((6,9))
+        transform[0,0:3] = axis[:,0] * 2
+        transform[1,3:6] = axis[:,1] * 2
+        transform[2,6:9] = axis[:,2] * 2
+        transform[3,0:3] = axis[:,1]
+        transform[3,3:6] = axis[:,0]
+
+        transform[4,3:6] = axis[:,2]
+        transform[4,6:9] = axis[:,1]
+
+        transform[5,0:3] = axis[:,2]
+        transform[5,6:9] = axis[:,0]
+        transform_pinv = np.linalg.pinv(transform)
+
+        derivatives_s = self.derivatives_by_axis()
+        derivatives = transform_pinv.T @ derivatives_s
+        derivatives = self.__basis_metric.T @ derivatives
+        return derivatives
+
+       
     def run(self, gtol=1e-4, method='BFGS'): 
         ''' 
         Parameters
@@ -176,6 +199,12 @@ class MinimizeSym:
         self.__x0 = self.__res.x
         return self
 
+    @property
+    def metric(self):
+        metric = self.st_dict['axis'].T @ self.st_dict['axis']
+        return np.array([metric[0][0], metric[1][1], metric[2][2],
+                         metric[0][1], metric[1][2], metric[2][0]])
+            
     @property
     def structure(self):
         self.st_dict = refine_positions(self.st_dict)
@@ -231,7 +260,7 @@ if __name__ == '__main__':
 
     print('Fixing cell parameters (symmetric constraints)')
     try:
-        minobj = MinimizeSym(unitcell, pot=args.pot)
+        minobj = MinimizeSymMetric(unitcell, pot=args.pot)
         minobj.run(gtol=1e-5)
 
         print('Residuals (force):')
@@ -242,7 +271,7 @@ if __name__ == '__main__':
 
     print('---')
     print('Relaxing cell parameters')
-    minobj = MinimizeSym(unitcell, pot=args.pot, relax_cell=True)
+    minobj = MinimizeSymMetric(unitcell, pot=args.pot, relax_cell=True)
     print('Initial structure')
     minobj.print_structure()
     minobj.run(gtol=1e-5)

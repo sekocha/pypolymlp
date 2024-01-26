@@ -43,8 +43,64 @@ def construct_basis_fractional_coordinates(cell):
 def normalize_vector(vec):
     return vec / np.linalg.norm(vec)
 
+def basis_cell(cell):
 
-def basis_cell(cell, tol=1e-10):
+    cell_copy = copy.deepcopy(cell)
+    cell_ph = st_dict_to_phonopy_cell(cell_copy)
+    cell, scaled_positions, _ = spglib.standardize_cell(cell_ph)
+    spg_info = spglib.get_symmetry_dataset(cell_ph)
+    spg_num = spg_info['number']
+
+    cell_copy['axis'] = cell.T
+    cell_copy['positions'] = scaled_positions.T
+
+    '''basis (row): In the order of ax, bx, cx, ay, by, cy, az, bz, cz'''
+    if spg_num >= 195:
+        print('Crystal system: Cubic')
+        basis = np.zeros((9,1))
+        basis[:,0] = normalize_vector([1,0,0,0,1,0,0,0,1])
+    elif spg_num >= 168 and spg_num <= 194:
+        print('Crystal system: Hexagonal')
+        basis = np.zeros((9,2))
+        basis[:,0] = normalize_vector([1,-0.5,0,0,sqrt(3)/2,0,0,0,0])
+        basis[8,1] = 1.0
+    elif spg_num >= 143 and spg_num <= 167:
+        if 'P' in spg_info['international']:
+            print('Crystal system: Trigonal (Hexagonal)')
+            basis = np.zeros((9,2))
+            basis[:,0] = normalize_vector([1,-0.5,0,0,sqrt(3)/2,0,0,0,0])
+            basis[8,1] = 1.0
+        else:
+            print('Crystal system: Trigonal (Rhombohedral)')
+            basis = np.zeros((9,2))
+            basis[:,0] = normalize_vector([1,-0.5,0,0,sqrt(3)/2,0,0,0,0])
+            basis[8,1] = 1.0
+    elif spg_num >= 75 and spg_num <= 142:
+        print('Crystal system: Tetragonal')
+        basis = np.zeros((9,2))
+        basis[:,0] = normalize_vector([1,0,0,0,1,0,0,0,0])
+        basis[8,1] = 1.0
+    elif spg_num >= 16 and spg_num <= 74:
+        print('Crystal system: Orthorhombic')
+        basis = np.zeros((9,3))
+        basis[0,0] = 1.0
+        basis[4,1] = 1.0
+        basis[8,2] = 1.0
+    elif spg_num >= 3 and spg_num <= 15:
+        print('Crystal system: Monoclinic')
+        basis = np.zeros((9,4))
+        basis[0,0] = 1.0
+        basis[4,1] = 1.0
+        basis[8,2] = 1.0
+        basis[2,3] = 1.0
+    else:
+        print('Crystal system: Triclinic')
+        basis = np.eye(9)
+
+    return basis, cell_copy
+
+
+def basis_cell_metric(cell):
 
     cell_copy = copy.deepcopy(cell)
     cell_ph = st_dict_to_phonopy_cell(cell_copy)
