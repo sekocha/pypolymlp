@@ -23,6 +23,7 @@ class Minimize:
         self.__stress = None
         self.__relax_cell = False
         self.__res = None
+        self.__n_atom = len(self.st_dict['elements'])
 
     def set_structure(self, cell):
 
@@ -36,6 +37,11 @@ class Minimize:
 
         self.to_st_dict_fix_cell(x)
         self.__energy, self.__force, _ = self.prop.eval(self.st_dict)
+
+        if self.__energy < -1e3 * self.__n_atom:
+            print('Energy =', self.__energy)
+            raise ValueError('Geometry optimization failed: '
+                              'Huge negative energy value.')
         return self.__energy
 
     def jac_fix_cell(self, x, args=None):
@@ -168,20 +174,28 @@ if __name__ == '__main__':
     unitcell = Poscar(args.poscar).get_structure()
 
     print('Fixing cell parameters')
-    minobj = Minimize(unitcell, pot=args.pot)
-    minobj.run(gtol=1e-5)
+    try:
+        minobj = Minimize(unitcell, pot=args.pot)
+        minobj.run(gtol=1e-5)
 
-    print(minobj.residual_forces.T)
-    minobj.print_structure()
+        print(minobj.residual_forces.T)
+        minobj.print_structure()
+    except:
+        print('Optimization has failed '
+              'or No degree of freedom to be optimized.')
 
+    print('---')
     print('Relaxing cell parameters')
-    minobj = Minimize(unitcell, pot=args.pot)
-    minobj.run(relax_cell=True, gtol=1e-5)
+    try:
+        minobj = Minimize(unitcell, pot=args.pot)
+        minobj.run(relax_cell=True, gtol=1e-5)
 
-    res_f, res_s = minobj.residual_forces
-    print('Residuals (force):')
-    print(res_f.T)
-    print('Residuals (stress):')
-    print(res_s)
-    minobj.print_structure()
+        res_f, res_s = minobj.residual_forces
+        print('Residuals (force):')
+        print(res_f.T)
+        print('Residuals (stress):')
+        print(res_s)
+        minobj.print_structure()
+    except:
+        print('Optimization has failed ')
 

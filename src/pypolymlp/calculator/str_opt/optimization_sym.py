@@ -4,14 +4,13 @@ import copy
 from scipy.optimize import minimize
 
 from pypolymlp.core.io_polymlp import load_mlp_lammps
+from pypolymlp.utils.structure_utils import refine_positions
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.str_opt.symmetry import (
     construct_basis_fractional_coordinates,
     basis_cell,
 )
 
-from pypolymlp.utils.structure_utils import refine_positions
-from pypolymlp.calculator.str_opt.metric import metric_to_axis
 
 class MinimizeSym:
     
@@ -58,6 +57,7 @@ class MinimizeSym:
 
         self.__positions_f0 = copy.deepcopy(self.st_dict['positions'])
         self.st_dict = self.set_structure(self.st_dict)
+        self.__n_atom = len(self.st_dict['elements'])
 
     def set_structure(self, cell):
 
@@ -88,6 +88,12 @@ class MinimizeSym:
 
         self.to_st_dict_fix_cell(x)
         self.__energy, self.__force, _ = self.prop.eval(self.st_dict)
+
+        if self.__energy < -1e3 * self.__n_atom:
+            print('Energy =', self.__energy)
+            raise ValueError('Geometry optimization failed: '
+                              'Huge negative energy value.')
+ 
         return self.__energy
 
     def jac_fix_cell(self, x, args=None):
@@ -113,7 +119,7 @@ class MinimizeSym:
          self.__force, 
          self.__stress) = self.prop.eval(self.st_dict)
 
-        if self.__energy < -1e8:
+        if self.__energy < -1e3 * self.__n_atom:
             print('Energy =', self.__energy)
             raise ValueError('Geometry optimization failed: '
                               'Huge negative energy value.')
@@ -146,6 +152,8 @@ class MinimizeSym:
                  [self.__stress[3], self.__stress[1], self.__stress[4]],
                  [self.__stress[5], self.__stress[4], self.__stress[2]]]
         derivatives_s = - np.array(sigma) @ self.st_dict['axis_inv'].T
+
+        '''derivatives_s: In the order of ax, bx, cx, ay, by, cy, az, bz, cz'''
         return self.__basis_axis.T @ derivatives_s.reshape(-1)
 
     def run(self, gtol=1e-4, method='BFGS'): 
@@ -238,7 +246,8 @@ if __name__ == '__main__':
         print(minobj.residual_forces.T)
         minobj.print_structure()
     except:
-        print('No optimization is done')
+        print('Optimization has failed '
+              'or No degree of freedom to be optimized.')
 
     print('---')
     print('Relaxing cell parameters')
