@@ -23,6 +23,13 @@ class Minimize:
         self.__relax_cell = False
         self.__res = None
 
+    def set_structure(self, cell):
+
+        self.st_dict = copy.deepcopy(cell)
+        self.st_dict['axis_inv'] = np.linalg.inv(cell['axis'])
+        self.st_dict['volume'] = np.linalg.det(cell['axis'])
+        return self.st_dict
+
     ''' no cell relaxation'''
     def fun_fix_cell(self, x, args=None):
 
@@ -74,13 +81,6 @@ class Minimize:
         self.st_dict['volume'] = np.linalg.det(self.st_dict['axis'])
         self.st_dict['axis_inv'] = np.linalg.inv(self.st_dict['axis'])
         self.st_dict['positions'] = x_positions.reshape((-1,3)).T
-        return self.st_dict
-
-    def set_structure(self, cell):
-
-        self.st_dict = cell
-        self.st_dict['axis_inv'] = np.linalg.inv(cell['axis'])
-        self.st_dict['volume'] = np.linalg.det(cell['axis'])
         return self.st_dict
 
     def run(self, relax_cell=False, gtol=1e-4, method='BFGS'): 
