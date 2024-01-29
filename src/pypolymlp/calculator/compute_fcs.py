@@ -18,7 +18,7 @@ from pypolymlp.core.displacements import (
 )
 
 from pypolymlp.calculator.properties import Properties
-from pypolymlp.calculator.str_opt.optimization import Minimize
+from pypolymlp.calculator.str_opt.optimization_simple import Minimize
 
 from symfc.basis_sets.basis_sets_O2 import FCBasisSetO2
 from symfc.basis_sets.basis_sets_O3 import FCBasisSetO3
