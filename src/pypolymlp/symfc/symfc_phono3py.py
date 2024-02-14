@@ -1,3 +1,7 @@
+#!/usr/bin/env python 
+import numpy as np
+import signal
+import argparse
 import phono3py
 
 if __name__ == '__main__':
@@ -14,7 +18,7 @@ if __name__ == '__main__':
                         type=int,
                         default=None,
                         help='Supercell size (diagonal components)')
-   parser.add_argument('--mesh',
+    parser.add_argument('--mesh',
                         type=int,
                         nargs=3,
                         default=[19,19,19],
