@@ -243,7 +243,6 @@ def run():
             compute_fcs_phono3py_dataset,
         )
         print('Mode: Force constant calculations')
-
         if args.phono3py_yaml is not None:
             compute_fcs_phono3py_dataset(pot=args.pot,
                                          phono3py_yaml=args.phono3py_yaml,

@@ -142,7 +142,10 @@ def compute_fcs_from_dataset(st_dicts,
 
     fc2 = recover_fc2(coefs_fc2, compress_mat_fc2, compress_eigvecs_fc2, N)
     fc3 = recover_fc3(coefs_fc3, compress_mat_fc3, compress_eigvecs_fc3, N)
-    #write_fc2_to_hdf5(fc2)
+
+    print('writing fc2.hdf5') 
+    write_fc2_to_hdf5(fc2)
+    print('writing fc3.hdf5') 
     write_fc3_to_hdf5(fc3)
 
 
