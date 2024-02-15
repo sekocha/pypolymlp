@@ -152,6 +152,14 @@ def run():
     parser.add_argument('--is_plusminus',
                         action='store_true',
                         help='Plus-minus displacements will be generated.')
+    parser.add_argument('--geometry_optimization',
+                        action='store_true',
+                        help='Geometry optimization is performed '
+                             'for initial structure.')
+    parser.add_argument('--batch_size',
+                        type=int,
+                        default=200,
+                        help='Batch size for FC solver.')
 
     parser.add_argument('--ph_mesh',
                         type=int,
@@ -244,12 +252,16 @@ def run():
         )
         print('Mode: Force constant calculations')
         if args.phono3py_yaml is not None:
-            compute_fcs_phono3py_dataset(pot=args.pot,
-                                         phono3py_yaml=args.phono3py_yaml,
-                                         use_phonon_dataset=False,
-                                         n_samples=args.fc_n_samples,
-                                         displacements=args.disp,
-                                         is_plusminus=args.is_plusminus)
+            compute_fcs_phono3py_dataset(
+                pot=args.pot,
+                phono3py_yaml=args.phono3py_yaml,
+                use_phonon_dataset=False,
+                n_samples=args.fc_n_samples,
+                displacements=args.disp,
+                is_plusminus=args.is_plusminus,
+                geometry_optimization=args.geometry_optimization,
+                batch_size=args.batch_size,
+            )
 
 
         else:
@@ -262,13 +274,17 @@ def run():
                 supercell_matrix = np.diag(args.supercell)
                 supercell_dict = None
    
-            compute_fcs_from_structure(pot=args.pot,
-                                       unitcell_dict=unitcell_dict,
-                                       supercell_dict=supercell_dict,
-                                       supercell_matrix=supercell_matrix,
-                                       n_samples=args.fc_n_samples,
-                                       displacements=args.disp,
-                                       is_plusminus=args.is_plusminus)
+            compute_fcs_from_structure(
+                pot=args.pot,
+                unitcell_dict=unitcell_dict,
+                supercell_dict=supercell_dict,
+                supercell_matrix=supercell_matrix,
+                n_samples=args.fc_n_samples,
+                displacements=args.disp,
+                is_plusminus=args.is_plusminus,
+                geometry_optimization=args.geometry_optimization,
+                batch_size=args.batch_size,
+            )
 
     elif args.phonon:
         from pypolymlp.calculator.compute_phonon import PolymlpPhonon

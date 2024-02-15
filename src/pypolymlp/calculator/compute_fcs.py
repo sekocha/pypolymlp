@@ -55,7 +55,8 @@ def compute_fcs_from_dataset(st_dicts,
                              pot=None, 
                              params_dict=None, 
                              coeffs=None,
-                             geometry_optimization=False):
+                             geometry_optimization=False,
+                             batch_size=200):
     '''
     Parameters
     ----------
@@ -119,7 +120,6 @@ def compute_fcs_from_dataset(st_dicts,
     compress_eigvecs_fc2 = fc2_basis.basis_set
 
     fc3_basis = FCBasisSetO3(supercell, use_mkl=False).run()
-    #fc3_basis = FCBasisSetO3(supercell, use_mkl=True).run()
     compress_mat_fc3 = fc3_basis.compression_matrix
     compress_eigvecs_fc3 = fc3_basis.basis_set
     t2 = time.time()
@@ -136,7 +136,7 @@ def compute_fcs_from_dataset(st_dicts,
                                                   compress_eigvecs_fc3,
                                                   use_mkl=True,
                                                   #use_mkl=False,
-                                                  batch_size=200)
+                                                  batch_size=batch_size)
     t2 = time.time()
     print(' elapsed time (solve fc2 + fc3) =', t2-t1)
 
@@ -157,7 +157,9 @@ def compute_fcs_from_structure(pot=None,
                                supercell_dict=None, 
                                n_samples=100,
                                displacements=0.03,
-                               is_plusminus=False):
+                               is_plusminus=False,
+                               geometry_optimization=False,
+                               batch_size=200):
 
     if supercell_dict is not None:
         supercell = st_dict_to_phonopy_cell(supercell_dict)
@@ -175,7 +177,9 @@ def compute_fcs_from_structure(pot=None,
             is_plusminus=is_plusminus,
     )
     compute_fcs_from_dataset(st_dicts, disps, supercell, 
-                             pot=pot, params_dict=params_dict, coeffs=coeffs)
+                             pot=pot, params_dict=params_dict, coeffs=coeffs,
+                             geometry_optimization=geometry_optimization,
+                             batch_size=batch_size)
 
 
 def compute_fcs_phono3py_dataset(pot=None, 
@@ -185,7 +189,9 @@ def compute_fcs_phono3py_dataset(pot=None,
                                  use_phonon_dataset=False,
                                  n_samples=None,
                                  displacements=0.03,
-                                 is_plusminus=False):
+                                 is_plusminus=False,
+                                 geometry_optimization=False,
+                                 batch_size=200):
 
     supercell, disps, st_dicts = parse_phono3py_yaml_fcs(
             phono3py_yaml,
@@ -202,6 +208,8 @@ def compute_fcs_phono3py_dataset(pot=None,
         )
 
     compute_fcs_from_dataset(st_dicts, disps, supercell, 
-                             pot=pot, params_dict=params_dict, coeffs=coeffs)
+                             pot=pot, params_dict=params_dict, coeffs=coeffs,
+                             geometry_optimization=geometry_optimization,
+                             batch_size=batch_size)
 
 
