@@ -5,6 +5,7 @@ import signal
 import time
 import gc
 import math
+import itertools
 
 from pypolymlp.core.interface_vasp import Poscar
 from pypolymlp.utils.phonopy_utils import phonopy_supercell
@@ -33,6 +34,7 @@ from symfc.utils.utils_O3 import (
 )
 from symfc.utils.matrix_tools_O3 import (
     get_perm_compr_matrix_O3,
+    N3N3N3_to_NNN333,
 )
 import scipy
 import time
@@ -68,6 +70,7 @@ def compressed_complement_projector_sum_rules_lat_trans(
 
     return proj_sum_cplmt
 
+
 def compressed_complement_projector_sum_rules(
     n_a_compress_mat: csr_array, trans_perms,  use_mkl: bool = False
 ) -> csr_array:
@@ -85,6 +88,86 @@ def compressed_projector_sum_rules(
         n_a_compress_mat, trans_perms, use_mkl=use_mkl
     )
     return scipy.sparse.identity(proj_cplmt.shape[0]) - proj_cplmt
+
+
+def permutation_dot_lat_trans_stable(trans_perms):
+
+    n_lp, N = trans_perms.shape
+    c_trans = get_lat_trans_compr_matrix_O3(trans_perms)
+    print_sp_matrix_size(c_trans, " C_(trans):")
+
+    c_perm = get_perm_compr_matrix_O3(N)
+    print_sp_matrix_size(c_perm, " C_(perm):")
+
+    c_pt = c_perm.T @ c_trans
+    del c_perm
+    del c_trans
+    gc.collect()
+    return c_pt
+
+
+def permutation_dot_lat_trans(trans_perms):
+
+    n_lp, natom = trans_perms.shape
+    decompr_idx = get_lat_trans_decompr_indices_O3(trans_perms)
+    NNN27 = natom**3 * 27
+
+    combinations3 = np.array(
+        list(itertools.combinations(range(3 * natom), 3)), dtype=int
+    )
+    combinations2 = np.array(
+        list(itertools.combinations(range(3 * natom), 2)), dtype=int
+    )
+    combinations1 = np.array([[i, i, i] for i in range(3 * natom)], dtype=int)
+
+    n_perm3 = combinations3.shape[0]
+    n_perm2 = combinations2.shape[0] * 2
+    n_perm1 = combinations1.shape[0]
+    n_perm = n_perm3 + n_perm2 + n_perm1
+
+    n_data3 = combinations3.shape[0] * 6
+    n_data2 = combinations2.shape[0] * 6
+    n_data1 = combinations1.shape[0]
+    n_data = n_data3 + n_data2 + n_data1
+
+    row = np.zeros(n_data, dtype="int_")
+    col = np.zeros(n_data, dtype="int_")
+    data = np.zeros(n_data, dtype="double")
+
+    # (3) for FC3 with three distinguished indices (ia,jb,kc)
+    begin_id, end_id = 0, n_data3
+    perms = [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]]
+    combinations_perm = combinations3[:, perms].reshape((-1, 3))
+    combinations_perm = N3N3N3_to_NNN333(combinations_perm, natom)
+
+    row[begin_id:end_id] = np.repeat(range(n_perm3), 6)
+    col[begin_id:end_id] = decompr_idx[combinations_perm]
+    data[begin_id:end_id] = 1 / math.sqrt(6 * n_lp)
+
+    # (2) for FC3 with two distinguished indices (ia,ia,jb)
+    begin_id = end_id
+    end_id = begin_id + n_data2
+    perms = [[0, 0, 1], [0, 1, 0], [1, 0, 0], [0, 1, 1], [1, 0, 1], [1, 1, 0]]
+    combinations_perm = combinations2[:, perms].reshape((-1, 3))
+    combinations_perm = N3N3N3_to_NNN333(combinations_perm, natom)
+
+    row[begin_id:end_id] = np.repeat(range(n_perm3, n_perm3 + n_perm2), 3)
+    col[begin_id:end_id] = decompr_idx[combinations_perm]
+    data[begin_id:end_id] = 1 / math.sqrt(3 * n_lp)
+
+    # (1) for FC3 with single index ia
+    begin_id = end_id
+    combinations_perm = N3N3N3_to_NNN333(combinations1, natom)
+    row[begin_id:] = np.array(range(n_perm3 + n_perm2, n_perm))
+    col[begin_id:] = decompr_idx[combinations_perm]
+    data[begin_id:] = 1.0 / math.sqrt(n_lp)
+
+    c_pt = csr_array(
+        (data, (row, col)),
+        shape=(n_perm, NNN27 // n_lp),
+        dtype="double",
+    )
+    return c_pt
 
 
 if __name__ == '__main__':
@@ -118,22 +201,15 @@ if __name__ == '__main__':
     print_sp_matrix_size(trans_perms, " trans_perms:")
     t01 = time.time()
 
-    '''lattice translation'''
-    c_trans = get_lat_trans_compr_matrix_O3(trans_perms)
-    print_sp_matrix_size(c_trans, " C_(trans):")
+    '''permutation @ lattice translation'''
+    #c_pt = permutation_dot_lat_trans_stable(trans_perms)
+    c_pt = permutation_dot_lat_trans(trans_perms)
+    print_sp_matrix_size(c_pt, " C_perm.T @ C_trans:")
     t02 = time.time()
 
-    '''permutation'''
-    c_perm = get_perm_compr_matrix_O3(N)
-    print_sp_matrix_size(c_perm, " C_(perm):")
-    t03 = time.time()
-
-    c_pt = c_perm.T @ c_trans
-    del c_perm
-    del c_trans
-    gc.collect()
-
-    proj_pt = c_pt.T @ c_pt
+    #proj_pt = c_pt.T @ c_pt
+    proj_pt = dot_product_sparse(c_pt.T, c_pt, use_mkl=True)
+    print_sp_matrix_size(proj_pt, " P_(perm,trans):")
     c_pt = eigsh_projector(proj_pt)
     del proj_pt
     gc.collect()
@@ -173,12 +249,11 @@ if __name__ == '__main__':
     print("Basis size =", eigvecs.shape)
     print('-----')
     print('Time (spg. rep.)                        =', t01-t00)
-    print('Time (lattice trans.)                   =', t02-t01)
-    print('Time (permutation)                      =', t03-t02)
-    print('Time (eigh(perm @ ltrans))              =', t04-t03)
+    print('Time (perm @ lattice trans.)            =', t02-t01)
+    print('Time (eigh(perm @ ltrans))              =', t04-t02)
     print('Time (coset)                            =', t05-t04)
     print('Time (eigh(coset @ perm @ ltrans))      =', t06-t05)
-    print('Time (c_trans @ c_pt @ c_rpt)           =', t07-t06)
+    print('Time (c_pt @ c_rpt)                     =', t07-t06)
     print('Time (proj(coset @ perm @ ltrans @ sum) =', t08-t07)
     print('Time (eigh(coset @ perm @ ltrans @ sum) =', t09-t08)
 

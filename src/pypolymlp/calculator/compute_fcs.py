@@ -134,8 +134,8 @@ def compute_fcs_from_dataset(st_dicts,
                                                   compress_mat_fc3, 
                                                   compress_eigvecs_fc2,
                                                   compress_eigvecs_fc3,
-                                                  use_mkl=True,
-                                                  #use_mkl=False,
+                                                  #use_mkl=True,
+                                                  use_mkl=False,
                                                   batch_size=batch_size)
     t2 = time.time()
     print(' elapsed time (solve fc2 + fc3) =', t2-t1)
