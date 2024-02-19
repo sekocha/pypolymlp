@@ -24,7 +24,6 @@ from symfc.utils.eig_tools import (
     eigsh_projector_sumrule,
 )
 
-
 #from symfc.utils.utils_O3 import get_compr_coset_reps_sum_O3
 from utils_O3_dev import get_compr_coset_reps_sum_O3
 from matrix_O3_dev import (
@@ -51,28 +50,8 @@ def permutation_dot_lat_trans_stable(trans_perms):
     return c_pt
 
 
-if __name__ == '__main__':
+def run_basis(supercell, apply_sum_rule=True):
 
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--poscar',
-                        type=str,
-                        default=None,
-                        help='poscar')
-    parser.add_argument('--supercell',
-                        nargs=3,
-                        type=int,
-                        default=None,
-                        help='Supercell size (diagonal components)')
-    args = parser.parse_args()
-
-    unitcell_dict = Poscar(args.poscar).get_structure()
-    supercell_matrix = np.diag(args.supercell)
-
-    supercell = phonopy_supercell(unitcell_dict, supercell_matrix)
-
-    t1 = time.time()
     t00 = time.time()
 
     '''space group representations'''
@@ -96,8 +75,8 @@ if __name__ == '__main__':
     t02 = time.time()
 
     c_pt = eigsh_projector(proj_pt)
-    del proj_pt
-    gc.collect()
+#    del proj_pt
+#    gc.collect()
 
     print_sp_matrix_size(c_pt, " C_(perm,trans):")
     t03 = time.time()
@@ -122,16 +101,17 @@ if __name__ == '__main__':
 
     t06 = time.time()
 
-    proj = compressed_projector_sum_rules(n_a_compress_mat, 
-                                          trans_perms, 
-                                          use_mkl=True)
-    print_sp_matrix_size(proj, " P_(perm,trans,coset,sum):")
-    t07 = time.time()
+    if apply_sum_rule:
+        proj = compressed_projector_sum_rules(
+                trans_perms,
+                n_a_compress_mat=n_a_compress_mat, 
+                use_mkl=True)
+        print_sp_matrix_size(proj, " P_(perm,trans,coset,sum):")
+        t07 = time.time()
 
-    eigvecs = eigsh_projector_sumrule(proj)
+        eigvecs = eigsh_projector_sumrule(proj)
+        t08 = time.time()
 
-    t08 = time.time()
-    print("Basis size =", eigvecs.shape)
     print('-----')
     print('Time (spg. rep.)                        =', t01-t00)
     print('Time (proj(perm @ lattice trans.)       =', t02-t01)
@@ -139,9 +119,41 @@ if __name__ == '__main__':
     print('Time (coset)                            =', t04-t03)
     print('Time (eigh(coset @ perm @ ltrans))      =', t05-t04)
     print('Time (c_pt @ c_rpt)                     =', t06-t05)
-    print('Time (proj(coset @ perm @ ltrans @ sum) =', t07-t06)
-    print('Time (eigh(coset @ perm @ ltrans @ sum) =', t08-t07)
 
+    if apply_sum_rule:
+        print('Time (proj(coset @ perm @ ltrans @ sum) =', t07-t06)
+        print('Time (eigh(coset @ perm @ ltrans @ sum) =', t08-t07)
+        print("Basis size =", eigvecs.shape)
+        return n_a_compress_mat, eigvecs
+
+    print("Basis size =", n_a_compress_mat.shape)
+    return n_a_compress_mat, proj_pt
+
+
+if __name__ == '__main__':
+
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--poscar',
+                        type=str,
+                        default=None,
+                        help='poscar')
+    parser.add_argument('--supercell',
+                        nargs=3,
+                        type=int,
+                        default=None,
+                        help='Supercell size (diagonal components)')
+    args = parser.parse_args()
+
+    unitcell_dict = Poscar(args.poscar).get_structure()
+    supercell_matrix = np.diag(args.supercell)
+
+    supercell = phonopy_supercell(unitcell_dict, supercell_matrix)
+
+    t1 = time.time()
+    n_a_compress_mat, eigvecs = run_basis(supercell)
+    #n_a_compress_mat = run_basis(supercell, apply_sum_rule=False)
     t2 = time.time()
     print('Elapsed time (basis sets for fc2 and fc3) =', t2-t1)
 
