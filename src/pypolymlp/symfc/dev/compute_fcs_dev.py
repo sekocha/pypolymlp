@@ -196,6 +196,7 @@ def compute_fcs_from_dataset(st_dicts,
     if sum_rule_basis:
         fc3 = recover_fc3(coefs_fc3, compress_mat_fc3, compress_eigvecs_fc3, N)
     else:
+        print('Applying sum rules to fc3')
         fc3 = recover_fc3_variant(
             coefs_fc3, compress_mat_fc3, proj_pt, trans_perms
         )
