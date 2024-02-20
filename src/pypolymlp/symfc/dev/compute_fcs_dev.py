@@ -331,8 +331,8 @@ if __name__ == '__main__':
          is_plusminus=args.is_plusminus,
          geometry_optimization=args.geometry_optimization,
          batch_size=args.batch_size,
-         #sum_rule_basis=False,
-         sum_rule_basis=True,
+         sum_rule_basis=False,
+         #sum_rule_basis=True,
     )
 
 
