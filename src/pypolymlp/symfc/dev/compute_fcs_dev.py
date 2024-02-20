@@ -20,21 +20,22 @@ from pypolymlp.core.displacements import (
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.str_opt.optimization_simple import Minimize
 
-from symfc.basis_sets.basis_sets_O2 import FCBasisSetO2
-#from symfc.basis_sets.basis_sets_O3 import FCBasisSetO3
-from symfc.solvers.solver_O2O3 import run_solver_sparse_O2O3
+from phono3py.file_IO import write_fc2_to_hdf5, write_fc3_to_hdf5
 
+
+from symfc.basis_sets.basis_sets_O2 import FCBasisSetO2
 from pypolymlp.symfc.dev.symfc_basis_dev import run_basis
+from pypolymlp.symfc.dev.solver_O2O3_dev import (
+    run_solver_O2O3,
+    run_solver_O2O3_no_sum_rule_basis,
+)
 from pypolymlp.symfc.dev.matrix_O3_dev import (
     set_complement_sum_rules_lat_trans,
 )
-from pypolymlp.symfc.dev.solver_O2O3_dev import run_solver_O2O3_variant
 
-from symfc.spg_reps import SpgRepsO3
+from symfc.spg_reps import SpgRepsO1
 from symfc.utils.utils_O3 import get_lat_trans_compr_matrix_O3
-
-
-from phono3py.file_IO import write_fc2_to_hdf5, write_fc3_to_hdf5
+import gc
 
 
 def recover_fc2(coefs, compress_mat, compress_eigvecs, N):
@@ -56,8 +57,7 @@ def recover_fc3(coefs, compress_mat, compress_eigvecs, N):
 
 
 def recover_fc3_variant(
-    coefs, compress_mat, proj_pt, trans_perms, 
-    use_mkl = False, n_iter=10,
+    coefs, compress_mat, proj_pt, trans_perms, n_iter=10,
 ):
     ''' if using full compression_matrix
     fc3 = compress_eigvecs @ coefs
@@ -85,7 +85,8 @@ def compute_fcs_from_dataset(st_dicts,
                              params_dict=None, 
                              coeffs=None,
                              geometry_optimization=False,
-                             batch_size=200):
+                             batch_size=200,
+                             sum_rule_basis=True):
     '''
     Parameters
     ----------
@@ -145,55 +146,62 @@ def compute_fcs_from_dataset(st_dicts,
     ''' Constructing fc2 basis and fc3 basis '''
     t1 = time.time()
     fc2_basis = FCBasisSetO2(supercell, use_mkl=False).run()
-    compress_mat_fc2 = fc2_basis.compression_matrix
+    compress_mat_fc2_full = fc2_basis.compression_matrix
     compress_eigvecs_fc2 = fc2_basis.basis_set
 
-    #compress_mat_fc3, compress_eigvecs_fc3 = run_basis(supercell)
-    compress_mat_fc3, proj_pt = run_basis(supercell, apply_sum_rule=False)
+    if sum_rule_basis:
+        compress_mat_fc3, compress_eigvecs_fc3 = run_basis(
+            supercell, apply_sum_rule=True,
+        )
+    else:
+        compress_mat_fc3, proj_pt = run_basis(supercell, apply_sum_rule=False)
 
-    spg_reps = SpgRepsO3(supercell)
-    trans_perms = spg_reps.translation_permutations
+    trans_perms = SpgRepsO1(supercell).translation_permutations
     c_trans = get_lat_trans_compr_matrix_O3(trans_perms)
     compress_mat_fc3_full = c_trans @ compress_mat_fc3
+    del c_trans
+    gc.collect()
 
     t2 = time.time()
     print(' elapsed time (basis sets for fc2 and fc3) =', t2-t1)
 
-    ''' Solving fc3 using run_solver_sparse '''
-    print('-----')
+    print('----- Solving fc2 and fc3 using run_solver -----')
     t1 = time.time()
-    coefs_fc2, coefs_fc3 = run_solver_O2O3_variant(disps, 
-                                                  forces, 
-                                                  compress_mat_fc2, 
-                                                  compress_mat_fc3_full, 
-                                                  compress_eigvecs_fc2,
-                                                  use_mkl=True,
-                                                  #use_mkl=False,
-                                                  batch_size=batch_size)
-#    coefs_fc2, coefs_fc3 = run_solver_sparse_O2O3(disps, 
-#                                                  forces, 
-#                                                  compress_mat_fc2, 
-#                                                  compress_mat_fc3_full, 
-#                                                  compress_eigvecs_fc2,
-#                                                  compress_eigvecs_fc3,
-#                                                  #use_mkl=True,
-#                                                  use_mkl=False,
-#                                                  batch_size=batch_size)
+    if sum_rule_basis:
+        coefs_fc2, coefs_fc3 = run_solver_O2O3(
+            disps, forces, 
+            compress_mat_fc2_full, compress_mat_fc3_full, 
+            compress_eigvecs_fc2, compress_eigvecs_fc3,
+            use_mkl=True,
+            #use_mkl=False,
+            batch_size=batch_size,
+        )
+    else:
+        coefs_fc2, coefs_fc3 = run_solver_O2O3_no_sum_rule_basis(
+            disps, forces, 
+            compress_mat_fc2_full, compress_mat_fc3_full, 
+            compress_eigvecs_fc2,
+            use_mkl=True,
+            #use_mkl=False,
+            batch_size=batch_size
+        )
     t2 = time.time()
     print(' elapsed time (solve fc2 + fc3) =', t2-t1)
 
     t1 = time.time()
-    fc2 = recover_fc2(coefs_fc2, compress_mat_fc2, compress_eigvecs_fc2, N)
+    fc2 = recover_fc2(
+        coefs_fc2, compress_mat_fc2_full, compress_eigvecs_fc2, N
+    )
 
-#    fc3 = recover_fc3(coefs_fc3, compress_mat_fc3, compress_eigvecs_fc3, N)
-    fc3 = recover_fc3_variant(coefs_fc3, 
-                              compress_mat_fc3, 
-                              proj_pt,
-                              trans_perms, 
-                              use_mkl=True)
+    if sum_rule_basis:
+        fc3 = recover_fc3(coefs_fc3, compress_mat_fc3, compress_eigvecs_fc3, N)
+    else:
+        fc3 = recover_fc3_variant(
+            coefs_fc3, compress_mat_fc3, proj_pt, trans_perms
+        )
 
     t2 = time.time()
-    print(' elapsed time (recover fc3 with applying sum rules) =', t2-t1)
+    print(' elapsed time (recover fc2 and fc3) =', t2-t1)
 
     print('writing fc2.hdf5') 
     write_fc2_to_hdf5(fc2)
@@ -208,10 +216,11 @@ def compute_fcs_from_structure(pot=None,
                                supercell_matrix=None,
                                supercell_dict=None, 
                                n_samples=100,
-                               displacements=0.03,
+                               displacements=0.001,
                                is_plusminus=False,
                                geometry_optimization=False,
-                               batch_size=200):
+                               batch_size=100,
+                               sum_rule_basis=True):
 
     if supercell_dict is not None:
         supercell = st_dict_to_phonopy_cell(supercell_dict)
@@ -231,7 +240,8 @@ def compute_fcs_from_structure(pot=None,
     compute_fcs_from_dataset(st_dicts, disps, supercell, 
                              pot=pot, params_dict=params_dict, coeffs=coeffs,
                              geometry_optimization=geometry_optimization,
-                             batch_size=batch_size)
+                             batch_size=batch_size,
+                             sum_rule_basis=sum_rule_basis)
 
 
 def compute_fcs_phono3py_dataset(pot=None, 
@@ -240,10 +250,11 @@ def compute_fcs_phono3py_dataset(pot=None,
                                  phono3py_yaml=None, 
                                  use_phonon_dataset=False,
                                  n_samples=None,
-                                 displacements=0.03,
+                                 displacements=0.001,
                                  is_plusminus=False,
                                  geometry_optimization=False,
-                                 batch_size=200):
+                                 batch_size=100,
+                                 sum_rule_basis=True):
 
     supercell, disps, st_dicts = parse_phono3py_yaml_fcs(
             phono3py_yaml,
@@ -262,7 +273,8 @@ def compute_fcs_phono3py_dataset(pot=None,
     compute_fcs_from_dataset(st_dicts, disps, supercell, 
                              pot=pot, params_dict=params_dict, coeffs=coeffs,
                              geometry_optimization=geometry_optimization,
-                             batch_size=batch_size)
+                             batch_size=batch_size,
+                             sum_rule_basis=sum_rule_basis)
 
 if __name__ == '__main__':
 
@@ -300,7 +312,7 @@ if __name__ == '__main__':
                              'for initial structure.')
     parser.add_argument('--batch_size',
                         type=int,
-                        default=200,
+                        default=100,
                         help='Batch size for FC solver.')
 
     args = parser.parse_args()
@@ -319,6 +331,8 @@ if __name__ == '__main__':
          is_plusminus=args.is_plusminus,
          geometry_optimization=args.geometry_optimization,
          batch_size=args.batch_size,
+         #sum_rule_basis=False,
+         sum_rule_basis=True,
     )
 
 
