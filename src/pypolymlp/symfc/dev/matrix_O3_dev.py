@@ -15,7 +15,16 @@ import scipy
 import time
 
 def set_complement_sum_rules_lat_trans(trans_perms) -> csr_array:
+    '''Calculate a decomposition of complementary projector 
+    for sum rules compressed by C_trans without allocating C_trans. 
 
+    P_sum^(c) = C_trans.T @ C_sum^(c) @ C_sum^(c).T @ C_trans
+              = [C_sum^(c).T @ C_trans].T @ [C_sum^(c).T @ C_trans]
+
+    Return
+    ------
+    Product of C_sum^(c).T and C_trans.
+    '''
     n_lp, natom = trans_perms.shape
     NNN27 = natom**3 * 27
     NN27 = natom**2 * 27
@@ -38,15 +47,15 @@ def set_complement_sum_rules_lat_trans(trans_perms) -> csr_array:
 def compressed_complement_projector_sum_rules_lat_trans(
     trans_perms, n_a_compress_mat: csr_array, use_mkl: bool = False
 ) -> csr_array:
-    '''Calculate a complementary projector for sum rules compressed by C_trans
-    without allocating C_trans. 
-    Batch calculations are used to reduce memory allocation.
+    '''Calculate a complementary projector for sum rules compressed by 
+    C_trans and n_a_compress_mat without allocating C_trans. 
+    Batch calculations are used to reduce the amount of memory allocation.
 
     Return
     ------
     Compressed projector 
-    P_sum_(c) = n_a_compress_mat.T @ C_trans.T @ C_sum_(c) 
-                @ C_sum_(c).T @ C_trans @ n_a_compress_mat
+    P^(c) = n_a_compress_mat.T @ C_trans.T @ C_sum^(c) 
+            @ C_sum^(c).T @ C_trans @ n_a_compress_mat
     '''
 
     n_lp, natom = trans_perms.shape
@@ -103,7 +112,8 @@ def compressed_complement_projector_sum_rules_lat_trans(
 def compressed_complement_projector_sum_rules(
     trans_perms, n_a_compress_mat: csr_array = None, use_mkl: bool = False
 ) -> csr_array:
-    """Return complementary projection matrix for sum rule compressed by C."""
+    """Return complementary projection matrix for sum rule compressed by 
+       C_compr = C_trans @ n_a_compress_mat."""
     return compressed_complement_projector_sum_rules_lat_trans(
         trans_perms, n_a_compress_mat, use_mkl=use_mkl
     )
@@ -112,27 +122,30 @@ def compressed_complement_projector_sum_rules(
 def compressed_projector_sum_rules(
     trans_perms, n_a_compress_mat: csr_array = None, use_mkl: bool = False
 ) -> csr_array:
-    """Return projection matrix for sum rule compressed by C."""
+    """Return projection matrix for sum rule compressed by 
+       C_compr = C_trans @ n_a_compress_mat."""
     proj_cplmt = compressed_complement_projector_sum_rules(
         trans_perms, n_a_compress_mat, use_mkl=use_mkl
     )
     return scipy.sparse.identity(proj_cplmt.shape[0]) - proj_cplmt
 
 
-def get_combinations(n, k):
-    #combinations = np.array(
-    #    list(itertools.combinations(range(n), k)), dtype=int
-    #)
-    a = np.ones((k, n-k+1), dtype=int)
-    a[0] = np.arange(n-k+1)
-    for j in range(1, k):
-        reps = (n-k+j) - a[j-1]
-        a = np.repeat(a, reps, axis=1)
+def get_combinations(n, r):
+    '''
+    combinations = np.array(
+        list(itertools.combinations(range(n), r)), dtype=int
+    )
+    '''
+    combs = np.ones((r, n - r + 1), dtype=int)
+    combs[0] = np.arange(n - r + 1)
+    for j in range(1, r):
+        reps = (n - r + j) - combs[j-1]
+        combs = np.repeat(combs, reps, axis=1)
         ind = np.add.accumulate(reps)
-        a[j, ind[:-1]] = 1-reps[1:]
-        a[j, 0] = j
-        a[j] = np.add.accumulate(a[j])
-    return a.T
+        combs[j, ind[:-1]] = 1 - reps[1:]
+        combs[j, 0] = j
+        combs[j] = np.add.accumulate(combs[j])
+    return combs.T
 
 
 def projector_permutation_lat_trans(trans_perms, n_batch=6, use_mkl=False):

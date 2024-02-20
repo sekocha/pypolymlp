@@ -3,14 +3,14 @@ import time
 
 import numpy as np
 
+from scipy.sparse import csr_array
+
 from symfc.utils.eig_tools import dot_product_sparse
 from symfc.utils.utils_O2 import get_perm_compr_matrix
 
 from symfc.solvers.solver_funcs import get_batch_slice, solve_linear_equation
 from symfc.solvers.solver_O2 import get_training_from_full_basis
 from symfc.solvers.solver_O3 import set_2nd_disps
-
-from scipy.sparse import csr_array
 
 
 def _NNN333_to_NN33N3_core(row, N):
@@ -34,6 +34,8 @@ def _NNN333_to_NN33N3_core(row, N):
 
 
 def _NNN333_to_NN33N3(row, N, n_batch=10):
+    """Reorder row indices in a sparse matrix (NNN333->NN33N3) 
+       using divided row index sets."""
 
     batch_size = len(row) // n_batch
     begin_batch, end_batch = get_batch_slice(len(row), batch_size)
@@ -43,7 +45,8 @@ def _NNN333_to_NN33N3(row, N, n_batch=10):
 
  
 def reshape_compress_mat(mat, N, n_batch=10):
-    """Reorder row indices in a sparse matrix (NNN333->NN33N3).
+    """Reorder row indices in a sparse matrix (NNN333->NN33N3)
+    and reshape it into a sparse matrix (NN33N3,Nx) -> (NN33, N3Nx).
 
     Return reordered csr_matrix.
 
@@ -79,7 +82,7 @@ def get_training(
     use_mkl=False,
     compress_perm_fc2=False,
 ):
-    r"""Calculate X.T @ X and X.T @ y.
+    """Calculate X.T @ X and X.T @ y.
 
     X = displacements @ compress_mat @ compress_eigvecs
     X = np.hstack([X_fc2, X_fc3])
@@ -179,7 +182,7 @@ def get_training_no_sum_rule_basis(
     use_mkl=False,
     compress_perm_fc2=False,
 ):
-    r"""Calculate X.T @ X and X.T @ y.
+    """Calculate X.T @ X and X.T @ y.
 
     X = displacements @ compress_mat @ compress_eigvecs
     X = np.hstack([X_fc2, X_fc3])
