@@ -26,9 +26,9 @@ from symfc.utils.eig_tools import (
 
 #from symfc.utils.utils_O3 import get_compr_coset_reps_sum_O3
 from utils_O3_dev import get_compr_coset_reps_sum_O3
-from matrix_O3_dev import (
+from symfc.utils.matrix_tools_O3 import (
     projector_permutation_lat_trans,
-    compressed_projector_sum_rules,
+    compressed_projector_sum_rules_from_compact_compr_mat
 )
 
 import time
@@ -102,9 +102,9 @@ def run_basis(supercell, apply_sum_rule=True):
     t06 = time.time()
 
     if apply_sum_rule:
-        proj = compressed_projector_sum_rules(
+        proj = compressed_projector_sum_rules_from_compact_compr_mat(
                 trans_perms,
-                n_a_compress_mat=n_a_compress_mat, 
+                n_a_compress_mat,
                 use_mkl=True)
         print_sp_matrix_size(proj, " P_(perm,trans,coset,sum):")
         t07 = time.time()

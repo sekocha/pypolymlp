@@ -23,18 +23,17 @@ from pypolymlp.calculator.str_opt.optimization_simple import Minimize
 from phono3py.file_IO import write_fc2_to_hdf5, write_fc3_to_hdf5
 
 
-from symfc.basis_sets.basis_sets_O2 import FCBasisSetO2
 from pypolymlp.symfc.dev.symfc_basis_dev import run_basis
-from pypolymlp.symfc.dev.solver_O2O3_dev import (
+
+from symfc.basis_sets.basis_sets_O2 import FCBasisSetO2
+from symfc.solvers.solver_O2O3 import (
     run_solver_O2O3,
     run_solver_O2O3_no_sum_rule_basis,
 )
-from pypolymlp.symfc.dev.matrix_O3_dev import (
-    set_complement_sum_rules_lat_trans,
-)
-
-from symfc.spg_reps import SpgRepsO1
 from symfc.utils.utils_O3 import get_lat_trans_compr_matrix_O3
+from symfc.utils.matrix_tools_O3 import set_complement_sum_rules
+from symfc.spg_reps import SpgRepsO1
+
 import gc
 
 
@@ -67,7 +66,7 @@ def recover_fc3_variant(
     n_a = compress_mat.shape[0] // (27*(N**2))
 
     fc3 = compress_mat @ coefs
-    c_sum_cplmt = set_complement_sum_rules_lat_trans(trans_perms)
+    c_sum_cplmt = set_complement_sum_rules(trans_perms)
 
     for i in range(n_iter):
         fc3 -= c_sum_cplmt.T @ (c_sum_cplmt @ fc3)
@@ -78,6 +77,89 @@ def recover_fc3_variant(
     return fc3
 
 
+def compute_fcs_from_disps_forces(disps, 
+                                  forces, 
+                                  supercell,
+                                  batch_size=100,
+                                  sum_rule_basis=True):
+    ''' 
+    disps: (n_str, 3, n_atom) --> (n_str, n_atom, 3)
+    forces: (n_str, 3, n_atom) --> (n_str, n_atom, 3)
+    '''
+    disps = disps.transpose((0,2,1)) 
+    forces = np.array(forces).transpose((0,2,1)) 
+
+    n_data, N, _ = forces.shape
+    disps = disps.reshape((n_data, -1))
+    forces = forces.reshape((n_data, -1))
+
+    ''' Constructing fc2 basis and fc3 basis '''
+    t1 = time.time()
+    fc2_basis = FCBasisSetO2(supercell, use_mkl=False).run()
+    compress_mat_fc2_full = fc2_basis.compression_matrix
+    compress_eigvecs_fc2 = fc2_basis.basis_set
+
+    if sum_rule_basis:
+        compress_mat_fc3, compress_eigvecs_fc3 = run_basis(
+            supercell, apply_sum_rule=True,
+        )
+    else:
+        compress_mat_fc3, proj_pt = run_basis(supercell, apply_sum_rule=False)
+
+    trans_perms = SpgRepsO1(supercell).translation_permutations
+    c_trans = get_lat_trans_compr_matrix_O3(trans_perms)
+    compress_mat_fc3_full = c_trans @ compress_mat_fc3
+    del c_trans
+    gc.collect()
+
+    t2 = time.time()
+    print(' elapsed time (basis sets for fc2 and fc3) =', t2-t1)
+
+
+    print('----- Solving fc2 and fc3 using run_solver -----')
+    t1 = time.time()
+    use_mkl = False if N > 400 else True
+    if sum_rule_basis:
+        coefs_fc2, coefs_fc3 = run_solver_O2O3(
+            disps, forces, 
+            compress_mat_fc2_full, compress_mat_fc3_full, 
+            compress_eigvecs_fc2, compress_eigvecs_fc3,
+            use_mkl=use_mkl,
+            batch_size=batch_size,
+        )
+    else:
+        coefs_fc2, coefs_fc3 = run_solver_O2O3_no_sum_rule_basis(
+            disps, forces, 
+            compress_mat_fc2_full, compress_mat_fc3_full, 
+            compress_eigvecs_fc2,
+            use_mkl=use_mkl,
+            batch_size=batch_size
+        )
+    t2 = time.time()
+    print(' elapsed time (solve fc2 + fc3) =', t2-t1)
+
+    t1 = time.time()
+    fc2 = recover_fc2(
+        coefs_fc2, compress_mat_fc2_full, compress_eigvecs_fc2, N
+    )
+
+    if sum_rule_basis:
+        fc3 = recover_fc3(coefs_fc3, compress_mat_fc3, compress_eigvecs_fc3, N)
+    else:
+        print('Applying sum rules to fc3')
+        fc3 = recover_fc3_variant(
+            coefs_fc3, compress_mat_fc3, proj_pt, trans_perms
+        )
+
+    t2 = time.time()
+    print(' elapsed time (recover fc2 and fc3) =', t2-t1)
+
+    print('writing fc2.hdf5') 
+    write_fc2_to_hdf5(fc2)
+    print('writing fc3.hdf5') 
+    write_fc3_to_hdf5(fc3)
+
+
 def compute_fcs_from_dataset(st_dicts, 
                              disps, 
                              supercell, 
@@ -85,7 +167,7 @@ def compute_fcs_from_dataset(st_dicts,
                              params_dict=None, 
                              coeffs=None,
                              geometry_optimization=False,
-                             batch_size=200,
+                             batch_size=100,
                              sum_rule_basis=True):
     '''
     Parameters
@@ -130,84 +212,13 @@ def compute_fcs_from_dataset(st_dicts,
     for f in forces:
         f -= residual_forces
 
-    ''' 
-    disps: (n_str, 3, n_atom) --> (n_str, n_atom, 3)
-    forces: (n_str, 3, n_atom) --> (n_str, n_atom, 3)
-    '''
-    disps = disps.transpose((0,2,1)) 
-    forces = np.array(forces).transpose((0,2,1)) 
     t2 = time.time()
     print(' elapsed time (computing forces) =', t2-t1)
 
-    n_data, N, _ = forces.shape
-    disps = disps.reshape((n_data, -1))
-    forces = forces.reshape((n_data, -1))
-
-    ''' Constructing fc2 basis and fc3 basis '''
-    t1 = time.time()
-    fc2_basis = FCBasisSetO2(supercell, use_mkl=False).run()
-    compress_mat_fc2_full = fc2_basis.compression_matrix
-    compress_eigvecs_fc2 = fc2_basis.basis_set
-
-    if sum_rule_basis:
-        compress_mat_fc3, compress_eigvecs_fc3 = run_basis(
-            supercell, apply_sum_rule=True,
-        )
-    else:
-        compress_mat_fc3, proj_pt = run_basis(supercell, apply_sum_rule=False)
-
-    trans_perms = SpgRepsO1(supercell).translation_permutations
-    c_trans = get_lat_trans_compr_matrix_O3(trans_perms)
-    compress_mat_fc3_full = c_trans @ compress_mat_fc3
-    del c_trans
-    gc.collect()
-
-    t2 = time.time()
-    print(' elapsed time (basis sets for fc2 and fc3) =', t2-t1)
-
-    print('----- Solving fc2 and fc3 using run_solver -----')
-    t1 = time.time()
-    if sum_rule_basis:
-        coefs_fc2, coefs_fc3 = run_solver_O2O3(
-            disps, forces, 
-            compress_mat_fc2_full, compress_mat_fc3_full, 
-            compress_eigvecs_fc2, compress_eigvecs_fc3,
-            use_mkl=True,
-            #use_mkl=False,
-            batch_size=batch_size,
-        )
-    else:
-        coefs_fc2, coefs_fc3 = run_solver_O2O3_no_sum_rule_basis(
-            disps, forces, 
-            compress_mat_fc2_full, compress_mat_fc3_full, 
-            compress_eigvecs_fc2,
-            use_mkl=True,
-            #use_mkl=False,
-            batch_size=batch_size
-        )
-    t2 = time.time()
-    print(' elapsed time (solve fc2 + fc3) =', t2-t1)
-
-    t1 = time.time()
-    fc2 = recover_fc2(
-        coefs_fc2, compress_mat_fc2_full, compress_eigvecs_fc2, N
+    compute_fcs_from_disps_forces(
+        disps, forces, supercell, 
+        batch_size=batch_size, sum_rule_basis=sum_rule_basis
     )
-
-    if sum_rule_basis:
-        fc3 = recover_fc3(coefs_fc3, compress_mat_fc3, compress_eigvecs_fc3, N)
-    else:
-        print('Applying sum rules to fc3')
-        fc3 = recover_fc3_variant(
-            coefs_fc3, compress_mat_fc3, proj_pt, trans_perms
-        )
-
-    t2 = time.time()
-    print(' elapsed time (recover fc2 and fc3) =', t2-t1)
-
-    print('writing fc2.hdf5') 
-    write_fc2_to_hdf5(fc2)
-    print('writing fc3.hdf5') 
-    write_fc3_to_hdf5(fc3)
 
 
 def compute_fcs_from_structure(pot=None, 
@@ -332,8 +343,8 @@ if __name__ == '__main__':
          is_plusminus=args.is_plusminus,
          geometry_optimization=args.geometry_optimization,
          batch_size=args.batch_size,
-         sum_rule_basis=False,
-         #sum_rule_basis=True,
+         sum_rule_basis=True,
+         #sum_rule_basis=False,
     )
 
 

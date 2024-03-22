@@ -31,7 +31,7 @@ def calc_symmetric_matrix_norm(A):
         print(' v', i,' =', e)
     print(np.where(eigvals < 1e-4)[0])
     print(' n_near_zero =', len(np.where(eigvals < 1e-4)[0]))
-    return max(eigvals)
+    return max(eigvals), min(eigvals)
 
 def compute_fcs_from_dataset(st_dicts, 
                              disps, 
@@ -97,9 +97,12 @@ def compute_fcs_from_dataset(st_dicts,
     mat2 = XTX_inv.T @ XTX_inv
 
 
-    norm1 = calc_symmetric_matrix_norm(mat1)
+    max1, min1 = calc_symmetric_matrix_norm(mat1)
+    print(max1/min1)
+
+    norm1, _ = calc_symmetric_matrix_norm(mat1)
     print(sqrt(norm1))
-    norm2 = calc_symmetric_matrix_norm(mat2)
+    norm2, _ = calc_symmetric_matrix_norm(mat2)
     print(sqrt(norm2))
     print(sqrt(norm1 * norm2))
 

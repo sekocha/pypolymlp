@@ -1,0 +1,1 @@
+python3 ~/git/pypolymlp/src/pypolymlp/calculator/rss/data/vasp/summary.py -d ./finished --pot ../mlp/gtinv/polymlp.lammps
