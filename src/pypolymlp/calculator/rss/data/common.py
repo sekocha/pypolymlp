@@ -16,6 +16,22 @@ def readfile(filename):
     f.close()
     return lines
 
+def set_emin(e_all, e_outlier=None):
+
+    e_all = np.array(e_all)
+    if e_outlier is None:
+        e_outlier = -np.inf
+        for i, e in enumerate(e_all):
+            ave = np.average(e_all[i+1:11+i])
+            if e - ave < -0.5:
+                e_outlier = e + 1e-5
+            else:
+                break
+    e_min = np.min(e_all[e_all > e_outlier])
+
+    return e_min, e_outlier
+
+
 def parse_log_summary_yaml(fname, return_numbers=False):
 
     data = yaml.safe_load(open(fname))

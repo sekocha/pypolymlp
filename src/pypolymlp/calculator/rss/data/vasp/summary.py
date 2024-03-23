@@ -23,7 +23,7 @@ def find_vasprun_xml(dir_st):
     return f_summary
 
 
-def get_summary_single(st_id, dir_res):
+def get_summary_single(st_id, dir_res, elements=None):
 
     dir_st = dir_res + '/' + st_id + '/'
     f_summary = find_vasprun_xml(dir_st)
@@ -34,8 +34,14 @@ def get_summary_single(st_id, dir_res):
     st_dict = vasp.get_structure()
 
     n_atoms_sum = np.sum(st_dict['n_atoms'])
-    comp = np.array(st_dict['n_atoms']) / n_atoms_sum
-    comp_tuple = tuple([round(c, 6) for c in comp])
+
+    if elements is None:
+        comp = np.array(st_dict['n_atoms']) / n_atoms_sum
+    else:
+        n_atoms = [np.count_nonzero(np.array(st_dict['elements']) == ele)
+                   for ele in elements]
+        comp = n_atoms / n_atoms_sum
+    comp_tuple = tuple([round(c, 15) for c in comp])
 
     e = e/n_atoms_sum
 
@@ -49,16 +55,44 @@ def get_summary_single(st_id, dir_res):
     return single
 
 
-def get_summaries(st_ids, dir_res, summary=defaultdict(list)):
+def get_summaries(st_ids, dir_res, 
+                  elements=None, 
+                  summary=defaultdict(list)):
 
     for st_id in st_ids:
-        single = get_summary_single(st_id, dir_res)
+        single = get_summary_single(st_id, dir_res, elements=elements)
         summary[single['comp']].append(single)
 
     for comp, values in summary.items():
         summary[comp] = sorted(values, key=lambda x: x['e'])
 
     return summary
+
+
+def write_yaml(summary, equiv_dict, n_trial_total, n_st_total, 
+               filename='log_summary.yaml'):
+
+    f = open(filename,'w')
+    print('numbers:', file=f)
+    print('  number_of_trial_structures:', n_trial_total, file=f)
+    print('  number_of_local_minimizers:', n_st_total, file=f)
+    print('', file=f)
+
+    print('nonequiv_structures:', file=f)
+    for comp, equiv_d in equiv_dict.items():
+        print('- composition:', list(comp), file=f)
+        print('  structures:', file=f)
+
+        n_total = sum([len(orbit) for rep, orbit in equiv_d.items()])
+        for rep, orbit in equiv_d.items():
+            st_attr = summary[comp][rep]
+            ids_orbit = sorted([summary[comp][orb]['id'] 
+                                for orb in orbit], key=natural_keys)
+            print('  - id:  ', ids_orbit[0], file=f)
+            print('    e:   ', round(st_attr['e'], 5), file=f)
+            print('    spg: ', list(st_attr['spg']), file=f)
+        print('', file=f)
+    f.close()
 
 
 
@@ -82,13 +116,30 @@ if __name__ == '__main__':
                         default=None,
                         help='polymlp.lammps file for computing '
                              'polynomial invariants')
+    parser.add_argument('--elements',
+                        nargs='*',
+                        type=str,
+                        default=None,
+                        help='Elements')
+    parser.add_argument('--tol_distance',
+                        type=float,
+                        default=0.01,
+                        help='Tolerance for distance in duplicate '
+                             'structure elimination')
+    parser.add_argument('--tol_energy',
+                        type=float,
+                        default=0.001,
+                        help='Tolerance for energy in duplicate '
+                             'structure elimination')
     args = parser.parse_args()
 
     summary = defaultdict(list)
     for dir1 in args.dirs:
         targets = sorted(glob.glob(dir1 + '/*'), key=natural_keys)
         st_ids = [t.split('/')[-1] for t in targets]
-        summary = get_summaries(st_ids, dir1, summary=summary)
+        summary = get_summaries(st_ids, dir1, 
+                                elements=args.elements,
+                                summary=summary)
 
     n_trial_total = sum([len(values) for values in summary.values()])
 
@@ -99,41 +150,27 @@ if __name__ == '__main__':
             v['spg'] = s
 
     n_st_total = 0
-
     equiv_dict = dict()
     for comp, values in summary.items():
+        print(' comp =', comp)
         equiv_dict[comp] = get_equivalency(values, 
-                                           features_infile=args.pot,
-                                           tol_distance=1e-2,
-                                           tol_energy=1e-3,
-                                           pmg_matcher=False)
+                                           pot=args.pot,
+                                           tol_distance=args.tol_distance,
+                                           tol_energy=args.tol_energy,
+                                           pmg_matcher=False,
+                                           verbose=True)
         n_st_total += len(equiv_dict[comp])
 
     if args.output_dir is not None:
         output_dir = args.output_dir
     else:
-        output_dir = '/'.join(args.dirs[-1].split('/')[:-1])
+        output_dir = './'
+
+    output_file = output_dir + '/log_summary.yaml'
     print(' directory for output files:', output_dir)
 
-    f = open(output_dir + '/log_summary.yaml','w')
-    print('numbers:', file=f)
-    print('  number_of_trial_structures:', n_trial_total, file=f)
-    print('  number_of_local_minimizers:', n_st_total, file=f)
-    print('', file=f)
+    write_yaml(
+        summary, equiv_dict, n_trial_total, n_st_total, filename=output_file
+    )
 
-    print('nonequiv_structures:', file=f)
-    for comp, equiv_d in equiv_dict.items():
-        print('- composition:', list(comp), file=f)
-        print('  structures:', file=f)
-
-        n_total = sum([len(orbit) for rep, orbit in equiv_d.items()])
-        for rep, orbit in equiv_d.items():
-            st_attr = summary[comp][rep]
-            ids_orbit = sorted([summary[comp][orb]['id'] 
-                                for orb in orbit], key=natural_keys)
-            print('  - id:  ', ids_orbit[0], file=f)
-            print('    e:   ', round(st_attr['e'], 5), file=f)
-            print('    spg: ', list(st_attr['spg']), file=f)
-        print('', file=f)
-    f.close()
 

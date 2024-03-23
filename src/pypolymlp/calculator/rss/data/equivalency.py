@@ -87,10 +87,11 @@ def compute_features(pot, summary, coeffs=True, scales=True):
 
 
 def get_equivalency(summary_values, 
-                    features_infile=None, 
+                    pot=None, 
                     tol_distance=1e-3,
                     tol_energy=1e-4,
-                    pmg_matcher=False):
+                    pmg_matcher=False,
+                    verbose=False):
     '''
     Parameters
     ----------
@@ -115,11 +116,11 @@ def get_equivalency(summary_values,
                 equivalent_class[i1] = i3
                 equivalent_class[i2] = i3
 
-    if features_infile is not None:
-        x = compute_features(features_infile, summary_values)
-        print(' feature shape =', x.shape)
+    if pot is not None:
+        x = compute_features(pot, summary_values)
+        print('Feature shape =', x.shape)
 
-        print(' calculating equivalent class ...')
+        print('Calculating equivalent class ...')
         orbits = defaultdict(list)
         for i, eq in enumerate(equivalent_class):
             orbits[eq].append(i)
@@ -153,15 +154,18 @@ def get_equivalency(summary_values,
                 for i, lab in enumerate(labels):
                     equivalent_class[equivs[i]] = equivs[lab]
 
-                for eq in equivs:
-                    print(eq, summary_values[eq]['id'], 
-                          summary_values[eq]['e'], summary_values[eq]['spg'])
+                if verbose:
+                    for eq in equivs:
+                        print(eq, summary_values[eq]['id'], 
+                              summary_values[eq]['e'], 
+                              summary_values[eq]['spg'])
 
                 dist = cdist([x_equivs[0]], x_equivs)
-                print(equivs[0], dist)
 
-                print('rep_id =', rep, 'n_rep / n_equivs =', 
-                        n_components, '/', len(equivs))
+                if verbose:
+                    print(equivs[0], dist)
+                    print('rep_id =', rep, 'n_rep / n_equivs =', 
+                            n_components, '/', len(equivs))
 
     orbits = defaultdict(list)
     for i, eq in enumerate(equivalent_class):
