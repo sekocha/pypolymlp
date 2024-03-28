@@ -256,34 +256,32 @@ if __name__ == '__main__':
         print('- Fixing cell parameters')
         try:
             minobj = MinimizeSym(unitcell, pot=args.pot)
-            print('Initial structure')
-            minobj.print_structure()
-            minobj.run(gtol=1e-5)
-
-            print('Residuals (force):')
-            print(minobj.residual_forces.T)
-            minobj.print_structure()
-            minobj.write_poscar()
         except:
-            print('Optimization has failed '
-                  'or No degree of freedom to be optimized.')
-
+            print('No degree of freedom to be optimized.')
     else:
         print('- Relaxing cell parameters')
-        try:
-            minobj = MinimizeSym(unitcell, pot=args.pot, relax_cell=True)
-            print('Initial structure')
-            minobj.print_structure()
-            minobj.run(gtol=1e-5)
+        minobj = MinimizeSym(unitcell, pot=args.pot, relax_cell=True)
 
-            res_f, res_s = minobj.residual_forces
-            print('Residuals (force):')
-            print(res_f.T)
-            print('Residuals (stress):')
-            print(res_s)
-            print('Final structure')
-            minobj.print_structure()
-            minobj.write_poscar()
-        except:
-            print('Optimization has failed.')
+    print('Initial structure')
+    minobj.print_structure()
+    minobj.run(gtol=1e-5)
+
+    if not args.cell_relax:
+        print('Residuals (force):')
+        print(minobj.residual_forces.T)
+    else:
+        res_f, res_s = minobj.residual_forces
+        print('Residuals (force):')
+        print(res_f.T)
+        print('Residuals (stress):')
+        print(res_s)
+ 
+
+        print('Initial structure')
+        minobj.print_structure()
+        minobj.run(gtol=1e-5)
+
+    print('Final structure')
+    minobj.print_structure()
+    minobj.write_poscar()
 

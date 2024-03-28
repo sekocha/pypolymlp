@@ -187,36 +187,25 @@ if __name__ == '__main__':
     print('- Considering no symmetric constraints')
     if not args.cell_relax:
         print('- Fixing cell parameters')
-        try:
-            minobj = Minimize(unitcell, pot=args.pot)
-            print('Initial structure')
-            minobj.print_structure()
-            minobj.run(gtol=1e-5)
-
-            print('Residuals (force):')
-            print(minobj.residual_forces.T)
-            print('Final structure')
-            minobj.print_structure()
-            minobj.write_poscar()
-        except:
-            print('Optimization has failed '
-                  'or No degree of freedom to be optimized.')
     else:
         print('- Relaxing cell parameters')
-        try:
-            minobj = Minimize(unitcell, pot=args.pot)
-            print('Initial structure')
-            minobj.print_structure()
-            minobj.run(relax_cell=True, gtol=1e-5)
+
+    minobj = Minimize(unitcell, pot=args.pot)
+    print('Initial structure')
+    minobj.print_structure()
+    minobj.run(relax_cell=args.cell_relax, gtol=1e-5)
     
-            res_f, res_s = minobj.residual_forces
-            print('Residuals (force):')
-            print(res_f.T)
-            print('Residuals (stress):')
-            print(res_s)
-            print('Final structure')
-            minobj.print_structure()
-            minobj.write_poscar()
-        except:
-            print('Optimization has failed ')
+    if not args.cell_relax:
+        print('Residuals (force):')
+        print(minobj.residual_forces.T)
+    else:
+        res_f, res_s = minobj.residual_forces
+        print('Residuals (force):')
+        print(res_f.T)
+        print('Residuals (stress):')
+        print(res_s)
+
+    print('Final structure')
+    minobj.print_structure()
+    minobj.write_poscar()
 
