@@ -1,7 +1,9 @@
 #!/usr/bin/env python 
 import numpy as np
 import os
+import copy
 import argparse
+
 import signal
 import warnings
 
@@ -28,6 +30,40 @@ def write_hull_yaml(data_ch, e_form_ch, e_info, filename='log_hull.yaml'):
     f.close()
 
 
+def write_summary_yaml(summary_dict, numbers_dict=None,
+                       filename='log_screening.yaml'):
+
+    f = open(filename, 'w')
+    if numbers_dict is not None:
+        print('numbers:', file=f)
+        print('  number_of_trial_structures:', 
+              numbers_dict['number_of_trial_structures'], file=f)
+        print('  number_of_local_minimizers:', 
+              numbers_dict['number_of_local_minimizers'], file=f)
+        print('  threshold                 :', 
+              numbers_dict['threshold'], file=f)
+        print('', file=f)
+
+    print('nonequiv_structures:', file=f)
+    for comp, summary in sorted(summary_dict.items(), 
+                                key=lambda x:x[0], 
+                                reverse=True):
+        if len(summary['poscars']) > 0:
+            print('- composition:', list(comp), file=f)
+            print('  structures:', file=f)
+            for id1, e1, spg1, ef1, eah1 in zip(summary['poscars'], 
+                                                summary['energies'], 
+                                                summary['space_groups'], 
+                                                summary['energies_formation'], 
+                                                summary['energies_abovehull']):
+                print('  - id:         ', id1, file=f)
+                print('    e:          ', "{:.5f}".format(e1), file=f)
+                print('    spg:        ', spg1, file=f)
+                print('    e_formation:', "{:.5f}".format(ef1), file=f)
+                print('    e_abovehull:', "{:.5f}".format(eah1), file=f)
+            print('', file=f)
+    f.close()
+
 
 if __name__ == '__main__':
 
@@ -48,6 +84,7 @@ if __name__ == '__main__':
 
     e_info = dict()
     data_min = []
+    '''Finding minimum structure for each composition'''
     for comp, summary in summary_dict.items():
         e_all = summary['energies']
         e_min, e_outlier = set_emin(e_all)
@@ -70,8 +107,9 @@ if __name__ == '__main__':
         data_min.append(add_entry)
     data_min = np.array(data_min).astype(float)
 
+    '''Evaluating convex hull'''
     alloy = AlloyEnergy()
-    data_ch, ids_ch = alloy.compute_ch(data_min=data_min)
+    data_ch, _ = alloy.compute_ch(data_min=data_min)
     e_form_ch = alloy.compute_formation_e(data_ch)
     write_hull_yaml(data_ch, e_form_ch, e_info)
 
@@ -79,48 +117,36 @@ if __name__ == '__main__':
     alloy.initialize_composition_partition()
     for comp_tuple, summary in summary_dict.items():
         e_all = summary['energies']
-        id_all = summary['poscars']
         comp = np.array(comp_tuple).astype(float)
-
-        print('C', comp)
-        e_form = alloy.compute_formation_e2(comp, e_all)
-        print(e_all[:5])
+        summary['energies_formation'] = alloy.compute_formation_e2(comp, e_all)
         e_hull = alloy.get_convex_hull_energy(comp)
-        print(e_hull)
+        summary['energies_abovehull'] = e_all - e_hull
+
+    write_summary_yaml(summary_dict, filename='log_screening_inf.yaml')
 
 
+    e_list = [0.005,0.01,0.015,0.02] + list(np.arange(0.025,0.301,0.025))
+    for e_th in e_list:
+        summary_dict_th = copy.deepcopy(summary_dict)
+        n_locals = 0
+        for comp_tuple, summary in summary_dict_th.items():
+            e_abovehull = summary['energies_abovehull']
+            ids = np.where(e_abovehull < e_th)[0]
+            summary['energies_abovehull'] = e_abovehull[ids]
+            summary['energies'] = summary['energies'][ids]
+            summary['energies_formation'] = summary['energies_formation'][ids]
+            summary['space_groups'] = [summary['space_groups'][i] for i in ids]
+            summary['poscars'] = summary['poscars'][ids]
+            n_locals += len(summary['energies_abovehull'])
 
-    
+        numbers_dict = dict()
+        numbers_dict['number_of_trial_structures'] = n_trials
+        numbers_dict['number_of_local_minimizers'] = n_locals
+        numbers_dict['threshold'] = round(e_th,6)
+
+        filename = 'log_screening_' + str(round(e_th,6)).ljust(5,'0') + '.yaml'
+        write_summary_yaml(summary_dict_th, 
+                           numbers_dict=numbers_dict,
+                           filename=filename)
 
 
-
-#    for comp, summary in summary_dict.items():
-#        e_list = [0.005,0.01,0.015,0.02] + list(np.arange(0.025,0.301,0.025))
-#        for e_th in e_list:
-#            e_ub = e_min + e_th
-#            indices = np.where(e_all < e_ub)[0]
-#            spg_array = [summary['space_groups'][i] for i in indices]
-#
-#            n_locals_estimator = estimate_n_locals(n_trials, len(indices))
-#
-#            f = open(output_dir + '/log_screening_' 
-#                     + str(round(e_th,6)).ljust(5,'0') + '.yaml','w')
-#            print('numbers:', file=f)
-#            print('  number_of_local_minimizers:', len(indices), file=f)
-#            print('  number_of_locals_estimator:', 
-#                    n_locals_estimator, file=f)
-#            print('  threshold_energy_(eV/atom):', round(e_th,6), file=f)
-#            print('', file=f)
-#
-#            print('nonequiv_structures:', file=f)
-#            print('- composition:', list(comp), file=f)
-#            print('  structures:', file=f)
-#            for poscar, e, spg in zip(summary['poscars'][indices], 
-#                                      summary['energies'][indices],
-#                                      spg_array):
-#                print('  - id:  ', poscar, file=f)
-#                print('    e:   ', e, file=f)
-#                print('    spg: ', spg, file=f)
-#            f.close()
-#                
-#

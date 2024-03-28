@@ -5,6 +5,7 @@ from pypolymlp.core.io_polymlp import load_mlp_lammps
 from pypolymlp.calculator.compute_features import update_types
 from pypolymlp.cxx.lib import libmlpcpp
 
+
 class Properties:
 
     def __init__(self, pot=None, params_dict=None, coeffs=None):

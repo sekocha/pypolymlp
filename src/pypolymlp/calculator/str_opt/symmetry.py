@@ -57,6 +57,7 @@ def basis_cell(cell):
     '''basis (row): In the order of ax, bx, cx, ay, by, cy, az, bz, cz'''
     spg_info = spglib.get_symmetry_dataset(cell_ph)
     spg_num = spg_info['number']
+
     if spg_num >= 195:
         print('Crystal system: Cubic')
         basis = np.zeros((9,1))

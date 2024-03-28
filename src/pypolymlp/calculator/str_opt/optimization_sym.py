@@ -4,12 +4,15 @@ import copy
 from scipy.optimize import minimize
 
 from pypolymlp.core.io_polymlp import load_mlp_lammps
+from pypolymlp.calculator.compute_features import update_types
+from pypolymlp.utils.vasp_utils import write_poscar_file
 from pypolymlp.utils.structure_utils import refine_positions
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.str_opt.symmetry import (
     construct_basis_fractional_coordinates,
     basis_cell,
 )
+
 
 
 class MinimizeSym:
@@ -25,6 +28,8 @@ class MinimizeSym:
         if pot is not None:
             params_dict, mlp_dict = load_mlp_lammps(filename=pot)
             coeffs = mlp_dict['coeffs'] / mlp_dict['scales']
+
+        cell = update_types([cell], params_dict['elements'])[0]
 
         self.__relax_cell = relax_cell
         self.__relax_positions = relax_positions
@@ -220,6 +225,9 @@ class MinimizeSym:
         for p, e in zip(self.st_dict['positions'].T, self.st_dict['elements']):
             print(' -', e, list(p))
 
+    def write_poscar(self, filename='POSCAR_eqm'):
+        write_poscar_file(self.st_dict, filename=filename)
+
    
 if __name__ == '__main__':
 
@@ -235,37 +243,47 @@ if __name__ == '__main__':
                         type=str, 
                         default='polymlp.lammps',
                         help='polymlp file')
+    parser.add_argument('--cell_relax', 
+                        action='store_true',
+                        help='Relaxing cell parameters')
     args = parser.parse_args()
 
     unitcell = Poscar(args.poscar).get_structure()
 
-    print('Fixing cell parameters (symmetric constraints)')
-    try:
-        minobj = MinimizeSym(unitcell, pot=args.pot)
-        minobj.run(gtol=1e-5)
+    print('Mode: Geometry optimization')
+    print('- Considering symmetric constraints')
+    if not args.cell_relax:
+        print('- Fixing cell parameters')
+        try:
+            minobj = MinimizeSym(unitcell, pot=args.pot)
+            print('Initial structure')
+            minobj.print_structure()
+            minobj.run(gtol=1e-5)
 
-        print('Residuals (force):')
-        print(minobj.residual_forces.T)
-        minobj.print_structure()
-    except:
-        print('Optimization has failed '
-              'or No degree of freedom to be optimized.')
+            print('Residuals (force):')
+            print(minobj.residual_forces.T)
+            minobj.print_structure()
+            minobj.write_poscar()
+        except:
+            print('Optimization has failed '
+                  'or No degree of freedom to be optimized.')
 
-    print('---')
-    print('Relaxing cell parameters')
-    try:
-        minobj = MinimizeSym(unitcell, pot=args.pot, relax_cell=True)
-        print('Initial structure')
-        minobj.print_structure()
-        minobj.run(gtol=1e-5)
+    else:
+        print('- Relaxing cell parameters')
+        try:
+            minobj = MinimizeSym(unitcell, pot=args.pot, relax_cell=True)
+            print('Initial structure')
+            minobj.print_structure()
+            minobj.run(gtol=1e-5)
 
-        res_f, res_s = minobj.residual_forces
-        print('Residuals (force):')
-        print(res_f.T)
-        print('Residuals (stress):')
-        print(res_s)
-        print('Final structure')
-        minobj.print_structure()
-    except:
-        print('Optimization has failed.')
+            res_f, res_s = minobj.residual_forces
+            print('Residuals (force):')
+            print(res_f.T)
+            print('Residuals (stress):')
+            print(res_s)
+            print('Final structure')
+            minobj.print_structure()
+            minobj.write_poscar()
+        except:
+            print('Optimization has failed.')
 

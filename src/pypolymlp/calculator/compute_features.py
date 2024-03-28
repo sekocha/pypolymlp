@@ -13,11 +13,16 @@ from pypolymlp.mlp_gen.features import Features
 def update_types(st_dicts, element_order):
 
     for st in st_dicts:
-        types = np.zeros(len(st['types']), dtype=int)
+        types = np.ones(len(st['types']), dtype=int) * 1000
         elements = np.array(st['elements'])
         for i, ele in enumerate(element_order):
             types[elements == ele] = i
         st['types'] = types
+        if np.any(types == 1000):
+            print('elements (structure) =', st['elements'])
+            print('elements (polymlp.lammps) =', element_order)
+            raise('Elements in structure are not found in polymlp.lammps')
+
     return st_dicts
 
 def compute_from_polymlp_lammps(st_dicts, 

@@ -79,7 +79,10 @@ def write_yaml(summary, equiv_dict, n_trial_total, n_st_total,
     print('', file=f)
 
     print('nonequiv_structures:', file=f)
-    for comp, equiv_d in equiv_dict.items():
+
+    for comp, equiv_d in sorted(equiv_dict.items(), 
+                                key=lambda x:x[0], 
+                                reverse=True):
         print('- composition:', list(comp), file=f)
         print('  structures:', file=f)
 
