@@ -7,7 +7,7 @@ from phonopy.structure.atoms import PhonopyAtoms
 
 def st_dict_to_phonopy_cell(st_dict):
 
-    ph_cell = PhonopyAtoms(st_dict['elements'],
+    ph_cell = PhonopyAtoms(symbols=st_dict['elements'],
                            cell=st_dict['axis'].T,
                            scaled_positions=st_dict['positions'].T)
     return ph_cell

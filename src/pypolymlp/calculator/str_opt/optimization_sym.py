@@ -41,6 +41,8 @@ class MinimizeSym:
         self.__stress = None
         self.__res = None
 
+        print(cell['positions'])
+
         if relax_cell:
             self.__basis_axis, self.st_dict = basis_cell(cell)
             if not np.allclose(cell['axis'], self.st_dict['axis']):
@@ -48,16 +50,20 @@ class MinimizeSym:
         else:
             self.__basis_axis = None
             self.st_dict = cell
+        print(self.st_dict['positions'])
 
         self.__basis_f = None
         self.__split = 0
         if relax_positions:
-            try:
-                self.__basis_f \
-                    = construct_basis_fractional_coordinates(self.st_dict)
-                self.__split = self.__basis_f.shape[1]
-            except:
-                self.__relax_positions = False
+            self.__basis_f \
+                = construct_basis_fractional_coordinates(self.st_dict)
+            self.__split = self.__basis_f.shape[1]
+            #try:
+            #    self.__basis_f \
+            #        = construct_basis_fractional_coordinates(self.st_dict)
+            #    self.__split = self.__basis_f.shape[1]
+            #except:
+            #    self.__relax_positions = False
 
         if self.__relax_cell == False and self.__relax_positions == False:
             raise ValueError('No degree of freedom to be optimized.')

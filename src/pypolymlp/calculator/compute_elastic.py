@@ -105,7 +105,7 @@ class PolymlpElastic:
             lattice = np.array(deform[i].as_dict()['lattice']['matrix'])
             st_dict['axis'] = lattice.T
 
-            st_dict = self.__run_geometry_optimization(st_dict)
+            #st_dict = self.__run_geometry_optimization(st_dict)
             st_dict_deform.append(st_dict)
 
         _, _, stresses = self.prop.eval_multiple(st_dict_deform)

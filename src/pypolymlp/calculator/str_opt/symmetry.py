@@ -4,9 +4,11 @@ import copy
 from math import sqrt
 
 from symfc.basis_sets.basis_sets_O1 import FCBasisSetO1
-from pypolymlp.utils.phonopy_utils import st_dict_to_phonopy_cell
+from symfc.utils.utils import SymfcAtoms
 
+from pypolymlp.utils.phonopy_utils import st_dict_to_phonopy_cell
 import spglib
+from phonopy.structure.atoms import PhonopyAtoms
 
 
 '''Atomic Coodinates'''
@@ -28,8 +30,33 @@ def basis_cartesian_to_fractional_coordinates(basis_c, unitcell):
 
 def construct_basis_cartesian(cell):
 
-    cell_ph = st_dict_to_phonopy_cell(cell)
+    cell_ph = PhonopyAtoms(symbols=cell['elements'],
+                           cell=cell['axis'].T,
+                           scaled_positions=cell['positions'].T)
+    print(cell_ph.cell)
+    print(cell_ph.scaled_positions)
+    print(cell_ph.symbols)
+    sym = spglib.get_symmetry(cell=cell_ph, symprec=1e-3)
+    spg = spglib.get_spacegroup(cell=cell_ph, symprec=1e-3)
+    print('SpaceGroup(Tmp):', spg)
+
     fc_basis = FCBasisSetO1(cell_ph).run()
+
+#    cell_ph = st_dict_to_phonopy_cell(cell)
+#    print(cell_ph)
+#
+#    print(cell_ph.cell)
+##    print(cell_ph.positions)
+#    print(cell_ph.scaled_positions)
+#    print(cell_ph.numbers)
+#    fc_basis = FCBasisSetO1(cell_ph).run()
+    print(fc_basis)
+
+#    sym = spglib.get_symmetry(cell=cell_ph, symprec=1e-3)
+#    spg = spglib.get_spacegroup(cell=cell_ph, symprec=1e-3)
+#    print(sym)
+#    print(spg)
+#    print(fc_basis.full_basis_set.toarray()[2::3])
     return fc_basis.full_basis_set.toarray()
 
 
@@ -49,14 +76,31 @@ def basis_cell(cell):
 
     cell_copy = copy.deepcopy(cell)
     cell_ph = st_dict_to_phonopy_cell(cell_copy)
-    lattice, scaled_positions, _ = spglib.standardize_cell(cell_ph)
+
+    map_numbers = dict()
+    for n, t in zip(cell_ph.numbers, cell['types']):
+        map_numbers[n] = t
+
+    lattice, scaled_positions, numbers = spglib.standardize_cell(cell_ph)
+    types = [map_numbers[n] for n in numbers]
+    print(numbers)
+    print(types)
+
+    scaled_positions_reorder = []
+    for i in range(len(cell['n_atoms'])):
+        for j, t in enumerate(types):
+            if i == t:
+                scaled_positions_reorder.append(scaled_positions[j])
+    scaled_positions_reorder = np.array(scaled_positions_reorder)
+        
 
     cell_copy['axis'] = lattice.T
-    cell_copy['positions'] = scaled_positions.T
+    cell_copy['positions'] = scaled_positions_reorder.T
 
     '''basis (row): In the order of ax, bx, cx, ay, by, cy, az, bz, cz'''
     spg_info = spglib.get_symmetry_dataset(cell_ph)
     spg_num = spg_info['number']
+    print('Space group:', spg_info['international'], spg_num)
 
     if spg_num >= 195:
         print('Crystal system: Cubic')
