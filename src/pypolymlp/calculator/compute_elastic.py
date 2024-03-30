@@ -175,8 +175,6 @@ if __name__ == '__main__':
     el = PolymlpElastic(unitcell, args.poscar, pot=args.pot)
     el.run()
     el.write_elastic_constants()
-    #np.set_printoptions(suppress=True)
-    #print(el.elastic_constants)
 
 
 
