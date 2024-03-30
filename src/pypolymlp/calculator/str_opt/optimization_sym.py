@@ -276,11 +276,6 @@ if __name__ == '__main__':
         print('Residuals (stress):')
         print(res_s)
  
-
-        print('Initial structure')
-        minobj.print_structure()
-        minobj.run(gtol=1e-5)
-
     print('Final structure')
     minobj.print_structure()
     minobj.write_poscar()

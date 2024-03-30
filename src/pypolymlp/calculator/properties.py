@@ -6,6 +6,15 @@ from pypolymlp.calculator.compute_features import update_types
 from pypolymlp.cxx.lib import libmlpcpp
 
 
+def convert_stresses_in_gpa(stresses, st_dicts):
+
+    volumes = np.array([st['volume'] for st in st_dicts])
+    stresses_gpa = np.zeros(stresses.shape)
+    for i in range(6):
+        stresses_gpa[:,i] = stresses[:,i] / volumes * 160.21766208
+    return stresses_gpa
+
+ 
 class Properties:
 
     def __init__(self, pot=None, params_dict=None, coeffs=None):

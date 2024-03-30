@@ -7,7 +7,7 @@ from math import pi
 
 import sys
 from pypolymlp.core.interface_vasp import Poscar
-from pypolymlp.utils.vasp_utils import print_poscar
+from pypolymlp.utils.vasp_utils import print_poscar, write_poscar_file
 
 def refine_positions(st_dict, tol=1e-13):
 
@@ -44,7 +44,7 @@ def isotropic_volume_change(st_dict, eps=1.0):
     return st_dict_vol
 
 def multiple_isotropic_volume_changes(st_dict, 
-                                      eps_min=0.8, 
+                                      eps_min=0.7, 
                                       eps_max=2.0, 
                                       n_eps=10):
     eps_array = np.linspace(eps_min, eps_max, n_eps)
@@ -77,6 +77,7 @@ def supercell_diagonal(st_dict, size=[2,2,2]):
     supercell['supercell_matrix'] = supercell_matrix
     return supercell
 
+
 def remove(st_dict, idx):
     ''' idx-th element is removed from st_dict. '''
     begin = int(np.sum(st_dict['n_atoms'][:idx]))
@@ -87,6 +88,19 @@ def remove(st_dict, idx):
     st_dict['elements'] = np.delete(st_dict['elements'], range(begin, end))
     st_dict['types'] = np.delete(st_dict['types'], range(begin, end))
     return st_dict
+
+
+def remove_atom(st_dict, idx):
+    ''' idx-th atom is removed from st_dict. '''
+    st_dict['positions'] = np.delete(st_dict['positions'], idx, axis=1)
+    st_dict['elements'] = np.delete(st_dict['elements'], idx)
+    st_dict['types'] = np.delete(st_dict['types'], idx)
+
+    sum1 = np.cumsum(st_dict['n_atoms'])
+    match = np.where(idx < sum1)[0][0]
+    st_dict['n_atoms'][match] -= 1
+    return st_dict
+
 
 def reorder(st_dict, order=None, index1=None, index2=None):
 
@@ -141,11 +155,19 @@ def swap_elements(st_dict, order=None, index1=None, index2=None):
 if __name__ == '__main__':
 
     st_dict = Poscar(sys.argv[1]).get_structure()
-    st_dict = supercell_diagonal(st_dict)
-    #st_dict = remove(st_dict, 1)
-    #st_dict = reorder(st_dict, order=[1,0])
-    st_dict = swap_elements(st_dict, order=[1,0])
-    print_poscar(st_dict)
 
+    #st_dict = supercell_diagonal(st_dict)
+    ##st_dict = remove(st_dict, 1)
+    ##st_dict = reorder(st_dict, order=[1,0])
+    #st_dict = swap_elements(st_dict, order=[1,0])
+    #print_poscar(st_dict)
 
+    st_dicts = multiple_isotropic_volume_changes(st_dict, 
+                                                eps_min=0.7, 
+                                                eps_max=2.0, 
+                                                n_eps=15)
+
+    
+    for i, st_dict in enumerate(st_dicts):
+        write_poscar_file(st_dict, filename='POSCAR-'+str(i+1).zfill(3))
     
