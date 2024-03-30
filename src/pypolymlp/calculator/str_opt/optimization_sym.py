@@ -1,5 +1,6 @@
 #!/usr/bin/env python 
 import numpy as np
+import sys
 import copy
 from scipy.optimize import minimize
 
@@ -257,6 +258,7 @@ if __name__ == '__main__':
             minobj = MinimizeSym(unitcell, pot=args.pot)
         except:
             print('No degree of freedom to be optimized.')
+            sys.exit(8)
     else:
         print('- Relaxing cell parameters')
         minobj = MinimizeSym(unitcell, pot=args.pot, relax_cell=True)
