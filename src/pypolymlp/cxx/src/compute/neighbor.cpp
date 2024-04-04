@@ -63,8 +63,8 @@ vector2d Neighbor::find_trans(const vector2d& axis, const double& cutoff){
                 vector1d vec_c = prod(axis, vec);
                 double dis = sqrt(vec_c[0]*vec_c[0]
                     +vec_c[1]*vec_c[1]+vec_c[2]*vec_c[2]);
-                if (dis > 0 and dis < cutoff){
-                    double exp = ceil(cutoff/dis);
+                if (dis > 0 and dis < 2 * cutoff){
+                    double exp = ceil(2 * cutoff/dis);
                     for (int l = 0; l < 3; ++l){
                         if (exp * vec[l] > max_exp[l]) 
                             max_exp[l] = exp * vec[l];

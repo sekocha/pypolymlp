@@ -70,10 +70,10 @@ vector2d NeighborHalf::find_trans(const vector2d& axis, const double& cutoff){
                 vector1d vec_c = prod(axis, vec);
                 double dis = sqrt(vec_c[0]*vec_c[0]
                     +vec_c[1]*vec_c[1]+vec_c[2]*vec_c[2]);
-                if (dis > 0 and dis < cutoff){
-                    double exp = ceil(cutoff/dis);
+                if (dis > 0 and dis < cutoff * 2){
+                    double exp = ceil((cutoff * 2)/dis);
                     for (int l = 0; l < 3; ++l){
-                        if (exp * vec[l] > max_exp[l]) 
+                        if (exp * abs(vec[l]) > max_exp[l]) 
                             max_exp[l] = exp * vec[l];
                     }
                 }
@@ -92,6 +92,40 @@ vector2d NeighborHalf::find_trans(const vector2d& axis, const double& cutoff){
     return trans_c_array;
 }
 
+//
+//vector2d NeighborHalf::find_trans(const vector2d& axis, const double& cutoff){
+//
+//    int m = 10;
+//    vector1i max_exp(3,1);
+//    for (int i = 0; i < m + 1; ++i){
+//        for (int j = 0; j < m + 1; ++j){
+//            for (int k = 0; k < m + 1; ++k){
+//                vector1i vec = {i,j,k};
+//                vector1d vec_c = prod(axis, vec);
+//                double dis = sqrt(vec_c[0]*vec_c[0]
+//                    +vec_c[1]*vec_c[1]+vec_c[2]*vec_c[2]);
+//                if (dis > 0 and dis < cutoff){
+//                    double exp = ceil(cutoff/dis);
+//                    for (int l = 0; l < 3; ++l){
+//                        if (exp * vec[l] > max_exp[l]) 
+//                            max_exp[l] = exp * vec[l];
+//                    }
+//                }
+//            }
+//        }
+//    }
+//
+//    vector2d trans_c_array;
+//    for (int i = -max_exp[0]; i < max_exp[0] + 1; ++i){
+//        for (int j = -max_exp[1]; j < max_exp[1] + 1; ++j){
+//            for (int k = -max_exp[2]; k < max_exp[2] + 1; ++k){
+//                trans_c_array.emplace_back(prod(axis, vector1i{i,j,k}));
+//            }
+//        }
+//    }
+//    return trans_c_array;
+//}
+//
 const vector2i& NeighborHalf::get_half_list() const{ return half_list; }
 const vector3d& NeighborHalf::get_diff_list() const{ return diff_list; }
 

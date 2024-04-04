@@ -60,7 +60,9 @@ def standardize_cell(cell):
     for n, t in zip(cell_ph.numbers, cell['types']):
         map_numbers[n] = t
 
-    lattice, scaled_positions, numbers = spglib.standardize_cell(cell_ph)
+    lattice, scaled_positions, numbers = spglib.standardize_cell(
+        cell_ph, to_primitive=False,
+    )
     types = [map_numbers[n] for n in numbers]
 
     scaled_positions_reorder = []

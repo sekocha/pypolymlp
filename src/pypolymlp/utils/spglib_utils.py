@@ -31,15 +31,23 @@ class SymCell:
 
         self.symprec = symprec
 
-    def refine_cell(self):
+    def refine_cell(self, standardize_cell=False):
         
-        try:
-            lattice1, position1, types1 = spglib.refine_cell(
-                                                self.cell, 
-                                                symprec=self.symprec)
-        except:
-            raise TypeError
-
+        if standardize_cell == False:
+            try:
+                lattice1, position1, types1 = spglib.refine_cell(
+                                                    self.cell, 
+                                                    symprec=self.symprec)
+            except:
+                raise TypeError
+        else:
+            try:
+                lattice1, position1, types1 = spglib.standardize_cell(
+                                self.cell, symprec=self.symprec
+                                )
+            except:
+                raise TypeError
+ 
         type_list = list(range(0, self.n_types))
 
         position1_tmp, types1_tmp = [], []
@@ -62,6 +70,7 @@ class SymCell:
         st_dict['comment'] = self.comment
         return st_dict
 
+
     def get_spacegroup(self):
         return spglib.get_spacegroup(self.cell, symprec=self.symprec)
 
@@ -82,6 +91,9 @@ if __name__ == '__main__':
     parser.add_argument('--refine_cell', 
                         action='store_true',
                         help='refine cell')
+    parser.add_argument('--standardize_cell', 
+                        action='store_true',
+                        help='standardize cell')
     parser.add_argument('--space_group', 
                         action='store_true',
                         help='get space group')
@@ -91,6 +103,10 @@ if __name__ == '__main__':
 
     if args.refine_cell:
         st_dict = sc.refine_cell()
+        print_poscar(st_dict)
+        write_poscar_file(st_dict)
+    elif args.standardize_cell:
+        st_dict = sc.refine_cell(standardize_cell=True)
         print_poscar(st_dict)
         write_poscar_file(st_dict)
 

@@ -14,7 +14,7 @@ def convert_stresses_in_gpa(stresses, st_dicts):
         stresses_gpa[:,i] = stresses[:,i] / volumes * 160.21766208
     return stresses_gpa
 
- 
+
 class Properties:
 
     def __init__(self, pot=None, params_dict=None, coeffs=None):
@@ -83,15 +83,6 @@ class Properties:
         return energies, forces, stresses
 
  
-def convert_stresses_in_gpa(stresses, st_dicts):
-
-    volumes = np.array([st['volume'] for st in st_dicts])
-    stresses_gpa = np.zeros(stresses.shape)
-    for i in range(6):
-        stresses_gpa[:,i] = stresses[:,i] / volumes * 160.21766208
-    return stresses_gpa
-    
-
 if __name__ == '__main__':
 
     import argparse
@@ -139,6 +130,7 @@ if __name__ == '__main__':
     np.save('polymlp_stress_tensors.npy', stresses_gpa)
 
     if len(forces) == 1:
+        np.savetxt('polymlp_energies.dat', energies, fmt='%f')
         print(' energy =', energies[0], '(eV/cell)')
         print(' forces =')
         for i, f in enumerate(forces[0].T):

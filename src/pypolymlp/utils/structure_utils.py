@@ -3,7 +3,7 @@ import numpy as np
 import argparse
 import itertools
 import copy
-from math import pi
+from math import pi, sqrt
 
 import sys
 from pypolymlp.core.interface_vasp import Poscar
@@ -151,6 +151,29 @@ def swap_elements(st_dict, order=None, index1=None, index2=None):
     st_dict['positions'] = np.array(positions).T
     return st_dict
 
+
+def triangulation_axis(st_dict):
+
+    a = np.linalg.norm(st_dict['axis'][:,0])
+    b = np.linalg.norm(st_dict['axis'][:,1])
+    c = np.linalg.norm(st_dict['axis'][:,2])
+    calpha = np.dot(st_dict['axis'][:,1], st_dict['axis'][:,2]) / (b * c)
+    cbeta  = np.dot(st_dict['axis'][:,2], st_dict['axis'][:,0]) / (c * a)
+    cgamma = np.dot(st_dict['axis'][:,0], st_dict['axis'][:,1]) / (a * b)
+
+    lx = a
+    xy = b * cgamma
+    xz = c * cbeta
+    ly = sqrt(b*b - xy*xy)
+    yz = (b * c * calpha - xy * xz) / ly
+    lz = sqrt(c*c - xz*xz - yz*yz)
+
+    tri_axis = np.array([[lx, xy, xz],
+                          [0, ly, yz],
+                          [0, 0, lz]])
+    st_dict['axis'] = tri_axis
+    return st_dict
+    
 
 if __name__ == '__main__':
 
