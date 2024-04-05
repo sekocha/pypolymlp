@@ -42,14 +42,26 @@ expansions = np.array([
      [1,1,0],
      [1,1,1]],
     [[1,0,0],
+     [1,1,0],
+     [0,0,1]],
+    [[1,0,0],
+     [-1,1,0],
+     [0,0,1]],
+    [[1,0,0],
      [-1,1,0],
      [-1,-1,1]],
+    [[1,0,0],
+     [-3,1,0],
+     [3,3,1]],
     [[1,0,0],
      [3,1,0],
      [3,3,1]],
     [[1,0,0],
      [-3,1,0],
      [-3,-3,1]],
+    [[1,0,0],
+     [3,1,0],
+     [10,3,10]],
     [[1,0,0],
      [5,1,0],
      [5,5,1]],
@@ -59,7 +71,7 @@ expansions = np.array([
 ])
 
 for hnf in expansions:
-    st_rev = make_supercell(unitcell, hnf)
+    st_rev = make_supercell(unitcell, hnf.T)
     energy, forces, stresses = prop.eval(st_rev)
     print(hnf, energy)
 

@@ -14,11 +14,11 @@ NeighborHalf::NeighborHalf(const vector2d& axis,
                            const vector1i& types, 
                            const double& cutoff){
 
-    clock_t start = clock();
+//    clock_t start = clock();
 
     const double tol = 1e-12;
     const auto& trans = find_trans(axis, cutoff);
-    clock_t start2 = clock();
+//    clock_t start2 = clock();
 
     const int n_total_atom = types.size();
     half_list = vector2i(n_total_atom);
@@ -54,9 +54,9 @@ NeighborHalf::NeighborHalf(const vector2d& axis,
         }
     }
 
-    clock_t end = clock();
-    std::cout << (double)(start2 - start) / CLOCKS_PER_SEC << std::endl;
-    std::cout << (double)(end - start) / CLOCKS_PER_SEC << std::endl;
+//    clock_t end = clock();
+//    std::cout << (double)(start2 - start) / CLOCKS_PER_SEC << std::endl;
+//    std::cout << (double)(end - start2) / CLOCKS_PER_SEC << std::endl;
 }
 
 NeighborHalf::~NeighborHalf(){}
@@ -72,81 +72,10 @@ vector1d NeighborHalf::prod(const vector2d& mat, const vector1i& vec){
     return res;
 }
 
-//vector2d NeighborHalf::find_trans(const vector2d& axis, const double& cutoff){
-//
-//    vector2i vertices;
-//    for (int i = 0; i < 2; ++i){
-//        for (int j = 0; j < 2; ++j){
-//            for (int k = 0; k < 2; ++k){
-//                vertices.emplace_back(vector1i{i,j,k});
-//            }
-//        }
-//    }
-// 
-//    int m = 10;
-//    vector2i cell_expansion;
-//    for (int i = -m; i < m + 1; ++i){
-//        for (int j = -m; j < m + 1; ++j){
-//            for (int k = -m; k < m + 1; ++k){
-//                vector1i vec = {i,j,k};
-//                double min_dis(1e10);
-//                for (const auto& vertex1: vertices){
-//                    for (const auto& vertex2: vertices){
-//                        vector1i dint = {vec[0] + vertex2[0] - vertex1[0],
-//                                         vec[1] + vertex2[1] - vertex1[1],
-//                                         vec[2] + vertex2[2] - vertex1[2]};
-//                        vector1d vec_c = prod(axis, dint);
-//                        double dis = sqrt(vec_c[0]*vec_c[0]
-//                                +vec_c[1]*vec_c[1]
-//                                +vec_c[2]*vec_c[2]);
-//                        if (min_dis > dis){
-//                            min_dis = dis;
-//                        }
-//                        if (min_dis < cutoff) break;
-//                    }
-//                    if (min_dis < cutoff) break;
-//                }
-//                if (min_dis < cutoff){
-//                    cell_expansion.emplace_back(vec);
-//                }
-//
-//                /*
-//                vector1d vec_c = prod(axis, vec);
-//                double dis = sqrt(vec_c[0]*vec_c[0]
-//                                 +vec_c[1]*vec_c[1]
-//                                 +vec_c[2]*vec_c[2]);
-//                if (dis > 0 and dis < cutoff){
-//                    double exp = ceil(cutoff / dis);
-//                    for (int e = 0; e < exp + 1; ++e){
-//                        cell_expansion.insert(vector1i{i*e, j*e, k*e});
-//                    }
-//                    cell_expansion.insert(vector1i{i*exp+1, j*exp+1, k*exp+1});
-//
-//                    //for (int l = 0; l < 3; ++l){
-//                    //    if (exp * abs(vec[l]) > max_exp[l]){
-//                    //        max_exp[l] = exp * abs(vec[l]);
-//                    //    }
-//                    //}
-//                }
-//                */
-//            }
-//        }
-//    }
-//
-//    vector2d trans_c_array;
-//    for (const auto& cell: cell_expansion){
-//        trans_c_array.emplace_back(prod(axis, cell));
-//    }
-//    return trans_c_array;
-//}
-
 double NeighborHalf::distance(const vector2d& axis, 
                               const int i, const int j, const int k){
-    vector1i vec = {i,j,k};
-    vector1d vec_c = prod(axis, vec);
-    double dis = sqrt(vec_c[0]*vec_c[0]
-                    +vec_c[1]*vec_c[1]
-                    +vec_c[2]*vec_c[2]);
+    vector1d vec_c = prod(axis, vector1i{i,j,k});
+    double dis = sqrt(vec_c[0]*vec_c[0]+vec_c[1]*vec_c[1]+vec_c[2]*vec_c[2]);
     return dis;
 }
 
@@ -172,18 +101,45 @@ vector2d NeighborHalf::find_trans(const vector2d& axis, const double& cutoff){
         }
     }
 
+    int m = 30;
+    double min_dis(1e10);
+    vector1i vec_i{1,0,0}, vec_j{0,1,0}, vec_k{0,0,1};
+    for (int i = -m; i < m + 1; ++i){
+        double dis = distance(axis, i, 1, 0);
+        if (min_dis > dis) {
+            min_dis = dis;
+            vec_j[0] = i;
+        }
+    }
 
-    int m = 20;
+    min_dis = 1e10;
+    for (int i = -m; i < m + 1; ++i){
+        for (int j = -m; j < m + 1; ++j){
+            double dis = distance(axis, i, j, 1);
+            if (min_dis > dis) {
+                min_dis = dis;
+                vec_k[0] = i;
+                vec_k[1] = j;
+            }
+        }
+    }
+
+    // better to optimize m value automatically.
+    m = 5;
+    int i1, i2, i3;
     vector1i max_exp(3, 1);
     for (int i = -m; i < m + 1; ++i){
         for (int j = -m; j < m + 1; ++j){
             for (int k = -m; k < m + 1; ++k){
-                double dis = distance(axis, i, j, k);
+                i1 = vec_i[0] * i + vec_j[0] * j + vec_k[0] * k;
+                i2 = vec_i[1] * i + vec_j[1] * j + vec_k[1] * k;
+                i3 = vec_i[2] * i + vec_j[2] * j + vec_k[2] * k;
+                double dis = distance(axis, i1, i2, i3);
                 if (dis > 0 and dis < cutoff){
                     double exp = ceil(cutoff / dis);
-                    if (exp * abs(i) > max_exp[0]) max_exp[0] = exp * abs(i);
-                    if (exp * abs(j) > max_exp[1]) max_exp[1] = exp * abs(j);
-                    if (exp * abs(k) > max_exp[2]) max_exp[2] = exp * abs(k);
+                    if (exp * abs(i1) > max_exp[0]) max_exp[0] = exp * abs(i1);
+                    if (exp * abs(i2) > max_exp[1]) max_exp[1] = exp * abs(i2);
+                    if (exp * abs(i3) > max_exp[2]) max_exp[2] = exp * abs(i3);
                 }
             }
         }
@@ -205,8 +161,74 @@ vector2d NeighborHalf::find_trans(const vector2d& axis, const double& cutoff){
             }
         }
     }
+
     return trans_c_array;
 }
+
+/*
+vector2d NeighborHalf::find_trans(const vector2d& axis, const double& cutoff){
+
+    vector2i vertices;
+    for (int i = 0; i < 2; ++i){
+        for (int j = 0; j < 2; ++j){
+            for (int k = 0; k < 2; ++k){
+                vertices.emplace_back(vector1i{i,j,k});
+            }
+        }
+    }
+
+    double max_length(0.0);
+    for (const auto& ver1: vertices){
+        for (const auto& ver2: vertices){
+            double dis = distance(axis, 
+                                  ver1[0] - ver2[0], 
+                                  ver1[1] - ver2[1], 
+                                  ver1[2] - ver2[2]);
+            if (max_length < dis) max_length = dis;
+        }
+    }
+
+
+    // better to optimize m value automatically.
+    int m = 15;
+    vector1i max_exp(3, 1);
+    for (int i = -m; i < m + 1; ++i){
+        for (int j = -m; j < m + 1; ++j){
+            for (int k = -m; k < m + 1; ++k){
+                double dis = distance(axis, i, j, k);
+                if (dis > 0 and dis < cutoff){
+                    double exp = ceil(cutoff / dis);
+                    if (exp * abs(i) > max_exp[0]) max_exp[0] = exp * abs(i);
+                    if (exp * abs(j) > max_exp[1]) max_exp[1] = exp * abs(j);
+                    if (exp * abs(k) > max_exp[2]) max_exp[2] = exp * abs(k);
+                }
+            }
+        }
+    }
+    std::cout << max_exp[0] << " " << max_exp[1] << " " 
+                << max_exp[2] << std::endl;
+    for (int l = 0; l < 3; ++l) max_exp[l] += 1;
+    std::cout << max_exp[0] << " " << max_exp[1] << " " 
+                << max_exp[2] << std::endl;
+
+    vector2d trans_c_array;
+    for (int i = -max_exp[0]; i < max_exp[0] + 1; ++i){
+        for (int j = -max_exp[1]; j < max_exp[1] + 1; ++j){
+            for (int k = -max_exp[2]; k < max_exp[2] + 1; ++k){
+                vector1i vec = {i,j,k};
+                vector1d vec_c = prod(axis, vec);
+                double dis = sqrt(vec_c[0]*vec_c[0]
+                                +vec_c[1]*vec_c[1]
+                                +vec_c[2]*vec_c[2]);
+                if (dis < max_length + cutoff){
+                    trans_c_array.emplace_back(vec_c);
+                }
+            }
+        }
+    }
+    return trans_c_array;
+}
+*/
 
 /*
 vector2d NeighborHalf::find_trans(const vector2d& axis, const double& cutoff){
@@ -246,6 +268,8 @@ vector2d NeighborHalf::find_trans(const vector2d& axis, const double& cutoff){
 
 const vector2i& NeighborHalf::get_half_list() const{ return half_list; }
 const vector3d& NeighborHalf::get_diff_list() const{ return diff_list; }
+
+
 
 
 /* lammps convention for pair choice 
