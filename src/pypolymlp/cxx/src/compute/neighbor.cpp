@@ -107,7 +107,6 @@ vector2d Neighbor::find_trans(const vector2d& axis, const double& cutoff){
         }
     }
 
-    // better to optimize m value automatically.
     m = 5;
     int i1, i2, i3;
     vector1i max_exp(3, 1);
@@ -133,8 +132,7 @@ vector2d Neighbor::find_trans(const vector2d& axis, const double& cutoff){
     for (int i = -max_exp[0]; i < max_exp[0] + 1; ++i){
         for (int j = -max_exp[1]; j < max_exp[1] + 1; ++j){
             for (int k = -max_exp[2]; k < max_exp[2] + 1; ++k){
-                vector1i vec = {i,j,k};
-                vector1d vec_c = prod(axis, vec);
+                vector1d vec_c = prod(axis, vector1i{i,j,k});
                 double dis = sqrt(vec_c[0]*vec_c[0]
                                 +vec_c[1]*vec_c[1]
                                 +vec_c[2]*vec_c[2]);
