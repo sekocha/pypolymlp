@@ -9,6 +9,7 @@
 #define __NEIGHBOR
 
 #include "mlpcpp.h"
+#include "neighbor_cell.h"
 
 class Neighbor{
 
@@ -16,11 +17,6 @@ class Neighbor{
     vector4d diff_array; 
     vector3i atom2_array;
 
-    vector2d find_trans(const vector2d& axis, const double& cutoff);
-    vector1d prod(const vector2d& mat, const vector1i& vec);
-
-    double distance(const vector2d& axis, 
-                    const int i, const int j, const int k);
     public: 
 
     Neighbor(const vector2d& axis, 

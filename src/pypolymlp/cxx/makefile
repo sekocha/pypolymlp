@@ -21,7 +21,7 @@ source = polymlp_gtinv_data.o polymlp_read_gtinv.o polymlp_basis_function.o \
          polymlp_mlipkk_spherical_harmonics.o \
          local.o model.o py_model.o py_additive_model.o neighbor.o \
          model_properties.o py_properties.o py_features_attr.o \
-         neighbor_half.o polymlp_eval.o py_properties_efficient.o \
+         neighbor_half.o neighbor_cell.o polymlp_eval.o \
          pybind11_mlp.o 
 
 all: mkdir $(addprefix lib/,$(source))
