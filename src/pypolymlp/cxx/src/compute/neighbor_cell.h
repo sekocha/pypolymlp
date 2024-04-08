@@ -31,8 +31,23 @@ class NeighborCell{
             vector1i& vec0, vector1i& vec1, vector1i& vec2);
 
     int refine_axis(const vector2d& axis, 
+                    const double dot00, 
+                    const double dot11, 
+                    const double dot22, 
+                    const double dot01, 
+                    const double dot02, 
+                    const double dot12, 
                     vector1i& vec0, vector1i& vec1, vector1i& vec2);
 
+    double optimize_1d_axis0(
+        const vector2d& axis, const int val1, const int val2,
+        vector1i& vec);
+    double optimize_1d_axis1(
+        const vector2d& axis, const int val1, const int val2,
+        vector1i& vec);
+    double optimize_1d_axis2(
+        const vector2d& axis, const int val1, const int val2,
+        vector1i& vec);
 
     double find_maximum_diagonal_in_cell(const vector2d& axis);
     int find_trans(const vector2d& axis, const double cutoff);

@@ -6,7 +6,7 @@
 *****************************************************************************/
 
 #include "compute/neighbor_half.h"
-#include <time.h>
+//#include <chrono>
 
 
 NeighborHalf::NeighborHalf(const vector2d& axis, 
@@ -14,18 +14,24 @@ NeighborHalf::NeighborHalf(const vector2d& axis,
                            const vector1i& types, 
                            const double& cutoff){
 
-    clock_t start = clock();
+    //auto t1 = std::chrono::system_clock::now(); 
 
-    const double tol = 1e-12;
     NeighborCell neigh_cell(axis, cutoff);
     const auto& trans = neigh_cell.get_translations();
-    clock_t start2 = clock();
+
+    //auto t2 = std::chrono::system_clock::now(); 
+    //auto dur = t2 - t1;
+    //auto msec = std::chrono::duration_cast
+    //            <std::chrono::microseconds>(dur).count();
+    //std::cout << msec << std::endl;
 
     const int n_total_atom = types.size();
     half_list = vector2i(n_total_atom);
     diff_list = vector3d(n_total_atom);
 
+    //auto t3 = std::chrono::system_clock::now(); 
     double dx, dy, dz;
+    const double tol = 1e-12;
     for (int i = 0; i < n_total_atom; ++i){
         for (int j = 0; j <= i; ++j){
             for (const auto& tr: trans){
@@ -55,16 +61,17 @@ NeighborHalf::NeighborHalf(const vector2d& axis,
         }
     }
 
-    clock_t end = clock();
-    std::cout << (double)(start2 - start) / CLOCKS_PER_SEC << std::endl;
-    std::cout << (double)(end - start2) / CLOCKS_PER_SEC << std::endl;
+    //auto t4 = std::chrono::system_clock::now(); 
+    //dur = t4 - t3;
+    //msec = std::chrono::duration_cast
+    //            <std::chrono::microseconds>(dur).count();
+    //std::cout << msec << std::endl;
 }
 
 NeighborHalf::~NeighborHalf(){}
 
 const vector2i& NeighborHalf::get_half_list() const { return half_list; }
 const vector3d& NeighborHalf::get_diff_list() const { return diff_list; }
-
 
 
 
