@@ -13,7 +13,7 @@ Neighbor::Neighbor(const vector2d& axis,
                    const int& n_type, 
                    const double& cutoff){
 
-    NeighborCell neigh_cell(axis, cutoff);
+    NeighborCell neigh_cell(axis, positions_c, cutoff);
     const auto& trans = neigh_cell.get_translations();
 
     const int n_total_atom = types.size();
@@ -21,13 +21,16 @@ Neighbor::Neighbor(const vector2d& axis,
     diff_array = vector4d(n_total_atom, vector3d(n_type));
     atom2_array = vector3i(n_total_atom, vector2i(n_type));
 
-    double dx, dy, dz;
+    double dx, dy, dz, dx_ij, dy_ij, dz_ij;
     for (int i = 0; i < n_total_atom; ++i){
         for (int j = 0; j < n_total_atom; ++j){
+            dx_ij = positions_c[0][j] - positions_c[0][i];
+            dy_ij = positions_c[1][j] - positions_c[1][i];
+            dz_ij = positions_c[2][j] - positions_c[2][i];
             for (const auto& tr: trans){
-                dx = positions_c[0][j] + tr[0] - positions_c[0][i];
-                dy = positions_c[1][j] + tr[1] - positions_c[1][i];
-                dz = positions_c[2][j] + tr[2] - positions_c[2][i];
+                dx = dx_ij + tr[0];
+                dy = dy_ij + tr[1];
+                dz = dz_ij + tr[2];
                 double dis = sqrt(dx*dx + dy*dy + dz*dz);
                 if (dis < cutoff and dis > 1e-10){
                     int type2 = types[j];
