@@ -232,20 +232,16 @@ int NeighborCell::find_trans(){
         }
     }
 
-    double dis;
-    vector1i max_exp(3, 1);
-    dis = distance(1, 0, 0);
-    max_exp[0] = ceil(cutoff / dis) + 1;
-    dis = distance(0, 1, 0);
-    max_exp[1] = ceil(cutoff / dis) + 1;
-    dis = distance(0, 0, 1);
-    max_exp[2] = ceil(cutoff / dis) + 1;
+    vector1i max_exp = {int(ceil(cutoff / distance(1, 0, 0)) + 1), 
+                        int(ceil(cutoff / distance(0, 1, 0)) + 1), 
+                        int(ceil(cutoff / distance(0, 0, 1)) + 1)};
 
+    double dis;
     double max_length = find_maximum_diagonal_in_cell();
     vector1d vec_c;
-    for (int i = - max_exp[0]; i < max_exp[0] + 1; ++i){
-        for (int j = - max_exp[1]; j < max_exp[1] + 1; ++j){
-            for (int k = - max_exp[2]; k < max_exp[2] + 1; ++k){
+    for (int i = - max_exp[0] + 1; i < max_exp[0] + 1; ++i){
+        for (int j = - max_exp[1] + 1; j < max_exp[1] + 1; ++j){
+            for (int k = - max_exp[2] + 1; k < max_exp[2] + 1; ++k){
                 vec_c = to_cartesian(i, j, k);
                 dis = norm(vec_c);
                 if (dis < max_length + cutoff){

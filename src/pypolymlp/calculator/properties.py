@@ -15,7 +15,7 @@ def convert_stresses_in_gpa(stresses, st_dicts):
     return stresses_gpa
 
 
-class Properties:
+class PropertiesSingle:
 
     def __init__(self, pot=None, params_dict=None, coeffs=None):
 
@@ -82,7 +82,99 @@ class Properties:
         forces = [np.array(f).T for f in self.obj.get_f_array()]
         return energies, forces, stresses
 
+    @property
+    def params_dict(self):
+        return self.__params_dict
+
+
+class PropertiesHybrid:
+
+    def __init__(self, pot=None, params_dict=None, coeffs=None):
+
+        if pot is not None:
+            try:
+                bool_list = isinstance(pot, list)
+            except:
+                raise ValueError(
+                    'Parameters in PropertiesHybrid must be lists.'
+                )
+            self.props = [PropertiesSingle(pot=p) for p in pot]
+        else:
+            try:
+                bool_list = isinstance(params_dict, list)
+                bool_list = isinstance(coeffs, list)
+            except:
+                raise ValueError(
+                    'Parameters in PropertiesHybrid must be lists.'
+                )
+
+            self.props = [PropertiesSingle(params_dict=p, coeffs=c) 
+                           for p, c in zip(params_dict, coeffs)]
+
+    def eval(self, st_dict):
+
+        energy, force, stress = self.props[0].eval(st_dict)
+        for prop in self.props[1:]:
+            e_single, f_single, s_single = prop.eval(st_dict)
+            energy += e_single
+            force += f_single
+            stress += s_single
+
+        return energy, force, stress
+
+
+    def eval_multiple(self, st_dicts):
  
+        energies, forces, stresses = self.props[0].eval_multiple(st_dicts)
+        for prop in self.props[1:]:
+            e_single, f_single, s_single = prop.eval_multiple(st_dicts)
+            energies += e_single
+            for i, f1 in enumerate(f_single):
+                forces[i] += f1
+            stresses += s_single
+
+        return energies, forces, stresses
+
+    @property
+    def params_dict(self):
+        return [prop.params_dict for prop in self.props]
+
+
+class Properties:
+
+    def __init__(self, pot=None, params_dict=None, coeffs=None):
+        
+        if pot is not None:
+            if isinstance(pot, list): 
+                if len(pot) > 1:
+                    self.prop = PropertiesHybrid(pot=pot)
+                else:
+                    self.prop = PropertiesSingle(pot=pot[0])
+            else:
+                self.prop = PropertiesSingle(pot=pot)
+        else:
+            if isinstance(params_dict, list) and isinstance(coeffs, list):
+                if len(params_dict) > 1 and len(coeffs) > 1:
+                    self.prop = PropertiesHybrid(params_dict=params_dict,
+                                                 coeffs=coeffs)
+                else:
+                    self.prop = PropertiesSingle(params_dict=params_dict[0],
+                                                 coeffs=coeffs[0])
+            else:
+                self.prop = PropertiesSingle(params_dict=params_dict,
+                                             coeffs=coeffs)
+
+    def eval(self, st_dict):
+        return self.prop.eval(st_dict)
+
+    def eval_multiple(self, st_dicts):
+        return self.prop.eval_multiple(st_dicts)
+
+    @property
+    def params_dict(self):
+        return self.prop.params_dict
+
+
 if __name__ == '__main__':
 
     import argparse
@@ -105,6 +197,7 @@ if __name__ == '__main__':
                         default=None,
                         help='phono3py.yaml file')
     parser.add_argument('--pot', 
+                        nargs='*',
                         type=str, 
                         default='polymlp.lammps',
                         help='polymlp file')
@@ -120,7 +213,11 @@ if __name__ == '__main__':
         )
         structures = parse_structures_from_phono3py_yaml(args.phono3py_yaml)
 
-    prop = Properties(pot=args.pot)
+    if len(args.pot) == 1:
+        prop = Properties(pot=args.pot)
+    else:
+        prop = PropertiesHybrid(pot=args.pot)
+
     energies, forces, stresses = prop.eval_multiple(structures)
     stresses_gpa = convert_stresses_in_gpa(stresses, structures)
 

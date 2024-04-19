@@ -21,6 +21,7 @@ class PolymlpElastic:
                  pot=None, 
                  params_dict=None,
                  coeffs=None,
+                 properties=None,
                  geometry_optimization=True):
 
         '''
@@ -29,19 +30,20 @@ class PolymlpElastic:
         unitcell_dict: unitcell in dict format
         pot or (params_dict and coeffs): polynomal MLP
         '''
-        if pot is not None:
-            params_dict, mlp_dict = load_mlp_lammps(filename=pot)
-            coeffs = mlp_dict['coeffs'] / mlp_dict['scales']
 
-        self.__params_dict = params_dict
-        self.__coeffs = coeffs
+        if properties is not None:
+            self.prop = properties
+        else:
+            self.prop = Properties(pot=pot, 
+                                   params_dict=params_dict, 
+                                   coeffs=coeffs)
+
         self.__unitcell_dict = unitcell_dict
         self.st_pmg = pmg.core.Structure.from_str(
             open(unitcell_poscar).read(), fmt="POSCAR"
         )
         #self.__run_initial_geometry_optimization()
 
-        self.prop = Properties(params_dict=params_dict, coeffs=coeffs)
         self.__compute_initial_properties()
 
     def __compute_initial_properties(self):
@@ -60,8 +62,7 @@ class PolymlpElastic:
         print('-------------------------------')
         print('Running geometry optimization')
         minobj = MinimizeSym(self.__unitcell_dict, 
-                             params_dict=self.__params_dict, 
-                             coeffs=self.__coeffs,
+                             properties=self.prop,
                              relax_cell=True)
         minobj.run(gtol=1e-6)
         res_f, res_s = minobj.residual_forces
@@ -82,8 +83,7 @@ class PolymlpElastic:
         print('Running geometry optimization')
         try:
             minobj = MinimizeSym(st_dict, 
-                                 params_dict=self.__params_dict, 
-                                 coeffs=self.__coeffs,
+                                 properties=self.prop,
                                  relax_cell=False)
             minobj.run(gtol=1e-6)
             print('Success:', minobj.success)
@@ -166,6 +166,7 @@ if __name__ == '__main__':
                         default=None,
                         help='poscar file')
     parser.add_argument('--pot', 
+                        nargs='*',
                         type=str, 
                         default='polymlp.lammps',
                         help='polymlp file')

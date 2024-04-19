@@ -11,13 +11,16 @@ class PolymlpEOS:
                  unitcell_dict, 
                  pot=None, 
                  params_dict=None,
-                 coeffs=None):
+                 coeffs=None,
+                 properties=None):
 
-        if pot is not None:
-            params_dict, mlp_dict = load_mlp_lammps(filename=pot)
-            coeffs = mlp_dict['coeffs'] / mlp_dict['scales']
+        if properties is not None:
+            self.prop = properties
+        else:
+            self.prop = Properties(pot=pot, 
+                                   params_dict=params_dict, 
+                                   coeffs=coeffs)
 
-        self.prop = Properties(params_dict=params_dict, coeffs=coeffs)
         self.__unitcell_dict = unitcell_dict
 
         self.__eos_data = None
@@ -142,6 +145,7 @@ if __name__ == '__main__':
                         default=None,
                         help='poscar file')
     parser.add_argument('--pot', 
+                        nargs='*',
                         type=str, 
                         default='polymlp.lammps',
                         help='polymlp file')

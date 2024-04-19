@@ -8,10 +8,10 @@ from pypolymlp.utils.phonopy_utils import phonopy_cell_to_st_dict
 
 class HarmonicReciprocal:
 
-    def __init__(self, phonopy_obj, params_dict, coeffs, fc2=None):
+    def __init__(self, phonopy_obj, properties, fc2=None):
 
         self.ph = phonopy_obj
-        self.prop = Properties(params_dict=params_dict, coeffs=coeffs)
+        self.prop = properties
         self.fc2 = fc2
 
         self.__tp_dict = dict()

@@ -27,8 +27,7 @@ class HarmonicReal:
 
     def __init__(self, 
                  supercell_dict, 
-                 params_dict, 
-                 coeffs, 
+                 properties,
                  n_unitcells=None, 
                  fc2=None):
 
@@ -37,7 +36,7 @@ class HarmonicReal:
         if n_unitcells is not None:
             self.supercell['n_unitcells'] = n_unitcells
 
-        self.prop = Properties(params_dict=params_dict, coeffs=coeffs)
+        self.prop = properties
 
         self.__mesh_dict = dict()
         self.__tp_dict = dict()

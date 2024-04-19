@@ -104,6 +104,7 @@ def run():
                               'This uses only features'))
 
     parser.add_argument('--pot',
+                        nargs='*',
                         type=str,
                         default=None,
                         help='polymlp file')
@@ -210,10 +211,10 @@ def run():
                     run_generator_multiple_datasets(infile)
         else:
             if args.sequential:
-                print('Mode: Sequential regression (additive model)')
+                print('Mode: Sequential regression (hybrid model)')
                 run_sequential_generator_additive(args.infile)
             else:
-                print('Mode: Regression (additive model)')
+                print('Mode: Regression (hybrid model)')
                 run_generator_additive(args.infile)
 
     if args.properties:
@@ -225,13 +226,11 @@ def run():
 
         np.set_printoptions(suppress=True)
         np.save('polymlp_energies.npy', energies)
-        ''' todo: if numbers of atoms are different, 
-                   numpy array cannot be used.
-        '''
         np.save('polymlp_forces.npy', forces)
         np.save('polymlp_stress_tensors.npy', stresses_gpa)
 
         if len(forces) == 1:
+            np.savetxt('polymlp_energies.dat', energies, fmt='%f')
             print(' energy =', energies[0], '(eV/cell)')
             print(' forces =')
             for i, f in enumerate(forces[0].T):
@@ -287,7 +286,9 @@ def run():
             )
 
     elif args.phonon:
-        from pypolymlp.calculator.compute_phonon import PolymlpPhonon
+        from pypolymlp.calculator.compute_phonon import (
+            PolymlpPhonon, PolymlpPhononQHA
+        )
         print('Mode: Phonon calculations')
 
         if args.str_yaml is not None:
@@ -297,13 +298,17 @@ def run():
             unitcell_dict = Poscar(args.poscar).get_structure()
             supercell_matrix = np.diag(args.supercell)
 
-        ph = PolymlpPhonon(unitcell_dict, supercell_matrix, args.pot)
+        ph = PolymlpPhonon(unitcell_dict, supercell_matrix, pot=args.pot)
         ph.produce_force_constants(displacements=args.disp)
         ph.compute_properties(mesh=args.ph_mesh,
                               t_min=args.ph_tmin,
                               t_max=args.ph_tmax,
                               t_step=args.ph_tstep,
                               pdos=args.ph_pdos)
+
+
+        qha = PolymlpPhononQHA(unitcell_dict, supercell_matrix, pot=args.pot)
+        qha.run()
 
     elif args.features:
         print('Mode: Feature matrix calculations')

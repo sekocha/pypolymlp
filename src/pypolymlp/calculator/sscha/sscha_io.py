@@ -63,7 +63,12 @@ def print_parameters(supercell, args):
         for t in args.temperatures[1:]:
             print('                  ', t)
 
-    print('  - Polynomial ML potential:  ', os.path.abspath(args.pot))
+    if isinstance(args.pot, list):
+        for p in args.pot:
+            print('  - Polynomial ML potential:  ', os.path.abspath(p))
+    else:
+        print('  - Polynomial ML potential:  ', os.path.abspath(args.pot))
+ 
     print('  - FC tolerance:             ', args.tol)
     print('  - max iter:                 ', args.max_iter)
     print('  - num samples:              ', args.n_steps)
@@ -114,7 +119,11 @@ def save_sscha_yaml(sscha, args, filename='sscha_results.yaml'):
 
     f = open(filename, 'w')
     print('parameters:', file=f)
-    print('  pot:     ', os.path.abspath(args.pot), file=f)
+    if isinstance(args.pot, list):
+        for p in args.pot:
+            print('  pot:     ', os.path.abspath(p), file=f)
+    else:
+        print('  pot:     ', os.path.abspath(args.pot), file=f)
     print('  temperature:   ', sscha_dict['temperature'], file=f)
     print('  n_steps:       ', args.n_steps, file=f)
     print('  n_steps_final: ', args.n_steps_final, file=f)

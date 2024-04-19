@@ -3,7 +3,6 @@ import numpy as np
 import copy
 
 from scipy.optimize import minimize
-from pypolymlp.core.io_polymlp import load_mlp_lammps
 from pypolymlp.calculator.compute_features import update_types
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.utils.vasp_utils import write_poscar_file
@@ -11,15 +10,23 @@ from pypolymlp.utils.vasp_utils import write_poscar_file
 
 class Minimize:
     
-    def __init__(self, cell, pot=None, params_dict=None, coeffs=None):
+    def __init__(self, cell, pot=None, params_dict=None, coeffs=None,
+                 properties=None):
 
-        if pot is not None:
-            params_dict, mlp_dict = load_mlp_lammps(filename=pot)
-            coeffs = mlp_dict['coeffs'] / mlp_dict['scales']
+        if properties is not None:
+            self.prop = properties
+        else:
+            self.prop = Properties(pot=pot, 
+                                   params_dict=params_dict, 
+                                   coeffs=coeffs)
 
-        cell = update_types([cell], params_dict['elements'])[0]
+        params_dict = self.prop.params_dict
+        if isinstance(params_dict, list):
+            elements = params_dict[0]['elements']
+        else:
+            elements = params_dict['elements']
 
-        self.prop = Properties(params_dict=params_dict, coeffs=coeffs)
+        cell = update_types([cell], elements)[0]
         self.st_dict = self.set_structure(cell)
 
         self.__energy = None
@@ -173,6 +180,7 @@ if __name__ == '__main__':
                         default=None,
                         help='poscar file')
     parser.add_argument('--pot', 
+                        nargs='*',
                         type=str, 
                         default='polymlp.lammps',
                         help='polymlp file')

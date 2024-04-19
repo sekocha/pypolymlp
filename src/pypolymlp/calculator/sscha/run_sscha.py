@@ -8,12 +8,12 @@ from symfc.basis_sets.basis_sets_O2 import FCBasisSetO2
 from symfc.solvers.solver_O2 import run_solver_dense_O2
 
 from pypolymlp.core.utils import ev_to_kjmol
-from pypolymlp.core.io_polymlp import load_mlp_lammps
 from pypolymlp.utils.phonopy_utils import (
         phonopy_cell_to_st_dict,
         st_dict_to_phonopy_cell,
 )
 
+from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.sscha.harmonic_real import HarmonicReal
 from pypolymlp.calculator.sscha.harmonic_reciprocal import HarmonicReciprocal
 from pypolymlp.calculator.sscha.sscha_io import save_sscha_yaml
@@ -32,14 +32,15 @@ class PolymlpSSCHA:
                  supercell_matrix, 
                  pot=None, 
                  params_dict=None,
-                 coeffs=None):
+                 coeffs=None,
+                 properties=None):
 
-        if pot is not None:
-            self.params_dict, mlp_dict = load_mlp_lammps(filename=pot)
-            self.coeffs = mlp_dict['coeffs'] / mlp_dict['scales']
+        if properties is not None:
+            self.prop = properties
         else:
-            self.params_dict = params_dict
-            self.coeffs = coeffs
+            self.prop = Properties(pot=pot, 
+                                   params_dict=params_dict, 
+                                   coeffs=coeffs)
 
         self.unitcell_dict = unitcell_dict
         self.supercell_matrix = supercell_matrix
@@ -63,12 +64,9 @@ class PolymlpSSCHA:
         compress_eigvecs_fc3 = fc3_basis.basis_set
         '''
 
-        self.ph_real = HarmonicReal(self.supercell_dict, 
-                                    self.params_dict,
-                                    self.coeffs)
-        self.ph_recip = HarmonicReciprocal(self.phonopy, 
-                                           self.params_dict, 
-                                           self.coeffs)
+        self.ph_real = HarmonicReal(self.supercell_dict, self.prop)
+        self.ph_recip = HarmonicReciprocal(self.phonopy, self.prop)
+
         self.fc2 = None
         self.__sscha_dict = None
         self.__log_dict = None
@@ -327,6 +325,7 @@ if __name__ == '__main__':
                         help='sscha_results.yaml file for parsing '
                              'unitcell and supercell size.')
     parser.add_argument('--pot', 
+                        nargs='*',
                         type=str, 
                         default=None,
                         help='polymlp.lammps file')

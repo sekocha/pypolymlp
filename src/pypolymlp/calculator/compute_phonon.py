@@ -4,7 +4,6 @@ import os
 
 from phonopy import Phonopy, PhonopyQHA
 
-from pypolymlp.core.io_polymlp import load_mlp_lammps
 from pypolymlp.utils.phonopy_utils import (
         phonopy_cell_to_st_dict,
         st_dict_to_phonopy_cell,
@@ -26,11 +25,9 @@ class PolymlpPhonon:
         if properties is not None:
             self.prop = properties
         else:
-            if pot is not None:
-                params_dict, mlp_dict = load_mlp_lammps(filename=pot)
-                coeffs = mlp_dict['coeffs'] / mlp_dict['scales']
-
-            self.prop = Properties(params_dict=params_dict, coeffs=coeffs)
+            self.prop = Properties(pot=pot, 
+                                   params_dict=params_dict, 
+                                   coeffs=coeffs)
 
         unitcell = st_dict_to_phonopy_cell(unitcell_dict)
         self.ph = Phonopy(unitcell, supercell_matrix)
@@ -85,18 +82,16 @@ class PolymlpPhonon:
 
 class PolymlpPhononQHA:
 
-    def __init__(self, unitcell_dict, supercell_matrix, 
-                 pot=None, params_dict=None, coeffs=None):
+    def __init__(self, 
+                 unitcell_dict, 
+                 supercell_matrix, 
+                 pot=None, 
+                 params_dict=None, 
+                 coeffs=None):
 
-        if pot is not None:
-            self.__params_dict, mlp_dict = load_mlp_lammps(filename=pot)
-            self.__coeffs = mlp_dict['coeffs'] / mlp_dict['scales']
-        else:
-            self.__params_dict = params_dict
-            self.__coeffs = coeffs
-
-        self.prop = Properties(params_dict=self.__params_dict, 
-                               coeffs=self.__coeffs)
+        self.prop = Properties(pot=pot, 
+                               params_dict=params_dict, 
+                               coeffs=coeffs)
 
         self.__unitcell_dict = unitcell_dict
         self.__supercell_matrix = supercell_matrix
@@ -174,6 +169,7 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, signal.SIG_DFL)
     parser = argparse.ArgumentParser()
     parser.add_argument('--pot',
+                        nargs='*',
                         type=str,
                         default='polymlp.lammps',
                         help='polymlp file')
