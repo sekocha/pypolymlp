@@ -213,11 +213,7 @@ if __name__ == '__main__':
         )
         structures = parse_structures_from_phono3py_yaml(args.phono3py_yaml)
 
-    if len(args.pot) == 1:
-        prop = Properties(pot=args.pot)
-    else:
-        prop = PropertiesHybrid(pot=args.pot)
-
+    prop = Properties(pot=args.pot)
     energies, forces, stresses = prop.eval_multiple(structures)
     stresses_gpa = convert_stresses_in_gpa(stresses, structures)
 

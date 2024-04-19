@@ -1,0 +1,3 @@
+# count_time.py
+python3 ~/git/pypolymlp/src/pypolymlp/utils/count_time.py --poscar POSCAR_eqm --pot polymlp.lammps.*
+
