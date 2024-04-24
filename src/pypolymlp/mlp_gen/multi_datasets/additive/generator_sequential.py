@@ -8,19 +8,18 @@ from pypolymlp.core.parser_polymlp_params import ParamsParser
 from pypolymlp.core.io_polymlp import save_multiple_mlp_lammps
 
 from pypolymlp.mlp_gen.regression import Regression
-from pypolymlp.mlp_gen.accuracy import compute_error
 from pypolymlp.mlp_gen.accuracy import write_error_yaml
 from pypolymlp.mlp_gen.features_attr import write_polymlp_params_yaml
 
 from pypolymlp.mlp_gen.multi_datasets.parser import parse_observations
+from pypolymlp.mlp_gen.multi_datasets.accuracy import compute_error
+
 from pypolymlp.mlp_gen.multi_datasets.additive.sequential import Sequential
-from pypolymlp.mlp_gen.multi_datasets.additive.accuracy import (
-        compute_predictions
-)
 from pypolymlp.mlp_gen.multi_datasets.additive.params_utils import (
         set_common_params_dict, 
         print_common_params
 )
+
 
 def run_sequential_generator_additive(infiles):
 
@@ -44,10 +43,12 @@ def run_sequential_generator_additive(infiles):
     coeffs, scales = reg.ridge_seq()
     mlp_dict = reg.get_best_model()
 
-    save_multiple_mlp_lammps(multiple_params_dicts,
-                             train_reg_dict['cumulative_n_features'],
-                             coeffs,
-                             scales)
+    multiple_coeffs, multiple_scales = save_multiple_mlp_lammps(
+        multiple_params_dicts, 
+        train_reg_dict['cumulative_n_features'],
+        coeffs,
+        scales
+    )
 
     print('  regression: best model')
     print('    alpha: ', mlp_dict['alpha'])
@@ -55,33 +56,22 @@ def run_sequential_generator_additive(infiles):
     t3 = time.time()
     error_dict = dict()
     error_dict['train'], error_dict['test'] = dict(), dict()
+
     for set_id, dft_dict in train_dft_dict.items():
         output_key = '.'.join(set_id.split('*')[0].split('/')[:-1])\
                         .replace('..','')
-        predictions, weights, indices \
-                    = compute_predictions(multiple_params_dicts, 
-                                          dft_dict, 
-                                          coeffs, 
-                                          scales)
-        error_dict['train'][set_id] = compute_error(dft_dict, 
-                                                    common_params_dict, 
-                                                    predictions, 
-                                                    weights,
-                                                    indices,
+        error_dict['train'][set_id] = compute_error(multiple_params_dicts,
+                                                    multiple_coeffs,
+                                                    multiple_scales,
+                                                    dft_dict,
                                                     output_key=output_key)
     for set_id, dft_dict in test_dft_dict.items():
         output_key = '.'.join(set_id.split('*')[0].split('/')[:-1])\
                         .replace('..','')
-        predictions, weights, indices \
-                        = compute_predictions(multiple_params_dicts, 
-                                              dft_dict, 
-                                              coeffs, 
-                                              scales)
-        error_dict['test'][set_id] = compute_error(dft_dict, 
-                                                   common_params_dict, 
-                                                   predictions, 
-                                                   weights,
-                                                   indices,
+        error_dict['test'][set_id] = compute_error(multiple_params_dicts,
+                                                   multiple_coeffs,
+                                                   multiple_scales,
+                                                   dft_dict,
                                                    output_key=output_key)
 
     t4 = time.time()

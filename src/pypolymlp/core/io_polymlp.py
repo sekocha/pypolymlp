@@ -19,11 +19,14 @@ def print_array1d(array, fstream, comment='', fmt=None):
             print(obj, end=' ', file=fstream)
     print('#', comment, file=fstream)
 
+
 def save_multiple_mlp_lammps(multiple_params_dicts,
                              cumulative_n_features,
                              coeffs,
                              scales):
 
+    multiple_coeffs = []
+    multiple_scales = []
     for i, params_dict in enumerate(multiple_params_dicts):
         if i == 0:
             begin, end = 0, cumulative_n_features[0]
@@ -34,6 +37,11 @@ def save_multiple_mlp_lammps(multiple_params_dicts,
                         coeffs[begin:end],
                         scales[begin:end],
                         filename='polymlp.lammps.'+str(i+1))
+        multiple_coeffs.append(coeffs[begin:end])
+        multiple_scales.append(scales[begin:end])
+
+    return multiple_coeffs, multiple_scales
+
 
 def save_mlp_lammps(params_dict, coeffs, scales, filename='polymlp.lammps'):
 

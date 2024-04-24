@@ -11,10 +11,10 @@ from pypolymlp.mlp_gen.multi_datasets.parser import parse_observations
 from pypolymlp.mlp_gen.multi_datasets.sequential import Sequential
 from pypolymlp.mlp_gen.regression import Regression
 
-from pypolymlp.mlp_gen.accuracy import compute_error
-from pypolymlp.mlp_gen.multi_datasets.accuracy import compute_predictions
+from pypolymlp.mlp_gen.multi_datasets.accuracy import compute_error
 from pypolymlp.mlp_gen.accuracy import write_error_yaml
 from pypolymlp.mlp_gen.features_attr import write_polymlp_params_yaml
+
 
 def run_sequential_generator_multiple_datasets(infile):
 
@@ -43,32 +43,24 @@ def run_sequential_generator_multiple_datasets(infile):
     t3 = time.time()
     error_dict = dict()
     error_dict['train'], error_dict['test'] = dict(), dict()
+
     for set_id, dft_dict in train_dft_dict.items():
         output_key = '.'.join(set_id.split('*')[0].split('/')[:-1])\
                         .replace('..','')
-        predictions, weights, indices = compute_predictions(params_dict, 
-                                                            dft_dict, 
-                                                            coeffs, 
-                                                            scales)
-        error_dict['train'][set_id] = compute_error(dft_dict, 
-                                                    params_dict, 
-                                                    predictions, 
-                                                    weights,
-                                                    indices,
+        error_dict['train'][set_id] = compute_error(params_dict,
+                                                    coeffs, 
+                                                    scales,
+                                                    dft_dict, 
                                                     output_key=output_key)
     for set_id, dft_dict in test_dft_dict.items():
         output_key = '.'.join(set_id.split('*')[0].split('/')[:-1])\
                         .replace('..','')
-        predictions, weights, indices = compute_predictions(params_dict, 
-                                                            dft_dict, 
-                                                            coeffs, 
-                                                            scales)
-        error_dict['test'][set_id] = compute_error(dft_dict, 
-                                                   params_dict, 
-                                                   predictions, 
-                                                   weights,
-                                                   indices,
+        error_dict['test'][set_id] = compute_error(params_dict,
+                                                   coeffs, 
+                                                   scales,
+                                                   dft_dict, 
                                                    output_key=output_key)
+ 
     t4 = time.time()
 
     write_error_yaml(error_dict['train'])
