@@ -58,6 +58,7 @@ Variables in dft_dict (train_dft_dict, test_dft_dict):
         - elements
       - ...
     - elements
+    - volumes
     - total_n_atoms
 
 Variables in reg_dict

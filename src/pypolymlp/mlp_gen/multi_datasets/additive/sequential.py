@@ -2,10 +2,15 @@
 import numpy as np
 import os
 import sys
+import gc
 
 from pypolymlp.mlp_gen.multi_datasets.additive.features import Features
 from pypolymlp.mlp_gen.precondition import apply_atomic_energy
 from pypolymlp.mlp_gen.precondition import apply_weight_percentage
+from pypolymlp.mlp_gen.multi_datasets.sequential import (
+    get_batch_slice, slice_dft_dict
+)
+
 
 class Sequential:
 
@@ -13,8 +18,9 @@ class Sequential:
                  multiple_params_dicts,
                  multiple_dft_dicts, 
                  scales=None,
-                 print_memory=True,
-                 element_swap=False):  
+                 verbose=True,
+                 element_swap=False,
+                 batch_size=100):  
 
         single_params_dict = multiple_params_dicts[0]
         self.multiple_dft_dicts = multiple_dft_dicts
@@ -27,43 +33,61 @@ class Sequential:
         xe_sum, xe_sq_sum = None, None
         total_n_data = 0
         for id_dataset, dft_dict in multiple_dft_dicts.items():
-            dft_dict_tmp = dict({id_dataset: dft_dict})
-            features = Features(multiple_params_dicts, 
-                                dft_dict_tmp, 
-                                print_memory=print_memory,
-                                element_swap=element_swap)
+            if verbose:
+                print('----- Dataset:', id_dataset, '-----')
 
-            x = features.get_x()
-            first_indices = features.get_first_indices()[0]
-            cumulative_n_features = features.get_cumulative_n_features()
+            #print(len(dft_dict))
+            #print(isinstance(dft_dict, list))
+            #print(isinstance(dft_dict, dict))
+            #print(dft_dict.keys())
+            structures = dft_dict['structures']
+            begin_ids, end_ids = get_batch_slice(len(structures), batch_size)
+            for begin, end in zip(begin_ids, end_ids):
+                dft_dict_sliced = slice_dft_dict(dft_dict, begin, end)
+                if verbose:
+                    print('Number of structures:', end - begin)
 
-            if print_memory:
-                ram = x.shape[1] * x.shape[1] * 8e-9 * 2
-                print(' - memory allocation (for computing X^T @ X) =',
-                      '{:.3f}'.format(ram),'(GB)')
+                dft_dict_tmp = dict({'tmp': dft_dict_sliced})
+                features = Features(multiple_params_dicts, 
+                                    dft_dict_tmp, 
+                                    print_memory=verbose,
+                                    element_swap=element_swap)
 
-            if scales is None:
-                xe = x[:features.ne]
-                local1 = np.sum(xe, axis=0)
-                local2 = np.sum(np.square(xe), axis=0)
-                xe_sum = self.__sum_array(xe_sum, local1)
-                xe_sq_sum = self.__sum_array(xe_sq_sum, local2)
 
-            n_data, n_features = x.shape
-            y = np.zeros(n_data)
-            w = np.ones(n_data)
-            total_n_data += n_data
+                x = features.get_x()
+                first_indices = features.get_first_indices()[0]
+                cumulative_n_features = features.get_cumulative_n_features()
 
-            x, y, w = apply_weight_percentage(x, y, w, 
-                                              dft_dict, 
-                                              single_params_dict, 
-                                              first_indices,
-                                              min_e=min_e_per_atom)
-            xtx1 = x.T @ x
-            xty1 = x.T @ y
-            xtx = self.__sum_array(xtx, xtx1)
-            xty = self.__sum_array(xty, xty1)
-            y_sq_norm += np.dot(y, y)
+                if verbose:
+                    ram = x.shape[1] * x.shape[1] * 8e-9 * 2
+                    print(' Memory allocation (X^T @ X) :',
+                            '{:.3f}'.format(ram),'(GB)')
+
+                if scales is None:
+                    xe = x[:features.ne]
+                    local1 = np.sum(xe, axis=0)
+                    local2 = np.sum(np.square(xe), axis=0)
+                    xe_sum = self.__sum_array(xe_sum, local1)
+                    xe_sq_sum = self.__sum_array(xe_sq_sum, local2)
+
+                n_data, n_features = x.shape
+                y = np.zeros(n_data)
+                w = np.ones(n_data)
+                total_n_data += n_data
+
+                x, y, w = apply_weight_percentage(x, y, w, 
+                                                  dft_dict_sliced, 
+                                                  single_params_dict, 
+                                                  first_indices,
+                                                  min_e=min_e_per_atom)
+                xtx1 = x.T @ x
+                xty1 = x.T @ y
+                xtx = self.__sum_array(xtx, xtx1)
+                xty = self.__sum_array(xty, xty1)
+                y_sq_norm += y @ y
+
+                del x, y, w, xtx1, xty1
+                gc.collect()
 
         if scales is None:
             n_data = sum([len(dft_dict['energy']) 
@@ -75,10 +99,6 @@ class Sequential:
 
         xtx /= self.scales[:, np.newaxis]
         xtx /= self.scales[np.newaxis, :]
-        ''' numba version
-        numba_support.mat_prod_vec(xtx, np.reciprocal(self.scales), axis=0)
-        numba_support.mat_prod_vec(xtx, np.reciprocal(self.scales), axis=1)
-        '''
         xty /= self.scales
 
         self.reg_dict = dict()
