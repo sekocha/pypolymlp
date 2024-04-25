@@ -58,11 +58,11 @@ class PolymlpPhonon:
                          is_mesh_symmetry=is_mesh_symmetry)
         self.ph.run_total_dos()
         self.ph.run_thermal_properties(t_step=t_step, t_max=t_max, t_min=t_min)
-        mesh_dict = self.ph.get_mesh_dict()
+        self.mesh_dict = self.ph.get_mesh_dict()
 
         os.makedirs('polymlp_phonon', exist_ok=True)
         np.savetxt('polymlp_phonon/mesh-qpoints.txt',
-                    mesh_dict['qpoints'], fmt='%f')
+                    self.mesh_dict['qpoints'], fmt='%f')
         self.ph.write_total_dos(filename="polymlp_phonon/total_dos.dat")
         self.ph.write_yaml_thermal_properties(
             filename='polymlp_phonon/thermal_properties.yaml'
@@ -74,6 +74,9 @@ class PolymlpPhonon:
                              is_mesh_symmetry=False)
             self.ph.run_projected_dos()
             self.ph.write_projected_dos(filename="polymlp_phonon/proj_dos.dat")
+
+    def is_imaginary(self, threshold=-0.01):
+        return np.min(self.mesh_dict['frequencies']) < threshold
 
     @property
     def phonopy(self):
@@ -87,11 +90,15 @@ class PolymlpPhononQHA:
                  supercell_matrix, 
                  pot=None, 
                  params_dict=None, 
-                 coeffs=None):
+                 coeffs=None,
+                 properties=None):
 
-        self.prop = Properties(pot=pot, 
-                               params_dict=params_dict, 
-                               coeffs=coeffs)
+        if properties is not None:
+            self.prop = properties
+        else:
+            self.prop = Properties(pot=pot, 
+                                   params_dict=params_dict, 
+                                   coeffs=coeffs)
 
         self.__unitcell_dict = unitcell_dict
         self.__supercell_matrix = supercell_matrix

@@ -125,7 +125,7 @@ class PolymlpElastic:
 
         return self
 
-    def write_elastic_constants(self, filename='elastic.yaml'):
+    def write_elastic_constants(self, filename='polymlp_elastic.yaml'):
 
         f = open(filename, 'w')
 
