@@ -11,8 +11,8 @@ if __name__ == '__main__':
 
     polymlp = Pypolymlp()
 
-#    dataset_type = 'vasp'
-    dataset_type = 'phono3py'
+    dataset_type = 'vasp'
+#    dataset_type = 'phono3py'
 #    dataset_type = 'displacements'
     if dataset_type == 'vasp':
         ''' from parameters and vasprun.xml files'''

@@ -4,50 +4,7 @@ import os, sys
 import itertools
 import argparse
 
-def write_params_dict(params_dict, filename):
-
-    f = open(filename,'w')
-
-    print('feature_type', params_dict['feature_type'], file=f)
-    print('cutoff', params_dict['cutoff'], file=f)
-    
-    gauss1, gauss2 = params_dict['gauss1'], params_dict['gauss2']
-    print('gaussian_params1', gauss1[0], gauss1[1], gauss1[2], file=f)
-    print('gaussian_params2', gauss2[0], gauss2[1], gauss2[2], file=f)
-
-    reg = params_dict['reg_alpha_params']
-    print('reg_alpha_params', reg[0], reg[1], reg[2], file=f)
-    print('', file=f)
-
-    print('model_type', params_dict['model_type'], file=f)
-    print('max_p', params_dict['max_p'], file=f)
-    if params_dict['feature_type'] == 'gtinv':
-        print('gtinv_order', params_dict['gtinv_order'], file=f)
-        print('gtinv_maxl', end='', file=f)
-        for maxl in params_dict['gtinv_maxl']:
-            print('', maxl, end='', file=f)
-        print('', file=f)
-
-    print('', file=f)
-
-    print('include_force', params_dict['include_force'], file=f) 
-    print('include_stress', params_dict['include_stress'], file=f) 
-
-    f.close()
-
-def write_grid(params_grid_pair, params_grid_gtinv):
-
-    for i, params_dict in enumerate(params_grid_pair):
-        idx = str(i + 1).zfill(4)
-        dirname = 'model_grid/pair-' + idx + '/'
-        os.makedirs(dirname, exist_ok=True)
-        write_params_dict(params_dict, dirname + 'polymlp.in')
-
-    for i, params_dict in enumerate(params_grid_gtinv):
-        idx = str(i + 1).zfill(4)
-        dirname = 'model_grid/gtinv-' + idx + '/'
-        os.makedirs(dirname, exist_ok=True)
-        write_params_dict(params_dict, dirname + 'polymlp.in')
+from pypolymlp.mlp_opt.grid_io import write_grid, write_grid_hybrid
 
 
 def set_pair_grid(grid_setting, max_p=[2,3]):
@@ -149,6 +106,9 @@ if __name__ == '__main__':
     ps.add_argument('--stress', 
                     action='store_true',
                     help='include_stress True')
+    ps.add_argument('--no_hybrid', 
+                    action='store_true',
+                    help='No hybrid models are considered.')
     ps.add_argument('--cutoff_linspace',
                     nargs=3,
                     type=float,
@@ -157,7 +117,7 @@ if __name__ == '__main__':
     ps.add_argument('--reg_alpha_params',
                     nargs=3,
                     type=float,
-                    default=[-3,1,5],
+                    default=[-4,3,15],
                     help='Regularization parameters')
     ps.add_argument('--n_gauss', 
                     nargs='*', 
@@ -185,8 +145,6 @@ if __name__ == '__main__':
                     help='Interval l values of invariants')
     args = ps.parse_args()
 
-    n_gaussians = args.n_gauss
-    n_gaussians[2] = int(n_gaussians[2])
     reg_alpha_params = args.reg_alpha_params 
     reg_alpha_params[2] = int(reg_alpha_params[2])
 
@@ -194,7 +152,7 @@ if __name__ == '__main__':
     grid_setting['cutoffs'] = np.linspace(args.cutoff_linspace[0], 
                                           args.cutoff_linspace[1], 
                                           int(args.cutoff_linspace[2]))
-    grid_setting['n_gaussians'] = n_gaussians
+    grid_setting['n_gaussians'] = args.n_gauss
     grid_setting['reg_alpha_params'] = reg_alpha_params
     grid_setting['model_types'] = args.model_types
     grid_setting['include_force'] = True
@@ -209,6 +167,29 @@ if __name__ == '__main__':
         grid_setting['gtinv_grid'] = set_gtinv_params(grid_setting)
         params_grid_gtinv = set_gtinv_grid(grid_setting)
 
-    write_grid(params_grid_pair, params_grid_gtinv)
+    iseq = write_grid(params_grid_pair)
+    iseq = write_grid(params_grid_gtinv, iseq=iseq)
+    if not args.no_hybrid:
+        grid_setting_h = dict()
+        grid_setting_h['cutoffs'] = [3.0,4.0,5.0]
+        grid_setting_h['n_gaussians'] = [7]
+        grid_setting_h['reg_alpha_params'] = reg_alpha_params
+        grid_setting_h['model_types'] = [2]
+        grid_setting_h['include_force'] = True
+        grid_setting_h['include_stress'] = args.stress
+
+        grid_setting_h['gtinv_order_ub'] = 3
+        grid_setting_h['gtinv_l_ub'] = [12,12,2,1,1]
+        grid_setting_h['gtinv_l_int'] = [12,12,2,1,1]
+        grid_setting_h['gtinv_grid'] = set_gtinv_params(grid_setting_h)
+
+        params_grid_hybrid = set_gtinv_grid(grid_setting_h)
+
+        iseq = write_grid_hybrid(params_grid_pair, 
+                                 params_grid_hybrid, 
+                                 iseq=iseq)
+        iseq = write_grid_hybrid(params_grid_gtinv, 
+                                 params_grid_hybrid, 
+                                 iseq=iseq)
 
 

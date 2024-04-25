@@ -34,22 +34,37 @@ if __name__ == '__main__':
                         help='supercell size')
     parser.add_argument('--n_calc',
                         type=int,
-                        default=100,
+                        default=20,
                         help='number of calculations')
+
     args = parser.parse_args()
 
+    prop = Properties(pot=args.pot)
 
-    unitcell_dict = Poscar(args.poscar).get_structure()
+    if args.poscar is not None:
+        unitcell_dict = Poscar(args.poscar).get_structure()
+    else:
+        unitcell_dict = dict()
+        elements = prop.params_dict['elements']
+        if len(elements) == 1:
+            unitcell_dict['axis'] = np.array([[4,0,0],[0,4,0],[0,0,4]])
+            unitcell_dict['positions'] = np.array([[0.0,0.0,0.0],
+                                                   [0.0,0.5,0.5],
+                                                   [0.5,0.0,0.5],
+                                                   [0.5,0.5,0.0]]).T
+            unitcell_dict['n_atoms'] = np.array([4])
+            unitcell_dict['types'] = np.array([0,0,0,0])
+            unitcell_dict['elements'] = [elements[t] 
+                                         for t in unitcell_dict['types']]
+            unitcell_dict['volume'] = np.linalg.det(unitcell_dict['axis'])
+
     supercell_matrix = np.diag(args.supercell)
 
     unitcell = st_dict_to_phonopy_cell(unitcell_dict)
     phonopy = Phonopy(unitcell, supercell_matrix)
     supercell_dict = phonopy_cell_to_st_dict(phonopy.supercell)
 
-    prop = Properties(pot=args.pot)
-
     print('Calculations have been started.')
-
     t1 = time.time()
     for i in range(args.n_calc):
         e, _, _ = prop.eval(supercell_dict)

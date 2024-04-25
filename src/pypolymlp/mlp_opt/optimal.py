@@ -11,7 +11,7 @@ def find_optimal_mlps(dirs, key, use_force=False):
     d_array = []
     for dir_pot in dirs:
         fname1 = dir_pot + '/polymlp_error.yaml'
-        fname2 = dir_pot + '/comp_cost.dat'
+        fname2 = dir_pot + '/polymlp_cost.yaml'
         match_d = None
         if os.path.exists(fname1) and os.path.exists(fname2):
             print(dir_pot)
@@ -24,9 +24,9 @@ def find_optimal_mlps(dirs, key, use_force=False):
         if match_d is not None:
             rmse_e = match_d['rmse_energy']
             rmse_f = match_d['rmse_force']
-            time = np.loadtxt(fname2, skiprows=1)
-            time1 =  time[0,2] / time[0,1] / 10
-            time36 = time[1,2] / time[1,1] / 10
+            yml_data = yaml.safe_load(open(fname2))
+            time1 = yml_data['costs']['single_core']
+            time36 = yml_data['costs']['openmp']
             name = dir_pot.split('/')[-1]
             d_array.append([time1, time36, rmse_e, rmse_f, name])
 
@@ -63,6 +63,7 @@ def find_optimal_mlps(dirs, key, use_force=False):
     d_convex = d_convex[d_convex[:,2].astype(float) < 30]
     
     np.savetxt('polymlp_opts/convexhull.dat', d_convex, fmt='%s')
+
 
 if __name__ == '__main__':
 
