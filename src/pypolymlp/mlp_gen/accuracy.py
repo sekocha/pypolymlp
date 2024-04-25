@@ -71,6 +71,8 @@ def compute_error(dft_dict,
                                             ebegin, eend,
                                             normalize=n_total_atoms,
                                             return_values=True)
+#    for i, e1 in enumerate(pred_e):
+#        print(i, e1)
 
     rmse_f, rmse_s = None, None
     if include_force:

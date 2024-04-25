@@ -51,6 +51,8 @@ def compute_error(params_dict,
                                             energies,
                                             normalize=n_total_atoms,
                                             return_values=True)
+#    for i, e1 in enumerate(pred_e):
+#        print(i, e1)
 
     if log_force == False:
         rmse_f = __compute_rmse(dft_dict['force'], forces)
