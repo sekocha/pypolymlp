@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 import numpy as np
-import os
-import sys
 import gc
 
 from pypolymlp.mlp_gen.multi_datasets.additive.features import Features
@@ -36,10 +34,6 @@ class Sequential:
             if verbose:
                 print('----- Dataset:', id_dataset, '-----')
 
-            #print(len(dft_dict))
-            #print(isinstance(dft_dict, list))
-            #print(isinstance(dft_dict, dict))
-            #print(dft_dict.keys())
             structures = dft_dict['structures']
             begin_ids, end_ids = get_batch_slice(len(structures), batch_size)
             for begin, end in zip(begin_ids, end_ids):
@@ -52,7 +46,6 @@ class Sequential:
                                     dft_dict_tmp, 
                                     print_memory=verbose,
                                     element_swap=element_swap)
-
 
                 x = features.get_x()
                 first_indices = features.get_first_indices()[0]

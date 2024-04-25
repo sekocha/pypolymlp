@@ -57,6 +57,33 @@ def set_gtinv_grid(grid_setting):
 
     return params_grid_gtinv
 
+
+def set_gtinv_grid_hybrid(grid_setting):
+
+    product = itertools.product(*[grid_setting['cutoffs'],
+                                  grid_setting['n_gaussians'],
+                                  grid_setting['gtinv_grid']])
+
+    params_grid_gtinv = []
+    for cut, n_gauss, gtinv_dict in product:
+        params_dict = dict()
+        params_dict['cutoff'] = cut
+        params_dict['gauss2'] = (0.0, cut-0.5, n_gauss)
+
+        ''' constant settings'''
+        params_dict['feature_type'] = 'gtinv'
+        params_dict['max_p'] = 2
+        params_dict['gauss1'] = (0.5, 0.5, 1)
+        params_dict['reg_alpha_params'] = grid_setting['reg_alpha_params']
+        params_dict['include_force'] = grid_setting['include_force']
+        params_dict['include_stress'] = grid_setting['include_stress']
+        params_dict.update(gtinv_dict)
+        params_grid_gtinv.append(params_dict)
+
+    return params_grid_gtinv
+
+
+
 def set_gtinv_params(grid_setting):
 
     model_types = grid_setting['model_types'] 
@@ -172,18 +199,18 @@ if __name__ == '__main__':
     if not args.no_hybrid:
         grid_setting_h = dict()
         grid_setting_h['cutoffs'] = [3.0,4.0,5.0]
-        grid_setting_h['n_gaussians'] = [7]
+        grid_setting_h['n_gaussians'] = [5]
         grid_setting_h['reg_alpha_params'] = reg_alpha_params
         grid_setting_h['model_types'] = [2]
         grid_setting_h['include_force'] = True
         grid_setting_h['include_stress'] = args.stress
 
         grid_setting_h['gtinv_order_ub'] = 3
-        grid_setting_h['gtinv_l_ub'] = [12,12,2,1,1]
-        grid_setting_h['gtinv_l_int'] = [12,12,2,1,1]
+        grid_setting_h['gtinv_l_ub'] = [8,4,2,1,1]
+        grid_setting_h['gtinv_l_int'] = [8,4,2,1,1]
         grid_setting_h['gtinv_grid'] = set_gtinv_params(grid_setting_h)
 
-        params_grid_hybrid = set_gtinv_grid(grid_setting_h)
+        params_grid_hybrid = set_gtinv_grid_hybrid(grid_setting_h)
 
         iseq = write_grid_hybrid(params_grid_pair, 
                                  params_grid_hybrid, 

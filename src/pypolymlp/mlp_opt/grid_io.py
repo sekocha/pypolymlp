@@ -53,7 +53,7 @@ def write_grid_hybrid(params_grid1, params_grid2, iseq=0):
         idx = str(iseq + 1).zfill(5)
         dirname = 'model_grid/polymlp-hybrid-' + idx + '/'
         os.makedirs(dirname, exist_ok=True)
-        write_params_dict(params_dict1, dirname + 'polymlp.in.1')
+        write_params_dict(params_dict1, dirname + 'polymlp.in')
         write_params_dict(params_dict2, dirname + 'polymlp.in.2')
         iseq += 1
 

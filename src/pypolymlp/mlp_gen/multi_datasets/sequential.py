@@ -1,11 +1,8 @@
 #!/usr/bin/env python
 import numpy as np
-import os
-import sys
-import copy
 import gc
 
-from pypolymlp.mlp_gen.features import Features
+from pypolymlp.mlp_gen.multi_datasets.features import Features
 from pypolymlp.mlp_gen.precondition import apply_atomic_energy
 from pypolymlp.mlp_gen.precondition import apply_weight_percentage
 
@@ -34,6 +31,7 @@ def slice_dft_dict(dft_dict, begin, end):
     dft_dict_sliced['elements'] = dft_dict['elements']
     dft_dict_sliced['total_n_atoms'] = dft_dict['total_n_atoms'][begin:end]
     dft_dict_sliced['include_force'] = dft_dict['include_force']
+    dft_dict_sliced['weight'] = dft_dict['weight']
 
     return dft_dict_sliced
 
@@ -49,7 +47,6 @@ class Sequential:
                  batch_size=100):  
 
         self.multiple_dft_dicts = multiple_dft_dicts
-        params_include_force = copy.copy(params_dict['include_force'])
 
         for _, dft_dict in self.multiple_dft_dicts.items():
             dft_dict = apply_atomic_energy(dft_dict, params_dict)
@@ -63,7 +60,6 @@ class Sequential:
                 print('----- Dataset:', set_id, '-----')
 
             structures = dft_dict['structures']
-            params_dict['include_force'] = dft_dict['include_force']
 
             begin_ids, end_ids = get_batch_slice(len(structures), batch_size)
             for begin, end in zip(begin_ids, end_ids):
@@ -71,11 +67,11 @@ class Sequential:
                 if verbose:
                     print('Number of structures:', end - begin)
 
+                dft_dict_tmp = dict({'tmp': dft_dict_sliced})
                 features = Features(params_dict, 
-                                    dft_dict_sliced['structures'], 
+                                    dft_dict_tmp, 
                                     print_memory=verbose,
                                     element_swap=element_swap)
-                params_dict['include_force'] = params_include_force
 
                 x = features.get_x()
                 first_indices = features.get_first_indices()[0]
