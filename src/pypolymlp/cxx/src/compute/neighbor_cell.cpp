@@ -239,9 +239,9 @@ int NeighborCell::find_trans(){
     double dis;
     double max_length = find_maximum_diagonal_in_cell();
     vector1d vec_c;
-    for (int i = - max_exp[0] + 1; i < max_exp[0] + 1; ++i){
-        for (int j = - max_exp[1] + 1; j < max_exp[1] + 1; ++j){
-            for (int k = - max_exp[2] + 1; k < max_exp[2] + 1; ++k){
+    for (int i = - max_exp[0]; i < max_exp[0] + 1; ++i){
+        for (int j = - max_exp[1]; j < max_exp[1] + 1; ++j){
+            for (int k = - max_exp[2]; k < max_exp[2] + 1; ++k){
                 vec_c = to_cartesian(i, j, k);
                 dis = norm(vec_c);
                 if (dis < max_length + cutoff){

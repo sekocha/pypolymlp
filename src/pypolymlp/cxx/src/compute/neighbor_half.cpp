@@ -65,6 +65,20 @@ NeighborHalf::NeighborHalf(const vector2d& axis,
             }
         }
     }
+
+/*
+    vector1i count(n_total_atom, 0);
+    for (int i = 0; i < n_total_atom; ++i){
+        for (auto& j: half_list[i]){
+            count[j] += 1;
+            count[i] += 1;
+        }
+    }
+    for (int i = 0; i < n_total_atom; ++i){
+        std::cout << i << " " << count[i] << std::endl;
+    }
+*/
+
 /*
     auto t4 = std::chrono::system_clock::now(); 
     dur = t4 - t3;

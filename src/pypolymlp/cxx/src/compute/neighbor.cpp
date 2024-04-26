@@ -41,6 +41,16 @@ Neighbor::Neighbor(const vector2d& axis,
             }
         }
     }
+/*
+    vector1i count(n_total_atom, 0);
+    for (int i = 0; i < n_total_atom; ++i){
+        for (auto& j: atom2_array[i][0]) count[j] += 1;
+    }
+    for (int i = 0; i < n_total_atom; ++i){
+        std::cout << i << " " << count[i] << " " 
+                  << atom2_array[i][0].size() << std::endl;
+    }
+*/
 }
 
 Neighbor::~Neighbor(){}

@@ -30,13 +30,13 @@ def print_error(error_dict, key='train'):
 
     print('  prediction:', key)
     print('    rmse_energy:', 
-           "{0:13.7f}".format(error_dict['energy'] * 1000), '(meV/atom)')
+           "{0:13.4f}".format(error_dict['energy'] * 1000), '(meV/atom)')
     if error_dict['force'] is not None:
         print('    rmse_force: ', 
-               "{0:13.7f}".format(error_dict['force']), '(eV/ang)')
+               "{0:13.4f}".format(error_dict['force']), '(eV/ang)')
     if error_dict['stress'] is not None:
         print('    rmse_stress:', 
-               "{0:13.7f}".format(error_dict['stress'] * 1000), '(meV/atom)')
+               "{0:13.4f}".format(error_dict['stress'] * 1000), '(meV/atom)')
 
 def compute_error(dft_dict, 
                   params_dict, 
@@ -71,8 +71,6 @@ def compute_error(dft_dict,
                                             ebegin, eend,
                                             normalize=n_total_atoms,
                                             return_values=True)
-#    for i, e1 in enumerate(pred_e):
-#        print(i, e1)
 
     rmse_f, rmse_s = None, None
     if include_force:
