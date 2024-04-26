@@ -33,6 +33,7 @@ def set_pair_grid(grid_setting, max_p=[2,3]):
 
     return params_grid_pair
 
+
 def set_gtinv_grid(grid_setting):
 
     product = itertools.product(*[grid_setting['cutoffs'],
@@ -115,6 +116,8 @@ def set_gtinv_params(grid_setting):
         if model == 2 and len(lp) > 2:
             include = False
         elif model == 2 and len(lp) == 1:
+            include = False
+        elif model == 2 and lp[1] > 5:
             include = False
 
         if include:
@@ -201,13 +204,13 @@ if __name__ == '__main__':
         grid_setting_h['cutoffs'] = [3.0,4.0,5.0]
         grid_setting_h['n_gaussians'] = [5]
         grid_setting_h['reg_alpha_params'] = reg_alpha_params
-        grid_setting_h['model_types'] = [2]
+        grid_setting_h['model_types'] = [4]
         grid_setting_h['include_force'] = True
         grid_setting_h['include_stress'] = args.stress
 
         grid_setting_h['gtinv_order_ub'] = 3
-        grid_setting_h['gtinv_l_ub'] = [8,4,2,1,1]
-        grid_setting_h['gtinv_l_int'] = [8,4,2,1,1]
+        grid_setting_h['gtinv_l_ub'] = [8,8,2,1,1]
+        grid_setting_h['gtinv_l_int'] = [8,8,2,1,1]
         grid_setting_h['gtinv_grid'] = set_gtinv_params(grid_setting_h)
 
         params_grid_hybrid = set_gtinv_grid_hybrid(grid_setting_h)
