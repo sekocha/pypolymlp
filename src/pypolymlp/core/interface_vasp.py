@@ -56,6 +56,7 @@ def parse_structures_from_vaspruns(vaspruns):
 def parse_structures_from_poscars(poscars):
     return [Poscar(f).get_structure() for f in poscars]
 
+
 class Vasprun:
 
     def __init__(self, name):

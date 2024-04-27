@@ -12,7 +12,7 @@ from pypolymlp.core.interface_vasp import Vasprun
 
 def __find_trans(axis, cutoff):
 
-
+    # neighbor.cpp should be used.
     # Expansion size should be determined automatically
     m = 7
     ranges = [range(-m, m+1), range(-m, m+1), range(-m, m+1)]
