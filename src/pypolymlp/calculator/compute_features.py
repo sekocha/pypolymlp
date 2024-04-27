@@ -80,6 +80,7 @@ def compute_from_infile(infile, st_dicts, force=None, stress=None):
     features = Features(params_dict, st_dicts, print_memory=False)
     return features.get_x()
 
+
 if __name__ == '__main__':
 
     signal.signal(signal.SIGINT, signal.SIG_DFL)
