@@ -6,6 +6,28 @@ import yaml
 
 from scipy.spatial import ConvexHull
 
+
+def write_yaml(data, filename='polymlp_summary_all.yaml'):
+
+    f = open(filename, 'w')
+    print('unit:', file=f)
+    print('  cost:         msec/atom/step', file=f)
+    print('  rmse_energy:  meV/atom', file=f)
+    print('  rmse_force:   eV/ang.', file=f)
+
+    print('', file=f)
+    print('polymlps:', file=f)
+    for d in data:
+        print('- id:', d[-1], file=f)
+        print('  cost_single:', d[0], file=f)
+        print('  cost_openmp:', d[1], file=f)
+        print('  rmse_energy:', d[2], file=f)
+        print('  rmse_force: ', d[3], file=f)
+        print('', file=f)
+
+    f.close()
+    
+
 def find_optimal_mlps(dirs, key, use_force=False):
 
     d_array = []
@@ -33,8 +55,7 @@ def find_optimal_mlps(dirs, key, use_force=False):
     d_array = sorted(d_array, key=lambda x:x[0])
     d_array = np.array(d_array)
 
-    os.makedirs('polymlp_opts', exist_ok=True)
-    np.savetxt('polymlp_opts/all.dat', d_array, fmt='%s')
+    write_yaml(d_array, filename='polymlp_summary_all.yaml')
     
     if use_force:
         d_target = d_array[:,[0,3]]
@@ -62,7 +83,7 @@ def find_optimal_mlps(dirs, key, use_force=False):
     d_convex = d_array[np.array(v_convex_l)]
     d_convex = d_convex[d_convex[:,2].astype(float) < 30]
     
-    np.savetxt('polymlp_opts/convexhull.dat', d_convex, fmt='%s')
+    write_yaml(d_convex, filename='polymlp_summary_convex.yaml')
 
 
 if __name__ == '__main__':
@@ -79,6 +100,7 @@ if __name__ == '__main__':
     parser.add_argument('--key', 
                         type=str, 
                         default=None,
+                        required=True,
                         help='Test dataset name or partial string' +
                              ' used for finding optimal MLPs.')
     args = parser.parse_args()

@@ -1,0 +1,1 @@
+python3 ~/git/pypolymlp/src/pypolymlp/mlp_opt/optimal.py -d ../4-grid/* --key test_vasprun_low
