@@ -76,8 +76,6 @@ def recover_fc3_variant(
     return fc3
 
 
-
-
 class PolymlpFC:
 
     def __init__(self, 
@@ -96,12 +94,15 @@ class PolymlpFC:
         pot, (params_dict and coeffs), or Properties object: polynomal MLP
         '''
 
-        if properties is not None:
-            self.prop = properties
+        if (pot is None and params_dict is None and properties is None):
+            self.prop = None
         else:
-            self.prop = Properties(pot=pot, 
-                                   params_dict=params_dict, 
-                                   coeffs=coeffs)
+            if properties is not None:
+                self.prop = properties
+            else:
+                self.prop = Properties(pot=pot, 
+                                       params_dict=params_dict, 
+                                       coeffs=coeffs)
 
         self.__initialize_supercell(supercell=supercell,
                                     phono3py_yaml=phono3py_yaml,
