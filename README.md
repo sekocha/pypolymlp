@@ -105,7 +105,7 @@ or
 > pypolymlp -i polymlp.in --sequential
 ```
 
-### MLP development using additive models
+### MLP development using hybrid models
 
 ```
 > pypolymlp -i polymlp1.in polymlp2.in (--sequential)
