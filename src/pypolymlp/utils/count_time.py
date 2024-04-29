@@ -46,7 +46,10 @@ if __name__ == '__main__':
         unitcell_dict = Poscar(args.poscar).get_structure()
     else:
         unitcell_dict = dict()
-        elements = prop.params_dict['elements']
+        if isinstance(prop.params_dict, list):
+            elements = prop.params_dict[0]['elements']
+        else:
+            elements = prop.params_dict['elements']
         if len(elements) == 1:
             unitcell_dict['axis'] = np.array([[4,0,0],[0,4,0],[0,0,4]])
             unitcell_dict['positions'] = np.array([[0.0,0.0,0.0],
@@ -58,6 +61,8 @@ if __name__ == '__main__':
             unitcell_dict['elements'] = [elements[t] 
                                          for t in unitcell_dict['types']]
             unitcell_dict['volume'] = np.linalg.det(unitcell_dict['axis'])
+        else:
+            raise ValueError('No structure setting for more than binary system')
 
     supercell_matrix = np.diag(args.supercell)
 

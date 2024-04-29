@@ -170,6 +170,16 @@ class Properties:
     def eval_multiple(self, st_dicts):
         return self.prop.eval_multiple(st_dicts)
 
+    def eval_phonopy(self, str_ph):
+        from pypolymlp.utils.phonopy_utils import phonopy_cell_to_st_dict
+        st_dict = phonopy_cell_to_st_dict(str_ph)
+        return self.prop.eval(st_dict)
+
+    def eval_multiple_phonopy(self, str_ph_list):
+        from pypolymlp.utils.phonopy_utils import phonopy_cell_to_st_dict
+        st_dicts = [phonopy_cell_to_st_dict(str_ph) for str_ph in str_ph_list]
+        return self.prop.eval_multiple(st_dicts)
+
     @property
     def params_dict(self):
         return self.prop.params_dict
