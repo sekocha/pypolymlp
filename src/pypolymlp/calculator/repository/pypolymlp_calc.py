@@ -1,5 +1,6 @@
 #!/usr/bin/env python 
 import numpy as np
+import os
 
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.str_opt.optimization_sym import MinimizeSym
@@ -68,36 +69,41 @@ def run_single_structure(st_dict,
                          params_dict=None,
                          coeffs=None,
                          properties=None,
-                         run_qha=False):
+                         run_qha=False,
+                         path_output='./'):
 
     if properties is not None:
         prop = properties
     else:
         prop = Properties(pot=pot, params_dict=params_dict, coeffs=coeffs)
 
-
+    os.makedirs(path_output, exist_ok=True)
     print('Mode: Geometry optimization')
     minobj = MinimizeSym(st_dict, properties=prop, relax_cell=True)
     minobj.run(gtol=1e-5)
-    minobj.write_poscar()
-    st_dict_eq = Poscar('POSCAR_eqm').get_structure()
+    minobj.write_poscar(filename=path_output + '/POSCAR_eqm')
+    st_dict_eq = minobj.structure
 
     print('Mode: Elastic constant')
-    el = PolymlpElastic(st_dict_eq, 'POSCAR_eqm', properties=prop)
+    el = PolymlpElastic(st_dict_eq, path_output + 'POSCAR_eqm', properties=prop)
     el.run()
-    el.write_elastic_constants()
+    el.write_elastic_constants(filename=path_output + '/polymlp_elastic.yaml')
 
     print('Mode: Phonon')
     supercell_matrix = np.diag([4,4,4])
     ph = PolymlpPhonon(st_dict_eq, supercell_matrix, properties=prop)
     ph.produce_force_constants(displacements=0.01)
-    ph.compute_properties(mesh=[10,10,10], t_min=100, t_max=1000, t_step=50)
+    ph.compute_properties(
+        mesh=[10,10,10], t_min=100, t_max=1000, t_step=50,
+        path_output=path_output,
+    )
 
     if run_qha and not ph.is_imaginary():
         print('Mode: Phonon QHA')
         qha = PolymlpPhononQHA(st_dict_eq, supercell_matrix, properties=prop)
         qha.run(eps_min=0.8, eps_max=1.2, eps_int=0.02,
                 mesh=[10,10,10], t_min=100, t_max=1000, t_step=10, disp=0.01)
+        qha.write_qha(path_output=path_output)
     elif run_qha and ph.is_imaginary():
         print('Phonon QHA is not performed '
               'because imaginary modes are detected.')

@@ -51,7 +51,8 @@ class PolymlpPhonon:
                            t_step=10,
                            with_eigenvectors=False,
                            is_mesh_symmetry=True,
-                           pdos=False):
+                           pdos=False,
+                           path_output='./'):
 
         self.ph.run_mesh(mesh,
                          with_eigenvectors=with_eigenvectors,
@@ -60,12 +61,14 @@ class PolymlpPhonon:
         self.ph.run_thermal_properties(t_step=t_step, t_max=t_max, t_min=t_min)
         self.mesh_dict = self.ph.get_mesh_dict()
 
-        os.makedirs('polymlp_phonon', exist_ok=True)
-        np.savetxt('polymlp_phonon/mesh-qpoints.txt',
-                    self.mesh_dict['qpoints'], fmt='%f')
-        self.ph.write_total_dos(filename="polymlp_phonon/total_dos.dat")
+        os.makedirs(path_output + '/polymlp_phonon', exist_ok=True)
+        np.savetxt(path_output + '/polymlp_phonon/mesh-qpoints.txt',
+                   self.mesh_dict['qpoints'], fmt='%f')
+        self.ph.write_total_dos(
+            filename=path_output + "/polymlp_phonon/total_dos.dat"
+        )
         self.ph.write_yaml_thermal_properties(
-            filename='polymlp_phonon/thermal_properties.yaml'
+            filename=path_output + '/polymlp_phonon/thermal_properties.yaml'
         )
 
         if pdos:
@@ -73,7 +76,9 @@ class PolymlpPhonon:
                              with_eigenvectors=True,
                              is_mesh_symmetry=False)
             self.ph.run_projected_dos()
-            self.ph.write_projected_dos(filename="polymlp_phonon/proj_dos.dat")
+            self.ph.write_projected_dos(
+                filename=path_output + "/polymlp_phonon/proj_dos.dat"
+            )
 
     def is_imaginary(self, threshold=-0.01):
         return np.min(self.mesh_dict['frequencies']) < threshold
@@ -147,22 +152,21 @@ class PolymlpPhononQHA:
                                 free_energy=free_energies,
                                 entropy=entropies,
                                 cv=heat_capacities)
-        self.__write_qha()
 
-    def __write_qha(self, output_dir='polymlp_phonon_qha'):
+    def write_qha(self, path_output='polymlp_phonon_qha'):
 
-        os.makedirs(output_dir, exist_ok=True)
-        filename = output_dir+'/helmholtz-volume.dat'
+        os.makedirs(path_output, exist_ok=True)
+        filename = path_output+'/helmholtz-volume.dat'
         self.__qha.write_helmholtz_volume(filename=filename)
-        filename = output_dir+'/volume-temperature.dat'
+        filename = path_output+'/volume-temperature.dat'
         self.__qha.write_volume_temperature(filename=filename)
-        filename = output_dir+'/thermal_expansion.dat'
+        filename = path_output+'/thermal_expansion.dat'
         self.__qha.write_thermal_expansion(filename=filename)
-        filename = output_dir+'/gibbs-temperature.dat'
+        filename = path_output+'/gibbs-temperature.dat'
         self.__qha.write_gibbs_temperature(filename=filename)
-        filename = output_dir+'/bulk_modulus-temperature.dat'
+        filename = path_output+'/bulk_modulus-temperature.dat'
         self.__qha.write_bulk_modulus_temperature(filename=filename)
-        filename = output_dir+'/gruneisen-temperature.dat'
+        filename = path_output+'/gruneisen-temperature.dat'
         self.__qha.write_gruneisen_temperature(filename=filename)
 
 
@@ -238,3 +242,4 @@ if __name__ == '__main__':
 
     qha = PolymlpPhononQHA(unitcell_dict, supercell_matrix, pot=args.pot)
     qha.run()
+    qha.write_qha()

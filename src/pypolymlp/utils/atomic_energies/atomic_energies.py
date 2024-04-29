@@ -26,7 +26,7 @@ def get_atomic_energies(elements=None,
     if formula is not None:
         elements = get_elements(formula)
 
-    atom_e = [data[ele] for ele in elements]
+    atom_e = [float(data[ele]) for ele in elements]
     return atom_e, elements
 
 def get_atomic_energies_polymlp_in(elements=None, 
