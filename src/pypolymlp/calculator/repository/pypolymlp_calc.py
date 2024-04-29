@@ -80,7 +80,16 @@ def run_single_structure(st_dict,
     os.makedirs(path_output, exist_ok=True)
     print('Mode: Geometry optimization')
     minobj = MinimizeSym(st_dict, properties=prop, relax_cell=True)
-    minobj.run(gtol=1e-5)
+    try:
+        minobj.run(gtol=1e-5)
+    except:
+        print('Geometry optimization has failed.')
+        return 0
+
+    if minobj.success == False:
+        print('Geometry optimization has failed.')
+        return 0
+
     minobj.write_poscar(filename=path_output + '/POSCAR_eqm')
     st_dict_eq = minobj.structure
 
@@ -100,9 +109,12 @@ def run_single_structure(st_dict,
 
     if run_qha and not ph.is_imaginary():
         print('Mode: Phonon QHA')
-        qha = PolymlpPhononQHA(st_dict_eq, supercell_matrix, properties=prop)
+        qha = PolymlpPhononQHA(st_dict_eq, 
+                               supercell_matrix, 
+                               properties=prop)
         qha.run(eps_min=0.8, eps_max=1.2, eps_int=0.02,
-                mesh=[10,10,10], t_min=100, t_max=1000, t_step=10, disp=0.01)
+                mesh=[10,10,10], disp=0.01,
+                t_min=100, t_max=1000, t_step=10)
         qha.write_qha(path_output=path_output)
     elif run_qha and ph.is_imaginary():
         print('Phonon QHA is not performed '

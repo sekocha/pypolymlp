@@ -147,6 +147,8 @@ class Minimize:
     
     @property
     def success(self):
+        if self.__res is None:
+            return False
         return self.__res.success
 
     @property
