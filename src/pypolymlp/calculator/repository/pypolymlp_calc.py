@@ -4,6 +4,7 @@ import os
 
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.str_opt.optimization_sym import MinimizeSym
+from pypolymlp.calculator.compute_eos import PolymlpEOS
 from pypolymlp.calculator.compute_elastic import PolymlpElastic
 from pypolymlp.calculator.compute_phonon import (
     PolymlpPhonon, PolymlpPhononQHA
@@ -93,6 +94,12 @@ def run_single_structure(st_dict,
     minobj.write_poscar(filename=path_output + '/POSCAR_eqm')
     st_dict_eq = minobj.structure
 
+    print('Mode: EOS')
+    eos = PolymlpEOS(st_dict_eq, properties=prop)
+    eos.run(eps_min=0.7, eps_max=2.0, eps_int=0.01, eos_fit=True)
+    eos.write_eos_yaml(write_eos_fit=False, 
+                       filename=path_output + '/polymlp_eos.yaml')
+
     print('Mode: Elastic constant')
     el = PolymlpElastic(st_dict_eq, path_output + 'POSCAR_eqm', properties=prop)
     el.run()
@@ -109,9 +116,7 @@ def run_single_structure(st_dict,
 
     if run_qha and not ph.is_imaginary():
         print('Mode: Phonon QHA')
-        qha = PolymlpPhononQHA(st_dict_eq, 
-                               supercell_matrix, 
-                               properties=prop)
+        qha = PolymlpPhononQHA(st_dict_eq, supercell_matrix, properties=prop)
         qha.run(eps_min=0.8, eps_max=1.2, eps_int=0.02,
                 mesh=[10,10,10], disp=0.01,
                 t_min=100, t_max=1000, t_step=10)

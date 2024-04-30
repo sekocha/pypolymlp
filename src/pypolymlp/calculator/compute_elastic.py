@@ -39,9 +39,9 @@ class PolymlpElastic:
                                    coeffs=coeffs)
 
         self.__unitcell_dict = unitcell_dict
-        self.st_pmg = pmg.core.Structure.from_str(
-            open(unitcell_poscar).read(), fmt="POSCAR"
-        )
+        fposcar = open(unitcell_poscar)
+        self.st_pmg = pmg.core.Structure.from_str(fposcar.read(), fmt="POSCAR")
+        fposcar.close()
         #self.__run_initial_geometry_optimization()
 
         self.__compute_initial_properties()

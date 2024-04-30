@@ -95,9 +95,10 @@ class PolymlpEOS:
         self.__eos_data = np.array([volumes, energies]).T
 
         if eos_fit:
-            self.__eos_fit_data = self.run_eos_fit(volumes, energies)
-
-        self.__write_eos_yaml()
+            try:
+                self.__eos_fit_data = self.run_eos_fit(volumes, energies)
+            except:
+                print('Warning: EOS fitting failed.')
 
         return self
 
@@ -109,26 +110,30 @@ class PolymlpEOS:
         print('', file=stream)
 
 
-    def __write_eos_yaml(self, filename='eos.yaml'):
+    def write_eos_yaml(self, write_eos_fit=True, filename='polymlp_eos.yaml'):
 
         f = open(filename, 'w')
 
-        print('equilibrium:', file=f)
-        print('- bulk_modulus:', float(self.__b0), file=f)
-        print('  free_energy: ', self.__e0, file=f)
-        print('  volume:      ', self.__v0, file=f)
-        print('', file=f)
-        print('', file=f)
+        if self.__b0 is not None:
+            print('equilibrium:', file=f)
+            print('  bulk_modulus:', float(self.__b0), file=f)
+            print('  free_energy: ', self.__e0, file=f)
+            print('  volume:      ', self.__v0, file=f)
+            print('  n_atoms:     ', 
+                  list(self.__unitcell_dict['n_atoms']), file=f)
+            print('', file=f)
+            print('', file=f)
 
         print('eos_data:', file=f)
         print('', file=f)
         self.__write_data_2d(self.__eos_data, f, tag='volume_helmholtz')
         print('', file=f)
 
-        print('eos_fit_data:', file=f)
-        print('', file=f)
-        self.__write_data_2d(self.__eos_fit_data, f, tag='volume_helmholtz')
-        print('', file=f)
+        if write_eos_fit and self.__eos_fit_data is not None:
+            print('eos_fit_data:', file=f)
+            print('', file=f)
+            self.__write_data_2d(self.__eos_fit_data, f, tag='volume_helmholtz')
+            print('', file=f)
 
         f.close()
         
@@ -154,6 +159,7 @@ if __name__ == '__main__':
     unitcell = Poscar(args.poscar).get_structure()
     eos = PolymlpEOS(unitcell, pot=args.pot)
     eos.run(eos_fit=True)
+    eos.write_eos_yaml()
 
 
 

@@ -66,6 +66,6 @@ def write_poscar_file(st_dict, filename='poscar_pypolymlp', header=None):
               "{0:15.15f}".format(float(n[1])),
               "{0:15.15f}".format(float(n[2])), file=f)
 
-   
+    f.close()
     
 

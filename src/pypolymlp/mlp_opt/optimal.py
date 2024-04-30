@@ -1,15 +1,18 @@
 #!/usr/bin/env python
 import numpy as np
 import argparse
-import os
+import os, glob
 import yaml
 
 from scipy.spatial import ConvexHull
+from pypolymlp.core.io_polymlp import load_mlp_lammps
 
 
-def write_yaml(data, filename='polymlp_summary_all.yaml'):
+def write_yaml(data, system, filename='polymlp_summary_all.yaml'):
 
     f = open(filename, 'w')
+    print('system:', system, file=f)
+    print('', file=f)
     print('unit:', file=f)
     print('  cost:         msec/atom/step', file=f)
     print('  rmse_energy:  meV/atom', file=f)
@@ -28,9 +31,10 @@ def write_yaml(data, filename='polymlp_summary_all.yaml'):
     f.close()
     
 
-def find_optimal_mlps(dirs, key, use_force=False):
+def find_optimal_mlps(dirs, key, use_force=False, use_logscale_time=False):
 
     d_array = []
+    system = None
     for dir_pot in dirs:
         fname1 = dir_pot + '/polymlp_error.yaml'
         fname2 = dir_pot + '/polymlp_cost.yaml'
@@ -42,6 +46,11 @@ def find_optimal_mlps(dirs, key, use_force=False):
                 if key in d['dataset']:
                     match_d = d
                     break
+            if system is None:
+                params, _ = load_mlp_lammps(
+                    glob.glob(dir_pot + '/polymlp.lammps*')[0]
+                )
+                system = '-'.join(params['elements'])
             
         if match_d is not None:
             rmse_e = match_d['rmse_energy']
@@ -55,12 +64,16 @@ def find_optimal_mlps(dirs, key, use_force=False):
     d_array = sorted(d_array, key=lambda x:x[0])
     d_array = np.array(d_array)
 
-    write_yaml(d_array, filename='polymlp_summary_all.yaml')
+    write_yaml(d_array, system, filename='polymlp_summary_all.yaml')
     
     if use_force:
         d_target = d_array[:,[0,3]]
     else:
         d_target = d_array[:,[0,2]]
+
+    if use_logscale_time:
+        d_target = np.vstack([np.log10(d_target[:,0].astype(float)), 
+                              d_target[:,1].astype(float)]).T
 
     ch = ConvexHull(d_target)
     v_convex = np.unique(ch.simplices)
@@ -83,7 +96,7 @@ def find_optimal_mlps(dirs, key, use_force=False):
     d_convex = d_array[np.array(v_convex_l)]
     d_convex = d_convex[d_convex[:,2].astype(float) < 30]
     
-    write_yaml(d_convex, filename='polymlp_summary_convex.yaml')
+    write_yaml(d_convex, system, filename='polymlp_summary_convex.yaml')
 
 
 if __name__ == '__main__':

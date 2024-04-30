@@ -41,7 +41,7 @@ class PolymlpPhonon:
         ''' forces: (n_str, 3, n_atom) --> (n_str, n_atom, 3)'''
         _, forces, _ = self.prop.eval_multiple(st_dicts)
         forces = np.array(forces).transpose((0,2,1)) 
-        self.ph.set_forces(forces)
+        self.ph.forces = forces
         self.ph.produce_force_constants()
 
     def compute_properties(self,
@@ -153,20 +153,20 @@ class PolymlpPhononQHA:
                                 entropy=entropies,
                                 cv=heat_capacities)
 
-    def write_qha(self, path_output='polymlp_phonon_qha'):
+    def write_qha(self, path_output='./'):
 
-        os.makedirs(path_output, exist_ok=True)
-        filename = path_output+'/helmholtz-volume.dat'
+        os.makedirs(path_output + '/polymlp_phonon_qha/', exist_ok=True)
+        filename = path_output+'/polymlp_phonon_qha/helmholtz-volume.dat'
         self.__qha.write_helmholtz_volume(filename=filename)
-        filename = path_output+'/volume-temperature.dat'
+        filename = path_output+'/polymlp_phonon_qha/volume-temperature.dat'
         self.__qha.write_volume_temperature(filename=filename)
-        filename = path_output+'/thermal_expansion.dat'
+        filename = path_output+'/polymlp_phonon_qha/thermal_expansion.dat'
         self.__qha.write_thermal_expansion(filename=filename)
-        filename = path_output+'/gibbs-temperature.dat'
+        filename = path_output+'/polymlp_phonon_qha/gibbs-temperature.dat'
         self.__qha.write_gibbs_temperature(filename=filename)
-        filename = path_output+'/bulk_modulus-temperature.dat'
+        filename = path_output+'/polymlp_phonon_qha/bulk_modulus-temperature.dat'
         self.__qha.write_bulk_modulus_temperature(filename=filename)
-        filename = path_output+'/gruneisen-temperature.dat'
+        filename = path_output+'/polymlp_phonon_qha/gruneisen-temperature.dat'
         self.__qha.write_gruneisen_temperature(filename=filename)
 
 

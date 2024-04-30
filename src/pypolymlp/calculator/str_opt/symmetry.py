@@ -61,7 +61,8 @@ def standardize_cell(cell):
         map_numbers[n] = t
 
     lattice, scaled_positions, numbers = spglib.standardize_cell(
-        cell_ph, to_primitive=False,
+        (cell_ph.cell, cell_ph.scaled_positions, cell_ph.numbers), 
+        to_primitive=False,
     )
     types = [map_numbers[n] for n in numbers]
 
@@ -85,7 +86,9 @@ def basis_cell(cell):
     cell_ph = st_dict_to_phonopy_cell(cell_copy)
 
     '''basis (row): In the order of ax, bx, cx, ay, by, cy, az, bz, cz'''
-    spg_info = spglib.get_symmetry_dataset(cell_ph)
+    spg_info = spglib.get_symmetry_dataset(
+        (cell_ph.cell, cell_ph.scaled_positions, cell_ph.numbers), 
+    )
     spg_num = spg_info['number']
     print('Space group:', spg_info['international'], spg_num)
 

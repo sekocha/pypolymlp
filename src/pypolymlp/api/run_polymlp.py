@@ -309,6 +309,7 @@ def run():
 
         qha = PolymlpPhononQHA(unitcell_dict, supercell_matrix, pot=args.pot)
         qha.run()
+        qha.write_qha()
 
     elif args.features:
         print('Mode: Feature matrix calculations')

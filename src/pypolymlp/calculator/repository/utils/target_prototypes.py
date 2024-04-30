@@ -42,11 +42,12 @@ def get_icsd_data1(elements, path_vasp):
 
         icsd_id = file1.split('/')[-2]
         key = 'icsd-' + icsd_id + '-[' + structure_types[icsd_id] +']'
-        icsd_data[key] = dict()
-        icsd_data[key]['DFT_energy'] = e
-        icsd_data[key]['MLP_energy'] = None
-        icsd_data[key]['structure'] = st_dict
-        icsd_data[key]['icsd_id'] = icsd_id
+        icsd_data[key] = {
+            'DFT_energy' : e,
+            'MLP_energy' : None,
+            'structure' : st_dict,
+            'icsd_id' : icsd_id,
+        }
 
     return icsd_data
 
