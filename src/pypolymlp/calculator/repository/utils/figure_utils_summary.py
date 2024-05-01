@@ -53,6 +53,7 @@ def plot_mlp_distribution(d1_array,
     plt.savefig(path_output + '/mlp_dist.png',format='png',dpi=dpi)
     plt.savefig(path_output + '/mlp_dist.eps',format='eps')
     plt.clf()
+    plt.close()
 
 
 def plot_eqm_properties(eqm_props_dict, system, path_output='./', dpi=300):
@@ -116,5 +117,6 @@ def plot_eqm_properties(eqm_props_dict, system, path_output='./', dpi=300):
     plt.savefig(path_output+'/eqm_properties.png',format='png',dpi=dpi)
     plt.savefig(path_output+'/eqm_properties.eps',format='eps')
     plt.clf()
+    plt.close()
 
 

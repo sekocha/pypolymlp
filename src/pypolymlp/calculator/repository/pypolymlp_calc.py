@@ -96,7 +96,7 @@ def run_single_structure(st_dict,
 
     print('Mode: EOS')
     eos = PolymlpEOS(st_dict_eq, properties=prop)
-    eos.run(eps_min=0.7, eps_max=2.0, eps_int=0.01, eos_fit=True)
+    eos.run(eps_min=0.7, eps_max=2.0, eps_int=0.02, eos_fit=True)
     eos.write_eos_yaml(write_eos_fit=False, 
                        filename=path_output + '/polymlp_eos.yaml')
 
@@ -110,7 +110,7 @@ def run_single_structure(st_dict,
     ph = PolymlpPhonon(st_dict_eq, supercell_matrix, properties=prop)
     ph.produce_force_constants(displacements=0.01)
     ph.compute_properties(
-        mesh=[10,10,10], t_min=100, t_max=1000, t_step=50,
+        mesh=[10,10,10], t_min=0, t_max=1000, t_step=50,
         path_output=path_output,
     )
 
@@ -119,7 +119,7 @@ def run_single_structure(st_dict,
         qha = PolymlpPhononQHA(st_dict_eq, supercell_matrix, properties=prop)
         qha.run(eps_min=0.8, eps_max=1.2, eps_int=0.02,
                 mesh=[10,10,10], disp=0.01,
-                t_min=100, t_max=1000, t_step=10)
+                t_min=0, t_max=1000, t_step=10)
         qha.write_qha(path_output=path_output)
     elif run_qha and ph.is_imaginary():
         print('Phonon QHA is not performed '

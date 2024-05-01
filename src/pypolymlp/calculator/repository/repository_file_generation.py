@@ -9,9 +9,15 @@ from pypolymlp.calculator.repository.utils.figure_utils_summary import (
     plot_eqm_properties,
 )
 
-#from pypolymlp.calculator.repository.utils.figure_utils_each_pot import (
-#    plot_mlp_distribution,
-#)
+from pypolymlp.calculator.repository.utils.figure_utils_each_mlp import (
+    plot_energy,
+    plot_icsd_prediction,
+    plot_eos,
+    plot_eos_separate,
+    plot_phonon,
+    plot_phonon_qha_thermal_expansion,
+    plot_phonon_qha_bulk_modulus,
+)
 
 #from pypolymlp.calculator.repository.utils.yaml_io import (
 #    write_icsd_yaml,
@@ -32,7 +38,7 @@ class PolymlpRepositoryGeneration:
 
         yaml_name = path_data + '/polymlp_summary/prediction.yaml'
         yaml_data = yaml.safe_load(open(yaml_name))
-        self.__target_list = [d['st_type'] for d in yaml_data['structures']]
+        self.__target_list = yaml_data['structures']
 
     def run_mlp_distribution(self, dpi=300):
 
@@ -49,8 +55,7 @@ class PolymlpRepositoryGeneration:
                      d['rmse_energy'], 
                      d['rmse_force'],
                      d['id']] for d in self.__yamldata_convex]
-        d_all = np.array(d_all)
-        d_convex = np.array(d_convex)
+        d_all, d_convex = np.array(d_all), np.array(d_convex)
 
         path_output = self.__path_data + '/polymlp_summary/'
         plot_mlp_distribution(
@@ -63,7 +68,8 @@ class PolymlpRepositoryGeneration:
 
         eos_dict = defaultdict(dict)
         eqm_props_dict = dict()
-        for st in self.__target_list:
+        for target in self.__target_list:
+            st = target['st_type']
             eqm_props = []
             for pot_id, cost in zip(self.__pot_ids, self.__costs):
                 yamlfile = '/'.join(
@@ -79,9 +85,9 @@ class PolymlpRepositoryGeneration:
                 bm = float(eqm_data['bulk_modulus'])
                 eqm_props.append([cost, energy, volume, bm])
 
-                data = yamldata['eos_data']['volume_helmholtz']
-                data = np.array(data, dtype=float) / n_atom_sum
-                eos_dict[pot_id][st] = data
+                eos_data = yamldata['eos_data']['volume_helmholtz']
+                eos_data = np.array(eos_data, dtype=float) / n_atom_sum
+                eos_dict[pot_id][st] = eos_data
 
             eqm_props_dict[st] = np.array(eqm_props)
 
@@ -89,11 +95,117 @@ class PolymlpRepositoryGeneration:
         plot_eqm_properties(
             eqm_props_dict, self.__system, path_output=path_output, dpi=dpi,
         )
+
+        emin = min([np.min(prop[:,1]) for prop in eqm_props_dict.values()])
+        for pot_id in self.__pot_ids:
+            path_output = '/'.join([self.__path_data, pot_id, 'predictions'])
+            plot_eos(
+                eos_dict[pot_id], self.__system, pot_id, 
+                emin=emin, path_output=path_output, dpi=dpi,
+            )
+            plot_eos_separate(
+                eos_dict[pot_id], self.__system, pot_id, 
+                emin=emin, path_output=path_output, dpi=dpi,
+            )
             
         return self
 
-    def run(self, path_output='.'):
-        pass
+    def run_energy_distribution(self, dpi=300):
+
+        for pot_id in self.__pot_ids:
+            path_output = '/'.join([self.__path_data, pot_id, 'energy_dist'])
+            file_train = '/'.join([path_output, 'energy-train.dat'])
+            file_test = '/'.join([path_output, 'energy-test.dat'])
+            data_train = np.loadtxt(file_train, dtype=float, skiprows=1)
+            data_test = np.loadtxt(file_test, dtype=float, skiprows=1)
+
+            plot_energy(
+                data_train, data_test, self.__system, pot_id, 
+                path_output=path_output, dpi=dpi,
+            )
+        return self
+            
+    def run_icsd_prediction(self, dpi=300):
+
+        for pot_id in self.__pot_ids:
+            path_output = '/'.join([self.__path_data, pot_id, 'predictions'])
+            yamlfile = '/'.join([path_output, 'polymlp_icsd_pred.yaml'])
+            yamldata = yaml.safe_load(open(yamlfile))
+            icsd_dict = yamldata['icsd_predictions']
+            plot_icsd_prediction(
+                icsd_dict, self.__system, pot_id, 
+                path_output=path_output, dpi=dpi,
+                figsize=(10,4),
+            )
+            
+        return self
+
+    def run_phonon(self, dpi=300):
+
+        for pot_id in self.__pot_ids:
+            phonon_dict = dict()
+            path_output = '/'.join([self.__path_data, pot_id, 'predictions'])
+            for target in self.__target_list:
+                st = target['st_type']
+                yamlfile = '/'.join(
+                    [path_output, st, 'polymlp_phonon/thermal_properties.yaml']
+                )
+                yamldata = yaml.safe_load(open(yamlfile))
+                n_atom = int(yamldata['natom'])
+                datafile = '/'.join(
+                    [path_output, st, 'polymlp_phonon/total_dos.dat']
+                )
+                phonon_dict[st] = np.loadtxt(datafile, dtype=float, skiprows=1)
+                phonon_dict[st][:,1] /= n_atom
+
+            plot_phonon(
+                phonon_dict, self.__system, pot_id, 
+                path_output=path_output, dpi=dpi,
+            )
+
+        return self
+
+    def run_phonon_qha(self, dpi=300):
+
+        for pot_id in self.__pot_ids:
+            thermal_expansion_dict = dict()
+            bm_dict = dict()
+            path_output = '/'.join([self.__path_data, pot_id, 'predictions'])
+            for target in self.__target_list:
+                st = target['st_type']
+                datafile = '/'.join(
+                    [path_output, st, 
+                     'polymlp_phonon_qha/thermal_expansion.dat']
+                )
+                if os.path.exists(datafile):
+                    thermal_expansion_dict[st] = np.loadtxt(datafile, 
+                                                            dtype=float)
+                datafile = '/'.join(
+                    [path_output, st, 
+                     'polymlp_phonon_qha/bulk_modulus-temperature.dat']
+                )
+                if os.path.exists(datafile):
+                    bm_dict[st] = np.loadtxt(datafile, dtype=float)
+
+            plot_phonon_qha_thermal_expansion(
+                thermal_expansion_dict, self.__system, pot_id, 
+                path_output=path_output, dpi=dpi,
+            )
+            plot_phonon_qha_bulk_modulus(
+                bm_dict, self.__system, pot_id, 
+                path_output=path_output, dpi=dpi,
+            )
+
+
+        return self
+
+    def run(self):
+        self.run_mlp_distribution()
+        self.run_eos()
+        self.run_energy_distribution()
+        self.run_icsd_prediction()
+        self.run_phonon()
+        self.run_phonon_qha()
 
   
 if __name__ == '__main__':
@@ -108,6 +220,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     pred = PolymlpRepositoryGeneration(path_data=args.path_data)
-    pred.run_mlp_distribution()
-    pred.run_eos()
+    pred.run()
 
