@@ -4,6 +4,7 @@ import os
 from math import floor, ceil
 
 import matplotlib.pyplot as plt
+from matplotlib.ticker import ScalarFormatter
 import seaborn as sns
 
 
@@ -325,20 +326,27 @@ def plot_phonon_qha_thermal_expansion(
     for i, (st, te) in enumerate(thermal_expansion_dict.items()):
         row = i // n_cols
         col = i % n_cols
-        ax[row][col].plot(te[:,0], te[:,1],
+        ax_obj = ax[col] if n_rows == 1 else ax[row][col]
+        ax_obj.plot(te[:,0], te[:,1],
                           color='mediumvioletred',
                           linewidth=1)
-        ax[row][col].set_title(st, fontsize=fontsize, loc='left')
-        ax[row][col].set_xlim(limmin_x,limmax_x)
-        ax[row][col].set_ylim(limmin_y,limmax_y)
-        ax[row][col].tick_params(axis='both', labelsize=8)
+        ax_obj.set_title(st, fontsize=fontsize, loc='left')
+        ax_obj.set_xlim(limmin_x,limmax_x)
+        ax_obj.set_ylim(limmin_y,limmax_y)
+        ax_obj.tick_params(axis='both', labelsize=8)
+        ax_obj.yaxis.set_major_formatter(
+            ScalarFormatter(useMathText=True)
+        )
+        ax_obj.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
 
     for i in range(n_rows):
-        ax[i][0].set_ylabel('Thermal expansion (K$^{-1}$)', fontsize=fontsize)
+        ax_obj = ax[0] if n_rows == 1 else ax[i][0]
+        ax_obj.set_ylabel('Thermal expansion (K$^{-1}$)', fontsize=fontsize)
 
     for i in range(n_cols):
-        ax[-1][i].set_xlabel('Temperature (K)', fontsize=fontsize)
-        ax[-1][i].tick_params(axis='both', labelsize=8)
+        ax_obj = ax[i] if n_rows == 1 else ax[-1][i]
+        ax_obj.set_xlabel('Temperature (K)', fontsize=fontsize)
+        ax_obj.tick_params(axis='both', labelsize=8)
 
     plt.tight_layout()
     plt.savefig(path_output + '/polymlp_thermal_expansion.png',
@@ -347,6 +355,7 @@ def plot_phonon_qha_thermal_expansion(
                 format='eps')
     plt.clf()
     plt.close()
+
 
 def plot_phonon_qha_bulk_modulus(
     bm_dict, system, pot_id, 
@@ -374,23 +383,30 @@ def plot_phonon_qha_bulk_modulus(
     fig, ax = plt.subplots(n_rows, n_cols, figsize = figsize)
     fig.suptitle("Bulk modulus (" 
                  + system + ', ' + pot_id + ')', fontsize=10)
+
     for i, (st, te) in enumerate(bm_dict.items()):
         row = i // n_cols
         col = i % n_cols
-        ax[row][col].plot(te[:,0], te[:,1],
+        ax_obj = ax[col] if n_rows == 1 else ax[row][col]
+        ax_obj.plot(te[:,0], te[:,1],
                           color='mediumvioletred',
                           linewidth=1)
-        ax[row][col].set_title(st, fontsize=fontsize, loc='left')
-        ax[row][col].set_xlim(limmin_x,limmax_x)
-        ax[row][col].set_ylim(limmin_y,limmax_y)
-        ax[row][col].tick_params(axis='both', labelsize=8)
+        ax_obj.set_title(st, fontsize=fontsize, loc='left')
+        ax_obj.set_xlim(limmin_x,limmax_x)
+        ax_obj.set_ylim(limmin_y,limmax_y)
+        ax_obj.tick_params(axis='both', labelsize=8)
+        ax_obj.yaxis.set_major_formatter(
+            ScalarFormatter(useMathText=True)
+        )
 
     for i in range(n_rows):
-        ax[i][0].set_ylabel('Bulk modulus (GPa)', fontsize=fontsize)
+        ax_obj = ax[0] if n_rows == 1 else ax[i][0]
+        ax_obj.set_ylabel('Bulk modulus (GPa)', fontsize=fontsize)
 
     for i in range(n_cols):
-        ax[-1][i].set_xlabel('Temperature (K)', fontsize=fontsize)
-        ax[-1][i].tick_params(axis='both', labelsize=8)
+        ax_obj = ax[i] if n_rows == 1 else ax[-1][i]
+        ax_obj.set_xlabel('Temperature (K)', fontsize=fontsize)
+        ax_obj.tick_params(axis='both', labelsize=8)
 
     plt.tight_layout()
     plt.savefig(path_output + '/polymlp_bulk_modulus.png',

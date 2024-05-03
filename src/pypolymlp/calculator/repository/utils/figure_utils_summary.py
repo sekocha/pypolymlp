@@ -111,6 +111,8 @@ def plot_eqm_properties(eqm_props_dict, system, path_output='./', dpi=300):
         ax[i].set_xscale('log')
 
         dval = (max(max_vals[i]) - min(min_vals[i])) / 4
+        if i == 1:
+            dval = max(dval, 3.0)
         ax[i].set_ylim(min(min_vals[i]) - dval, max(max_vals[i]) + dval)
 
     plt.tight_layout()

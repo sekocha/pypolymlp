@@ -29,12 +29,15 @@ if __name__ == '__main__':
                         type=str, 
                         default='./',
                         help='Path (output of predictions)')
+    parser.add_argument('--no_qha', 
+                        action='store_false',
+                        help='QHA calculation')
     args = parser.parse_args()
 
     pred = PolymlpRepositoryPrediction(yamlfile=args.yaml,
                                        path_mlp=args.path_mlp,
                                        path_vasp=args.path_vasp)
-    pred.run(path_output=args.path_output, run_qha=False)
+    pred.run(path_output=args.path_output, run_qha=args.no_qha)
 
     rep_file = PolymlpRepositoryGeneration(path_data=args.path_output)
     rep_file.run()
