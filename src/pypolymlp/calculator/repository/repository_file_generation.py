@@ -19,11 +19,6 @@ from pypolymlp.calculator.repository.utils.figure_utils_each_mlp import (
     plot_phonon_qha_bulk_modulus,
 )
 
-#from pypolymlp.calculator.repository.utils.yaml_io import (
-#    write_icsd_yaml,
-#)
-
-
 
 class PolymlpRepositoryGeneration:
 
@@ -86,7 +81,7 @@ class PolymlpRepositoryGeneration:
             for pot_id, cost in zip(self.__pot_ids, self.__costs):
                 yamlfile = '/'.join(
                     [self.__path_data, pot_id, 'predictions', 
-                     st, 'polymlp_eos.yaml']
+                     st, 'polymlp_eos_fit.yaml']
                 )
                 if os.path.exists(yamlfile):
                     yamldata = self.__read_yaml(yamlfile)
@@ -98,6 +93,15 @@ class PolymlpRepositoryGeneration:
                     bm = float(eqm_data['bulk_modulus'])
                     eqm_props.append([cost, energy, volume, bm])
 
+                    eos_data = yamldata['eos_data']['volume_helmholtz']
+                    eos_data = np.array(eos_data, dtype=float) / n_atom_sum
+                    eos_dict[pot_id][st] = eos_data
+
+                    yamlfile = '/'.join(
+                        [self.__path_data, pot_id, 'predictions', 
+                        st, 'polymlp_eos.yaml']
+                    )
+                    yamldata = self.__read_yaml(yamlfile)
                     eos_data = yamldata['eos_data']['volume_helmholtz']
                     eos_data = np.array(eos_data, dtype=float) / n_atom_sum
                     eos_dict[pot_id][st] = eos_data

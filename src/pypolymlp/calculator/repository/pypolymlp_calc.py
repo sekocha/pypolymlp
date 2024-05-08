@@ -96,9 +96,14 @@ def run_single_structure(st_dict,
 
     print('Mode: EOS')
     eos = PolymlpEOS(st_dict_eq, properties=prop)
-    eos.run(eps_min=0.7, eps_max=2.0, eps_int=0.02, eos_fit=True)
+    eos.run(eps_min=0.7, eps_max=2.5, eps_int=0.02, eos_fit=False)
     eos.write_eos_yaml(write_eos_fit=False, 
                        filename=path_output + '/polymlp_eos.yaml')
+
+    eos.run(eps_min=0.97, eps_max=1.03, eps_int=0.003, eos_fit=True)
+    eos.write_eos_yaml(write_eos_fit=False, 
+                       filename=path_output + '/polymlp_eos_fit.yaml')
+
 
     print('Mode: Elastic constant')
     el = PolymlpElastic(st_dict_eq, path_output + 'POSCAR_eqm', properties=prop)

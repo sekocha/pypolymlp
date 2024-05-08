@@ -112,8 +112,13 @@ def plot_eqm_properties(eqm_props_dict, system, path_output='./', dpi=300):
 
         dval = (max(max_vals[i]) - min(min_vals[i])) / 4
         if i == 1:
-            dval = max(dval, 3.0)
-        ax[i].set_ylim(min(min_vals[i]) - dval, max(max_vals[i]) + dval)
+            dval = max(dval, 1.0)
+        elif i == 2:
+            dval = max(dval, 20.0)
+        if not i == 2:
+            ax[i].set_ylim(min(min_vals[i]) - dval, max(max_vals[i]) + dval)
+        else:
+            ax[i].set_ylim(0, max(max_vals[i]) + dval)
 
     plt.tight_layout()
     plt.savefig(path_output+'/eqm_properties.png',format='png',dpi=dpi)

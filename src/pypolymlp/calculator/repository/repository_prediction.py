@@ -14,7 +14,7 @@ from pypolymlp.calculator.repository.utils.target_structures import (
 from pypolymlp.calculator.repository.utils.target_prototypes import (
     get_icsd_data1,
 )
-from pypolymlp.calculator.repository.utils.yaml_io import (
+from pypolymlp.calculator.repository.utils.yaml_io_utils import (
     write_icsd_yaml,
 )
 
