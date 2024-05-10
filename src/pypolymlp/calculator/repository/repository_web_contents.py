@@ -133,9 +133,9 @@ class PolymlpRepositoryWebContents:
 
         print('', file=f)
         print('.. csv-table:: Pareto optimals (on convex hull)', file=f)
-        print(' :header: Name, Time [ms] (1core/36cores),'
-              ' RMSE [meV/atom]/[eV/ang.], Predictions, Files', file=f)
-        print(' :widths: 5,10,10,7,10', file=f)
+        print(' :header: Name, Time[ms](1core/36cores),'
+              ' RMSE[meV/atom]/[eV/ang.], Predictions, Files', file=f)
+        print(' :widths: 10,12,12,6,15', file=f)
         print('', file=f)
 
         for d in self.__polymlps:
@@ -150,7 +150,7 @@ class PolymlpRepositoryWebContents:
                       '{:.3f}'.format(float(d['cost_openmp'])),",",
                       '{:.3f}'.format(float(d['rmse_energy'])),"/",
                       '{:.4f}'.format(float(d['rmse_force'])),",",
-                      ':doc:`predictions </predictions/'+id1+'/prediction>`,',
+                      ':doc:`predictions <predictions/'+id1+'/prediction>`,',
                       ':download:`polymlp.lammps <polymlps/' 
                                 + id1 + '/polymlp.lammps.tar.gz>`',
                       ':download:`polymlp.in <polymlps/' 
@@ -177,7 +177,8 @@ class PolymlpRepositoryWebContents:
               file=f)
         print('', file=f)
         print('- All Pareto optimal MLPs are available :download:`here'
-              ' <polymlps-' + self.__polymlps_id + '.tar.gz>`.', file=f)
+              ' <polymlps/polymlps-' + self.__polymlps_id + '.tar.gz>`.', 
+              file=f)
         print('', file=f)
 
         f.close()
@@ -199,19 +200,17 @@ class PolymlpRepositoryWebContents:
                 tar = tarfile.open(
                     path_output + 'polymlp.lammps.tar.gz', 'w:gz')
                 for name in glob.glob(path_data + 'polymlp.lammps*'):
-                    tar.add(name)
+                    tar.add(name, arcname=name.split('/')[-1])
                 tar.close()
 
                 if 'hybrid' in d['id']:
                     tar = tarfile.open(
                         path_output + 'polymlp.in.tar.gz', 'w:gz')
                     for name in glob.glob(path_data + 'polymlp.in*'):
-                        tar.add(name)
+                        tar.add(name, arcname=name.split('/')[-1])
                     tar.close()
                 else:
                     self.__copy(path_data + 'polymlp.in', path_output)
-
-                self.__copy(path_data + 'polymlp.in', path_output)
 
         path_output = '/'.join([self.__path_output, 'polymlps']) + '/'
         tar = tarfile.open(
@@ -273,7 +272,7 @@ class PolymlpRepositoryWebContents:
                 if os.path.exists(file_copied):
                     self.__copy(file_copied, path_output)
                     include_image(
-                        'distribution.png', height=300, file=f,
+                        'distribution.png', height=600, file=f,
                         title='Energy distribution'
                     )
 
@@ -289,7 +288,7 @@ class PolymlpRepositoryWebContents:
                 if os.path.exists(file_copied):
                     self.__copy(file_copied, path_output)
                     include_image(
-                        'polymlp_eos.png', height=300, file=f,
+                        'polymlp_eos.png', height=350, file=f,
                         title='Equation of state'
                     )
 
@@ -297,7 +296,7 @@ class PolymlpRepositoryWebContents:
                 if os.path.exists(file_copied):
                     self.__copy(file_copied, path_output)
                     include_image(
-                        'polymlp_eos_sep.png', height=600, file=f,
+                        'polymlp_eos_sep.png', height=700, file=f,
                         title='Equation of state for each structure'
                     )
 
@@ -326,6 +325,7 @@ class PolymlpRepositoryWebContents:
                     )
 
                 print('**Prototype structure energy**', file=f)
+                print('', file=f)
                 yamlfile = '/'.join(
                     [path_data, 'polymlp_icsd_pred.yaml']
                 )
@@ -340,6 +340,7 @@ class PolymlpRepositoryWebContents:
 
 
                 print('**Elastic constants**', file=f)
+                print('', file=f)
                 for st in self.__structures:
                     yamlfile = '/'.join(
                         [path_data, st['st_type'], 'polymlp_elastic.yaml']

@@ -23,7 +23,6 @@ class PolymlpRepositoryPrediction:
 
     def __init__(self, 
                  yamlfile='polymlp_summary_convex.yaml',
-                 path_mlp='./',
                  path_vasp='./'):
 
         yamldata = yaml.safe_load(open(yamlfile))['polymlps']
@@ -31,7 +30,7 @@ class PolymlpRepositoryPrediction:
         self.__pot_dict = dict()
         self.__elements = None
         for potdata in yamldata:
-            path_pot = path_mlp + potdata['id'] 
+            path_pot = potdata['path'] 
             pot = sorted(glob.glob(path_pot + '/polymlp.lammps*'))
             prop = Properties(pot=pot)
             self.__pot_dict[potdata['id']] = {
@@ -175,10 +174,6 @@ if __name__ == '__main__':
                         type=str, 
                         default='polymlp_summary_convex.yaml',
                         help='Summary yaml file from grid search')
-    parser.add_argument('--path_mlp', 
-                        type=str, 
-                        default='../4-grid/',
-                        help='Path (regression data from grid search)')
     parser.add_argument('--path_vasp', 
                         type=str, 
                         default='./',
@@ -190,7 +185,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     pred = PolymlpRepositoryPrediction(yamlfile=args.yaml,
-                                       path_mlp=args.path_mlp,
                                        path_vasp=args.path_vasp)
     pred.run(path_output=args.path_output, run_qha=False)
 

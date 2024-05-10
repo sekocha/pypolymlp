@@ -21,7 +21,8 @@ def write_yaml(data, system, filename='polymlp_summary_all.yaml'):
     print('', file=f)
     print('polymlps:', file=f)
     for d in data:
-        print('- id:', d[-1], file=f)
+        print('- id:    ', d[-2], file=f)
+        print('  path:  ', d[-1], file=f)
         print('  cost_single:', d[0], file=f)
         print('  cost_openmp:', d[1], file=f)
         print('  rmse_energy:', d[2], file=f)
@@ -53,13 +54,14 @@ def find_optimal_mlps(dirs, key, use_force=False, use_logscale_time=False):
                 system = '-'.join(params['elements'])
             
         if match_d is not None:
+            abspath = os.path.abspath(dir_pot)
             rmse_e = match_d['rmse_energy']
             rmse_f = match_d['rmse_force']
             yml_data = yaml.safe_load(open(fname2))
             time1 = yml_data['costs']['single_core']
             time36 = yml_data['costs']['openmp']
             name = dir_pot.split('/')[-1]
-            d_array.append([time1, time36, rmse_e, rmse_f, name])
+            d_array.append([time1, time36, rmse_e, rmse_f, name, abspath])
 
     d_array = sorted(d_array, key=lambda x:x[0])
     d_array = np.array(d_array)
