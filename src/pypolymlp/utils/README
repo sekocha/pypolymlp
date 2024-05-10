@@ -3,4 +3,5 @@ python3 ~/git/pypolymlp/src/pypolymlp/utils/count_time.py --poscar POSCAR_eqm --
 
 # count_time.py: automatic structure generation
 python3 ~/git/pypolymlp/src/pypolymlp/utils/count_time.py --pot polymlp.lammps.*
-
+or
+python3 ~/git/pypolymlp/src/pypolymlp/utils/count_time.py -d .

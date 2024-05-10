@@ -97,10 +97,10 @@ def split_three_datasets(dft_dict,
     train2, test2 = split_train_test(set2)
     return train0, train1, train2, test0, test1, test2
 
-def copy_vaspruns(vaspruns, tag):
+def copy_vaspruns(vaspruns, tag, path_output='./vaspruns/', suffix=''):
 
-    dir_output = 'vaspruns/' + tag + '/'
-    os.makedirs('vaspruns/' + tag, exist_ok=True)
+    dir_output = path_output + '/' + tag + '/'
+    os.makedirs(dir_output, exist_ok=True)
 
     f = open(dir_output + 'dataset_auto_div.yaml', 'w')
     print('datasets:', file=f)
@@ -110,7 +110,7 @@ def copy_vaspruns(vaspruns, tag):
         print('  - id:', id1, file=f)
         print('    file:', infile, file=f)
 
-        outfile = 'vaspruns-' + str(id1).zfill(5) + '.xml'
+        outfile = 'vaspruns-' + str(id1).zfill(5) + '.xml' + suffix
         shutil.copyfile(infile, dir_output + outfile)
     f.close()
 

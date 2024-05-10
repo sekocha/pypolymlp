@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import numpy as np
+import glob
 
 from pypolymlp.core.interface_vasp import Poscar
 from pypolymlp.utils.phonopy_utils import (
@@ -12,6 +13,46 @@ from phonopy import Phonopy
 
 import argparse
 import time
+
+def run_single(prop, supercell_dict, args, filename='polymlp_cost.yaml'):
+
+    print('Calculations have been started.')
+    t1 = time.time()
+    for i in range(args.n_calc):
+        e, _, _ = prop.eval(supercell_dict)
+    t2 = time.time()
+
+    n_atoms_sum = sum(supercell_dict['n_atoms'])
+    cost1 = (t2 - t1) / n_atoms_sum / args.n_calc
+    cost1 *= 1000
+    print('Total time (sec):', t2 - t1)
+    print('Number of atoms:', n_atoms_sum)
+    print('Number of steps:', args.n_calc)
+    print('Computational cost (msec/atom/step):', cost1)
+
+    print('Calculations have been started (openmp).')
+    n_calc = args.n_calc * 10
+    st_dicts = [supercell_dict for i in range(n_calc)]
+
+    t3 = time.time()
+    _, _, _ = prop.eval_multiple(st_dicts)
+    t4 = time.time()
+
+    cost2 = (t4 - t3) / n_atoms_sum / n_calc
+    cost2 *= 1000
+    print('Total time (sec):', t4 - t3)
+    print('Number of atoms:', n_atoms_sum)
+    print('Number of steps:', n_calc)
+    print('Computational cost (msec/atom/step):', cost2)
+
+    f = open(filename, 'w')
+    print('units:', file=f)
+    print('  time: msec/atom/step', file=f)
+    print('', file=f)
+    print('costs:', file=f)
+    print('  single_core:', cost1, file=f)
+    print('  openmp:     ', cost2, file=f)
+    f.close()
 
 
 if __name__ == '__main__':
@@ -28,6 +69,11 @@ if __name__ == '__main__':
                         default='polymlp.lammps',
                         help='polymlp file')
 
+    parser.add_argument('-d', '--dirs',
+                        type=str,
+                        default=None,
+                        help='directory path')
+
     parser.add_argument('--supercell',
                         nargs=3,
                         type=int,
@@ -40,7 +86,12 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    prop = Properties(pot=args.pot)
+    if args.dirs is None:
+        prop = Properties(pot=args.pot)
+    else:
+        pot_dirs = sorted(glob.glob(args.dirs + '/*'))
+        pot = sorted(glob.glob(pot_dirs[0] + '/polymlp.lammps*'))
+        prop = Properties(pot=pot)
 
     if args.poscar is not None:
         unitcell_dict = Poscar(args.poscar).get_structure()
@@ -70,42 +121,15 @@ if __name__ == '__main__':
     phonopy = Phonopy(unitcell, supercell_matrix)
     supercell_dict = phonopy_cell_to_st_dict(phonopy.supercell)
 
-    print('Calculations have been started.')
-    t1 = time.time()
-    for i in range(args.n_calc):
-        e, _, _ = prop.eval(supercell_dict)
-    t2 = time.time()
+    if args.dirs is None:
+        run_single(prop, supercell_dict, args)
 
-    n_atoms_sum = sum(supercell_dict['n_atoms'])
-    cost1 = (t2 - t1) / n_atoms_sum / args.n_calc
-    cost1 *= 1000
-    print('Total time (sec):', t2 - t1)
-    print('Number of atoms:', n_atoms_sum)
-    print('Number of steps:', args.n_calc)
-    print('Computational cost (msec/atom/step):', cost1)
-
-    print('Calculations have been started (openmp).')
-    args.n_calc *= 10
-    st_dicts = [supercell_dict for i in range(args.n_calc)]
-
-    t3 = time.time()
-    _, _, _ = prop.eval_multiple(st_dicts)
-    t4 = time.time()
-
-    cost2 = (t4 - t3) / n_atoms_sum / args.n_calc
-    cost2 *= 1000
-    print('Total time (sec):', t4 - t3)
-    print('Number of atoms:', n_atoms_sum)
-    print('Number of steps:', args.n_calc)
-    print('Computational cost (msec/atom/step):', cost2)
-
-    f = open('polymlp_cost.yaml', 'w')
-    print('units:', file=f)
-    print('  time: msec/atom/step', file=f)
-    print('', file=f)
-    print('costs:', file=f)
-    print('  single_core:', cost1, file=f)
-    print('  openmp:     ', cost2, file=f)
-    f.close()
+    else:
+        for dir1 in pot_dirs:
+            print('------- Target MLP:', dir1, '-------')
+            pot = sorted(glob.glob(dir1 + '/polymlp.lammps*'))
+            prop = Properties(pot=pot)
+            run_single(prop, supercell_dict, args, 
+                       filename=dir1+'/polymlp_cost.yaml')
 
 
