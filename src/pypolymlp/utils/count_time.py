@@ -112,6 +112,17 @@ if __name__ == '__main__':
             unitcell_dict['elements'] = [elements[t] 
                                          for t in unitcell_dict['types']]
             unitcell_dict['volume'] = np.linalg.det(unitcell_dict['axis'])
+        elif len(elements) == 2:
+            unitcell_dict['axis'] = np.array([[4,0,0],[0,4,0],[0,0,4]])
+            unitcell_dict['positions'] = np.array([[0.0,0.0,0.0],
+                                                   [0.0,0.5,0.5],
+                                                   [0.5,0.0,0.5],
+                                                   [0.5,0.5,0.0]]).T
+            unitcell_dict['n_atoms'] = np.array([2,2])
+            unitcell_dict['types'] = np.array([0,0,1,1])
+            unitcell_dict['elements'] = [elements[t] 
+                                         for t in unitcell_dict['types']]
+            unitcell_dict['volume'] = np.linalg.det(unitcell_dict['axis'])
         else:
             raise ValueError('No structure setting for more than binary system')
 

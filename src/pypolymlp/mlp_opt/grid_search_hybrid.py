@@ -24,13 +24,13 @@ def set_gtinv_grid_hybrid(grid_setting):
         if n_gauss == 1:
             min1 = max1 = cut/2
         else:
-            min1 = cut/2 - 0.5
-            max1 = cut/2 + 0.5
+            min1 = 1.0
+            max1 = cut - 1.0
         params_dict['gauss2'] = (min1, max1, n_gauss)
 
         ''' constant settings'''
         params_dict['feature_type'] = 'gtinv'
-        params_dict['max_p'] = 3
+        params_dict['max_p'] = 2
         params_dict['gauss1'] = (0.5, 0.5, 1)
         params_dict['reg_alpha_params'] = grid_setting['reg_alpha_params']
         params_dict['include_force'] = grid_setting['include_force']
@@ -60,14 +60,14 @@ if __name__ == '__main__':
 
     grid_setting_h = dict()
     grid_setting_h['cutoffs'] = [3.0,4.0,5.0]
-    grid_setting_h['n_gaussians'] = [1,2]
+    grid_setting_h['n_gaussians'] = [2,4]
     grid_setting_h['reg_alpha_params'] = [-4.0,3.0,15]
     grid_setting_h['model_types'] = [4]
     grid_setting_h['include_force'] = True
     grid_setting_h['include_stress'] = args.no_stress
 
     grid_setting_h['gtinv_order_ub'] = 3
-    grid_setting_h['gtinv_l_ub'] = [16,8,2,1,1]
+    grid_setting_h['gtinv_l_ub'] = [8,8,2,1,1]
     grid_setting_h['gtinv_l_int'] = [8,8,2,1,1]
     grid_setting_h['gtinv_grid'] = set_gtinv_params(grid_setting_h)
 
