@@ -74,6 +74,7 @@ class PolymlpRepositoryGeneration:
     def run_eos(self, dpi=300):
 
         eos_dict = defaultdict(dict)
+        e_eqm_dict = defaultdict(dict)
         eqm_props_dict = dict()
         for target in self.__target_list:
             st = target['st_type']
@@ -92,10 +93,7 @@ class PolymlpRepositoryGeneration:
                     volume = float(eqm_data['volume']) / n_atom_sum
                     bm = float(eqm_data['bulk_modulus'])
                     eqm_props.append([cost, energy, volume, bm])
-
-                    eos_data = yamldata['eos_data']['volume_helmholtz']
-                    eos_data = np.array(eos_data, dtype=float) / n_atom_sum
-                    eos_dict[pot_id][st] = eos_data
+                    e_eqm_dict[pot_id][st] = energy
 
                     yamlfile = '/'.join(
                         [self.__path_data, pot_id, 'predictions', 
@@ -113,17 +111,19 @@ class PolymlpRepositoryGeneration:
             eqm_props_dict, self.__system, path_output=path_output, dpi=dpi,
         )
 
-        emin = min([np.min(prop[:,1]) for prop in eqm_props_dict.values()])
+        #emin = ([np.min(prop[:,1]) for prop in eqm_props_dict.values()])
         for pot_id in self.__pot_ids:
             path_output = '/'.join([self.__path_data, pot_id, 'predictions'])
-            plot_eos(
-                eos_dict[pot_id], self.__system, pot_id, 
-                emin=emin, path_output=path_output, dpi=dpi,
-            )
-            plot_eos_separate(
-                eos_dict[pot_id], self.__system, pot_id, 
-                emin=emin, path_output=path_output, dpi=dpi,
-            )
+            if pot_id in eos_dict:
+                emin = min(e_eqm_dict[pot_id].values())
+                plot_eos(
+                    eos_dict[pot_id], self.__system, pot_id, 
+                    emin=emin, path_output=path_output, dpi=dpi,
+                )
+                plot_eos_separate(
+                    eos_dict[pot_id], self.__system, pot_id, 
+                    emin=emin, path_output=path_output, dpi=dpi,
+                )
             
         return self
 

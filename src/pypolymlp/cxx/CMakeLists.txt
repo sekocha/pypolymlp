@@ -15,6 +15,10 @@ set(SRC_FILES
     src/compute/py_additive_model.cpp
     src/compute/py_features_attr.cpp
     src/compute/polymlp_eval.cpp
+    src/compute/features.cpp
+    src/compute/functions.cpp
+    src/compute/local_fast.cpp
+    src/compute/model_fast.cpp
     src/python/pybind11_mlp.cpp
     src/polymlp/polymlp_read_gtinv.cpp
     src/polymlp/polymlp_basis_function.cpp
