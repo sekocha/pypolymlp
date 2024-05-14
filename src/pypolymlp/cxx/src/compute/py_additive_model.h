@@ -14,6 +14,10 @@
 #include "compute/neighbor.h"
 #include "compute/model.h"
 
+#include "compute/model_fast.h"
+#include "compute/features.h"
+#include "polymlp/polymlp_features.h"
+
 #include <Eigen/Core>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>

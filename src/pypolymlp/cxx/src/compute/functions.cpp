@@ -7,7 +7,6 @@
 
 #include "functions.h"
 
-//template<typename T>
 void compute_products(const vector2i& map,
                       const vector1dc& element,
                       vector1dc& prod_vals){

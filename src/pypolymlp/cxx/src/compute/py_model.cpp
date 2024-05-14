@@ -51,10 +51,11 @@ PyModel::PyModel(const py::dict& params_dict,
     const ModelParams modelp(fp, element_swap);
     const Features f_obj(fp, modelp);
 
+    std::cout << "Initial setting for computing features" << std::endl;
     FunctionFeatures features_obj;
-    if (fp.des_type == "gtinv")
-        std::cout << "Initial setting for computing features" << std::endl;
+    if (fp.des_type == "gtinv"){
         features_obj = FunctionFeatures(f_obj);
+    }
     //
 
     std::vector<bool> force_st;
@@ -67,7 +68,6 @@ PyModel::PyModel(const py::dict& params_dict,
               force_st);
 
     Neighbor neigh(axis[0], positions_c[0], types[0], fp.n_type, fp.cutoff);
-
     // added for local_fast and model_fast
     ModelFast mod(neigh.get_dis_array(), 
                   neigh.get_diff_array(),
@@ -113,7 +113,12 @@ PyModel::PyModel(const py::dict& params_dict,
                       neigh.get_diff_array(),
                       neigh.get_atom2_array(), 
                       types[i], fp1, modelp, features_obj);
-
+        /*
+        Model mod(neigh.get_dis_array(), 
+                  neigh.get_diff_array(),
+                  neigh.get_atom2_array(), 
+                  types[i], fp1, element_swap);
+        */
         const auto &xe = mod.get_xe_sum();
         for (size_t j = 0; j < xe.size(); ++j) x_all(i,j) = xe[j];
 

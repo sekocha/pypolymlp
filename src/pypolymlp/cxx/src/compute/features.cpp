@@ -139,7 +139,36 @@ void FunctionFeatures::set_features_using_mappings(const Features& f_obj){
         }
         ++idx;
     }
+    //sort_linear_features_deriv();
 }
+
+void FunctionFeatures::sort_linear_features_deriv(){
+
+    // sorted by prod_key and then by prod_features_key
+    for (int t1 = 0; t1 < n_type; ++t1){
+        for (auto& sfeature: linear_features_deriv[t1]){
+            std::sort(sfeature.begin(), sfeature.end(),
+                    [](const FeatureSingleTermDeriv& lhs, 
+                        const FeatureSingleTermDeriv& rhs){
+                        /*
+                    if (lhs.prod_key != rhs.prod_key){
+                        return lhs.prod_key < rhs.prod_key;
+                    }
+                    else {
+                        return lhs.nlmtc_key < rhs.nlmtc_key;
+                    }
+                    */
+                    if (lhs.nlmtc_key != rhs.nlmtc_key){
+                        return lhs.nlmtc_key < rhs.nlmtc_key;
+                    }
+                    else {
+                        return lhs.prod_key < rhs.prod_key;
+                    }
+                    });
+        }
+    }
+}
+
 
 void FunctionFeatures::set_features_using_mappings_simple(const Features& f_obj){
 

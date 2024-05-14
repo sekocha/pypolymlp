@@ -13,9 +13,10 @@
 
 #include "mlpcpp.h"
 #include "compute/local.h"
+#include "polymlp/polymlp_model_params.h"
+
 #include "compute/local_fast.h"
 #include "compute/features.h"
-#include "polymlp/polymlp_model_params.h"
 
 class ModelFast{
 

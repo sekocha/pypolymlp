@@ -53,6 +53,7 @@ class FunctionFeatures {
     void set_mapping_prod(const Features& f_obj);
     void set_features_using_mappings(const Features& f_obj);
     void set_features_using_mappings_simple(const Features& f_obj);
+    void sort_linear_features_deriv();
 
     public: 
 

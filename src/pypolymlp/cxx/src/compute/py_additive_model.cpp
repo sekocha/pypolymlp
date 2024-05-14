@@ -16,6 +16,8 @@ PyAdditiveModel::PyAdditiveModel(const std::vector<py::dict>& params_dict_array,
                                  const vector1i& n_atoms_all){
 
     std::vector<struct feature_params> fp_array;
+    std::vector<ModelParams> modelp_array;
+    std::vector<FunctionFeatures> features_array;
     bool element_swap, print_memory;
     for (const auto& params_dict: params_dict_array){
         const int n_type = params_dict["n_type"].cast<int>();
@@ -51,6 +53,17 @@ PyAdditiveModel::PyAdditiveModel(const std::vector<py::dict>& params_dict_array,
                                     l_comb,
                                     lm_coeffs};
         fp_array.emplace_back(fp);
+
+        // added for local_fast and model_fast
+        ModelParams modelp(fp, element_swap);
+        modelp_array.emplace_back(modelp);
+
+        std::cout << "Initial setting for computing features" << std::endl;
+        const Features f_obj(fp, modelp);
+        FunctionFeatures features_obj;
+        if (fp.des_type == "gtinv") features_obj = FunctionFeatures(f_obj);
+        features_array.emplace_back(features_obj);
+        //
     }
 
     std::vector<bool> force_st;
@@ -64,7 +77,7 @@ PyAdditiveModel::PyAdditiveModel(const std::vector<py::dict>& params_dict_array,
 
     const int n_st = axis.size();
     const int total_n_data = n_data[0] + n_data[1] + n_data[2];
-    int n_features(0);
+    int n_features(0), imodel(0);
     for (const auto& fp: fp_array){
 
         std::set<int> uniq_types(types[0].begin(), types[0].end());
@@ -75,14 +88,24 @@ PyAdditiveModel::PyAdditiveModel(const std::vector<py::dict>& params_dict_array,
 
         Neighbor neigh(axis[0], positions_c[0], types_mod, 
                        fp.n_type, fp.cutoff);
+        /*
         Model mod(neigh.get_dis_array(), 
                   neigh.get_diff_array(),
                   neigh.get_atom2_array(), 
                   types_mod, 
                   fp, 
                   element_swap);
+        */
+        // added for local_fast and model_fast
+        ModelFast mod(neigh.get_dis_array(), 
+                      neigh.get_diff_array(),
+                      neigh.get_atom2_array(), 
+                      types_mod, fp, 
+                      modelp_array[imodel], features_array[imodel]);
+ 
         n_features += mod.get_xe_sum().size();
         cumulative_n_features.emplace_back(n_features);
+        ++imodel;
     }
 
     if (print_memory == true){
@@ -103,6 +126,8 @@ PyAdditiveModel::PyAdditiveModel(const std::vector<py::dict>& params_dict_array,
         std::set<int> uniq_types(types[i].begin(), types[i].end());
         for (size_t n = 0; n < cumulative_n_features.size(); ++n){
             struct feature_params fp1 = fp_array[n];
+            const auto& modelp1 = modelp_array[n];
+            const auto& features1 = features_array[n];
             fp1.force = force_st[i];
 
             int first_index;
@@ -117,13 +142,20 @@ PyAdditiveModel::PyAdditiveModel(const std::vector<py::dict>& params_dict_array,
                            types_mod, 
                            fp1.n_type, 
                            fp1.cutoff);
+            /*               
             Model mod(neigh.get_dis_array(), 
                       neigh.get_diff_array(),
                       neigh.get_atom2_array(), 
                       types_mod, 
                       fp1, 
                       element_swap);
-
+            */
+            ModelFast mod(neigh.get_dis_array(), 
+                          neigh.get_diff_array(),
+                          neigh.get_atom2_array(), 
+                          types_mod, fp1, 
+                          modelp1, features1);
+ 
             const auto &xe = mod.get_xe_sum();
             for (size_t j = 0; j < xe.size(); ++j) 
                 x_all(i,first_index+j) = xe[j];
