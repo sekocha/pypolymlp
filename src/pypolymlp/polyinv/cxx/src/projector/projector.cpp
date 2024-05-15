@@ -304,10 +304,10 @@ void Projector::order6
 int Projector::lm_to_matrix_index
 (const vector1i& l_list, const vector1i& m_array){
 
-    arma::vec lpm_list(l_list.size()), l_list2(l_list.size());
+    vector1i lpm_list(l_list.size()), l_list2(l_list.size());
     for (int i = 0; i < l_list.size(); ++i){
-        lpm_list(i) = m_array[i] + l_list[i];
-        l_list2(i) = 2 * l_list[i] + 1;
+        lpm_list[i] = m_array[i] + l_list[i];
+        l_list2[i] = 2 * l_list[i] + 1;
     }
 
     int index(0);
