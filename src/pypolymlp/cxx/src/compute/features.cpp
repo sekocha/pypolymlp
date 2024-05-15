@@ -105,16 +105,7 @@ void FunctionFeatures::set_features_using_mappings(const Features& f_obj){
                 linear_features[t1][idx].emplace_back(fsterm);
             }
         }
-/*
-        const auto type1 = sfeature[0].type1;
-        for (const auto& sterm: sfeature){
-            for (const auto& t1: type1){
-                const int prod_key = prod_map_from_keys[t1][sterm.nlmtc_keys];
-                FeatureSingleTerm fsterm = {sterm.coeff, prod_key};
-                linear_features[t1][idx].emplace_back(fsterm);
-            }
-        }
-*/
+
         for (const auto& t1: type1){
             std::unordered_map<vector1i, double, HashVI> sfeature_map;
             for (const auto& sterm: sfeature){
@@ -150,14 +141,6 @@ void FunctionFeatures::sort_linear_features_deriv(){
             std::sort(sfeature.begin(), sfeature.end(),
                     [](const FeatureSingleTermDeriv& lhs, 
                         const FeatureSingleTermDeriv& rhs){
-                        /*
-                    if (lhs.prod_key != rhs.prod_key){
-                        return lhs.prod_key < rhs.prod_key;
-                    }
-                    else {
-                        return lhs.nlmtc_key < rhs.nlmtc_key;
-                    }
-                    */
                     if (lhs.nlmtc_key != rhs.nlmtc_key){
                         return lhs.nlmtc_key < rhs.nlmtc_key;
                     }
@@ -230,7 +213,7 @@ vector1i FunctionFeatures::erase_a_key(const vector1i& original, const int idx){
 }
 
 /*
-void Potential::print_keys(const vector1i& keys){
+void FunctionFeatures::print_keys(const vector1i& keys){
     for (const auto& k: keys)
         std::cout << k << " ";
     std::cout << std::endl;

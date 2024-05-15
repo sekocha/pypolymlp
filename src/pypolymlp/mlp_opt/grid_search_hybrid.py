@@ -41,6 +41,79 @@ def set_gtinv_grid_hybrid(grid_setting):
     return params_grid_gtinv
 
 
+def model1(cutoffs, stress, reg_alpha_params):
+
+    params_dict_all = []
+    for i, cut in enumerate(cutoffs):
+        params_dict = dict()
+        params_dict['feature_type'] = 'gtinv'
+        params_dict['cutoff'] = cut
+        params_dict['gauss1'] = [0.5,0.5,1]
+        params_dict['gauss2'] = [0.0,cut-1.5,2]
+        
+        params_dict['reg_alpha_params'] = reg_alpha_params
+        params_dict['model_type'] = 2
+        params_dict['max_p'] = 2
+        params_dict['gtinv_order'] = 3
+        params_dict['gtinv_maxl'] = [12,8]
+
+        params_dict['include_force'] = True
+        params_dict['include_stress'] = stress
+
+        params_dict_all.append(params_dict)
+
+    return params_dict_all
+
+
+def model2(cutoffs, stress, reg_alpha_params):
+
+    params_dict_all = []
+    for i, cut in enumerate(cutoffs):
+        params_dict = dict()
+        params_dict['feature_type'] = 'gtinv'
+        params_dict['cutoff'] = cut
+        params_dict['gauss1'] = [0.5,0.5,1]
+        params_dict['gauss2'] = [0.0,cut-1.5,2]
+        
+        params_dict['reg_alpha_params'] = reg_alpha_params
+        params_dict['model_type'] = 2
+        params_dict['max_p'] = 2
+        params_dict['gtinv_order'] = 4
+        params_dict['gtinv_maxl'] = [12,4,2]
+
+        params_dict['include_force'] = True
+        params_dict['include_stress'] = stress
+
+        params_dict_all.append(params_dict)
+
+    return params_dict_all
+
+
+def model3(cutoffs, stress, reg_alpha_params):
+
+    params_dict_all = []
+    for i, cut in enumerate(cutoffs):
+        params_dict = dict()
+        params_dict['feature_type'] = 'gtinv'
+        params_dict['cutoff'] = cut
+        params_dict['gauss1'] = [0.5,0.5,1]
+        params_dict['gauss2'] = [0.0,cut-1.5,2]
+        
+        params_dict['reg_alpha_params'] = reg_alpha_params
+        params_dict['model_type'] = 4
+        params_dict['max_p'] = 2
+        params_dict['gtinv_order'] = 6
+        params_dict['gtinv_maxl'] = [12,12,4,1,1]
+
+        params_dict['include_force'] = True
+        params_dict['include_stress'] = stress
+
+        params_dict_all.append(params_dict)
+
+    return params_dict_all
+
+
+
 
 if __name__ == '__main__':
 
@@ -58,6 +131,7 @@ if __name__ == '__main__':
     yamldata = yaml.safe_load(f)
     f.close()
 
+    '''
     grid_setting_h = dict()
     grid_setting_h['cutoffs'] = [3.0,4.0,5.0]
     grid_setting_h['n_gaussians'] = [2,4]
@@ -72,6 +146,17 @@ if __name__ == '__main__':
     grid_setting_h['gtinv_grid'] = set_gtinv_params(grid_setting_h)
 
     params_grid_hybrid = set_gtinv_grid_hybrid(grid_setting_h)
+    '''
+
+    cutoffs = [4.0,5.0]
+    reg_alpha_params = [-4.0,3.0,15]
+
+    params_grid_hybrid = model1(cutoffs, args.no_stress, reg_alpha_params)
+    grid2 = model2(cutoffs, args.no_stress, reg_alpha_params)
+    params_grid_hybrid.extend(grid2)
+    grid3 = model3(cutoffs, args.no_stress, reg_alpha_params)
+    params_grid_hybrid.extend(grid3)
+
 
     polymlps = yamldata['polymlps']
     for pot in polymlps:

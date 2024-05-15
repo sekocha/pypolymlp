@@ -18,7 +18,7 @@ class Sequential:
                  scales=None,
                  verbose=True,
                  element_swap=False,
-                 batch_size=100):  
+                 batch_size=64):  
 
         single_params_dict = multiple_params_dicts[0]
         self.multiple_dft_dicts = multiple_dft_dicts

@@ -6,9 +6,6 @@
 *****************************************************************************/
 
 #include "compute/local_fast.h"
-#include "time.h"
-#include <chrono>
-
 
 LocalFast::LocalFast(){}
 
@@ -164,7 +161,6 @@ void LocalFast::gtinv_d(const vector2d& dis_a,
 
     vector1d prod_anlmtc;
     vector1dc prod_anlmtc_d;
-
     compute_products_real(prod_map, anlmtc, prod_anlmtc);
     compute_products(prod_map_d, anlmtc, prod_anlmtc_d);
 
@@ -216,7 +212,7 @@ void LocalFast::compute_linear_features_deriv(
     dn_dfz = vector2d(n_features, vector1d(n_atom, 0.0));
     dn_ds = vector2d(n_features, vector1d(6, 0.0));
 
-    int nlmtc_key, idx(0), j;
+    int nlmtc_key, idx(0);
     dc val_dc;
     for (const auto& sfeature: linear_features_d){
         for (const auto& sterm: sfeature){
@@ -269,7 +265,7 @@ void LocalFast::compute_anlm(const vector2d& dis_a,
     }
 
     for (const auto& nlmtc: nlmtc_map_no_conj){
-        const auto& cc = nlmtc.lm.cc_coeff;
+        cc = nlmtc.lm.cc_coeff;
         anlm[nlmtc.conj_key] = cc * std::conj(anlm[nlmtc.nlmtc_key]);
     }
 }
@@ -354,35 +350,5 @@ void LocalFast::compute_anlm_d(const vector2d& dis_a,
         }
     }
 }
-
-/*
-void LocalFast::compute_linear_features_deriv(
-    const vector1dc& prod_anlmtc_d,
-    const FunctionFeatures& features,
-    const vector2dc& anlmtc_d,
-    vector2d& dn_d
-){
-
-    const auto& linear_features_d = features.get_linear_features_deriv(type1);
-    const int n_features = linear_features_d.size();
-    const int size2 = anlmtc_d[0].size();
-    dn_d = vector2d(n_features, vector1d(size2, 0.0));
-
-    int idx = 0;
-    double val, val_prod;
-    for (const auto& sfeature: linear_features_d){
-        for (int j = 0; j < size2; ++j){
-            val = 0.0;
-            for (const auto& sterm: sfeature){
-                val_prod = prod_real(prod_anlmtc_d[sterm.prod_key],
-                                     anlmtc_d[sterm.nlmtc_key][j]);
-                val += sterm.coeff * val_prod;
-            }
-            dn_d[idx][j] = val;
-        }
-        ++idx;
-    }
-}
-*/
 
 

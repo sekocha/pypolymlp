@@ -39,9 +39,7 @@ class FunctionFeatures {
     int n_nlmtc_all, n_type;
  
     vector3i prod_map, prod_map_deriv;
-    std::vector<ProdMapFromKeys> prod_map_from_keys, 
-                                 prod_map_deriv_from_keys;
-
+    std::vector<ProdMapFromKeys> prod_map_from_keys, prod_map_deriv_from_keys;
     std::vector<FeatureVector> linear_features;
     std::vector<FeatureVectorDeriv> linear_features_deriv;
 
@@ -52,7 +50,10 @@ class FunctionFeatures {
 
     void set_mapping_prod(const Features& f_obj);
     void set_features_using_mappings(const Features& f_obj);
+
+    // deprecated
     void set_features_using_mappings_simple(const Features& f_obj);
+    // not needed ?
     void sort_linear_features_deriv();
 
     public: 

@@ -4,7 +4,9 @@ import os, sys
 import itertools
 import argparse
 
-from pypolymlp.mlp_opt.grid_io import write_grid, write_grid_hybrid
+from pypolymlp.mlp_opt.grid_io import (
+    write_grid, write_grid_hybrid, write_params_dict
+)
 
 
 def set_pair_grid(grid_setting, max_p=[2,3]):
@@ -32,7 +34,6 @@ def set_pair_grid(grid_setting, max_p=[2,3]):
         params_grid_pair.append(params_dict)
 
     return params_grid_pair
-
 
 
 def set_gtinv_params(grid_setting):
@@ -105,16 +106,93 @@ def set_gtinv_grid(grid_setting):
     return params_grid_gtinv
 
 
+def complex_model1(cutoffs, stress, reg_alpha_params, iseq=0):
+
+    for i, cut in enumerate(cutoffs):
+        params_dict = dict()
+        params_dict['feature_type'] = 'gtinv'
+        params_dict['cutoff'] = cut
+        params_dict['gauss1'] = [1.0,1.0,1]
+        params_dict['gauss2'] = [0.0,cut-1.0,15]
+        
+        params_dict['reg_alpha_params'] = reg_alpha_params
+        params_dict['model_type'] = 4
+        params_dict['max_p'] = 2
+        params_dict['gtinv_order'] = 4
+        params_dict['gtinv_maxl'] = [12,12,4]
+
+        params_dict['include_force'] = True
+        params_dict['include_stress'] = stress
+
+        idx = str(iseq + 1 + i).zfill(5)
+        dirname = 'model_grid/polymlp-' + idx + '/'
+        os.makedirs(dirname, exist_ok=True)
+        write_params_dict(params_dict, dirname + 'polymlp.in')
+
+    iseq += len(cutoffs)
+    return iseq
+
+
+def complex_model2(cutoffs, stress, reg_alpha_params, iseq=0):
+
+    for i, cut in enumerate(cutoffs):
+        params_dict = dict()
+        params_dict['feature_type'] = 'gtinv'
+        params_dict['cutoff'] = cut
+        params_dict['gauss1'] = [1.0,1.0,1]
+        params_dict['gauss2'] = [0.0,cut-1.0,15]
+        
+        params_dict['reg_alpha_params'] = reg_alpha_params
+        params_dict['model_type'] = 4
+        params_dict['max_p'] = 2
+        params_dict['gtinv_order'] = 6
+        params_dict['gtinv_maxl'] = [16,12,4,1,1]
+
+        params_dict['include_force'] = True
+        params_dict['include_stress'] = stress
+
+        idx = str(iseq + 1 + i).zfill(5)
+        dirname = 'model_grid/polymlp-' + idx + '/'
+        os.makedirs(dirname, exist_ok=True)
+        write_params_dict(params_dict, dirname + 'polymlp.in')
+
+    iseq += len(cutoffs)
+    return iseq
+
+
+def complex_model3(cutoffs, stress, reg_alpha_params, iseq=0):
+
+    for i, cut in enumerate(cutoffs):
+        params_dict = dict()
+        params_dict['feature_type'] = 'gtinv'
+        params_dict['cutoff'] = cut
+        params_dict['gauss1'] = [1.0,1.0,1]
+        params_dict['gauss2'] = [0.0,cut-1.0,7]
+        
+        params_dict['reg_alpha_params'] = reg_alpha_params
+        params_dict['model_type'] = 2
+        params_dict['max_p'] = 2
+        params_dict['gtinv_order'] = 3
+        params_dict['gtinv_maxl'] = [12,8]
+
+        params_dict['include_force'] = True
+        params_dict['include_stress'] = stress
+
+        idx = str(iseq + 1 + i).zfill(5)
+        dirname = 'model_grid/polymlp-' + idx + '/'
+        os.makedirs(dirname, exist_ok=True)
+        write_params_dict(params_dict, dirname + 'polymlp.in')
+
+    iseq += len(cutoffs)
+    return iseq
+
 
 if __name__ == '__main__':
 
     ps = argparse.ArgumentParser()
-    ps.add_argument('--stress', 
-                    action='store_true',
-                    help='include_stress True')
-    ps.add_argument('--no_hybrid', 
-                    action='store_true',
-                    help='No hybrid models are considered.')
+    ps.add_argument('--no_stress',
+                    action='store_false',
+                    help='Stress')
     ps.add_argument('--cutoff_linspace',
                     nargs=3,
                     type=float,
@@ -162,16 +240,25 @@ if __name__ == '__main__':
     grid_setting['reg_alpha_params'] = reg_alpha_params
     grid_setting['model_types'] = args.model_types
     grid_setting['include_force'] = True
-    grid_setting['include_stress'] = args.stress
+    grid_setting['include_stress'] = args.no_stress
 
     grid_setting['gtinv_order_ub'] = args.max_gtinv_order
     grid_setting['gtinv_l_ub'] = args.max_gtinv_maxl
     grid_setting['gtinv_l_int'] = args.interval_gtinv_maxl
 
     params_grid_pair = set_pair_grid(grid_setting)
+    iseq = write_grid(params_grid_pair)
+
     if grid_setting['gtinv_order_ub'] > 1:
         grid_setting['gtinv_grid'] = set_gtinv_params(grid_setting)
         params_grid_gtinv = set_gtinv_grid(grid_setting)
+        iseq = write_grid(params_grid_gtinv, iseq=iseq)
 
-    iseq = write_grid(params_grid_pair)
-    iseq = write_grid(params_grid_gtinv, iseq=iseq)
+    iseq = complex_model1([6.0,8.0,10.0], 
+                          args.no_stress, reg_alpha_params, iseq=iseq)
+    iseq = complex_model2([6.0,8.0,10.0], 
+                          args.no_stress, reg_alpha_params, iseq=iseq)
+    iseq = complex_model3([6.0,8.0,10.0], 
+                          args.no_stress, reg_alpha_params, iseq=iseq)
+
+
