@@ -61,6 +61,7 @@ def save_mlp_lammps(params_dict, coeffs, scales, filename='polymlp.lammps'):
         print_array1d(gtinv_dict['max_l'], f, comment='gtinv_max_l')
         gtinv_sym = [0 for _ in gtinv_dict['max_l']]
         print_array1d(gtinv_sym, f, comment='gtinv_sym')
+        print_param(gtinv_dict, 'version', f, prefix='gtinv_')
 
     print(len(coeffs), '# n_coeffs', file=f)
     print_array1d(coeffs, f, comment='reg. coeffs', fmt="{0:15.15e}")
@@ -76,9 +77,8 @@ def save_mlp_lammps(params_dict, coeffs, scales, filename='polymlp.lammps'):
     print('False # electrostatic', file=f)
     f.close()
 
-def __read_var(f, dtype=int, return_list=False):
+def __read_var(line, dtype=int, return_list=False):
 
-    line = f.readline()
     l = line.split('#')[0].split()
     if return_list == True:
         return [dtype(v) for v in l]
@@ -96,24 +96,44 @@ def load_mlp_lammps(filename='polymlp.lammps'):
     params_dict['model']['gtinv'] = gtinv_dict = dict()
 
     f = open(filename)
-    params_dict['elements'] = __read_var(f, str, return_list=True)
-    params_dict['n_type'] = len(params_dict['elements'])
+    lines = f.readlines()
+    f.close()
 
-    model_dict['cutoff'] = __read_var(f, float)
-    model_dict['pair_type'] = __read_var(f, str)
-    model_dict['feature_type'] = __read_var(f, str)
-    model_dict['model_type'] = __read_var(f)
-    model_dict['max_p'] = __read_var(f)
-    model_dict['max_l'] = __read_var(f)
+    idx = 0
+    params_dict['elements'] = __read_var(lines[idx], str, return_list=True)
+    params_dict['n_type'] = len(params_dict['elements'])
+    idx += 1
+
+    model_dict['cutoff'] = __read_var(lines[idx], float)
+    idx += 1
+    model_dict['pair_type'] = __read_var(lines[idx], str)
+    idx += 1
+    model_dict['feature_type'] = __read_var(lines[idx], str)
+    idx += 1
+    model_dict['model_type'] = __read_var(lines[idx])
+    idx += 1
+    model_dict['max_p'] = __read_var(lines[idx])
+    idx += 1
+    model_dict['max_l'] = __read_var(lines[idx])
+    idx += 1
 
     if model_dict['feature_type'] == 'gtinv':
-        gtinv_dict['order'] = __read_var(f)
-        gtinv_dict['max_l'] = __read_var(f, return_list=True)
-        gtinv_dict['sym'] = __read_var(f, strtobool, return_list=True)
+        gtinv_dict['order'] = __read_var(lines[idx])
+        idx += 1
+        gtinv_dict['max_l'] = __read_var(lines[idx], return_list=True)
+        idx += 1
+        gtinv_dict['sym'] = __read_var(lines[idx], strtobool, return_list=True)
+        idx += 1
+        if 'gtinv_version' in lines[idx]:
+            gtinv_dict['version'] = __read_var(lines[idx], int)
+            idx += 1
+        else:
+            gtinv_dict['version'] = 1
         rgi = libmlpcpp.Readgtinv(gtinv_dict['order'],
                                   gtinv_dict['max_l'],
                                   gtinv_dict['sym'],
-                                  params_dict['n_type'])
+                                  params_dict['n_type'],
+                                  gtinv_dict['version'])
         gtinv_dict['lm_seq'] = rgi.get_lm_seq()
         gtinv_dict['l_comb'] = rgi.get_l_comb()
         gtinv_dict['lm_coeffs'] = rgi.get_lm_coeffs()
@@ -126,19 +146,28 @@ def load_mlp_lammps(filename='polymlp.lammps'):
         gtinv_dict['lm_coeffs'] = []
         model_dict['max_l'] = 0
         
-    n_coeffs = __read_var(f)
-    mlp_dict['coeffs'] = np.array(__read_var(f, float, return_list=True))
-    mlp_dict['scales'] = np.array(__read_var(f, float, return_list=True))
+    n_coeffs = __read_var(lines[idx])
+    idx += 1
+    mlp_dict['coeffs'] = np.array(
+                            __read_var(lines[idx], float, return_list=True)
+                         )
+    idx += 1
+    mlp_dict['scales'] = np.array(
+                            __read_var(lines[idx], float, return_list=True)
+                         )
+    idx += 1
 
-    n_pair_params = __read_var(f)
+    n_pair_params = __read_var(lines[idx])
+    idx += 1
     model_dict['pair_params'] = []
     for n in range(n_pair_params):
-        params = __read_var(f, float, return_list=True)
+        params = __read_var(lines[idx], float, return_list=True)
         model_dict['pair_params'].append(params)
+        idx += 1
 
-    params_dict['mass'] = __read_var(f, float, return_list=True)
+    params_dict['mass'] = __read_var(lines[idx], float, return_list=True)
+    idx += 1
 
-    f.close()
     return params_dict, mlp_dict
 
 

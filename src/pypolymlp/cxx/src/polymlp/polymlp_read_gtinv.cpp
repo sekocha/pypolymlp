@@ -11,9 +11,10 @@ Readgtinv::Readgtinv(){}
 Readgtinv::Readgtinv(const int& gtinv_order, 
                      const vector1i& gtinv_maxl, 
                      const std::vector<bool>& gtinv_sym, 
-                     const int& n_type){
+                     const int& n_type,
+                     const int& version){
 
-    screening(gtinv_order, gtinv_maxl, gtinv_sym, n_type);
+    screening(gtinv_order, gtinv_maxl, gtinv_sym, n_type, version);
 
 }
 
@@ -22,12 +23,24 @@ Readgtinv::~Readgtinv(){}
 void Readgtinv::screening(const int& gtinv_order, 
                           const vector1i& gtinv_maxl, 
                           const std::vector<bool>& gtinv_sym, 
-                          const int& n_type){
+                          const int& n_type,
+                          const int& version){
 
-    GtinvData data;
-    const vector2i l_array_all = data.get_l_array();
-    const vector3i m_array_all = data.get_m_array();
-    const vector2d coeffs_all = data.get_coeffs();
+    vector2i l_array_all;
+    vector3i m_array_all;
+    vector2d coeffs_all;
+    if (version == 1){
+        GtinvData data;
+        l_array_all = data.get_l_array();
+        m_array_all = data.get_m_array();
+        coeffs_all = data.get_coeffs();
+    }
+    else if (version == 2){
+        GtinvDataVer2 data;
+        l_array_all = data.get_l_array();
+        m_array_all = data.get_m_array();
+        coeffs_all = data.get_coeffs();
+    }
 
     for (size_t i = 0; i < l_array_all.size(); ++i){
         const vector1i &lcomb = l_array_all[i];

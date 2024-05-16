@@ -90,7 +90,11 @@ void Projector::order2
         for (int j = m_list[i].size()/2; j < m_list[i].size(); ++j)
             mv2.push_back(m_list[i][j]);
         
-        double num = pow(-1, abs(m2-m2p))/(2*l2+1);
+        double num; 
+        if (l1 == l2 and -m1 == m2 and -m1p == m2p){
+            num = pow(-1, abs(m2 - m2p)) / (2 * l2 + 1);
+        }
+        else num = 0.0;
              
         index = lm_to_matrix_index(l_list, mv1);
         index_p = lm_to_matrix_index(l_list, mv2);

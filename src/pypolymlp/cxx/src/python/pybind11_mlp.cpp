@@ -108,6 +108,7 @@ PYBIND11_MODULE(libmlpcpp, m) {
         .def(py::init<const int&, 
                       const vector1i&, 
                       const std::vector<bool>&, 
+                      const int&,
                       const int&>())
         .def("get_lm_seq", &Readgtinv::get_lm_seq, 
                 py::return_value_policy::reference_internal)

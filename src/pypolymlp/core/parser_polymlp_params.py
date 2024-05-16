@@ -96,10 +96,15 @@ class ParamsParser:
                     gtinv_dict['max_l'].append(2)
 
             gtinv_sym = [False for i in range(size)]
+
+            gtinv_dict['version'] = self.parser.get_params('gtinv_version',
+                                                           default=1,
+                                                           dtype=int)
             rgi = libmlpcpp.Readgtinv(gtinv_dict['order'],
                                       gtinv_dict['max_l'],
                                       gtinv_sym,
-                                      n_type)
+                                      n_type,
+                                      gtinv_dict['version'])
             gtinv_dict['lm_seq'] = rgi.get_lm_seq()
             gtinv_dict['l_comb'] = rgi.get_l_comb()
             gtinv_dict['lm_coeffs'] = rgi.get_lm_coeffs()
@@ -110,6 +115,7 @@ class ParamsParser:
             gtinv_dict['lm_seq'] = []
             gtinv_dict['l_comb'] = []
             gtinv_dict['lm_coeffs'] = []
+            gtinv_dict['version'] = 1
             model['max_l'] = 0
         model['gtinv'] = gtinv_dict
 

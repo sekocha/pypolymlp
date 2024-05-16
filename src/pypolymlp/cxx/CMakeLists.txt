@@ -28,6 +28,7 @@ set(SRC_FILES
     src/polymlp/polymlp_features.cpp
     src/polymlp/polymlp_potential.cpp
     src/polymlp/polymlp_gtinv_data.cpp
+    src/polymlp/polymlp_gtinv_data_ver2.cpp
 )
 
 #SET(CMAKE_INTERPROCEDURAL_OPTIMIZATION FALSE)

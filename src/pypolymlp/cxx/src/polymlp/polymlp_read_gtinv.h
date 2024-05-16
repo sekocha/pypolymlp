@@ -9,9 +9,10 @@
 #define __POLYMLP_READ_GTINV
 
 #include "polymlp_gtinv_data.h"
+#include "polymlp_gtinv_data_ver2.h"
 #include "polymlp_mlpcpp.h"
 
-class Readgtinv{
+class Readgtinv {
 
     vector2i l_array;
     vector3i lm_array;
@@ -20,7 +21,8 @@ class Readgtinv{
     void screening(const int& gtinv_order, 
                    const vector1i& gtinv_maxl, 
                    const std::vector<bool>& gtinv_sym, 
-                   const int& n_type);
+                   const int& n_type,
+                   const int& version);
 
     public: 
 
@@ -28,7 +30,8 @@ class Readgtinv{
     Readgtinv(const int& gtinv_order, 
               const vector1i& gtinv_maxl, 
               const std::vector<bool>& gtinv_sym, 
-              const int& n_type);
+              const int& n_type,
+              const int& version);
    ~Readgtinv();
 
     const vector3i& get_lm_seq() const;
