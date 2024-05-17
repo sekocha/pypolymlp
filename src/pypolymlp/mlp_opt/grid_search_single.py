@@ -167,7 +167,7 @@ def complex_model3(cutoffs, stress, reg_alpha_params, iseq=0):
         params_dict['feature_type'] = 'gtinv'
         params_dict['cutoff'] = cut
         params_dict['gauss1'] = [1.0,1.0,1]
-        params_dict['gauss2'] = [0.0,cut-1.0,7]
+        params_dict['gauss2'] = [0.0,cut-1.0,5]
         
         params_dict['reg_alpha_params'] = reg_alpha_params
         params_dict['model_type'] = 2
@@ -258,7 +258,8 @@ if __name__ == '__main__':
                           args.no_stress, reg_alpha_params, iseq=iseq)
     iseq = complex_model2([6.0,8.0,10.0], 
                           args.no_stress, reg_alpha_params, iseq=iseq)
-    iseq = complex_model3([6.0,8.0,10.0], 
-                          args.no_stress, reg_alpha_params, iseq=iseq)
+
+#    iseq = complex_model3([6.0,8.0,10.0], 
+#                          args.no_stress, reg_alpha_params, iseq=iseq)
 
 

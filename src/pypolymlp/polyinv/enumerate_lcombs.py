@@ -14,7 +14,6 @@ def chi1(x, lcomb):
     return np.prod([chi(x,l,1) for l in lcomb])
 
 def n_all_lcomb(lcomb, lproj):
-
     num, _ = quad(lambda x:chi(x,lproj,1)*chi1(x,lcomb)*sin(x/2)**2, 0, 2*pi)
     return round(num/pi)
  
@@ -65,14 +64,9 @@ if __name__ == '__main__':
 
         print('Order:', order)
         print('Cumulative number of combinations:', n_total)
-        os.makedirs('./lists', exist_ok=True)
-        filename = './lists/lcomb-order' + str(order) \
+        os.makedirs('./lists_ver2', exist_ok=True)
+        filename = './lists_ver2/lcomb-order' + str(order) \
                     + '-l' + str(args.lproj) + '.yaml'
         print_n_comb(n_list, lcomb_all, fname=filename)
-
-#print(n_all_lcomb([5,4,2], 3, 0))
-#n_list, lcomb_all = n_all(5, 2, 2)
-#for a, b in zip(n_list, lcomb_all):
-#    print(a, b)
 
 

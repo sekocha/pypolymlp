@@ -42,7 +42,7 @@ def print3d(array, varname):
 
 l_all, m_all, c_all = [], [], []
 #maxl = [[1],[30],[10,12,20],[2,4,8],[2],[2]]
-maxl = [[1],[30],[20],[8],[2],[2]]
+maxl = [[1],[30],[20],[6],[1],[1]]
 for order in range(1,7):
     f = open('lists/basis-order'+str(order)+'-l0.yaml')
     yamldata = yaml.safe_load(f)

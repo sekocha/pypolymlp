@@ -1,6 +1,0 @@
-units:
-  time: msec/atom/step
-
-costs:
-  single_core: 3.433103486895561
-  openmp:      0.16686865594238043

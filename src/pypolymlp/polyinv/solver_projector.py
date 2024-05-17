@@ -97,7 +97,7 @@ if __name__ == '__main__':
     )
     args = parser.parse_args()
 
-    os.makedirs('lists', exist_ok=True)
+    os.makedirs('lists_ver2', exist_ok=True)
     args.lproj = 0
     orders = list(range(1,7)) if args.order is None else [args.order]
     for order in orders:
@@ -109,7 +109,7 @@ if __name__ == '__main__':
                     if np.any(np.array(lcomb) >= args.minl)
             ]
 
-        fname = ('lists/basis-order' + str(order) 
+        fname = ('lists_ver2/basis-order' + str(order) 
                     + '-l' + str(args.lproj) + '.yaml')
         f = open(fname, 'w')
         print('basis_set:', file=f)
@@ -117,13 +117,13 @@ if __name__ == '__main__':
             mcomb_all = get_mcomb_all_nonzero(lcomb, lproj=args.lproj)
             for mproj in range(-args.lproj, args.lproj + 1):
                 print('lcomb:', lcomb)
-                print('- lp:', args.lproj)
-                print('  mp:', mproj)
+                print('- lp_mp:', [args.lproj, mproj])
                 print('Building projector.', end=' ')
                 proj = build_projector(lcomb, mcomb_all)
                 print('... Done.')
-
+                print('Solving projector.', end=' ')
                 eigvecs = eigsh_projector(proj).toarray()
+                print('... Done.')
 
                 lm_indices = [
                     matrix_index_to_lm(i, lcomb) for i in range(proj.shape[0])
