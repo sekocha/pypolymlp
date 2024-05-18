@@ -32,34 +32,36 @@ def model_for_gtinv(stress, reg_alpha_params, params_dict_in):
     cutoff = params_dict_in['model']['cutoff']
     maxl = params_dict_in['model']['gtinv']['max_l']
 
-    cutoffs = [cutoff-1.0, cutoff-2.0]
+    cutoffs = np.arange(4.0, cutoff-0.999, 1.0)
 
     maxl_cands = []
     if len(maxl) == 1:
-        maxl_cands.append([maxl[0] + 4])
-        maxl_cands.append([maxl[0] + 4, 8])
+        maxl_cands.append([min(maxl[0] + 2, 12)])
+        maxl_cands.append([min(maxl[0] + 4, 12)])
+        maxl_cands.append([min(maxl[0] + 4, 12), min(maxl[0] + 4, 8)])
     elif len(maxl) == 2:
-        maxl_cands.append([maxl[0] + 4, maxl[1] + 4])
-        maxl_cands.append([maxl[0] + 4, maxl[1] + 4, 4])
+        maxl_cands.append([min(maxl[0] + 2, 12), maxl[1]])
+        maxl_cands.append([min(maxl[0] + 4, 12), min(maxl[1] + 2, 12)])
+        maxl_cands.append([min(maxl[0] + 4, 12), min(maxl[1] + 2, 12), 2])
     elif len(maxl) == 3:
-        maxl_cands.append([maxl[0] + 4, maxl[1] + 4, maxl[2]])
-        maxl_cands.append([maxl[0] + 4, maxl[1] + 4, maxl[2] + 2, 1, 1])
+        maxl_cands.append([min(maxl[0] + 2, 12), maxl[1], maxl[2]])
+        maxl_cands.append([min(maxl[0] + 4, 12), min(maxl[1] + 2, 12), maxl[2]])
+        maxl_cands.append(
+            [min(maxl[0] + 4, 12), min(maxl[1] + 2, 12), maxl[2] + 2]
+        )
     else:
-        maxl_cands.append([l + 4 if i < 2 else l for i, l in enumerate(maxl)])
+        maxl_cands.append(
+            [min(l + 4, 12) if i < 2 else l for i, l in enumerate(maxl)]
+        )
+
 
     params_dict_all = []
-    for ml, mp in itertools.product(maxl_cands, [2,3]):
+    for ml in maxl_cands:
         grid1 = set_models(
             cutoffs, stress, reg_alpha_params,
-            n_gauss2=3, model_type=4, max_p=mp, gtinv_maxl=ml,
+            n_gauss2=5, model_type=4, max_p=2, gtinv_maxl=ml,
         )
         params_dict_all.extend(grid1)
-
-    grid2 = set_models(
-        cutoffs, stress, reg_alpha_params,
-        n_gauss2=3, model_type=2, max_p=2, gtinv_maxl=maxl[:2],
-    )
-    params_dict_all.extend(grid2)
 
     return params_dict_all
 

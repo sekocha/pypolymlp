@@ -8,7 +8,7 @@ import argparse
 from pypolymlp.mlp_opt.grid_io import write_params_dict
 
 def set_models(
-    cutoffs, stress, reg_alpha_params
+    cutoffs, stress, reg_alpha_params,
     feature_type='gtinv',
     gauss1=[0.5,0.5,1],
     r_gauss2=2.0,

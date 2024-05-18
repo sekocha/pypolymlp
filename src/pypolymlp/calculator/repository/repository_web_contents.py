@@ -133,9 +133,8 @@ class PolymlpRepositoryWebContents:
 
         print('', file=f)
         print('.. csv-table:: Pareto optimals (on convex hull)', file=f)
-        print(' :header: Name, Time[ms](1core/36cores),'
-              ' RMSE[meV/atom]/[eV/ang.], Predictions, Files', file=f)
-        print(' :widths: 10,12,12,6,15', file=f)
+        print(' :header: Name, Time, RMSE, Predictions, Files', file=f)
+        print(' :widths: 15,8,8,6,15', file=f)
         print('', file=f)
 
         for d in self.__polymlps:
@@ -167,6 +166,11 @@ class PolymlpRepositoryWebContents:
 
         print('', file=f)
 
+        print('Units:', file=f)
+        print('', file=f)
+        print('* Time: [ms] (1core/36cores)', file=f)
+        print('* RMSE: [meV/atom]/[eV/ang.]', file=f)
+        print('', file=f)
         print('Column "Time" shows the time required to compute the energy'
               ' and forces for **1 MD step** and **1 atom**, which is'
               ' estimated from 10 runs for a large structure using'

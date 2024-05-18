@@ -9,6 +9,12 @@
 #define __POLYMLP_GTINV_DATA
 
 #include "polymlp_mlpcpp.h"
+#include "polymlp_gtinv_data_order1.h"
+#include "polymlp_gtinv_data_order2.h"
+#include "polymlp_gtinv_data_order3.h"
+#include "polymlp_gtinv_data_order4.h"
+#include "polymlp_gtinv_data_order5.h"
+#include "polymlp_gtinv_data_order6.h"
 
 class GtinvData{
 

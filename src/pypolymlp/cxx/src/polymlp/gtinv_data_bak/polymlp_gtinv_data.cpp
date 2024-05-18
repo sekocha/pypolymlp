@@ -9,37 +9,7 @@
 
 GtinvData::GtinvData(){
 
-    GtinvDataOrder1 order1;
-    for (const auto& a: order1.get_l_array()) l_array_all.emplace_back(a);
-    for (const auto& a: order1.get_m_array()) m_array_all.emplace_back(a);
-    for (const auto& a: order1.get_coeffs()) coeffs_all.emplace_back(a);
-
-    GtinvDataOrder2 order2;
-    for (const auto& a: order2.get_l_array()) l_array_all.emplace_back(a);
-    for (const auto& a: order2.get_m_array()) m_array_all.emplace_back(a);
-    for (const auto& a: order2.get_coeffs()) coeffs_all.emplace_back(a);
-
-    GtinvDataOrder3 order3;
-    for (const auto& a: order3.get_l_array()) l_array_all.emplace_back(a);
-    for (const auto& a: order3.get_m_array()) m_array_all.emplace_back(a);
-    for (const auto& a: order3.get_coeffs()) coeffs_all.emplace_back(a);
-
-    GtinvDataOrder4 order4;
-    for (const auto& a: order4.get_l_array()) l_array_all.emplace_back(a);
-    for (const auto& a: order4.get_m_array()) m_array_all.emplace_back(a);
-    for (const auto& a: order4.get_coeffs()) coeffs_all.emplace_back(a);
-
-    GtinvDataOrder5 order5;
-    for (const auto& a: order5.get_l_array()) l_array_all.emplace_back(a);
-    for (const auto& a: order5.get_m_array()) m_array_all.emplace_back(a);
-    for (const auto& a: order5.get_coeffs()) coeffs_all.emplace_back(a);
-
-    GtinvDataOrder6 order6;
-    for (const auto& a: order6.get_l_array()) l_array_all.emplace_back(a);
-    for (const auto& a: order6.get_m_array()) m_array_all.emplace_back(a);
-    for (const auto& a: order6.get_coeffs()) coeffs_all.emplace_back(a);
-
-//    set_gtinv_info();
+    set_gtinv_info();
 }
 
 GtinvData::~GtinvData(){}
@@ -48,7 +18,6 @@ const vector2i& GtinvData::get_l_array() const{ return l_array_all; }
 const vector3i& GtinvData::get_m_array() const{ return m_array_all; }
 const vector2d& GtinvData::get_coeffs() const{ return coeffs_all; }
 
-/*
 void GtinvData::set_gtinv_info(){
 
     l_array_all =
@@ -70675,4 +70644,4 @@ void GtinvData::set_gtinv_info(){
         {1, 1, 0, 0, -1, -1},
         {1, 1, 1, -1, -1, -1}}};
 
-}*/
+}
