@@ -3,12 +3,9 @@ import numpy as np
 import os
 import shutil
 import yaml
-import itertools
 import argparse
 
-from pypolymlp.core.parser_polymlp_params import ParamsParser
 from pypolymlp.mlp_opt.grid_io import write_params_dict
-
 
 def set_models(
     cutoffs, stress, reg_alpha_params,
@@ -45,63 +42,6 @@ def set_models(
     return params_dict_all
 
 
-def model_for_pair(stress, reg_alpha_params, params_dict_in):
-
-    cutoff = params_dict_in['model']['cutoff']
-    cutoffs = [cutoff-1.0, cutoff-2.0]
-
-    maxl_cands = [[4],[8],[4,4]]
-    params_dict_all = []
-    for ml, mp in itertools.product(maxl_cands, [2,3]):
-        grid1 = set_models(
-            cutoffs, stress, reg_alpha_params,
-            n_gauss2=3, model_type=4, max_p=mp, gtinv_maxl=ml,
-        )
-        params_dict_all.extend(grid1)
-
-    return params_dict_all
-
-
-def model_for_gtinv(stress, reg_alpha_params, params_dict_in):
-
-    cutoff = params_dict_in['model']['cutoff']
-    maxl = params_dict_in['model']['gtinv']['max_l']
-
-    cutoffs = np.arange(4.0, cutoff-0.999, 1.0)
-
-    maxl_cands = []
-    if len(maxl) == 1:
-        maxl_cands.append([min(maxl[0] + 2, 12)])
-        maxl_cands.append([min(maxl[0] + 4, 12)])
-        maxl_cands.append([min(maxl[0] + 4, 12), min(maxl[0] + 4, 8)])
-    elif len(maxl) == 2:
-        maxl_cands.append([min(maxl[0] + 2, 12), maxl[1]])
-        maxl_cands.append([min(maxl[0] + 4, 12), min(maxl[1] + 2, 12)])
-        maxl_cands.append([min(maxl[0] + 4, 12), min(maxl[1] + 2, 12), 2])
-    elif len(maxl) == 3:
-        maxl_cands.append([min(maxl[0] + 2, 12), maxl[1], maxl[2]])
-        maxl_cands.append([min(maxl[0] + 4, 12), min(maxl[1] + 2, 12), maxl[2]])
-        maxl_cands.append(
-            [min(maxl[0] + 4, 12), min(maxl[1] + 2, 12), maxl[2] + 2]
-        )
-    else:
-        maxl_cands.append(
-            [min(l + 4, 12) if i < 2 else l for i, l in enumerate(maxl)]
-        )
-
-
-    params_dict_all = []
-    for ml in maxl_cands:
-        grid1 = set_models(
-            cutoffs, stress, reg_alpha_params,
-            n_gauss2=5, model_type=4, max_p=2, gtinv_maxl=ml,
-        )
-        params_dict_all.extend(grid1)
-
-    return params_dict_all
-
-
-
 if __name__ == '__main__':
 
     ps = argparse.ArgumentParser()
@@ -118,7 +58,61 @@ if __name__ == '__main__':
     yamldata = yaml.safe_load(f)
     f.close()
 
+    cutoffs = [4.0,5.0]
     reg_alpha_params = [-4.0,3.0,15]
+
+    grid1 = set_models(
+        cutoffs, args.no_stress, reg_alpha_params,
+        n_gauss2=2,
+        model_type=2,
+        max_p=2,
+        gtinv_maxl=[12,8]
+    )
+    grid2 = set_models(
+        cutoffs, args.no_stress, reg_alpha_params,
+        n_gauss2=2,
+        model_type=2,
+        max_p=2,
+        gtinv_maxl=[12,4,2]
+    )
+    grid3 = set_models(
+        cutoffs, args.no_stress, reg_alpha_params,
+        n_gauss2=2,
+        model_type=4,
+        max_p=2,
+        gtinv_maxl=[12,12,4,1,1]
+    )
+    params_grid_hybrid_high = grid1
+    params_grid_hybrid_high.extend(grid2)
+    params_grid_hybrid_high.extend(grid3)
+
+    grid4 = set_models(
+        cutoffs, args.no_stress, reg_alpha_params,
+        n_gauss2=4,
+        model_type=2,
+        max_p=2,
+        gtinv_maxl=[12,12]
+    )
+    grid5 = set_models(
+        cutoffs, args.no_stress, reg_alpha_params,
+        n_gauss2=2,
+        model_type=4,
+        max_p=2,
+        gtinv_maxl=[12,12,2]
+    )
+    grid6 = set_models(
+        cutoffs, args.no_stress, reg_alpha_params,
+        n_gauss2=2,
+        model_type=4,
+        max_p=3,
+        gtinv_maxl=[12,8]
+    )
+
+    params_grid_hybrid_low = grid4
+    params_grid_hybrid_low.extend(grid5)
+    params_grid_hybrid_low.extend(grid6)
+
+
     polymlps = yamldata['polymlps']
     for pot in polymlps:
         f = open(pot['path'] + '/polymlp.in')
@@ -132,18 +126,12 @@ if __name__ == '__main__':
             if 'elements' in l:
                 addlines.append(l)
 
-        params = ParamsParser(
-            pot['path'] + '/polymlp.in', parse_vasprun_locations=False
-        )
-        params_dict = params.get_params()
-
-        if params_dict['model']['feature_type'] == 'gtinv':
-            grid = model_for_gtinv(
-                args.no_stress, reg_alpha_params, params_dict)
+        if pot['cost_single'] > 2:
+            params_grid_hybrid = params_grid_hybrid_high
         else:
-            grid = model_for_pair(args.no_stress, reg_alpha_params, params_dict)
+            params_grid_hybrid = params_grid_hybrid_low
 
-        for i, params in enumerate(grid):
+        for i, params in enumerate(params_grid_hybrid):
             path_output = pot['id'] + '-hybrid-' + str(i+1).zfill(4)
             os.makedirs(path_output, exist_ok=True)
             shutil.copy(pot['path'] + '/polymlp.in', path_output)
@@ -153,3 +141,5 @@ if __name__ == '__main__':
             for l in addlines:
                 print(l, file=f, end='')
             print('', file=f)
+            f.close()
+
