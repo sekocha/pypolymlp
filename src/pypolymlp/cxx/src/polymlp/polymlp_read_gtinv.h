@@ -21,8 +21,11 @@ class Readgtinv {
     void screening(const int& gtinv_order, 
                    const vector1i& gtinv_maxl, 
                    const std::vector<bool>& gtinv_sym, 
-                   const int& n_type,
-                   const int& version);
+                   const int& n_type);
+
+    void screening_ver2(const int& gtinv_order, 
+                        const vector1i& gtinv_maxl, 
+                        const int& n_type);
 
     public: 
 

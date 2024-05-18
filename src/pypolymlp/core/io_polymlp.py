@@ -61,7 +61,6 @@ def save_mlp_lammps(params_dict, coeffs, scales, filename='polymlp.lammps'):
         print_array1d(gtinv_dict['max_l'], f, comment='gtinv_max_l')
         gtinv_sym = [0 for _ in gtinv_dict['max_l']]
         print_array1d(gtinv_sym, f, comment='gtinv_sym')
-        print_param(gtinv_dict, 'version', f, prefix='gtinv_')
 
     print(len(coeffs), '# n_coeffs', file=f)
     print_array1d(coeffs, f, comment='reg. coeffs', fmt="{0:15.15e}")
@@ -75,6 +74,10 @@ def save_mlp_lammps(params_dict, coeffs, scales, filename='polymlp.lammps'):
     mass = [mass_table()[ele] for ele in params_dict['elements']]
     print_array1d(mass, f, comment='atomic mass', fmt="{0:15.15e}")
     print('False # electrostatic', file=f)
+
+    if model_dict['feature_type'] == 'gtinv':
+        print_param(gtinv_dict, 'version', f, prefix='gtinv_')
+
     f.close()
 
 def __read_var(line, dtype=int, return_list=False):
@@ -124,19 +127,6 @@ def load_mlp_lammps(filename='polymlp.lammps'):
         idx += 1
         gtinv_dict['sym'] = __read_var(lines[idx], strtobool, return_list=True)
         idx += 1
-        if 'gtinv_version' in lines[idx]:
-            gtinv_dict['version'] = __read_var(lines[idx], int)
-            idx += 1
-        else:
-            gtinv_dict['version'] = 1
-        rgi = libmlpcpp.Readgtinv(gtinv_dict['order'],
-                                  gtinv_dict['max_l'],
-                                  gtinv_dict['sym'],
-                                  params_dict['n_type'],
-                                  gtinv_dict['version'])
-        gtinv_dict['lm_seq'] = rgi.get_lm_seq()
-        gtinv_dict['l_comb'] = rgi.get_l_comb()
-        gtinv_dict['lm_coeffs'] = rgi.get_lm_coeffs()
     else:
         gtinv_dict['order'] = 0
         gtinv_dict['max_l'] = []
@@ -167,6 +157,28 @@ def load_mlp_lammps(filename='polymlp.lammps'):
 
     params_dict['mass'] = __read_var(lines[idx], float, return_list=True)
     idx += 1
+
+    params_dict['electrostatic'] = __read_var(lines[idx], strtobool)
+    idx += 1
+
+    if model_dict['feature_type'] == 'gtinv':
+        try:
+            if 'gtinv_version' in lines[idx]:
+                gtinv_dict['version'] = __read_var(lines[idx], int)
+                idx += 1
+            else:
+                gtinv_dict['version'] = 1
+        except:
+            gtinv_dict['version'] = 1
+
+        rgi = libmlpcpp.Readgtinv(gtinv_dict['order'],
+                                  gtinv_dict['max_l'],
+                                  gtinv_dict['sym'],
+                                  params_dict['n_type'],
+                                  gtinv_dict['version'])
+        gtinv_dict['lm_seq'] = rgi.get_lm_seq()
+        gtinv_dict['l_comb'] = rgi.get_l_comb()
+        gtinv_dict['lm_coeffs'] = rgi.get_lm_coeffs()
 
     return params_dict, mlp_dict
 

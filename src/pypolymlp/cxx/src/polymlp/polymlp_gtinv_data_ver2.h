@@ -18,18 +18,21 @@
 
 class GtinvDataVer2{
 
-    vector2i l_array_all;
-    vector3i m_array_all;
-    vector2d coeffs_all;
+    GtinvDataVer2Order1 order1;
+    GtinvDataVer2Order2 order2;
+    GtinvDataVer2Order3 order3;
+    GtinvDataVer2Order4 order4;
+    GtinvDataVer2Order5 order5;
+    GtinvDataVer2Order6 order6;
 
     public: 
 
     GtinvDataVer2();
    ~GtinvDataVer2();
 
-    const vector2i& get_l_array() const;
-    const vector3i& get_m_array() const;
-    const vector2d& get_coeffs() const;
+    const vector2i& get_l_array(const int order) const;
+    const vector3i& get_m_array(const int order) const;
+    const vector2d& get_coeffs(const int order) const;
 
 };
 
