@@ -43,6 +43,7 @@
 
 2. Building a shared library (libmlpcpp)
 
+The process of building libmlpcpp may take approximately five minutes to one hour. 
 ```
 > cd $(pypolymlp)/src/pypolymlp/cxx
 > cmake -S . -B build
