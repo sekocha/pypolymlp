@@ -55,6 +55,11 @@ or
 > make
 ```
 
+If necessary, the stack size may need to be set to unlimited.
+```
+ulimit -s unlimited
+```
+
 3. Install pypolymlp using pip
 
 ```
