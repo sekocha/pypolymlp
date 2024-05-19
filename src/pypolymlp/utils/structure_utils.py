@@ -151,8 +151,7 @@ def swap_elements(st_dict, order=None, index1=None, index2=None):
     st_dict['positions'] = np.array(positions).T
     return st_dict
 
-
-def triangulation_axis(st_dict):
+def get_lattice_constants(st_dict):
 
     a = np.linalg.norm(st_dict['axis'][:,0])
     b = np.linalg.norm(st_dict['axis'][:,1])
@@ -160,6 +159,13 @@ def triangulation_axis(st_dict):
     calpha = np.dot(st_dict['axis'][:,1], st_dict['axis'][:,2]) / (b * c)
     cbeta  = np.dot(st_dict['axis'][:,2], st_dict['axis'][:,0]) / (c * a)
     cgamma = np.dot(st_dict['axis'][:,0], st_dict['axis'][:,1]) / (a * b)
+
+    return a, b, c, calpha, cbeta, cgamma
+
+ 
+def triangulation_axis(st_dict):
+
+    a, b, c, calpha, cbeta, cgamma = get_lattice_constants(st_dict)
 
     lx = a
     xy = b * cgamma

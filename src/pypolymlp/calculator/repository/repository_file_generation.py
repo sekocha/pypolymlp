@@ -4,6 +4,12 @@ import os
 import yaml
 from collections import defaultdict
 
+import spglib
+from pypolymlp.core.interface_vasp import Poscar
+from pypolymlp.utils.phonopy_utils import st_dict_to_phonopy_cell
+from pypolymlp.utils.structure_utils import get_lattice_constants
+from math import acos, degrees
+
 from pypolymlp.calculator.repository.utils.figure_utils_summary import (
     plot_mlp_distribution,
     plot_eqm_properties,
@@ -46,6 +52,71 @@ class PolymlpRepositoryGeneration:
         yamldata = yaml.safe_load(f)
         f.close()
         return yamldata
+
+    def __single_lattice_constants(
+        self, poscar,
+        filename='polymlp_lattice_constants.yaml'
+    ): 
+
+        try:
+            cell = Poscar(poscar).get_structure()
+        except:
+            return 0
+
+        cell_ph = st_dict_to_phonopy_cell(cell)
+
+        lattice, _, _ = spglib.standardize_cell(
+            (cell_ph.cell, cell_ph.scaled_positions, cell_ph.numbers), 
+            to_primitive=False,
+        )
+        cell['axis'] = lattice.T
+        a, b, c, calpha, cbeta, cgamma = get_lattice_constants(cell)
+        volume = np.linalg.det(cell['axis'])
+
+        self.__write_lattice_constants_yaml(
+            a, b, c, calpha, cbeta, cgamma, volume, filename=filename
+        )
+        return 1
+
+    def __write_lattice_constants_yaml(
+        self, a, b, c, calpha, cbeta, cgamma, volume,
+        filename='polymlp_lattice_constants.yaml'
+    ):
+        f = open(filename, 'w')
+        print('standardized_lattice_constants:', file=f)
+        print('  a:', a, file=f)
+        print('  b:', b, file=f)
+        print('  c:', c, file=f)
+        print('  alpha:', degrees(acos(calpha)), file=f)
+        print('  beta:', degrees(acos(cbeta)), file=f)
+        print('  gamma:', degrees(acos(cgamma)), file=f)
+        print('  volume:', volume, file=f)
+            
+        f.close()
+
+    def run_lattice_constants(self):
+
+        for target in self.__target_list:
+            st = target['st_type']
+            for pot_id, cost in zip(self.__pot_ids, self.__costs):
+                path_output = '/'.join(
+                    [self.__path_data, pot_id, 'predictions', st]
+                ) + '/'
+                POSCAR_file = path_output + '/POSCAR_eqm'
+                self.__single_lattice_constants(
+                    POSCAR_file, 
+                    filename=path_output + 'polymlp_lattice_constants.yaml'
+                )
+
+            path_output = '/'.join(
+                [self.__path_data, 'vasp', st]
+            ) + '/'
+            POSCAR_file = path_output + '/POSCAR'
+            self.__single_lattice_constants(
+                POSCAR_file, 
+                filename=path_output + 'polymlp_lattice_constants.yaml'
+            )
+
 
     def run_mlp_distribution(self, dpi=300):
 
@@ -244,5 +315,6 @@ if __name__ == '__main__':
 
     pred = PolymlpRepositoryGeneration(path_data=args.path_data)
     pred.run()
+    #pred.run_lattice_constants()
     #pred.run_phonon_qha()
 

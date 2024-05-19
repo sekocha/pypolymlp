@@ -281,7 +281,6 @@ calc_cost option generates a file 'polymlp_cost.yaml', which is required for fin
 
 ```
 > pypolymlp-utils --calc_cost -d $(path_mlps)/polymlp-00*
-
 ```
 
 ### Enumeration of optimal MLPs on convex hull

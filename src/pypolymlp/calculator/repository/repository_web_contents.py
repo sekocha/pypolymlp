@@ -225,6 +225,16 @@ class PolymlpRepositoryWebContents:
 
         return self
 
+    def __read_lattice_constants_yaml(self, yamlfile):
+
+        C = self.__read_yaml(yamlfile)['standardized_lattice_constants']
+        data_output = [
+            C['volume'], C['a'], C['b'], C['c'], 
+            C['alpha'], C['beta'], C['gamma']
+        ]
+        data_output = np.round(np.array(data_output).astype(float), decimals=4)
+        return data_output
+
     def __read_elastic_yaml(self, yamlfile):
 
         C = self.__read_yaml(yamlfile)['elastic_constants']
@@ -342,6 +352,44 @@ class PolymlpRepositoryWebContents:
                     file=f
                 )
 
+                print('**Lattice constants**', file=f)
+                print('', file=f)
+                for st in self.__structures:
+                    yamlfile = '/'.join(
+                        [path_data, st['st_type'], 
+                        'polymlp_lattice_constants.yaml']
+                    )
+                    if os.path.exists(yamlfile):
+                        lc_data = self.__read_lattice_constants_yaml(yamlfile)
+                        text_to_csv_table(
+                            [lc_data], 
+                            title=('Lattice constants ['
+                                    + st['st_type'] + '] (MLP)'),
+                            header=('volume (ang.^3), '
+                                    'a (ang.), b (ang.), c (ang.), '
+                                    'alpha, beta, gamma'),
+                            widths=[12,10,10,10,8,8,8],
+                            file=f
+                        )
+
+                    '''
+                    yamlfile = '/'.join(
+                        [self.__path_data, 'vasp', st['st_type'], 
+                        'polymlp_lattice_constants.yaml']
+                    )
+                    if os.path.exists(yamlfile):
+                        lc_data = self.__read_lattice_constants_yaml(yamlfile)
+                        text_to_csv_table(
+                            [lc_data], 
+                            title=('Lattice constants ['
+                                    + st['st_type'] + '] (DFT)'),
+                            header=('volume (ang.^3), '
+                                    'a (ang.), b (ang.), c (ang.), '
+                                    'alpha, beta, gamma'),
+                            widths=[12,10,10,10,8,8,8],
+                            file=f
+                        )
+                    '''
 
                 print('**Elastic constants**', file=f)
                 print('', file=f)
