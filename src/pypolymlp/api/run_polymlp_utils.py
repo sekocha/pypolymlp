@@ -4,7 +4,10 @@ import argparse
 import signal
 
 from pypolymlp.core.interface_vasp import Poscar
+
 from pypolymlp.mlp_opt.optimal import find_optimal_mlps
+from pypolymlp.utils.count_time import PolymlpCost
+
 from pypolymlp.utils.vasprun_compress import convert
 from pypolymlp.utils.dataset.auto_divide import auto_divide
 from pypolymlp.utils.vasp_utils import print_poscar, write_poscar_file
@@ -49,7 +52,31 @@ def run():
                         default='PBE',
                         help='Exc functional for getting atomic energies.')
 
+    '''Calculation of computational costs'''
+    parser.add_argument('--calc_cost', 
+                        action='store_true',
+                        help='Calculation of computational costs.')
+    parser.add_argument('-d', '--dirs',
+                        nargs='*',
+                        type=str,
+                        default=None,
+                        help='directory paths')
+    parser.add_argument('--pot',
+                        nargs='*',
+                        type=str,
+                        default='polymlp.lammps',
+                        help='polymlp file')
+    parser.add_argument('--supercell',
+                        nargs=3,
+                        type=int,
+                        default=[4,4,4],
+                        help='supercell size')
+    parser.add_argument('--n_calc',
+                        type=int,
+                        default=20,
+                        help='number of calculations')
 
+    '''Pareto optimal search''' 
     parser.add_argument('--find_optimal', 
                         nargs='*',
                         type=str, 
@@ -62,6 +89,7 @@ def run():
                         help='Identification key for the dataset ' +
                              'in finding optimal MLPs')
 
+    '''Spglib utilities'''
     parser.add_argument('-p', '--poscar',
                         type=str,
                         help='poscar file name')
@@ -96,6 +124,12 @@ def run():
                                        formula=args.atomic_energy_formula,
                                        functional=args.atomic_energy_functional)
 
+    elif args.calc_cost:
+        pycost = PolymlpCost(
+            pot_path=args.dirs, pot=args.pot, poscar=args.poscar,
+            supercell=args.supercell
+        )
+        pycost.run(n_calc=args.n_calc)
     elif args.find_optimal is not None:
         find_optimal_mlps(args.find_optimal, args.key)
 
@@ -109,7 +143,4 @@ def run():
         if args.space_group:
             print(' space_group = ', sc.get_spacegroup())
 
-    '''
-    todo: str_gen/run_strgen
-    '''
 

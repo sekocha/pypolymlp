@@ -264,11 +264,33 @@ A standard output can be appended in your polymlp.in, which will be used for dev
 The polynomial MLP has no constant term, which means that the energy for isolated atoms is set to zero.
 The energy values for the isolated atoms must be subtracted from the energy values for structures.
 
+### Estimation of computational costs
+
+calc_cost option generates a file 'polymlp_cost.yaml', which is required for finding optimal MLPs.
+
+1. Single polynomial MLP
+
+```
+> pypolymlp-utils --calc_cost --pot polymlp.lammps
+
+# hybrid polynomial MLP
+> pypolymlp-utils --calc_cost --pot polymlp.lammps*
+```
+
+2. Multiple polynomial MLPs
+
+```
+> pypolymlp-utils --calc_cost -d $(path_mlps)/polymlp-00*
+
+```
+
 ### Enumeration of optimal MLPs on convex hull
 
 ```
 > pypolymlp-utils --find_optimal Ti-Pb/* --key test-disp1
 ```
+
+Files 'polymlp_error.yaml' and 'polymlp_cost.yaml' are needed for each MLP.
 
 ## Python API
 ### MLP development
