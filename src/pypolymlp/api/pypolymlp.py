@@ -1,11 +1,22 @@
 #!/usr/bin/env python 
 import numpy as np
 import itertools
+import glob
 
 from pypolymlp.mlp_gen.generator import (
     run_generator_single_dataset,
     run_generator_single_dataset_from_params,
     run_generator_single_dataset_from_params_and_datasets,
+)
+
+from pypolymlp.mlp_gen.multi_datasets.generator import (
+    run_generator_multiple_datasets,
+    run_generator_multiple_datasets_from_params,
+)
+
+from pypolymlp.mlp_gen.multi_datasets.generator_sequential import (
+    run_sequential_generator_multiple_datasets,
+    run_sequential_generator_multiple_datasets_from_params,
 )
 
 from pypolymlp.cxx.lib import libmlpcpp
@@ -60,6 +71,7 @@ class Pypolymlp:
         self.test_dft_dict = None
 
         self.__mlp_dict = None
+        self.__multi_dataset = False
 
     def __set_param(self, tag_params, params, assign_variable):
 
@@ -229,88 +241,41 @@ class Pypolymlp:
         else:
             self.__params_dict['element_order'] = None
 
-        '''
-        self.__params_dict['elements'] = elements
-
-        n_type = len(elements)
-        self.__params_dict['n_type'] = n_type
-        self.__params_dict['include_force'] = include_force
-        self.__params_dict['include_stress'] = include_stress
-
-        model = self.__params_dict['model']
-        model['cutoff'] = cutoff
-
-        if model_type > 4:
-            raise ValueError('model_type != 1, 2, 3, or 4')
-        model['model_type'] = model_type
-            
-        if max_p > 3:
-            raise ValueError('model_type != 1, 2, or 3')
-        model['max_p'] = max_p
-
-        if feature_type != 'gtinv' and feature_type != 'pair':
-            raise ValueError('feature_type != gtinv or pair')
-        model['feature_type'] = feature_type
-
-        model['pair_type'] = 'gaussian'
-        if len(gaussian_params1) != 3:
-            raise ValueError('len(gaussian_params1) != 3')
-        if len(gaussian_params2) != 3:
-            raise ValueError('len(gaussian_params2) != 3')
-        params1 = self.__sequence(gaussian_params1)
-        params2 = self.__sequence(gaussian_params2)
-        model['pair_params'] = list(itertools.product(params1, params2))
-        model['pair_params'].append([0.0,0.0])
-
-        gtinv_dict = self.__params_dict['model']['gtinv']
-        if model['feature_type'] == 'gtinv':
-            gtinv_dict['order'] = gtinv_order
-            size = gtinv_dict['order'] - 1
-            if len(gtinv_maxl) < size:
-                raise ValueError('size (gtinv_maxl) !=', size)
-            gtinv_dict['max_l'] = list(gtinv_maxl)
-            gtinv_sym = [False for i in range(size)]
-            gtinv_dict['version'] = gtinv_version
-            rgi = libmlpcpp.Readgtinv(gtinv_dict['order'],
-                                      gtinv_dict['max_l'],
-                                      gtinv_sym,
-                                      n_type,
-                                      gtinv_version)
-            gtinv_dict['lm_seq'] = rgi.get_lm_seq()
-            gtinv_dict['l_comb'] = rgi.get_l_comb()
-            gtinv_dict['lm_coeffs'] = rgi.get_lm_coeffs()
-            model['max_l'] = max(gtinv_dict['max_l'])
-        else:
-            gtinv_dict['order'] = 0
-            gtinv_dict['max_l'] = []
-            gtinv_dict['lm_seq'] = []
-            gtinv_dict['l_comb'] = []
-            gtinv_dict['lm_coeffs'] = []
-            model['max_l'] = 0
-
-        if len(reg_alpha_params) != 3:
-            raise ValueError('len(reg_alpha_params) != 3')
-        self.__params_dict['reg']['method'] = 'ridge'
-        self.__params_dict['reg']['alpha'] = self.__sequence(reg_alpha_params)
-
-        if atomic_energy is None:
-            self.__params_dict['atomic_energy'] = [0.0 for i in range(n_type)]
-        else:
-            if len(atomic_energy) != n_type:
-                raise ValueError('len(atomic_energy) != n_type')
-            self.__params_dict['atomic_energy'] = atomic_energy
-
-        if rearrange_by_elements:
-            self.__params_dict['element_order'] = elements 
-        else:
-            self.__params_dict['element_order'] = None
-        '''
-
     def set_datasets_vasp(self, train_vaspruns, test_vaspruns):
-
+        ''' 
+        Parameters
+        ----------
+        train_vaspruns: vasprun files for training dataset (list)
+        test_vaspruns: vasprun files for test dataset (list)
+        '''
         self.__params_dict['dataset_type'] = 'vasp'
         self.__params_dict['dft']['train'] = sorted(train_vaspruns)
         self.__params_dict['dft']['test'] = sorted(test_vaspruns)
+
+    def set_multiple_datasets_vasp(self, train_vaspruns, test_vaspruns):
+        ''' 
+        Parameters
+        ----------
+        train_vaspruns: list of list containing vasprun files (training)
+        test_vaspruns: list of list containing vasprun files (test)
+        '''
+        self.__params_dict['dataset_type'] = 'vasp'
+        self.__params_dict['dft']['train'] = dict()
+        self.__params_dict['dft']['test'] = dict()
+        for i, vaspruns in enumerate(train_vaspruns):
+            self.__params_dict['dft']['train']['dataset'+str(i+1)] = {
+                'vaspruns': sorted(vaspruns),
+                'include_force': True,
+                'weight': 1.0,
+            }
+
+        for i, vaspruns in enumerate(test_vaspruns):
+            self.__params_dict['dft']['test']['dataset'+str(i+1)] = {
+                'vaspruns': sorted(vaspruns),
+                'include_force': True,
+                'weight': 1.0,
+            }
+        self.__multi_dataset = True
 
     def set_datasets_phono3py(
             self, 
@@ -332,7 +297,6 @@ class Pypolymlp:
 
         data['train']['indices'] = train_ids
         data['test']['indices'] = test_ids
-
 
     def set_datasets_displacements(
             self,
@@ -383,26 +347,48 @@ class Pypolymlp:
     def __sequence(self, params):
         return np.linspace(float(params[0]), float(params[1]), int(params[2]))
 
-    def run(self, file_params=None, log=True, path_output='./'):
-
-        if file_params is not None:
-            self.__mlp_dict = run_generator_single_dataset(file_params, log=log)
-        else:
-            if self.train_dft_dict is None:
-                self.__mlp_dict = run_generator_single_dataset_from_params(
-                    self.__params_dict,
-                    log=log,
-                    path_output=path_output,
+    def run(
+        self, file_params=None, path_output='./', log=True, sequential=False
+    ):
+        '''
+        Running linear ridge regression to estimate MLP coefficients.
+        '''
+        if self.__multi_dataset == False:
+            if file_params is not None:
+                self.__mlp_dict = run_generator_single_dataset(
+                    file_params, log=log
                 )
             else:
+                if self.train_dft_dict is None:
+                    self.__mlp_dict = run_generator_single_dataset_from_params(
+                        self.__params_dict,
+                        log=log,
+                        path_output=path_output,
+                    )
+                else:
+                    self.__mlp_dict \
+                        = run_generator_single_dataset_from_params_and_datasets(
+                        self.__params_dict,
+                        self.train_dft_dict,
+                        self.test_dft_dict,
+                        log=log,
+                        path_output=path_output,
+                    )
+        else:
+            if file_params is not None and sequential:
                 self.__mlp_dict \
-                    = run_generator_single_dataset_from_params_and_datasets(
-                    self.__params_dict,
-                    self.train_dft_dict,
-                    self.test_dft_dict,
-                    log=log,
-                    path_output=path_output,
-                )
+                    = run_sequential_generator_multiple_datasets(file_params)
+            elif file_params is not None and sequential == False:
+                self.__mlp_dict \
+                    = run_generator_multiple_datasets(file_params)
+            elif file_params is None and sequential:
+                self.__mlp_dict \
+                    = run_sequential_generator_multiple_datasets_from_params\
+                    (self.__params_dict)
+            else:
+                self.__mlp_dict \
+                    = run_generator_multiple_datasets_from_params\
+                    (self.__params_dict)
 
     @ property
     def parameters(self):

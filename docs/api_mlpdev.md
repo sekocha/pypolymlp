@@ -66,6 +66,10 @@ polymlp.run(log=True)
 ```
 or
 ```
+import numpy as np
+import glob
+from pypolymlp.api.pypolymlp import Pypolymlp
+
 params = {
     'elements': ['Mg','O'],
     'cutoff' : 8.0,
@@ -136,6 +140,40 @@ polymlp.set_params(
     gaussian_params2=[0.0,7.0,10],
     atomic_energy=[-0.19820116,-0.21203241],
 )
+
+## From multiple sets of vasprun.xml files
+```
+import numpy as np
+import glob
+from pypolymlp.api.pypolymlp import Pypolymlp
+
+params = {
+    'elements': ['Mg','O'],
+    'cutoff' : 8.0,
+    'model_type' : 3,
+    'max_p' : 2,
+    'gtinv_order' : 3,
+    'gtinv_maxl' : [4,4],
+    'gaussian_params2' : [0.0, 7.0, 8],
+    'atomic_energy' : [-0.00040000,-1.85321219],
+}
+
+polymlp = Pypolymlp()
+polymlp.set_params(params=params)
+
+train_vaspruns1 = glob.glob('vaspruns/train1/vasprun-*.xml.polymlp')
+train_vaspruns2 = glob.glob('vaspruns/train2/vasprun-*.xml.polymlp')
+test_vaspruns1 = glob.glob('vaspruns/test1/vasprun-*.xml.polymlp')
+test_vaspruns2 = glob.glob('vaspruns/test2/vasprun-*.xml.polymlp')
+polymlp.set_multiple_datasets_vasp(
+    [train_vaspruns1, train_vaspruns2],
+    [test_vaspruns1, test_vaspruns2]
+)
+
+#polymlp.run(log=True, sequential=False)
+polymlp.run(log=True, sequential=True)
+```
+
 
 '''
 Parameters in polymlp.set_datasets_displacements

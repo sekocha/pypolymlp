@@ -84,11 +84,7 @@ from pypolymlp.mlp_gen.features_attr import write_polymlp_params_yaml
       - scaler
 
 """
-
-def run_generator_multiple_datasets(infile):
-
-    p = ParamsParser(infile, multiple_datasets=True)
-    params_dict = p.get_params()
+def run_generator_multiple_datasets_from_params(params_dict):
 
     train_dft_dict, test_dft_dict = parse_observations(params_dict)
 
@@ -163,6 +159,16 @@ def run_generator_multiple_datasets(infile):
     print('    regression:        ', '{:.3f}'.format(t4-t3), '(s)')
 
     return mlp_dict
+
+
+def run_generator_multiple_datasets(infile):
+
+    p = ParamsParser(infile, multiple_datasets=True)
+    params_dict = p.get_params()
+
+    mlp_dict = run_generator_multiple_datasets_from_params(params_dict)
+    return mlp_dict
+
 
 if __name__ == '__main__':
 
