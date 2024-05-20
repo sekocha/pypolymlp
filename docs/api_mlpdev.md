@@ -1,6 +1,6 @@
-## Python API (MLP development)
+# Python API (MLP development)
 
-- MLP development using polymlp.in
+## MLP development using polymlp.in
 ```
 import numpy as np
 from pypolymlp.api.pypolymlp import Pypolymlp
@@ -12,7 +12,7 @@ params_dict = polymlp.parameters
 mlp_dict = polymlp.summary
 ```
 
-- MLP development from vasprun.xml files without using polymlp.in
+## MLP development from vasprun.xml files without using polymlp.in
 ```
 import numpy as np
 import glob
@@ -65,7 +65,8 @@ polymlp.set_datasets_vasp(train_vaspruns, test_vaspruns)
 polymlp.run(log=True)
 ```
 
-- MLP development from phono3py.yaml.xz without using polymlp.in
+## MLP development from phono3py.yaml.xz without using polymlp.in
+
 ```
 from pypolymlp.api.pypolymlp import Pypolymlp
 
@@ -98,7 +99,8 @@ polymlp.set_datasets_phono3py(
 polymlp.run(log=True)
 ```
 
-- MLP development using displacements and forces
+## MLP development using displacements and forces
+
 ```
 from pypolymlp.api.pypolymlp import Pypolymlp
 

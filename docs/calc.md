@@ -1,4 +1,4 @@
-# Calculators
+# Pypolymlp calculators
 
 ## Properties (energies, forces, and stress tensors)
 

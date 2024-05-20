@@ -1,5 +1,5 @@
-## Python API (Property calculations)
-### Calculations of energy, forces, and stress tensor
+# Python API (Property calculations)
+## Calculations of energy, forces, and stress tensor
 
 - Single structure
 ```
@@ -51,7 +51,7 @@ from pypolymlp.utils.phonopy_utils import phonopy_cell_to_st_dict
 st_dict = phonopy_cell_to_st_dict(cell_phonopy)
 ```
 
-### Force constant calculations
+## Force constant calculations
 - Force constant calculations using phono3py.yaml.xz
 ```  
 from pypolymlp.api.pypolymlp_fc import PypolymlpFC
