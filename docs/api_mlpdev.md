@@ -64,6 +64,27 @@ test_vaspruns = glob.glob('vaspruns/test/vasprun-*.xml.polymlp')
 polymlp.set_datasets_vasp(train_vaspruns, test_vaspruns)
 polymlp.run(log=True)
 ```
+or
+```
+params = {
+    'elements': ['Mg','O'],
+    'cutoff' : 8.0,
+    'model_type' : 3,
+    'max_p' : 2,
+    'gtinv_order' : 3,
+    'gtinv_maxl' : [4,4],
+    'gaussian_params2' : [0.0, 7.0, 8],
+    'atomic_energy' : [-0.00040000,-1.85321219],
+}
+
+polymlp = Pypolymlp()
+polymlp.set_params(params=params)
+
+train_vaspruns = glob.glob('vaspruns/train/vasprun-*.xml.polymlp')
+test_vaspruns = glob.glob('vaspruns/test/vasprun-*.xml.polymlp')
+polymlp.set_datasets_vasp(train_vaspruns, test_vaspruns)
+polymlp.run(log=True)
+```
 
 ## MLP development from phono3py.yaml.xz without using polymlp.in
 
