@@ -141,6 +141,29 @@ polymlp.set_params(
     atomic_energy=[-0.19820116,-0.21203241],
 )
 
+'''
+Parameters in polymlp.set_datasets_displacements
+-------------------------------------------------
+train_disps: (n_train, 3, n_atoms)
+train_forces: (n_train, 3, n_atoms)
+train_energies: (n_train)
+test_disps: (n_test, 3, n_atom)
+test_forces: (n_test, 3, n_atom)
+test_energies: (n_test)
+'''
+
+polymlp.set_datasets_displacements(
+    train_disps,
+    train_forces,
+    train_energies,
+    test_disps,
+    test_forces,
+    test_energies,
+    st_dict,
+)
+polymlp.run(log=True)
+```
+
 ## From multiple sets of vasprun.xml files
 
 ```pycon
@@ -175,27 +198,4 @@ polymlp.set_multiple_datasets_vasp(
 polymlp.run(log=True, sequential=True)
 ```
 
-
-'''
-Parameters in polymlp.set_datasets_displacements
--------------------------------------------------
-train_disps: (n_train, 3, n_atoms)
-train_forces: (n_train, 3, n_atoms)
-train_energies: (n_train)
-test_disps: (n_test, 3, n_atom)
-test_forces: (n_test, 3, n_atom)
-test_energies: (n_test)
-'''
-
-polymlp.set_datasets_displacements(
-    train_disps,
-    train_forces,
-    train_energies,
-    test_disps,
-    test_forces,
-    test_energies,
-    st_dict,
-)
-polymlp.run(log=True)
-```
 
