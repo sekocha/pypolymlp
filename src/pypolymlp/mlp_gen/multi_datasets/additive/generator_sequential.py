@@ -75,6 +75,7 @@ def run_sequential_generator_additive(infiles):
                                                    output_key=output_key)
 
     t4 = time.time()
+    mlp_dict['error'] = error_dict
     write_error_yaml(error_dict['train'])
     write_error_yaml(error_dict['test'], initialize=False)
 
@@ -87,6 +88,7 @@ def run_sequential_generator_additive(infiles):
     print('    regression:           ', '{:.3f}'.format(t3-t2), '(s)')
     print('    predictions:          ', '{:.3f}'.format(t4-t3), '(s)')
 
+    return mlp_dict
 
 if __name__ == '__main__':
 

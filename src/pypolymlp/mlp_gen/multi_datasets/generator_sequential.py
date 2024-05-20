@@ -63,6 +63,7 @@ def run_sequential_generator_multiple_datasets(infile):
  
     t4 = time.time()
 
+    mlp_dict['error'] = error_dict
     write_error_yaml(error_dict['train'])
     write_error_yaml(error_dict['test'], initialize=False)
     write_polymlp_params_yaml(params_dict)
@@ -71,6 +72,8 @@ def run_sequential_generator_multiple_datasets(infile):
     print('    features + weighting: ', '{:.3f}'.format(t2-t1), '(s)')
     print('    regression:           ', '{:.3f}'.format(t3-t2), '(s)')
     print('    predictions:          ', '{:.3f}'.format(t4-t3), '(s)')
+
+    return mlp_dict
 
 
 if __name__ == '__main__':

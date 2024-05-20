@@ -75,6 +75,7 @@ def run_generator_single_dataset_from_params_and_datasets(
         test_dft_dict,
         log=True,
         compute_learning_curve=False,
+        path_output='./',
 ):
 
     t1 = time.time()
@@ -127,7 +128,9 @@ def run_generator_single_dataset_from_params_and_datasets(
     reg = Regression(train_reg_dict, test_reg_dict, params_dict)
     coeffs, scales = reg.ridge()
     mlp_dict = reg.get_best_model()
-    save_mlp_lammps(params_dict, coeffs, scales)
+    save_mlp_lammps(
+        params_dict, coeffs, scales, filename=path_output+'/polymlp.lammps'
+    )
 
     if log:
         print('  regression: best model')
@@ -141,16 +144,21 @@ def run_generator_single_dataset_from_params_and_datasets(
                                         mlp_dict['predictions']['train'],
                                         train_reg_dict['weight'],
                                         indices, 
-                                        output_key='train')
+                                        output_key='train',
+                                        path_output=path_output)
     indices = test_reg_dict['first_indices'][0]
     error_dict['test'] = compute_error(test_dft_dict, 
                                        params_dict, 
                                        mlp_dict['predictions']['test'],
                                        test_reg_dict['weight'],
                                        indices,
-                                       output_key='test')
-    write_error_yaml(error_dict)
-    write_polymlp_params_yaml(params_dict)
+                                       output_key='test',
+                                       path_output=path_output)
+    write_error_yaml(error_dict, filename=path_output+'/polymlp_error.yaml')
+    write_polymlp_params_yaml(
+        params_dict, filename=path_output+'/polymlp_params.yaml'
+    )
+    mlp_dict['error'] = error_dict
 
     if log:
         print('  elapsed_time:')
@@ -165,6 +173,7 @@ def run_generator_single_dataset_from_params(
     params_dict, 
     log=True,
     compute_learning_curve=False,
+    path_output='./',
 ):
 
     if params_dict['dataset_type'] == 'vasp':
@@ -200,6 +209,7 @@ def run_generator_single_dataset_from_params(
             test_dft_dict,
             log=log,
             compute_learning_curve=compute_learning_curve,
+            path_output=path_output,
     )
     return mlp_dict
 

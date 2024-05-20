@@ -44,7 +44,8 @@ def compute_error(dft_dict,
                   weights_all,
                   first_indices,
                   output_key='train',
-                  log_force=False):
+                  log_force=False,
+                  path_output='./'):
 
     if 'include_force' in dft_dict:
         include_force = dft_dict['include_force']
@@ -102,8 +103,8 @@ def compute_error(dft_dict,
     filenames = dft_dict['filenames']
     outdata = np.array([true_e, pred_e, (true_e - pred_e) * 1000]).T
 
-    os.makedirs('predictions', exist_ok=True)
-    f = open('predictions/energy.' + output_key + '.dat', 'w')
+    os.makedirs(path_output + '/predictions', exist_ok=True)
+    f = open(path_output + '/predictions/energy.' + output_key + '.dat', 'w')
     print('# DFT(eV/atom), MLP(eV/atom), DFT-MLP(meV/atom)', file=f)
     for d, name in zip(outdata, filenames):
         print(d[0], d[1], d[2], name, file=f)

@@ -291,6 +291,9 @@ calc_cost option generates a file 'polymlp_cost.yaml', which is required for fin
 
 Files 'polymlp_error.yaml' and 'polymlp_cost.yaml' are needed for each MLP.
 
+- [Python API](docs/api.md)
+
+<!--
 ## Python API
 ### MLP development
 
@@ -506,4 +509,4 @@ polymlp_fc.compute_fcs(unitcell_dict=unitcell_dict,
                        n_samples=1000,
                        displacements=0.03)
 ```  
-
+-->

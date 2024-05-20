@@ -158,13 +158,14 @@ class PolymlpRepositoryGeneration:
                 if os.path.exists(yamlfile):
                     yamldata = self.__read_yaml(yamlfile)
 
-                    eqm_data = yamldata['equilibrium']
-                    n_atom_sum = sum([int(n) for n in eqm_data['n_atoms']])
-                    energy = float(eqm_data['free_energy']) / n_atom_sum
-                    volume = float(eqm_data['volume']) / n_atom_sum
-                    bm = float(eqm_data['bulk_modulus'])
-                    eqm_props.append([cost, energy, volume, bm])
-                    e_eqm_dict[pot_id][st] = energy
+                    if 'equilibrium' in yamldata:
+                        eqm_data = yamldata['equilibrium']
+                        n_atom_sum = sum([int(n) for n in eqm_data['n_atoms']])
+                        energy = float(eqm_data['free_energy']) / n_atom_sum
+                        volume = float(eqm_data['volume']) / n_atom_sum
+                        bm = float(eqm_data['bulk_modulus'])
+                        eqm_props.append([cost, energy, volume, bm])
+                        e_eqm_dict[pot_id][st] = energy
 
                     yamlfile = '/'.join(
                         [self.__path_data, pot_id, 'predictions', 
@@ -295,6 +296,7 @@ class PolymlpRepositoryGeneration:
     def run(self):
 
         self.run_mlp_distribution()
+        self.run_lattice_constants()
         self.run_eos()
         self.run_energy_distribution()
         self.run_icsd_prediction()
