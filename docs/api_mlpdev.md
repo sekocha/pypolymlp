@@ -142,7 +142,8 @@ polymlp.set_params(
 )
 
 ## From multiple sets of vasprun.xml files
-```
+
+```python
 import numpy as np
 import glob
 from pypolymlp.api.pypolymlp import Pypolymlp
