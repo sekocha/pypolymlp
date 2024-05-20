@@ -1,6 +1,6 @@
-## Utilities
+# Pypolymlp utilities
 
-### Structure generation for DFT calculations
+## Structure generation for DFT calculations
 
 1. Prototype structure selection
 
@@ -38,14 +38,14 @@ Structures are generated in "poscar_phonon" directory.
 
 3. DFT calculations for structures 
 
-### Compression of vasprun.xml files
+## Compression of vasprun.xml files
 
 ```
 > pypolymlp-utils --vasprun_compress vaspruns/vasprun-*.xml
 ```
 Compressed vasprun.xml is generated as vasprun.xml.polymlp.
 
-### Automatic division of DFT dataset
+## Automatic division of DFT dataset
 
 ```
 > pypolymlp-utils --auto_dataset dataset1/*/vasprun.xml dataset2/*/vasprun.xml
@@ -56,7 +56,7 @@ A generated file "polymlp.in.append" can be appended in your polymlp.in, which w
 Datasets identified with "train1" and "test1" are composed of structures with low energy and small force values.
 The predictive power for them is more important than the other structures for the successive calculations using polynomial MLPs, so the prediction errors for "train1" and "test1" datasets should be accuracy measures for polynomial MLPs.
 
-### Atomic energies
+## Atomic energies
 (Experimental: Only for VASP calculations using PBE and PBEsol functionals)
 
 ```
@@ -69,7 +69,7 @@ A standard output can be appended in your polymlp.in, which will be used for dev
 The polynomial MLP has no constant term, which means that the energy for isolated atoms is set to zero.
 The energy values for the isolated atoms must be subtracted from the energy values for structures.
 
-### Estimation of computational costs
+## Estimation of computational costs
 
 calc_cost option generates a file 'polymlp_cost.yaml', which is required for finding optimal MLPs.
 
@@ -88,7 +88,7 @@ calc_cost option generates a file 'polymlp_cost.yaml', which is required for fin
 > pypolymlp-utils --calc_cost -d $(path_mlps)/polymlp-00*
 ```
 
-### Enumeration of optimal MLPs on convex hull
+## Enumeration of optimal MLPs on convex hull
 
 ```
 > pypolymlp-utils --find_optimal Ti-Pb/* --key test-disp1
