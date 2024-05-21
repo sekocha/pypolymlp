@@ -32,7 +32,8 @@ def compute_error(params_dict,
                   output_key='train',
                   stress_unit='eV',
                   log_force=False,
-                  log_stress=False):
+                  log_stress=False,
+                  path_output='./'):
 
     if isinstance(params_dict, list) and len(params_dict) > 1:
         coeffs_rescale = [c/s for c, s in zip(coeffs,scales)]
@@ -82,11 +83,11 @@ def compute_error(params_dict,
     error_dict['stress'] = rmse_s
     print_error(error_dict, key=output_key)
 
-    os.makedirs('predictions', exist_ok=True)
+    os.makedirs(path_output + '/predictions', exist_ok=True)
     filenames = dft_dict['filenames']
 
     outdata = np.array([true_e, pred_e, (true_e - pred_e) * 1000]).T
-    f = open('predictions/energy.' + output_key + '.dat', 'w')
+    f = open(path_output + '/predictions/energy.' + output_key + '.dat', 'w')
     print('# DFT(eV/atom), MLP(eV/atom), DFT-MLP(meV/atom)', file=f)
     for d, name in zip(outdata, filenames):
         print(d[0], d[1], d[2], name, file=f)
@@ -94,7 +95,7 @@ def compute_error(params_dict,
 
     if log_force:
         outdata = np.array([true_f, pred_f, (true_f - pred_f)]).T
-        f = open('predictions/force.' + output_key + '.dat', 'w')
+        f = open(path_output + '/predictions/force.' + output_key + '.dat', 'w')
         print('# DFT, MLP, DFT-MLP', file=f)
         for d in outdata:
             print(d[0], d[1], d[2], file=f)
@@ -102,7 +103,7 @@ def compute_error(params_dict,
 
     if log_stress:
         outdata = np.array([true_s, pred_s, (true_s - pred_s)]).T
-        f = open('predictions/stress.' + output_key + '.dat', 'w')
+        f = open(path_output + '/predictions/stress.' + output_key + '.dat', 'w')
         print('# DFT, MLP, DFT-MLP', file=f)
         for d in outdata:
             print(d[0], d[1], d[2], file=f)

@@ -84,7 +84,7 @@ from pypolymlp.mlp_gen.features_attr import write_polymlp_params_yaml
       - scaler
 
 """
-def run_generator_multiple_datasets_from_params(params_dict):
+def run_generator_multiple_datasets_from_params(params_dict, path_output='./'):
 
     train_dft_dict, test_dft_dict = parse_observations(params_dict)
 
@@ -114,7 +114,9 @@ def run_generator_multiple_datasets_from_params(params_dict):
     reg = Regression(train_reg_dict, test_reg_dict, params_dict)
     coeffs, scales = reg.ridge()
     mlp_dict = reg.get_best_model()
-    save_mlp_lammps(params_dict, coeffs, scales)
+    save_mlp_lammps(
+        params_dict, coeffs, scales, filename=path_output+'/polymlp.lammps'
+    )
 
     print('  regression: best model')
     print('    alpha: ', mlp_dict['alpha'])
@@ -133,7 +135,8 @@ def run_generator_multiple_datasets_from_params(params_dict):
                                                     predictions, 
                                                     weights,
                                                     indices,
-                                                    output_key=output_key)
+                                                    output_key=output_key,
+                                                    path_output=path_output)
 
     for (set_id, dft_dict), indices in zip(test_dft_dict.items(), 
                                            test_reg_dict['first_indices']):
@@ -146,12 +149,20 @@ def run_generator_multiple_datasets_from_params(params_dict):
                                                    predictions, 
                                                    weights,
                                                    indices,
-                                                   output_key=output_key)
+                                                   output_key=output_key,
+                                                   path_output=path_output)
 
     mlp_dict['error'] = error_dict
-    write_error_yaml(error_dict['train'])
-    write_error_yaml(error_dict['test'], initialize=False)
-    write_polymlp_params_yaml(params_dict)
+    write_error_yaml(
+        error_dict['train'], filename=path_output+'/polymlp_error.yaml'
+    )
+    write_error_yaml(
+        error_dict['test'], initialize=False, 
+        filename=path_output+'/polymlp_error.yaml'
+    )
+    write_polymlp_params_yaml(
+        params_dict, filename=path_output+'/polymlp_params.yaml'
+    )
 
     print('  elapsed_time:')
     print('    features:          ', '{:.3f}'.format(t2-t1), '(s)')

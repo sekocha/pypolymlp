@@ -118,7 +118,7 @@ def compute_error(dft_dict,
                                             return_values=True)
         outdata = np.array([true_f, pred_f, (true_f - pred_f)]).T
  
-        f = open('predictions/force.' + output_key + '.dat', 'w')
+        f = open(path_output + '/predictions/force.' + output_key + '.dat', 'w')
         print('# DFT, MLP, DFT-MLP', file=f)
         for d in outdata:
             print(d[0], d[1], d[2], file=f)

@@ -377,18 +377,22 @@ class Pypolymlp:
         else:
             if file_params is not None and sequential:
                 self.__mlp_dict \
-                    = run_sequential_generator_multiple_datasets(file_params)
+                    = run_sequential_generator_multiple_datasets(
+                        file_params, path_output=path_output
+                    )
             elif file_params is not None and sequential == False:
                 self.__mlp_dict \
-                    = run_generator_multiple_datasets(file_params)
+                    = run_generator_multiple_datasets(
+                        file_params, path_output=path_output
+                    )
             elif file_params is None and sequential:
                 self.__mlp_dict \
                     = run_sequential_generator_multiple_datasets_from_params\
-                    (self.__params_dict)
+                    (self.__params_dict, path_output=path_output)
             else:
                 self.__mlp_dict \
                     = run_generator_multiple_datasets_from_params\
-                    (self.__params_dict)
+                    (self.__params_dict, path_output=path_output)
 
     @ property
     def parameters(self):
