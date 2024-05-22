@@ -58,7 +58,7 @@ void ModelFast::pair(const vector3d& dis_array,
                           diff_array[atom1], 
                           atom2_array[atom1], 
                           de, dfx, dfy, dfz, ds);
-        model_common(de, dfx, dfy, dfz, ds, modelp);
+        model_common(de, dfx, dfy, dfz, ds, modelp, types[atom1]);
     }
 }
 
@@ -76,17 +76,17 @@ void ModelFast::gtinv(const vector3d& dis_array,
         vector1d de; vector2d dfx, dfy, dfz, ds;
         LocalFast local(n_atom, atom1, types[atom1], fp, modelp);
         if (force == false) {
-            local.gtinv(dis_array[atom1], diff_array[atom1], 
-                        features, de);
+            local.gtinv(
+                dis_array[atom1], diff_array[atom1], features, de
+            );
         }
         else {
-            local.gtinv_d(dis_array[atom1], 
-                          diff_array[atom1], 
-                          atom2_array[atom1], 
-                          features,
-                          de, dfx, dfy, dfz, ds);
+            local.gtinv_d(
+                dis_array[atom1], diff_array[atom1], atom2_array[atom1], 
+                features, de, dfx, dfy, dfz, ds
+            );
         }
-        model_common(de, dfx, dfy, dfz, ds, modelp);
+        model_common(de, dfx, dfy, dfz, ds, modelp, types[atom1]);
     }
 }
 
@@ -95,14 +95,16 @@ void ModelFast::model_common(const vector1d& de,
                              const vector2d& dfy, 
                              const vector2d& dfz, 
                              const vector2d& ds, 
-                             const ModelParams& modelp){
+                             const ModelParams& modelp,
+                             const int type1){
 
-    int col = 0;
-    model_linear(de, dfx, dfy, dfz, ds, col);
-    if (model_type == 1 and maxp > 1) model1(de, dfx, dfy, dfz, ds, col);
+    model_linear(de, dfx, dfy, dfz, ds, modelp, type1);
+    if (model_type == 1 and maxp > 1) {
+        model1(de, dfx, dfy, dfz, ds, modelp, type1);
+    }
     else if (model_type > 1){
-        if (maxp > 1) model2_comb2(de, dfx, dfy, dfz, ds, modelp, col);
-        if (maxp > 2) model2_comb3(de, dfx, dfy, dfz, ds, modelp, col);
+        if (maxp > 1) model2_comb2(de, dfx, dfy, dfz, ds, modelp, type1);
+        if (maxp > 2) model2_comb3(de, dfx, dfy, dfz, ds, modelp, type1);
     }
 }
 
@@ -111,20 +113,20 @@ void ModelFast::model_linear(const vector1d& de,
                              const vector2d& dfy, 
                              const vector2d& dfz, 
                              const vector2d& ds, 
-                             int& col){
+                             const ModelParams& modelp,
+                             const int type1){
 
-    const int n_linear = de.size();
-    for (int n = 0; n < n_linear; ++n){
-        xe_sum[col] += de[n];
+    const auto& indices = modelp.get_comb1_indices(type1);
+    for (const auto& i: indices){
+        xe_sum[i] += de[i];
         if (force == true){
             for (int k = 0; k < n_atom; ++k){
-                xf_sum[3*k][col] += dfx[n][k];
-                xf_sum[3*k+1][col] += dfy[n][k];
-                xf_sum[3*k+2][col] += dfz[n][k];
+                xf_sum[3*k][i] += dfx[i][k];
+                xf_sum[3*k+1][i] += dfy[i][k];
+                xf_sum[3*k+2][i] += dfz[i][k];
             }
-            for (int k = 0; k < 6; ++k) xs_sum[k][col] += ds[n][k];
+            for (int k = 0; k < 6; ++k) xs_sum[k][i] += ds[i][k];
         }
-        ++col;
     }
 }
 
@@ -133,23 +135,28 @@ void ModelFast::model1(const vector1d& de,
                        const vector2d& dfy, 
                        const vector2d& dfz, 
                        const vector2d& ds, 
-                       int& col){
+                       const ModelParams& modelp,
+                       const int type1){
 
-    const int n_linear = de.size();
+    const auto& indices = modelp.get_comb1_indices(type1);
+    const int col_begin = de.size();
+
+    int col, col_local(0);
     double val;
     for (int p = 2; p < maxp + 1; ++p){
-        for (int n = 0; n < n_linear; ++n){
-            xe_sum[col] += pow(de[n], p);
+        for (const auto& i: indices){
+            col = col_begin + col_local;
+            xe_sum[col] += pow(de[i], p);
             if (force == true){
-                val = p * pow(de[n], p-1);
-                for (size_t k = 0; k < dfx[n].size(); ++k){
-                    xf_sum[3*k][col] += val * dfx[n][k];
-                    xf_sum[3*k+1][col] += val * dfy[n][k];
-                    xf_sum[3*k+2][col] += val * dfz[n][k];
+                val = p * pow(de[i], p-1);
+                for (size_t k = 0; k < dfx[i].size(); ++k){
+                    xf_sum[3*k][col] += val * dfx[i][k];
+                    xf_sum[3*k+1][col] += val * dfy[i][k];
+                    xf_sum[3*k+2][col] += val * dfz[i][k];
                 }
-                for (int k = 0; k < 6; ++k) xs_sum[k][col] += val * ds[n][k];
+                for (int k = 0; k < 6; ++k) xs_sum[k][col] += val * ds[i][k];
             }
-            ++col;
+            ++col_local;
         }
     }
 }
@@ -160,12 +167,17 @@ void ModelFast::model2_comb2(const vector1d& de,
                              const vector2d& dfz, 
                              const vector2d& ds, 
                              const ModelParams& modelp,
-                             int& col){
+                             const int type1){
 
-    int c1, c2;
+    const auto& comb2 = modelp.get_comb2();
+    const auto& indices = modelp.get_comb2_indices(type1);
+    const int col_begin = de.size();
+
+    int col, c1, c2;
     double val1, val2;
-    for (const auto& comb: modelp.get_comb2()){
-        c1 = comb[0], c2 = comb[1];
+    for (const auto& i: indices){
+        col = col_begin + i;
+        c1 = comb2[i][0], c2 = comb2[i][1];
         xe_sum[col] += de[c1] * de[c2];
         if (force == true){
             val1 = de[c2], val2 = de[c1];
@@ -178,7 +190,6 @@ void ModelFast::model2_comb2(const vector1d& de,
                 xs_sum[k][col] += val1 * ds[c1][k] + val2 * ds[c2][k];
             }
         }
-        ++col;
     }
 }
 
@@ -188,12 +199,18 @@ void ModelFast::model2_comb3(const vector1d& de,
                              const vector2d& dfz, 
                              const vector2d& ds, 
                              const ModelParams& modelp,
-                             int& col){
+                             const int type1){
 
-    int c1, c2, c3;
+    const auto& comb2 = modelp.get_comb2();
+    const auto& comb3 = modelp.get_comb3();
+    const auto& indices = modelp.get_comb3_indices(type1);
+    const int col_begin = de.size() + comb2.size();
+
+    int col, c1, c2, c3;
     double val1, val2, val3;
-    for (const auto& comb: modelp.get_comb3()){
-        c1 = comb[0], c2 = comb[1], c3 = comb[2];
+    for (const auto& i: indices){
+        col = col_begin + i;
+        c1 = comb3[i][0], c2 = comb3[i][1], c3 = comb3[i][2];
         xe_sum[col] += de[c1] * de[c2] * de[c3];
         if (force == true){
             val1 = de[c2] * de[c3]; 
@@ -212,7 +229,6 @@ void ModelFast::model2_comb3(const vector1d& de,
                     + val2 * ds[c2][k] + val3 * ds[c3][k]; 
             }
         }
-        ++col;
     }
 }
 

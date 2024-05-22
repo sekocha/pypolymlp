@@ -47,33 +47,36 @@ class ModelFast{
                       const vector2d& dfy, 
                       const vector2d& dfz, 
                       const vector2d& ds, 
-                      const ModelParams& modelp);
+                      const ModelParams& modelp,
+                      const int type1);
     void model_linear(const vector1d& de, 
                       const vector2d& dfx, 
                       const vector2d& dfy, 
                       const vector2d& dfz, 
                       const vector2d& ds, 
-                      int& col);
+                      const ModelParams& modelp,
+                      const int type1);
     void model1(const vector1d& de, 
                 const vector2d& dfx, 
                 const vector2d& dfy, 
                 const vector2d& dfz, 
                 const vector2d& ds, 
-                int& col);
+                const ModelParams& modelp,
+                const int type1);
     void model2_comb2(const vector1d& de, 
                       const vector2d& dfx, 
                       const vector2d& dfy, 
                       const vector2d& dfz, 
                       const vector2d& ds, 
                       const ModelParams& modelp,
-                      int& col);
+                      const int type1);
     void model2_comb3(const vector1d& de, 
                       const vector2d& dfx, 
                       const vector2d& dfy, 
                       const vector2d& dfz, 
                       const vector2d& ds, 
                       const ModelParams& modelp,
-                      int& col);
+                      const int type1);
 
     public: 
 

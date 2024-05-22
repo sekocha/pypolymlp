@@ -17,13 +17,15 @@
 class ModelParams{
 
     int n_type, n_fn, n_des, n_coeff_all, n_type_comb;
-    vector2i comb, comb2, comb3;
+    vector2i comb, comb2, comb3, comb1_indices, comb2_indices, comb3_indices;
     vector3i type_comb_pair;
 
     std::vector<struct LinearTermGtinv> linear_array_g;
 
+    void combination1();
     void combination2(const vector1i& iarray);
     void combination3(const vector1i& iarray);
+    void combination1_gtinv();
     void combination2_gtinv(const vector1i& iarray);
     void combination3_gtinv(const vector1i& iarray);
 
@@ -34,6 +36,7 @@ class ModelParams{
     void uniq_gtinv_type(const feature_params& fp);
 
     bool check_type(const vector2i &type1_array);
+    vector1i intersection_types_in_polynomial(const vector2i &type1_array);
 
     void initial_setting(const struct feature_params& fp);
 
@@ -52,6 +55,10 @@ class ModelParams{
 
     const vector2i& get_comb2() const;
     const vector2i& get_comb3() const;
+
+    const vector1i& get_comb1_indices(const int type) const;
+    const vector1i& get_comb2_indices(const int type) const;
+    const vector1i& get_comb3_indices(const int type) const;
 
     const std::vector<struct LinearTermGtinv>& get_linear_term_gtinv() const;
 
