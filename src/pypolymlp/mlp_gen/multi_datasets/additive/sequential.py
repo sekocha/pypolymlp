@@ -30,7 +30,7 @@ class Sequential:
         xtx, xty, y_sq_norm = None, None, 0.0
         xe_sum, xe_sq_sum = None, None
         total_n_data = 0
-        for id_dataset, dft_dict in multiple_dft_dicts.items():
+        for i, (id_dataset, dft_dict) in enumerate(multiple_dft_dicts.items()):
             if verbose:
                 print('----- Dataset:', id_dataset, '-----')
 
@@ -53,8 +53,9 @@ class Sequential:
 
                 if verbose:
                     ram = x.shape[1] * x.shape[1] * 8e-9 * 2
-                    print(' Memory allocation (X^T @ X) :',
-                            '{:.3f}'.format(ram),'(GB)')
+                    if i == 0:
+                        print(' Memory allocation (X^T @ X) :',
+                              '{:.3f}'.format(ram),'(GB)')
 
                 if scales is None:
                     xe = x[:features.ne]
