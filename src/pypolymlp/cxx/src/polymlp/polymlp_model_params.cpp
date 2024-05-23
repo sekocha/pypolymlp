@@ -241,6 +241,10 @@ void ModelParams::initial_setting(const struct feature_params& fp){
         std::sort(polynomial_index.begin(),polynomial_index.end());
     }
 
+    comb1_indices.resize(n_type);
+    comb2_indices.resize(n_type);
+    comb3_indices.resize(n_type);
+
     if (fp.des_type == "pair") combination1();
     else if (fp.des_type == "gtinv") combination1_gtinv();
 
@@ -303,7 +307,6 @@ void ModelParams::uniq_gtinv_type(const feature_params& fp){
 
 void ModelParams::combination1_gtinv(){
 
-    comb1_indices.resize(n_type);
     int i_comb;
     for (int n = 0; n < n_fn; ++n){
         for (size_t i = 0; i < linear_array_g.size(); ++i){
@@ -317,7 +320,6 @@ void ModelParams::combination1_gtinv(){
 
 void ModelParams::combination2_gtinv(const vector1i& iarray){
 
-    comb2_indices.resize(n_type);
     vector2i type_array;
     vector1i intersection;
     int i_comb(0), t1, t2;
@@ -342,7 +344,6 @@ void ModelParams::combination2_gtinv(const vector1i& iarray){
 
 void ModelParams::combination3_gtinv(const vector1i& iarray){
 
-    comb3_indices.resize(n_type);
     vector2i type_array;
     vector1i intersection;
     int i_comb(0), t1, t2, t3;
@@ -420,7 +421,6 @@ int ModelParams::seq2igtinv(const int& seq){
 
 void ModelParams::combination1(){
 
-    comb1_indices.resize(n_type);
     int t1;
     for (int i = 0; i < n_des; ++i){
         t1 = seq2typecomb(i);
@@ -435,7 +435,6 @@ void ModelParams::combination1(){
 
 void ModelParams::combination2(const vector1i& iarray){
 
-    comb2_indices.resize(n_type);
     int i_comb(0), t1, t2;
     bool match;
     for (size_t i1 = 0; i1 < iarray.size(); ++i1){
@@ -459,7 +458,6 @@ void ModelParams::combination2(const vector1i& iarray){
 
 void ModelParams::combination3(const vector1i& iarray){
 
-    comb3_indices.resize(n_type);
     int i_comb(0), t1, t2, t3;
     bool match;
     for (size_t i1 = 0; i1 < iarray.size(); ++i1){

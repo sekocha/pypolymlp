@@ -52,35 +52,22 @@ PyModel::PyModel(const py::dict& params_dict,
     const Features f_obj(fp, modelp);
 
     std::cout << "Initial setting for computing features" << std::endl;
-    FunctionFeatures features_obj;
-    if (fp.des_type == "gtinv"){
-        features_obj = FunctionFeatures(f_obj);
-    }
+    FunctionFeatures features_obj(fp, modelp, f_obj);
+    std::cout << "Finished." << std::endl;
     //
 
     std::vector<bool> force_st;
     vector1i xf_begin, xs_begin;
-    set_index(n_st_dataset, 
-              force_dataset, 
-              n_atoms_all, 
-              xf_begin, 
-              xs_begin, 
-              force_st);
+    set_index(
+        n_st_dataset, force_dataset, n_atoms_all, 
+        xf_begin, xs_begin, force_st
+    );
 
     Neighbor neigh(axis[0], positions_c[0], types[0], fp.n_type, fp.cutoff);
-    // added for local_fast and model_fast
-    ModelFast mod(neigh.get_dis_array(), 
-                  neigh.get_diff_array(),
-                  neigh.get_atom2_array(), 
-                  types[0], fp, modelp, features_obj);
-    /*
-    Model mod(neigh.get_dis_array(), 
-              neigh.get_diff_array(),
-              neigh.get_atom2_array(), 
-              types[0], 
-              fp, 
-              element_swap);
-    */
+    ModelFast mod(
+        neigh.get_dis_array(), neigh.get_diff_array(), neigh.get_atom2_array(), 
+        types[0], fp, modelp, features_obj
+    );
 
     const int n_features = mod.get_xe_sum().size();
     const int n_st = axis.size();
@@ -113,12 +100,7 @@ PyModel::PyModel(const py::dict& params_dict,
                       neigh.get_diff_array(),
                       neigh.get_atom2_array(), 
                       types[i], fp1, modelp, features_obj);
-        /*
-        Model mod(neigh.get_dis_array(), 
-                  neigh.get_diff_array(),
-                  neigh.get_atom2_array(), 
-                  types[i], fp1, element_swap);
-        */
+
         const auto &xe = mod.get_xe_sum();
         for (size_t j = 0; j < xe.size(); ++j) x_all(i,j) = xe[j];
 
@@ -196,7 +178,7 @@ const vector1i& PyModel::get_fbegin() const{ return xf_begin_dataset; }
 const vector1i& PyModel::get_sbegin() const{ return xs_begin_dataset; }
 const vector1i& PyModel::get_n_data() const{ return n_data; }
 
-
+/*
 PyModelSingleStruct::PyModelSingleStruct(const py::dict& params_dict,
                                          const vector2d& axis,
                                          const vector2d& positions_c,
@@ -246,5 +228,5 @@ PyModelSingleStruct::PyModelSingleStruct(const py::dict& params_dict,
 PyModelSingleStruct::~PyModelSingleStruct(){}
 
 const vector1d& PyModelSingleStruct::get_x() const{ return xe; }
-
+*/
 

@@ -26,7 +26,7 @@ PYBIND11_MODULE(libmlpcpp, m) {
         .def("get_n_data", &PyModel::get_n_data, 
                 py::return_value_policy::reference_internal)
         ;
-
+/*
     py::class_<PyModelSingleStruct>(m, "PotentialModelSingleStruct")
         .def(py::init<const py::dict&,
                       const vector2d&,
@@ -35,7 +35,7 @@ PYBIND11_MODULE(libmlpcpp, m) {
         .def("get_x", &PyModelSingleStruct::get_x, 
                 py::return_value_policy::reference_internal)
         ;
-
+*/
     py::class_<PyAdditiveModel>(m, "PotentialAdditiveModel")
         .def(py::init<const std::vector<py::dict>&,
                       const vector3d&,

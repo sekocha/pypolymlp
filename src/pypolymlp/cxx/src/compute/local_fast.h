@@ -18,9 +18,9 @@
 
 class LocalFast{
 
-    int n_atom, atom1, type1, n_fn, n_des, n_type; 
+    int n_atom, atom1, type1, n_fn, n_des, n_type, size_pair; 
     struct feature_params fp;
-    vector2i type_comb;
+    vector1i type2_array, type_comb;
 
     void set_type_comb(const ModelParams& modelp);
     void compute_linear_features(const vector1d& prod_anlmtc,
@@ -38,10 +38,6 @@ class LocalFast{
                                        vector2d& dn_dfz,
                                        vector2d& dn_ds);
 
-//    void compute_linear_features_deriv(const vector1dc& prod_anlmtc_d,
-//                                       const FunctionFeatures& features,
-//                                       const vector2dc& anlmtc_d,
-//                                       vector2d& dn_d);
     void compute_anlm(const vector2d& dis_a, 
                       const vector3d& diff_a, 
                       const FunctionFeatures& features,
@@ -66,15 +62,15 @@ class LocalFast{
               const ModelParams& modelp);
     ~LocalFast();
 
-    vector1d pair(const vector2d& dis_a);
+    void pair(const vector2d& dis_a, vector1d& dn);
     void pair_d(const vector2d& dis_a, 
                 const vector3d& diff_a, 
                 const vector2i& atom2_a,
-                vector1d& an, 
-                vector2d& an_dfx, 
-                vector2d& an_dfy, 
-                vector2d& an_dfz, 
-                vector2d& an_ds);
+                vector1d& dn, 
+                vector2d& dn_dfx, 
+                vector2d& dn_dfy, 
+                vector2d& dn_dfz, 
+                vector2d& dn_ds);
 
     void gtinv(const vector2d& dis_a, 
                const vector3d& diff_a,

@@ -12,7 +12,7 @@
 #include <algorithm>
 
 #include "mlpcpp.h"
-#include "compute/local.h"
+//#include "compute/local.h"
 #include "polymlp/polymlp_model_params.h"
 
 #include "compute/local_fast.h"
@@ -20,7 +20,7 @@
 
 class ModelFast{
 
-    int n_atom, n_type, model_type, maxp; 
+    int n_atom, n_type, model_type, maxp, n_linear_features; 
     bool force;
 
     vector1i types;
@@ -47,35 +47,35 @@ class ModelFast{
                       const vector2d& dfy, 
                       const vector2d& dfz, 
                       const vector2d& ds, 
-                      const ModelParams& modelp,
+                      const FunctionFeatures& features,
                       const int type1);
     void model_linear(const vector1d& de, 
                       const vector2d& dfx, 
                       const vector2d& dfy, 
                       const vector2d& dfz, 
                       const vector2d& ds, 
-                      const ModelParams& modelp,
+                      const FunctionFeatures& features,
                       const int type1);
     void model1(const vector1d& de, 
                 const vector2d& dfx, 
                 const vector2d& dfy, 
                 const vector2d& dfz, 
                 const vector2d& ds, 
-                const ModelParams& modelp,
+                const FunctionFeatures& features,
                 const int type1);
     void model2_comb2(const vector1d& de, 
                       const vector2d& dfx, 
                       const vector2d& dfy, 
                       const vector2d& dfz, 
                       const vector2d& ds, 
-                      const ModelParams& modelp,
+                      const FunctionFeatures& features,
                       const int type1);
     void model2_comb3(const vector1d& de, 
                       const vector2d& dfx, 
                       const vector2d& dfy, 
                       const vector2d& dfz, 
                       const vector2d& ds, 
-                      const ModelParams& modelp,
+                      const FunctionFeatures& features,
                       const int type1);
 
     public: 

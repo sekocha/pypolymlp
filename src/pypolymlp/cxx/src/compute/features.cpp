@@ -10,37 +10,35 @@
 
 FunctionFeatures::FunctionFeatures(){}
 
-FunctionFeatures::FunctionFeatures(const Features& f_obj){
+FunctionFeatures::FunctionFeatures(
+    const feature_params& fp, 
+    const ModelParams& modelp, 
+    const Features& f_obj
+){
 
-    lm_map = f_obj.get_lm_map();
-    nlmtc_map = f_obj.get_nlmtc_map();
-    nlmtc_map_no_conjugate = f_obj.get_nlmtc_map_no_conjugate();
-    ntc_map = f_obj.get_ntc_map();
-    n_nlmtc_all = f_obj.get_n_nlmtc_all();
     n_type = f_obj.get_n_type();
-    
-    int size;
-    if (ntc_map.size() > 0){
-        eliminate_conj = false;
-        size = ntc_map.size();
+
+    if (fp.des_type == "gtinv"){
+        lm_map = f_obj.get_lm_map();
+        nlmtc_map = f_obj.get_nlmtc_map();
+        nlmtc_map_no_conjugate = f_obj.get_nlmtc_map_no_conjugate();
+
+        n_nlmtc_all = f_obj.get_n_nlmtc_all();
+ 
+        prod_map.resize(n_type);
+        prod_map_from_keys.resize(n_type);
+
+        prod_map_deriv.resize(n_type);
+        prod_map_deriv_from_keys.resize(n_type);
+
+        linear_features.resize(n_type);
+        linear_features_deriv.resize(n_type);
+
+        set_mapping_prod(f_obj);
+        set_features_using_mappings(f_obj);
     }
-    else {
-        eliminate_conj = true;
-        if (eliminate_conj == true) size = nlmtc_map_no_conjugate.size();
-        else size = n_nlmtc_all;
-    }
 
-    prod_map.resize(n_type);
-    prod_map_from_keys.resize(n_type);
-
-    prod_map_deriv.resize(n_type);
-    prod_map_deriv_from_keys.resize(n_type);
-
-    linear_features.resize(n_type);
-    linear_features_deriv.resize(n_type);
-
-    set_mapping_prod(f_obj);
-    set_features_using_mappings(f_obj);
+    set_polynomials(modelp);
 
 }
 
@@ -220,6 +218,44 @@ void FunctionFeatures::print_keys(const vector1i& keys){
 }
 */
 
+void FunctionFeatures::set_polynomials(const ModelParams& modelp){
+
+    polynomials1.resize(n_type);
+    polynomials2.resize(n_type);
+    polynomials3.resize(n_type);
+
+    const int n_linear_features = modelp.get_n_des();
+    const auto& comb2 = modelp.get_comb2();
+    const auto& comb3 = modelp.get_comb3();
+
+    int c1, c2, c3;
+    int begin;
+    for (int type1 = 0; type1 < n_type; ++type1){
+        int tlocal_id(0);
+        std::unordered_map<int,int> map1;
+        for (const auto& i: modelp.get_comb1_indices(type1)){
+            PolynomialTerm pterm = {i, vector1i{}};
+            polynomials1[type1].emplace_back(pterm);
+            map1[i] = tlocal_id;
+            ++tlocal_id;
+        }
+        begin = n_linear_features;
+        for (const auto& i: modelp.get_comb2_indices(type1)){
+            c1 = comb2[i][0], c2 = comb2[i][1];
+            PolynomialTerm pterm = {begin + i, vector1i{map1[c1], map1[c2]}};
+            polynomials2[type1].emplace_back(pterm);
+        }
+        begin = n_linear_features + comb2.size();
+        for (const auto& i: modelp.get_comb3_indices(type1)){
+            c1 = comb3[i][0], c2 = comb3[i][1], c3 = comb3[i][2];
+            PolynomialTerm pterm = {
+                begin + i, vector1i{map1[c1], map1[c2], map1[c3]}
+            };
+            polynomials3[type1].emplace_back(pterm);
+        }
+    }
+}
+
 const std::vector<lmAttribute>& FunctionFeatures::get_lm_map() const { 
     return lm_map; 
 }
@@ -229,9 +265,6 @@ FunctionFeatures::get_nlmtc_map_no_conjugate() const{
 }
 const std::vector<nlmtcAttribute>& FunctionFeatures::get_nlmtc_map() const { 
     return nlmtc_map; 
-}
-const std::vector<ntcAttribute>& FunctionFeatures::get_ntc_map() const { 
-    return ntc_map; 
 }
 const int FunctionFeatures::get_n_nlmtc_all() const { 
     return n_nlmtc_all; 
@@ -254,3 +287,12 @@ FunctionFeatures::get_linear_features_deriv(const int t) const {
     return linear_features_deriv[t];
 }
 
+const Polynomial& FunctionFeatures::get_polynomial1(const int t) const { 
+    return polynomials1[t];
+}
+const Polynomial& FunctionFeatures::get_polynomial2(const int t) const { 
+    return polynomials2[t];
+}
+const Polynomial& FunctionFeatures::get_polynomial3(const int t) const { 
+    return polynomials3[t];
+}

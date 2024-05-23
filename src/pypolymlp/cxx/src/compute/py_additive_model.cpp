@@ -60,8 +60,7 @@ PyAdditiveModel::PyAdditiveModel(const std::vector<py::dict>& params_dict_array,
 
         std::cout << "Initial setting for computing features" << std::endl;
         const Features f_obj(fp, modelp);
-        FunctionFeatures features_obj;
-        if (fp.des_type == "gtinv") features_obj = FunctionFeatures(f_obj);
+        FunctionFeatures features_obj(fp, modelp, f_obj);
         features_array.emplace_back(features_obj);
         //
     }

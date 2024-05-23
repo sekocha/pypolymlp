@@ -9,8 +9,9 @@
 #define __FEATURE
 
 #include "mlpcpp.h"
+#include "polymlp/polymlp_model_params.h"
 #include "polymlp/polymlp_features.h"
-#include "polymlp/polymlp_potential.h"
+#include "polymlp/polymlp_potential.h" // used for HashVI
 
 
 struct FeatureSingleTerm {
@@ -24,24 +25,31 @@ struct FeatureSingleTermDeriv {
     int nlmtc_key;
 };
 
+struct PolynomialTerm {
+    int seq_id;
+    vector1i comb_tlocal;
+};
+
+
 typedef std::vector<std::vector<FeatureSingleTerm> > FeatureVector;
 typedef std::vector<std::vector<FeatureSingleTermDeriv> > FeatureVectorDeriv;
 typedef std::unordered_map<vector1i,int,HashVI> ProdMapFromKeys;
 
+typedef std::vector<PolynomialTerm> Polynomial;
 
 class FunctionFeatures {
 
     std::vector<lmAttribute> lm_map;
     std::vector<nlmtcAttribute> nlmtc_map_no_conjugate, nlmtc_map;
-    std::vector<ntcAttribute> ntc_map;
 
-    bool eliminate_conj;
     int n_nlmtc_all, n_type;
  
     vector3i prod_map, prod_map_deriv;
     std::vector<ProdMapFromKeys> prod_map_from_keys, prod_map_deriv_from_keys;
     std::vector<FeatureVector> linear_features;
     std::vector<FeatureVectorDeriv> linear_features_deriv;
+
+    std::vector<Polynomial> polynomials1, polynomials2, polynomials3;
 
     vector1i erase_a_key(const vector1i& original, const int idx);
     void nonequiv_set_to_mappings(const std::set<vector1i>& nonequiv_keys,
@@ -51,6 +59,8 @@ class FunctionFeatures {
     void set_mapping_prod(const Features& f_obj);
     void set_features_using_mappings(const Features& f_obj);
 
+    void set_polynomials(const ModelParams& modelp);
+
     // deprecated
     void set_features_using_mappings_simple(const Features& f_obj);
     // not needed ?
@@ -59,13 +69,16 @@ class FunctionFeatures {
     public: 
 
     FunctionFeatures();
-    FunctionFeatures(const Features& f_obj);
+    FunctionFeatures(
+        const feature_params& fp, 
+        const ModelParams& modelp, 
+        const Features& f_obj
+    );
     ~FunctionFeatures();
 
     const std::vector<lmAttribute>& get_lm_map() const;
     const std::vector<nlmtcAttribute>& get_nlmtc_map_no_conjugate() const;
     const std::vector<nlmtcAttribute>& get_nlmtc_map() const;
-    const std::vector<ntcAttribute>& get_ntc_map() const;
     const int get_n_nlmtc_all() const;
 
     const vector2i& get_prod_map(const int t) const;
@@ -73,6 +86,9 @@ class FunctionFeatures {
     const FeatureVector& get_linear_features(const int t) const;
     const FeatureVectorDeriv& get_linear_features_deriv(const int t) const;
 
+    const Polynomial& get_polynomial1(const int t) const;
+    const Polynomial& get_polynomial2(const int t) const;
+    const Polynomial& get_polynomial3(const int t) const;
 };
 
 #endif

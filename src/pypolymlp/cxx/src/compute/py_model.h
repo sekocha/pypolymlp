@@ -57,21 +57,4 @@ class PyModel {
 
 };
 
-class PyModelSingleStruct{
-
-    vector1d xe;
-
-    public: 
-
-    PyModelSingleStruct(const py::dict& params_dict,
-                        const vector2d& axis,
-                        const vector2d& positions_c,
-                        const vector1i& types);
-
-    ~PyModelSingleStruct();
-
-    const vector1d& get_x() const;
-
-};
-
 #endif
