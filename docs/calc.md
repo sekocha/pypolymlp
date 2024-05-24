@@ -8,6 +8,13 @@
 > pypolymlp --properties --pot polymlp.lammps --phono3py_yaml phono3py_params_wurtzite_AgI.yaml.xz
 ```
 
+When using a hybrid polynomial MLP, multiple MLP files should be given for --pot option.
+```
+--pot polymlp.lammps*
+or
+--pot polymlp.lammps.1 polymlp.lammps.2
+```
+
 ## Polynomial structural features
 
 ```
