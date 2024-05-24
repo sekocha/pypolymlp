@@ -51,6 +51,12 @@ from pypolymlp.utils.phonopy_utils import phonopy_cell_to_st_dict
 st_dict = phonopy_cell_to_st_dict(cell_phonopy)
 ```
 
+- When using a hybrid polynomial MLP, multiple MLP files should be given as a list.
+```
+polymlps = ['polymlp.lammps.1', 'polymlp.lammps.2']
+prop = Properties(pot=polymlps)
+```
+
 ## Force constant calculations
 - Force constant calculations using phono3py.yaml.xz
 ```  
