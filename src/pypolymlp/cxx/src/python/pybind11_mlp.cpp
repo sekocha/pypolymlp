@@ -26,16 +26,7 @@ PYBIND11_MODULE(libmlpcpp, m) {
         .def("get_n_data", &PyModel::get_n_data, 
                 py::return_value_policy::reference_internal)
         ;
-/*
-    py::class_<PyModelSingleStruct>(m, "PotentialModelSingleStruct")
-        .def(py::init<const py::dict&,
-                      const vector2d&,
-                      const vector2d&,
-                      const vector1i&>())
-        .def("get_x", &PyModelSingleStruct::get_x, 
-                py::return_value_policy::reference_internal)
-        ;
-*/
+
     py::class_<PyAdditiveModel>(m, "PotentialAdditiveModel")
         .def(py::init<const std::vector<py::dict>&,
                       const vector3d&,
@@ -54,20 +45,6 @@ PYBIND11_MODULE(libmlpcpp, m) {
                 &PyAdditiveModel::get_cumulative_n_features, 
                 py::return_value_policy::reference_internal)
         .def("get_n_data", &PyAdditiveModel::get_n_data, 
-                py::return_value_policy::reference_internal)
-        ;
-
-    py::class_<PyProperties>(m, "PotentialProperties")
-        .def(py::init<const py::dict&,
-                      const vector1d&,
-                      const vector3d&,
-                      const vector3d&,
-                      const vector2i&>())
-        .def("get_e", &PyProperties::get_e, 
-                py::return_value_policy::reference_internal)
-        .def("get_f", &PyProperties::get_f, 
-                py::return_value_policy::reference_internal)
-        .def("get_s", &PyProperties::get_s, 
                 py::return_value_policy::reference_internal)
         ;
 
@@ -120,4 +97,29 @@ PYBIND11_MODULE(libmlpcpp, m) {
 
 }
 
+/*
+    py::class_<PyModelSingleStruct>(m, "PotentialModelSingleStruct")
+        .def(py::init<const py::dict&,
+                      const vector2d&,
+                      const vector2d&,
+                      const vector1i&>())
+        .def("get_x", &PyModelSingleStruct::get_x, 
+                py::return_value_policy::reference_internal)
+        ;
+*/
+/*
+    py::class_<PyProperties>(m, "PotentialProperties")
+        .def(py::init<const py::dict&,
+                      const vector1d&,
+                      const vector3d&,
+                      const vector3d&,
+                      const vector2i&>())
+        .def("get_e", &PyProperties::get_e, 
+                py::return_value_policy::reference_internal)
+        .def("get_f", &PyProperties::get_f, 
+                py::return_value_policy::reference_internal)
+        .def("get_s", &PyProperties::get_s, 
+                py::return_value_policy::reference_internal)
+        ;
+*/
 

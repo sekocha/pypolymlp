@@ -3,14 +3,10 @@ cmake_minimum_required(VERSION 3.13)
 project(polymlplib_cmake CXX)
 
 set(SRC_FILES
-    src/compute/local.cpp
-    src/compute/model.cpp
-    src/compute/model_properties.cpp
     src/compute/neighbor.cpp
     src/compute/neighbor_half.cpp
     src/compute/neighbor_cell.cpp
     src/compute/py_model.cpp
-    src/compute/py_properties.cpp
     src/compute/py_properties_fast.cpp
     src/compute/py_additive_model.cpp
     src/compute/py_features_attr.cpp

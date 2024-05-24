@@ -23,68 +23,79 @@ class LocalFast{
     vector1i type2_array, type_comb;
 
     void set_type_comb(const ModelParams& modelp);
-    void compute_linear_features(const vector1d& prod_anlmtc,
-                                 const FunctionFeatures& features,
-                                 vector1d& dn);
+    void compute_linear_features(
+        const vector1d& prod_anlmtc,
+        const FunctionFeatures& features,
+        vector1d& dn
+    );
 
-    void compute_linear_features_deriv(const vector1dc& prod_anlmtc_d,
-                                       const FunctionFeatures& features,
-                                       const vector2dc& anlmtc_dfx,
-                                       const vector2dc& anlmtc_dfy,
-                                       const vector2dc& anlmtc_dfz,
-                                       const vector2dc& anlmtc_ds,
-                                       vector2d& dn_dfx,
-                                       vector2d& dn_dfy,
-                                       vector2d& dn_dfz,
-                                       vector2d& dn_ds);
+    void compute_linear_features_deriv(
+        const vector1dc& prod_anlmtc_d,
+        const FunctionFeatures& features,
+        const vector2dc& anlmtc_dfx,
+        const vector2dc& anlmtc_dfy,
+        const vector2dc& anlmtc_dfz,
+        const vector2dc& anlmtc_ds,
+        vector2d& dn_dfx,
+        vector2d& dn_dfy,
+        vector2d& dn_dfz,
+        vector2d& dn_ds
+    );
 
-    void compute_anlm(const vector2d& dis_a, 
-                      const vector3d& diff_a, 
-                      const FunctionFeatures& features,
-                      vector1dc& anlm);
-    void compute_anlm_d(const vector2d& dis_a, 
-                        const vector3d& diff_a, 
-                        const vector2i& atom2_a, 
-                        const FunctionFeatures& features,
-                        vector1dc& anlm, 
-                        vector2dc& anlm_dfx, 
-                        vector2dc& anlm_dfy, 
-                        vector2dc& anlm_dfz, 
-                        vector2dc& anlm_ds);
+    void compute_anlm(
+        const vector2d& dis_a, 
+        const vector3d& diff_a, 
+        const FunctionFeatures& features,
+        vector1dc& anlm
+    );
+    void compute_anlm_d(
+        const vector2d& dis_a, 
+        const vector3d& diff_a, 
+        const vector2i& atom2_a, 
+        const FunctionFeatures& features,
+        vector1dc& anlm, 
+        vector2dc& anlm_dfx, 
+        vector2dc& anlm_dfy, 
+        vector2dc& anlm_dfz, 
+        vector2dc& anlm_ds
+    );
 
     public: 
 
     LocalFast();
-    LocalFast(const int& n_atom_i, 
-              const int& atom1_i, 
-              const int& type1_i,
-              const struct feature_params& fp_i,
-              const ModelParams& modelp);
+    LocalFast(
+        const int& n_atom_i, 
+        const int& atom1_i, 
+        const int& type1_i,
+        const struct feature_params& fp_i,
+        const ModelParams& modelp
+    );
     ~LocalFast();
 
     void pair(const vector2d& dis_a, vector1d& dn);
-    void pair_d(const vector2d& dis_a, 
-                const vector3d& diff_a, 
-                const vector2i& atom2_a,
-                vector1d& dn, 
-                vector2d& dn_dfx, 
-                vector2d& dn_dfy, 
-                vector2d& dn_dfz, 
-                vector2d& dn_ds);
+    void pair_d(
+        const vector2d& dis_a, const vector3d& diff_a, const vector2i& atom2_a,
+        vector1d& dn, vector2d& dn_dfx, vector2d& dn_dfy, 
+        vector2d& dn_dfz, vector2d& dn_ds
+    );
 
-    void gtinv(const vector2d& dis_a, 
-               const vector3d& diff_a,
-               const FunctionFeatures& features,
-               vector1d& dn);
-    void gtinv_d(const vector2d& dis_a, 
-                 const vector3d& diff_a, 
-                 const vector2i& atom2_a,
-                 const FunctionFeatures& features,
-                 vector1d& dn, 
-                 vector2d& dn_dfx, 
-                 vector2d& dn_dfy, 
-                 vector2d& dn_dfz, 
-                 vector2d& dn_ds);
+    void gtinv(
+        const vector2d& dis_a, 
+        const vector3d& diff_a,
+        const FunctionFeatures& features,
+        vector1d& dn
+    );
+    void gtinv_d(
+        const vector2d& dis_a, 
+        const vector3d& diff_a, 
+        const vector2i& atom2_a,
+        const FunctionFeatures& features,
+        vector1d& dn, 
+        vector2d& dn_dfx, 
+        vector2d& dn_dfy, 
+        vector2d& dn_dfz, 
+        vector2d& dn_ds
+    );
 };
 
 #endif

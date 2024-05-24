@@ -228,8 +228,7 @@ void FunctionFeatures::set_polynomials(const ModelParams& modelp){
     const auto& comb2 = modelp.get_comb2();
     const auto& comb3 = modelp.get_comb3();
 
-    int c1, c2, c3;
-    int begin;
+    int c1, c2, c3, begin;
     for (int type1 = 0; type1 < n_type; ++type1){
         int tlocal_id(0);
         std::unordered_map<int,int> map1;

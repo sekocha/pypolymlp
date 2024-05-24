@@ -29,23 +29,25 @@ LocalFast::~LocalFast(){}
 void LocalFast::set_type_comb(const ModelParams& modelp){
 
     // for gtinv
-    type_comb.resize(n_type);
-    for (int type2 = 0; type2 < n_type; ++type2){
-        for (size_t i = 0; i < modelp.get_type_comb_pair().size(); ++i){
-            const auto &tc = modelp.get_type_comb_pair()[i];
-            if (tc[type1].size() > 0 and tc[type1][0] == type2){
-                type_comb[type2] = i;
-                break;
+    if (fp.des_type == "gtinv"){
+        type_comb.resize(n_type);
+        for (int type2 = 0; type2 < n_type; ++type2){
+            for (size_t i = 0; i < modelp.get_type_comb_pair().size(); ++i){
+                const auto &tc = modelp.get_type_comb_pair()[i];
+                if (tc[type1].size() > 0 and tc[type1][0] == type2){
+                    type_comb[type2] = i;
+                    break;
+                }
             }
         }
     }
-
-    // for pair
-    size_pair = 0;
-    for (const auto& tc: modelp.get_type_comb_pair()){
-        if (tc[type1].size() > 0) {
-            size_pair += n_fn;
-            type2_array.emplace_back(tc[type1][0]);
+    else if (fp.des_type == "pair"){
+        size_pair = 0;
+        for (const auto& tc: modelp.get_type_comb_pair()){
+            if (tc[type1].size() > 0) {
+                size_pair += n_fn;
+                type2_array.emplace_back(tc[type1][0]);
+            }
         }
     }
 }

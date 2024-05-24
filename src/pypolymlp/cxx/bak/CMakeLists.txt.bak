@@ -1,0 +1,71 @@
+cmake_minimum_required(VERSION 3.13)
+
+project(polymlplib_cmake CXX)
+
+set(SRC_FILES
+    src/compute/local.cpp
+    src/compute/model.cpp
+    src/compute/model_properties.cpp
+    src/compute/neighbor.cpp
+    src/compute/neighbor_half.cpp
+    src/compute/py_model.cpp
+    src/compute/py_properties.cpp
+    src/compute/py_properties_efficient.cpp
+    src/compute/py_additive_model.cpp
+    src/compute/py_features_attr.cpp
+    src/compute/polymlp_eval.cpp
+    src/python/pybind11_mlp.cpp
+    src/polymlp/polymlp_read_gtinv.cpp
+    src/polymlp/polymlp_basis_function.cpp
+    src/polymlp/polymlp_functions_interface.cpp
+    src/polymlp/polymlp_model_params.cpp
+    src/polymlp/polymlp_mlipkk_spherical_harmonics.cpp
+    src/polymlp/polymlp_features.cpp
+    src/polymlp/polymlp_potential.cpp
+    src/polymlp/polymlp_gtinv_data.cpp
+)
+
+#SET(BUILD_MODE Debug)
+#SET(CMAKE_CXX_FLAGS "-Wall")
+#SET(CMAKE_CXX_FLAGS_DEBUG "-g")
+#SET(CMAKE_INTERPROCEDURAL_OPTIMIZATION FALSE)
+
+set(CMAKE_VERBOSE_MAKEFILE true)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_FLAGS "-O2 -Wno-deprecated -fopenmp")
+
+#set_source_files_properties(src/polymlp/polymlp_gtinv_data.cpp 
+#    PROPERTIES
+#    COMPILE_FLAGS "-O0"
+#)
+
+
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
+find_package(pybind11 REQUIRED)
+find_package(Eigen3 REQUIRED)
+message(STATUS ${EIGEN3_INCLUDE_DIR})
+
+set ( PYBIND11_PYTHON_VERSION 
+    3.9 3.10 3.11
+)
+
+#add_library(libmlpcpp SHARED ${SRC_FILES})
+pybind11_add_module(libmlpcpp ${SRC_FILES})
+
+
+target_include_directories(libmlpcpp
+  PUBLIC ${CMAKE_SOURCE_DIR}/src
+  PUBLIC ${pybind11_INCLUDE_DIRS}
+  PUBLIC ${EIGEN3_INCLUDE_DIR}
+  )
+target_link_libraries(libmlpcpp PUBLIC -lgomp)
+
+
+install( TARGETS libmlpcpp 
+    COMPONENT python
+    LIBRARY DESTINATION ${CMAKE_SOURCE_DIR}/lib
+)
+

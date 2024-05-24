@@ -8,11 +8,29 @@
 #ifndef __POLYMLP_MODEL_PARAMS
 #define __POLYMLP_MODEL_PARAMS
 
-#include <set>
-#include <iterator>
-#include <algorithm>
-
 #include "polymlp_mlpcpp.h"
+
+
+template < typename SEQUENCE >
+void Permutenr
+(const SEQUENCE& input, SEQUENCE output, 
+ std::vector<SEQUENCE>& all, std::size_t r){
+    if( output.size() == r ) all.emplace_back(output); 
+    else {
+        for( std::size_t i=0; i < input.size(); ++i ) {
+            SEQUENCE temp_output = output;
+            temp_output.push_back(input[i]);
+            Permutenr(input, temp_output, all, r);
+        }
+    }
+}
+
+struct LinearTermGtinv {
+    int lmindex;
+    vector1i tcomb_index;
+    vector1i type1;
+};
+
 
 class ModelParams{
 
@@ -66,26 +84,6 @@ class ModelParams{
     vector1i get_type_comb_pair(const vector1i& tc_index, 
                                 const int& type1);
 
-};
-
-template < typename SEQUENCE >
-void Permutenr
-(const SEQUENCE& input, SEQUENCE output, 
- std::vector<SEQUENCE>& all, std::size_t r){
-    if( output.size() == r ) all.emplace_back(output); 
-    else {
-        for( std::size_t i=0; i < input.size(); ++i ) {
-            SEQUENCE temp_output = output;
-            temp_output.push_back(input[i]);
-            Permutenr(input, temp_output, all, r);
-        }
-    }
-}
-
-struct LinearTermGtinv {
-    int lmindex;
-    vector1i tcomb_index;
-    vector1i type1;
 };
 
 #endif

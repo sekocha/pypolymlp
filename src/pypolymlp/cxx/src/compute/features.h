@@ -11,7 +11,6 @@
 #include "mlpcpp.h"
 #include "polymlp/polymlp_model_params.h"
 #include "polymlp/polymlp_features.h"
-#include "polymlp/polymlp_potential.h" // used for HashVI
 
 
 struct FeatureSingleTerm {
@@ -33,9 +32,9 @@ struct PolynomialTerm {
 
 typedef std::vector<std::vector<FeatureSingleTerm> > FeatureVector;
 typedef std::vector<std::vector<FeatureSingleTermDeriv> > FeatureVectorDeriv;
+typedef std::vector<PolynomialTerm> Polynomial;
 typedef std::unordered_map<vector1i,int,HashVI> ProdMapFromKeys;
 
-typedef std::vector<PolynomialTerm> Polynomial;
 
 class FunctionFeatures {
 
@@ -52,9 +51,11 @@ class FunctionFeatures {
     std::vector<Polynomial> polynomials1, polynomials2, polynomials3;
 
     vector1i erase_a_key(const vector1i& original, const int idx);
-    void nonequiv_set_to_mappings(const std::set<vector1i>& nonequiv_keys,
-                                  ProdMapFromKeys& map_from_keys,
-                                  vector2i& map);
+    void nonequiv_set_to_mappings(
+        const std::set<vector1i>& nonequiv_keys,
+        ProdMapFromKeys& map_from_keys,
+        vector2i& map
+    );
 
     void set_mapping_prod(const Features& f_obj);
     void set_features_using_mappings(const Features& f_obj);

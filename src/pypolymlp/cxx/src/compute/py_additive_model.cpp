@@ -87,15 +87,6 @@ PyAdditiveModel::PyAdditiveModel(const std::vector<py::dict>& params_dict_array,
 
         Neighbor neigh(axis[0], positions_c[0], types_mod, 
                        fp.n_type, fp.cutoff);
-        /*
-        Model mod(neigh.get_dis_array(), 
-                  neigh.get_diff_array(),
-                  neigh.get_atom2_array(), 
-                  types_mod, 
-                  fp, 
-                  element_swap);
-        */
-        // added for local_fast and model_fast
         ModelFast mod(neigh.get_dis_array(), 
                       neigh.get_diff_array(),
                       neigh.get_atom2_array(), 
@@ -141,14 +132,6 @@ PyAdditiveModel::PyAdditiveModel(const std::vector<py::dict>& params_dict_array,
                            types_mod, 
                            fp1.n_type, 
                            fp1.cutoff);
-            /*               
-            Model mod(neigh.get_dis_array(), 
-                      neigh.get_diff_array(),
-                      neigh.get_atom2_array(), 
-                      types_mod, 
-                      fp1, 
-                      element_swap);
-            */
             ModelFast mod(neigh.get_dis_array(), 
                           neigh.get_diff_array(),
                           neigh.get_atom2_array(), 
