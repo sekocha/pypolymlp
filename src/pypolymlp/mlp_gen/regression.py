@@ -23,32 +23,60 @@ class Regression:
         """
         return self.best_model
 
-    def test_random_projection(self, iprint=True, k=1200):
+    def test_pca_projection(self, iprint=True, k=8000):
+
+        from sklearn.decomposition import PCA
 
         alphas = [pow(10, a) for a in self.params_dict['reg']['alpha']]
 
-        #element_list = [1, -1, 0]
-        #prob_list = [1/6, 1/6, 2/3]
-        #element_list = [1, -1]
-        #prob_list = [1/2, 1/2]
+        n_data = self.vtrain['x'].shape[0]
+        n_samples = min(2*k, n_data)
+        samples = np.random.choice(range(n_data), size=n_samples, replace=False)
+        
+        print('Running PCA')
+        pca = PCA(n_components=k).fit(self.vtrain['x'][samples])
+        X = self.vtrain['x'] @ pca.components_.T
+        print('Finished.')
+
+        coefs_array = self.__ridge_fit(X=X, 
+                                       y=self.vtrain['y'], 
+                                       alphas=alphas)
+        coefs_array = pca.components_.T @ coefs_array
+
+        best_model = self.__ridge_model_selection(alphas, 
+                                                  coefs_array,
+                                                  iprint=iprint)
+
+        return best_model['coeffs'], self.scales
+
+
+    def test_random_projection(self, iprint=True, k=3000):
 
         n_features = self.vtrain['x'].shape[1]
-        #random_proj = np.random.choice(
-        #    a=element_list, size=(n_features, k), p=prob_list
-        #)
+        alphas = [pow(10, a) for a in self.params_dict['reg']['alpha']]
+
+#        #element_list = [1, -1, 0]
+#        #prob_list = [1/6, 1/6, 2/3]
+#        element_list = [1, -1]
+#        prob_list = [1/2, 1/2]
+#
+#        random_proj = np.random.choice(
+#            a=element_list, size=(n_features, k), p=prob_list
+#        )
+
         nonzero = np.random.choice(range(n_features), size=k, replace=False)
         random_proj = np.zeros((n_features, k))
         for i, row in enumerate(nonzero):
             random_proj[row][i] = 1
 
-        #random_proj = np.random.uniform(-1.0, 1.0, (n_features, k))
+#        random_proj = np.random.uniform(-1.0, 1.0, (n_features, k))
+#        random_proj = random_proj / np.linalg.norm(random_proj, axis=0)
         '''More efficient algorithm can be applied.'''
         X = self.vtrain['x'] @ random_proj
 
         coefs_array = self.__ridge_fit(X=X, 
                                        y=self.vtrain['y'], 
                                        alphas=alphas)
-        print(coefs_array.shape)
 
         '''Reconstruct coefs using random_proj, random_proj @ coefs_array'''
         coefs_array = random_proj @ coefs_array
