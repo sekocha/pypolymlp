@@ -1,15 +1,6 @@
 #!/usr/bin/env python
 import numpy as np
 
-def apply_atomic_energy(dft_dict, params_dict):
-
-    energy = dft_dict['energy']
-    structures = dft_dict['structures']
-    atom_e = params_dict['atomic_energy']
-    coh_energy = [e - np.dot(st['n_atoms'], atom_e) 
-                 for e, st in zip(energy, structures)]
-    dft_dict['energy'] = np.array(coh_energy)
-    return dft_dict
 
 def __set_weight_energy_data(energy, total_n_atoms, min_e=None):
 
@@ -25,12 +16,14 @@ def __set_weight_energy_data(energy, total_n_atoms, min_e=None):
     weight_e[e_per_atom > 0.0] = 0.1
     return weight_e
 
+
 def __set_weight_force_data(force):
 
     log1 = np.log10(np.abs(force))
     w1 = np.array([pow(10, -v) for v in log1])
     weight_f = np.minimum(w1, np.ones(len(w1)))
     return weight_f
+
 
 def __set_weight_stress_data(stress, weight_stress):
 
@@ -39,12 +32,11 @@ def __set_weight_stress_data(stress, weight_stress):
     weight_s = np.minimum(w1, np.ones(len(w1))) * weight_stress
     return weight_s
 
-def apply_weight_percentage(x, y, w, 
-                            dft_dict, 
-                            params_dict, 
-                            first_indices, 
-                            weight_stress=0.1,
-                            min_e=None):
+
+def apply_weight_percentage(
+    x, y, w, dft_dict, params_dict, first_indices, 
+    weight_stress=0.1, min_e=None
+):
     
     if 'include_force' in dft_dict:
         include_force = dft_dict['include_force']
@@ -109,71 +101,4 @@ def apply_weight_percentage(x, y, w,
             w[sbegin:send] = 0.0
     return x, y, w
 
-
-class Precondition:
-
-    def __init__(
-        self, reg_dict, dft_dict, params_dict,
-        scales=None, weight_stress=0.1
-    ): 
-
-        self.__reg_dict = reg_dict
-        self.dft_dict = dft_dict
-        self.params_dict = params_dict
-
-        self.x = reg_dict['x']
-        self.first_indices = reg_dict['first_indices'][0] # single dataset
-        self.ne, self.nf, self.ns = reg_dict['n_data']
-        n_data, n_features = self.x.shape
-
-        self.y = np.zeros(n_data)
-        self.w = np.ones(n_data)
-        self.__scales = scales
-
-        self.__apply_scales(scales=self.__scales)
-        self.__apply_weight(weight_stress=weight_stress)
-
-        self.__reg_dict['x'] = self.x
-        self.__reg_dict['y'] = self.y
-        self.__reg_dict['weight'] = self.w
-        self.__reg_dict['scales'] = self.__scales
-
-    def __apply_scales(self, scales=None):
-
-        if scales is not None:
-            self.__scales = scales
-        else:
-            self.__scales = np.std(self.x[:self.ne], axis=0)
-
-        self.x /= self.__scales
-        ''' correctly-working numba version 
-            numba_support.mat_prod_vec(self.x, np.reciprocal(self.scales), 
-                                       axis=1)
-        '''
-
-    def __apply_weight(self, weight_stress=0.1):
-
-        res = apply_weight_percentage(self.x, 
-                                      self.y, 
-                                      self.w, 
-                                      self.dft_dict, 
-                                      self.params_dict,
-                                      self.first_indices, 
-                                      weight_stress=weight_stress)
-        self.x, self.y, self.w = res
-
-    def print_data_shape(self, header='training data size'):
-
-        print('  ' + header + ':', self.x.shape)
-        print('   - n (energy) =', self.ne)
-        print('   - n (force)  =', self.nf)
-        print('   - n (stress) =', self.ns)
-
-    @property
-    def scales(self):
-        return self.__scales
-
-    @property
-    def regression_dict(self):
-        return self.__reg_dict
 

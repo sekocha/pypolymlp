@@ -2,6 +2,7 @@
 import numpy as np
 from pypolymlp.cxx.lib import libmlpcpp
 
+
 def multiple_dft_dicts_to_mlpcpp_obj(multiple_dft_dicts):
 
     n_st_dataset, force_dataset = [], []
@@ -44,13 +45,13 @@ class Features:
     ):  
 
         if 'structures' in dft_dict:
-            structures = dft_dict['structure']
+            structures = dft_dict['structures']
             n_st_dataset = [len(structures)]
             force_dataset = [params_dict['include_force']]
-            (axis_array, 
-             positions_c_array, 
-             types_array, 
-             self.n_atoms_sum_array) = structures_to_mlpcpp_obj(structures)
+            (
+                axis_array, positions_c_array, 
+                types_array, self.n_atoms_sum_array
+            ) = structures_to_mlpcpp_obj(structures)
         else:
             res = multiple_dft_dicts_to_mlpcpp_obj(dft_dict)
             (axis_array, positions_c_array, types_array,
@@ -68,21 +69,20 @@ class Features:
             self.n_atoms_sum_array
         )
         self.__x = obj.get_x()
-        self.fbegin, self.sbegin = obj.get_fbegin(), obj.get_sbegin()
-        self.ne, self.nf, self.ns = obj.get_n_data()
+        fbegin, sbegin = obj.get_fbegin(), obj.get_sbegin()
+        ne, nf, ns = obj.get_n_data()
 
-        self.ebegin, ei = [], 0
+        ebegin, ei = [], 0
         for n in n_st_dataset:
-            self.ebegin.append(ei)
+            ebegin.append(ei)
             ei += n
-        self.ebegin = np.array(self.ebegin)
+        ebegin = np.array(ebegin)
 
-        self.__reg_dict = dict()
-        self.__reg_dict['x'] = self.__x
-        self.__reg_dict['first_indices'] = list(
-            zip(self.ebegin, self.fbegin, self.sbegin)
-        )
-        self.__reg_dict['n_data'] = (self.ne, self.nf, self.ns)
+        self.__reg_dict = {
+            'x': self.__x,
+            'first_indices': list(zip(ebegin, fbegin, sbegin)),
+            'n_data': (ne, nf, ns),
+        }
 
     @property
     def regression_dict(self):
@@ -100,6 +100,80 @@ class Features:
     def n_data(self):
         return self.__reg_dict['n_data']
 
-    def get_n_atoms_sums(self):
-        return self.n_atoms_sum_array
+#    def get_n_atoms_sums(self):
+#        return self.n_atoms_sum_array
 
+
+class FeaturesHybrid:
+
+    def __init__(
+        self,
+        hybrid_params_dicts,
+        dft_dicts, 
+        print_memory=True,
+        element_swap=False
+    ):  
+        if 'structures' in dft_dicts:
+            structures = dft_dicts['structures']
+            n_st_dataset = [len(structures)]
+            force_dataset = [params_dict['include_force']]
+            (
+                axis_array, positions_c_array, 
+                types_array, self.n_atoms_sum_array
+            ) = structures_to_mlpcpp_obj(structures)
+        else:
+            res = multiple_dft_dicts_to_mlpcpp_obj(dft_dicts)
+            (axis_array, positions_c_array, types_array,
+             n_atoms_sum_array, n_st_dataset, force_dataset) = res
+
+        for params_dict in hybrid_params_dicts:
+            params_dict['element_swap'] = element_swap
+            params_dict['print_memory'] = print_memory
+
+        obj = libmlpcpp.PotentialAdditiveModel(
+            hybrid_params_dicts,
+            axis_array, 
+            positions_c_array, 
+            types_array, 
+            n_st_dataset, 
+            force_dataset, 
+            n_atoms_sum_array
+        )
+ 
+        self.__x = obj.get_x()
+        fbegin, sbegin = obj.get_fbegin(), obj.get_sbegin()
+        cumulative_n_features = obj.get_cumulative_n_features()
+        ne, nf, ns = obj.get_n_data()
+
+        ebegin, ei = [], 0
+        for n in n_st_dataset:
+            ebegin.append(ei)
+            ei += n
+        ebegin = np.array(ebegin)
+
+        self.__reg_dict = {
+            'x': self.__x,
+            'first_indices': list(zip(ebegin, fbegin, sbegin)),
+            'n_data': (ne, nf, ns),
+            'cumulative_n_features': cumulative_n_features,
+        }
+
+    @property
+    def regression_dict(self):
+        return self.__reg_dict
+
+    @property
+    def x(self):
+        return self.__x
+
+    @property
+    def first_indices(self):
+        return self.__reg_dict['first_indices']
+
+    @property
+    def n_data(self):
+        return self.__reg_dict['n_data']
+
+    @property
+    def cumulative_n_features(self):
+        return self.__reg_dict['cumulative_n_features']

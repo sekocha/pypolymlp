@@ -4,110 +4,56 @@ from math import sqrt
 from scipy.linalg.lapack import get_lapack_funcs
 
 from pypolymlp.core.utils import rmse
+from pypolymlp.core.io_polymlp import (
+    save_mlp_lammps, save_multiple_mlp_lammps
+)
+from pypolymlp.mlp_dev.mlpdev_data import PolymlpDev
+
 
 class Regression:
 
-    def __init__(self, train_reg_dict, test_reg_dict, params_dict):
+    def __init__(self, polymlp_dev: PolymlpDev):
 
-        self.params_dict = params_dict
-        self.vtrain = train_reg_dict
-        self.vtest = test_reg_dict
+        self.__params_dict = polymlp_dev.params_dict
+        self.__common_params_dict = polymlp_dev.common_params_dict
+        self.__hybrid = polymlp_dev.is_hybrid
 
-        self.best_model = dict()
-        self.best_model['scales'] = self.scales = train_reg_dict['scales']
+        self.__multiple_datasets = polymlp_dev.is_multiple_datasets
 
-    def get_best_model(self):
-        """
-        best_model:
-            keys: coeffs, rmse, alpha, predictions (train, test)
-        """
-        return self.best_model
+        self.__vtrain = polymlp_dev.train_regression_dict
+        self.__vtest = polymlp_dev.test_regression_dict
+        self.__train_dict = polymlp_dev.train_dict
+        self.__test_dict = polymlp_dev.test_dict
 
-    def test_pca_projection(self, iprint=True, k=8000):
-
-        from sklearn.decomposition import PCA
-
-        alphas = [pow(10, a) for a in self.params_dict['reg']['alpha']]
-
-        n_data = self.vtrain['x'].shape[0]
-        n_samples = min(2*k, n_data)
-        samples = np.random.choice(range(n_data), size=n_samples, replace=False)
-        
-        print('Running PCA')
-        pca = PCA(n_components=k).fit(self.vtrain['x'][samples])
-        X = self.vtrain['x'] @ pca.components_.T
-        print('Finished.')
-
-        coefs_array = self.__ridge_fit(X=X, 
-                                       y=self.vtrain['y'], 
-                                       alphas=alphas)
-        coefs_array = pca.components_.T @ coefs_array
-
-        best_model = self.__ridge_model_selection(alphas, 
-                                                  coefs_array,
-                                                  iprint=iprint)
-
-        return best_model['coeffs'], self.scales
-
-
-    def test_random_projection(self, iprint=True, k=3000):
-
-        n_features = self.vtrain['x'].shape[1]
-        alphas = [pow(10, a) for a in self.params_dict['reg']['alpha']]
-
-#        #element_list = [1, -1, 0]
-#        #prob_list = [1/6, 1/6, 2/3]
-#        element_list = [1, -1]
-#        prob_list = [1/2, 1/2]
-#
-#        random_proj = np.random.choice(
-#            a=element_list, size=(n_features, k), p=prob_list
-#        )
-
-        nonzero = np.random.choice(range(n_features), size=k, replace=False)
-        random_proj = np.zeros((n_features, k))
-        for i, row in enumerate(nonzero):
-            random_proj[row][i] = 1
-
-#        random_proj = np.random.uniform(-1.0, 1.0, (n_features, k))
-#        random_proj = random_proj / np.linalg.norm(random_proj, axis=0)
-        '''More efficient algorithm can be applied.'''
-        X = self.vtrain['x'] @ random_proj
-
-        coefs_array = self.__ridge_fit(X=X, 
-                                       y=self.vtrain['y'], 
-                                       alphas=alphas)
-
-        '''Reconstruct coefs using random_proj, random_proj @ coefs_array'''
-        coefs_array = random_proj @ coefs_array
-        best_model = self.__ridge_model_selection(alphas, 
-                                                  coefs_array,
-                                                  iprint=iprint)
-
-        return best_model['coeffs'], self.scales
+        self.__best_model = dict()
+        self.__best_model['scales'] = self.__scales = self.__vtrain['scales']
+        self.__coeffs = None
 
     def ridge(self, iprint=True):
 
-        alphas = [pow(10, a) for a in self.params_dict['reg']['alpha']]
-        coefs_array = self.__ridge_fit(X=self.vtrain['x'], 
-                                       y=self.vtrain['y'], 
-                                       alphas=alphas)
-        best_model = self.__ridge_model_selection(alphas, 
-                                                  coefs_array,
-                                                  iprint=iprint)
+        alphas = [pow(10, a) for a in self.__common_params_dict['reg']['alpha']]
+        coefs_array = self.__ridge_fit(
+            X=self.__vtrain['x'], y=self.__vtrain['y'], alphas=alphas
+        )
+        self.__best_model = self.__ridge_model_selection(
+            alphas, coefs_array, iprint=iprint
+        )
+        self.__coeffs = self.__best_model['coeffs']
 
-        return best_model['coeffs'], self.scales
+        return self
 
     def ridge_seq(self, iprint=True):
 
-        alphas = [pow(10, a) for a in self.params_dict['reg']['alpha']]
-        coefs_array = self.__ridge_fit(A=self.vtrain['xtx'],
-                                       Xy=self.vtrain['xty'],
-                                       alphas=alphas)
-        best_model = self.__ridge_model_selection_seq(alphas, 
-                                                      coefs_array,
-                                                      iprint=iprint)
-        return best_model['coeffs'], self.scales
+        alphas = [pow(10, a) for a in self.__common_params_dict['reg']['alpha']]
+        coefs_array = self.__ridge_fit(
+            A=self.__vtrain['xtx'], Xy=self.__vtrain['xty'], alphas=alphas
+        )
+        self.__best_model = self.__ridge_model_selection_seq(
+            alphas, coefs_array, iprint=iprint
+        )
+        self.__coeffs = self.__best_model['coeffs']
+
+        return self
 
     def __ridge_fit(self, X=None, y=None, A=None, Xy=None, alphas=[1e-3,1e-1]):
 
@@ -145,19 +91,20 @@ class Regression:
 
     def __ridge_model_selection(self, alpha_array, coefs_array, iprint=True):
 
-        pred_train_array = np.dot(self.vtrain['x'], coefs_array).T
-        pred_test_array = np.dot(self.vtest['x'], coefs_array).T
-        rmse_train_array = [rmse(self.vtrain['y'], p) 
-                            for p in pred_train_array]
-        rmse_test_array = [rmse(self.vtest['y'], p) for p in pred_test_array]
+        pred_train_array = np.dot(self.__vtrain['x'], coefs_array).T
+        pred_test_array = np.dot(self.__vtest['x'], coefs_array).T
+        rmse_train_array = [
+            rmse(self.__vtrain['y'], p) for p in pred_train_array
+        ]
+        rmse_test_array = [rmse(self.__vtest['y'], p) for p in pred_test_array]
 
         idx = np.argmin(rmse_test_array)
-        self.best_model['rmse'] = rmse_test_array[idx]
-        self.best_model['coeffs'] = coefs_array[:,idx]
-        self.best_model['alpha'] = alpha_array[idx]
-        self.best_model['predictions'] = dict()
-        self.best_model['predictions']['train'] = pred_train_array[idx]
-        self.best_model['predictions']['test'] = pred_test_array[idx]
+        self.__best_model['rmse'] = rmse_test_array[idx]
+        self.__best_model['coeffs'] = coefs_array[:,idx]
+        self.__best_model['alpha'] = alpha_array[idx]
+        self.__best_model['predictions'] = dict()
+        self.__best_model['predictions']['train'] = pred_train_array[idx]
+        self.__best_model['predictions']['test'] = pred_test_array[idx]
  
         if iprint == True:
             print('  regression: model selection ...')
@@ -168,7 +115,7 @@ class Regression:
                       ': rmse (train, test) =', 
                       '{:f}'.format(rmse1), '{:f}'.format(rmse2))
 
-        return self.best_model
+        return self.__best_model
 
     def __ridge_model_selection_seq(self, 
                                     alpha_array, 
@@ -178,23 +125,23 @@ class Regression:
         # computing rmse using xtx, xty and y_sq
         rmse_train_array, rmse_test_array = [], []
         for coefs in coefs_array.T:
-            mse_train = self.__compute_mse(self.vtrain['xtx'],
-                                           self.vtrain['xty'],
-                                           self.vtrain['y_sq_norm'],
-                                           self.vtrain['total_n_data'],
-                                           coefs)
-            mse_test = self.__compute_mse(self.vtest['xtx'],
-                                          self.vtest['xty'],
-                                          self.vtest['y_sq_norm'],
-                                          self.vtest['total_n_data'],
-                                          coefs)
+            mse_train = self.__compute_mse(
+                self.__vtrain['xtx'], self.__vtrain['xty'],
+                self.__vtrain['y_sq_norm'], self.__vtrain['total_n_data'],
+                coefs
+            )
+            mse_test = self.__compute_mse(
+                self.__vtest['xtx'], self.__vtest['xty'],
+                self.__vtest['y_sq_norm'], self.__vtest['total_n_data'],
+                coefs
+            )
             rmse_train_array.append(sqrt(mse_train))
             rmse_test_array.append(sqrt(mse_test))
 
         idx = np.argmin(rmse_test_array)
-        self.best_model['rmse'] = rmse_test_array[idx]
-        self.best_model['coeffs'] = coefs_array[:,idx]
-        self.best_model['alpha'] = alpha_array[idx]
+        self.__best_model['rmse'] = rmse_test_array[idx]
+        self.__best_model['coeffs'] = coefs_array[:,idx]
+        self.__best_model['alpha'] = alpha_array[idx]
   
         if iprint == True:
             print('  regression: model selection ...')
@@ -205,40 +152,85 @@ class Regression:
                       ': rmse (train, test) =', 
                       '{:f}'.format(rmse1), '{:f}'.format(rmse2))
 
-        return self.best_model
+        return self.__best_model
 
     def __compute_mse(self, xtx, xty, y_sq_norm, size, coefs):
+
         v1 = np.dot(coefs, np.dot(xtx, coefs))
         v2 = - 2 * np.dot(coefs, xty)
         return (v1 + v2 + y_sq_norm) / size
 
-    def lasso(self, iprint=True):
+    def save_mlp_lammps(self, filename='polymlp.lammps'):
 
-        from sklearn.linear_model import LassoLars
-        alphas = [pow(10, a) for a in self.params_dict['reg']['alpha']]
+        if self.__hybrid == False:
+            save_mlp_lammps(
+                self.__params_dict, 
+                self.__coeffs, 
+                self.__scales, 
+                filename=filename
+            )
+        else:
+            save_multiple_mlp_lammps(
+                self.__params_dict,
+                self.__vtrain['cumulative_n_features'],
+                self.__coeffs,
+                self.__scales,
+            )
+        return self
 
-        best_rmse = 1e10
-        for alpha in alphas:
-            reg = LassoLars(alpha=alpha, fit_intercept=False)
-            reg.fit(self.vtrain['x'], self.vtrain['y'])
-            coeffs = reg.coef_
-            pred_train = np.dot(self.vtrain['x'], coeffs)
-            pred_test = np.dot(self.vtest['x'], coeffs)
-            rmse_train = rmse(self.vtrain['y'], pred_train)
-            rmse_test = rmse(self.vtest['y'], pred_test)
-            if rmse_test < best_rmse:
-                self.best_model['rmse'] = rmse_test
-                self.best_model['coeffs'] = coeffs
-                self.best_model['alpha'] = alpha
-                self.best_model['predictions'] = dict()
-                self.best_model['predictions']['train'] = pred_train
-                self.best_model['predictions']['test'] = pred_test
- 
-            if iprint == True:
-                print('  - alpha =', '{:f}'.format(a), 
-                      ': rmse (train, test) =', 
-                      '{:f}'.format(rmse_train), '{:f}'.format(rmse_test))
+    def hybrid_division(self, target):
 
-        return best_model['coeffs'], self.scales
+        cumulative = self.__vtrain['cumulative_n_features']
+        list_target = []
+        for i, params_dict in enumerate(self.__params_dict):
+            if i == 0:
+                begin, end = 0, cumulative[0]
+            else:
+                begin, end = cumulative[i-1], cumulative[i]
+            list_target.append(target[begin:end])
+        return list_target
+
+    @property
+    def best_model(self):
+        """
+        Keys
+        ----
+        coeffs, scales, rmse, alpha, predictions (train, test)
+        """
+        self.__best_model['coeffs'] = self.coeffs
+        self.__best_model['scales'] = self.scales
+        return self.__best_model
+
+    @property
+    def coeffs(self):
+        if self.__hybrid:
+            return self.hybrid_division(self.__coeffs)
+        return self.__coeffs
+
+    @property
+    def scales(self):
+        if self.__hybrid:
+            return self.hybrid_division(self.__scales)
+        return self.__scales
+
+    @property
+    def params_dict(self):
+        return self.__params_dict
+
+    @property
+    def train_dict(self):
+        return self.__train_dict
+
+    @property
+    def test_dict(self):
+        return self.__test_dict
+
+    @property
+    def is_multiple_datasets(self):
+        return self.__multiple_datasets
+
+    @property
+    def is_hybrid(self):
+        return self.__hybrid
 
 

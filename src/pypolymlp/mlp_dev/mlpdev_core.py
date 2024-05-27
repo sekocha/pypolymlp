@@ -1,5 +1,6 @@
 #!/usr/bin/env python 
 import numpy as np
+import copy
 
 from pypolymlp.core.parser_polymlp_params import ParamsParser
 from pypolymlp.core.interface_vasp import parse_vaspruns
@@ -103,20 +104,37 @@ class PolymlpDevParams:
         self.__train_dict = None
         self.__test_dict = None
 
-    def parse_infile(self, infile):
+        self.__multiple_datasets = False
+        self.__hybrid = False
 
-        p = ParamsParser(infile)
-        self.__params_dict = p.get_params()
+    def parse_infiles(self, infiles, verbose=True):
+
+        if isinstance(infiles, list) == False: 
+            p = ParamsParser(infiles, multiple_datasets=True)
+            self.__params_dict = p.get_params()
+            priority_infile = infiles
+        else:
+            priority_infile = infiles[0]
+            if len(infiles) == 1:
+                p = ParamsParser(priority_infile, multiple_datasets=True)
+                self.__params_dict = p.get_params()
+            else:
+                self.__hybrid_params_dicts = [
+                    ParamsParser(infile, multiple_datasets=True).get_params() 
+                    for infile in infiles
+                ]
+                self.__params_dict = set_common_params_dict(
+                    self.__hybrid_params_dicts
+                )
+                self.__hybrid = True
+
+        if verbose:
+            self.print_params(infile=priority_infile)
+
         return self
 
-    def parse_hybrid_infiles(self, infiles):
-
-        self.__hybrid_params_dicts = [
-            ParamsParser(infile, multiple_datasets=True).get_params() 
-            for infile in infiles
-        ]
-        self.__params_dict = set_common_params_dict(params)
-        return self
+    def parse_datasets(self):
+        self.parse_multiple_datasets()
 
     def parse_single_dataset(self):
 
@@ -183,6 +201,8 @@ class PolymlpDevParams:
         for _, dft_dict in self.__test_dict.items():
             dft_dict = self.__apply_atomic_energy(dft_dict)
 
+        self.__multiple_datasets = True
+
         return self
 
     def __apply_atomic_energy(self, dft_dict):
@@ -195,13 +215,40 @@ class PolymlpDevParams:
         dft_dict['energy'] = np.array(coh_energy)
         return dft_dict
 
+    def print_params(self, infile=None):
+
+        if infile is not None:
+            print('priority_input:', infile)
+
+        params_dict = self.common_params_dict
+        print('parameters:')
+        print('  n_types:       ', params_dict['n_type'])
+        print('  elements:      ', params_dict['elements'])
+        print('  element_order: ', params_dict['element_order'])
+        print('  atomic_energy: ', params_dict['atomic_energy'])
+        print('  include_force: ', bool(params_dict['include_force']))
+        print('  include_stress:', bool(params_dict['include_stress']))
+
+        print('  train_data:')
+        for v in params_dict['dft']['train']:
+            print('  -', v)
+        print('  test_data:')
+        for v in params_dict['dft']['test']:
+            print('  -', v)
+
     @property
     def params_dict(self):
+        if self.__hybrid:
+            return self.__hybrid_params_dicts
         return self.__params_dict
 
     @params_dict.setter
     def params_dict(self, params):
         self.__params_dict = params
+
+    @property
+    def common_params_dict(self):
+        return self.__params_dict
 
     @property
     def hybrid_params_dicts(self):
@@ -211,6 +258,7 @@ class PolymlpDevParams:
     def hybrid_params_dicts(self, params):
         self.__hybrid_params_dicts = params
         self.__params_dict = set_common_params_dict(params)
+        self.__hybrid = True
 
     @property
     def train_dict(self):
@@ -221,13 +269,28 @@ class PolymlpDevParams:
         return self.__test_dict
 
     @property
+    def is_multiple_datasets(self):
+        return self.__multiple_datasets
+
+    @property
+    def is_hybrid(self):
+        return self.__hybrid
+
+    @property
     def min_energy(self):
-        min_e = 1e10
-        for dft_dict in self.__train_dict.values():
+
+        if self.__multiple_datasets:
+            min_e = 1e10
+            for dft_dict in self.__train_dict.values():
+                e_per_atom = dft_dict['energy'] / dft_dict['total_n_atoms']
+                min_e_trial = np.min(e_per_atom)
+                if min_e_trial < min_e:
+                    min_e = min_e_trial
+        else:
+            dft_dict = self.__train_dict
             e_per_atom = dft_dict['energy'] / dft_dict['total_n_atoms']
-            min_e_trial = np.min(e_per_atom)
-            if min_e_trial < min_e:
-                min_e = min_e_trial
+            min_e = np.min(e_per_atom)
+ 
         return min_e
 
 

@@ -6,7 +6,7 @@ import argparse
 from collections import defaultdict
 
 from pypolymlp.cxx.lib import libmlpcpp
-from pypolymlp.core.parser_polymlp_params import ParamsParser
+
 
 def get_features_attr(params_dict, element_swap=False):
 
@@ -30,6 +30,7 @@ def get_features_attr(params_dict, element_swap=False):
         features_attr = list(zip(radial_ids, gtinv_ids, tcomb_ids))
 
     return features_attr, polynomial_attr, atomtype_pair_dict
+
 
 def write_polymlp_params_yaml(params_dict,
                               filename='polymlp_params.yaml'):
@@ -94,6 +95,8 @@ def write_polymlp_params_yaml(params_dict,
 
  
 if __name__ == '__main__':
+
+    from pypolymlp.core.parser_polymlp_params import ParamsParser
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-i', '--infile', 
