@@ -32,8 +32,7 @@ def get_features_attr(params_dict, element_swap=False):
     return features_attr, polynomial_attr, atomtype_pair_dict
 
 
-def write_polymlp_params_yaml(params_dict,
-                              filename='polymlp_params.yaml'):
+def write_polymlp_params_yaml(params_dict, filename='polymlp_params.yaml'):
 
     f = open(filename, 'w')
 

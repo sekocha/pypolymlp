@@ -50,12 +50,12 @@ class Features:
             force_dataset = [params_dict['include_force']]
             (
                 axis_array, positions_c_array, 
-                types_array, self.n_atoms_sum_array
+                types_array, n_atoms_sum_array
             ) = structures_to_mlpcpp_obj(structures)
         else:
             res = multiple_dft_dicts_to_mlpcpp_obj(dft_dict)
             (axis_array, positions_c_array, types_array,
-            self.n_atoms_sum_array, n_st_dataset, force_dataset) = res
+             n_atoms_sum_array, n_st_dataset, force_dataset) = res
 
         params_dict['element_swap'] = element_swap
         params_dict['print_memory'] = print_memory
@@ -66,7 +66,7 @@ class Features:
             types_array, 
             n_st_dataset, 
             force_dataset, 
-            self.n_atoms_sum_array
+            n_atoms_sum_array
         )
         self.__x = obj.get_x()
         fbegin, sbegin = obj.get_fbegin(), obj.get_sbegin()
@@ -100,9 +100,6 @@ class Features:
     def n_data(self):
         return self.__reg_dict['n_data']
 
-#    def get_n_atoms_sums(self):
-#        return self.n_atoms_sum_array
-
 
 class FeaturesHybrid:
 
@@ -119,7 +116,7 @@ class FeaturesHybrid:
             force_dataset = [params_dict['include_force']]
             (
                 axis_array, positions_c_array, 
-                types_array, self.n_atoms_sum_array
+                types_array, n_atoms_sum_array
             ) = structures_to_mlpcpp_obj(structures)
         else:
             res = multiple_dft_dicts_to_mlpcpp_obj(dft_dicts)
@@ -177,3 +174,4 @@ class FeaturesHybrid:
     @property
     def cumulative_n_features(self):
         return self.__reg_dict['cumulative_n_features']
+

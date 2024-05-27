@@ -1,22 +1,18 @@
 #!/usr/bin/env python 
 import numpy as np
+import argparse
+import signal
 import time
 
+from pypolymlp.mlp_dev.mlpdev_core import PolymlpDevParams
+from pypolymlp.mlp_dev.mlpdev_data import PolymlpDev, PolymlpDevSequential
+from pypolymlp.mlp_dev.regression import Regression
+from pypolymlp.mlp_dev.accuracy import PolymlpDevAccuracy
+from pypolymlp.mlp_dev.features_attr import write_polymlp_params_yaml
 from pypolymlp.mlp_dev.learning_curve import learning_curve
 
 
 if __name__ == '__main__':
-
-    import argparse
-    import signal
-
-    from pypolymlp.mlp_dev.mlpdev_core import PolymlpDevParams
-    from pypolymlp.mlp_dev.mlpdev_data import PolymlpDev, PolymlpDevSequential
-    from pypolymlp.mlp_dev.regression import Regression
-    from pypolymlp.mlp_dev.accuracy import PolymlpDevAccuracy
-    from pypolymlp.mlp_dev.features_attr import write_polymlp_params_yaml
-    from pypolymlp.mlp_dev.learning_curve import learning_curve
-
 
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
