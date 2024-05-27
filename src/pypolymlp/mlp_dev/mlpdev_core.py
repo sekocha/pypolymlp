@@ -88,13 +88,6 @@ class PolymlpDevParams:
         - elements
         - volumes
         - total_n_atoms
-    
-    Variables in reg_dict
-        - x
-        - y
-        - first_indices [(ebegin, fbegin, sbegin), ...]
-        - n_data (ne, nf, ns)
-        - scales
     """
     def __init__(self):
 
@@ -104,7 +97,7 @@ class PolymlpDevParams:
         self.__train_dict = None
         self.__test_dict = None
 
-        self.__multiple_datasets = False
+        self.__multiple_datasets = None
         self.__hybrid = False
 
     def parse_infiles(self, infiles, verbose=True):
@@ -134,7 +127,20 @@ class PolymlpDevParams:
         return self
 
     def parse_datasets(self):
-        self.parse_multiple_datasets()
+
+        '''todo: Must be revised'''
+        if 'phono3py_yaml' in self.__params_dict['dft']['train']:
+            self.parse_single_dataset()
+            self.__multiple_datasets = True
+            '''
+            self.__params_dict['dft']['train']['train1'] \
+                = self.__params_dict['dft']['train']
+            self.__params_dict['dft']['test']['test1'] \
+                = self.__params_dict['dft']['test']
+            '''
+        else:
+            self.parse_multiple_datasets()
+            self.__multiple_datasets = True
 
     def parse_single_dataset(self):
 
@@ -229,13 +235,21 @@ class PolymlpDevParams:
         print('  include_force: ', bool(params_dict['include_force']))
         print('  include_stress:', bool(params_dict['include_stress']))
 
-        print('  train_data:')
-        for v in params_dict['dft']['train']:
-            print('  -', v)
-        print('  test_data:')
-        for v in params_dict['dft']['test']:
-            print('  -', v)
-
+        ''' todo: Must be revised'''
+        if self.is_multiple_datasets is not None:
+            if self.is_multiple_datasets:
+                print('  train_data:')
+                for v in params_dict['dft']['train']:
+                    print('  -', v)
+                print('  test_data:')
+                for v in params_dict['dft']['test']:
+                    print('  -', v)
+            else:
+                print('  train_data:')
+                print('  -', params_dict['dft']['train']['phono3py_yaml'])
+                print('  test_data:')
+                print('  -', params_dict['dft']['test']['phono3py_yaml'])
+ 
     @property
     def params_dict(self):
         if self.__hybrid:

@@ -157,6 +157,10 @@ class PolymlpDevBase(ABC):
         return self.__hybrid
 
     @property
+    def min_energy(self):
+        return self.__min_energy
+
+    @property
     def train_regression_dict(self):
         return self.__train_reg_dict
 

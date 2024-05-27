@@ -11,40 +11,56 @@ if __name__ == '__main__':
     import signal
 
     from pypolymlp.mlp_dev.mlpdev_core import PolymlpDevParams
-    from pypolymlp.mlp_dev.mlpdev_data import PolymlpDev
+    from pypolymlp.mlp_dev.mlpdev_data import PolymlpDev, PolymlpDevSequential
     from pypolymlp.mlp_dev.regression import Regression
     from pypolymlp.mlp_dev.accuracy import PolymlpDevAccuracy
     from pypolymlp.mlp_dev.features_attr import write_polymlp_params_yaml
+    from pypolymlp.mlp_dev.learning_curve import learning_curve
 
 
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--infile', 
-                        nargs='*',
-                        type=str, 
-                        default=['polymlp.in'],
-                        help='Input file name')
+    parser.add_argument(
+        '-i', '--infile', nargs='*', type=str,  default=['polymlp.in'],
+        help='Input file name'
+    )
+    parser.add_argument(
+        '--no_sequential', action='store_true', 
+        help='Use normal feature calculations'
+    )
+    parser.add_argument(
+        '--learning_curve', action='store_true', 
+        help='Learning curve calculations'
+    )
     args = parser.parse_args()
 
     verbose = True
-    no_sequential = True
 
     polymlp_in = PolymlpDevParams()
     polymlp_in.parse_infiles(args.infile, verbose=True)
-
-    '''must be revised'''
     polymlp_in.parse_datasets()
 
+    if args.learning_curve:
+        if len(polymlp_in.train_dict) == 1:
+            args.no_sequential = True
+            polymlp = PolymlpDev(polymlp_in).run()
+            learning_curve(polymlp)
+        else:
+            raise ValueError('A single dataset is required '
+                             'for learning curve option')
+        
     t1 = time.time()
-    if no_sequential == True:
-        polymlp = PolymlpDev(polymlp_in).run()
+    if args.no_sequential == True:
+        if not args.learning_curve:
+            polymlp = PolymlpDev(polymlp_in).run()
         polymlp.print_data_shape()
+        reg = Regression(polymlp).ridge()
     else:
-        pass
+        polymlp = PolymlpDevSequential(polymlp_in).run()
+        reg = Regression(polymlp).ridge_seq()
     t2 = time.time()
 
-    reg = Regression(polymlp).ridge()
     reg.save_mlp_lammps(filename='polymlp.lammps')
     t3 = time.time()
 

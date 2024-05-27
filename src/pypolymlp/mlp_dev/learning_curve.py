@@ -1,8 +1,10 @@
 #!/usr/bin/env python 
 import numpy as np
+import copy
 
-from pypolymlp.mlp_gen.regression import Regression
-from pypolymlp.mlp_gen.accuracy import compute_error
+from pypolymlp.mlp_dev.mlpdev_data import PolymlpDev
+from pypolymlp.mlp_dev.regression import Regression
+from pypolymlp.mlp_dev.accuracy import PolymlpDevAccuracy
 
 
 def find_slices(train_reg_dict, total_n_atoms, n_samples):
@@ -21,11 +23,39 @@ def find_slices(train_reg_dict, total_n_atoms, n_samples):
     return np.array(ids)
 
 
-def learning_curve(train_reg_dict, 
-                   test_reg_dict, 
-                   test_dft_dict,
-                   params_dict,
-                   total_n_atoms):
+def write_learning_curve(error_all):
+
+    f = open('polymlp_learning_curve.dat', 'w')
+    print('# n_str, RMSE(energy, meV/atom), '
+            'RMSE(force, eV/ang), RMSE(stress)', file=f)
+    for n_samp, error in error_all:
+        print(n_samp, error['energy']*1000,
+                      error['force'],
+                      error['stress'], file=f)
+    f.close()
+
+    print('Learning Curve:')
+    for n_samples, error in error_all:
+        print('- n_samples:   ', n_samples)
+        print('  rmse_energy: ', '{:.8f}'.format(error['energy']*1000))
+        print('  rmse_force:  ', '{:.8f}'.format(error['force']))
+        print('  rmse_stress: ', error['stress'])
+
+
+def learning_curve(polymlp: PolymlpDev):
+
+    if len(polymlp.train_dict) > 1:
+        raise ValueError('A single dataset is required '
+                         'for learning curve option')
+
+    params_dict = polymlp.params_dict
+    train_reg_dict = polymlp.train_regression_dict
+    test_reg_dict = polymlp.test_regression_dict
+
+    for values in polymlp.train_dict.values():
+        total_n_atoms = values['total_n_atoms']
+
+    polymlp_copy = copy.deepcopy(polymlp)
 
     error_all = []
     n_train = train_reg_dict['first_indices'][0][2]
@@ -39,19 +69,16 @@ def learning_curve(train_reg_dict,
             'weight': train_reg_dict['weight'][ids],
             'scales': train_reg_dict['scales'],
         }
-        reg = Regression(train_reg_dict_sample, test_reg_dict, params_dict)
-        _, _ = reg.ridge()
-        mlp_dict = reg.get_best_model()
+        polymlp_copy.train_regression_dict = train_reg_dict_sample
+        reg = Regression(polymlp_copy).ridge()
 
-        indices = test_reg_dict['first_indices'][0]
-        error = compute_error(test_dft_dict, 
-                              params_dict, 
-                              mlp_dict['predictions']['test'],
-                              test_reg_dict['weight'],
-                              indices,
-                              output_key='test')
-        error_all.append((n_samples, error))
+        acc = PolymlpDevAccuracy(reg)
+        acc.compute_error()
+        for error in acc.error_test_dict.values():
+            error_all.append((n_samples, error))
 
+    write_learning_curve(error_all)
     return error_all
+
 
 
