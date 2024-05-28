@@ -12,7 +12,12 @@ from pypolymlp.mlp_dev.mlpdev_data import PolymlpDev
 
 class Regression:
 
-    def __init__(self, polymlp_dev: PolymlpDev):
+    def __init__(
+        self, 
+        polymlp_dev: PolymlpDev, 
+        train_regression_dict=None,
+        test_regression_dict=None,
+    ):
 
         self.__params_dict = polymlp_dev.params_dict
         self.__common_params_dict = polymlp_dev.common_params_dict
@@ -20,8 +25,16 @@ class Regression:
 
         self.__multiple_datasets = polymlp_dev.is_multiple_datasets
 
-        self.__vtrain = polymlp_dev.train_regression_dict
-        self.__vtest = polymlp_dev.test_regression_dict
+        if train_regression_dict is None:
+            self.__vtrain = polymlp_dev.train_regression_dict
+        else:
+            self.__vtrain = train_regression_dict
+
+        if test_regression_dict is None:
+            self.__vtest = polymlp_dev.test_regression_dict
+        else:
+            self.__vtest = test_regression_dict
+
         self.__train_dict = polymlp_dev.train_dict
         self.__test_dict = polymlp_dev.test_dict
 
@@ -212,6 +225,14 @@ class Regression:
         if self.__hybrid:
             return self.hybrid_division(self.__scales)
         return self.__scales
+
+    @coeffs.setter
+    def coeffs(self, array):
+        self.__coeffs = array
+
+    @scales.setter
+    def scales(self, array):
+        self.__scales = array
 
     @property
     def params_dict(self):

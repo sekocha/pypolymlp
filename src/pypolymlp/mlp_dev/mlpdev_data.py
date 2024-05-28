@@ -19,9 +19,9 @@ class PolymlpDev(PolymlpDevBase):
         ----------------
         - x
         - y
+        - scales
         - first_indices [(ebegin, fbegin, sbegin), ...]
         - n_data (ne, nf, ns)
-        - scales
         """
         super().__init__(params)
 
@@ -49,16 +49,11 @@ class PolymlpDevSequential(PolymlpDevBase):
         """
         Keys in reg_dict
         ----------------
-            'xtx': xtx,
-            'xty': xty,
-            'y_sq_norm': y_sq_norm,
-            'total_n_data': total_n_data,
-            'scales': self.__scales,
         - x.T @ X
         - x.T @ y
         - y_sq_norm,
-        - total_n_data,
         - scales
+        - total_n_data,
         """
         super().__init__(params)
 

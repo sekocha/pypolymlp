@@ -10,7 +10,12 @@ from pypolymlp.mlp_dev.regression import Regression
 
 class PolymlpDevAccuracy:
 
-    def __init__(self, reg: Regression):
+    def __init__(self, reg: Regression, coeffs=None, scales=None):
+
+        if coeffs is not None:
+            reg.coeffs = coeffs
+        if scales is not None:
+            reg.scales = scales
 
         if reg.is_hybrid:
             coeffs_rescale = [c/s for c, s in zip(reg.coeffs, reg.scales)]
