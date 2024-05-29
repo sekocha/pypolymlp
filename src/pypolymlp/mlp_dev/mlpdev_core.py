@@ -131,13 +131,13 @@ class PolymlpDevParams:
         '''todo: Must be revised'''
         if 'phono3py_yaml' in self.__params_dict['dft']['train']:
             self.parse_single_dataset()
-            self.__multiple_datasets = True
-            '''
             self.__params_dict['dft']['train']['train1'] \
                 = self.__params_dict['dft']['train']
             self.__params_dict['dft']['test']['test1'] \
                 = self.__params_dict['dft']['test']
-            '''
+            self.__train_dict = {'train1': self.__train_dict}
+            self.__test_dict = {'test1': self.__test_dict}
+            self.__multiple_datasets = True
         else:
             self.parse_multiple_datasets()
             self.__multiple_datasets = True

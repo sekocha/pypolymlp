@@ -148,7 +148,10 @@ class Regression:
                 self.__vtest['y_sq_norm'], self.__vtest['total_n_data'],
                 coefs
             )
-            rmse_train_array.append(sqrt(mse_train))
+            try:
+                rmse_train_array.append(sqrt(mse_train))
+            except:
+                rmse_train_array.append(0.0)
             rmse_test_array.append(sqrt(mse_test))
 
         idx = np.argmin(rmse_test_array)

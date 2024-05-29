@@ -9,7 +9,13 @@ from pypolymlp.mlp_dev.regression import Regression
 from pypolymlp.mlp_dev.accuracy import PolymlpDevAccuracy
 from pypolymlp.mlp_dev.features_attr import write_polymlp_params_yaml
 
-from pypolymlp.mlp_dev.dev.mlpdev_data_dev import PolymlpDevEnsemble
+from pypolymlp.mlp_dev.dev.mlpdev_data_feature_bagging import (
+    PolymlpDevFeatureBagging,
+    PolymlpDevFeatureBaggingSequential,
+)
+from pypolymlp.mlp_dev.dev.mlpdev_data_dev import (
+    PolymlpDevEnsembleSequential
+)
 from pypolymlp.core.io_polymlp import save_mlp_lammps
 
 if __name__ == '__main__':
@@ -21,12 +27,10 @@ if __name__ == '__main__':
         '-i', '--infile', nargs='*', type=str,  default=['polymlp.in'],
         help='Input file name'
     )
-#    parser.add_argument(
-#        '--no_sequential', action='store_true', 
-#        help='Use normal feature calculations'
-#    )
     args = parser.parse_args()
 
+    args.n_models = 10
+    args.ratio_features = 0.3
     verbose = True
 
     polymlp_in = PolymlpDevParams()
@@ -34,14 +38,20 @@ if __name__ == '__main__':
     polymlp_in.parse_datasets()
 
     t1 = time.time()
-    polymlp = PolymlpDevEnsemble(polymlp_in)
-    polymlp.run(n_models=100, ratio_feature_samples=0.5)
+    #polymlp = PolymlpDevEnsembleSequential(polymlp_in)
 
-    train_reg_dict_all = polymlp.train_regression_dict
-    test_reg_dict_all = polymlp.test_regression_dict
+    polymlp = PolymlpDevFeatureBagging(polymlp_in)
+    #polymlp = PolymlpDevFeatureBaggingSequential(polymlp_in)
+    polymlp.run(
+        n_models=args.n_models, 
+        ratio_feature_samples=args.ratio_features,
+    )
+
+    train_reg_dict_all = polymlp.train_regression_dict_list
+    test_reg_dict_all = polymlp.test_regression_dict_list
     random_indices = polymlp.random_indices
 
-
+    t2 = time.time()
     coeffs_sum = np.zeros(polymlp.n_features)
     for train_reg, test_reg, r_indices in zip(
         train_reg_dict_all, test_reg_dict_all, random_indices
@@ -56,12 +66,13 @@ if __name__ == '__main__':
         mlp_dict = reg.best_model
         coeffs_sum[r_indices] += mlp_dict['coeffs'] / mlp_dict['scales']
 
-    t2 = time.time()
-
     coeffs = coeffs_sum / polymlp.n_models
     scales = np.ones(polymlp.n_features)
 
     '''Must be extended to hybrid models'''
+    if polymlp.is_hybrid:
+        raise ValueError('No polymlp.lammps files will be generated.')
+
     save_mlp_lammps(reg.params_dict, coeffs, scales, filename='polymlp.lammps')
     t3 = time.time()
 

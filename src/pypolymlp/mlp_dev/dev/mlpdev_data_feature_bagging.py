@@ -11,7 +11,7 @@ from pypolymlp.mlp_dev.sequential import (
 from pypolymlp.mlp_dev.weights import apply_weight_percentage
 
 
-class PolymlpDevEnsembleSequential(PolymlpDevBase):
+class PolymlpDevFeatureBagging(PolymlpDevBase):
 
     def __init__(self, params: PolymlpDevParams):
         """
@@ -30,15 +30,134 @@ class PolymlpDevEnsembleSequential(PolymlpDevBase):
                              'for PolymlpDevParams with multiple datasets.')
 
         self.__random_indices = None
+        self.__n_models = None
+        self.__n_features = None
+        self.__train_regression_dict_list = None
+        self.__test_regression_dict_list = None
+
+    def run(self, n_models=20, ratio_feature_samples=0.1):
+
+        self.compute_features()
+        self.apply_scales()
+        self.apply_weights()
+
+        print('Feature Bagging: Calculating X.T @ X')
+        self.__train_regression_dict_list = self.compute_products(
+            self.train_regression_dict,
+            n_models=n_models,
+            ratio_feature_samples=ratio_feature_samples,
+        )
+        self.__test_regression_dict_list = self.compute_products(
+            self.test_regression_dict
+        )
+        print('Finished')
+
+        return self
+
+    def compute_features(self):
+
+        f_obj_train = self.features_class(self.params_dict, self.train_dict)
+        f_obj_test = self.features_class(self.params_dict, self.test_dict)
+
+        self.train_regression_dict = f_obj_train.regression_dict
+        self.test_regression_dict = f_obj_test.regression_dict
+
+        if self.is_hybrid:
+            self.__cumulative_n_features = features.cumulative_n_features
+
+        self.__n_features = self.train_regression_dict['x'].shape[1]
+        return self
+
+    def compute_products(
+            self, reg_dict, n_models=20, ratio_feature_samples=0.1,
+        ):
+
+        if self.__random_indices is None:
+            n_features_samples = round(
+                self.__n_features * ratio_feature_samples
+            )
+            self.__random_indices = np.array(
+                [
+                    np.random.choice(
+                        range(self.__n_features), 
+                        size=n_features_samples, 
+                        replace=False,
+                    ) for _ in range(n_models)
+                ]
+            )
+        self.__n_models = self.__random_indices.shape[0]
+
+        x, y = reg_dict['x'], reg_dict['y']
+        reg_dict_array = []
+        for i, r_indices in enumerate(self.__random_indices):
+            x_samp = x[:,r_indices]
+            reg_dict_add = {
+                'xtx': x_samp.T @ x_samp,
+                'xty': x_samp.T @ y,
+                'y_sq_norm': y @ y,
+                'total_n_data': y.shape[0],
+                'scales': reg_dict['scales'][r_indices],
+            }
+            if self.is_hybrid:
+                reg_dict_add['cumulative_n_features'] \
+                    = self.__cumulative_n_features
+
+            reg_dict_array.append(reg_dict_add)
+
+        return reg_dict_array
+
+    @property
+    def random_indices(self):
+        return self.__random_indices
+
+    @property
+    def n_models(self):
+        return self.__n_models
+
+    @property
+    def n_features(self):
+        return self.__n_features
+
+    @property
+    def train_regression_dict_list(self):
+        return self.__train_regression_dict_list
+
+    @property
+    def test_regression_dict_list(self):
+        return self.__test_regression_dict_list
+
+
+class PolymlpDevFeatureBaggingSequential(PolymlpDevBase):
+
+    def __init__(self, params: PolymlpDevParams):
+        """
+        Keys in reg_dict
+        ----------------
+        - x.T @ X
+        - x.T @ y
+        - y_sq_norm,
+        - scales
+        - total_n_data,
+        """
+        super().__init__(params)
+
+        if not self.is_multiple_datasets:
+            raise ValueError('Ensemble version is available '
+                             'for PolymlpDevParams with multiple datasets.')
+
+        self.__random_indices = None
+        self.__n_models = None
+        self.__n_features = None
+        self.__train_regression_dict_list = None
+        self.__test_regression_dict_list = None
         self.__scales_array = None
 
     def run(
         self, n_models=20, ratio_feature_samples=0.1,
         batch_size=64, verbose=True, element_swap=False
     ):
-        self.__n_models = n_models
 
-        self.train_regression_dict = self.compute_products(
+        self.__train_regression_dict_list = self.compute_products(
             self.train_dict, 
             n_models=n_models,
             ratio_feature_samples=ratio_feature_samples,
@@ -47,14 +166,11 @@ class PolymlpDevEnsembleSequential(PolymlpDevBase):
             element_swap=element_swap
         )
 
-        self.test_regression_dict = self.compute_products(
+        self.__test_regression_dict_list = self.compute_products(
             self.test_dict, 
-            n_models=n_models,
-            ratio_feature_samples=ratio_feature_samples,
             batch_size=batch_size,
             verbose=verbose,
-            element_swap=element_swap,
-            structure_sample=False,
+            element_swap=element_swap
         )
 
         return self
@@ -76,7 +192,6 @@ class PolymlpDevEnsembleSequential(PolymlpDevBase):
         self, dft_dicts, 
         n_models=20, ratio_feature_samples=0.1,
         batch_size=64, verbose=True, element_swap=False,
-        structure_sample=True,
     ):
 
         if self.__random_indices is None:
@@ -101,7 +216,8 @@ class PolymlpDevEnsembleSequential(PolymlpDevBase):
                         * 16e-9 * n_models
                     ), '(GB)')
 
-        n_models = self.__random_indices.shape[0]
+        self.__n_models = n_models = self.__random_indices.shape[0]
+
         xtx = [None for _ in range(n_models)]
         xty = [None for _ in range(n_models)]
         y_sq_norm = [0.0 for _ in range(n_models)]
@@ -137,7 +253,7 @@ class PolymlpDevEnsembleSequential(PolymlpDevBase):
                     print('small x.T @ x calculations:')
                     print('size (x.T @ x):', 
                           r_indices.shape[0], r_indices.shape[0])
-                    x_samp = x[:,r_indices]
+                    x_samp = features.x[:,r_indices]
                     if self.__scales_array is None:
                         xe = x_samp[:ne]
                         local1 = np.sum(xe, axis=0)
@@ -147,6 +263,7 @@ class PolymlpDevEnsembleSequential(PolymlpDevBase):
 
                     y = np.zeros(n_data)
                     w = np.ones(n_data)
+
                     x_samp, y, w = apply_weight_percentage(
                                         x_samp, y, w,
                                         dft_dict_sliced,
@@ -154,16 +271,6 @@ class PolymlpDevEnsembleSequential(PolymlpDevBase):
                                         first_indices,
                                         min_e=self.min_energy
                                     )
-
-                    if structure_sample:
-                        r_row_indices = np.random.choice(
-                            range(n_data), size=n_data*2, replace=True
-#                            range(n_data), size=n_data, replace=True
-                        )
-                        x_samp = x_samp[r_row_indices]
-                        y = y[r_row_indices]
-                        w = w[r_row_indices]
-
                     xtx[i] = self.__sum_array(xtx[i], x_samp.T @ x_samp)
                     xty[i] = self.__sum_array(xty[i], x_samp.T @ y)
                     y_sq_norm[i] += y @ y
@@ -220,3 +327,12 @@ class PolymlpDevEnsembleSequential(PolymlpDevBase):
     @property
     def n_features(self):
         return self.__n_features
+
+    @property
+    def train_regression_dict_list(self):
+        return self.__train_regression_dict_list
+
+    @property
+    def test_regression_dict_list(self):
+        return self.__test_regression_dict_list
+

@@ -42,6 +42,8 @@ def parse_phono3py_yaml(yaml_filename,
                             positions_all, 
                             st_dict, 
                             element_order=element_order)
+    dft_dict['include_force'] = True
+    dft_dict['weight'] = 1.0
 
     if return_displacements:
         return dft_dict, disps

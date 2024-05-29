@@ -37,10 +37,10 @@ class PolymlpDevAccuracy:
     def print_error(self, error, key='train'):
     
         print('prediction:', key)
-        print('  rmse_energy:', "{0:13.4f}".format(error['energy'] * 1000), 
+        print('  rmse_energy:', "{0:13.5f}".format(error['energy'] * 1000), 
               '(meV/atom)')
-        print('  rmse_force: ', "{0:13.4f}".format(error['force']), '(eV/ang)')
-        print('  rmse_stress:', "{0:13.4f}".format(error['stress'] * 1000), 
+        print('  rmse_force: ', "{0:13.5f}".format(error['force']), '(eV/ang)')
+        print('  rmse_stress:', "{0:13.5f}".format(error['stress'] * 1000), 
               '(meV/atom)')
         return self
 
