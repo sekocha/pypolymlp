@@ -61,7 +61,7 @@ class PolymlpDevFeatureBagging(PolymlpDevEnsembleBase):
 
         self.n_features = self.train_regression_dict['x'].shape[1]
         if self.is_hybrid:
-            self.cumulative_n_features = features.cumulative_n_features
+            self.cumulative_n_features = f_obj_train.cumulative_n_features
 
         return self
 

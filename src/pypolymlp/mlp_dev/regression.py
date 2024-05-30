@@ -210,7 +210,7 @@ class Regression:
                 begin, end = 0, cumulative[0]
             else:
                 begin, end = cumulative[i-1], cumulative[i]
-            list_target.append(target[begin:end])
+            list_target.append(np.array(target[begin:end]))
         return list_target
 
     @property
@@ -234,6 +234,14 @@ class Regression:
     def scales(self):
         if self.__hybrid:
             return self.hybrid_division(self.__scales)
+        return self.__scales
+
+    @property
+    def coeffs_vector(self):
+        return self.__coeffs
+
+    @property
+    def scales_vector(self):
         return self.__scales
 
     @coeffs.setter

@@ -51,8 +51,7 @@ class RegressionEnsemble:
                 test_regression_dict=test_reg,
             )
             reg.ridge_seq()
-            mlp_dict = reg.best_model
-            coeffs_sum[r_indices] += mlp_dict['coeffs'] / mlp_dict['scales']
+            coeffs_sum[r_indices] += reg.coeffs_vector / reg.scales_vector
 
             self.__train_dict = reg.train_dict
             self.__test_dict = reg.test_dict

@@ -60,7 +60,7 @@ if __name__ == '__main__':
 
     t3 = time.time()
 
-    acc = PolymlpDevAccuracy(reg, coeffs=reg.coeffs, scales=reg.scales)
+    acc = PolymlpDevAccuracy(reg)
     acc.compute_error()
     acc.write_error_yaml(filename='polymlp_error.yaml')
     t4 = time.time()
