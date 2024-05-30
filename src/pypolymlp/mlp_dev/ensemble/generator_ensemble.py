@@ -5,10 +5,13 @@ import signal
 import time
 
 from pypolymlp.mlp_dev.mlpdev_core import PolymlpDevParams
-from pypolymlp.mlp_dev.mlpdev_data import PolymlpDev, PolymlpDevSequential
-from pypolymlp.mlp_dev.regression import Regression
 from pypolymlp.mlp_dev.accuracy import PolymlpDevAccuracy
-from pypolymlp.mlp_dev.learning_curve import learning_curve
+
+from pypolymlp.mlp_dev.ensemble.mlpdev_data_feature_bagging import (
+    PolymlpDevFeatureBagging,
+    PolymlpDevFeatureBaggingSequential,
+)
+from pypolymlp.mlp_dev.ensemble.regression_ensemble import RegressionEnsemble
 
 
 if __name__ == '__main__':
@@ -24,12 +27,10 @@ if __name__ == '__main__':
         '--no_sequential', action='store_true', 
         help='Use normal feature calculations'
     )
-    parser.add_argument(
-        '--learning_curve', action='store_true', 
-        help='Learning curve calculations'
-    )
     args = parser.parse_args()
 
+    args.n_models = 10
+    args.ratio_features = 0.3
     verbose = True
 
     polymlp_in = PolymlpDevParams()
@@ -37,34 +38,23 @@ if __name__ == '__main__':
     polymlp_in.parse_datasets()
     polymlp_in.write_polymlp_params_yaml(filename='polymlp_params.yaml')
 
-    if args.learning_curve:
-        if len(polymlp_in.train_dict) == 1:
-            args.no_sequential = True
-            polymlp = PolymlpDev(polymlp_in).run()
-            learning_curve(polymlp)
-        else:
-            raise ValueError('A single dataset is required '
-                             'for learning curve option')
-        
     t1 = time.time()
-    if args.no_sequential == True:
-        if not args.learning_curve:
-            polymlp = PolymlpDev(polymlp_in).run()
-        polymlp.print_data_shape()
+    if args.no_sequential:
+        polymlp = PolymlpDevFeatureBagging(polymlp_in)
     else:
-        polymlp = PolymlpDevSequential(polymlp_in).run()
+        polymlp = PolymlpDevFeatureBaggingSequential(polymlp_in)
+    polymlp.run(
+        n_models=args.n_models, 
+        ratio_feature_samples=args.ratio_features,
+    )
     t2 = time.time()
 
-    reg = Regression(polymlp).fit(seq=not args.no_sequential)
+    reg = RegressionEnsemble(polymlp).fit()
     reg.save_mlp_lammps(filename='polymlp.lammps')
+
     t3 = time.time()
 
-    if verbose:
-        mlp_dict = reg.best_model
-        print('  Regression: best model')
-        print('    alpha: ', mlp_dict['alpha'])
-
-    acc = PolymlpDevAccuracy(reg)
+    acc = PolymlpDevAccuracy(reg, coeffs=reg.coeffs, scales=reg.scales)
     acc.compute_error()
     acc.write_error_yaml(filename='polymlp_error.yaml')
     t4 = time.time()

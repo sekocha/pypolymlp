@@ -42,6 +42,13 @@ class Regression:
         self.__best_model['scales'] = self.__scales = self.__vtrain['scales']
         self.__coeffs = None
 
+    def fit(self, seq=False, iprint=True):
+        if seq:
+            self.ridge_seq(iprint=iprint)
+        else:
+            self.ridge(iprint=iprint)
+        return self
+
     def ridge(self, iprint=True):
 
         alphas = [pow(10, a) for a in self.__common_params_dict['reg']['alpha']]

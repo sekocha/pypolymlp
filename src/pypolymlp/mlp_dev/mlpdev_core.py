@@ -4,6 +4,7 @@ import copy
 
 from pypolymlp.core.parser_polymlp_params import ParamsParser
 from pypolymlp.core.interface_vasp import parse_vaspruns
+from pypolymlp.mlp_dev.features_attr import write_polymlp_params_yaml
 
 
 def get_variable_with_max_length(multiple_params_dicts, key):
@@ -249,6 +250,17 @@ class PolymlpDevParams:
                 print('  -', params_dict['dft']['train']['phono3py_yaml'])
                 print('  test_data:')
                 print('  -', params_dict['dft']['test']['phono3py_yaml'])
+
+    def write_polymlp_params_yaml(self, filename='polymlp_params.yaml'):
+
+        if not self.is_hybrid:
+            write_polymlp_params_yaml(
+                self.params_dict, filename='polymlp_params.yaml'
+            )
+        else:
+            for i, params in enumerate(self.params_dict):
+                filename = 'polymlp_params' + str(i+1) + '.yaml'
+                write_polymlp_params_yaml(params, filename=filename)
  
     @property
     def params_dict(self):
