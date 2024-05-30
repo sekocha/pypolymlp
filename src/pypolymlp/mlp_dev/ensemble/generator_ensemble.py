@@ -20,21 +20,26 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '-i', '--infile', nargs='*', type=str,  default=['polymlp.in'],
+        '-i', '--infile', nargs='*', type=str, default=['polymlp.in'],
         help='Input file name'
     )
     parser.add_argument(
         '--no_sequential', action='store_true', 
         help='Use normal feature calculations'
     )
+    parser.add_argument(
+        '-n', '--n_models', type=int, default=10,
+        help='Number of ensemble models'
+    )
+    parser.add_argument(
+        '-r', '--ratio_features', type=float, default=0.5,
+        help='Ratio that gives the number of features in ensemble models.'
+    )
     args = parser.parse_args()
 
-    args.n_models = 10
-    args.ratio_features = 0.3
     verbose = True
-
     polymlp_in = PolymlpDevParams()
-    polymlp_in.parse_infiles(args.infile, verbose=True)
+    polymlp_in.parse_infiles(args.infile, verbose=verbose)
     polymlp_in.parse_datasets()
     polymlp_in.write_polymlp_params_yaml(filename='polymlp_params.yaml')
 
@@ -43,6 +48,7 @@ if __name__ == '__main__':
         polymlp = PolymlpDevFeatureBagging(polymlp_in)
     else:
         polymlp = PolymlpDevFeatureBaggingSequential(polymlp_in)
+
     polymlp.run(
         n_models=args.n_models, 
         ratio_feature_samples=args.ratio_features,

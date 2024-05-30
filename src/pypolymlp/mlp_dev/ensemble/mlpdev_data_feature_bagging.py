@@ -17,7 +17,13 @@ class PolymlpDevFeatureBagging(PolymlpDevEnsembleBase):
 
         super().__init__(params)
 
-    def run(self, n_models=20, ratio_feature_samples=0.1):
+    def run(
+        self, 
+        n_models=20, 
+        ratio_feature_samples=0.1, 
+        verbose=True, 
+        bootstrap_data=False
+    ):
 
         self.compute_features()
         self.apply_scales()
@@ -27,10 +33,17 @@ class PolymlpDevFeatureBagging(PolymlpDevEnsembleBase):
         self.__sample(
             n_models=n_models,
             ratio_feature_samples=ratio_feature_samples,
+            verbose=verbose,
         )
-        self.train_regression_dict_list = self.__compute_products(
-            self.train_regression_dict,
-        )
+        if bootstrap_data:
+            self.train_regression_dict_list = self.__compute_products_bootstrap(
+                self.train_regression_dict,
+            )
+        else:
+            self.train_regression_dict_list = self.__compute_products(
+                self.train_regression_dict,
+            )
+
         self.test_regression_dict_list = self.__compute_products(
             self.test_regression_dict
         )
@@ -52,7 +65,7 @@ class PolymlpDevFeatureBagging(PolymlpDevEnsembleBase):
 
         return self
 
-    def __sample(self, n_models=20, ratio_feature_samples=0.1):
+    def __sample(self, n_models=20, ratio_feature_samples=0.1, verbose=True):
 
         self.n_models = n_models
         n_features_samples = round(self.n_features * ratio_feature_samples)
@@ -61,19 +74,55 @@ class PolymlpDevFeatureBagging(PolymlpDevEnsembleBase):
                 range(self.n_features), size=n_features_samples, replace=False,
             ) for _ in range(n_models)
         ])
+
+        if verbose:
+            print('Size (X.T @ X):', n_features_samples, '** 2')
+            print(
+                'Estimated memory allocation (X.T @ X):', '{:.2f}'.format(
+                     pow(n_features_samples, 2) * 16e-9 * n_models
+                ), '(GB)'
+            )
+
         return self
 
     def __compute_products(self, reg_dict):
 
+        print('Compute X.T @ X without bootstrapping dataset')
         x, y = reg_dict['x'], reg_dict['y']
         reg_dict_array = []
         for i, r_indices in enumerate(self.random_indices):
+            print('X.T @ X calculation: Model', i)
             x_samp = x[:,r_indices]
+            y_samp = y
             reg_dict_add = {
                 'xtx': x_samp.T @ x_samp,
-                'xty': x_samp.T @ y,
-                'y_sq_norm': y @ y,
-                'total_n_data': y.shape[0],
+                'xty': x_samp.T @ y_samp,
+                'y_sq_norm': y_samp @ y_samp,
+                'total_n_data': y_samp.shape[0],
+                'scales': reg_dict['scales'][r_indices],
+                'cumulative_n_features': self.cumulative_n_features
+            }
+            reg_dict_array.append(reg_dict_add)
+
+        return reg_dict_array
+
+    def __compute_products_bootstrap(self, reg_dict):
+
+        print('Compute X.T @ X with bootstrapping dataset')
+        x, y = reg_dict['x'], reg_dict['y']
+        reg_dict_array = []
+        for i, r_indices in enumerate(self.random_indices):
+            print('X.T @ X calculation: Model', i)
+            row_indices = np.random.choice(
+                range(x.shape[0]), size=x.shape[0], replace=True,
+            )
+            x_samp = x[np.ix_(row_indices,r_indices)]
+            y_samp = y[row_indices]
+            reg_dict_add = {
+                'xtx': x_samp.T @ x_samp,
+                'xty': x_samp.T @ y_samp,
+                'y_sq_norm': y_samp @ y_samp,
+                'total_n_data': y_samp.shape[0],
                 'scales': reg_dict['scales'][r_indices],
                 'cumulative_n_features': self.cumulative_n_features
             }
