@@ -268,10 +268,6 @@ class PolymlpDevParams:
             return self.__hybrid_params_dicts
         return self.__params_dict
 
-    @params_dict.setter
-    def params_dict(self, params):
-        self.__params_dict = params
-
     @property
     def common_params_dict(self):
         return self.__params_dict
@@ -280,6 +276,21 @@ class PolymlpDevParams:
     def hybrid_params_dicts(self):
         return self.__hybrid_params_dicts
 
+    @params_dict.setter
+    def params_dict(self, params):
+        if isinstance(params, list):
+            if len(params) > 1:
+                self.hybrid_params_dicts = params
+                #self.__hybrid_params_dicts = params
+                #self.__params_dict = set_common_params_dict(params)
+                #self.__hybrid = True
+            else:
+                self.__params_dicts = params[0]
+                self.__hybrid = False
+        else:
+            self.__params_dicts = params
+            self.__hybrid = False
+        
     @hybrid_params_dicts.setter
     def hybrid_params_dicts(self, params):
         self.__hybrid_params_dicts = params

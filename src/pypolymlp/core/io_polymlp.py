@@ -104,6 +104,7 @@ def load_mlp_lammps(filename='polymlp.lammps'):
 
     idx = 0
     params_dict['elements'] = __read_var(lines[idx], str, return_list=True)
+    params_dict['element_order'] = params_dict['elements']
     params_dict['n_type'] = len(params_dict['elements'])
     idx += 1
 
@@ -182,4 +183,21 @@ def load_mlp_lammps(filename='polymlp.lammps'):
 
     return params_dict, mlp_dict
 
+
+def load_mlp_lammps_flexible(file_list_or_file):
+
+    if isinstance(file_list_or_file, list):
+        if len(file_list_or_file) > 1:
+            params_dicts, mlp_dicts = [], []
+            for pot in file_list_or_file:
+                params, mlp = load_mlp_lammps(pot)
+                params_dicts.append(params)
+                mlp_dicts.append(mlp)
+            return params_dicts, mlp_dicts
+        else:
+            return load_mlp_lammps(file_list_or_file[0])
+    else:
+        return load_mlp_lammps(file_list_or_file)
+
+    return params_dicts, mlp_dicts
 
