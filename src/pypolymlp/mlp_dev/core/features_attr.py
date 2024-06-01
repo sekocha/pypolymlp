@@ -1,8 +1,5 @@
 #!/usr/bin/env python 
 import numpy as np
-import os
-import sys
-import argparse
 from collections import defaultdict
 
 from pypolymlp.cxx.lib import libmlpcpp
@@ -95,6 +92,7 @@ def write_polymlp_params_yaml(params_dict, filename='polymlp_params.yaml'):
  
 if __name__ == '__main__':
 
+    import argparse
     from pypolymlp.core.parser_polymlp_params import ParamsParser
 
     parser = argparse.ArgumentParser()

@@ -4,7 +4,7 @@ import copy
 
 from pypolymlp.core.parser_polymlp_params import ParamsParser
 from pypolymlp.core.interface_vasp import parse_vaspruns
-from pypolymlp.mlp_dev.features_attr import write_polymlp_params_yaml
+from pypolymlp.mlp_dev.core.features_attr import write_polymlp_params_yaml
 
 
 def get_variable_with_max_length(multiple_params_dicts, key):
@@ -44,7 +44,7 @@ def set_common_params_dict(multiple_params_dicts):
     return common_params_dict
 
 
-class PolymlpDevParams:
+class PolymlpDevData:
     """
     Variables in params_dict
     ------------------------

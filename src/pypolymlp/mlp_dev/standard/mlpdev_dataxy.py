@@ -2,18 +2,18 @@
 import numpy as np
 import gc
 
-from pypolymlp.mlp_dev.mlpdev_core import PolymlpDevParams
-from pypolymlp.mlp_dev.mlpdev_data_base import PolymlpDevBase
+from pypolymlp.mlp_dev.core.mlpdev_data import PolymlpDevData
+from pypolymlp.mlp_dev.core.mlpdev_dataxy_base import PolymlpDevDataXYBase
 
-from pypolymlp.mlp_dev.sequential import (
+from pypolymlp.mlp_dev.core.utils_sequential import (
     get_batch_slice, slice_dft_dict,
 )
-from pypolymlp.mlp_dev.weights import apply_weight_percentage
+from pypolymlp.mlp_dev.core.utils_weights import apply_weight_percentage
 
 
-class PolymlpDev(PolymlpDevBase):
+class PolymlpDevDataXY(PolymlpDevDataXYBase):
 
-    def __init__(self, params: PolymlpDevParams):
+    def __init__(self, params: PolymlpDevData):
         """
         Keys in reg_dict
         ----------------
@@ -43,9 +43,9 @@ class PolymlpDev(PolymlpDevBase):
         return self
 
 
-class PolymlpDevSequential(PolymlpDevBase):
+class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
 
-    def __init__(self, params: PolymlpDevParams):
+    def __init__(self, params: PolymlpDevData):
         """
         Keys in reg_dict
         ----------------

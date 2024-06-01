@@ -1,20 +1,21 @@
 #!/usr/bin/env python 
 import numpy as np
 from math import sqrt
+from abc import ABC, abstractmethod
 from scipy.linalg.lapack import get_lapack_funcs
 
 from pypolymlp.core.utils import rmse
 from pypolymlp.core.io_polymlp import (
     save_mlp_lammps, save_multiple_mlp_lammps
 )
-from pypolymlp.mlp_dev.mlpdev_data import PolymlpDev
+from pypolymlp.mlp_dev.core.mlpdev_dataxy_base import PolymlpDevDataXYBase
 
 
-class Regression:
+class RegressionBase(ABC):
 
     def __init__(
         self, 
-        polymlp_dev: PolymlpDev, 
+        polymlp_dev: PolymlpDevDataXYBase, 
         train_regression_dict=None,
         test_regression_dict=None,
     ):
@@ -42,62 +43,11 @@ class Regression:
         self.__best_model['scales'] = self.__scales = self.__vtrain['scales']
         self.__coeffs = None
 
-    def fit(self, seq=False, iprint=True):
-        if seq:
-            self.ridge_seq(iprint=iprint)
-        else:
-            self.ridge(iprint=iprint)
-        return self
+    @abstractmethod
+    def fit(self):
+        pass
 
-    def ridge(self, iprint=True):
-
-        alphas = [pow(10, a) for a in self.__common_params_dict['reg']['alpha']]
-        coefs_array = self.__ridge_fit(
-            X=self.__vtrain['x'], y=self.__vtrain['y'], alphas=alphas
-        )
-        self.__best_model = self.__ridge_model_selection(
-            alphas, coefs_array, iprint=iprint
-        )
-        self.__coeffs = self.__best_model['coeffs']
-
-        return self
-
-    def ridge_seq(self, iprint=True):
-
-        alphas = [pow(10, a) for a in self.__common_params_dict['reg']['alpha']]
-        coefs_array = self.__ridge_fit(
-            A=self.__vtrain['xtx'], Xy=self.__vtrain['xty'], alphas=alphas
-        )
-        self.__best_model = self.__ridge_model_selection_seq(
-            alphas, coefs_array, iprint=iprint
-        )
-        self.__coeffs = self.__best_model['coeffs']
-
-        return self
-
-    def __ridge_fit(self, X=None, y=None, A=None, Xy=None, alphas=[1e-3,1e-1]):
-
-        if X is not None and y is not None:
-            print('  regression: computing inner products ...')
-            n_samples, n_features = X.shape
-            A = np.dot(X.T, X)
-            Xy = np.dot(X.T, y)
-        else:
-            n_features = A.shape[0]
-
-        print('  regression: cholesky decomposition ...')
-        coefs_array = np.zeros((n_features, len(alphas)))
-        alpha_prev = 0.0
-        for i, alpha in enumerate(alphas):
-            add = alpha - alpha_prev
-            A.flat[::n_features + 1] += add
-            coefs_array[:,i] = self.__solve_linear_equation(A, Xy)
-            alpha_prev = alpha
-        A.flat[::n_features + 1] -= alpha
-
-        return coefs_array
-
-    def __solve_linear_equation(self, A, b):
+    def solve_linear_equation(self, A, b):
         """
         numpy and scipy implementations
         x = np.linalg.solve(A, b)
@@ -109,40 +59,30 @@ class Regression:
                        overwrite_b=False)
         return x
 
-    def __ridge_model_selection(self, alpha_array, coefs_array, iprint=True):
+    def compute_inner_products(self, X=None, y=None, A=None, Xy=None):
 
-        pred_train_array = np.dot(self.__vtrain['x'], coefs_array).T
-        pred_test_array = np.dot(self.__vtest['x'], coefs_array).T
-        rmse_train_array = [
-            rmse(self.__vtrain['y'], p) for p in pred_train_array
-        ]
-        rmse_test_array = [rmse(self.__vtest['y'], p) for p in pred_test_array]
+        if X is not None and y is not None:
+            print('Regression: computing inner products ...')
+            A = np.dot(X.T, X)
+            Xy = np.dot(X.T, y)
+        return A, Xy
 
-        idx = np.argmin(rmse_test_array)
-        self.__best_model['rmse'] = rmse_test_array[idx]
-        self.__best_model['coeffs'] = coefs_array[:,idx]
-        self.__best_model['alpha'] = alpha_array[idx]
-        self.__best_model['predictions'] = dict()
-        self.__best_model['predictions']['train'] = pred_train_array[idx]
-        self.__best_model['predictions']['test'] = pred_test_array[idx]
- 
-        if iprint == True:
-            print('  regression: model selection ...')
-            for a, rmse1, rmse2 in zip(alpha_array, 
-                                       rmse_train_array, 
-                                       rmse_test_array):
-                print('  - alpha =', '{:f}'.format(a), 
-                      ': rmse (train, test) =', 
-                      '{:f}'.format(rmse1), '{:f}'.format(rmse2))
+    def rmse(self, true, pred):
+        return rmse(true, pred)
 
-        return self.__best_model
+    def rmse_list(self, true, pred_list):
+        return [rmse(true, p) for p in pred_list]
 
-    def __ridge_model_selection_seq(self, 
-                                    alpha_array, 
-                                    coefs_array, 
-                                    iprint=True):
-        
-        # computing rmse using xtx, xty and y_sq
+    def predict(self, coefs_array):
+        '''computing rmse using X and y'''
+        pred_train = np.dot(self.__vtrain['x'], coefs_array).T
+        pred_test = np.dot(self.__vtest['x'], coefs_array).T
+        rmse_train = self.rmse_list(self.__vtrain['y'], pred_train)
+        rmse_test = self.rmse_list(self.__vtest['y'], pred_test)
+        return pred_train, pred_test, rmse_train, rmse_test
+
+    def predict_seq(self, coefs_array):
+        '''computing rmse using xtx, xty and y_sq'''
         rmse_train_array, rmse_test_array = [], []
         for coefs in coefs_array.T:
             mse_train = self.__compute_mse(
@@ -159,23 +99,10 @@ class Regression:
                 rmse_train_array.append(sqrt(mse_train))
             except:
                 rmse_train_array.append(0.0)
+
             rmse_test_array.append(sqrt(mse_test))
 
-        idx = np.argmin(rmse_test_array)
-        self.__best_model['rmse'] = rmse_test_array[idx]
-        self.__best_model['coeffs'] = coefs_array[:,idx]
-        self.__best_model['alpha'] = alpha_array[idx]
-  
-        if iprint == True:
-            print('  regression: model selection ...')
-            for a, rmse1, rmse2 in zip(alpha_array, 
-                                       rmse_train_array, 
-                                       rmse_test_array):
-                print('  - alpha =', '{:f}'.format(a), 
-                      ': rmse (train, test) =', 
-                      '{:f}'.format(rmse1), '{:f}'.format(rmse2))
-
-        return self.__best_model
+        return rmse_train_array, rmse_test_array
 
     def __compute_mse(self, xtx, xty, y_sq_norm, size, coefs):
 
@@ -224,6 +151,12 @@ class Regression:
         self.__best_model['scales'] = self.scales
         return self.__best_model
 
+    @best_model.setter
+    def best_model(self, dict1):
+        self.__best_model.update(dict1)
+        self.__coeffs = self.__best_model['coeffs']
+        self.__scales = self.__best_model['scales']
+
     @property
     def coeffs(self):
         if self.__hybrid:
@@ -263,6 +196,14 @@ class Regression:
     @property
     def test_dict(self):
         return self.__test_dict
+
+    @property
+    def train_regression_dict(self):
+        return self.__vtrain
+
+    @property
+    def test_regression_dict(self):
+        return self.__vtest
 
     @property
     def is_multiple_datasets(self):

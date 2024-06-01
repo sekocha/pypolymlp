@@ -5,12 +5,12 @@ import os
 
 from pypolymlp.core.utils import rmse
 from pypolymlp.calculator.properties import Properties
-from pypolymlp.mlp_dev.regression import Regression
+from pypolymlp.mlp_dev.core.regression_base import RegressionBase
 
 
 class PolymlpDevAccuracy:
 
-    def __init__(self, reg: Regression):
+    def __init__(self, reg: RegressionBase):
 
         if reg.is_hybrid:
             coeffs_rescale = [c/s for c, s in zip(reg.coeffs, reg.scales)]

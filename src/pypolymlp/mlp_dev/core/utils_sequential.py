@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import numpy as np
 
+
 def get_batch_slice(n_data, batch_size):
     """Calculate slice indices for a given batch size."""
     begin_batch = list(range(0, n_data, batch_size))

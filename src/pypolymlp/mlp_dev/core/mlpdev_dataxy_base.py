@@ -3,14 +3,14 @@ import numpy as np
 
 from abc import ABC, abstractmethod
 
-from pypolymlp.mlp_dev.mlpdev_core import PolymlpDevParams
-from pypolymlp.mlp_dev.features import Features, FeaturesHybrid
-from pypolymlp.mlp_dev.weights import apply_weight_percentage
+from pypolymlp.mlp_dev.core.mlpdev_data import PolymlpDevData
+from pypolymlp.mlp_dev.core.features import Features, FeaturesHybrid
+from pypolymlp.mlp_dev.core.utils_weights import apply_weight_percentage
 
 
-class PolymlpDevBase(ABC):
+class PolymlpDevDataXYBase(ABC):
 
-    def __init__(self, params: PolymlpDevParams):
+    def __init__(self, params: PolymlpDevData):
         """
         Keys in reg_dict
         ----------------

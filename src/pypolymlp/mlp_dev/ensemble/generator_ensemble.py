@@ -4,12 +4,12 @@ import argparse
 import signal
 import time
 
-from pypolymlp.mlp_dev.mlpdev_core import PolymlpDevParams
-from pypolymlp.mlp_dev.accuracy import PolymlpDevAccuracy
+from pypolymlp.mlp_dev.core.mlpdev_data import PolymlpDevData
+from pypolymlp.mlp_dev.core.accuracy import PolymlpDevAccuracy
 
-from pypolymlp.mlp_dev.ensemble.mlpdev_data_feature_bagging import (
-    PolymlpDevFeatureBagging,
-    PolymlpDevFeatureBaggingSequential,
+from pypolymlp.mlp_dev.ensemble.mlpdev_dataxy_feature_bagging import (
+    PolymlpDevDataXYFeatureBagging,
+    PolymlpDevDataXYFeatureBaggingSequential,
 )
 from pypolymlp.mlp_dev.ensemble.regression_ensemble import RegressionEnsemble
 
@@ -38,16 +38,16 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     verbose = True
-    polymlp_in = PolymlpDevParams()
+    polymlp_in = PolymlpDevData()
     polymlp_in.parse_infiles(args.infile, verbose=verbose)
     polymlp_in.parse_datasets()
     polymlp_in.write_polymlp_params_yaml(filename='polymlp_params.yaml')
 
     t1 = time.time()
     if args.no_sequential:
-        polymlp = PolymlpDevFeatureBagging(polymlp_in)
+        polymlp = PolymlpDevDataXYFeatureBagging(polymlp_in)
     else:
-        polymlp = PolymlpDevFeatureBaggingSequential(polymlp_in)
+        polymlp = PolymlpDevDataXYFeatureBaggingSequential(polymlp_in)
 
     polymlp.run(
         n_models=args.n_models, 

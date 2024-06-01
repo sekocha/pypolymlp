@@ -4,11 +4,13 @@ import argparse
 import signal
 import time
 
-from pypolymlp.mlp_dev.mlpdev_core import PolymlpDevParams
-from pypolymlp.mlp_dev.mlpdev_data import PolymlpDev, PolymlpDevSequential
-from pypolymlp.mlp_dev.regression import Regression
-from pypolymlp.mlp_dev.accuracy import PolymlpDevAccuracy
-from pypolymlp.mlp_dev.learning_curve import learning_curve
+from pypolymlp.mlp_dev.core.mlpdev_data import PolymlpDevData
+from pypolymlp.mlp_dev.standard.mlpdev_dataxy import (
+    PolymlpDevDataXY, PolymlpDevDataXYSequential
+)
+from pypolymlp.mlp_dev.standard.regression import Regression
+from pypolymlp.mlp_dev.core.accuracy import PolymlpDevAccuracy
+from pypolymlp.mlp_dev.standard.learning_curve import learning_curve
 
 
 if __name__ == '__main__':
@@ -32,7 +34,7 @@ if __name__ == '__main__':
 
     verbose = True
 
-    polymlp_in = PolymlpDevParams()
+    polymlp_in = PolymlpDevData()
     polymlp_in.parse_infiles(args.infile, verbose=True)
     polymlp_in.parse_datasets()
     polymlp_in.write_polymlp_params_yaml(filename='polymlp_params.yaml')
@@ -40,7 +42,7 @@ if __name__ == '__main__':
     if args.learning_curve:
         if len(polymlp_in.train_dict) == 1:
             args.no_sequential = True
-            polymlp = PolymlpDev(polymlp_in).run()
+            polymlp = PolymlpDevDataXY(polymlp_in).run()
             learning_curve(polymlp)
         else:
             raise ValueError('A single dataset is required '
@@ -49,10 +51,10 @@ if __name__ == '__main__':
     t1 = time.time()
     if args.no_sequential == True:
         if not args.learning_curve:
-            polymlp = PolymlpDev(polymlp_in).run()
+            polymlp = PolymlpDevDataXY(polymlp_in).run()
         polymlp.print_data_shape()
     else:
-        polymlp = PolymlpDevSequential(polymlp_in).run()
+        polymlp = PolymlpDevDataXYSequential(polymlp_in).run()
     t2 = time.time()
 
     reg = Regression(polymlp).fit(seq=not args.no_sequential)

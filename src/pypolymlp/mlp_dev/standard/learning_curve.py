@@ -2,9 +2,9 @@
 import numpy as np
 import copy
 
-from pypolymlp.mlp_dev.mlpdev_data import PolymlpDev
-from pypolymlp.mlp_dev.regression import Regression
-from pypolymlp.mlp_dev.accuracy import PolymlpDevAccuracy
+from pypolymlp.mlp_dev.standard.mlpdev_dataxy import PolymlpDevDataXY
+from pypolymlp.mlp_dev.standard.regression import Regression
+from pypolymlp.mlp_dev.core.accuracy import PolymlpDevAccuracy
 
 
 def find_slices(train_reg_dict, total_n_atoms, n_samples):
@@ -42,7 +42,7 @@ def write_learning_curve(error_all):
         print('  rmse_stress: ', error['stress'])
 
 
-def learning_curve(polymlp: PolymlpDev):
+def learning_curve(polymlp: PolymlpDevDataXY):
 
     if len(polymlp.train_dict) > 1:
         raise ValueError('A single dataset is required '
@@ -70,7 +70,7 @@ def learning_curve(polymlp: PolymlpDev):
             'scales': train_reg_dict['scales'],
         }
         polymlp_copy.train_regression_dict = train_reg_dict_sample
-        reg = Regression(polymlp_copy).ridge()
+        reg = Regression(polymlp_copy).fit()
 
         acc = PolymlpDevAccuracy(reg)
         acc.compute_error()
@@ -79,6 +79,5 @@ def learning_curve(polymlp: PolymlpDev):
 
     write_learning_curve(error_all)
     return error_all
-
 
 

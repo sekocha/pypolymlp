@@ -4,11 +4,12 @@ import argparse
 import signal
 import time
 
-from pypolymlp.mlp_dev.mlpdev_core import PolymlpDevParams
-from pypolymlp.mlp_dev.mlpdev_data import PolymlpDev, PolymlpDevSequential
-from pypolymlp.mlp_dev.accuracy import PolymlpDevAccuracy
-
 from pypolymlp.core.io_polymlp import load_mlp_lammps_flexible
+from pypolymlp.mlp_dev.core.mlpdev_data import PolymlpDevData
+from pypolymlp.mlp_dev.standard.mlpdev_dataxy import (
+    PolymlpDevDataXY, PolymlpDevDataXYSequential
+)
+from pypolymlp.mlp_dev.core.accuracy import PolymlpDevAccuracy
 from pypolymlp.mlp_dev.transfer.regression_transfer import RegressionTransfer
 
 
@@ -36,17 +37,17 @@ if __name__ == '__main__':
     '''params_dict and polymlp_in.params_dict must be the same'''
     params_dict, mlp_dict = load_mlp_lammps_flexible(args.pot)
 
-    polymlp_in = PolymlpDevParams()
+    polymlp_in = PolymlpDevData()
     polymlp_in.parse_infiles(args.infile, verbose=True)
     polymlp_in.parse_datasets()
     polymlp_in.write_polymlp_params_yaml(filename='polymlp_params.yaml')
 
     t1 = time.time()
     if args.no_sequential:
-        polymlp = PolymlpDev(polymlp_in).run()
+        polymlp = PolymlpDevDataXY(polymlp_in).run()
         polymlp.print_data_shape()
     else:
-        polymlp = PolymlpDevSequential(polymlp_in).run()
+        polymlp = PolymlpDevDataXYSequential(polymlp_in).run()
     t2 = time.time()
 
     reg = RegressionTransfer(polymlp)
