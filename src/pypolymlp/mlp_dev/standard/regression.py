@@ -29,17 +29,12 @@ class Regression(RegressionBase):
         if seq:
             XTX, XTy = vtrain['xtx'], vtrain['xty']
             coefs_array = self.__ridge_fit(A=XTX, Xy=XTy)
-            self.__ridge_model_selection_seq(
-                coefs_array, iprint=iprint
-            )
+            self.__ridge_model_selection_seq(coefs_array, iprint=iprint)
         else:
             X, y = vtrain['x'], vtrain['y']
             coefs_array = self.__ridge_fit(X=X, y=y)
-            self.__ridge_model_selection(
-                coefs_array, iprint=iprint
-            )
+            self.__ridge_model_selection(coefs_array, iprint=iprint)
 
-        self.coeffs = self.best_model['coeffs']
         return self
 
     def __ridge_fit(self, X=None, y=None, A=None, Xy=None):

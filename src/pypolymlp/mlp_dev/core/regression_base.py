@@ -147,15 +147,7 @@ class RegressionBase(ABC):
         ----
         coeffs, scales, rmse, alpha, predictions (train, test)
         """
-        self.__best_model['coeffs'] = self.coeffs
-        self.__best_model['scales'] = self.scales
         return self.__best_model
-
-    @best_model.setter
-    def best_model(self, dict1):
-        self.__best_model.update(dict1)
-        self.__coeffs = self.__best_model['coeffs']
-        self.__scales = self.__best_model['scales']
 
     @property
     def coeffs(self):
@@ -169,6 +161,12 @@ class RegressionBase(ABC):
             return self.hybrid_division(self.__scales)
         return self.__scales
 
+    @best_model.setter
+    def best_model(self, dict1):
+        self.__best_model.update(dict1)
+        self.__coeffs = self.__best_model['coeffs']
+        self.__scales = self.__best_model['scales']
+
     @property
     def coeffs_vector(self):
         return self.__coeffs
@@ -180,10 +178,12 @@ class RegressionBase(ABC):
     @coeffs.setter
     def coeffs(self, array):
         self.__coeffs = array
+        self.__best_model['coeffs'] = array
 
     @scales.setter
     def scales(self, array):
         self.__scales = array
+        self.__best_model['scales'] = array
 
     @property
     def params_dict(self):

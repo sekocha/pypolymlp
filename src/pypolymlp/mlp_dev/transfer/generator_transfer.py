@@ -51,8 +51,7 @@ if __name__ == '__main__':
     t2 = time.time()
 
     reg = RegressionTransfer(polymlp)
-    reg.fit(mlp_dict['coeffs'], mlp_dict['scales'])
-    #(seq=not args.no_sequential)
+    reg.fit(mlp_dict['coeffs'], mlp_dict['scales'], seq=not args.no_sequential)
     reg.save_mlp_lammps(filename='polymlp.lammps')
     t3 = time.time()
 
