@@ -254,9 +254,7 @@ class PolymlpDevData:
     def write_polymlp_params_yaml(self, filename='polymlp_params.yaml'):
 
         if not self.is_hybrid:
-            write_polymlp_params_yaml(
-                self.params_dict, filename='polymlp_params.yaml'
-            )
+            write_polymlp_params_yaml(self.params_dict, filename=filename)
         else:
             for i, params in enumerate(self.params_dict):
                 filename = 'polymlp_params' + str(i+1) + '.yaml'
@@ -281,14 +279,11 @@ class PolymlpDevData:
         if isinstance(params, list):
             if len(params) > 1:
                 self.hybrid_params_dicts = params
-                #self.__hybrid_params_dicts = params
-                #self.__params_dict = set_common_params_dict(params)
-                #self.__hybrid = True
             else:
-                self.__params_dicts = params[0]
+                self.__params_dict = params[0]
                 self.__hybrid = False
         else:
-            self.__params_dicts = params
+            self.__params_dict = params
             self.__hybrid = False
         
     @hybrid_params_dicts.setter
@@ -304,6 +299,14 @@ class PolymlpDevData:
     @property
     def test_dict(self):
         return self.__test_dict
+
+    @train_dict.setter
+    def train_dict(self, dict1):
+        self.__train_dict = dict1
+
+    @test_dict.setter
+    def test_dict(self, dict1):
+        self.__test_dict = dict1
 
     @property
     def is_multiple_datasets(self):

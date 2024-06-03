@@ -16,10 +16,9 @@ def parse_vaspruns(vaspruns, element_order=None):
         structure_dict = v.get_structure()
 
         if element_order is not None:
-            structure_dict, property_dict['force'] \
-                    = permute_atoms(structure_dict,
-                                    property_dict['force'],
-                                    element_order)
+            structure_dict, property_dict['force'] = permute_atoms(
+                structure_dict, property_dict['force'], element_order
+            )
 
         dft_dict['energy'].append(property_dict['energy'])
         force_ravel = np.ravel(property_dict['force'], order='F')

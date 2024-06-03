@@ -3,7 +3,7 @@
 ## MLP development using polymlp.in
 ```
 import numpy as np
-from pypolymlp.api.pypolymlp import Pypolymlp
+from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
 
 polymlp = Pypolymlp()
 polymlp.run(file_params='polymlp.in', log=True)
@@ -16,7 +16,7 @@ mlp_dict = polymlp.summary
 ```
 import numpy as np
 import glob
-from pypolymlp.api.pypolymlp import Pypolymlp
+from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
 
 '''
 Parameters
@@ -68,7 +68,7 @@ or
 ```
 import numpy as np
 import glob
-from pypolymlp.api.pypolymlp import Pypolymlp
+from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
 
 params = {
     'elements': ['Mg','O'],
@@ -93,7 +93,7 @@ polymlp.run(log=True)
 ## MLP development from phono3py.yaml.xz without using polymlp.in
 
 ```
-from pypolymlp.api.pypolymlp import Pypolymlp
+from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
 
 polymlp = Pypolymlp()
 polymlp.set_params(
@@ -127,7 +127,7 @@ polymlp.run(log=True)
 ## MLP development using displacements and forces
 
 ```
-from pypolymlp.api.pypolymlp import Pypolymlp
+from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
 
 polymlp = Pypolymlp()
 polymlp.set_params(
@@ -169,7 +169,7 @@ polymlp.run(log=True)
 ```
 import numpy as np
 import glob
-from pypolymlp.api.pypolymlp import Pypolymlp
+from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
 
 params = {
     'elements': ['Mg','O'],

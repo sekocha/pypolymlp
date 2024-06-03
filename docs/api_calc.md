@@ -88,6 +88,7 @@ from pypolymlp.utils.phonopy_utils import phonopy_supercell
 unitcell_dict = Poscar('POSCAR').get_structure()
 supercell = phonopy_supercell(unitcell_dict, np.diag([3,3,2]))
 
+'''supercell: phonopy structure class'''
 polyfc = PolymlpFC(supercell=supercell, pot='polymlp.lammps')
 
 '''optional'''
