@@ -101,3 +101,56 @@ polyfc.run(batch_size=100)
 
 ```  
 
+## Phonon calculations
+(Required: phonopy)
+```
+from pypolymlp.calculator.compute_phonon import (
+    PolymlpPhonon, PolymlpPhononQHA,
+)
+
+unitcell_dict = Poscar('POSCAR').get_structure()
+supercell_matrix = np.diag([3,3,3])
+ph = PolymlpPhonon(unitcell_dict, supercell_matrix, pot='polymlp.lammps')
+ph.produce_force_constants(displacements=0.01)
+ph.compute_properties(
+    mesh=[10,10,10],
+    t_min=0,
+    t_max=1000,
+    t_step=10,
+    pdos=False
+)
+
+qha = PolymlpPhononQHA(unitcell_dict, supercell_matrix, pot='polymlp.lammps')
+qha.run()
+qha.write_qha()
+```
+
+## Elastic constant calculations 
+(Required: pymatgen)
+```
+from pypolymlp.core.interface_vasp import Poscar
+from pypolymlp.calculator.compute_elastic import PolymlpElastic
+
+unitcell = Poscar('POSCAR').get_structure()
+el = PolymlpElastic(unitcell, 'POSCAR', pot='polymlp.lammps')
+el.run()
+el.write_elastic_constants()
+elastic_constants = el.elastic_constants
+```
+
+## Equation of states calculation
+(Required: pymatgen)
+```
+from pypolymlp.calculator.compute_eos import PolymlpEOS
+
+unitcell = Poscar('POSCAR').get_structure()
+eos = PolymlpEOS(unitcell, pot='polymlp.lammps')
+eos.run(
+    eps_min=0.7, eps_max=2.0, eps_int=0.03, fine_grid=True, eos_fit=True
+)
+eos.write_eos_yaml(filename='polymlp_eos.yaml')
+```
+
+## SSCHA calculations
+(Required: phonopy)
+Coming soon.
