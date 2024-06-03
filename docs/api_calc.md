@@ -45,17 +45,30 @@ energy_all, forces_all, stress_all = prop.eval_multiple(
                                     )
 ```
 
+- When using a hybrid polynomial MLP, multiple MLP files should be given as a list.
+```
+polymlps = ['polymlp.lammps.1', 'polymlp.lammps.2']
+prop = Properties(pot=polymlps)
+```
+
+- Property calculations from phonopy structure objects
+```
+import numpy as np
+from pypolymlp.calculator.properties import Properties
+
+#phonopy.generate_displacements(distance=0.01)
+#supercells = ph.supercells_with_displacements
+
+prop = Properties(pot='polymlp.lammps')
+energy_all, forces_all, stress_all = prop.eval_multiple_phonopy(supercells)
+```
+
 - Conversion of a phonopy cell class object into a structure dictionary 
 ```
 from pypolymlp.utils.phonopy_utils import phonopy_cell_to_st_dict
 st_dict = phonopy_cell_to_st_dict(cell_phonopy)
 ```
 
-- When using a hybrid polynomial MLP, multiple MLP files should be given as a list.
-```
-polymlps = ['polymlp.lammps.1', 'polymlp.lammps.2']
-prop = Properties(pot=polymlps)
-```
 
 ## Force constant calculations
 - Force constant calculations using phono3py.yaml.xz

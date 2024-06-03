@@ -5,6 +5,8 @@ from collections import Counter
 from phonopy import Phonopy
 from phonopy.structure.atoms import PhonopyAtoms
 
+from pypolymlp.calculator.properties import Properties
+
 def st_dict_to_phonopy_cell(st_dict):
 
     ph_cell = PhonopyAtoms(symbols=st_dict['elements'],
@@ -46,5 +48,23 @@ def phonopy_supercell(st_dict,
     supercell_dict['supercell_matrix'] = supercell_matrix
     return supercell_dict
 
+
+def compute_forces_phonopy_displacements(
+    ph: Phonopy, pot='polymlp.lammps', distance=0.01
+):
+    '''Compute forces using phonopy object and polymlp.
+    Return
+    ------
+    forces: (n_str, n_atom, 3)
+    '''
+    prop = Properties(pot=pot)
+    
+    ph.generate_displacements(distance=distance)
+    supercells = ph.supercells_with_displacements
+    st_dicts = [phonopy_cell_to_st_dict(cell) for cell in supercells]
+    ''' forces: (n_str, 3, n_atom) --> (n_str, n_atom, 3)'''
+    _, forces, _ = prop.eval_multiple(st_dicts)
+    forces = np.array(forces).transpose((0,2,1))
+    return forces
 
 
