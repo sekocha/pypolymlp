@@ -381,7 +381,7 @@ class Pypolymlp:
         self.__mlp_dict = reg.best_model
 
         acc = PolymlpDevAccuracy(reg)
-        acc.compute_error()
+        acc.compute_error(path_output=path_output)
         acc.write_error_yaml(filename=path_output + '/polymlp_error.yaml')
 
         self.__mlp_dict['error'] = {

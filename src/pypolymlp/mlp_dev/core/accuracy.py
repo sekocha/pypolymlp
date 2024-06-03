@@ -88,21 +88,33 @@ class PolymlpDevAccuracy:
         return rmse(true, pred)
 
     def compute_error(
-        self, stress_unit='eV',
-        log_force=False, log_stress=False,
+        self, 
+        stress_unit='eV',
+        log_force=False, 
+        log_stress=False,
         path_output='./'
     ):
 
         if self.__multiple_datasets:
             for set_id, dft_dict in self.__train_dict.items():
-                output_key = '.'.join(set_id.split('*')[0].split('/')[:-1])\
-                             .replace('..','')
+                if '*' in set_id:
+                    output_key = '.'.join(
+                        set_id.split('*')[0].split('/')[:-1]
+                    ).replace('..','')
+                else:
+                    output_key = 'Train-' + set_id
+
                 self.__error_train[set_id] = self.compute_error_single(
                     dft_dict, output_key=output_key, path_output=path_output
                 )
             for set_id, dft_dict in self.__test_dict.items():
-                output_key = '.'.join(set_id.split('*')[0].split('/')[:-1])\
-                             .replace('..','')
+                if '*' in set_id:
+                    output_key = '.'.join(
+                        set_id.split('*')[0].split('/')[:-1]
+                    ).replace('..','')
+                else:
+                    output_key = 'Test-' + set_id
+
                 self.__error_test[set_id] = self.compute_error_single(
                     dft_dict, output_key=output_key, path_output=path_output
                 )
