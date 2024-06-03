@@ -41,13 +41,16 @@ class PolymlpDevAccuracy:
 
     def write_error_yaml(self, filename='polymlp_error.yaml'):
 
-        self.__write_error_yaml(self.__error_train, filename=filename)
         self.__write_error_yaml(
-            self.__error_test, filename=filename, initialize=False
+            self.__error_train, tag='train', filename=filename
+        )
+        self.__write_error_yaml(
+            self.__error_test, tag='test', filename=filename, initialize=False
         )
 
     def __write_error_yaml(
-        self, error, filename='polymlp_error.yaml', initialize=True
+        self, error, tag='train', 
+        filename='polymlp_error.yaml', initialize=True,
     ):
     
         if initialize:
@@ -57,10 +60,10 @@ class PolymlpDevAccuracy:
             print('  force:  eV/angstrom', file=f)
             print('  stress: meV/atom', file=f)
             print('', file=f)
-            print('prediction_errors:', file=f)
             f.close()
      
         f = open(filename, 'a')
+        print('prediction_errors_' + tag + ':', file=f)
         for key, dict1 in error.items():
             print('- dataset:', key, file=f)
             print('  rmse_energy: ', dict1['energy'] * 1000, file=f)
