@@ -98,7 +98,6 @@ polyfc.sample(n_samples=100, displacements=0.001, is_plusminus=False)
 
 '''fc2.hdf5 and fc3.hdf5 will be generated.'''
 polyfc.run(batch_size=100)
-
 ```  
 
 ## Phonon calculations
@@ -123,6 +122,15 @@ ph.compute_properties(
 qha = PolymlpPhononQHA(unitcell_dict, supercell_matrix, pot='polymlp.lammps')
 qha.run()
 qha.write_qha()
+```
+
+To use phonopy API after producing force constants using polynomial MLPs, phonopy object can be obtained as follows.
+```
+unitcell_dict = Poscar('POSCAR').get_structure()
+supercell_matrix = np.diag([3,3,3])
+ph = PolymlpPhonon(unitcell_dict, supercell_matrix, pot='polymlp.lammps')
+ph.produce_force_constants(displacements=0.01)
+phonopy = ph.phonopy
 ```
 
 ## Elastic constant calculations 
