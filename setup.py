@@ -33,6 +33,7 @@ setup(
     entry_points={
         'console_scripts': [
             'pypolymlp=pypolymlp.api.run_polymlp:run',
+            'pypolymlp-calc=pypolymlp.api.run_polymlp_calc:run',
             'pypolymlp-utils=pypolymlp.api.run_polymlp_utils:run',
             'pypolymlp-structure=pypolymlp.api.run_polymlp_str:run',
         ],

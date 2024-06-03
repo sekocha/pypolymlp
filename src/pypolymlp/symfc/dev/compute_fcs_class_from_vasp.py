@@ -3,7 +3,6 @@ import numpy as np
 import itertools
 
 
-
 def calc_displacements(positions_array, original_positions, axis):
 
     disps = []

@@ -24,8 +24,8 @@ from symfc.utils.eig_tools import (
     eigsh_projector_sumrule,
 )
 
-#from symfc.utils.utils_O3 import get_compr_coset_reps_sum_O3
-from utils_O3_dev import get_compr_coset_reps_sum_O3
+from symfc.utils.utils_O3 import get_compr_coset_reps_sum_O3
+#from utils_O3_dev import get_compr_coset_reps_sum_O3
 from symfc.utils.matrix_tools_O3 import (
     projector_permutation_lat_trans,
     compressed_projector_sum_rules_from_compact_compr_mat

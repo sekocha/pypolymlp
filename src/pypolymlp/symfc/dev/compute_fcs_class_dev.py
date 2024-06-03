@@ -126,6 +126,7 @@ class PolymlpFC:
                                  ' dict or phonopy supercell')
 
         elif phono3py_yaml is not None:
+            print('Supercell is read from:', phono3py_yaml)
             (self.__supercell_ph, self.__disps, self.__st_dicts) \
                 = parse_phono3py_yaml_fcs(
                     phono3py_yaml, use_phonon_dataset=use_phonon_dataset
@@ -142,17 +143,15 @@ class PolymlpFC:
 
     def sample(self, n_samples=100, displacements=0.001, is_plusminus=False):
 
-        if n_samples is not None:
-            self.__disps, self.__st_dicts \
-                = generate_random_const_displacements(
-                    self.__supercell_dict,
-                    n_samples=n_samples,
-                    displacements=displacements,
-                    is_plusminus=is_plusminus,
-                  )
+        self.__disps, self.__st_dicts = generate_random_const_displacements(
+            self.__supercell_dict,
+            n_samples=n_samples,
+            displacements=displacements,
+            is_plusminus=is_plusminus,
+        )
         return self
 
-    def run_geometry_optimization(self, gtol=1e-6):
+    def run_geometry_optimization(self, gtol=1e-5):
 
         print('Running geometry optimization')
         try:
@@ -306,7 +305,6 @@ if __name__ == '__main__':
     import argparse
     import signal
     from pypolymlp.core.interface_vasp import Poscar
-    #from pypolymlp.utils.yaml_utils import load_cells
 
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 

@@ -60,24 +60,43 @@ prop = Properties(pot=polymlps)
 ## Force constant calculations
 - Force constant calculations using phono3py.yaml.xz
 ```  
-from pypolymlp.api.pypolymlp_fc import PypolymlpFC
+from pypolymlp.symfc.dev.compute_fcs_class_dev import PolymlpFC
 
-polymlp_fc = PypolymlpFC('polymlp.lammps')
-yaml = 'phono3py_params_wurtzite_AgI.yaml.xz'
-polymlp_fc.compute_fcs_phono3py_yaml(yaml)
+polyfc = PolymlpFC(
+    phono3py_yaml='phono3py_params_wurtzite_AgI.yaml.xz',
+    use_phonon_dataset=False,
+    pot='polymlp.lammps',
+)
+
+'''optional'''
+polyfc.run_geometry_optimization()
+
+'''If not using sample(), displacements are read from phono3py.yaml.xz'''
+polyfc.sample(n_samples=100, displacements=0.001, is_plusminus=False)
+
+'''fc2.hdf5 and fc3.hdf5 will be generated.'''
+polyfc.run(batch_size=100)
 ```  
 
-- Force constant calculations using a structure
+- Force constant calculations using a POSCAR file
 ```  
 import numpy as np
-from pypolymlp.api.pypolymlp_fc import PypolymlpFC
+from pypolymlp.symfc.dev.compute_fcs_class_dev import PolymlpFC
+from pypolymlp.core.interface_vasp import Poscar
+from pypolymlp.utils.phonopy_utils import phonopy_supercell
 
-polymlp_fc = PypolymlpFC('polymlp.lammps')
-unitcell_dict = polymlp_fc.parse_poscar('POSCAR-unitcell')
-supercell_matrix = np.diag([3,3,2])
-polymlp_fc.compute_fcs(unitcell_dict=unitcell_dict,
-                       supercell_matrix=supercell_matrix,
-                       n_samples=1000,
-                       displacements=0.03)
+unitcell_dict = Poscar('POSCAR').get_structure()
+supercell = phonopy_supercell(unitcell_dict, np.diag([3,3,2]))
+
+polyfc = PolymlpFC(supercell=supercell, pot='polymlp.lammps')
+
+'''optional'''
+polyfc.run_geometry_optimization()
+
+polyfc.sample(n_samples=100, displacements=0.001, is_plusminus=False)
+
+'''fc2.hdf5 and fc3.hdf5 will be generated.'''
+polyfc.run(batch_size=100)
+
 ```  
 

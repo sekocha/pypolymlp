@@ -165,24 +165,75 @@ class Properties:
                                              coeffs=coeffs)
 
     def eval(self, st_dict):
-        return self.prop.eval(st_dict)
+        e, f, s = self.prop.eval(st_dict)
+        self.__e, self.__f, self.__s = [e], [f], [s]
+        self.__st_dicts = [st_dict]
+        return e, f, s
 
     def eval_multiple(self, st_dicts):
-        return self.prop.eval_multiple(st_dicts)
+        self.__e, self.__f, self.__s = self.prop.eval_multiple(st_dicts)
+        self.__st_dicts = st_dicts
+        return self.__e, self.__f, self.__s
 
     def eval_phonopy(self, str_ph):
         from pypolymlp.utils.phonopy_utils import phonopy_cell_to_st_dict
         st_dict = phonopy_cell_to_st_dict(str_ph)
-        return self.prop.eval(st_dict)
+        e, f, s = self.prop.eval(st_dict)
+        self.__e, self.__f, self.__s = [e], [f], [s]
+        self.__st_dicts = [st_dict]
+        return e, f, s
 
     def eval_multiple_phonopy(self, str_ph_list):
         from pypolymlp.utils.phonopy_utils import phonopy_cell_to_st_dict
         st_dicts = [phonopy_cell_to_st_dict(str_ph) for str_ph in str_ph_list]
-        return self.prop.eval_multiple(st_dicts)
+        self.__e, self.__f, self.__s = self.prop.eval_multiple(st_dicts)
+        self.__st_dicts = st_dicts
+        return self.__e, self.__f, self.__s
+
+    def save(self, verbose=True):
+        np.save('polymlp_energies.npy', self.energies)
+        np.save('polymlp_forces.npy', self.forces)
+        np.save('polymlp_stress_tensors.npy', self.stresses_gpa)
+        if len(self.forces) == 1:
+            np.savetxt('polymlp_energies.dat', self.energies, fmt='%f')
+
+        if verbose:
+            print('polymlp_energies.npy, polymlp_forces.npy,',
+                  'and polymlp_stress_tensors.npy are generated.')
+        return self
+
+    def print_single(self):
+        np.set_printoptions(suppress=True)
+        print('Energy:', self.energies[0], '(eV/cell)')
+        print('Forces:')
+        for i, f in enumerate(self.forces[0].T):
+            print('- atom', i, ":", f)
+        stress = self.stresses_gpa[0]
+        print('Stress tensors:')
+        print('- xx, yy, zz:', stress[0:3])
+        print('- xy, yz, zx:', stress[3:6])
+        print('---------')
+        return self
 
     @property
     def params_dict(self):
         return self.prop.params_dict
+
+    @property
+    def energies(self):
+        return self.__e
+
+    @property
+    def forces(self):
+        return self.__f
+
+    @property
+    def stresses(self):
+        return self.__s
+
+    @property
+    def stresses_gpa(self):
+        return convert_stresses_in_gpa(self.__s, self.__st_dicts)
 
 
 if __name__ == '__main__':
