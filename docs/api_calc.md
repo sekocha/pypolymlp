@@ -2,7 +2,7 @@
 ## Calculations of energy, forces, and stress tensor
 
 - Single structure
-```
+```python
 import numpy as np
 from pypolymlp.core.interface_vasp import Poscar
 from pypolymlp.calculator.properties import Properties
@@ -52,10 +52,17 @@ prop = Properties(pot=polymlps)
 ```
 
 - Property calculations from phonopy structure objects
-```
+```python
 import numpy as np
 from pypolymlp.calculator.properties import Properties
 
+
+'’'
+energy_all: unit: eV/supercell (n_str)
+forces_all: unit: eV/angstrom (n_str, 3, n_atom)
+stress_all: unit: eV/supercell: (n_str, 6)
+                                in the order of xx, yy, zz, xy, yz, zx
+'’’
 #phonopy.generate_displacements(distance=0.01)
 #supercells = ph.supercells_with_displacements
 
