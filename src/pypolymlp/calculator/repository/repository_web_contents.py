@@ -26,9 +26,15 @@ class PolymlpRepositoryWebContents:
 
         today = str(datetime.date.today())
         self.__polymlps_id = self.__system + '-' + today
-        self.__path_output = path_data + '/' + self.__polymlps_id + '/'
 
         self.__polymlps = yamldata['polymlps']
+        for d in self.__polymlps:
+            if 'hybrid' in d['id']:
+                self.__polymlps_id += '-hybrid'
+                break
+
+        self.__path_output = path_data + '/' + self.__polymlps_id + '/'
+
         min_rmse = min([float(d['rmse_energy']) for d in self.__polymlps])
         threshold = min(10, min_rmse * 2) if min_rmse > 2.5 else 5.0
 
@@ -274,9 +280,11 @@ class PolymlpRepositoryWebContents:
                 f = open(path_output + 'prediction.rst', 'w')
                 print(':orphan:', file=f)
                 print('', file=f)
-                print('------------------------------------------', file=f)
+                print('----------------------------------------------------', 
+                    file=f)
                 print(d['id'] + ' (' + self.__polymlps_id + ')', file=f)
-                print('------------------------------------------', file=f)
+                print('----------------------------------------------------', 
+                    file=f)
                 print('', file=f)
 
                 path_dist = '/'.join(
