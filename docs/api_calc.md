@@ -18,24 +18,23 @@ str_dict: dictionary
 """
 str_dict = Poscar('POSCAR').get_structure()
 
-prop = Properties(pot='polymlp.lammps')
-
 """
 energy: unit: eV/supercell
 forces: unit: eV/angstrom (3, n_atom)
 stress: unit: eV/supercell: (6) in the order of xx, yy, zz, xy, yz, zx
 """
+prop = Properties(pot='polymlp.lammps')
 energy, forces, stress = prop.eval(str_dict)
 ```
 
 - Multiple structures (Compatible with OPENMP support)
 ```python
-'’'
+"""
 energy_all: unit: eV/supercell (n_str)
 forces_all: unit: eV/angstrom (n_str, 3, n_atom)
 stress_all: unit: eV/supercell: (n_str, 6) 
                                 in the order of xx, yy, zz, xy, yz, zx
-'’’
+"""
 import numpy as np
 from pypolymlp.calculator.properties import Properties
 
@@ -57,12 +56,12 @@ import numpy as np
 from pypolymlp.calculator.properties import Properties
 
 
-'’'
+"""
 energy_all: unit: eV/supercell (n_str)
 forces_all: unit: eV/angstrom (n_str, 3, n_atom)
 stress_all: unit: eV/supercell: (n_str, 6)
                                 in the order of xx, yy, zz, xy, yz, zx
-'’’
+"""
 #phonopy.generate_displacements(distance=0.01)
 #supercells = ph.supercells_with_displacements
 
@@ -88,13 +87,13 @@ polyfc = PolymlpFC(
     pot='polymlp.lammps',
 )
 
-'''optional'''
+"""optional"""
 polyfc.run_geometry_optimization()
 
-'''If not using sample(), displacements are read from phono3py.yaml.xz'''
+"""If not using sample(), displacements are read from phono3py.yaml.xz"""
 polyfc.sample(n_samples=100, displacements=0.001, is_plusminus=False)
 
-'''fc2.hdf5 and fc3.hdf5 will be generated.'''
+"""fc2.hdf5 and fc3.hdf5 will be generated."""
 polyfc.run(batch_size=100)
 ```  
 
@@ -108,15 +107,15 @@ from pypolymlp.utils.phonopy_utils import phonopy_supercell
 unitcell_dict = Poscar('POSCAR').get_structure()
 supercell = phonopy_supercell(unitcell_dict, np.diag([3,3,2]))
 
-'''supercell: phonopy structure class'''
+"""supercell: phonopy structure class"""
 polyfc = PolymlpFC(supercell=supercell, pot='polymlp.lammps')
 
-'''optional'''
+"""optional"""
 polyfc.run_geometry_optimization()
 
 polyfc.sample(n_samples=100, displacements=0.001, is_plusminus=False)
 
-'''fc2.hdf5 and fc3.hdf5 will be generated.'''
+"""fc2.hdf5 and fc3.hdf5 will be generated."""
 polyfc.run(batch_size=100)
 ```  
 
