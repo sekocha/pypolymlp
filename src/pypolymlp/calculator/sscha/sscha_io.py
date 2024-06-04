@@ -176,7 +176,6 @@ class Restart:
         if fc2hdf5 is not None:
             self.__fc2 = read_fc2_from_hdf5(fc2hdf5)
 
-
     def load_sscha_yaml(self):
     
         yaml_data = yaml.safe_load(open(self.yaml))
@@ -198,15 +197,8 @@ class Restart:
         self.__supercell_matrix = np.array(yaml_data['supercell_matrix'])
         self.__n_atom_unitcell = len(self.__unitcell['elements'])
 
-    def get_mlp_properties(self, pot=None):
-        if pot is not None:
-            self.__pot = pot
-        params_dict, mlp_dict = load_mlp_lammps(filename=pot)
-        coeffs = mlp_dict['coeffs'] / mlp_dict['scales']
-        return params_dict, coeffs
-
     @property
-    def mlp(self):
+    def polymlp(self):
         return self.__pot
 
     @property
