@@ -7,7 +7,7 @@ import numpy as np
 from pypolymlp.core.interface_vasp import Poscar
 from pypolymlp.calculator.properties import Properties
 
-'''
+"""
 str_dict: dictionary
 - 'axis': (3,3), [a, b, c] 
 - 'positions': (3, n_atom) [x1, x2, ...]
@@ -15,16 +15,16 @@ str_dict: dictionary
 - 'elements': Element list (e.g.) ['Mg','Mg','Mg','Mg','O','O','O','O']
 - 'types': Atomic type integers (e.g.) [0, 0, 0, 0, 1, 1, 1, 1]
 - 'volume': 64.0 (ang.^3)
-'''
+"""
 str_dict = Poscar('POSCAR').get_structure()
 
 prop = Properties(pot='polymlp.lammps')
 
-'’'
+"""
 energy: unit: eV/supercell
 forces: unit: eV/angstrom (3, n_atom)
 stress: unit: eV/supercell: (6) in the order of xx, yy, zz, xy, yz, zx
-'’’
+"""
 energy, forces, stress = prop.eval(str_dict)
 ```
 
