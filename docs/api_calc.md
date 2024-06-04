@@ -78,7 +78,7 @@ st_dict = phonopy_cell_to_st_dict(cell_phonopy)
 ## Force constant calculations
 - Force constant calculations using phono3py.yaml.xz
 ```python
-from pypolymlp.symfc.dev.compute_fcs_class_dev import PolymlpFC
+from pypolymlp.calculator.fc import PolymlpFC
 
 polyfc = PolymlpFC(
     phono3py_yaml='phono3py_params_wurtzite_AgI.yaml.xz',
@@ -99,7 +99,7 @@ polyfc.run(batch_size=100)
 - Force constant calculations using a POSCAR file
 ```python  
 import numpy as np
-from pypolymlp.symfc.dev.compute_fcs_class_dev import PolymlpFC
+from pypolymlp.calculator.fc import PolymlpFC
 from pypolymlp.core.interface_vasp import Poscar
 from pypolymlp.utils.phonopy_utils import phonopy_supercell
 

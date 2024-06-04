@@ -36,7 +36,7 @@ if __name__ == '__main__':
     )
 
     from pypolymlp.core.interface_vasp import Poscar, Vasprun
-    from pypolymlp.symfc.dev.compute_fcs_class_dev import PolymlpFC
+    from pypolymlp.calculator.fc import PolymlpFC
 
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 

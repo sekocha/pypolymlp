@@ -9,7 +9,7 @@ from pypolymlp.calculator.sscha.harmonic_real import HarmonicReal
 from pypolymlp.calculator.sscha.sscha_io import Restart
 
 from phono3py.file_IO import write_fc3_to_hdf5
-from pypolymlp.symfc.dev.compute_fcs_class_dev import PolymlpFC
+from pypolymlp.calculator.fc import PolymlpFC
 
 if __name__ == '__main__':
 
