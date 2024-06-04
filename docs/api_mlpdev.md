@@ -18,7 +18,7 @@ import numpy as np
 import glob
 from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
 
-'''
+"""
 Parameters
 ----------
 elements: Element species, (e.g., ['Mg','O'])
@@ -46,7 +46,7 @@ gtinv_maxl: Maximum angular numbers of polynomial invariants.
     [maxl for order=2, maxl for order=3, ...]
 atomic_energy: Atomic energies (in eV).
 rearrange_by_elements: Set True if not developing special MLPs.
-'''
+"""
 
 polymlp = Pypolymlp()
 polymlp.set_params(

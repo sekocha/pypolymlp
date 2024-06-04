@@ -29,15 +29,15 @@ energy, forces, stress = prop.eval(str_dict)
 
 - Multiple structures (Compatible with OPENMP support)
 ```python
+import numpy as np
+from pypolymlp.calculator.properties import Properties
+
 """
 energy_all: unit: eV/supercell (n_str)
 forces_all: unit: eV/angstrom (n_str, 3, n_atom)
 stress_all: unit: eV/supercell: (n_str, 6) 
                                 in the order of xx, yy, zz, xy, yz, zx
 """
-import numpy as np
-from pypolymlp.calculator.properties import Properties
-
 prop = Properties(pot='polymlp.lammps')
 energy_all, forces_all, stress_all = prop.eval_multiple(
                                         [str_dict1, str_dict2, str_dict3]
@@ -54,7 +54,6 @@ prop = Properties(pot=polymlps)
 ```python
 import numpy as np
 from pypolymlp.calculator.properties import Properties
-
 
 """
 energy_all: unit: eV/supercell (n_str)
