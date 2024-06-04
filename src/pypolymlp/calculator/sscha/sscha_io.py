@@ -249,6 +249,13 @@ class Restart:
         return cell
 
     @property
+    def supercell_phonopy(self):
+        cell = phonopy_supercell(self.__unitcell,
+                                 supercell_matrix=self.__supercell_matrix,
+                                 return_phonopy=True)
+        return cell
+
+    @property
     def unitcell_volume(self):
         volume = np.linalg.det(self.__unitcell['axis'])
         if self.__unit == 'kJ/mol':

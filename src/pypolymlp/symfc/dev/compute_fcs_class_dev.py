@@ -107,7 +107,8 @@ class PolymlpFC:
         self.__initialize_supercell(supercell=supercell,
                                     phono3py_yaml=phono3py_yaml,
                                     use_phonon_dataset=use_phonon_dataset)
-
+        self.__fc2 = None
+        self.__fc3 = None
 
     def __initialize_supercell(self,
                                supercell=None,
@@ -188,7 +189,12 @@ class PolymlpFC:
             f -= residual_forces
         return forces
 
-    def run(self, forces=None, batch_size=100, sum_rule_basis=True):
+    def run(
+        self, disps=None, forces=None, 
+        batch_size=100, sum_rule_basis=True, write_fc=True):
+
+        if disps is not None:
+            self.displacements = disps
 
         if forces is None:
             print('Computing forces using polymlp')
@@ -231,7 +237,6 @@ class PolymlpFC:
         t2 = time.time()
         print(' elapsed time (basis sets for fc2 and fc3) =', t2-t1)
 
-
         print('----- Solving fc2 and fc3 using run_solver -----')
         t1 = time.time()
         use_mkl = False if N > 400 else True
@@ -271,10 +276,14 @@ class PolymlpFC:
         t2 = time.time()
         print(' elapsed time (recover fc2 and fc3) =', t2-t1)
 
-        print('writing fc2.hdf5') 
-        write_fc2_to_hdf5(fc2)
-        print('writing fc3.hdf5') 
-        write_fc3_to_hdf5(fc3)
+        self.__fc2 = fc2
+        self.__fc3 = fc3
+        
+        if write_fc:
+            print('writing fc2.hdf5') 
+            write_fc2_to_hdf5(fc2)
+            print('writing fc3.hdf5') 
+            write_fc3_to_hdf5(fc3)
 
         return self
 
@@ -298,6 +307,13 @@ class PolymlpFC:
     def structures(self, st_dicts):
         self.__st_dicts = st_dicts
 
+    @property
+    def fc2(self):
+        return self.__fc2
+
+    @property
+    def fc3(self):
+        return self.__fc3
 
 
 if __name__ == '__main__':
