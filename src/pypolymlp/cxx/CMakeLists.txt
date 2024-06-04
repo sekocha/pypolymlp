@@ -2,6 +2,42 @@ cmake_minimum_required(VERSION 3.13)
 
 project(polymlplib_cmake CXX)
 
+if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.25")
+    if(POLICY CMP0148)
+        cmake_policy(SET CMP0148 NEW)
+    endif()
+endif()
+
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+if(NOT DEFINED CMAKE_CXX_FLAGS_RELEASE)
+    set(CMAKE_CXX_FLAGS_RELEASE "-O2 -Wno-deprecated -DNDEBUG")
+endif()
+
+if(NOT DEFINED CMAKE_CXX_FLAGS_DEBUG)
+    set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
+endif()
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    message(STATUS "Configuring Debug build")
+elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
+    message(STATUS "Configuring Release build")
+else()
+    message(STATUS "No specific build type selected, defaulting to Release")
+    set(CMAKE_BUILD_TYPE "Release")
+endif()
+
+# SET(CMAKE_INTERPROCEDURAL_OPTIMIZATION FALSE) set(CMAKE_VERBOSE_MAKEFILE true)
+
+find_package(pybind11 REQUIRED)
+find_package(Eigen3 REQUIRED)
+message(STATUS "Eigen3 include dir: ${EIGEN3_INCLUDE_DIR}")
+find_package(OpenMP REQUIRED)
+
 set(SRC_FILES
     src/compute/neighbor.cpp
     src/compute/neighbor_half.cpp
@@ -39,44 +75,20 @@ set(SRC_FILES
     src/polymlp/polymlp_gtinv_data_ver2_order6.cpp
 )
 
-#SET(CMAKE_INTERPROCEDURAL_OPTIMIZATION FALSE)
-#set(CMAKE_VERBOSE_MAKEFILE true)
-
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
-set(CMAKE_CXX_FLAGS "-O2 -Wno-deprecated -DNDEBUG")
-find_package(OpenMP)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-
-
-set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
-find_package(pybind11 REQUIRED)
-find_package(Eigen3 REQUIRED)
-message(STATUS ${EIGEN3_INCLUDE_DIR})
-
-set(PYBIND11_PYTHON_VERSION 
-    3.9 3.10 3.11
-)
-
-#add_library(libmlpcpp SHARED ${SRC_FILES})
+# add_library(libmlpcpp SHARED ${SRC_FILES})
 pybind11_add_module(libmlpcpp ${SRC_FILES})
 
+target_include_directories(libmlpcpp PRIVATE ${CMAKE_SOURCE_DIR}/src)
 
-target_include_directories(libmlpcpp
-  PUBLIC ${CMAKE_SOURCE_DIR}/src
-  PUBLIC ${pybind11_INCLUDE_DIRS}
-  PUBLIC ${EIGEN3_INCLUDE_DIR}
+target_link_libraries(
+    libmlpcpp
+    PRIVATE OpenMP::OpenMP_CXX
+    PRIVATE Eigen3::Eigen
+    PRIVATE pybind11::module
 )
 
-target_link_libraries(libmlpcpp 
-    PUBLIC ${OpenMP_CXX_LIBRARIES}
-)
-
-
-install( TARGETS libmlpcpp 
+install(
+    TARGETS libmlpcpp
     COMPONENT python
     LIBRARY DESTINATION ${CMAKE_SOURCE_DIR}/lib
 )
-
