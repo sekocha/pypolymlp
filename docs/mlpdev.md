@@ -1,6 +1,6 @@
 # MLP development 
 
-```
+```shell-session
 > pypolymlp -i polymlp.in
 > cat polymlp.in
 

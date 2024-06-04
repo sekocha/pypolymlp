@@ -29,7 +29,7 @@ energy, forces, stress = prop.eval(str_dict)
 ```
 
 - Multiple structures (Compatible with OPENMP support)
-```
+```python
 '’'
 energy_all: unit: eV/supercell (n_str)
 forces_all: unit: eV/angstrom (n_str, 3, n_atom)
@@ -46,7 +46,7 @@ energy_all, forces_all, stress_all = prop.eval_multiple(
 ```
 
 - When using a hybrid polynomial MLP, multiple MLP files should be given as a list.
-```
+```python
 polymlps = ['polymlp.lammps.1', 'polymlp.lammps.2']
 prop = Properties(pot=polymlps)
 ```
@@ -71,7 +71,7 @@ energy_all, forces_all, stress_all = prop.eval_multiple_phonopy(supercells)
 ```
 
 - Conversion of a phonopy cell class object into a structure dictionary 
-```
+```python
 from pypolymlp.utils.phonopy_utils import phonopy_cell_to_st_dict
 st_dict = phonopy_cell_to_st_dict(cell_phonopy)
 ```
@@ -79,7 +79,7 @@ st_dict = phonopy_cell_to_st_dict(cell_phonopy)
 
 ## Force constant calculations
 - Force constant calculations using phono3py.yaml.xz
-```  
+```python
 from pypolymlp.symfc.dev.compute_fcs_class_dev import PolymlpFC
 
 polyfc = PolymlpFC(
@@ -99,7 +99,7 @@ polyfc.run(batch_size=100)
 ```  
 
 - Force constant calculations using a POSCAR file
-```  
+```python  
 import numpy as np
 from pypolymlp.symfc.dev.compute_fcs_class_dev import PolymlpFC
 from pypolymlp.core.interface_vasp import Poscar
@@ -122,7 +122,7 @@ polyfc.run(batch_size=100)
 
 ## Phonon calculations
 (Required: phonopy)
-```
+```python
 from pypolymlp.calculator.compute_phonon import (
     PolymlpPhonon, PolymlpPhononQHA,
 )
@@ -145,7 +145,7 @@ qha.write_qha()
 ```
 
 To use phonopy API after producing force constants using polynomial MLPs, phonopy object can be obtained as follows.
-```
+```python
 unitcell_dict = Poscar('POSCAR').get_structure()
 supercell_matrix = np.diag([3,3,3])
 ph = PolymlpPhonon(unitcell_dict, supercell_matrix, pot='polymlp.lammps')
@@ -155,7 +155,7 @@ phonopy = ph.phonopy
 
 ## Elastic constant calculations 
 (Required: pymatgen)
-```
+```python
 from pypolymlp.core.interface_vasp import Poscar
 from pypolymlp.calculator.compute_elastic import PolymlpElastic
 
@@ -168,7 +168,7 @@ elastic_constants = el.elastic_constants
 
 ## Equation of states calculation
 (Required: pymatgen)
-```
+```python
 from pypolymlp.calculator.compute_eos import PolymlpEOS
 
 unitcell = Poscar('POSCAR').get_structure()
