@@ -190,8 +190,13 @@ class PolymlpFC:
         return forces
 
     def run(
-        self, disps=None, forces=None, 
-        batch_size=100, sum_rule_basis=True, write_fc=True):
+        self, 
+        disps=None, 
+        forces=None, 
+        batch_size=100, 
+        sum_rule_basis=True, 
+        write_fc=True
+    ):
 
         if disps is not None:
             self.displacements = disps
