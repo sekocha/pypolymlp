@@ -33,7 +33,7 @@ from symfc.utils.matrix_tools_O3 import set_complement_sum_rules
 
 
 '''symfc_basis_dev: must be included to FCBasisSetO3 in symfc'''
-from pypolymlp.symfc.dev.symfc_basis_dev import run_basis
+from pypolymlp.calculator.symfc_basis import run_basis
 
 
 def recover_fc2(coefs, compress_mat, compress_eigvecs, N):
