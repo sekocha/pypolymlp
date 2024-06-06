@@ -442,15 +442,13 @@ void PolymlpEval::compute_sum_of_prod_anlmtc(const vector1i& types,
         clock_t t3 = clock();
 
         vector1dc prod_anlmtc_erased;
-        compute_products<dc>(prod_map_erased,
-                             anlmtc[i],
-                             prod_anlmtc_erased);
+        compute_products<dc>(prod_map_erased, anlmtc[i], prod_anlmtc_erased);
         clock_t t4 = clock();
 
         for (size_t key = 0; key < nlmtc_map_no_conj.size(); ++key){
             const auto& pmodel = pot.p_obj.get_potential_model(type1, key);
             dc sum_e(0.0), sum_f(0.0);
-//            dc prod;
+            //dc prod;
             for (const auto& pterm: pmodel){
                 // TODO: examine accuracy
                 if (fabs(prod_features[pterm.prod_features_key]) > 1e-50){
@@ -460,12 +458,12 @@ void PolymlpEval::compute_sum_of_prod_anlmtc(const vector1i& types,
                     sum_f += pterm.coeff_f
                            * prod_features[pterm.prod_features_key]
                            * prod_anlmtc_erased[pterm.prod_key];
-                   /*
-                   prod = prod_anlmtc_erased[pterm.prod_key]
-                         * prod_features[pterm.prod_features_key];
-                   sum_e += pterm.coeff_e * prod;
-                   sum_f += pterm.coeff_f * prod;
-                   */
+                    /*
+                    prod = prod_anlmtc_erased[pterm.prod_key]
+                          * prod_features[pterm.prod_features_key];
+                    sum_e += pterm.coeff_e * prod;
+                    sum_f += pterm.coeff_f * prod;
+                    */
                 }
             }
             prod_sum_e[i][key] = sum_e;

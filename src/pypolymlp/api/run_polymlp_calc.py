@@ -2,6 +2,7 @@
 import numpy as np
 import argparse
 import signal
+import time
 
 from pypolymlp.core.interface_vasp import parse_structures_from_poscars
 from pypolymlp.core.interface_vasp import parse_structures_from_vaspruns
@@ -164,13 +165,16 @@ def run():
         print('Mode: Property calculations')
         structures = set_structures(args)
         prop = Properties(pot=args.pot)
+        t1 = time.time()
         energies, forces, stresses = prop.eval_multiple(structures)
+        t2 = time.time()
         prop.save()
         if len(forces) == 1:
             prop.print_single()
+        print('Elapsed time:', t2-t1, '(s)')
 
     elif args.force_constants:
-        from pypolymlp.symfc.dev.compute_fcs_class_dev import PolymlpFC
+        from pypolymlp.calculator.fc import PolymlpFC
         from pypolymlp.utils.phonopy_utils import phonopy_supercell
 
         print('Mode: Force constant calculations')

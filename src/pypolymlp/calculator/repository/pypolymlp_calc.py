@@ -91,6 +91,10 @@ def run_single_structure(st_dict,
         print('Geometry optimization has failed.')
         return 0
 
+    if minobj.energy / sum(minobj.structure['n_atoms']) < -20:
+        print('Geometry optimization has failed. (Too low cohesive energy)')
+        return 0
+
     minobj.write_poscar(filename=path_output + '/POSCAR_eqm')
     st_dict_eq = minobj.structure
 

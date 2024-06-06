@@ -43,7 +43,13 @@ def find_optimal_mlps(dirs, key, use_force=False, use_logscale_time=False):
         if os.path.exists(fname1) and os.path.exists(fname2):
             print(dir_pot)
             yml_data = yaml.safe_load(open(fname1))
-            for d in yml_data['prediction_errors']:
+
+            if 'prediction_errors' in yml_data:
+                values = yml_data['prediction_errors']
+            else:
+                values = yml_data['prediction_errors_test']
+
+            for d in values:
                 if key in d['dataset']:
                     match_d = d
                     break

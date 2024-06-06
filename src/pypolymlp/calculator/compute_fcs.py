@@ -19,34 +19,13 @@ from pypolymlp.core.displacements import (
 
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.str_opt.optimization_simple import Minimize
+from pypolymlp.calculator.str_opt.optimization_sym import MinimizeSym
 
 from symfc.basis_sets.basis_sets_O2 import FCBasisSetO2
 from symfc.basis_sets.basis_sets_O3 import FCBasisSetO3
-from symfc.solvers.solver_O2O3 import run_solver_sparse_O2O3
+from symfc.solvers.solver_O2O3 import FCSolverO2O3
 
 from phono3py.file_IO import write_fc2_to_hdf5, write_fc3_to_hdf5
-
-
-def recover_fc2(coefs, compress_mat, compress_eigvecs, N):
-    ''' if using full compression_matrix
-    fc2 = compress_eigvecs @ coefs
-    fc2 = (compress_mat @ fc2).reshape((N,N,3,3))
-    '''
-    n_a = compress_mat.shape[0] // (9*N)
-    fc2 = compress_eigvecs @ coefs
-    fc2 = (compress_mat @ fc2).reshape((n_a,N,3,3))
-    return fc2
-
-
-def recover_fc3(coefs, compress_mat, compress_eigvecs, N):
-    ''' if using full compression_matrix
-    fc3 = compress_eigvecs @ coefs
-    fc3 = (compress_mat @ fc3).reshape((N,N,N,3,3,3))
-    '''
-    n_a = compress_mat.shape[0] // (27*(N**2))
-    fc3 = compress_eigvecs @ coefs
-    fc3 = (compress_mat @ fc3).reshape((n_a,N,N,3,3,3))
-    return fc3
 
 
 def compute_fcs_from_dataset(st_dicts, 
@@ -56,6 +35,8 @@ def compute_fcs_from_dataset(st_dicts,
                              params_dict=None, 
                              coeffs=None,
                              geometry_optimization=False,
+                             geometry_optimization_full=False,
+                             gtol=1e-4,
                              batch_size=200):
     '''
     Parameters
@@ -67,11 +48,38 @@ def compute_fcs_from_dataset(st_dicts,
     if geometry_optimization:
         print('Running geometry optimization')
         supercell_dict = phonopy_cell_to_st_dict(supercell)
+        try:
+            minobj = MinimizeSym(
+                supercell_dict, pot=pot, params_dict=params_dict, coeffs=coeffs
+            )
+            run_go = True
+        except:
+            print('No geomerty optimization is performed.')
+            run_go = False
+
+        if run_go:
+            minobj.run(gtol=gtol)
+            print('Residual forces:')
+            print(minobj.residual_forces.T)
+            print('E0:', minobj.energy)
+            print('n_iter:', minobj.n_iter)
+            print('Fractional coordinate changes:')
+            diff_positions = supercell_dict['positions'] \
+                                - minobj.structure['positions']
+            print(diff_positions.T)
+            print('Success:', minobj.success)
+
+            if minobj.success:
+                supercell_dict = minobj.structure
+
+    elif geometry_optimization_full:
+        print('Running geometry optimization')
+        supercell_dict = phonopy_cell_to_st_dict(supercell)
         minobj = Minimize(supercell_dict, 
                           pot=pot, 
                           params_dict=params_dict, 
                           coeffs=coeffs)
-        minobj.run(gtol=1e-6)
+        minobj.run(gtol=gtol)
         print('Residual forces:')
         print(minobj.residual_forces.T)
         print('E0:', minobj.energy)
@@ -84,8 +92,9 @@ def compute_fcs_from_dataset(st_dicts,
 
         if minobj.success:
             supercell_dict = minobj.structure
-            supercell = st_dict_to_phonopy_cell(supercell_dict)
-            st_dicts = get_structures_from_displacements(disps, supercell_dict)
+
+    supercell_dict = phonopy_cell_to_st_dict(supercell)
+    st_dicts = get_structures_from_displacements(disps, supercell_dict)
 
     t1 = time.time()
     prop = Properties(pot=pot, params_dict=params_dict, coeffs=coeffs)
@@ -95,7 +104,6 @@ def compute_fcs_from_dataset(st_dicts,
 
     '''residual forces'''
     print('Eliminating residual forces')
-    supercell_dict = phonopy_cell_to_st_dict(supercell)
     _, residual_forces, _ = prop.eval(supercell_dict)
     for f in forces:
         f -= residual_forces
@@ -113,35 +121,21 @@ def compute_fcs_from_dataset(st_dicts,
     disps = disps.reshape((n_data, -1))
     forces = forces.reshape((n_data, -1))
 
-    ''' Constructing fc2 basis and fc3 basis '''
+    '''Constructing fc2 basis and fc3 basis '''
     t1 = time.time()
     fc2_basis = FCBasisSetO2(supercell, use_mkl=False).run()
-    compress_mat_fc2 = fc2_basis.compression_matrix
-    compress_eigvecs_fc2 = fc2_basis.basis_set
-
     fc3_basis = FCBasisSetO3(supercell, use_mkl=False).run()
-    compress_mat_fc3 = fc3_basis.compression_matrix
-    compress_eigvecs_fc3 = fc3_basis.basis_set
     t2 = time.time()
     print(' elapsed time (basis sets for fc2 and fc3) =', t2-t1)
 
     ''' Solving fc3 using run_solver_sparse '''
     print('-----')
     t1 = time.time()
-    coefs_fc2, coefs_fc3 = run_solver_sparse_O2O3(disps, 
-                                                  forces, 
-                                                  compress_mat_fc2, 
-                                                  compress_mat_fc3, 
-                                                  compress_eigvecs_fc2,
-                                                  compress_eigvecs_fc3,
-                                                  #use_mkl=True,
-                                                  use_mkl=False,
-                                                  batch_size=batch_size)
+    solver = FCSolverO2O3([fc2_basis, fc3_basis], use_mkl=False)
+    solver.solve(disps, forces, batch_size=batch_size)
+    fc2, fc3 = solver.compact_fc
     t2 = time.time()
     print(' elapsed time (solve fc2 + fc3) =', t2-t1)
-
-    fc2 = recover_fc2(coefs_fc2, compress_mat_fc2, compress_eigvecs_fc2, N)
-    fc3 = recover_fc3(coefs_fc3, compress_mat_fc3, compress_eigvecs_fc3, N)
 
     print('writing fc2.hdf5') 
     write_fc2_to_hdf5(fc2)
