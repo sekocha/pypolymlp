@@ -34,6 +34,7 @@ from symfc.utils.matrix_tools_O3 import set_complement_sum_rules
 
 '''symfc_basis_dev: must be included to FCBasisSetO3 in symfc'''
 from pypolymlp.symfc.dev.symfc_basis_dev import run_basis
+from pypolymlp.symfc.dev.zero_tools_O3 import find_zero_indices
 
 
 def recover_fc2(coefs, compress_mat, compress_eigvecs, N):
@@ -109,6 +110,7 @@ class PolymlpFC:
                                     use_phonon_dataset=use_phonon_dataset)
         self.__fc2 = None
         self.__fc3 = None
+        self.__zero_ids = None
 
     def __initialize_supercell(self,
                                supercell=None,
@@ -181,6 +183,14 @@ class PolymlpFC:
 
         return self
 
+    def set_zero_elements(self, cutoff=7.0):
+        #self.__zero_ids = np.array(
+        #    [20,30,102,202,1453,23455]
+        #)
+        self.__zero_ids = find_zero_indices(self.__supercell_ph, cutoff=cutoff)
+        print('Number of given zero elements:', len(self.__zero_ids))
+        return self
+
     def __compute_forces(self):
 
         _, forces, _ = self.prop.eval_multiple(self.__st_dicts)
@@ -227,11 +237,16 @@ class PolymlpFC:
 
         if sum_rule_basis:
             compress_mat_fc3, compress_eigvecs_fc3 = run_basis(
-                self.__supercell_ph, apply_sum_rule=True,
+                self.__supercell_ph, 
+                zero_ids=self.__zero_ids, 
+                apply_sum_rule=True,
             )
         else:
-            compress_mat_fc3, proj_pt = run_basis(self.__supercell_ph, 
-                                                  apply_sum_rule=False)
+            compress_mat_fc3, proj_pt = run_basis(
+                self.__supercell_ph, 
+                zero_ids=self.__zero_ids, 
+                apply_sum_rule=False,
+            )
 
         trans_perms = SpgRepsO1(self.__supercell_ph).translation_permutations
         c_trans = get_lat_trans_compr_matrix_O3(trans_perms)
@@ -363,6 +378,9 @@ if __name__ == '__main__':
                         type=int,
                         default=100,
                         help='Batch size for FC solver.')
+    parser.add_argument('--zero',
+                        action='store_true',
+                        help='Zero elements will be imposed.')
 
     args = parser.parse_args()
 
@@ -379,4 +397,6 @@ if __name__ == '__main__':
     if args.geometry_optimization:
         polyfc.run_geometry_optimization()
 
+    if args.zero:
+        polyfc.set_zero_elements()
     polyfc.run()

@@ -20,32 +20,38 @@ from scipy.sparse import csr_array
 from symfc.spg_reps import SpgRepsO3
 from symfc.utils.eig_tools import (
     dot_product_sparse,
-#    eigsh_projector,
+    eigsh_projector,
     eigsh_projector_sumrule,
 )
 
 from symfc.utils.utils_O3 import get_compr_coset_reps_sum_O3
-#from utils_O3_dev import get_compr_coset_reps_sum_O3
 from symfc.utils.matrix_tools_O3 import (
-    projector_permutation_lat_trans,
+#    projector_permutation_lat_trans,
     compressed_projector_sum_rules_from_compact_compr_mat
 )
 
 import time
 
-
 from symfc.utils.utils_O3 import get_lat_trans_compr_matrix_O3
 from symfc.utils.matrix_tools_O3 import get_perm_compr_matrix_O3
 
+'''Not implemented in symfc'''
+from pypolymlp.symfc.dev.matrix_tools_O3 import (
+    projector_permutation_lat_trans,
+)
+from pypolymlp.symfc.dev.zero_tools_O3 import (
+    apply_zeros,
+)
 
-from pypolymlp.symfc.dev.eig_tools_dev import eigsh_projector
 
-
-def permutation_dot_lat_trans_stable(trans_perms):
+def permutation_dot_lat_trans_stable(trans_perms, zero_ids=None):
 
     """permutation @ lattice translation"""
     n_lp, N = trans_perms.shape
     c_trans = get_lat_trans_compr_matrix_O3(trans_perms)
+
+    if zero_ids is not None:
+        c_trans = apply_zeros(c_trans, zero_ids)
     print_sp_matrix_size(c_trans, " C_(trans):")
 
     c_perm = get_perm_compr_matrix_O3(N)
@@ -53,47 +59,10 @@ def permutation_dot_lat_trans_stable(trans_perms):
 
     c_pt = c_perm.T @ c_trans
     return c_pt
-
-def apply_zeros(C, zero_ids):
-    """Using this function, sparse C can become larger by assigning zeros.
-    Zero elements should be applied to c_trans and c_perm in constructing them.
-    """
-
-    """Method 1
-    C[zero_ids,:] = 0
-    """
-
-    """Method 2
-    C = C.tolil()
-    C[zero_ids, :] = 0
-    C = C.tocsr()
-    """
-
-    for i in zero_ids:
-        nonzero_cols = C.getrow(i).nonzero()[1]
-        for j in nonzero_cols:
-            C[i,j] = 0
-    return C
-
-def permutation_dot_lat_trans_zero_applied(trans_perms, zero_ids=None):
-
-    """permutation @ lattice translation"""
-    n_lp, N = trans_perms.shape
-    c_trans = get_lat_trans_compr_matrix_O3(trans_perms)
-    c_trans = apply_zeros(c_trans, zero_ids)
-    print_sp_matrix_size(c_trans, " C_(trans):")
-
-    c_perm = get_perm_compr_matrix_O3(N)
-    c_perm = apply_zeros(c_perm, zero_ids)
-    print_sp_matrix_size(c_perm, " C_(perm):")
-
-    c_pt = c_perm.T @ c_trans
-    return c_pt
-
 
 
 def run_basis(
-    supercell, zero_ids=None, reduce_memory=False, apply_sum_rule=True
+    supercell, zero_ids=None, reduce_memory=True, apply_sum_rule=True
 ):
 
     t00 = time.time()
@@ -104,27 +73,15 @@ def run_basis(
     print_sp_matrix_size(trans_perms, " trans_perms:")
     t01 = time.time()
 
-    zero_ids = np.array(
-        [20,30,102,202,1453,23455]
-    )
-
     """permutation @ lattice translation"""
-    if zero_ids is None:
-        if reduce_memory:
-            proj_pt = projector_permutation_lat_trans(trans_perms, use_mkl=True)
-        else:
-            #c_pt = permutation_dot_lat_trans(trans_perms)
-            c_pt = permutation_dot_lat_trans_stable(trans_perms)
-            print_sp_matrix_size(c_pt, " C_perm.T @ C_trans:")
-            proj_pt = dot_product_sparse(c_pt.T, c_pt, use_mkl=True)
+    if reduce_memory:
+        proj_pt = projector_permutation_lat_trans(
+            trans_perms, use_mkl=True, zero_ids=zero_ids,
+        )
     else:
-        if reduce_memory:
-            raise ValueError('Not available: Reduce_memory version.')
-        else:
-            c_pt = permutation_dot_lat_trans_zero_applied(
-                trans_perms, zero_ids=zero_ids,
-            )
-            proj_pt = dot_product_sparse(c_pt.T, c_pt, use_mkl=True)
+        c_pt = permutation_dot_lat_trans_stable(trans_perms, zero_ids=zero_ids)
+        print_sp_matrix_size(c_pt, " C_perm.T @ C_trans:")
+        proj_pt = dot_product_sparse(c_pt.T, c_pt, use_mkl=True)
 
     print_sp_matrix_size(proj_pt, " P_(perm,trans):")
     t02 = time.time()
