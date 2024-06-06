@@ -6,7 +6,7 @@ import numpy as np
 from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
 
 polymlp = Pypolymlp()
-polymlp.run(file_params='polymlp.in', log=True)
+polymlp.run(file_params='polymlp.in', verbose=True)
 
 params_dict = polymlp.parameters
 mlp_dict = polymlp.summary
@@ -62,7 +62,7 @@ polymlp.set_params(
 train_vaspruns = glob.glob('vaspruns/train/vasprun-*.xml.polymlp')
 test_vaspruns = glob.glob('vaspruns/test/vasprun-*.xml.polymlp')
 polymlp.set_datasets_vasp(train_vaspruns, test_vaspruns)
-polymlp.run(log=True)
+polymlp.run(verbose=True)
 ```
 or
 ```python
@@ -87,7 +87,7 @@ polymlp.set_params(params=params)
 train_vaspruns = glob.glob('vaspruns/train/vasprun-*.xml.polymlp')
 test_vaspruns = glob.glob('vaspruns/test/vasprun-*.xml.polymlp')
 polymlp.set_datasets_vasp(train_vaspruns, test_vaspruns)
-polymlp.run(log=True)
+polymlp.run(verbose=True)
 ```
 
 ## MLP development from phono3py.yaml.xz without using polymlp.in
@@ -121,7 +121,7 @@ polymlp.set_datasets_phono3py(
     train_ids=train_ids,
     test_ids=test_ids,
 )
-polymlp.run(log=True)
+polymlp.run(verbose=True)
 ```
 
 ## MLP development using displacements and forces
@@ -161,7 +161,7 @@ polymlp.set_datasets_displacements(
     test_energies,
     st_dict,
 )
-polymlp.run(log=True)
+polymlp.run(verbose=True)
 ```
 
 ## From multiple sets of vasprun.xml files
@@ -194,8 +194,8 @@ polymlp.set_multiple_datasets_vasp(
     [test_vaspruns1, test_vaspruns2]
 )
 
-#polymlp.run(log=True, sequential=False)
-polymlp.run(log=True, sequential=True)
+#polymlp.run(verbose=True, sequential=False)
+polymlp.run(verbose=True, sequential=True)
 ```
 
 

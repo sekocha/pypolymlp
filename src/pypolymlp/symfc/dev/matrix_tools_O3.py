@@ -58,9 +58,6 @@ def projector_permutation_lat_trans(
         shape=(n_perm1, NNN27 // n_lp), dtype="double",
     )
 
-    #if zero_ids is not None:
-    #    c_pt = apply_zeros(c_pt, decompr_idx, zero_ids)
-
     proj_pt = dot_product_sparse(c_pt.T, c_pt, use_mkl=use_mkl)
 
 
@@ -79,14 +76,10 @@ def projector_permutation_lat_trans(
 
     c_pt = csr_array(
         (
-            data,
-            (np.repeat(range(n_perm2), 3), decompr_idx[combinations])
+            data, (np.repeat(range(n_perm2), 3), decompr_idx[combinations])
         ),
         shape=(n_perm2, NNN27 // n_lp), dtype="double",
     )
-
-#    if zero_ids is not None:
-#        c_pt = apply_zeros(c_pt, decompr_idx, zero_ids)
 
     proj_pt += dot_product_sparse(c_pt.T, c_pt, use_mkl=use_mkl)
 
@@ -114,9 +107,6 @@ def projector_permutation_lat_trans(
             ),
             shape=(batch_size, NNN27 // n_lp), dtype="double",
         )
-
-#        if zero_ids is not None:
-#            c_pt = apply_zeros(c_pt, decompr_idx, zero_ids)
 
         proj_pt += dot_product_sparse(c_pt.T, c_pt, use_mkl=use_mkl)
 

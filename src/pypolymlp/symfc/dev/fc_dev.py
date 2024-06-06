@@ -378,9 +378,10 @@ if __name__ == '__main__':
                         type=int,
                         default=100,
                         help='Batch size for FC solver.')
-    parser.add_argument('--zero',
-                        action='store_true',
-                        help='Zero elements will be imposed.')
+    parser.add_argument('--cutoff',
+                        type=float,
+                        default=None,
+                        help='Cutoff radius for setting zero elements.')
 
     args = parser.parse_args()
 
@@ -397,6 +398,7 @@ if __name__ == '__main__':
     if args.geometry_optimization:
         polyfc.run_geometry_optimization()
 
-    if args.zero:
-        polyfc.set_zero_elements()
+    if args.cutoff:
+        polyfc.set_zero_elements(cutoff=args.cutoff)
+
     polyfc.run()

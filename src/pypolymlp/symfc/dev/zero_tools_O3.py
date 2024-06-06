@@ -2,7 +2,7 @@
 import numpy as np
 import itertools
 
-
+"""Slow when zero_ids is large"""
 def apply_zeros(C, zero_ids):
     """Using this function, sparse C can become larger by assigning zeros.
     Zero elements should be applied to c_trans and c_perm in constructing them.

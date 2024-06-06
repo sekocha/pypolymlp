@@ -68,7 +68,7 @@ class Pypolymlp:
 
     def __set_param(self, tag_params, params, assign_variable):
 
-        if tag_params in params:
+        if params is not None and tag_params in params:
             assign_variable = params[tag_params]
         return assign_variable
 
@@ -125,6 +125,8 @@ class Pypolymlp:
 
         All parameters are stored in self.__params_dict.
         '''
+        if params is None:
+            params = dict()
 
         self.__params_dict['elements'] = self.__set_param(
             'elements', params, elements
