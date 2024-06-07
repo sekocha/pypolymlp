@@ -3,7 +3,7 @@ import numpy as np
 import time
 import gc
 
-from pypolymlp.core.interface_phono3py import parse_phono3py_yaml_fcs
+from pypolymlp.core.interface_phono3py_ver3 import parse_phono3py_yaml_fcs
 from pypolymlp.utils.phonopy_utils import (
         phonopy_supercell,
         phonopy_cell_to_st_dict,

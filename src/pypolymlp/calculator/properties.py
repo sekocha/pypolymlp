@@ -269,7 +269,7 @@ if __name__ == '__main__':
     elif args.vaspruns is not None:
         structures = parse_structures_from_vaspruns(args.vaspruns)
     elif args.phono3py_yaml is not None:
-        from pypolymlp.core.interface_phono3py import (
+        from pypolymlp.core.interface_phono3py_ver3 import (
             parse_structures_from_phono3py_yaml
         )
         structures = parse_structures_from_phono3py_yaml(args.phono3py_yaml)

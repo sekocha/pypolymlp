@@ -278,9 +278,9 @@ class Pypolymlp:
     def set_datasets_phono3py(
             self, 
             train_yaml, 
-            train_energy_dat, 
             test_yaml, 
-            test_energy_dat,
+            train_energy_dat=None, 
+            test_energy_dat=None,
             train_ids=None,
             test_ids=None,
     ):

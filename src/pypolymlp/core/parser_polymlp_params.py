@@ -205,12 +205,21 @@ class ParamsParser:
         return data
 
     def __get_phono3py_set(self):
-
-        ''' format: 
-            phono3py_train_data phono3py_params.yaml.xz energies.dat
-            phono3py_test_data phono3py_params.yaml.xz energies.dat
-            phono3py_train_data phono3py_params.yaml.xz energies.dat 0 200
-            phono3py_train_data phono3py_params.yaml.xz energies.dat 950 1000
+        ''' 
+        Format 
+        ------
+        1.
+        phono3py_train_data phono3py_params.yaml.xz energies.dat
+        phono3py_test_data phono3py_params.yaml.xz energies.dat
+        2.
+        phono3py_train_data phono3py_params.yaml.xz energies.dat 0 200
+        phono3py_test_data phono3py_params.yaml.xz energies.dat 950 1000
+        3.
+        phono3py_train_data phono3py_params.yaml.xz 
+        phono3py_test_data phono3py_params.yaml.xz
+        4.
+        phono3py_train_data phono3py_params.yaml.xz 0 200
+        phono3py_test_data phono3py_params.yaml.xz 950 1000
         '''
         train = self.parser.get_params('phono3py_train_data', 
                                         size=4,
@@ -225,22 +234,26 @@ class ParamsParser:
         data['train'] = dict()
         data['test'] = dict()
         data['train']['phono3py_yaml'] = train[0]
-        data['train']['energy'] = train[1]
         data['test']['phono3py_yaml'] = test[0]
-        data['test']['energy'] = test[1]
+
+        if len(train) == 2 or len(train) == 4:
+            data['train']['energy'] = train[1]
+            data['test']['energy'] = test[1]
 
         if len(train) > 2:
             if phono3py_sample == 'sequence':
-                data['train']['indices'] = np.arange(int(train[2]), 
-                                                     int(train[3]))
+                data['train']['indices'] = np.arange(
+                    int(train[-2]), int(train[-1])
+                )
             elif phono3py_sample == 'random':
-                data['train']['indices'] \
-                    = np.random.choice(int(train[2]), size=int(train[3]))
+                data['train']['indices'] = np.random.choice(
+                    int(train[-2]), size=int(train[-1])
+                )
         else:
             data['train']['indices'] = None
 
         if len(test) > 2:
-            data['test']['indices'] = np.arange(int(test[2]), int(test[3]))
+            data['test']['indices'] = np.arange(int(test[-2]), int(test[-1]))
         else:
             data['test']['indices'] = None
 

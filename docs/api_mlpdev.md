@@ -115,9 +115,9 @@ test_ids = np.arange(380,400)
 
 polymlp.set_datasets_phono3py(
     train_yaml,
-    train_energy_dat,
     test_yaml,
-    test_energy_dat,
+    train_energy_dat=train_energy_dat,
+    test_energy_dat=test_energy_dat,
     train_ids=train_ids,
     test_ids=test_ids,
 )

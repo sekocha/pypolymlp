@@ -52,13 +52,13 @@ if __name__ == '__main__':
 
         polymlp.set_datasets_phono3py(
             train_yaml,
-            train_energy_dat,
             test_yaml,
-            test_energy_dat,
+            train_energy_dat=train_energy_dat,
+            test_energy_dat=test_energy_dat,
             train_ids=train_ids,
             test_ids=test_ids,
         )
-        polymlp.run(log=True)
+        polymlp.run(verbose=True)
 
     elif dataset_type == 'displacements':
 
@@ -76,14 +76,14 @@ if __name__ == '__main__':
         ''' Parameters (disps, forces, energies, and st_dict) are 
             Temporarily obtained from phono3py.yaml.xz
         '''
-        from pypolymlp.core.interface_phono3py import Phono3pyYaml
+        from pypolymlp.core.interface_phono3py_ver3 import Phono3pyYaml
 
         yaml_file = 'phono3py_params_wurtzite_AgI.yaml.xz'
         energy_dat = 'energies_ltc_wurtzite_AgI_fc3-forces.dat'
 
         ph3 = Phono3pyYaml(yaml_file)
-        disps, forces = ph3.get_phonon_dataset()
-        st_dict, _ = ph3.get_structure_dataset()
+        disps, forces = ph3.phonon_dataset
+        st_dict, _ = ph3.structure_dataset
         energies = np.loadtxt(energy_dat)[1:,1]
 
         train_disps = disps[0:20]
@@ -112,7 +112,7 @@ if __name__ == '__main__':
             test_energies,
             st_dict,
         )
-        polymlp.run(log=True)
+        polymlp.run(verbose=True)
 
 
     ''' from polymlp.in'''

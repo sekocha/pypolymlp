@@ -31,10 +31,14 @@ def parse_phono3py_yaml(
     disps, forces = ph3.phonon_dataset
     supercell, positions_all = ph3.structure_dataset
 
-    if energies_filename is None:
-        energies = ph3.energies
-    else:
+    if energies_filename is not None:
         energies = np.loadtxt(energies_filename)[1:,1]
+    else:
+        energies = ph3.energies
+        if energies is None:
+            raise ValueError(
+                'No energy entry in phono3py.yaml or no energy file.'
+            )
 
     if select_ids is not None:
         select_ids = np.array(select_ids)
@@ -56,7 +60,6 @@ def parse_phono3py_yaml(
 
 
 def parse_structures_from_phono3py_yaml(phono3py_yaml, select_ids=None):
-
     ph3 = Phono3pyYaml(phono3py_yaml)
     if select_ids is not None:
         return [ph3.supercells[i] for i in select_ids]
@@ -78,7 +81,10 @@ class Phono3pyYaml:
             self.__supercell = self.__ph3.supercell
             self.__displacements = self.__ph3.displacements.transpose((0,2,1))
             self.__forces = self.__ph3.forces.transpose((0,2,1)) 
-            self.__energies = self.__ph3.supercell_energies
+            try:
+                self.__energies = self.__ph3.supercell_energies
+            except:
+                self.__energies = None
         else:
             print('Using phono3py.phonon_*** dataset')
             self.__supercell = self.__ph3.phonon_supercell
@@ -137,10 +143,4 @@ class Phono3pyYaml:
             self.supercell_dict, self.__positions_all
         )
 
-
-if __name__ == '__main__':
-
-    dft_dict = parse_phono3py_yaml(sys.argv[1], sys.argv[2], 
-                                    select_ids=range(200))
-    print(dft_dict['filenames'])
 

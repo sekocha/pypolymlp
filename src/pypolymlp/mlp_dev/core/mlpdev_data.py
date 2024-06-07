@@ -159,7 +159,9 @@ class PolymlpDevData:
                 element_order=self.__params_dict['element_order']
             )
         elif dataset_type == 'phono3py':
-            from pypolymlp.core.interface_phono3py import parse_phono3py_yaml
+            from pypolymlp.core.interface_phono3py_ver3 import (
+                parse_phono3py_yaml
+            )
 
             self.__train_dict = parse_phono3py_yaml(
                 self.__params_dict['dft']['train']['phono3py_yaml'],
