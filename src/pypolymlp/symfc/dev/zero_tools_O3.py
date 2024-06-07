@@ -32,8 +32,8 @@ def find_zero_indices(supercell, cutoff=7.0):
     n_atom = scaled_positions.shape[0]
     diff = scaled_positions[:,None,:] - scaled_positions[None,:,:]
 
-    NN27 = 27 * n_atom * n_atom
-    N27 = 27 * n_atom
+    NN27 = n_atom ** 2 * 27
+    N27 = n_atom * 27
 
     trans = np.array(list(itertools.product(*[[-1,0,1],[-1,0,1],[-1,0,1]])))
     norms = np.ones((n_atom, n_atom)) * 1e10
@@ -43,6 +43,7 @@ def find_zero_indices(supercell, cutoff=7.0):
         match = norms_trial < norms
         norms[match] = norms_trial[match]
 
+    '''Algorithm to eliminate FC3 should be reconsidered.'''
     zero_atom_indices = np.array(np.where(norms > cutoff)).T
     zero_atom_indices = zero_atom_indices @ np.array([NN27, N27])
 
