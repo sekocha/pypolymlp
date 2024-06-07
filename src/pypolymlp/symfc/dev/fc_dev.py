@@ -19,6 +19,7 @@ from pypolymlp.calculator.str_opt.optimization_sym import MinimizeSym
 
 
 import phonopy
+import phono3py
 from phono3py.file_IO import write_fc2_to_hdf5, write_fc3_to_hdf5
 
 
@@ -382,7 +383,14 @@ if __name__ == '__main__':
                         type=float,
                         default=None,
                         help='Cutoff radius for setting zero elements.')
-
+    parser.add_argument('--run_ltc',
+                        action='store_true',
+                        help='Run LTC calculations')
+    parser.add_argument('--ltc_mesh',
+                        type=int,
+                        nargs=3,
+                        default=[19,19,19],
+                        help='k-mesh used for phono3py calculation')
     args = parser.parse_args()
 
     unitcell_dict = Poscar(args.poscar).get_structure()
@@ -392,13 +400,30 @@ if __name__ == '__main__':
     polyfc = PolymlpFC(supercell=supercell, pot=args.pot)
 
     if args.fc_n_samples is not None:
-        polyfc.sample(n_samples=args.fc_n_samples, 
-                      displacements=args.disp, 
-                      is_plusminus=args.is_plusminus)
+        polyfc.sample(
+            n_samples=args.fc_n_samples, 
+            displacements=args.disp, 
+            is_plusminus=args.is_plusminus
+        )
+
     if args.geometry_optimization:
         polyfc.run_geometry_optimization()
 
     if args.cutoff:
         polyfc.set_zero_elements(cutoff=args.cutoff)
 
-    polyfc.run()
+    polyfc.run(write_fc=True)
+
+    if args.run_ltc:
+        ph3 = phono3py.load(
+            unitcell_filename=args.poscar,
+            supercell_matrix=supercell_matrix,
+            primitive_matrix='auto',
+            log_level=1
+        )
+        ph3.mesh_numbers = args.ltc_mesh
+        ph3.init_phph_interaction()
+        ph3.run_thermal_conductivity(
+            temperatures=range(0,1001,10), write_kappa=True
+        )
+        

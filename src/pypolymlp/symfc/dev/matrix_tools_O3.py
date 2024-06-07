@@ -36,7 +36,7 @@ def projector_permutation_lat_trans(
     P_pt = C_trans.T @ C_perm @ C_perm.T @ C_trans 
     '''
     n_lp, natom = trans_perms.shape
-    """Bottleneck part for memory reduction. 
+    """Bottleneck part for memory reduction in constructing a basis set. 
     Input zero elements must be applied to decompr_idx.
     """
     decompr_idx = get_lat_trans_decompr_indices_O3(trans_perms)

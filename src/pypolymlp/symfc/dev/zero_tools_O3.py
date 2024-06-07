@@ -23,10 +23,15 @@ def apply_zeros(C, zero_ids):
 
 
 def find_zero_indices(supercell, cutoff=7.0):
-    """
+    """Find zero FC3 elements outside a sphere given by cutoff radius.
+
     Parameters
     ----------
     supercell: SymfcAtoms or PhonopyAtoms
+    cutoff: Cutoff radius (in angstrom)
+
+    The number of shells may be better than cutoff radius, 
+    because the minimal cutoff radius is strongly system-dependent.
     """
     scaled_positions = supercell.scaled_positions
     n_atom = scaled_positions.shape[0]
