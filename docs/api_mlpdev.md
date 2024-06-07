@@ -124,6 +124,23 @@ polymlp.set_datasets_phono3py(
 polymlp.run(verbose=True)
 ```
 
+When energy values are read from phono3py.yaml.xz, train_energy_dat and test_energy dat are not required as follows.
+```python
+train_yaml = 'phono3py_params_wurtzite_AgI.yaml.xz'
+test_yaml = 'phono3py_params_wurtzite_AgI.yaml.xz'
+train_ids = np.arange(20)
+test_ids = np.arange(380,400)
+
+polymlp.set_datasets_phono3py(
+    train_yaml,
+    test_yaml,
+    train_ids=train_ids,
+    test_ids=test_ids,
+)
+polymlp.run(verbose=True)
+```
+
+
 ## MLP development using displacements and forces
 
 ```python
