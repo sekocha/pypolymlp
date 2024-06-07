@@ -153,7 +153,7 @@ class PolymlpFC:
         )
         return self
 
-    def run_geometry_optimization(self, gtol=1e-5, method='BFGS'):
+    def run_geometry_optimization(self, gtol=1e-5, method='CG'):
 
         print('Running geometry optimization')
         try:

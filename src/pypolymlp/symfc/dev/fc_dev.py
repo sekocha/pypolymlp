@@ -155,7 +155,7 @@ class PolymlpFC:
         )
         return self
 
-    def run_geometry_optimization(self, gtol=1e-5):
+    def run_geometry_optimization(self, gtol=1e-5, method='CG'):
 
         print('Running geometry optimization')
         try:
@@ -164,7 +164,7 @@ class PolymlpFC:
             print('No geomerty optimization is performed.')
             return self
 
-        minobj.run(gtol=gtol)
+        minobj.run(gtol=gtol, method=method)
         print('Residual forces:')
         print(minobj.residual_forces.T)
         print('E0:', minobj.energy)
@@ -178,9 +178,8 @@ class PolymlpFC:
         if minobj.success:
             self.__supercell_dict = minobj.structure
             self.__supercell_ph = st_dict_to_phonopy_cell(self.__supercell_dict)
-            self.__st_dicts = get_structures_from_displacements(
-                self.__disps, self.__supercell_dict
-            )
+            if self.__disps is not None:
+                self.displacements = self.__disps
 
         return self
 
@@ -323,6 +322,9 @@ class PolymlpFC:
             raise ValueError('displacements must have a shape of '
                              '(n_str, 3, n_atom)')
         self.__disps = disps
+        self.__st_dicts = get_structures_from_displacements(
+            self.__disps, self.__supercell_dict
+        )
 
     @structures.setter
     def structures(self, st_dicts):
@@ -335,6 +337,14 @@ class PolymlpFC:
     @property
     def fc3(self):
         return self.__fc3
+
+    @property
+    def supercell_phonopy(self):
+        return self.__supercell_ph
+
+    @property
+    def supercell_dict(self):
+        return self.__supercell_dict
 
 
 if __name__ == '__main__':
