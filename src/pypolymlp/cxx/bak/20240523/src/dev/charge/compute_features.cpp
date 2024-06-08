@@ -1,4 +1,4 @@
-/**************************************************************************** 
+/****************************************************************************
 
         Copyright (C) 2022 Atsuto Seko
                 seko@cms.mtl.kyoto-u.ac.jp
@@ -9,7 +9,7 @@
 
 ComputeFeatures::ComputeFeatures(){}
 
-ComputeFeatures::ComputeFeatures(const vector3d& dis_array, 
+ComputeFeatures::ComputeFeatures(const vector3d& dis_array,
                                  const vector4d& diff_array,
                                  const vector3i& atom2_array,
                                  const vector1i& types_i,
@@ -34,23 +34,23 @@ ComputeFeatures::ComputeFeatures(const vector3d& dis_array,
         compute_features_charge(dis_array, atom2_array, fp, prod_sum_e);
     }
     else if (icharge == true and fp.des_type == "gtinv"){
-        vector2dc anlmtc; 
+        vector2dc anlmtc;
         vector2map_dc prod_sum_e;
         compute_anlmtc(dis_array, diff_array, fp, anlmtc);
         compute_sum_of_prod_anlmtc(anlmtc, prod_sum_e);
-        compute_features_charge(dis_array, 
+        compute_features_charge(dis_array,
                                 diff_array,
                                 atom2_array,
-                                fp, 
+                                fp,
                                 prod_sum_e);
     }
 }
 
 ComputeFeatures::~ComputeFeatures(){}
 
-void ComputeFeatures::compute_features_charge(const vector3d& dis_array, 
+void ComputeFeatures::compute_features_charge(const vector3d& dis_array,
                                               const vector3i& atom2_array,
-                                              const feature_params& fp, 
+                                              const feature_params& fp,
                                               const vector2map_d& prod_sum_e){
 
     const auto& ntc_map = p_obj.get_ntc_map();
@@ -71,8 +71,8 @@ void ComputeFeatures::compute_features_charge(const vector3d& dis_array,
                     get_fn_(dis, fp, fn);
                     int head_key(0);
                     for (const auto& ntc: ntc_map){
-                        if (type_comb_p[ntc.tc][type1].size() > 0 
-                            and type2 == type_comb_p[ntc.tc][type1][0]){ 
+                        if (type_comb_p[ntc.tc][type1].size() > 0
+                            and type2 == type_comb_p[ntc.tc][type1][0]){
                             const int atom2 = atom2_a[j];
                             const auto& prod = prod_sum_e[atom1][head_key];
                             for (const auto& p_ele: prod){
@@ -89,10 +89,10 @@ void ComputeFeatures::compute_features_charge(const vector3d& dis_array,
     }
 }
 
-void ComputeFeatures::compute_features_charge(const vector3d& dis_array, 
+void ComputeFeatures::compute_features_charge(const vector3d& dis_array,
                                               const vector4d& diff_array,
                                               const vector3i& atom2_array,
-                                              const feature_params& fp, 
+                                              const feature_params& fp,
                                               const vector2map_dc& prod_sum_e){
 
     const auto& nlmtc_map_no_conj = p_obj.get_nlmtc_map_no_conjugate();
@@ -118,8 +118,8 @@ void ComputeFeatures::compute_features_charge(const vector3d& dis_array,
                     get_ylm_(sph[0], sph[1], fp.maxl, ylm);
                     for (const auto& nlmtc: nlmtc_map_no_conj){
                         const int tc = nlmtc.tc;
-                        if (type_comb_p[tc][type1].size() > 0 
-                            and type2 == type_comb_p[tc][type1][0]){ 
+                        if (type_comb_p[tc][type1].size() > 0
+                            and type2 == type_comb_p[tc][type1][0]){
                             const int atom2 = atom2_a[j];
                             const int n = nlmtc.n;
                             const auto& lm_attr = nlmtc.lm;
@@ -150,8 +150,8 @@ void ComputeFeatures::compute_features_charge(const vector3d& dis_array,
     }
 }
 
-void ComputeFeatures::compute_antc(const vector3d& dis_array, 
-                                   const feature_params& fp, 
+void ComputeFeatures::compute_antc(const vector3d& dis_array,
+                                   const feature_params& fp,
                                    vector2d& antc){
 
     const auto& ntc_map = p_obj.get_ntc_map();
@@ -160,7 +160,7 @@ void ComputeFeatures::compute_antc(const vector3d& dis_array,
 
     antc = vector2d(inum, vector1d(ntc_map.size(), 0.0));
 
-    vector1d fn; 
+    vector1d fn;
     for (int i = 0; i < dis_array.size(); ++i) {
         int type1 = types[i];
         for (int type2 = 0; type2 < n_type; ++type2){
@@ -171,8 +171,8 @@ void ComputeFeatures::compute_antc(const vector3d& dis_array,
                     get_fn_(dis, fp, fn);
                     int idx(0);
                     for (const auto& ntc: ntc_map){
-                        if (type_comb_p[ntc.tc][type1].size() > 0 
-                            and type2 == type_comb_p[ntc.tc][type1][0]){ 
+                        if (type_comb_p[ntc.tc][type1].size() > 0
+                            and type2 == type_comb_p[ntc.tc][type1][0]){
                             antc[i][idx] += fn[ntc.n];
                         }
                         ++idx;
@@ -191,7 +191,7 @@ void ComputeFeatures::compute_sum_of_prod_antc(const vector2d& antc,
     const auto& ntc_map = p_obj.get_ntc_map();
     const auto& linear_features = p_obj.get_linear_features();
 
-    const int inum = antc.size(); 
+    const int inum = antc.size();
     const int n_head_keys = ntc_map.size();
 
     prod_sum_e = vector2map_d(inum, vector1map_d(n_head_keys));
@@ -231,9 +231,9 @@ void ComputeFeatures::compute_sum_of_prod_antc(const vector2d& antc,
     }
 }
 
-void ComputeFeatures::compute_anlmtc(const vector3d& dis_array, 
+void ComputeFeatures::compute_anlmtc(const vector3d& dis_array,
                                      const vector4d& diff_array,
-                                     const feature_params& fp, 
+                                     const feature_params& fp,
                                      vector2dc& anlmtc){
 
     const auto& nlmtc_map_no_conj = p_obj.get_nlmtc_map_no_conjugate();
@@ -257,8 +257,8 @@ void ComputeFeatures::compute_anlmtc(const vector3d& dis_array,
                     get_ylm_(sph[0], sph[1], fp.maxl, ylm);
                     for (const auto& nlmtc: nlmtc_map_no_conj){
                         const int tc = nlmtc.tc;
-                        if (type_comb_p[tc][type1].size() > 0 
-                            and type2 == type_comb_p[tc][type1][0]){ 
+                        if (type_comb_p[tc][type1].size() > 0
+                            and type2 == type_comb_p[tc][type1][0]){
                             const auto& lm_attr = nlmtc.lm;
                             const int idx = nlmtc.nlmtc_noconj_key;
                             val = fn[nlmtc.n] * ylm[lm_attr.ylmkey];
@@ -303,7 +303,7 @@ void ComputeFeatures::compute_sum_of_prod_anlmtc(const vector2dc& anlmtc,
 
     const auto& nlmtc_map_no_conj = p_obj.get_nlmtc_map_no_conjugate();
     const int n_head_keys = nlmtc_map_no_conj.size();
-    const int inum = anlmtc.size(); 
+    const int inum = anlmtc.size();
 
     prod_sum_e = vector2map_dc(inum, vector1map_dc(n_head_keys));
     for (int i = 0; i < inum; ++i) {
@@ -382,7 +382,6 @@ double ComputeFeatures::prod_real(const dc& val1, const dc& val2){
     return val1.real() * val2.real() - val1.imag() * val2.imag();
 }
 
-const vector2d& ComputeFeatures::get_x() const { 
-    return xc; 
+const vector2d& ComputeFeatures::get_x() const {
+    return xc;
 }
-

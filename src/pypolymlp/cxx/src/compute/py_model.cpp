@@ -8,9 +8,9 @@
 #include "py_model.h"
 
 PyModel::PyModel(const py::dict& params_dict,
-                 const vector3d& axis, 
+                 const vector3d& axis,
                  const vector3d& positions_c,
-                 const vector2i& types, 
+                 const vector2i& types,
                  const vector1i& n_st_dataset,
                  const std::vector<bool>& force_dataset,
                  const vector1i& n_atoms_all){
@@ -59,13 +59,13 @@ PyModel::PyModel(const py::dict& params_dict,
     std::vector<bool> force_st;
     vector1i xf_begin, xs_begin;
     set_index(
-        n_st_dataset, force_dataset, n_atoms_all, 
+        n_st_dataset, force_dataset, n_atoms_all,
         xf_begin, xs_begin, force_st
     );
 
     Neighbor neigh(axis[0], positions_c[0], types[0], fp.n_type, fp.cutoff);
     ModelFast mod(
-        neigh.get_dis_array(), neigh.get_diff_array(), neigh.get_atom2_array(), 
+        neigh.get_dis_array(), neigh.get_diff_array(), neigh.get_atom2_array(),
         types[0], fp, modelp, features_obj
     );
 
@@ -74,11 +74,11 @@ PyModel::PyModel(const py::dict& params_dict,
     const int total_n_data = n_data[0] + n_data[1] + n_data[2];
 
     if (print_memory == true){
-        std::cout << " matrix shape (X) = (" 
+        std::cout << " matrix shape (X) = ("
             << total_n_data << "," << n_features << ")" << std::endl;
         std::cout << std::fixed << std::setprecision(2);
-        std::cout << " Estimated memory allocation = " 
-            << double(total_n_data) * double(n_features) * 8e-9 
+        std::cout << " Estimated memory allocation = "
+            << double(total_n_data) * double(n_features) * 8e-9
             << " (GB)" << std::endl;
         std::cout << std::fixed << std::setprecision(10);
     }
@@ -91,14 +91,14 @@ PyModel::PyModel(const py::dict& params_dict,
         struct feature_params fp1 = fp;
         fp1.force = force_st[i];
 
-        Neighbor neigh(axis[i], 
-                       positions_c[i], 
-                       types[i], 
-                       fp1.n_type, 
+        Neighbor neigh(axis[i],
+                       positions_c[i],
+                       types[i],
+                       fp1.n_type,
                        fp1.cutoff);
-        ModelFast mod(neigh.get_dis_array(), 
+        ModelFast mod(neigh.get_dis_array(),
                       neigh.get_diff_array(),
-                      neigh.get_atom2_array(), 
+                      neigh.get_atom2_array(),
                       types[i], fp1, modelp, features_obj);
 
         const auto &xe = mod.get_xe_sum();
@@ -123,10 +123,10 @@ PyModel::PyModel(const py::dict& params_dict,
 
 PyModel::~PyModel(){}
 
-void PyModel::set_index(const std::vector<int>& n_data_dataset, 
+void PyModel::set_index(const std::vector<int>& n_data_dataset,
                         const std::vector<bool>& force_dataset,
                         const std::vector<int>& n_atoms_st,
-                        std::vector<int>& xf_begin, 
+                        std::vector<int>& xf_begin,
                         std::vector<int>& xs_begin,
                         std::vector<bool>& force){
 
@@ -140,7 +140,7 @@ void PyModel::set_index(const std::vector<int>& n_data_dataset,
     n_data = vector1i(3, 0);
     n_data[0] = n_st;
 
-    int id_st(0), istress(n_st); 
+    int id_st(0), istress(n_st);
     for (int i = 0; i < n_datasets; ++i){
         if (force_dataset[i] == true) {
             xs_begin_dataset[i] = istress;
@@ -154,9 +154,9 @@ void PyModel::set_index(const std::vector<int>& n_data_dataset,
             ++id_st;
         }
     }
- 
-    id_st = 0; 
-    int iforce = istress; 
+
+    id_st = 0;
+    int iforce = istress;
     for (int i = 0; i < n_datasets; ++i){
         if (force_dataset[i] == true) {
             xf_begin_dataset[i] = iforce;
@@ -216,11 +216,11 @@ PyModelSingleStruct::PyModelSingleStruct(const py::dict& params_dict,
                                 lm_coeffs};
 
     Neighbor neigh(axis, positions_c, types, fp.n_type, fp.cutoff);
-    Model mod(neigh.get_dis_array(), 
+    Model mod(neigh.get_dis_array(),
               neigh.get_diff_array(),
-              neigh.get_atom2_array(), 
-              types, 
-              fp, 
+              neigh.get_atom2_array(),
+              types,
+              fp,
               element_swap);
     xe = mod.get_xe_sum();
 }
@@ -229,4 +229,3 @@ PyModelSingleStruct::~PyModelSingleStruct(){}
 
 const vector1d& PyModelSingleStruct::get_x() const{ return xe; }
 */
-

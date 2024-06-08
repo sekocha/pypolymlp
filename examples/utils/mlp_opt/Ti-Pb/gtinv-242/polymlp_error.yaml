@@ -143,4 +143,3 @@ prediction_errors:
 - dataset: ../../vaspruns/test-eqm1/vasprun-*.xml.polymlp
   rmse_energy:  22.220153099887227
   rmse_force:   0.07176997355310763
-

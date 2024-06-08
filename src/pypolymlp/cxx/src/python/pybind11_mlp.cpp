@@ -17,13 +17,13 @@ PYBIND11_MODULE(libmlpcpp, m) {
                       const vector1i&,
                       const std::vector<bool>&,
                       const vector1i&>())
-        .def("get_x", &PyModel::get_x, 
+        .def("get_x", &PyModel::get_x,
                 py::return_value_policy::reference_internal)
-        .def("get_fbegin", &PyModel::get_fbegin, 
+        .def("get_fbegin", &PyModel::get_fbegin,
                 py::return_value_policy::reference_internal)
-        .def("get_sbegin", &PyModel::get_sbegin, 
+        .def("get_sbegin", &PyModel::get_sbegin,
                 py::return_value_policy::reference_internal)
-        .def("get_n_data", &PyModel::get_n_data, 
+        .def("get_n_data", &PyModel::get_n_data,
                 py::return_value_policy::reference_internal)
         ;
 
@@ -35,16 +35,16 @@ PYBIND11_MODULE(libmlpcpp, m) {
                       const vector1i&,
                       const std::vector<bool>&,
                       const vector1i&>())
-        .def("get_x", &PyAdditiveModel::get_x, 
+        .def("get_x", &PyAdditiveModel::get_x,
                 py::return_value_policy::reference_internal)
-        .def("get_fbegin", &PyAdditiveModel::get_fbegin, 
+        .def("get_fbegin", &PyAdditiveModel::get_fbegin,
                 py::return_value_policy::reference_internal)
-        .def("get_sbegin", &PyAdditiveModel::get_sbegin, 
+        .def("get_sbegin", &PyAdditiveModel::get_sbegin,
                 py::return_value_policy::reference_internal)
-        .def("get_cumulative_n_features", 
-                &PyAdditiveModel::get_cumulative_n_features, 
+        .def("get_cumulative_n_features",
+                &PyAdditiveModel::get_cumulative_n_features,
                 py::return_value_policy::reference_internal)
-        .def("get_n_data", &PyAdditiveModel::get_n_data, 
+        .def("get_n_data", &PyAdditiveModel::get_n_data,
                 py::return_value_policy::reference_internal)
         ;
 
@@ -53,45 +53,45 @@ PYBIND11_MODULE(libmlpcpp, m) {
                       const vector1d&>())
         .def("eval", &PyPropertiesFast::eval)
         .def("eval_multiple", &PyPropertiesFast::eval_multiple)
-        .def("get_e", &PyPropertiesFast::get_e, 
+        .def("get_e", &PyPropertiesFast::get_e,
                 py::return_value_policy::reference_internal)
-        .def("get_f", &PyPropertiesFast::get_f, 
+        .def("get_f", &PyPropertiesFast::get_f,
                 py::return_value_policy::reference_internal)
-        .def("get_s", &PyPropertiesFast::get_s, 
+        .def("get_s", &PyPropertiesFast::get_s,
                 py::return_value_policy::reference_internal)
-        .def("get_e_array", &PyPropertiesFast::get_e_array, 
+        .def("get_e_array", &PyPropertiesFast::get_e_array,
                 py::return_value_policy::reference_internal)
-        .def("get_f_array", &PyPropertiesFast::get_f_array, 
+        .def("get_f_array", &PyPropertiesFast::get_f_array,
                 py::return_value_policy::reference_internal)
-        .def("get_s_array", &PyPropertiesFast::get_s_array, 
+        .def("get_s_array", &PyPropertiesFast::get_s_array,
                 py::return_value_policy::reference_internal)
         ;
 
     py::class_<PyFeaturesAttr>(m, "FeaturesAttr")
         .def(py::init<const py::dict&>())
-        .def("get_radial_ids", &PyFeaturesAttr::get_radial_ids, 
+        .def("get_radial_ids", &PyFeaturesAttr::get_radial_ids,
                 py::return_value_policy::reference_internal)
-        .def("get_gtinv_ids", &PyFeaturesAttr::get_gtinv_ids, 
+        .def("get_gtinv_ids", &PyFeaturesAttr::get_gtinv_ids,
                 py::return_value_policy::reference_internal)
-        .def("get_tcomb_ids", &PyFeaturesAttr::get_tcomb_ids, 
+        .def("get_tcomb_ids", &PyFeaturesAttr::get_tcomb_ids,
                 py::return_value_policy::reference_internal)
-        .def("get_polynomial_ids", &PyFeaturesAttr::get_polynomial_ids, 
+        .def("get_polynomial_ids", &PyFeaturesAttr::get_polynomial_ids,
                 py::return_value_policy::reference_internal)
-        .def("get_type_comb_pair", &PyFeaturesAttr::get_type_comb_pair, 
+        .def("get_type_comb_pair", &PyFeaturesAttr::get_type_comb_pair,
                 py::return_value_policy::reference_internal)
         ;
 
     py::class_<Readgtinv>(m, "Readgtinv")
-        .def(py::init<const int&, 
-                      const vector1i&, 
-                      const std::vector<bool>&, 
+        .def(py::init<const int&,
+                      const vector1i&,
+                      const std::vector<bool>&,
                       const int&,
                       const int&>())
-        .def("get_lm_seq", &Readgtinv::get_lm_seq, 
+        .def("get_lm_seq", &Readgtinv::get_lm_seq,
                 py::return_value_policy::reference_internal)
-        .def("get_l_comb", &Readgtinv::get_l_comb, 
+        .def("get_l_comb", &Readgtinv::get_l_comb,
                 py::return_value_policy::reference_internal)
-        .def("get_lm_coeffs", &Readgtinv::get_lm_coeffs, 
+        .def("get_lm_coeffs", &Readgtinv::get_lm_coeffs,
                 py::return_value_policy::reference_internal)
         ;
 
@@ -103,7 +103,7 @@ PYBIND11_MODULE(libmlpcpp, m) {
                       const vector2d&,
                       const vector2d&,
                       const vector1i&>())
-        .def("get_x", &PyModelSingleStruct::get_x, 
+        .def("get_x", &PyModelSingleStruct::get_x,
                 py::return_value_policy::reference_internal)
         ;
 */
@@ -114,12 +114,11 @@ PYBIND11_MODULE(libmlpcpp, m) {
                       const vector3d&,
                       const vector3d&,
                       const vector2i&>())
-        .def("get_e", &PyProperties::get_e, 
+        .def("get_e", &PyProperties::get_e,
                 py::return_value_policy::reference_internal)
-        .def("get_f", &PyProperties::get_f, 
+        .def("get_f", &PyProperties::get_f,
                 py::return_value_policy::reference_internal)
-        .def("get_s", &PyProperties::get_s, 
+        .def("get_s", &PyProperties::get_s,
                 py::return_value_policy::reference_internal)
         ;
 */
-

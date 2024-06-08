@@ -7,8 +7,8 @@
 
 #include "polymlp_functions_interface.h"
 
-void get_fn_(const double& dis, 
-             const struct feature_params& fp, 
+void get_fn_(const double& dis,
+             const struct feature_params& fp,
              vector1d& fn){
 
     double fc = cosine_cutoff_function(dis, fp.cutoff);
@@ -28,9 +28,9 @@ void get_fn_(const double& dis,
     */
 }
 
-void get_fn_(const double& dis, 
-             const struct feature_params& fp, 
-             vector1d& fn, 
+void get_fn_(const double& dis,
+             const struct feature_params& fp,
+             vector1d& fn,
              vector1d& fn_dr){
 
     double fn_val, fn_dr_val;
@@ -58,22 +58,22 @@ void get_fn_(const double& dis,
     */
 }
 
-void get_ylm_(const double polar, 
-              const double azimuthal, 
-              const int lmax, 
+void get_ylm_(const double polar,
+              const double azimuthal,
+              const int lmax,
               vector1dc& ylm){
 
     SphericalHarmonics sh(lmax);
     sh.compute_ylm(cos(polar), azimuthal, ylm);
 }
 
-void get_ylm_(const double r, 
-              const double polar, 
-              const double azimuthal, 
-              const int lmax, 
-              vector1dc& ylm, 
-              vector1dc& ylm_dx, 
-              vector1dc& ylm_dy, 
+void get_ylm_(const double r,
+              const double polar,
+              const double azimuthal,
+              const int lmax,
+              vector1dc& ylm,
+              vector1dc& ylm_dx,
+              vector1dc& ylm_dy,
               vector1dc& ylm_dz){
 
     SphericalHarmonics sh(lmax);

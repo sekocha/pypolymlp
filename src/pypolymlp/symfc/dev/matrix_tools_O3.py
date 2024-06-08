@@ -1,13 +1,13 @@
-#!/usr/bin/env python 
-import numpy as np
+#!/usr/bin/env python
 import math
 
+import numpy as np
 from scipy.sparse import csr_array
-
 from symfc.utils.eig_tools import dot_product_sparse
-from symfc.utils.utils_O3 import get_lat_trans_decompr_indices_O3
 from symfc.utils.matrix_tools_O3 import N3N3N3_to_NNN333, get_combinations
 from symfc.utils.solver_funcs import get_batch_slice
+from symfc.utils.utils_O3 import get_lat_trans_decompr_indices_O3
+
 
 def apply_zeros(c_pt, decompr_idx, zero_ids):
     """
@@ -26,17 +26,17 @@ def apply_zeros(c_pt, decompr_idx, zero_ids):
 def projector_permutation_lat_trans(
     trans_perms, n_batch=6, use_mkl=False, zero_ids=None
 ):
-    '''Calculate a projector for permutation rules compressed by C_trans
-    without allocating C_trans and C_perm. 
+    """Calculate a projector for permutation rules compressed by C_trans
+    without allocating C_trans and C_perm.
     Batch calculations are used to reduce memory allocation.
 
     Return
     ------
     Compressed projector for permutation
-    P_pt = C_trans.T @ C_perm @ C_perm.T @ C_trans 
-    '''
+    P_pt = C_trans.T @ C_perm @ C_perm.T @ C_trans
+    """
     n_lp, natom = trans_perms.shape
-    """Bottleneck part for memory reduction in constructing a basis set. 
+    """Bottleneck part for memory reduction in constructing a basis set.
     Input zero elements must be applied to decompr_idx.
     """
     decompr_idx = get_lat_trans_decompr_indices_O3(trans_perms)
@@ -52,21 +52,26 @@ def projector_permutation_lat_trans(
         data[np.isin(combinations, zero_ids)] = 0
 
     c_pt = csr_array(
-        (
-            data, (np.arange(n_perm1), decompr_idx[combinations])
-        ),
-        shape=(n_perm1, NNN27 // n_lp), dtype="double",
+        (data, (np.arange(n_perm1), decompr_idx[combinations])),
+        shape=(n_perm1, NNN27 // n_lp),
+        dtype="double",
     )
 
     proj_pt = dot_product_sparse(c_pt.T, c_pt, use_mkl=use_mkl)
 
-
     # (2) for FC3 with two distinguished indices (ia,ia,jb)
-    #combinations = np.stack(np.triu_indices(3 * natom, k=1), axis=-1)
-    combinations = get_combinations(3*natom, 2)
+    # combinations = np.stack(np.triu_indices(3 * natom, k=1), axis=-1)
+    combinations = get_combinations(3 * natom, 2)
     n_perm2 = combinations.shape[0] * 2
 
-    perms = [[0, 0, 1], [0, 1, 0], [1, 0, 0], [0, 1, 1], [1, 0, 1], [1, 1, 0]]
+    perms = [
+        [0, 0, 1],
+        [0, 1, 0],
+        [1, 0, 0],
+        [0, 1, 1],
+        [1, 0, 1],
+        [1, 1, 0],
+    ]
     combinations = combinations[:, perms].reshape((-1, 3))
     combinations = N3N3N3_to_NNN333(combinations, natom)
 
@@ -75,22 +80,27 @@ def projector_permutation_lat_trans(
         data[np.isin(combinations, zero_ids)] = 0
 
     c_pt = csr_array(
-        (
-            data, (np.repeat(range(n_perm2), 3), decompr_idx[combinations])
-        ),
-        shape=(n_perm2, NNN27 // n_lp), dtype="double",
+        (data, (np.repeat(range(n_perm2), 3), decompr_idx[combinations])),
+        shape=(n_perm2, NNN27 // n_lp),
+        dtype="double",
     )
 
     proj_pt += dot_product_sparse(c_pt.T, c_pt, use_mkl=use_mkl)
 
-
     # (3) for FC3 with three distinguished indices (ia,jb,kc)
-    combinations = get_combinations(3*natom, 3)
+    combinations = get_combinations(3 * natom, 3)
     n_perm3 = combinations.shape[0]
 
-    perms = [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]]
+    perms = [
+        [0, 1, 2],
+        [0, 2, 1],
+        [1, 0, 2],
+        [1, 2, 0],
+        [2, 0, 1],
+        [2, 1, 0],
+    ]
     for begin, end in zip(*get_batch_slice(n_perm3, n_perm3 // n_batch)):
-        print('Proj (perm.T @ trans) batch:', end)
+        print("Proj (perm.T @ trans) batch:", end)
         batch_size = end - begin
         combinations_perm = combinations[begin:end][:, perms].reshape((-1, 3))
         combinations_perm = N3N3N3_to_NNN333(combinations_perm, natom)
@@ -101,15 +111,16 @@ def projector_permutation_lat_trans(
 
         c_pt = csr_array(
             (
-                data, 
-                (np.repeat(np.arange(batch_size), 6), 
-                    decompr_idx[combinations_perm])
+                data,
+                (
+                    np.repeat(np.arange(batch_size), 6),
+                    decompr_idx[combinations_perm],
+                ),
             ),
-            shape=(batch_size, NNN27 // n_lp), dtype="double",
+            shape=(batch_size, NNN27 // n_lp),
+            dtype="double",
         )
 
         proj_pt += dot_product_sparse(c_pt.T, c_pt, use_mkl=use_mkl)
 
     return proj_pt
-
-

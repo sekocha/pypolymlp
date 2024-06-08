@@ -37,7 +37,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_FLAGS "-O2 -Wno-deprecated -fopenmp")
 
-#set_source_files_properties(src/polymlp/polymlp_gtinv_data.cpp 
+#set_source_files_properties(src/polymlp/polymlp_gtinv_data.cpp
 #    PROPERTIES
 #    COMPILE_FLAGS "-O0"
 #)
@@ -48,7 +48,7 @@ find_package(pybind11 REQUIRED)
 find_package(Eigen3 REQUIRED)
 message(STATUS ${EIGEN3_INCLUDE_DIR})
 
-set ( PYBIND11_PYTHON_VERSION 
+set ( PYBIND11_PYTHON_VERSION
     3.9 3.10 3.11
 )
 
@@ -64,8 +64,7 @@ target_include_directories(libmlpcpp
 target_link_libraries(libmlpcpp PUBLIC -lgomp)
 
 
-install( TARGETS libmlpcpp 
+install( TARGETS libmlpcpp
     COMPONENT python
     LIBRARY DESTINATION ${CMAKE_SOURCE_DIR}/lib
 )
-

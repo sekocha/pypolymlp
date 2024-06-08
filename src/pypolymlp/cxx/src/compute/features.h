@@ -42,7 +42,7 @@ class FunctionFeatures {
     std::vector<nlmtcAttribute> nlmtc_map_no_conjugate, nlmtc_map;
 
     int n_nlmtc_all, n_type;
- 
+
     vector3i prod_map, prod_map_deriv;
     std::vector<ProdMapFromKeys> prod_map_from_keys, prod_map_deriv_from_keys;
     std::vector<FeatureVector> linear_features;
@@ -67,12 +67,12 @@ class FunctionFeatures {
     // not needed ?
     void sort_linear_features_deriv();
 
-    public: 
+    public:
 
     FunctionFeatures();
     FunctionFeatures(
-        const feature_params& fp, 
-        const ModelParams& modelp, 
+        const feature_params& fp,
+        const ModelParams& modelp,
         const Features& f_obj
     );
     ~FunctionFeatures();

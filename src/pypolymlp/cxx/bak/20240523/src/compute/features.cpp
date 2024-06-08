@@ -1,4 +1,4 @@
-/**************************************************************************** 
+/****************************************************************************
 
         Copyright (C) 2024 Atsuto Seko
                 seko@cms.mtl.kyoto-u.ac.jp
@@ -18,7 +18,7 @@ FunctionFeatures::FunctionFeatures(const Features& f_obj){
     ntc_map = f_obj.get_ntc_map();
     n_nlmtc_all = f_obj.get_n_nlmtc_all();
     n_type = f_obj.get_n_type();
-    
+
     int size;
     if (ntc_map.size() > 0){
         eliminate_conj = false;
@@ -48,7 +48,7 @@ FunctionFeatures::~FunctionFeatures(){}
 
 void FunctionFeatures::set_mapping_prod(const Features& f_obj){
 
-    std::vector<std::set<vector1i> > 
+    std::vector<std::set<vector1i> >
         nonequiv_keys(n_type), nonequiv_deriv_keys(n_type);
 
     const auto& mfeatures = f_obj.get_features();
@@ -68,11 +68,11 @@ void FunctionFeatures::set_mapping_prod(const Features& f_obj){
     }
 
     for (int t1 = 0; t1 < n_type; ++t1){
-        nonequiv_set_to_mappings(nonequiv_keys[t1], 
-                                 prod_map_from_keys[t1], 
+        nonequiv_set_to_mappings(nonequiv_keys[t1],
+                                 prod_map_from_keys[t1],
                                  prod_map[t1]);
-        nonequiv_set_to_mappings(nonequiv_deriv_keys[t1], 
-                                 prod_map_deriv_from_keys[t1], 
+        nonequiv_set_to_mappings(nonequiv_deriv_keys[t1],
+                                 prod_map_deriv_from_keys[t1],
                                  prod_map_deriv[t1]);
     }
 
@@ -123,7 +123,7 @@ void FunctionFeatures::set_features_using_mappings(const Features& f_obj){
                 }
             }
             for (const auto& sterm: sfeature_map){
-                FeatureSingleTermDeriv fsterm 
+                FeatureSingleTermDeriv fsterm
                     = {sterm.second, sterm.first[0], sterm.first[1]};
                 linear_features_deriv[t1][idx].emplace_back(fsterm);
             }
@@ -139,7 +139,7 @@ void FunctionFeatures::sort_linear_features_deriv(){
     for (int t1 = 0; t1 < n_type; ++t1){
         for (auto& sfeature: linear_features_deriv[t1]){
             std::sort(sfeature.begin(), sfeature.end(),
-                    [](const FeatureSingleTermDeriv& lhs, 
+                    [](const FeatureSingleTermDeriv& lhs,
                         const FeatureSingleTermDeriv& rhs){
                     if (lhs.nlmtc_key != rhs.nlmtc_key){
                         return lhs.nlmtc_key < rhs.nlmtc_key;
@@ -178,7 +178,7 @@ void FunctionFeatures::set_features_using_mappings_simple(const Features& f_obj)
                 const vector1i keys = erase_a_key(sterm.nlmtc_keys, i);
                 for (const auto& t1: type1){
                     const int prod_key = prod_map_deriv_from_keys[t1][keys];
-                    FeatureSingleTermDeriv fsterm 
+                    FeatureSingleTermDeriv fsterm
                             = {sterm.coeff, prod_key, nlmtc_key};
                     linear_features_deriv[t1][idx].emplace_back(fsterm);
                 }
@@ -220,37 +220,36 @@ void FunctionFeatures::print_keys(const vector1i& keys){
 }
 */
 
-const std::vector<lmAttribute>& FunctionFeatures::get_lm_map() const { 
-    return lm_map; 
+const std::vector<lmAttribute>& FunctionFeatures::get_lm_map() const {
+    return lm_map;
 }
-const std::vector<nlmtcAttribute>& 
-FunctionFeatures::get_nlmtc_map_no_conjugate() const{ 
-    return nlmtc_map_no_conjugate; 
+const std::vector<nlmtcAttribute>&
+FunctionFeatures::get_nlmtc_map_no_conjugate() const{
+    return nlmtc_map_no_conjugate;
 }
-const std::vector<nlmtcAttribute>& FunctionFeatures::get_nlmtc_map() const { 
-    return nlmtc_map; 
+const std::vector<nlmtcAttribute>& FunctionFeatures::get_nlmtc_map() const {
+    return nlmtc_map;
 }
-const std::vector<ntcAttribute>& FunctionFeatures::get_ntc_map() const { 
-    return ntc_map; 
+const std::vector<ntcAttribute>& FunctionFeatures::get_ntc_map() const {
+    return ntc_map;
 }
-const int FunctionFeatures::get_n_nlmtc_all() const { 
-    return n_nlmtc_all; 
-}
-
-
-const vector2i& FunctionFeatures::get_prod_map(const int t) const { 
-    return prod_map[t]; 
-}
-const vector2i& FunctionFeatures::get_prod_map_deriv(const int t) const { 
-    return prod_map_deriv[t]; 
+const int FunctionFeatures::get_n_nlmtc_all() const {
+    return n_nlmtc_all;
 }
 
-const FeatureVector& 
-FunctionFeatures::get_linear_features(const int t) const { 
+
+const vector2i& FunctionFeatures::get_prod_map(const int t) const {
+    return prod_map[t];
+}
+const vector2i& FunctionFeatures::get_prod_map_deriv(const int t) const {
+    return prod_map_deriv[t];
+}
+
+const FeatureVector&
+FunctionFeatures::get_linear_features(const int t) const {
     return linear_features[t];
 }
-const FeatureVectorDeriv& 
-FunctionFeatures::get_linear_features_deriv(const int t) const { 
+const FeatureVectorDeriv&
+FunctionFeatures::get_linear_features_deriv(const int t) const {
     return linear_features_deriv[t];
 }
-

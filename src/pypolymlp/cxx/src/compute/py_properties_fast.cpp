@@ -44,7 +44,7 @@ PyPropertiesFast::PyPropertiesFast(const py::dict& params_dict,
 
 PyPropertiesFast::~PyPropertiesFast(){}
 
-void PyPropertiesFast::eval(const vector2d& axis, 
+void PyPropertiesFast::eval(const vector2d& axis,
                             const vector2d& positions_c,
                             const vector1i& types){
     /* positions_c: (3, n_atom) */
@@ -58,7 +58,7 @@ void PyPropertiesFast::eval(const vector2d& axis,
                  stress);
 }
 
-void PyPropertiesFast::eval_multiple(const vector3d& axis_array, 
+void PyPropertiesFast::eval_multiple(const vector3d& axis_array,
                                      const vector3d& positions_c_array,
                                      const vector2i& types_array){
     const int n_st = axis_array.size();
@@ -70,9 +70,9 @@ void PyPropertiesFast::eval_multiple(const vector3d& axis_array,
     #pragma omp parallel for schedule(guided,1)
     #endif
     for (int i = 0; i < n_st; ++i){
-        NeighborHalf neigh(axis_array[i], 
-                           positions_c_array[i], 
-                           types_array[i], 
+        NeighborHalf neigh(axis_array[i],
+                           positions_c_array[i],
+                           types_array[i],
                            fp.cutoff);
         polymlp.eval(positions_c_array[i],
                      types_array[i],
@@ -92,5 +92,3 @@ const vector1d& PyPropertiesFast::get_s() const { return stress; }
 const vector1d& PyPropertiesFast::get_e_array() const { return e_array; }
 const vector3d& PyPropertiesFast::get_f_array() const { return f_array; }
 const vector2d& PyPropertiesFast::get_s_array() const { return s_array; }
-
-

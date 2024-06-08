@@ -9,7 +9,7 @@ from pypolymlp.calculator.properties import Properties
 
 """
 str_dict: dictionary
-- 'axis': (3,3), [a, b, c] 
+- 'axis': (3,3), [a, b, c]
 - 'positions': (3, n_atom) [x1, x2, ...]
 - 'n_atoms': [4, 4]
 - 'elements': Element list (e.g.) ['Mg','Mg','Mg','Mg','O','O','O','O']
@@ -35,7 +35,7 @@ from pypolymlp.calculator.properties import Properties
 """
 energy_all: unit: eV/supercell (n_str)
 forces_all: unit: eV/angstrom (n_str, 3, n_atom)
-stress_all: unit: eV/supercell: (n_str, 6) 
+stress_all: unit: eV/supercell: (n_str, 6)
                                 in the order of xx, yy, zz, xy, yz, zx
 """
 prop = Properties(pot='polymlp.lammps')
@@ -68,7 +68,7 @@ prop = Properties(pot='polymlp.lammps')
 energy_all, forces_all, stress_all = prop.eval_multiple_phonopy(supercells)
 ```
 
-- Conversion of a phonopy cell class object into a structure dictionary 
+- Conversion of a phonopy cell class object into a structure dictionary
 ```python
 from pypolymlp.utils.phonopy_utils import phonopy_cell_to_st_dict
 st_dict = phonopy_cell_to_st_dict(cell_phonopy)
@@ -94,10 +94,10 @@ polyfc.sample(n_samples=100, displacements=0.001, is_plusminus=False)
 
 """fc2.hdf5 and fc3.hdf5 will be generated."""
 polyfc.run(batch_size=100)
-```  
+```
 
 - Force constant calculations using a POSCAR file
-```python  
+```python
 import numpy as np
 from pypolymlp.calculator.fc import PolymlpFC
 from pypolymlp.core.interface_vasp import Poscar
@@ -116,7 +116,7 @@ polyfc.sample(n_samples=100, displacements=0.001, is_plusminus=False)
 
 """fc2.hdf5 and fc3.hdf5 will be generated."""
 polyfc.run(batch_size=100)
-```  
+```
 
 ## Phonon calculations
 (Required: phonopy)
@@ -151,7 +151,7 @@ ph.produce_force_constants(displacements=0.01)
 phonopy = ph.phonopy
 ```
 
-## Elastic constant calculations 
+## Elastic constant calculations
 (Required: pymatgen)
 ```python
 from pypolymlp.core.interface_vasp import Poscar

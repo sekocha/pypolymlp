@@ -19,20 +19,20 @@ class Ewald{
     arma::vec f, s, fr, fg, sr, sg;
     vector1d fvec, svec, frvec, fgvec, srvec, sgvec;
 
-    double realspace(const vector3d& dis_array, 
+    double realspace(const vector3d& dis_array,
                      const vector3i& atom2_array);
-    double reciprocal(const vector2d& gvectors, 
-                      const vector2d& positions_cartesian, 
+    double reciprocal(const vector2d& gvectors,
+                      const vector2d& positions_cartesian,
                       const double& volume);
-    double realspace_f(const vector3d& dis_array, 
+    double realspace_f(const vector3d& dis_array,
                        const vector4d& diff_array,
-                       const vector3i& atom2_array, 
-                       arma::vec& fr, 
+                       const vector3i& atom2_array,
+                       arma::vec& fr,
                        arma::vec& sr);
-    double reciprocal_f(const vector2d& gvectors, 
-                        const vector2d& positions_cartesian, 
-                        const double& volume, 
-                        arma::vec& fg, 
+    double reciprocal_f(const vector2d& gvectors,
+                        const vector2d& positions_cartesian,
+                        const double& volume,
+                        arma::vec& fg,
                         arma::vec& sg);
     double self();
 
@@ -43,12 +43,12 @@ class Ewald{
         T dforce_to_dstress
         (const T& dforce, const arma::vec& diff_c);
 
-    public: 
+    public:
 
     Ewald();
-    Ewald(const vector2d& axis, 
+    Ewald(const vector2d& axis,
           const vector2d& positions_c,
-          const vector1i& types, 
+          const vector1i& types,
           const int& n_type,
           const double& cutoff,
           const vector2d& gvectors,

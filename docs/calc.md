@@ -22,7 +22,7 @@ or
 > pypolymlp-calc --features -i polymlp.in --poscars */POSCAR
 ```
 
-## Force constants 
+## Force constants
 
 (phonopy, phono3py, and symfc are required.)
 ```

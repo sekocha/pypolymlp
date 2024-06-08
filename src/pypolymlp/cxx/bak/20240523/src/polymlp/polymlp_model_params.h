@@ -40,7 +40,7 @@ class ModelParams{
 
     void initial_setting(const struct feature_params& fp);
 
-    public: 
+    public:
 
     ModelParams();
     ModelParams(const struct feature_params& fp);
@@ -63,16 +63,16 @@ class ModelParams{
     const std::vector<struct LinearTermGtinv>& get_linear_term_gtinv() const;
 
     const vector3i& get_type_comb_pair() const;
-    vector1i get_type_comb_pair(const vector1i& tc_index, 
+    vector1i get_type_comb_pair(const vector1i& tc_index,
                                 const int& type1);
 
 };
 
 template < typename SEQUENCE >
 void Permutenr
-(const SEQUENCE& input, SEQUENCE output, 
+(const SEQUENCE& input, SEQUENCE output,
  std::vector<SEQUENCE>& all, std::size_t r){
-    if( output.size() == r ) all.emplace_back(output); 
+    if( output.size() == r ) all.emplace_back(output);
     else {
         for( std::size_t i=0; i < input.size(); ++i ) {
             SEQUENCE temp_output = output;

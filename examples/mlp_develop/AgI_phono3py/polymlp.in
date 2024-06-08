@@ -14,8 +14,8 @@ reg_alpha_params -2 3 6
 include_stress False
 
 n_type 2
-elements Ag I 
-atomic_energy -0.19820116 -0.21203241 
+elements Ag I
+atomic_energy -0.19820116 -0.21203241
 
 dataset_type phono3py
 phono3py_train_data phono3py_params_wurtzite_AgI.yaml.xz energies_ltc_wurtzite_AgI_fc3-forces.dat 0 200

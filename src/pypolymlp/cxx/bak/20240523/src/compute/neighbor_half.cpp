@@ -9,23 +9,23 @@
 //#include <chrono>
 
 
-NeighborHalf::NeighborHalf(const vector2d& axis, 
-                           const vector2d& positions_c, 
-                           const vector1i& types, 
+NeighborHalf::NeighborHalf(const vector2d& axis,
+                           const vector2d& positions_c,
+                           const vector1i& types,
                            const double& cutoff){
 
-//    auto t1 = std::chrono::system_clock::now(); 
+//    auto t1 = std::chrono::system_clock::now();
 
     NeighborCell neigh_cell(axis, positions_c, cutoff);
     const auto& trans = neigh_cell.get_translations();
     const auto& positions_c_rev = neigh_cell.get_positions_cartesian();
-/* 
-    auto t2 = std::chrono::system_clock::now(); 
+/*
+    auto t2 = std::chrono::system_clock::now();
     auto dur = t2 - t1;
     auto msec = std::chrono::duration_cast
                 <std::chrono::microseconds>(dur).count();
     std::cout << msec << std::endl;
-    auto t3 = std::chrono::system_clock::now(); 
+    auto t3 = std::chrono::system_clock::now();
 */
     double dx, dy, dz, dx_ij, dy_ij, dz_ij, dis;
     bool bool_half;
@@ -48,14 +48,14 @@ NeighborHalf::NeighborHalf(const vector2d& axis,
                 }
             }
         }
-        // j = i 
+        // j = i
         for (const auto& tr: trans){
             dx = tr[0], dy = tr[1], dz = tr[2];
             dis = sqrt(dx*dx + dy*dy + dz*dz);
             if (dis < cutoff and dis > 1e-10){
                 if (dz >= tol) bool_half = true;
                 else if (fabs(dz) < tol and dy >= tol) bool_half = true;
-                else if (fabs(dz) < tol and fabs(dy) < tol and dx >=tol) 
+                else if (fabs(dz) < tol and fabs(dy) < tol and dx >=tol)
                     bool_half = true;
                 else bool_half = false;
                 if (bool_half == true){
@@ -80,7 +80,7 @@ NeighborHalf::NeighborHalf(const vector2d& axis,
 */
 
 /*
-    auto t4 = std::chrono::system_clock::now(); 
+    auto t4 = std::chrono::system_clock::now();
     dur = t4 - t3;
     msec = std::chrono::duration_cast
                 <std::chrono::microseconds>(dur).count();
@@ -95,10 +95,10 @@ const vector3d& NeighborHalf::get_diff_list() const { return diff_list; }
 
 
 
-/* lammps convention for pair choice 
-NeighborHalf::NeighborHalf(const vector2d& axis, 
-                           const vector2d& positions_c, 
-                           const vector1i& types, 
+/* lammps convention for pair choice
+NeighborHalf::NeighborHalf(const vector2d& axis,
+                           const vector2d& positions_c,
+                           const vector1i& types,
                            const double& cutoff){
 
     const double tol = 1e-12;
@@ -118,11 +118,11 @@ NeighborHalf::NeighborHalf(const vector2d& axis,
                 bool bool_half = false;
                 double dis = sqrt(dx*dx + dy*dy + dz*dz);
                 if (dis < cutoff and dis > 1e-10){
-                    if (dz >= tol) 
+                    if (dz >= tol)
                         bool_half = true;
-                    else if (fabs(dz) < tol and dy >= tol) 
+                    else if (fabs(dz) < tol and dy >= tol)
                         bool_half = true;
-                    else if (fabs(dz) < tol and fabs(dy) < tol and dx >=tol) 
+                    else if (fabs(dz) < tol and fabs(dy) < tol and dx >=tol)
                         bool_half = true;
                 }
                 if (bool_half == true){
@@ -134,4 +134,3 @@ NeighborHalf::NeighborHalf(const vector2d& axis,
     }
 }
 */
-

@@ -2,7 +2,7 @@
 
         Copyright (C) 2024 Atsuto Seko
                 seko@cms.mtl.kyoto-u.ac.jp
-	
+
 ****************************************************************************/
 
 #ifndef __POLYMLP_GTINV_DATA_ORDER1
@@ -18,7 +18,7 @@ class GtinvDataOrder1{
 
     void set_gtinv_info();
 
-    public: 
+    public:
 
     GtinvDataOrder1();
    ~GtinvDataOrder1();

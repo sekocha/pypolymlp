@@ -1,14 +1,13 @@
-import numpy as np
 import sys
 import time
 
-from symfc.solvers.solver_O2O3 import run_solver_sparse_O2O3
-from symfc.solvers.solver_O2 import run_solver_sparse_O2
-from symfc.basis_sets import FCBasisSetO2, FCBasisSetO3
-
-from phono3py.file_IO import write_fc2_to_hdf5, write_fc3_to_hdf5
+import numpy as np
 import phono3py
 import phonopy
+from phono3py.file_IO import write_fc2_to_hdf5, write_fc3_to_hdf5
+from symfc.basis_sets import FCBasisSetO2, FCBasisSetO3
+from symfc.solvers.solver_O2 import run_solver_sparse_O2
+from symfc.solvers.solver_O2O3 import run_solver_sparse_O2O3
 
 
 def parse_dataset_phono3py_xz(filename):
@@ -117,6 +116,9 @@ if __name__ == "__main__":
         ph_disps, ph_forces, ph_compress_mat_fc2, ph_compress_eigvecs_fc2
     )
     fc2 = recover_fc2(
-        ph_coefs, ph_compress_mat_fc2, ph_compress_eigvecs_fc2, len(ph_supercell)
+        ph_coefs,
+        ph_compress_mat_fc2,
+        ph_compress_eigvecs_fc2,
+        len(ph_supercell),
     )
     write_fc2_to_hdf5(fc2)

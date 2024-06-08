@@ -1,6 +1,4 @@
-#!/usr/bin/env python 
-import numpy as np
-
+#!/usr/bin/env python
 from pypolymlp.mlp_dev.core.mlpdev_data import PolymlpDevData
 from pypolymlp.mlp_dev.core.mlpdev_dataxy_base import PolymlpDevDataXYBase
 
@@ -12,8 +10,10 @@ class PolymlpDevDataXYEnsembleBase(PolymlpDevDataXYBase):
         super().__init__(params)
 
         if not self.is_multiple_datasets:
-            raise ValueError('Ensemble version is available '
-                             'for PolymlpDevParams with multiple datasets.')
+            raise ValueError(
+                "Ensemble version is available "
+                "for PolymlpDevParams with multiple datasets."
+            )
 
         self.__random_indices = None
         self.__n_models = None
@@ -71,7 +71,7 @@ class PolymlpDevDataXYEnsembleBase(PolymlpDevDataXYBase):
     @test_regression_dict_list.setter
     def test_regression_dict_list(self, i):
         self.__test_regression_dict_list = i
-        
+
     @property
     def cumulative_n_features(self):
         return self.__cumulative_n_features
@@ -87,5 +87,3 @@ class PolymlpDevDataXYEnsembleBase(PolymlpDevDataXYBase):
     @scales_list.setter
     def scales_list(self, i):
         self.__scales_list = i
-
-

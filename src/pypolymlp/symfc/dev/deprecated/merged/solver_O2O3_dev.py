@@ -1,16 +1,14 @@
 """Solver of 2nd and 3rd order force constants simultaneously."""
+
 import time
 
 import numpy as np
-
 from scipy.sparse import csr_array
-
-from symfc.utils.eig_tools import dot_product_sparse
-from symfc.utils.utils_O2 import get_perm_compr_matrix
-
 from symfc.solvers.solver_funcs import get_batch_slice, solve_linear_equation
 from symfc.solvers.solver_O2 import get_training_from_full_basis
 from symfc.solvers.solver_O3 import set_2nd_disps
+from symfc.utils.eig_tools import dot_product_sparse
+from symfc.utils.utils_O2 import get_perm_compr_matrix
 
 
 def _NNN333_to_NN33N3_core(row, N):
@@ -20,7 +18,7 @@ def _NNN333_to_NN33N3_core(row, N):
     row_update = div * 27 * (N**2)
     # j
     div, rem = np.divmod(rem, 27 * N)
-    row_update += div * 27 * N 
+    row_update += div * 27 * N
     # k
     div, rem = np.divmod(rem, 27)
     row_update += div * 3
@@ -34,8 +32,8 @@ def _NNN333_to_NN33N3_core(row, N):
 
 
 def _NNN333_to_NN33N3(row, N, n_batch=10):
-    """Reorder row indices in a sparse matrix (NNN333->NN33N3) 
-       using divided row index sets."""
+    """Reorder row indices in a sparse matrix (NNN333->NN33N3)
+    using divided row index sets."""
 
     batch_size = len(row) // n_batch
     begin_batch, end_batch = get_batch_slice(len(row), batch_size)
@@ -43,7 +41,7 @@ def _NNN333_to_NN33N3(row, N, n_batch=10):
         row[begin:end] = _NNN333_to_NN33N3_core(row[begin:end], N)
     return row
 
- 
+
 def reshape_compress_mat(mat, N, n_batch=10):
     """Reorder row indices in a sparse matrix (NNN333->NN33N3)
     and reshape it into a sparse matrix (NN33N3,Nx) -> (NN33, N3Nx).
@@ -55,20 +53,20 @@ def reshape_compress_mat(mat, N, n_batch=10):
     mat = mat.tocoo()
     mat.row = _NNN333_to_NN33N3(mat.row, N, n_batch=n_batch)
 
-    NN33 = (N**2)*9
-    N3 = N*3
-    '''
+    NN33 = (N**2) * 9
+    N3 = N * 3
+    """
     # reshape: (NN33N3,Nx) -> (NN33, N3Nx)
     mat.row, rem = np.divmod(mat.row, N3)
     mat.col += rem * nx
-    '''
+    """
     batch_size = len(mat.row) // n_batch
     begin_batch, end_batch = get_batch_slice(len(mat.row), batch_size)
     for begin, end in zip(begin_batch, end_batch):
         mat.row[begin:end], rem = np.divmod(mat.row[begin:end], N3)
         mat.col[begin:end] += rem * nx
 
-    return csr_array((mat.data, (mat.row, mat.col)), shape=(NN33, N3*nx))
+    return csr_array((mat.data, (mat.row, mat.col)), shape=(NN33, N3 * nx))
 
 
 def get_training(
@@ -118,18 +116,18 @@ def get_training(
     print(" training data (fc2):    ", t2 - t1)
 
     t1 = time.time()
-    '''
+    """
     compress_mat_fc3 = (
         csr_NNN333_to_NN33N3(compress_mat_fc3, N).reshape((NN33, -1)).tocsr()
     )
-    '''
-    '''peak memory part (when batch size is less than nearly 50)'''
+    """
+    """peak memory part (when batch size is less than nearly 50)"""
     compress_mat_fc3 = -0.5 * reshape_compress_mat(compress_mat_fc3, N)
     if compress_perm_fc2:
         c_perm_fc2 = get_perm_compr_matrix(N)
         compress_mat_fc3 = dot_product_sparse(
-                              c_perm_fc2.T, compress_mat_fc3, use_mkl=use_mkl
-                           )
+            c_perm_fc2.T, compress_mat_fc3, use_mkl=use_mkl
+        )
 
     t2 = time.time()
     print(" precond. compress_mat (for fc3):", t2 - t1)
@@ -141,7 +139,7 @@ def get_training(
     begin_batch, end_batch = get_batch_slice(disps.shape[0], batch_size)
     for begin, end in zip(begin_batch, end_batch):
         t01 = time.time()
-        '''peak memory part (when batch size is more than nearly 50)'''
+        """peak memory part (when batch size is more than nearly 50)"""
         disps_batch = set_2nd_disps(disps[begin:end], sparse=sparse_disps)
         if compress_perm_fc2:
             disps_batch = disps_batch @ c_perm_fc2
@@ -217,13 +215,13 @@ def get_training_no_sum_rule_basis(
     print(" training data (fc2):    ", t2 - t1)
 
     t1 = time.time()
-    '''peak memory part (when batch size is less than nearly 50)'''
+    """peak memory part (when batch size is less than nearly 50)"""
     compress_mat_fc3 = -0.5 * reshape_compress_mat(compress_mat_fc3, N)
     if compress_perm_fc2:
         c_perm_fc2 = get_perm_compr_matrix(N)
         compress_mat_fc3 = dot_product_sparse(
-                              c_perm_fc2.T, compress_mat_fc3, use_mkl=use_mkl
-                           )
+            c_perm_fc2.T, compress_mat_fc3, use_mkl=use_mkl
+        )
     t2 = time.time()
     print(" precond. compress_mat (for fc3):", t2 - t1)
 
@@ -234,7 +232,7 @@ def get_training_no_sum_rule_basis(
     begin_batch, end_batch = get_batch_slice(disps.shape[0], batch_size)
     for begin, end in zip(begin_batch, end_batch):
         t01 = time.time()
-        '''peak memory part (when batch size is more than 50)'''
+        """peak memory part (when batch size is more than 50)"""
         disps_batch = set_2nd_disps(disps[begin:end], sparse=sparse_disps)
         if compress_perm_fc2:
             disps_batch = disps_batch @ c_perm_fc2

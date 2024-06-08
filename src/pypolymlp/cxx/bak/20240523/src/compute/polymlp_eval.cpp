@@ -43,7 +43,7 @@ void PolymlpEval::set_type_comb(){
 }
 
 void PolymlpEval::eval(const vector2d& positions_c,
-                       const vector1i& types, 
+                       const vector1i& types,
                        const vector2i& neighbor_half,
                        const vector3d& neighbor_diff,
                        double& energy,
@@ -51,11 +51,11 @@ void PolymlpEval::eval(const vector2d& positions_c,
                        vector1d& stress){
 
     if (pot.fp.des_type == "pair"){
-        eval_pair(positions_c, types, neighbor_half, neighbor_diff, 
+        eval_pair(positions_c, types, neighbor_half, neighbor_diff,
                   energy, forces, stress);
     }
     else if (pot.fp.des_type == "gtinv"){
-        eval_gtinv(positions_c, types, neighbor_half, neighbor_diff, 
+        eval_gtinv(positions_c, types, neighbor_half, neighbor_diff,
                    energy, forces, stress);
     }
 
@@ -64,7 +64,7 @@ void PolymlpEval::eval(const vector2d& positions_c,
 /*--- feature_type = pair ----------------------------------------------*/
 
 void PolymlpEval::eval_pair(const vector2d& positions_c,
-                            const vector1i& types, 
+                            const vector1i& types,
                             const vector2i& neighbor_half,
                             const vector3d& neighbor_diff,
                             double& energy,
@@ -84,7 +84,7 @@ void PolymlpEval::eval_pair(const vector2d& positions_c,
     stress = vector1d(6, 0.0);
 
     int type1,type2;
-    double dx, dy, dz, dis, e_ij, f_ij, fx, fy, fz; 
+    double dx, dy, dz, dis, e_ij, f_ij, fx, fy, fz;
     vector1d fn, fn_d;
     for (int i = 0; i < n_atom; ++i) {
         type1 = types[i];
@@ -92,8 +92,8 @@ void PolymlpEval::eval_pair(const vector2d& positions_c,
         for (size_t jj = 0; jj < neighbor_i.size(); ++jj){
             int j = neighbor_i[jj];
             type2 = types[j];
-            const auto& diff = neighbor_diff[i][jj]; 
-            dx = - diff[0]; 
+            const auto& diff = neighbor_diff[i][jj];
+            dx = - diff[0];
             dy = - diff[1];
             dz = - diff[2];
             dis = sqrt(dx*dx + dy*dy + dz*dz);
@@ -132,26 +132,26 @@ void PolymlpEval::eval_pair(const vector2d& positions_c,
 }
 
 void PolymlpEval::compute_antc(const vector2d& positions_c,
-                               const vector1i& types, 
+                               const vector1i& types,
                                const vector2i& neighbor_half,
                                const vector3d& neighbor_diff,
                                vector2d& antc){
- 
+
     const int n_atom = types.size();
     const auto& ntc_map = pot.p_obj.get_ntc_map();
 
     antc = vector2d(n_atom, vector1d(ntc_map.size(), 0.0));
 
     int type1, type2;
-    double dx, dy, dz, dis; 
-    vector1d fn; 
+    double dx, dy, dz, dis;
+    vector1d fn;
     for (int i = 0; i < n_atom; ++i) {
         type1 = types[i];
         const vector1i& neighbor_i = neighbor_half[i];
         for (size_t jj = 0; jj < neighbor_i.size(); ++jj){
             int j = neighbor_i[jj];
             const auto& diff = neighbor_diff[i][jj];
-            dx = - diff[0]; 
+            dx = - diff[0];
             dy = - diff[1];
             dz = - diff[2];
             dis = sqrt(dx*dx + dy*dy + dz*dz);
@@ -230,7 +230,7 @@ void PolymlpEval::compute_sum_of_prod_antc(const vector1i& types,
 
 /*--- feature_type = gtinv ----------------------------------------------*/
 void PolymlpEval::eval_gtinv(const vector2d& positions_c,
-                             const vector1i& types, 
+                             const vector1i& types,
                              const vector2i& neighbor_half,
                              const vector3d& neighbor_diff,
                              double& energy,
@@ -254,7 +254,7 @@ void PolymlpEval::eval_gtinv(const vector2d& positions_c,
     stress = vector1d(6, 0.0);
 
     int type1,type2;
-    double dx, dy, dz, dis; 
+    double dx, dy, dz, dis;
     double e_ij, fx, fy, fz;
     dc val, valx, valy, valz, d1;
     vector1d fn, fn_d;
@@ -267,8 +267,8 @@ void PolymlpEval::eval_gtinv(const vector2d& positions_c,
             int j = neighbor_i[jj];
             type2 = types[j];
             // diff = pos[j] - pos[i], (dx, dy, dz) = pos[i] - pos[j]
-            const auto& diff = neighbor_diff[i][jj]; 
-            dx = - diff[0]; 
+            const auto& diff = neighbor_diff[i][jj];
+            dx = - diff[0];
             dy = - diff[1];
             dz = - diff[2];
             dis = sqrt(dx*dx + dy*dy + dz*dz);
@@ -330,12 +330,12 @@ void PolymlpEval::eval_gtinv(const vector2d& positions_c,
         << double(t4-t3)/CLOCKS_PER_SEC << " "
         << std::endl;
     */
- 
+
 }
 
 
 void PolymlpEval::compute_anlmtc(const vector2d& positions_c,
-                                 const vector1i& types, 
+                                 const vector1i& types,
                                  const vector2i& neighbor_half,
                                  const vector3d& neighbor_diff,
                                  vector2dc& anlmtc){
@@ -347,7 +347,7 @@ void PolymlpEval::compute_anlmtc(const vector2d& positions_c,
     vector2d anlmtc_i(n_atom, vector1d(nlmtc_map_no_conj.size(), 0.0));
 
     int type1, type2;
-    double dx, dy, dz, dis; 
+    double dx, dy, dz, dis;
     vector1d fn; vector1dc ylm; dc val;
     for (int i = 0; i < n_atom; ++i) {
         type1 = types[i];
@@ -355,7 +355,7 @@ void PolymlpEval::compute_anlmtc(const vector2d& positions_c,
         for (size_t jj = 0; jj < neighbor_i.size(); ++jj){
             int j = neighbor_i[jj];
             const auto& diff = neighbor_diff[i][jj];
-            dx = - diff[0]; 
+            dx = - diff[0];
             dy = - diff[1];
             dz = - diff[2];
             dis = sqrt(dx*dx + dy*dy + dz*dz);
@@ -473,14 +473,14 @@ void PolymlpEval::compute_sum_of_prod_anlmtc(const vector1i& types,
         }
 
         clock_t t5 = clock();
-   /* 
-        std::cout << "prod" 
+   /*
+        std::cout << "prod"
             << double(t2-t1)/CLOCKS_PER_SEC << " "
             << double(t3-t2)/CLOCKS_PER_SEC << " "
             << double(t4-t3)/CLOCKS_PER_SEC << " "
             << double(t5-t4)/CLOCKS_PER_SEC << " "
             << std::endl;
-    */        
+    */
     }
 }
 
@@ -563,5 +563,3 @@ double PolymlpEval::prod_real(const dc& val1, const dc& val2){
 dc PolymlpEval::prod_real_and_complex(const double val1, const dc& val2){
     return dc(val1 * val2.real(), val1 * val2.imag());
 }
-
-

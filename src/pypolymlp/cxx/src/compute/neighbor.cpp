@@ -7,10 +7,10 @@
 
 #include "compute/neighbor.h"
 
-Neighbor::Neighbor(const vector2d& axis, 
-                   const vector2d& positions_c, 
-                   const vector1i& types, 
-                   const int& n_type, 
+Neighbor::Neighbor(const vector2d& axis,
+                   const vector2d& positions_c,
+                   const vector1i& types,
+                   const int& n_type,
                    const double& cutoff){
 
     NeighborCell neigh_cell(axis, positions_c, cutoff);
@@ -47,7 +47,7 @@ Neighbor::Neighbor(const vector2d& axis,
         for (auto& j: atom2_array[i][0]) count[j] += 1;
     }
     for (int i = 0; i < n_total_atom; ++i){
-        std::cout << i << " " << count[i] << " " 
+        std::cout << i << " " << count[i] << " "
                   << atom2_array[i][0].size() << std::endl;
     }
 */
@@ -59,4 +59,3 @@ Neighbor::~Neighbor(){}
 const vector3d& Neighbor::get_dis_array() const{ return dis_array; }
 const vector4d& Neighbor::get_diff_array() const{ return diff_array; }
 const vector3i& Neighbor::get_atom2_array() const{ return atom2_array; }
-

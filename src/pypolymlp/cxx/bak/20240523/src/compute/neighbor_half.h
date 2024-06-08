@@ -16,11 +16,11 @@ class NeighborHalf{
     vector2i half_list;
     vector3d diff_list;
 
-    public: 
+    public:
 
-    NeighborHalf(const vector2d& axis, 
-                 const vector2d& positions_c, 
-                 const vector1i& types, 
+    NeighborHalf(const vector2d& axis,
+                 const vector2d& positions_c,
+                 const vector1i& types,
                  const double& cutoff);
 
     ~NeighborHalf();

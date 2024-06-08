@@ -214,5 +214,3 @@ polymlp.set_multiple_datasets_vasp(
 #polymlp.run(verbose=True, sequential=False)
 polymlp.run(verbose=True, sequential=True)
 ```
-
-

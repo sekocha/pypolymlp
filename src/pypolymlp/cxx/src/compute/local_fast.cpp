@@ -9,13 +9,13 @@
 
 LocalFast::LocalFast(){}
 
-LocalFast::LocalFast(const int& n_atom_i, 
-                     const int& atom1_i, 
+LocalFast::LocalFast(const int& n_atom_i,
+                     const int& atom1_i,
                      const int& type1_i,
                      const struct feature_params& fp_i,
                      const ModelParams& modelp){
 
-    n_atom = n_atom_i, atom1 = atom1_i, type1 = type1_i, 
+    n_atom = n_atom_i, atom1 = atom1_i, type1 = type1_i,
     fp = fp_i;
     n_type = fp.n_type;
     n_fn = modelp.get_n_fn();
@@ -68,13 +68,13 @@ void LocalFast::pair(const vector2d& dis_a, vector1d& dn){
     }
 }
 
-void LocalFast::pair_d(const vector2d& dis_a, 
-                       const vector3d& diff_a, 
+void LocalFast::pair_d(const vector2d& dis_a,
+                       const vector3d& diff_a,
                        const vector2i& atom2_a,
-                       vector1d& dn, 
-                       vector2d& dn_dfx, 
-                       vector2d& dn_dfy, 
-                       vector2d& dn_dfz, 
+                       vector1d& dn,
+                       vector2d& dn_dfx,
+                       vector2d& dn_dfy,
+                       vector2d& dn_dfz,
                        vector2d& dn_ds){
 
     dn = vector1d(size_pair, 0.0);
@@ -95,7 +95,7 @@ void LocalFast::pair_d(const vector2d& dis_a,
             atom2 = atom2_a[type2][j];
             get_fn_(dis, fp, fn, fn_d);
             for (int n = 0; n < n_fn; ++n){
-                col = begin + n; 
+                col = begin + n;
                 dn[col] += fn[n];
                 valx = fn_d[n] * delx / dis;
                 valy = fn_d[n] * dely / dis;
@@ -118,7 +118,7 @@ void LocalFast::pair_d(const vector2d& dis_a,
     }
 }
 
-void LocalFast::gtinv(const vector2d& dis_a, 
+void LocalFast::gtinv(const vector2d& dis_a,
                       const vector3d& diff_a,
                       const FunctionFeatures& features,
                       vector1d& dn){
@@ -135,14 +135,14 @@ void LocalFast::gtinv(const vector2d& dis_a,
 }
 
 
-void LocalFast::gtinv_d(const vector2d& dis_a, 
-                        const vector3d& diff_a, 
+void LocalFast::gtinv_d(const vector2d& dis_a,
+                        const vector3d& diff_a,
                         const vector2i& atom2_a,
                         const FunctionFeatures& features,
-                        vector1d& dn, 
-                        vector2d& dn_dfx, 
-                        vector2d& dn_dfy, 
-                        vector2d& dn_dfz, 
+                        vector1d& dn,
+                        vector2d& dn_dfx,
+                        vector2d& dn_dfy,
+                        vector2d& dn_dfz,
                         vector2d& dn_ds){
 
     const auto& prod_map = features.get_prod_map(type1);
@@ -162,8 +162,8 @@ void LocalFast::gtinv_d(const vector2d& dis_a,
 
     compute_linear_features(prod_anlmtc, features, dn);
     compute_linear_features_deriv(
-        prod_anlmtc_d, features, 
-        anlmtc_dfx, anlmtc_dfy, anlmtc_dfz, anlmtc_ds, 
+        prod_anlmtc_d, features,
+        anlmtc_dfx, anlmtc_dfy, anlmtc_dfz, anlmtc_ds,
         dn_dfx, dn_dfy, dn_dfz, dn_ds
     );
 
@@ -226,11 +226,11 @@ void LocalFast::compute_linear_features_deriv(
                 val_dc = sterm.coeff * prod_anlmtc_d[sterm.prod_key];
                 nlmtc_key = sterm.nlmtc_key;
                 for (int j = 0; j < n_atom; ++j){
-                    dn_dfx[idx][j] += 
+                    dn_dfx[idx][j] +=
                         prod_real(val_dc, anlmtc_dfx[nlmtc_key][j]);
-                    dn_dfy[idx][j] += 
+                    dn_dfy[idx][j] +=
                         prod_real(val_dc, anlmtc_dfy[nlmtc_key][j]);
-                    dn_dfz[idx][j] += 
+                    dn_dfz[idx][j] +=
                         prod_real(val_dc, anlmtc_dfz[nlmtc_key][j]);
                 }
                 for (int j = 0; j < 6; ++j){
@@ -243,8 +243,8 @@ void LocalFast::compute_linear_features_deriv(
 }
 
 
-void LocalFast::compute_anlm(const vector2d& dis_a, 
-                             const vector3d& diff_a, 
+void LocalFast::compute_anlm(const vector2d& dis_a,
+                             const vector3d& diff_a,
                              const FunctionFeatures& features,
                              vector1dc& anlm){
 
@@ -281,14 +281,14 @@ void LocalFast::compute_anlm(const vector2d& dis_a,
     }
 }
 
-void LocalFast::compute_anlm_d(const vector2d& dis_a, 
-                               const vector3d& diff_a, 
-                               const vector2i& atom2_a, 
+void LocalFast::compute_anlm_d(const vector2d& dis_a,
+                               const vector3d& diff_a,
+                               const vector2i& atom2_a,
                                const FunctionFeatures& features,
-                               vector1dc& anlm, 
-                               vector2dc& anlm_dfx, 
-                               vector2dc& anlm_dfy, 
-                               vector2dc& anlm_dfz, 
+                               vector1dc& anlm,
+                               vector2dc& anlm_dfx,
+                               vector2dc& anlm_dfy,
+                               vector2dc& anlm_dfz,
                                vector2dc& anlm_ds){
 
     const auto& nlmtc_map_no_conj = features.get_nlmtc_map_no_conjugate();
@@ -361,5 +361,3 @@ void LocalFast::compute_anlm_d(const vector2d& dis_a,
         }
     }
 }
-
-

@@ -8,9 +8,9 @@
 #include "polymlp_read_gtinv.h"
 
 Readgtinv::Readgtinv(){}
-Readgtinv::Readgtinv(const int& gtinv_order, 
-                     const vector1i& gtinv_maxl, 
-                     const std::vector<bool>& gtinv_sym, 
+Readgtinv::Readgtinv(const int& gtinv_order,
+                     const vector1i& gtinv_maxl,
+                     const std::vector<bool>& gtinv_sym,
                      const int& n_type,
                      const int& version){
 
@@ -23,9 +23,9 @@ Readgtinv::Readgtinv(const int& gtinv_order,
 
 Readgtinv::~Readgtinv(){}
 
-void Readgtinv::screening(const int& gtinv_order, 
-                          const vector1i& gtinv_maxl, 
-                          const std::vector<bool>& gtinv_sym, 
+void Readgtinv::screening(const int& gtinv_order,
+                          const vector1i& gtinv_maxl,
+                          const std::vector<bool>& gtinv_sym,
                           const int& n_type){
 
     GtinvData data;
@@ -63,8 +63,8 @@ void Readgtinv::screening(const int& gtinv_order,
 
 }
 
-void Readgtinv::screening_ver2(const int& gtinv_order, 
-                               const vector1i& gtinv_maxl, 
+void Readgtinv::screening_ver2(const int& gtinv_order,
+                               const vector1i& gtinv_maxl,
                                const int& n_type){
 
     GtinvDataVer2 data;
@@ -80,7 +80,7 @@ void Readgtinv::screening_ver2(const int& gtinv_order,
             if (order > 1){
                 if (maxl > gtinv_maxl[order-2]) tag = false;
             }
-    
+
             if (tag == true){
                 int l, m;
                 vector2i vec1(m_array_all[i].size(), vector1i(order));
@@ -102,4 +102,3 @@ void Readgtinv::screening_ver2(const int& gtinv_order,
 const vector3i& Readgtinv::get_lm_seq() const{ return lm_array; }
 const vector2i& Readgtinv::get_l_comb() const{ return l_array; }
 const vector2d& Readgtinv::get_lm_coeffs() const{ return coeffs; }
-

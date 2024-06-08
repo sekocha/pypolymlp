@@ -1,51 +1,44 @@
-#!/usr/bin/env python 
-import numpy as np
+#!/usr/bin/env python
 import argparse
-import signal
 import gc
+import signal
+
+import numpy as np
 
 from pypolymlp.core.interface_vasp import Poscar
 from pypolymlp.utils.phonopy_utils import phonopy_supercell
 
-'''
+"""
 from pypolymlp.calculator.compute_fcs import recover_fc2, recover_fc3
 from symfc.basis_sets.basis_sets_O2 import FCBasisSetO2
 from symfc.basis_sets.basis_sets_O3 import FCBasisSetO3
 from symfc.solvers.solver_O2O3 import run_solver_sparse_O2O3
-'''
+"""
 
+import time
+
+# from scipy.sparse import csr_array
 from symfc.basis_sets.basis_sets_O3 import print_sp_matrix_size
-from scipy.sparse import csr_array
-
 from symfc.spg_reps import SpgRepsO3
 from symfc.utils.eig_tools import (
     dot_product_sparse,
     eigsh_projector,
     eigsh_projector_sumrule,
 )
-
-from symfc.utils.utils_O3 import get_compr_coset_reps_sum_O3
-from symfc.utils.matrix_tools_O3 import (
-#    projector_permutation_lat_trans,
-    compressed_projector_sum_rules_from_compact_compr_mat
+from symfc.utils.matrix_tools_O3 import (  # projector_permutation_lat_trans,
+    compressed_projector_sum_rules_from_compact_compr_mat,
+    get_perm_compr_matrix_O3,
+)
+from symfc.utils.utils_O3 import (
+    get_compr_coset_reps_sum_O3,
+    get_lat_trans_compr_matrix_O3,
 )
 
-import time
-
-from symfc.utils.utils_O3 import get_lat_trans_compr_matrix_O3
-from symfc.utils.matrix_tools_O3 import get_perm_compr_matrix_O3
-
-'''Not implemented in symfc'''
-from pypolymlp.symfc.dev.matrix_tools_O3 import (
-    projector_permutation_lat_trans,
-)
-from pypolymlp.symfc.dev.zero_tools_O3 import (
-    apply_zeros,
-)
+from pypolymlp.symfc.dev.matrix_tools_O3 import projector_permutation_lat_trans
+from pypolymlp.symfc.dev.zero_tools_O3 import apply_zeros
 
 
 def permutation_dot_lat_trans_stable(trans_perms, zero_ids=None):
-
     """permutation @ lattice translation"""
     n_lp, N = trans_perms.shape
     c_trans = get_lat_trans_compr_matrix_O3(trans_perms)
@@ -61,12 +54,10 @@ def permutation_dot_lat_trans_stable(trans_perms, zero_ids=None):
     return c_pt
 
 
-def run_basis(
-    supercell, zero_ids=None, reduce_memory=True, apply_sum_rule=True
-):
+def run_basis(supercell, zero_ids=None, reduce_memory=True, apply_sum_rule=True):
 
     t00 = time.time()
-    '''space group representations'''
+    """space group representations"""
     spg_reps = SpgRepsO3(supercell)
     trans_perms = spg_reps.translation_permutations
     n_lp, N = trans_perms.shape
@@ -76,7 +67,9 @@ def run_basis(
     """permutation @ lattice translation"""
     if reduce_memory:
         proj_pt = projector_permutation_lat_trans(
-            trans_perms, use_mkl=True, zero_ids=zero_ids,
+            trans_perms,
+            use_mkl=True,
+            zero_ids=zero_ids,
         )
     else:
         c_pt = permutation_dot_lat_trans_stable(trans_perms, zero_ids=zero_ids)
@@ -113,26 +106,25 @@ def run_basis(
 
     if apply_sum_rule:
         proj = compressed_projector_sum_rules_from_compact_compr_mat(
-                trans_perms,
-                n_a_compress_mat,
-                use_mkl=True)
+            trans_perms, n_a_compress_mat, use_mkl=True
+        )
         print_sp_matrix_size(proj, " P_(perm,trans,coset,sum):")
         t07 = time.time()
 
         eigvecs = eigsh_projector_sumrule(proj)
         t08 = time.time()
 
-    print('-----')
-    print('Time (spg. rep.)                        =', t01-t00)
-    print('Time (proj(perm @ lattice trans.)       =', t02-t01)
-    print('Time (eigh(perm @ ltrans))              =', t03-t02)
-    print('Time (coset)                            =', t04-t03)
-    print('Time (eigh(coset @ perm @ ltrans))      =', t05-t04)
-    print('Time (c_pt @ c_rpt)                     =', t06-t05)
+    print("-----")
+    print("Time (spg. rep.)                        =", t01 - t00)
+    print("Time (proj(perm @ lattice trans.)       =", t02 - t01)
+    print("Time (eigh(perm @ ltrans))              =", t03 - t02)
+    print("Time (coset)                            =", t04 - t03)
+    print("Time (eigh(coset @ perm @ ltrans))      =", t05 - t04)
+    print("Time (c_pt @ c_rpt)                     =", t06 - t05)
 
     if apply_sum_rule:
-        print('Time (proj(coset @ perm @ ltrans @ sum) =', t07-t06)
-        print('Time (eigh(coset @ perm @ ltrans @ sum) =', t08-t07)
+        print("Time (proj(coset @ perm @ ltrans @ sum) =", t07 - t06)
+        print("Time (eigh(coset @ perm @ ltrans @ sum) =", t08 - t07)
         print("Basis size =", eigvecs.shape)
         return n_a_compress_mat, eigvecs
 
@@ -140,20 +132,19 @@ def run_basis(
     return n_a_compress_mat, proj_pt
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--poscar',
-                        type=str,
-                        default=None,
-                        help='poscar')
-    parser.add_argument('--supercell',
-                        nargs=3,
-                        type=int,
-                        default=None,
-                        help='Supercell size (diagonal components)')
+    parser.add_argument("--poscar", type=str, default=None, help="poscar")
+    parser.add_argument(
+        "--supercell",
+        nargs=3,
+        type=int,
+        default=None,
+        help="Supercell size (diagonal components)",
+    )
     args = parser.parse_args()
 
     unitcell_dict = Poscar(args.poscar).get_structure()
@@ -163,8 +154,6 @@ if __name__ == '__main__':
 
     t1 = time.time()
     n_a_compress_mat, eigvecs = run_basis(supercell)
-    #n_a_compress_mat = run_basis(supercell, apply_sum_rule=False)
+    # n_a_compress_mat = run_basis(supercell, apply_sum_rule=False)
     t2 = time.time()
-    print('Elapsed time (basis sets for fc2 and fc3) =', t2-t1)
-
-
+    print("Elapsed time (basis sets for fc2 and fc3) =", t2 - t1)

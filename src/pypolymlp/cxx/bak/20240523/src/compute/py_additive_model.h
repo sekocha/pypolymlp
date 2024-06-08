@@ -8,7 +8,7 @@
 #ifndef __PY_ADDITIVE_MODEL
 #define __PY_ADDITIVE_MODEL
 
-#include <iomanip> 
+#include <iomanip>
 
 #include "mlpcpp.h"
 #include "compute/neighbor.h"
@@ -28,24 +28,24 @@ class PyAdditiveModel {
 
     Eigen::MatrixXd x_all;
     vector1i xf_begin_dataset, xs_begin_dataset;
-    vector1i cumulative_n_features, n_data; 
+    vector1i cumulative_n_features, n_data;
 
-    void set_index(const std::vector<int>& n_data_dataset, 
+    void set_index(const std::vector<int>& n_data_dataset,
                    const std::vector<bool>& force_dataset,
                    const std::vector<int>& n_atoms_st,
-                   std::vector<int>& xf_begin, 
+                   std::vector<int>& xf_begin,
                    std::vector<int>& xs_begin,
                    std::vector<bool>& force);
 
     vector1i modify_types(const std::vector<int>& types_orig,
                           const int n_type_orig,
                           const int n_type);
-    public: 
+    public:
 
     PyAdditiveModel(const std::vector<py::dict>& params_dict_array,
-                    const vector3d& axis, 
+                    const vector3d& axis,
                     const vector3d& positions_c,
-                    const vector2i& types, 
+                    const vector2i& types,
                     const vector1i& n_st_dataset,
                     const std::vector<bool>& force_dataset,
                     const vector1i& n_atoms_all);

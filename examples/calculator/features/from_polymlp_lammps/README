@@ -1,1 +1,1 @@
-pypolymlp --features --pot polymlp.lammps --poscars poscars/poscar-0* 
+pypolymlp --features --pot polymlp.lammps --poscars poscars/poscar-0*

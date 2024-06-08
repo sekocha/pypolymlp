@@ -30,16 +30,16 @@ class PyPropertiesFast {
     struct feature_params fp;
     PolymlpEval polymlp;
 
-    public: 
+    public:
 
     PyPropertiesFast(const py::dict& params_dict, const vector1d& coeffs);
     ~PyPropertiesFast();
 
-    void eval(const vector2d& axis, 
+    void eval(const vector2d& axis,
               const vector2d& positions_c,
               const vector1i& types);
 
-    void eval_multiple(const vector3d& axis_array, 
+    void eval_multiple(const vector3d& axis_array,
                        const vector3d& positions_c_array,
                        const vector2i& types_array);
 

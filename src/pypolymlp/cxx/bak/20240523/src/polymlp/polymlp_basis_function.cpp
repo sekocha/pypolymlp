@@ -12,22 +12,22 @@ const double pi(3.141592653589793);
 double cosine_cutoff_function(const double& dis, const double& cutoff){
     if (dis < cutoff)
         return 0.5 * (cos (pi * dis / cutoff) + 1.0);
-    else 
+    else
         return 0.0;
 }
 double cosine_cutoff_function_d(const double& dis, const double& cutoff){
     if (dis < cutoff)
         return - 0.5 * pi / cutoff * sin (pi * dis / cutoff);
-    else 
+    else
         return 0.0;
 }
 double bump_cutoff_function(const double& dis, const double& cutoff){
     double x = dis / cutoff;
     return exp (- 1.0 / (1.0 - x*x));
 }
-void bump_cutoff_function_d(const double& dis, 
+void bump_cutoff_function_d(const double& dis,
                             const double& cutoff,
-                            double& bf, 
+                            double& bf,
                             double& bf_d){
     double x = dis / cutoff;
     double tmp1 = 1.0 - pow(x, 20);
@@ -38,20 +38,20 @@ void bump_cutoff_function_d(const double& dis,
 double gauss(const double& x, const double& beta, const double& mu){
     return exp(- beta * pow (fabs(x - mu), 2.0));
 }
-void gauss_d(const double& dis, 
-             const double& p1, 
+void gauss_d(const double& dis,
+             const double& p1,
              const double& p2,
-             double& bf, 
+             double& bf,
              double& bf_d){
     bf = gauss(dis, p1, p2);
     bf_d = - 2.0 * p1 * (dis - p2) * bf;
 }
-double cosine(const double& dis, const double& p1){ 
-    return cos(p1 * dis); 
+double cosine(const double& dis, const double& p1){
+    return cos(p1 * dis);
 }
-void cosine_d(const double& dis, 
-              const double& p1, 
-              double& bf, 
+void cosine_d(const double& dis,
+              const double& p1,
+              double& bf,
               double& bf_d){
     bf = cosine(dis, p1);
     bf_d = - p1 * sin(p1 * dis);
@@ -68,7 +68,7 @@ void polynomial_d
     bf = polynomial(dis, param1);
     if (fabs(param1) < 1e-15)
         bf_d = 0.0;
-    else 
+    else
         bf_d = param1 * pow(dis, param1-1.0);
 }
 
@@ -96,10 +96,10 @@ void exp3_d(const double& dis, const double& param1, double& bf, double& bf_d){
 double sto(const double& dis, const double& param1, const double& param2){
     return pow(dis, param1) * exp(-param2 * dis);
 }
-void sto_d(const double& dis, 
-           const double& param1, 
-           const double& param2, 
-           double& bf, 
+void sto_d(const double& dis,
+           const double& param1,
+           const double& param2,
+           double& bf,
            double& bf_d){
     bf = sto(dis, param1, param2);
     bf_d = (param1 - param2 * dis) * bf / dis;
@@ -107,10 +107,10 @@ void sto_d(const double& dis,
 double gto(const double& dis, const double& param1, const double& param2){
     return pow(dis, param1) * gauss(param2, dis, 0.0);
 }
-void gto_d(const double& dis, 
-           const double& param1, 
-           const double& param2, 
-           double& bf, 
+void gto_d(const double& dis,
+           const double& param1,
+           const double& param2,
+           double& bf,
            double& bf_d){
     bf = gto(dis, param1, param2);
     bf_d = (param1 - 2.0 * param2 * dis * dis) * bf / dis;
@@ -118,9 +118,9 @@ void gto_d(const double& dis,
 double morlet(const double& dis, const double& param1){
     return gauss(0.5, dis, param1) - gauss(0.5, -dis, param1);
 }
-void morlet_d(const double& dis, 
-              const double& param1, 
-              double& bf, 
+void morlet_d(const double& dis,
+              const double& param1,
+              double& bf,
               double& bf_d){
     bf = morlet(dis, param1);
     bf_d = (param1 - dis) * gauss(0.5, dis, param1)
@@ -129,9 +129,9 @@ void morlet_d(const double& dis,
 double modified_morlet(const double& dis, const double& param1){
     return cos(param1 * dis) / cosh(dis);
 }
-void modified_morlet_d(const double& dis, 
-                       const double& param1, 
-                       double& bf, 
+void modified_morlet_d(const double& dis,
+                       const double& param1,
+                       double& bf,
                        double& bf_d){
     bf = modified_morlet(dis, param1);
     bf_d = - param1 * sin(param1 * dis) / cosh(dis) - bf * tanh(dis);
@@ -141,9 +141,9 @@ double mexican(const double& dis, const double& param1){
     double prod2 = exp(- 0.5 * prod1);
     return sqrt(param1) * (1.0 - prod1) * prod2;
 }
-void mexican_d(const double& dis, 
-               const double& param1, 
-               double& bf, 
+void mexican_d(const double& dis,
+               const double& param1,
+               double& bf,
                double& bf_d){
     double prod1 = pow (dis, 2.0) * pow (param1, 2.0);
     double prod2 = exp(- 0.5 * prod1);
@@ -155,10 +155,10 @@ double morse(const double& dis, const double& param1, const double& param2){
     double prod1 = - param1 * (dis - param2);
     return exp(2.0 * prod1) - 2.0 * exp(prod1);
 }
-void morse_d(const double& dis, 
-             const double& param1, 
+void morse_d(const double& dis,
+             const double& param1,
              const double& param2,
-             double& bf, 
+             double& bf,
              double& bf_d){
     double prod1 = - param1 * (dis - param2);
     bf =  exp(2.0 * prod1) - 2.0 * exp(prod1);
@@ -204,10 +204,10 @@ void neumann_d(const double& dis, const double& p1, double& bf, double& bf_d){
         bf_d = prod1 * 0.5;
     }
 }
-void sph_bessel_d(const double& dis, 
-                  const double& p1, 
-                  const double& p2, 
-                  double& bf, 
+void sph_bessel_d(const double& dis,
+                  const double& p1,
+                  const double& p2,
+                  double& bf,
                   double& bf_d){
 
 //  accuracy of derivatives may be not good, particularly n > 10.
@@ -216,21 +216,20 @@ void sph_bessel_d(const double& dis,
     bf = boost::math::sph_bessel(index, pdis);
     if (index == 0) bf_d = - boost::math::sph_bessel(1, pdis) * p2;
     else {
-        bf_d = boost::math::sph_bessel(index-1, pdis) 
-            - (index + 1) * bf / (pdis); 
+        bf_d = boost::math::sph_bessel(index-1, pdis)
+            - (index + 1) * bf / (pdis);
         bf_d *= p2;
     }
 
 }
-void sph_neumann_d(const double& dis, 
-                   const double& p1, 
-                   double& bf, 
+void sph_neumann_d(const double& dis,
+                   const double& p1,
+                   double& bf,
                    double& bf_d){
 
     int index = round(p1);
     bf = boost::math::sph_neumann(index, dis);
     if (index == 0) bf_d = - boost::math::sph_neumann(1, dis);
-    else bf_d = boost::math::sph_neumann(index-1, dis) - (index + 1) * bf / dis; 
+    else bf_d = boost::math::sph_neumann(index-1, dis) - (index + 1) * bf / dis;
 }
 */
-

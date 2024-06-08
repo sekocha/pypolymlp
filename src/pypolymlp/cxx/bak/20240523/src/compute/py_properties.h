@@ -24,11 +24,11 @@ class PyProperties {
     vector2d f_all;
     Eigen::MatrixXd s_all;
 
-    public: 
+    public:
 
     PyProperties(const py::dict& params_dict,
-                 const vector1d& coeffs, 
-                 const vector3d& axis, 
+                 const vector1d& coeffs,
+                 const vector3d& axis,
                  const vector3d& positions_c,
                  const vector2i& types);
 

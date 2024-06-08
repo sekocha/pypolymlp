@@ -29,7 +29,7 @@ class Projector{
 
     void array_initialize(const vector2i& m_list);
 
-    public: 
+    public:
 
     Projector();
     ~Projector();
@@ -37,7 +37,7 @@ class Projector{
     void build_projector(const vector1i& l_list, const vector2i& m_list);
 
     double clebsch_gordan
-        (const int& l1, const int& l2, const int& l, 
+        (const int& l1, const int& l2, const int& l,
          const int& m1, const int& m2, const int& m);
 
     const vector1i& get_row() const;

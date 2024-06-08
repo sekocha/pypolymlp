@@ -18,7 +18,7 @@
 
 class LocalFast{
 
-    int n_atom, atom1, type1, n_fn, n_des, n_type, size_pair; 
+    int n_atom, atom1, type1, n_fn, n_des, n_type, size_pair;
     struct feature_params fp;
     vector1i type2_array, type_comb;
 
@@ -43,29 +43,29 @@ class LocalFast{
     );
 
     void compute_anlm(
-        const vector2d& dis_a, 
-        const vector3d& diff_a, 
+        const vector2d& dis_a,
+        const vector3d& diff_a,
         const FunctionFeatures& features,
         vector1dc& anlm
     );
     void compute_anlm_d(
-        const vector2d& dis_a, 
-        const vector3d& diff_a, 
-        const vector2i& atom2_a, 
+        const vector2d& dis_a,
+        const vector3d& diff_a,
+        const vector2i& atom2_a,
         const FunctionFeatures& features,
-        vector1dc& anlm, 
-        vector2dc& anlm_dfx, 
-        vector2dc& anlm_dfy, 
-        vector2dc& anlm_dfz, 
+        vector1dc& anlm,
+        vector2dc& anlm_dfx,
+        vector2dc& anlm_dfy,
+        vector2dc& anlm_dfz,
         vector2dc& anlm_ds
     );
 
-    public: 
+    public:
 
     LocalFast();
     LocalFast(
-        const int& n_atom_i, 
-        const int& atom1_i, 
+        const int& n_atom_i,
+        const int& atom1_i,
         const int& type1_i,
         const struct feature_params& fp_i,
         const ModelParams& modelp
@@ -75,25 +75,25 @@ class LocalFast{
     void pair(const vector2d& dis_a, vector1d& dn);
     void pair_d(
         const vector2d& dis_a, const vector3d& diff_a, const vector2i& atom2_a,
-        vector1d& dn, vector2d& dn_dfx, vector2d& dn_dfy, 
+        vector1d& dn, vector2d& dn_dfx, vector2d& dn_dfy,
         vector2d& dn_dfz, vector2d& dn_ds
     );
 
     void gtinv(
-        const vector2d& dis_a, 
+        const vector2d& dis_a,
         const vector3d& diff_a,
         const FunctionFeatures& features,
         vector1d& dn
     );
     void gtinv_d(
-        const vector2d& dis_a, 
-        const vector3d& diff_a, 
+        const vector2d& dis_a,
+        const vector3d& diff_a,
         const vector2i& atom2_a,
         const FunctionFeatures& features,
-        vector1d& dn, 
-        vector2d& dn_dfx, 
-        vector2d& dn_dfy, 
-        vector2d& dn_dfz, 
+        vector1d& dn,
+        vector2d& dn_dfx,
+        vector2d& dn_dfy,
+        vector2d& dn_dfz,
         vector2d& dn_ds
     );
 };

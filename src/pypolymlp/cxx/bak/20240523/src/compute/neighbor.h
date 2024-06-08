@@ -13,16 +13,16 @@
 
 class Neighbor{
 
-    vector3d dis_array; 
-    vector4d diff_array; 
+    vector3d dis_array;
+    vector4d diff_array;
     vector3i atom2_array;
 
-    public: 
+    public:
 
-    Neighbor(const vector2d& axis, 
-             const vector2d& positions_c, 
-             const vector1i& types, 
-             const int& n_type, 
+    Neighbor(const vector2d& axis,
+             const vector2d& positions_c,
+             const vector1i& types,
+             const int& n_type,
              const double& cutoff);
 
     ~Neighbor();

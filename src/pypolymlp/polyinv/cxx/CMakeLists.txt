@@ -26,7 +26,7 @@ find_package(GSL REQUIRED)
 message(STATUS ${EIGEN3_INCLUDE_DIR})
 message(STATUS ${GSL_INCLUDE_DIR})
 
-set(PYBIND11_PYTHON_VERSION 
+set(PYBIND11_PYTHON_VERSION
     3.9 3.10 3.11
 )
 
@@ -41,14 +41,13 @@ target_include_directories(libprojcpp
   PUBLIC ${GSL_INCLUDE_DIR}
 )
 
-target_link_libraries(libprojcpp 
+target_link_libraries(libprojcpp
     PUBLIC ${OpenMP_CXX_LIBRARIES}
     GSL::gsl GSL::gslcblas
 )
 
 
-install( TARGETS libprojcpp 
+install( TARGETS libprojcpp
     COMPONENT python
     LIBRARY DESTINATION ${CMAKE_SOURCE_DIR}/lib
 )
-

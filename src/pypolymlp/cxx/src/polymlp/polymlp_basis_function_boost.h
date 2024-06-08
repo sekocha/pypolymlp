@@ -23,25 +23,25 @@ double sph_bessel(const double& dis, const double& p1, const double& p2);
 
 double sph_neumann(const double& dis, const double& param1);
 
-void bessel_d(const double& dis, 
-              const double& param1, 
-              double& bf, 
+void bessel_d(const double& dis,
+              const double& param1,
+              double& bf,
               double& bf_d);
 
-void neumann_d(const double& dis, 
-               const double& param1, 
-               double& bf, 
+void neumann_d(const double& dis,
+               const double& param1,
+               double& bf,
                double& bf_d);
 
-void sph_bessel_d(const double& dis, 
-                  const double& param1, 
-                  const double& param2, 
-                  double& bf, 
+void sph_bessel_d(const double& dis,
+                  const double& param1,
+                  const double& param2,
+                  double& bf,
                   double& bf_d);
 
-void sph_neumann_d(const double& dis, 
-                   const double& param1, 
-                   double& bf, 
+void sph_neumann_d(const double& dis,
+                   const double& param1,
+                   double& bf,
                    double& bf_d);
 
 #endif

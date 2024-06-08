@@ -13,9 +13,9 @@ const double pi = 3.14159265358979323846;
 
 Ewald::Ewald(){}
 
-Ewald::Ewald(const vector2d& axis, 
+Ewald::Ewald(const vector2d& axis,
              const vector2d& positions_c,
-             const vector1i& types, 
+             const vector1i& types,
              const int& n_type,
              const double& cutoff,
              const vector2d& gvectors,
@@ -28,7 +28,7 @@ Ewald::Ewald(const vector2d& axis,
     const auto &dis_array = neigh.get_dis_array();
     const auto &diff_array = neigh.get_diff_array();
     const auto &atom2_array = neigh.get_atom2_array();
- 
+
     const double coulomb_electron = 1.602176634e-19;
     //correction = coulomb_electron * 1e10 / (4.0 * pi * 8.8541878128e-12);
     correction = coulomb_electron * 1e10 * 8.9875517923e9;
@@ -77,7 +77,7 @@ Ewald::Ewald(const vector2d& axis,
 
 Ewald::~Ewald(){}
 
-double Ewald::realspace(const vector3d& dis_array, 
+double Ewald::realspace(const vector3d& dis_array,
                         const vector3i& atom2_array){
 
 //#ifdef _OPENMP
@@ -96,8 +96,8 @@ double Ewald::realspace(const vector3d& dis_array,
     return 0.5 * correction * er1;
 }
 
-double Ewald::reciprocal(const vector2d& gvectors, 
-                         const vector2d& positions_c, 
+double Ewald::reciprocal(const vector2d& gvectors,
+                         const vector2d& positions_c,
                          const double& volume){
 
     vector2vec diff = get_diff_array(positions_c);
@@ -121,7 +121,7 @@ double Ewald::reciprocal(const vector2d& gvectors,
 double Ewald::realspace_f(const vector3d& dis_array,
                           const vector4d& diff_array,
                           const vector3i& atom2_array,
-                          arma::vec& fr, 
+                          arma::vec& fr,
                           arma::vec& sr){
 
 //#ifdef _OPENMP
@@ -129,7 +129,7 @@ double Ewald::realspace_f(const vector3d& dis_array,
 //#endif
     int atom2;
     double er1 = 0.0, dis, c1, coeff1;
-    arma::vec fr1(3*n_atom, arma::fill::zeros), 
+    arma::vec fr1(3*n_atom, arma::fill::zeros),
         sr1(6, arma::fill::zeros), dr_dx, tmp;
     for (int atom1 = 0; atom1 < diff_array.size(); ++atom1){
         for (int t2 = 0; t2 < diff_array[atom1].size(); ++t2){
@@ -156,17 +156,17 @@ double Ewald::realspace_f(const vector3d& dis_array,
     return coeff * er1;
 }
 
-double Ewald::reciprocal_f(const vector2d& gvectors, 
-                           const vector2d& positions_c, 
-                           const double& volume, 
-                           arma::vec& fg, 
+double Ewald::reciprocal_f(const vector2d& gvectors,
+                           const vector2d& positions_c,
+                           const double& volume,
+                           arma::vec& fg,
                            arma::vec& sg){
 
     vector2vec diff = get_diff_array(positions_c);
     vector1d gcoeff = get_gcoeff(gvectors);
 
     double eg1 = 0.0, eg2, g_prod_r, trace = arma::trace(charge_prod);
-    arma::vec fg1(3*n_atom, arma::fill::zeros), 
+    arma::vec fg1(3*n_atom, arma::fill::zeros),
         sg1(6, arma::fill::zeros), gvec, tmp;
     for (int g = 0; g < gvectors.size(); ++g){
         gvec = arma::vec(gvectors[g]);
@@ -261,4 +261,3 @@ const vector1d& Ewald::get_reciprocal_force_vector1d() const{ return fgvec; }
 const vector1d& Ewald::get_stress_vector1d() const{ return svec; }
 const vector1d& Ewald::get_real_stress_vector1d() const{ return srvec; }
 const vector1d& Ewald::get_reciprocal_stress_vector1d() const{ return sgvec; }
-

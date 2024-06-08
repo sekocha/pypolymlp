@@ -19,43 +19,43 @@ ModelParams::ModelParams(const struct feature_params& fp){
         type_comb_pair = {{{0}}};
     }
     else if (n_type == 2) {
-        type_comb_pair = {{{0}, {}}, 
-                          {{1}, {0}}, 
+        type_comb_pair = {{{0}, {}},
+                          {{1}, {0}},
                           {{}, {1}}};
     }
     else if (n_type == 3) {
-        type_comb_pair = {{{0}, {}, {}}, 
-                          {{1}, {0}, {}}, 
-                          {{2}, {}, {0}}, 
-                          {{}, {1}, {}}, 
-                          {{}, {2}, {1}}, 
+        type_comb_pair = {{{0}, {}, {}},
+                          {{1}, {0}, {}},
+                          {{2}, {}, {0}},
+                          {{}, {1}, {}},
+                          {{}, {2}, {1}},
                           {{}, {}, {2}}};
     }
     else if (n_type == 4) {
-        type_comb_pair = {{{0}, {}, {}, {}}, 
-                          {{1}, {0}, {}, {}}, 
-                          {{2}, {}, {0}, {}}, 
-                          {{3}, {}, {}, {0}}, 
-                          {{}, {1}, {}, {}}, 
-                          {{}, {2}, {1}, {}}, 
-                          {{}, {3}, {}, {1}}, 
-                          {{}, {}, {2}, {}}, 
-                          {{}, {}, {3}, {2}}, 
+        type_comb_pair = {{{0}, {}, {}, {}},
+                          {{1}, {0}, {}, {}},
+                          {{2}, {}, {0}, {}},
+                          {{3}, {}, {}, {0}},
+                          {{}, {1}, {}, {}},
+                          {{}, {2}, {1}, {}},
+                          {{}, {3}, {}, {1}},
+                          {{}, {}, {2}, {}},
+                          {{}, {}, {3}, {2}},
                           {{}, {}, {}, {3}}};
     }
     else if (n_type == 5) {
-        type_comb_pair = {{{0}, {}, {}, {}, {}}, 
-                          {{1}, {0}, {}, {}, {}}, 
-                          {{2}, {}, {0}, {}, {}}, 
-                          {{3}, {}, {}, {0}, {}}, 
-                          {{4}, {}, {}, {}, {0}}, 
-                          {{}, {1}, {}, {}, {}}, 
-                          {{}, {2}, {1}, {}, {}}, 
-                          {{}, {3}, {}, {1}, {}}, 
-                          {{}, {4}, {}, {}, {1}}, 
-                          {{}, {}, {2}, {}, {}}, 
-                          {{}, {}, {3}, {2}, {}}, 
-                          {{}, {}, {4}, {}, {2}}, 
+        type_comb_pair = {{{0}, {}, {}, {}, {}},
+                          {{1}, {0}, {}, {}, {}},
+                          {{2}, {}, {0}, {}, {}},
+                          {{3}, {}, {}, {0}, {}},
+                          {{4}, {}, {}, {}, {0}},
+                          {{}, {1}, {}, {}, {}},
+                          {{}, {2}, {1}, {}, {}},
+                          {{}, {3}, {}, {1}, {}},
+                          {{}, {4}, {}, {}, {1}},
+                          {{}, {}, {2}, {}, {}},
+                          {{}, {}, {3}, {2}, {}},
+                          {{}, {}, {4}, {}, {2}},
                           {{}, {}, {}, {3}, {}},
                           {{}, {}, {}, {4}, {3}},
                           {{}, {}, {}, {}, {4}}};
@@ -74,63 +74,63 @@ ModelParams::ModelParams(const struct feature_params& fp, const bool icharge){
             type_comb_pair = {{{0}}};
         }
         else if (n_type == 2) {
-            type_comb_pair = {{{0}, {}}, 
-                              {{1}, {0}}, 
+            type_comb_pair = {{{0}, {}},
+                              {{1}, {0}},
                               {{}, {1}}};
         }
         else if (n_type == 3) {
-            type_comb_pair = {{{0}, {}, {}}, 
-                              {{1}, {0}, {}}, 
-                              {{2}, {}, {0}}, 
-                              {{}, {1}, {}}, 
-                              {{}, {2}, {1}}, 
+            type_comb_pair = {{{0}, {}, {}},
+                              {{1}, {0}, {}},
+                              {{2}, {}, {0}},
+                              {{}, {1}, {}},
+                              {{}, {2}, {1}},
                               {{}, {}, {2}}};
         }
         else if (n_type == 4) {
-            type_comb_pair = {{{0}, {}, {}, {}}, 
-                              {{1}, {0}, {}, {}}, 
-                              {{2}, {}, {0}, {}}, 
-                              {{3}, {}, {}, {0}}, 
-                              {{}, {1}, {}, {}}, 
-                              {{}, {2}, {1}, {}}, 
-                              {{}, {3}, {}, {1}}, 
-                              {{}, {}, {2}, {}}, 
-                              {{}, {}, {3}, {2}}, 
+            type_comb_pair = {{{0}, {}, {}, {}},
+                              {{1}, {0}, {}, {}},
+                              {{2}, {}, {0}, {}},
+                              {{3}, {}, {}, {0}},
+                              {{}, {1}, {}, {}},
+                              {{}, {2}, {1}, {}},
+                              {{}, {3}, {}, {1}},
+                              {{}, {}, {2}, {}},
+                              {{}, {}, {3}, {2}},
                               {{}, {}, {}, {3}}};
         }
         else if (n_type == 5) {
-            type_comb_pair = {{{0}, {}, {}, {}, {}}, 
-                              {{1}, {0}, {}, {}, {}}, 
-                              {{2}, {}, {0}, {}, {}}, 
-                              {{3}, {}, {}, {0}, {}}, 
-                              {{4}, {}, {}, {}, {0}}, 
-                              {{}, {1}, {}, {}, {}}, 
-                              {{}, {2}, {1}, {}, {}}, 
-                              {{}, {3}, {}, {1}, {}}, 
-                              {{}, {4}, {}, {}, {1}}, 
-                              {{}, {}, {2}, {}, {}}, 
-                              {{}, {}, {3}, {2}, {}}, 
-                              {{}, {}, {4}, {}, {2}}, 
+            type_comb_pair = {{{0}, {}, {}, {}, {}},
+                              {{1}, {0}, {}, {}, {}},
+                              {{2}, {}, {0}, {}, {}},
+                              {{3}, {}, {}, {0}, {}},
+                              {{4}, {}, {}, {}, {0}},
+                              {{}, {1}, {}, {}, {}},
+                              {{}, {2}, {1}, {}, {}},
+                              {{}, {3}, {}, {1}, {}},
+                              {{}, {4}, {}, {}, {1}},
+                              {{}, {}, {2}, {}, {}},
+                              {{}, {}, {3}, {2}, {}},
+                              {{}, {}, {4}, {}, {2}},
                               {{}, {}, {}, {3}, {}},
                               {{}, {}, {}, {4}, {3}},
                               {{}, {}, {}, {}, {4}}};
         }
         else if (n_type == 6) {
-            type_comb_pair = {{{0}, {}, {}, {}, {}, {}}, 
-                              {{1}, {0}, {}, {}, {}, {}}, 
-                              {{2}, {}, {0}, {}, {}, {}}, 
-                              {{3}, {}, {}, {0}, {}, {}}, 
-                              {{4}, {}, {}, {}, {0}, {}}, 
-                              {{5}, {}, {}, {}, {}, {0}}, 
-                              {{}, {1}, {}, {}, {}, {}}, 
-                              {{}, {2}, {1}, {}, {}, {}}, 
-                              {{}, {3}, {}, {1}, {}, {}}, 
-                              {{}, {4}, {}, {}, {1}, {}}, 
-                              {{}, {5}, {}, {}, {}, {1}}, 
-                              {{}, {}, {2}, {}, {}, {}}, 
-                              {{}, {}, {3}, {2}, {}, {}}, 
-                              {{}, {}, {4}, {}, {2}, {}}, 
-                              {{}, {}, {5}, {}, {}, {2}}, 
+            type_comb_pair = {{{0}, {}, {}, {}, {}, {}},
+                              {{1}, {0}, {}, {}, {}, {}},
+                              {{2}, {}, {0}, {}, {}, {}},
+                              {{3}, {}, {}, {0}, {}, {}},
+                              {{4}, {}, {}, {}, {0}, {}},
+                              {{5}, {}, {}, {}, {}, {0}},
+                              {{}, {1}, {}, {}, {}, {}},
+                              {{}, {2}, {1}, {}, {}, {}},
+                              {{}, {3}, {}, {1}, {}, {}},
+                              {{}, {4}, {}, {}, {1}, {}},
+                              {{}, {5}, {}, {}, {}, {1}},
+                              {{}, {}, {2}, {}, {}, {}},
+                              {{}, {}, {3}, {2}, {}, {}},
+                              {{}, {}, {4}, {}, {2}, {}},
+                              {{}, {}, {5}, {}, {}, {2}},
                               {{}, {}, {}, {3}, {}, {}},
                               {{}, {}, {}, {4}, {3}, {}},
                               {{}, {}, {}, {5}, {}, {3}},
@@ -139,24 +139,24 @@ ModelParams::ModelParams(const struct feature_params& fp, const bool icharge){
                               {{}, {}, {}, {}, {}, {5}}};
         }
         else if (n_type == 7) {
-            type_comb_pair = {{{0}, {}, {}, {}, {}, {}, {}}, 
-                              {{1}, {0}, {}, {}, {}, {}, {}}, 
-                              {{2}, {}, {0}, {}, {}, {}, {}}, 
-                              {{3}, {}, {}, {0}, {}, {}, {}}, 
-                              {{4}, {}, {}, {}, {0}, {}, {}}, 
-                              {{5}, {}, {}, {}, {}, {0}, {}}, 
-                              {{6}, {}, {}, {}, {}, {}, {0}}, 
-                              {{}, {1}, {}, {}, {}, {}, {}}, 
-                              {{}, {2}, {1}, {}, {}, {}, {}}, 
-                              {{}, {3}, {}, {1}, {}, {}, {}}, 
-                              {{}, {4}, {}, {}, {1}, {}, {}}, 
-                              {{}, {5}, {}, {}, {}, {1}, {}}, 
-                              {{}, {6}, {}, {}, {}, {}, {1}}, 
-                              {{}, {}, {2}, {}, {}, {}, {}}, 
-                              {{}, {}, {3}, {2}, {}, {}, {}}, 
-                              {{}, {}, {4}, {}, {2}, {}, {}}, 
-                              {{}, {}, {5}, {}, {}, {2}, {}}, 
-                              {{}, {}, {6}, {}, {}, {}, {2}}, 
+            type_comb_pair = {{{0}, {}, {}, {}, {}, {}, {}},
+                              {{1}, {0}, {}, {}, {}, {}, {}},
+                              {{2}, {}, {0}, {}, {}, {}, {}},
+                              {{3}, {}, {}, {0}, {}, {}, {}},
+                              {{4}, {}, {}, {}, {0}, {}, {}},
+                              {{5}, {}, {}, {}, {}, {0}, {}},
+                              {{6}, {}, {}, {}, {}, {}, {0}},
+                              {{}, {1}, {}, {}, {}, {}, {}},
+                              {{}, {2}, {1}, {}, {}, {}, {}},
+                              {{}, {3}, {}, {1}, {}, {}, {}},
+                              {{}, {4}, {}, {}, {1}, {}, {}},
+                              {{}, {5}, {}, {}, {}, {1}, {}},
+                              {{}, {6}, {}, {}, {}, {}, {1}},
+                              {{}, {}, {2}, {}, {}, {}, {}},
+                              {{}, {}, {3}, {2}, {}, {}, {}},
+                              {{}, {}, {4}, {}, {2}, {}, {}},
+                              {{}, {}, {5}, {}, {}, {2}, {}},
+                              {{}, {}, {6}, {}, {}, {}, {2}},
                               {{}, {}, {}, {3}, {}, {}, {}},
                               {{}, {}, {}, {4}, {3}, {}, {}},
                               {{}, {}, {}, {5}, {}, {3}, {}},
@@ -182,14 +182,14 @@ ModelParams::ModelParams(const struct feature_params& fp, const bool icharge){
                               {{}, {1}}};
         }
         else if (n_type == 3) {
-            type_comb_pair = {{{0}, {}, {}}, 
-                              {{1}, {}, {}}, 
-                              {{2}, {}, {}}, 
-                              {{}, {0}, {}}, 
-                              {{}, {1}, {}}, 
-                              {{}, {2}, {}}, 
-                              {{}, {}, {0}}, 
-                              {{}, {}, {1}}, 
+            type_comb_pair = {{{0}, {}, {}},
+                              {{1}, {}, {}},
+                              {{2}, {}, {}},
+                              {{}, {0}, {}},
+                              {{}, {1}, {}},
+                              {{}, {2}, {}},
+                              {{}, {}, {0}},
+                              {{}, {}, {1}},
                               {{}, {}, {2}}};
         }
         else {
@@ -215,7 +215,7 @@ void ModelParams::initial_setting(const struct feature_params& fp){
 
     vector1i polynomial_index;
     if (fp.model_type == 2){
-        for (int n = 0; n < n_des; ++n) 
+        for (int n = 0; n < n_des; ++n)
             polynomial_index.emplace_back(n);
     }
     else if (fp.model_type == 3 and fp.des_type == "gtinv"){
@@ -293,7 +293,7 @@ void ModelParams::uniq_gtinv_type(const feature_params& fp){
             vector1i tc, t1a;
             for (const auto& lt1: lt) tc.emplace_back(lt1.second);
             for (int type1 = 0; type1 < n_type; ++type1){
-                if (check_type_comb_pair(tc, type1) == true) 
+                if (check_type_comb_pair(tc, type1) == true)
                     t1a.emplace_back(type1);
             }
             linear_array_g.emplace_back(LinearTermGtinv({int(i),tc,t1a}));
@@ -411,7 +411,7 @@ vector1i ModelParams::intersection_types_in_polynomial(
     return intersection;
 }
 
-int ModelParams::seq2typecomb(const int& seq){ 
+int ModelParams::seq2typecomb(const int& seq){
     return seq/n_fn;
 }
 int ModelParams::seq2igtinv(const int& seq){
@@ -451,7 +451,7 @@ void ModelParams::combination2(const vector1i& iarray){
             }
             if (match == true) {
                 comb2.push_back(vector1i({iarray[i2],iarray[i1]}));
-                ++i_comb; 
+                ++i_comb;
             }
         }
     }
@@ -474,13 +474,13 @@ void ModelParams::combination3(const vector1i& iarray){
                         (vector1i({t1,t2,t3}), type1) == true){
                         comb3_indices[type1].emplace_back(i_comb);
                         match = true;
-                        
+
                     }
                 }
                 if (match == true) {
                     comb3.push_back
                         (vector1i({iarray[i3],iarray[i2],iarray[i1]}));
-                    ++i_comb; 
+                    ++i_comb;
                 }
             }
         }
@@ -489,7 +489,7 @@ void ModelParams::combination3(const vector1i& iarray){
 
 
 bool ModelParams::check_type_comb_pair
-(const vector1i& index, const int& type1) const{ 
+(const vector1i& index, const int& type1) const{
     vector1i size;
     for (const auto& p2: index){
         size.emplace_back(type_comb_pair[p2][type1].size());
@@ -516,20 +516,19 @@ const vector1i& ModelParams::get_comb3_indices(const int type) const {
     return comb3_indices[type];
 }
 
-const vector3i& ModelParams::get_type_comb_pair() const{ 
+const vector3i& ModelParams::get_type_comb_pair() const{
     return type_comb_pair;
 }
 
-vector1i ModelParams::get_type_comb_pair(const vector1i& tc_index, 
-                                         const int& type1){ 
+vector1i ModelParams::get_type_comb_pair(const vector1i& tc_index,
+                                         const int& type1){
     vector1i all;
-    for (const auto& i: tc_index) 
+    for (const auto& i: tc_index)
         all.emplace_back(type_comb_pair[i][type1][0]);
     return all;
 }
 
-const std::vector<struct LinearTermGtinv>& 
+const std::vector<struct LinearTermGtinv>&
 ModelParams::get_linear_term_gtinv() const{
     return linear_array_g;
 }
-

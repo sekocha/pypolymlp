@@ -8,7 +8,7 @@
 #ifndef __MODELFORCHARGEPY
 #define __MODELFORCHARGEPY
 
-#include <iomanip> 
+#include <iomanip>
 
 #include "mlpcpp.h"
 #include "compute/neighbor.h"
@@ -21,11 +21,11 @@ class ModelForChargePy{
     Eigen::MatrixXd x_all;
     vector1i xc_begin_idx_dataset;
 
-    public: 
+    public:
 
-    ModelForChargePy(const vector3d& axis, 
+    ModelForChargePy(const vector3d& axis,
                      const vector3d& positions_c,
-                     const vector2i& types, 
+                     const vector2i& types,
                      const int& n_type,
                      const vector2d& params,
                      const double& cutoff,

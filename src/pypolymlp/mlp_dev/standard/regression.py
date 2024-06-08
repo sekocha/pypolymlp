@@ -1,37 +1,37 @@
-#!/usr/bin/env python 
+#!/usr/bin/env python
 import numpy as np
 
+from pypolymlp.mlp_dev.core.regression_base import RegressionBase
 from pypolymlp.mlp_dev.standard.mlpdev_dataxy import PolymlpDevDataXY
-from pypolymlp.mlp_dev.core.regression_base import RegressionBase 
 
 
 class Regression(RegressionBase):
 
     def __init__(
-        self, 
-        polymlp_dev: PolymlpDevDataXY, 
+        self,
+        polymlp_dev: PolymlpDevDataXY,
         train_regression_dict=None,
         test_regression_dict=None,
     ):
 
         super().__init__(
-            polymlp_dev, 
-            train_regression_dict=train_regression_dict, 
+            polymlp_dev,
+            train_regression_dict=train_regression_dict,
             test_regression_dict=test_regression_dict,
         )
         self.__alphas = [
-            pow(10, a) for a in polymlp_dev.common_params_dict['reg']['alpha']
+            pow(10, a) for a in polymlp_dev.common_params_dict["reg"]["alpha"]
         ]
 
     def fit(self, seq=False, iprint=True):
 
         vtrain = self.train_regression_dict
         if seq:
-            XTX, XTy = vtrain['xtx'], vtrain['xty']
+            XTX, XTy = vtrain["xtx"], vtrain["xty"]
             coefs_array = self.__ridge_fit(A=XTX, Xy=XTy)
             self.__ridge_model_selection_seq(coefs_array, iprint=iprint)
         else:
-            X, y = vtrain['x'], vtrain['y']
+            X, y = vtrain["x"], vtrain["y"]
             coefs_array = self.__ridge_fit(X=X, y=y)
             self.__ridge_model_selection(coefs_array, iprint=iprint)
 
@@ -42,15 +42,15 @@ class Regression(RegressionBase):
         A, Xy = self.compute_inner_products(X=X, y=y, A=A, Xy=Xy)
         n_features = A.shape[0]
 
-        print('Regression: cholesky decomposition ...')
+        print("Regression: cholesky decomposition ...")
         coefs_array = np.zeros((n_features, len(self.__alphas)))
         alpha_prev = 0.0
         for i, alpha in enumerate(self.__alphas):
             add = alpha - alpha_prev
-            A.flat[::n_features + 1] += add
-            coefs_array[:,i] = self.solve_linear_equation(A, Xy)
+            A.flat[:: n_features + 1] += add
+            coefs_array[:, i] = self.solve_linear_equation(A, Xy)
             alpha_prev = alpha
-        A.flat[::n_features + 1] -= alpha
+        A.flat[:: n_features + 1] -= alpha
 
         return coefs_array
 
@@ -59,38 +59,42 @@ class Regression(RegressionBase):
         pred_train, pred_test, rmse_train, rmse_test = self.predict(coefs_array)
         idx = np.argmin(rmse_test)
         self.best_model = {
-            'rmse': rmse_test[idx],
-            'coeffs': coefs_array[:,idx],
-            'alpha': self.__alphas[idx],
-            'predictions': {
-                'train': pred_train[idx],
-                'test': pred_test[idx],
+            "rmse": rmse_test[idx],
+            "coeffs": coefs_array[:, idx],
+            "alpha": self.__alphas[idx],
+            "predictions": {
+                "train": pred_train[idx],
+                "test": pred_test[idx],
             },
         }
-        if iprint == True:
+        if iprint:
             self.__print_log(rmse_train, rmse_test)
 
         return self
 
     def __ridge_model_selection_seq(self, coefs_array, iprint=True):
-        
+
         rmse_train, rmse_test = self.predict_seq(coefs_array)
         idx = np.argmin(rmse_test)
         self.best_model = {
-            'rmse': rmse_test[idx],
-            'coeffs': coefs_array[:,idx],
-            'alpha': self.__alphas[idx],
+            "rmse": rmse_test[idx],
+            "coeffs": coefs_array[:, idx],
+            "alpha": self.__alphas[idx],
         }
-        if iprint == True:
+        if iprint:
             self.__print_log(rmse_train, rmse_test)
 
         return self
 
     def __print_log(self, rmse_train, rmse_test):
 
-        print('Regression: model selection ...')
+        print("Regression: model selection ...")
         for a, rmse1, rmse2 in zip(self.__alphas, rmse_train, rmse_test):
-            print('  - alpha =', '{:.3e}'.format(a), ': rmse (train, test) =', 
-                  '{:.5f}'.format(rmse1), '{:.5f}'.format(rmse2))
+            print(
+                "  - alpha =",
+                "{:.3e}".format(a),
+                ": rmse (train, test) =",
+                "{:.5f}".format(rmse1),
+                "{:.5f}".format(rmse2),
+            )
         return self
-

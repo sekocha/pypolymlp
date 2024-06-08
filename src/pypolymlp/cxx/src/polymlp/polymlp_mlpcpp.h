@@ -37,7 +37,7 @@ using vector4dc = std::vector<vector3dc>;
 template<typename T>
 void print_time(clock_t& start, clock_t& end, const T& memo){
 
-    std::cout << " elapsed time: " << memo << ": " 
+    std::cout << " elapsed time: " << memo << ": "
         << (double)(end-start) / CLOCKS_PER_SEC << " (sec.)" << std::endl;
 
 }
@@ -50,7 +50,7 @@ struct feature_params {
     std::string pair_type;
     std::string des_type;
     int model_type;
-    int maxp; 
+    int maxp;
     int maxl;
     vector3i lm_array;
     vector2i l_comb;

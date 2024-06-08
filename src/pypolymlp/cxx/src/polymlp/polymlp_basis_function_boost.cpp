@@ -44,10 +44,10 @@ void neumann_d(const double& dis, const double& p1, double& bf, double& bf_d){
         bf_d = prod1 * 0.5;
     }
 }
-void sph_bessel_d(const double& dis, 
-                  const double& p1, 
-                  const double& p2, 
-                  double& bf, 
+void sph_bessel_d(const double& dis,
+                  const double& p1,
+                  const double& p2,
+                  double& bf,
                   double& bf_d){
 
 //  accuracy of derivatives may be not good, particularly n > 10.
@@ -56,21 +56,19 @@ void sph_bessel_d(const double& dis,
     bf = boost::math::sph_bessel(index, pdis);
     if (index == 0) bf_d = - boost::math::sph_bessel(1, pdis) * p2;
     else {
-        bf_d = boost::math::sph_bessel(index-1, pdis) 
-            - (index + 1) * bf / (pdis); 
+        bf_d = boost::math::sph_bessel(index-1, pdis)
+            - (index + 1) * bf / (pdis);
         bf_d *= p2;
     }
 
 }
-void sph_neumann_d(const double& dis, 
-                   const double& p1, 
-                   double& bf, 
+void sph_neumann_d(const double& dis,
+                   const double& p1,
+                   double& bf,
                    double& bf_d){
 
     int index = round(p1);
     bf = boost::math::sph_neumann(index, dis);
     if (index == 0) bf_d = - boost::math::sph_neumann(1, dis);
-    else bf_d = boost::math::sph_neumann(index-1, dis) - (index + 1) * bf / dis; 
+    else bf_d = boost::math::sph_neumann(index-1, dis) - (index + 1) * bf / dis;
 }
-
-

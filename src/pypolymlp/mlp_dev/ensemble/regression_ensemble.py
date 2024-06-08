@@ -1,16 +1,15 @@
-#!/usr/bin/env python 
+#!/usr/bin/env python
 import numpy as np
 
 from pypolymlp.mlp_dev.core.regression_base import RegressionBase
-from pypolymlp.mlp_dev.standard.regression import Regression
-
 from pypolymlp.mlp_dev.ensemble.mlpdev_dataxy_ensemble_base import (
     PolymlpDevDataXYEnsembleBase,
 )
+from pypolymlp.mlp_dev.standard.regression import Regression
 
 
 class RegressionEnsemble(RegressionBase):
-    
+
     def __init__(
         self,
         polymlp: PolymlpDevDataXYEnsembleBase,
@@ -30,20 +29,20 @@ class RegressionEnsemble(RegressionBase):
         self.__random_indices = polymlp.random_indices
         self.__n_features = polymlp.n_features
         self.__n_models = polymlp.n_models
-        #self.__cumulative = polymlp.cumulative_n_features
+        # self.__cumulative = polymlp.cumulative_n_features
 
     def fit(self):
 
         coeffs_sum = np.zeros(self.__n_features)
         for train_reg, test_reg, r_indices in zip(
-            self.__train_reg_dict_all, 
-            self.__test_reg_dict_all, 
-            self.__random_indices
+            self.__train_reg_dict_all,
+            self.__test_reg_dict_all,
+            self.__random_indices,
         ):
 
             reg = Regression(
-                self.__polymlp, 
-                train_regression_dict=train_reg, 
+                self.__polymlp,
+                train_regression_dict=train_reg,
                 test_regression_dict=test_reg,
             )
             reg.fit(seq=True)
@@ -55,5 +54,3 @@ class RegressionEnsemble(RegressionBase):
         self.coeffs = coeffs_sum / self.__n_models
         self.scales = np.ones(self.__n_features)
         return self
-
-

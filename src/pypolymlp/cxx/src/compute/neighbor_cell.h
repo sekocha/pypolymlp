@@ -39,18 +39,18 @@ class NeighborCell{
 
     int find_trans();
 
-    template <typename T> T dot_prod(const std::vector<T>& vec1, 
+    template <typename T> T dot_prod(const std::vector<T>& vec1,
                                      const std::vector<T>& vec2);
     template <typename T> T norm(const std::vector<T>& vec);
     template <typename T> double distance(const T& i, const T& j, const T& k);
-    template <typename T> vector1d to_cartesian(const T& i, 
-                                                const T& j, 
+    template <typename T> vector1d to_cartesian(const T& i,
+                                                const T& j,
                                                 const T& k);
 
-    public: 
+    public:
 
-    NeighborCell(const vector2d& axis_i, 
-                 const vector2d& positions_c_i, 
+    NeighborCell(const vector2d& axis_i,
+                 const vector2d& positions_c_i,
                  const double cutoff_i);
     ~NeighborCell();
 
@@ -61,7 +61,7 @@ class NeighborCell{
 };
 
 template <typename T>
-T NeighborCell::dot_prod(const std::vector<T>& vec1, 
+T NeighborCell::dot_prod(const std::vector<T>& vec1,
                          const std::vector<T>& vec2){
     return vec1[0] * vec2[0] + vec1[1] * vec2[1] + vec1[2] * vec2[2];
 }

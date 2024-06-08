@@ -74,19 +74,18 @@ PyFeaturesAttr::PyFeaturesAttr(const py::dict& params_dict){
 
 PyFeaturesAttr::~PyFeaturesAttr(){}
 
-const vector1i& PyFeaturesAttr::get_radial_ids() const{ 
-    return radial_ids; 
+const vector1i& PyFeaturesAttr::get_radial_ids() const{
+    return radial_ids;
 }
-const vector1i& PyFeaturesAttr::get_gtinv_ids() const{ 
-    return gtinv_ids; 
+const vector1i& PyFeaturesAttr::get_gtinv_ids() const{
+    return gtinv_ids;
 }
-const vector2i& PyFeaturesAttr::get_tcomb_ids() const{ 
-    return tcomb_ids; 
+const vector2i& PyFeaturesAttr::get_tcomb_ids() const{
+    return tcomb_ids;
 }
-const vector2i& PyFeaturesAttr::get_polynomial_ids() const{ 
-    return polynomial_ids; 
+const vector2i& PyFeaturesAttr::get_polynomial_ids() const{
+    return polynomial_ids;
 }
-const vector3i& PyFeaturesAttr::get_type_comb_pair() const{ 
-    return type_comb_pair; 
+const vector3i& PyFeaturesAttr::get_type_comb_pair() const{
+    return type_comb_pair;
 }
-

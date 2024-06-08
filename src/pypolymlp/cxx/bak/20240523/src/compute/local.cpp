@@ -9,13 +9,13 @@
 
 Local::Local(){}
 
-Local::Local(const int& n_atom_i, 
-             const int& atom1_i, 
+Local::Local(const int& n_atom_i,
+             const int& atom1_i,
              const int& type1_i,
-             const struct feature_params& fp_i, 
+             const struct feature_params& fp_i,
              const ModelParams& modelp_i){
 
-    n_atom = n_atom_i, atom1 = atom1_i, type1 = type1_i, 
+    n_atom = n_atom_i, atom1 = atom1_i, type1 = type1_i,
     fp = fp_i, modelp = modelp_i;
 
     n_type = fp.n_type;
@@ -41,7 +41,7 @@ vector1d Local::pair(const vector2d& dis_a){
                 dis = dis_a[type2][j];
                 get_fn_(dis, fp, fn);
                 for (int n = 0; n < n_fn; ++n) {
-                    col = n_type_comb * n_fn + n; 
+                    col = n_type_comb * n_fn + n;
                     an[col] += fn[n];
                 }
             }
@@ -51,13 +51,13 @@ vector1d Local::pair(const vector2d& dis_a){
     return an;
 }
 
-void Local::pair_d(const vector2d& dis_a, 
-                   const vector3d& diff_a, 
+void Local::pair_d(const vector2d& dis_a,
+                   const vector3d& diff_a,
                    const vector2i& atom2_a,
-                   vector1d& an, 
-                   vector2d& an_dfx, 
-                   vector2d& an_dfy, 
-                   vector2d& an_dfz, 
+                   vector1d& an,
+                   vector2d& an_dfx,
+                   vector2d& an_dfy,
+                   vector2d& an_dfz,
                    vector2d& an_ds){
 
     an = vector1d(n_des, 0.0);
@@ -80,7 +80,7 @@ void Local::pair_d(const vector2d& dis_a,
                 atom2 = atom2_a[type2][j];
                 get_fn_(dis, fp, fn, fn_d);
                 for (int n = 0; n < n_fn; ++n){
-                    col = n_type_comb * n_fn + n; 
+                    col = n_type_comb * n_fn + n;
                     an[col] += fn[n];
                     valx = fn_d[n] * delx / dis;
                     valy = fn_d[n] * dely / dis;
@@ -121,12 +121,12 @@ vector1d Local::gtinv(const vector2d& dis_a, const vector3d& diff_a){
             if (it != lin.type1.end()){
                 const auto& lm_array = fp.lm_array[lin.lmindex];
                 const auto& coeffs = fp.lm_coeffs[lin.lmindex];
-                const auto& tc = 
+                const auto& tc =
                     modelp.get_type_comb_pair(lin.tcomb_index, type1);
                 n_prod = lm_array[0].size();
                 for (size_t j = 0; j < lm_array.size(); ++j){
                     const vector1i &lm = lm_array[j];
-                    prod_all = coeffs[j]; 
+                    prod_all = coeffs[j];
                     for (int s1 = 0; s1 < n_prod; ++s1){
                         prod_all *= an[tc[s1]][lm[s1]];
                     }
@@ -140,26 +140,26 @@ vector1d Local::gtinv(const vector2d& dis_a, const vector3d& diff_a){
 }
 
 
-void Local::gtinv_d(const vector2d& dis_a, 
-                    const vector3d& diff_a, 
+void Local::gtinv_d(const vector2d& dis_a,
+                    const vector3d& diff_a,
                     const vector2i& atom2_a,
-                    vector1d& dn, 
-                    vector2d& dn_dfx, 
-                    vector2d& dn_dfy, 
-                    vector2d& dn_dfz, 
+                    vector1d& dn,
+                    vector2d& dn_dfx,
+                    vector2d& dn_dfy,
+                    vector2d& dn_dfz,
                     vector2d& dn_ds){
 
     const vector2i &lm_info = get_lm_info(fp.maxl);
     vector3dc anlm;
     vector4dc anlm_dfx, anlm_dfy, anlm_dfz, anlm_ds;
-    compute_anlm_d(dis_a, 
-                   diff_a, 
-                   atom2_a, 
-                   lm_info, 
-                   anlm, 
-                   anlm_dfx, 
-                   anlm_dfy, 
-                   anlm_dfz, 
+    compute_anlm_d(dis_a,
+                   diff_a,
+                   atom2_a,
+                   lm_info,
+                   anlm,
+                   anlm_dfx,
+                   anlm_dfy,
+                   anlm_dfz,
                    anlm_ds);
 
     dn = vector1d(n_des, 0.0);
@@ -181,7 +181,7 @@ void Local::gtinv_d(const vector2d& dis_a,
             if (it != lin.type1.end()){
                 const auto& lm_array = fp.lm_array[lin.lmindex];
                 const auto& coeffs = fp.lm_coeffs[lin.lmindex];
-                const auto& tc = 
+                const auto& tc =
                     modelp.get_type_comb_pair(lin.tcomb_index, type1);
                 n_prod = lm_array[0].size();
 
@@ -231,8 +231,8 @@ void Local::gtinv_d(const vector2d& dis_a,
     }
 }
 
-vector3dc Local::compute_anlm(const vector2d& dis_a, 
-                              const vector3d& diff_a, 
+vector3dc Local::compute_anlm(const vector2d& dis_a,
+                              const vector3d& diff_a,
                               const vector2i& lm_info){
 
     const int n_lm = lm_info.size(), n_lm_all = 2 * n_lm - fp.maxl - 1;
@@ -268,14 +268,14 @@ vector3dc Local::compute_anlm(const vector2d& dis_a,
     return anlm;
 }
 
-void Local::compute_anlm_d(const vector2d& dis_a, 
-                           const vector3d& diff_a, 
-                           const vector2i& atom2_a, 
-                           const vector2i& lm_info, 
-                           vector3dc& anlm, 
-                           vector4dc& anlm_dfx, 
-                           vector4dc& anlm_dfy, 
-                           vector4dc& anlm_dfz, 
+void Local::compute_anlm_d(const vector2d& dis_a,
+                           const vector3d& diff_a,
+                           const vector2i& atom2_a,
+                           const vector2i& lm_info,
+                           vector3dc& anlm,
+                           vector4dc& anlm_dfx,
+                           vector4dc& anlm_dfy,
+                           vector4dc& anlm_dfz,
                            vector4dc& anlm_ds){
 
     const int n_lm = lm_info.size(), n_lm_all = 2 * n_lm - fp.maxl - 1;
@@ -362,4 +362,3 @@ vector2i Local::get_lm_info(const int& max_l){
     }
     return lm_comb;
 }
-

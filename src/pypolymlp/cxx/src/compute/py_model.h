@@ -27,19 +27,19 @@ class PyModel {
     vector1i xf_begin_dataset, xs_begin_dataset;
     vector1i n_data;
 
-    void set_index(const std::vector<int>& n_data_dataset, 
+    void set_index(const std::vector<int>& n_data_dataset,
                    const std::vector<bool>& force_dataset,
                    const std::vector<int>& n_atoms_st,
-                   std::vector<int>& xf_begin, 
+                   std::vector<int>& xf_begin,
                    std::vector<int>& xs_begin,
                    std::vector<bool>& force);
 
-    public: 
+    public:
 
     PyModel(const py::dict& params_dict,
-            const vector3d& axis, 
+            const vector3d& axis,
             const vector3d& positions_c,
-            const vector2i& types, 
+            const vector2i& types,
             const vector1i& n_st_dataset,
             const std::vector<bool>& force_dataset,
             const vector1i& n_atoms_all);

@@ -1,20 +1,25 @@
 #!/usr/bin/env python
-import numpy as np
 from math import sqrt
 
+import numpy as np
 import spglib
 
+
 def upper_triangle_axis(a, b, c, d, e, f):
-    return np.array([[a,d,e],[0,b,f],[0,0,c]])
+    return np.array([[a, d, e], [0, b, f], [0, 0, c]])
+
 
 def symmetric_metric(a, b, c, d, e, f):
-    return np.array([[a,d,e],[d,b,f],[e,f,c]])
+    return np.array([[a, d, e], [d, b, f], [e, f, c]])
+
 
 def transformation_matrix(axis_old, axis_new):
     return np.linalg.inv(axis_old) @ axis_new
 
+
 def axis_to_metric(axis: np.array):
     return axis.T @ axis
+
 
 def metric_to_axis(metric):
 
@@ -42,13 +47,12 @@ def metric_to_axis(metric):
         raise ValueError
 
     return upper_triangle_axis(ax, by, cz, bx, cx, cy)
-    
+
+
 def axis_to_niggli_reduce(axis: np.array):
 
     lattice = axis.T
     niggli_lattice = spglib.niggli_reduce(lattice, eps=1e-15).T
     transformation = transformation_matrix(axis, niggli_lattice)
     metric = axis_to_metric(niggli_lattice)
-    return niggli_lattice, transformation, metric 
-
-
+    return niggli_lattice, transformation, metric

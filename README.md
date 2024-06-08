@@ -31,7 +31,7 @@
 1. Conda package management system
 
 ```
-> conda create -n pypolymlp 
+> conda create -n pypolymlp
 > conda activate pypolymlp
 
 > conda install numpy scipy pybind11 eigen cmake
@@ -43,7 +43,7 @@
 
 2. Building a shared library (libmlpcpp)
 
-The process of building libmlpcpp may take approximately five minutes to one hour. 
+The process of building libmlpcpp may take approximately five minutes to one hour.
 ```
 > cd $(pypolymlp)/src/pypolymlp/cxx
 > cmake -S . -B build
@@ -89,4 +89,3 @@ ulimit -s unlimited
   - Atomic energies
 - [Python API (MLP development)](docs/api_mlpdev.md)
 - [Python API (Property calculations)](docs/api_calc.md)
-

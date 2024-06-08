@@ -1,11 +1,11 @@
 """Symmetry adapted basis sets of 1st order force constants."""
+
 from __future__ import annotations
 
 from typing import Optional
 
 import numpy as np
 from scipy.sparse import csr_array
-
 from symfc.spg_reps import SpgRepsO1
 from symfc.utils.eig_tools import eigsh_projector
 from symfc.utils.matrix_tools_O1 import compressed_projector_sum_rules

@@ -13,7 +13,7 @@
 
 struct SingleTerm {
     double coeff;
-    vector1i nlmtc_keys; 
+    vector1i nlmtc_keys;
     vector1i type1;
 };
 
@@ -56,7 +56,7 @@ class Features {
     MultipleFeatures mfeatures;
 
     MultipleFeatures set_linear_features_pair();
-    MultipleFeatures set_linear_features(const feature_params& fp, 
+    MultipleFeatures set_linear_features(const feature_params& fp,
                                          const ModelParams& modelp);
 
     // for des_type == pair
@@ -69,10 +69,10 @@ class Features {
     void set_mapping_nlmtc();
 
     // not used
-    SingleFeature product_features(const SingleFeature& feature1, 
+    SingleFeature product_features(const SingleFeature& feature1,
                                    const SingleFeature& feature2);
 
-    public: 
+    public:
 
     Features();
     Features(const feature_params& fp, const ModelParams& modelp);

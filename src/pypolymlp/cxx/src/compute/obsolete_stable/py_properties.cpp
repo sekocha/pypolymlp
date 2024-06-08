@@ -9,7 +9,7 @@
 
 PyProperties::PyProperties(const py::dict& params_dict,
                            const vector1d& coeffs,
-                           const vector3d& axis, 
+                           const vector3d& axis,
                            const vector3d& positions_c,
                            const vector2i& types){
 
@@ -54,15 +54,15 @@ PyProperties::PyProperties(const py::dict& params_dict,
     #endif
     for (int i = 0; i < n_st; ++i){
         struct feature_params fp1 = fp;
-        Neighbor neigh(axis[i], 
-                       positions_c[i], 
-                       types[i], 
-                       fp1.n_type, 
+        Neighbor neigh(axis[i],
+                       positions_c[i],
+                       types[i],
+                       fp1.n_type,
                        fp1.cutoff);
-        ModelProperties mod(neigh.get_dis_array(), 
+        ModelProperties mod(neigh.get_dis_array(),
                             neigh.get_diff_array(),
-                            neigh.get_atom2_array(), 
-                            types[i], 
+                            neigh.get_atom2_array(),
+                            types[i],
                             coeffs,
                             fp1,
                             element_swap);
@@ -77,5 +77,3 @@ PyProperties::~PyProperties(){}
 Eigen::VectorXd& PyProperties::get_e(){ return e_all; }
 const vector2d& PyProperties::get_f() const{ return f_all; }
 Eigen::MatrixXd& PyProperties::get_s(){ return s_all; }
-
-

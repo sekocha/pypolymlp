@@ -1,18 +1,20 @@
-#!/usr/bin/env python 
-import numpy as np
+#!/usr/bin/env python
 import signal
-import glob
 import sys
+
+import numpy as np
 
 from pypolymlp.api.pypolymlp import Pypolymlp
 
+
 def parse_yaml(yaml_file, energy_dat):
-    
+
     ph3 = Phono3pyYaml(yaml_file)
     disps, forces = ph3.get_phonon_dataset()
     st_dict, _ = ph3.get_structure_dataset()
-    energies = np.loadtxt(energy_dat)[1:,1]
+    energies = np.loadtxt(energy_dat)[1:, 1]
     return disps, forces, energies, st_dict
+
 
 def combine_array(array1, array2):
     array = []
@@ -23,7 +25,7 @@ def combine_array(array1, array2):
     return np.array(array)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from pypolymlp.core.interface_phono3py import Phono3pyYaml
 
     signal.signal(signal.SIGINT, signal.SIG_DFL)
@@ -33,24 +35,39 @@ if __name__ == '__main__':
 
     polymlp = Pypolymlp()
     polymlp.set_params(
-            ['Ag','I'],
-            cutoff=8.0,
-            model_type=3,
-            max_p=2,
-            gtinv_order=3,
-            gtinv_maxl=[8,8],
-            reg_alpha_params=[-2,2,15],
-            gaussian_params2=[1.0,7.0,7],
-            #gaussian_params2=[1.0,7.0,12],
-            atomic_energy=[-0.23677472,-0.18136690],
+        ["Ag", "I"],
+        cutoff=8.0,
+        model_type=3,
+        max_p=2,
+        gtinv_order=3,
+        gtinv_maxl=[8, 8],
+        reg_alpha_params=[-2, 2, 15],
+        gaussian_params2=[1.0, 7.0, 7],
+        # gaussian_params2=[1.0,7.0,12],
+        atomic_energy=[-0.23677472, -0.18136690],
     )
 
-
-    dir_prefix = '/home/seko/collaboration/togo/RS-ZB-WZ-ltc-data-ver4/'
-    yaml_file1 = dir_prefix + 'zincblende/phono3py_params_zincblende_yaml/phono3py_params_zincblende_AgI.yaml.xz'
-    energy_dat1 = dir_prefix + 'zincblende/energies_ltc_zincblende_fc3-forces/energies_ltc_zincblende_AgI_fc3-forces.dat'
-    yaml_file2 = dir_prefix + 'zincblende-d01/phono3py_params_zincblende_yaml/phono3py_params_zincblende_AgI.yaml.xz'
-    energy_dat2 = dir_prefix + 'zincblende-d01/energies_ltc_zincblende_fc3-forces/energies_ltc_zincblende_AgI_fc3-forces.dat'
+    dir_prefix = "/home/seko/collaboration/togo/RS-ZB-WZ-ltc-data-ver4/"
+    yaml_file1 = (
+        dir_prefix
+        + "zincblende/phono3py_params_zincblende_yaml/"
+        + "phono3py_params_zincblende_AgI.yaml.xz"
+    )
+    energy_dat1 = (
+        dir_prefix
+        + "zincblende/energies_ltc_zincblende_fc3-forces/"
+        + "energies_ltc_zincblende_AgI_fc3-forces.dat"
+    )
+    yaml_file2 = (
+        dir_prefix
+        + "zincblende-d01/phono3py_params_zincblende_yaml/"
+        + "phono3py_params_zincblende_AgI.yaml.xz"
+    )
+    energy_dat2 = (
+        dir_prefix
+        + "zincblende-d01/energies_ltc_zincblende_fc3-forces/"
+        + "energies_ltc_zincblende_AgI_fc3-forces.dat"
+    )
 
     disps1, forces1, energies1, st_dict = parse_yaml(yaml_file1, energy_dat1)
     disps2, forces2, energies2, _ = parse_yaml(yaml_file2, energy_dat2)
@@ -59,9 +76,9 @@ if __name__ == '__main__':
     train_forces = combine_array(forces1[:n_str1], forces2[:n_str2])
     train_energies = combine_array(energies1[:n_str1], energies2[:n_str2])
 
-    #test_disps = combine_array(disps1[390:400], disps2[390:400])
-    #test_forces = combine_array(forces1[390:400], forces2[390:400])
-    #test_energies = combine_array(energies1[390:400], energies2[390:400])
+    # test_disps = combine_array(disps1[390:400], disps2[390:400])
+    # test_forces = combine_array(forces1[390:400], forces2[390:400])
+    # test_energies = combine_array(energies1[390:400], energies2[390:400])
     test_disps = disps1[380:400]
     test_forces = forces1[380:400]
     test_energies = energies1[380:400]
@@ -76,6 +93,3 @@ if __name__ == '__main__':
         st_dict,
     )
     polymlp.run(log=True)
-
-
-

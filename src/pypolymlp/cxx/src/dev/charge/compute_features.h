@@ -1,4 +1,4 @@
-/**************************************************************************** 
+/****************************************************************************
 
         Copyright (C) 2020 Atsuto Seko
                 seko@cms.mtl.kyoto-u.ac.jp
@@ -22,7 +22,7 @@ using vector2map_dc = std::vector<vector1map_dc>;
 
 class ComputeFeatures {
 
-    int n_atom, n_type, n_terms; 
+    int n_atom, n_type, n_terms;
     ModelParams modelp;
     Potential p_obj;
 
@@ -71,10 +71,10 @@ class ComputeFeatures {
                           const std::vector<T>& element,
                           std::vector<T>& prod_vals);
 
-    public: 
+    public:
 
     ComputeFeatures();
-    ComputeFeatures(const vector3d& dis_array_all, 
+    ComputeFeatures(const vector3d& dis_array_all,
                     const vector4d& diff_array_all,
                     const vector3i& atom2_array,
                     const vector1i& types_i,

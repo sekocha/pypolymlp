@@ -21,5 +21,3 @@ PYBIND11_MODULE(libprojcpp, m) {
         ;
 
 }
-
-

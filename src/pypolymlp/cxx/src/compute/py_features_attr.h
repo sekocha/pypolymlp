@@ -23,7 +23,7 @@ class PyFeaturesAttr {
     vector2i tcomb_ids, polynomial_ids;
     vector3i type_comb_pair;
 
-    public: 
+    public:
 
     PyFeaturesAttr(const py::dict& params_dict);
     ~PyFeaturesAttr();

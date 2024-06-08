@@ -9,9 +9,9 @@
 > pypolymlp-structure --prototype --n_types 1
 > pypolymlp-structure --prototype --n_types 2 --comp 0.25 0.75
 > pypolymlp-structure --prototype --n_types 2 --comp 1 3
-> pypolymlp-structure --prototype --n_types 3 
+> pypolymlp-structure --prototype --n_types 3
 ```
-Only alloy structure types are available. 
+Only alloy structure types are available.
 Selected prototypes are listed in polymlp_prototypes.yaml.
 -->
 Prepare prototype structures in POSCAR format.
@@ -21,7 +21,7 @@ Prepare prototype structures in POSCAR format.
 ```
 > pypolymlp-structure --random --poscars prototypes/* --n_str 10 --low_density 2 --high_density 2
 ```
-Structures for are listed in polymlp_str_samples.yaml. 
+Structures for are listed in polymlp_str_samples.yaml.
 Structures are generated in "poscar" directory.
 
 - Generation from a given structure
@@ -36,7 +36,7 @@ Structures are generated in "poscar" directory.
 ```
 Structures are generated in "poscar_phonon" directory.
 
-3. DFT calculations for structures 
+3. DFT calculations for structures
 
 ## Compression of vasprun.xml files
 
@@ -52,7 +52,7 @@ Compressed vasprun.xml is generated as vasprun.xml.polymlp.
 > cat polymlp.in.append >> polymlp.in
 ```
 A given DFT dataset is automatically divided into some sets, depending on the values of the energy, the forces acting on atoms, and the volume.
-A generated file "polymlp.in.append" can be appended in your polymlp.in, which will be used for developing MLPs. 
+A generated file "polymlp.in.append" can be appended in your polymlp.in, which will be used for developing MLPs.
 Datasets identified with "train1" and "test1" are composed of structures with low energy and small force values.
 The predictive power for them is more important than the other structures for the successive calculations using polynomial MLPs, so the prediction errors for "train1" and "test1" datasets should be accuracy measures for polynomial MLPs.
 
@@ -65,7 +65,7 @@ The predictive power for them is more important than the other structures for th
 > pypolymlp-utils --atomic_energy_formula Al2O3 --atomic_energy_functional PBEsol
 ```
 
-A standard output can be appended in your polymlp.in, which will be used for developing MLPs. 
+A standard output can be appended in your polymlp.in, which will be used for developing MLPs.
 The polynomial MLP has no constant term, which means that the energy for isolated atoms is set to zero.
 The energy values for the isolated atoms must be subtracted from the energy values for structures.
 
@@ -95,4 +95,3 @@ calc_cost option generates a file 'polymlp_cost.yaml', which is required for fin
 ```
 
 Files 'polymlp_error.yaml' and 'polymlp_cost.yaml' are needed for each MLP.
-

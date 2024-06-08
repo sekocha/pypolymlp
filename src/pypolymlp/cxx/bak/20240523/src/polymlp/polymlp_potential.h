@@ -12,7 +12,7 @@
 #include "polymlp_features.h"
 
 // Hash function must be examined
-class HashVI { 
+class HashVI {
     public:
         size_t operator()(const std::vector<int> &x) const {
             const int C = 997;
@@ -49,8 +49,8 @@ typedef std::unordered_map<vector1i,int,HashVI> ProdMapFromKeys;
 class Potential {
 
     PotentialModelEachKey potential_model_each_key;
-    std::vector<ProdMapFromKeys> prod_map_from_keys, 
-                                 prod_map_erased_from_keys, 
+    std::vector<ProdMapFromKeys> prod_map_from_keys,
+                                 prod_map_erased_from_keys,
                                  prod_features_map_from_keys;
     std::vector<MappedMultipleFeatures> linear_features;
 
@@ -81,7 +81,7 @@ class Potential {
                                   ProdMapFromKeys& map_from_keys,
                                   vector2i& map);
 
-    public: 
+    public:
 
     Potential();
     Potential(const Features& f_obj, const vector1d& pot);
@@ -96,7 +96,7 @@ class Potential {
     const vector2i& get_prod_map_erased(const int t) const;
     const vector2i& get_prod_features_map(const int t) const;
     const MappedMultipleFeatures& get_linear_features(const int t) const;
-    const PotentialModel& get_potential_model(const int type1, 
+    const PotentialModel& get_potential_model(const int type1,
                                               const int head_key) const;
 
     const int get_n_nlmtc_all() const;

@@ -6,6 +6,6 @@ cutoff 11.0
 model_type 2
 max_p 2
 gtinv_order 3
-gtinv_maxl 4 4 
+gtinv_maxl 4 4
 reg_alpha_params -3 1 5
 include_stress False

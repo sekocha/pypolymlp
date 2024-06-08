@@ -1,4 +1,4 @@
-/**************************************************************************** 
+/****************************************************************************
 
         Copyright (C) 2024 Atsuto Seko
                 seko@cms.mtl.kyoto-u.ac.jp
@@ -78,7 +78,7 @@ MultipleFeatures Features::set_linear_features_pair(){
     return feature_array;
 }
 
-MultipleFeatures Features::set_linear_features(const feature_params& fp, 
+MultipleFeatures Features::set_linear_features(const feature_params& fp,
                                                const ModelParams& modelp){
 
     const vector3i& lm_array = fp.lm_array;
@@ -145,7 +145,7 @@ void Features::set_mapping_nlmtc(){
             conj_key_add = 2 * lm_attr.m * n_tc;
             for (int tc = 0; tc < n_tc; ++tc){
                 conj_key = nlmtc_key - conj_key_add;
-                nlmtcAttribute nlmtcs = {n, lm_attr, tc, nlmtc_key, conj_key, 
+                nlmtcAttribute nlmtcs = {n, lm_attr, tc, nlmtc_key, conj_key,
                                          nlmtc_noconj_key};
                 nlmtc_map.emplace_back(nlmtcs);
                 ++nlmtc_key;
@@ -196,40 +196,40 @@ void Features::set_mapping_lm(const int maxl){
 }
 
 const int Features::get_n_features() const {
-    return mfeatures.size(); 
+    return mfeatures.size();
 }
 const int Features::get_n_feature_combinations() const {
-    return feature_combinations.size(); 
+    return feature_combinations.size();
 }
-const int Features::get_n_nlmtc_all() const { 
-    return n_nlmtc_all; 
+const int Features::get_n_nlmtc_all() const {
+    return n_nlmtc_all;
 }
-const MultipleFeatures& Features::get_features() const { 
-    return mfeatures; 
+const MultipleFeatures& Features::get_features() const {
+    return mfeatures;
 }
-const std::vector<lmAttribute>& Features::get_lm_map() const { 
-    return lm_map; 
+const std::vector<lmAttribute>& Features::get_lm_map() const {
+    return lm_map;
 }
-const std::vector<nlmtcAttribute>& 
-Features::get_nlmtc_map_no_conjugate() const { 
-    return nlmtc_map_no_conjugate; 
+const std::vector<nlmtcAttribute>&
+Features::get_nlmtc_map_no_conjugate() const {
+    return nlmtc_map_no_conjugate;
 }
-const std::vector<nlmtcAttribute>& Features::get_nlmtc_map() const { 
-    return nlmtc_map; 
+const std::vector<nlmtcAttribute>& Features::get_nlmtc_map() const {
+    return nlmtc_map;
 }
-const std::vector<ntcAttribute>& Features::get_ntc_map() const { 
-    return ntc_map; 
+const std::vector<ntcAttribute>& Features::get_ntc_map() const {
+    return ntc_map;
 }
-const vector2i& Features::get_feature_combinations() const { 
-    return feature_combinations; 
+const vector2i& Features::get_feature_combinations() const {
+    return feature_combinations;
 }
-const int Features::get_n_type() const { 
-    return n_type; 
+const int Features::get_n_type() const {
+    return n_type;
 }
 
 
 // not used
-SingleFeature Features::product_features(const SingleFeature& feature1, 
+SingleFeature Features::product_features(const SingleFeature& feature1,
                                          const SingleFeature& feature2){
     SingleFeature feature;
     for (const auto& term1: feature1){
@@ -248,4 +248,3 @@ SingleFeature Features::product_features(const SingleFeature& feature1,
     }
     return feature;
 }
-

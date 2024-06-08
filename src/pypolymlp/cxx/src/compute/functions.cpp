@@ -62,5 +62,3 @@ void compute_products_real(const vector2i& map,
 double prod_real(const dc& val1, const dc& val2){
     return val1.real() * val2.real() - val1.imag() * val2.imag();
 }
-
-

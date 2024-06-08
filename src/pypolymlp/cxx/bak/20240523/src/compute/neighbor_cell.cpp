@@ -9,8 +9,8 @@
 
 
 NeighborCell::NeighborCell(
-    const vector2d& axis_i, 
-    const vector2d& positions_c_i, 
+    const vector2d& axis_i,
+    const vector2d& positions_c_i,
     const double cutoff_i
 ):axis(axis_i), positions_c(positions_c_i), cutoff(cutoff_i){
 
@@ -160,7 +160,7 @@ int NeighborCell::refine_axis(){
         }
         ++iter;
     }
- 
+
     return 0;
 }
 
@@ -232,8 +232,8 @@ int NeighborCell::find_trans(){
         }
     }
 
-    vector1i max_exp = {int(ceil(cutoff / distance(1, 0, 0)) + 1), 
-                        int(ceil(cutoff / distance(0, 1, 0)) + 1), 
+    vector1i max_exp = {int(ceil(cutoff / distance(1, 0, 0)) + 1),
+                        int(ceil(cutoff / distance(0, 1, 0)) + 1),
                         int(ceil(cutoff / distance(0, 0, 1)) + 1)};
 
     double dis;
@@ -256,9 +256,7 @@ int NeighborCell::find_trans(){
 
 
 const vector2d& NeighborCell::get_axis() const { return axis; }
-const vector2d& NeighborCell::get_positions_cartesian() const { 
-    return positions_c; 
+const vector2d& NeighborCell::get_positions_cartesian() const {
+    return positions_c;
 }
 const vector2d& NeighborCell::get_translations() const { return trans_c_array; }
-
-

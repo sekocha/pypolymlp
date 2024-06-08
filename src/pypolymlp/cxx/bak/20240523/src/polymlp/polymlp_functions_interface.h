@@ -17,28 +17,28 @@
 //namespace bm = boost::math;
 
 // Radial functions
-void get_fn_(const double& dis, 
-             const struct feature_params& fp, 
+void get_fn_(const double& dis,
+             const struct feature_params& fp,
              vector1d& fn);
 
-void get_fn_(const double& dis, 
-             const struct feature_params& fp, 
-             vector1d& fn, 
+void get_fn_(const double& dis,
+             const struct feature_params& fp,
+             vector1d& fn,
              vector1d& fn_dr);
 
 // Spherical harmonics
-void get_ylm_(const double polar, 
-              const double azimuthal, 
-              const int lmax, 
+void get_ylm_(const double polar,
+              const double azimuthal,
+              const int lmax,
               vector1dc& ylm);
 
-void get_ylm_(const double r, 
-              const double polar, 
-              const double azimuthal, 
-              const int lmax, 
-              vector1dc& ylm, 
-              vector1dc& ylm_dx, 
-              vector1dc& ylm_dy, 
+void get_ylm_(const double r,
+              const double polar,
+              const double azimuthal,
+              const int lmax,
+              vector1dc& ylm,
+              vector1dc& ylm_dx,
+              vector1dc& ylm_dy,
               vector1dc& ylm_dz);
 
 vector1d cartesian_to_spherical_(const vector1d& v);

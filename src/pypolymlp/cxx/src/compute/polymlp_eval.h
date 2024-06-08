@@ -26,7 +26,7 @@ class PolymlpEval {
     struct DataPolyMLP pot;
     vector2i type_comb;
     void set_type_comb();
-    
+
     /* for feature_type = pair */
     void compute_antc(const vector2d& positions_c,
                       const vector1i& types,
@@ -44,7 +44,7 @@ class PolymlpEval {
                    const vector2i& neighbor_half,
                    const vector3d& neighbor_diff,
                    double& energy,
-                   vector2d& forces, 
+                   vector2d& forces,
                    vector1d& stress);
 
     /* for feature_type = gtinv */
@@ -81,10 +81,10 @@ class PolymlpEval {
                     const vector2i& neighbor_half,
                     const vector3d& neighbor_diff,
                     double& energy,
-                    vector2d& forces, 
+                    vector2d& forces,
                     vector1d& stress);
 
-    public: 
+    public:
 
     PolymlpEval();
     PolymlpEval(const feature_params& fp, const vector1d& coeffs);
@@ -95,7 +95,7 @@ class PolymlpEval {
               const vector2i& neighbor_half,
               const vector3d& neighbor_diff,
               double& energy,
-              vector2d& forces, 
+              vector2d& forces,
               vector1d& stress);
 };
 

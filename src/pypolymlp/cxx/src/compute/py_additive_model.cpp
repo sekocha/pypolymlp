@@ -8,9 +8,9 @@
 #include "py_additive_model.h"
 
 PyAdditiveModel::PyAdditiveModel(const std::vector<py::dict>& params_dict_array,
-                                 const vector3d& axis, 
+                                 const vector3d& axis,
                                  const vector3d& positions_c,
-                                 const vector2i& types, 
+                                 const vector2i& types,
                                  const vector1i& n_st_dataset,
                                  const std::vector<bool>& force_dataset,
                                  const vector1i& n_atoms_all){
@@ -28,7 +28,7 @@ PyAdditiveModel::PyAdditiveModel(const std::vector<py::dict>& params_dict_array,
         const auto& pair_params = model["pair_params"].cast<vector2d>();
         const double& cutoff = model["cutoff"].cast<double>();
         const std::string& pair_type = model["pair_type"].cast<std::string>();
-        const std::string& feature_type 
+        const std::string& feature_type
                 = model["feature_type"].cast<std::string>();
         const int& model_type = model["model_type"].cast<int>();
         const int& maxp = model["max_p"].cast<int>();
@@ -67,11 +67,11 @@ PyAdditiveModel::PyAdditiveModel(const std::vector<py::dict>& params_dict_array,
 
     std::vector<bool> force_st;
     vector1i xf_begin, xs_begin;
-    set_index(n_st_dataset, 
-              force_dataset, 
-              n_atoms_all, 
-              xf_begin, 
-              xs_begin, 
+    set_index(n_st_dataset,
+              force_dataset,
+              n_atoms_all,
+              xf_begin,
+              xs_begin,
               force_st);
 
     const int n_st = axis.size();
@@ -81,29 +81,29 @@ PyAdditiveModel::PyAdditiveModel(const std::vector<py::dict>& params_dict_array,
 
         std::set<int> uniq_types(types[0].begin(), types[0].end());
 
-        vector1i types_mod = modify_types(types[0], 
-                                          uniq_types.size(), 
+        vector1i types_mod = modify_types(types[0],
+                                          uniq_types.size(),
                                           fp.n_type);
 
-        Neighbor neigh(axis[0], positions_c[0], types_mod, 
+        Neighbor neigh(axis[0], positions_c[0], types_mod,
                        fp.n_type, fp.cutoff);
-        ModelFast mod(neigh.get_dis_array(), 
+        ModelFast mod(neigh.get_dis_array(),
                       neigh.get_diff_array(),
-                      neigh.get_atom2_array(), 
-                      types_mod, fp, 
+                      neigh.get_atom2_array(),
+                      types_mod, fp,
                       modelp_array[imodel], features_array[imodel]);
- 
+
         n_features += mod.get_xe_sum().size();
         cumulative_n_features.emplace_back(n_features);
         ++imodel;
     }
 
     if (print_memory == true){
-        std::cout << " matrix shape (X) = (" 
+        std::cout << " matrix shape (X) = ("
             << total_n_data << "," << n_features << ")" << std::endl;
         std::cout << std::fixed << std::setprecision(2);
-        std::cout << " Estimated memory allocation = " 
-            << double(total_n_data) * double(n_features) * 8e-9 
+        std::cout << " Estimated memory allocation = "
+            << double(total_n_data) * double(n_features) * 8e-9
             << " (GB)" << std::endl;
         std::cout << std::fixed << std::setprecision(10);
     }
@@ -124,22 +124,22 @@ PyAdditiveModel::PyAdditiveModel(const std::vector<py::dict>& params_dict_array,
             if (n == 0) first_index = 0;
             else first_index = cumulative_n_features[n-1];
 
-            vector1i types_mod = modify_types(types[i], 
-                                              uniq_types.size(), 
+            vector1i types_mod = modify_types(types[i],
+                                              uniq_types.size(),
                                               fp1.n_type);
-            Neighbor neigh(axis[i], 
-                           positions_c[i], 
-                           types_mod, 
-                           fp1.n_type, 
+            Neighbor neigh(axis[i],
+                           positions_c[i],
+                           types_mod,
+                           fp1.n_type,
                            fp1.cutoff);
-            ModelFast mod(neigh.get_dis_array(), 
+            ModelFast mod(neigh.get_dis_array(),
                           neigh.get_diff_array(),
-                          neigh.get_atom2_array(), 
-                          types_mod, fp1, 
+                          neigh.get_atom2_array(),
+                          types_mod, fp1,
                           modelp1, features1);
- 
+
             const auto &xe = mod.get_xe_sum();
-            for (size_t j = 0; j < xe.size(); ++j) 
+            for (size_t j = 0; j < xe.size(); ++j)
                 x_all(i,first_index+j) = xe[j];
 
             if (force_st[i] == true){
@@ -229,8 +229,8 @@ const vector1i& PyAdditiveModel::get_fbegin() const{ return xf_begin_dataset; }
 
 const vector1i& PyAdditiveModel::get_sbegin() const{ return xs_begin_dataset; }
 
-const vector1i& PyAdditiveModel::get_cumulative_n_features() const{ 
-    return cumulative_n_features; 
+const vector1i& PyAdditiveModel::get_cumulative_n_features() const{
+    return cumulative_n_features;
 }
 
 const vector1i& PyAdditiveModel::get_n_data() const{ return n_data; }

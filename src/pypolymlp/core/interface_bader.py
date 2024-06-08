@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 import numpy as np
 
+
 class ACF:
-    def __init__(self, filename='ACF.dat'):
+    def __init__(self, filename="ACF.dat"):
         f = open(filename)
         lines2 = f.readlines()
         f.close()
@@ -17,10 +18,11 @@ class ACF:
         return self.charge
 
     def print_charge(self):
-        np.savetxt('bader_charge',charge)
+        np.savetxt("bader_charge", charge)
+
 
 class BCF:
-    def __init__(self, filename='BCF.dat'):
+    def __init__(self, filename="BCF.dat"):
         f = open(filename)
         lines2 = f.readlines()
         f.close()
@@ -38,12 +40,13 @@ class BCF:
         return self.charge
 
     def print_charge(self):
-        np.savetxt('bader_charge',charge)
-    
-if __name__ == '__main__':
-    #acf = ACF()
-    #charge = acf.get_charge()
-    #print(charge)
+        np.savetxt("bader_charge", charge)
+
+
+if __name__ == "__main__":
+    # acf = ACF()
+    # charge = acf.get_charge()
+    # print(charge)
     bcf = BCF()
     charge = bcf.get_charge()
     print(charge)
