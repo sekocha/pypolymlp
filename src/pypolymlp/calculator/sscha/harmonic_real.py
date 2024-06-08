@@ -99,7 +99,7 @@ class HarmonicReal:
     def __compute_properties(self, t=1000):
 
         freq = self.__hide_imaginary_modes(self.__mesh_dict["frequencies"])
-        nonzero = np.isclose(freq, 0.0) is False
+        nonzero = np.isclose(freq, 0.0) == False
 
         beta = 1.0 / (const_bortzmann * t)
         const_exp = 0.5 * beta * const_planck
@@ -131,7 +131,7 @@ class HarmonicReal:
     def __get_distribution(self, t=1000, n_samples=100):
 
         freq = self.__hide_imaginary_modes(self.__mesh_dict["frequencies"])
-        nonzero = np.isclose(freq, 0.0) is False
+        nonzero = np.isclose(freq, 0.0) == False
 
         beta = 1.0 / (const_bortzmann * t)
         const_exp = 0.5 * beta * const_planck
