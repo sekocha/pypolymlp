@@ -108,6 +108,7 @@ class PolymlpFC:
         )
         self.__fc2 = None
         self.__fc3 = None
+        self.__disps = None
         self.__zero_ids = None
 
     def __initialize_supercell(
