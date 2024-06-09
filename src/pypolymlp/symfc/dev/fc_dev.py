@@ -6,6 +6,7 @@ import numpy as np
 import phono3py
 import phonopy
 from phono3py.file_IO import write_fc2_to_hdf5, write_fc3_to_hdf5
+from symfc import Symfc
 from symfc.basis_sets.basis_sets_O2 import FCBasisSetO2
 from symfc.solvers.solver_O2O3 import run_solver_O2O3, run_solver_O2O3_no_sum_rule_basis
 from symfc.spg_reps import SpgRepsO1
@@ -109,6 +110,7 @@ class PolymlpFC:
         self.__fc2 = None
         self.__fc3 = None
         self.__disps = None
+        self.__forces = None
         self.__zero_ids = None
 
     def __initialize_supercell(
@@ -200,31 +202,24 @@ class PolymlpFC:
             f -= residual_forces
         return forces
 
-    def run(
-        self,
-        disps=None,
-        forces=None,
-        batch_size=100,
-        sum_rule_basis=True,
-        write_fc=True,
-    ):
+    def run_fc2(self):
 
-        if disps is not None:
-            self.displacements = disps
+        symfc = Symfc(
+            self.__supercell_ph,
+            displacements=self.__disps.transpose((0, 2, 1)),
+            forces=self.__forces.transpose((0, 2, 1)),
+        ).run(orders=[2])
+        self.__fc2 = symfc.force_constants[2]
 
-        if forces is None:
-            print("Computing forces using polymlp")
-            t1 = time.time()
-            forces = self.__compute_forces()
-            t2 = time.time()
-            print(" elapsed time (computing forces) =", t2 - t1)
+        return self
 
+    def run_fc2fc3(self, batch_size=100, sum_rule_basis=True):
         """
         disps: (n_str, 3, n_atom) --> (n_str, n_atom, 3)
         forces: (n_str, 3, n_atom) --> (n_str, n_atom, 3)
         """
         disps = self.__disps.transpose((0, 2, 1))
-        forces = np.array(forces).transpose((0, 2, 1))
+        forces = self.__forces.transpose((0, 2, 1))
 
         n_data, N, _ = forces.shape
         disps = disps.reshape((n_data, -1))
@@ -304,17 +299,52 @@ class PolymlpFC:
         self.__fc2 = fc2
         self.__fc3 = fc3
 
+        return self
+
+    def run(
+        self,
+        disps=None,
+        forces=None,
+        batch_size=100,
+        sum_rule_basis=True,
+        write_fc=True,
+        only_fc2=False,
+    ):
+
+        if disps is not None:
+            self.displacements = disps
+
+        if forces is None:
+            print("Computing forces using polymlp")
+            t1 = time.time()
+            self.forces = np.array(self.__compute_forces())
+            t2 = time.time()
+            print(" elapsed time (computing forces) =", t2 - t1)
+        else:
+            self.forces = forces
+
+        if only_fc2:
+            self.run_fc2()
+        else:
+            self.run_fc2fc3(batch_size=batch_size, sum_rule_basis=sum_rule_basis)
+
         if write_fc:
-            print("writing fc2.hdf5")
-            write_fc2_to_hdf5(fc2)
-            print("writing fc3.hdf5")
-            write_fc3_to_hdf5(fc3)
+            if self.__fc2 is None:
+                print("writing fc2.hdf5")
+                write_fc2_to_hdf5(self.__fc2)
+            if self.__fc3 is None:
+                print("writing fc3.hdf5")
+                write_fc3_to_hdf5(self.__fc3)
 
         return self
 
     @property
     def displacements(self):
         return self.__disps
+
+    @property
+    def forces(self):
+        return self.__forces
 
     @property
     def structures(self):
@@ -329,6 +359,13 @@ class PolymlpFC:
         self.__st_dicts = get_structures_from_displacements(
             self.__disps, self.__supercell_dict
         )
+
+    @forces.setter
+    def forces(self, f):
+        """forces: shape=(n_str, 3, n_atom)"""
+        if not f.shape[1] == 3 or not f.shape[2] == self.__N:
+            raise ValueError("forces must have a shape of " "(n_str, 3, n_atom)")
+        self.__forces = f
 
     @structures.setter
     def structures(self, st_dicts):
