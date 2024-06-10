@@ -1,3 +1,2 @@
-* pypolymlp.py and pypolymlp_fc.py are deprecated.
 * run_pypolymlp.py will be replaced with mlp_dev/standard/generator.py
 * run_pypolymlp.py --force_constants option uses deprecated version of calculator/compute_fcs.py

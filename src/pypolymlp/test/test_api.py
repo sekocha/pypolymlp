@@ -4,7 +4,7 @@ import signal
 
 import numpy as np
 
-from pypolymlp.api.pypolymlp import Pypolymlp
+from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
 
 if __name__ == "__main__":
 
@@ -30,7 +30,7 @@ if __name__ == "__main__":
         train_vaspruns = glob.glob("vaspruns/train/vasprun-*.xml.polymlp")
         test_vaspruns = glob.glob("vaspruns/test/vasprun-*.xml.polymlp")
         polymlp.set_datasets_vasp(train_vaspruns, test_vaspruns)
-        polymlp.run(log=True)
+        polymlp.run(verbose=True)
 
     elif dataset_type == "phono3py":
         """from parameters and phono3py.yaml.xz"""
@@ -46,16 +46,12 @@ if __name__ == "__main__":
         )
         train_yaml = "phono3py_params_wurtzite_AgI.yaml.xz"
         test_yaml = "phono3py_params_wurtzite_AgI.yaml.xz"
-        train_energy_dat = "energies_ltc_wurtzite_AgI_fc3-forces.dat"
-        test_energy_dat = "energies_ltc_wurtzite_AgI_fc3-forces.dat"
         train_ids = np.arange(20)
         test_ids = np.arange(380, 400)
 
         polymlp.set_datasets_phono3py(
             train_yaml,
             test_yaml,
-            train_energy_dat=train_energy_dat,
-            test_energy_dat=test_energy_dat,
             train_ids=train_ids,
             test_ids=test_ids,
         )

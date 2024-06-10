@@ -8,15 +8,18 @@ from symfc.utils.matrix_tools_O3 import N3N3N3_to_NNN333, get_combinations
 from symfc.utils.solver_funcs import get_batch_slice
 from symfc.utils.utils_O3 import get_lat_trans_decompr_indices_O3
 
+"""This function is not used elsewhere."""
+
 
 def apply_zeros(c_pt, decompr_idx, zero_ids):
     """
     Parameters
     ----------
     zero_ids: Zero elements in NNN333 format.
+
+    Slow but simple implementation to apply zero elements to C_pt = C_perm.T @ C_trans.
     """
     for i in zero_ids:
-        print(i)
         nonzero_rows = c_pt.getcol(decompr_idx[i]).nonzero()[0]
         for j in nonzero_rows:
             c_pt[j, decompr_idx[i]] = 0
