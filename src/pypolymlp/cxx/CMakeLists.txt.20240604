@@ -1,0 +1,81 @@
+cmake_minimum_required(VERSION 3.13)
+
+project(polymlplib_cmake CXX)
+
+set(SRC_FILES
+    src/compute/neighbor.cpp
+    src/compute/neighbor_half.cpp
+    src/compute/neighbor_cell.cpp
+    src/compute/py_model.cpp
+    src/compute/py_properties_fast.cpp
+    src/compute/py_additive_model.cpp
+    src/compute/py_features_attr.cpp
+    src/compute/polymlp_eval.cpp
+    src/compute/features.cpp
+    src/compute/functions.cpp
+    src/compute/local_fast.cpp
+    src/compute/model_fast.cpp
+    src/python/pybind11_mlp.cpp
+    src/polymlp/polymlp_read_gtinv.cpp
+    src/polymlp/polymlp_basis_function.cpp
+    src/polymlp/polymlp_functions_interface.cpp
+    src/polymlp/polymlp_model_params.cpp
+    src/polymlp/polymlp_mlipkk_spherical_harmonics.cpp
+    src/polymlp/polymlp_features.cpp
+    src/polymlp/polymlp_potential.cpp
+    src/polymlp/polymlp_gtinv_data.cpp
+    src/polymlp/polymlp_gtinv_data_order1.cpp
+    src/polymlp/polymlp_gtinv_data_order2.cpp
+    src/polymlp/polymlp_gtinv_data_order3.cpp
+    src/polymlp/polymlp_gtinv_data_order4.cpp
+    src/polymlp/polymlp_gtinv_data_order5.cpp
+    src/polymlp/polymlp_gtinv_data_order6.cpp
+    src/polymlp/polymlp_gtinv_data_ver2.cpp
+    src/polymlp/polymlp_gtinv_data_ver2_order1.cpp
+    src/polymlp/polymlp_gtinv_data_ver2_order2.cpp
+    src/polymlp/polymlp_gtinv_data_ver2_order3.cpp
+    src/polymlp/polymlp_gtinv_data_ver2_order4.cpp
+    src/polymlp/polymlp_gtinv_data_ver2_order5.cpp
+    src/polymlp/polymlp_gtinv_data_ver2_order6.cpp
+)
+
+#SET(CMAKE_INTERPROCEDURAL_OPTIMIZATION FALSE)
+#set(CMAKE_VERBOSE_MAKEFILE true)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+set(CMAKE_CXX_FLAGS "-O2 -Wno-deprecated -DNDEBUG")
+find_package(OpenMP)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+
+
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
+find_package(pybind11 REQUIRED)
+find_package(Eigen3 REQUIRED)
+message(STATUS ${EIGEN3_INCLUDE_DIR})
+
+set(PYBIND11_PYTHON_VERSION
+    3.9 3.10 3.11
+)
+
+#add_library(libmlpcpp SHARED ${SRC_FILES})
+pybind11_add_module(libmlpcpp ${SRC_FILES})
+
+
+target_include_directories(libmlpcpp
+  PUBLIC ${CMAKE_SOURCE_DIR}/src
+  PUBLIC ${pybind11_INCLUDE_DIRS}
+  PUBLIC ${EIGEN3_INCLUDE_DIR}
+)
+
+target_link_libraries(libmlpcpp
+    PUBLIC ${OpenMP_CXX_LIBRARIES}
+)
+
+
+install( TARGETS libmlpcpp
+    COMPONENT python
+    LIBRARY DESTINATION ${CMAKE_SOURCE_DIR}/lib
+)
