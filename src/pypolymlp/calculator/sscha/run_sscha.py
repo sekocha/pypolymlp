@@ -298,6 +298,7 @@ def run_sscha(
     freq = sscha.run_frequencies(qmesh=args.mesh)
     print("Frequency (min):  ", "{:.6f}".format(np.min(freq)))
     print("Frequency (max):  ", "{:.6f}".format(np.max(freq)))
+    print("Number of FC2 basis vectors:", sscha.fc2_basis.basis_set.shape[1])
 
     for temp in args.temperatures:
         print("************** Temperature:", temp, "**************")
