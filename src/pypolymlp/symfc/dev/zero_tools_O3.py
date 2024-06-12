@@ -108,20 +108,19 @@ class FCCutoffO3:
     def neighbors(self):
         """Neighbor atoms: shape=(n_atom, n_neighbors)"""
         if self.__neighbors is None:
-            # self.__neighbors = [[] for i in range(self.__n_atom)]
             self.__neighbors = [
                 np.where(self.__distances[i] < self.__cutoff)[0]
                 for i in range(self.__n_atom)
             ]
-            # """More simple implementation is possible"""
-            #    self.__neighbors.append(
-            #        np.where(self.__distances[i] < self.__cutoff)[0]
-            #    )
-            # for i, j in zip(*match):
-            #    self.__neighbors[i].append(j)
-            # for neighbors_list in self.__neighbors:
-            #    neighbors_list = sorted(neighbors_list)
+        return self.__neighbors
 
+    @property
+    def outsides(self):
+        """Atoms outside cutoff radius: shape=(n_atom, n_neighbors)"""
+        return [
+            np.where(self.__distances[i] >= self.__cutoff)[0]
+            for i in range(self.__n_atom)
+        ]
         return self.__neighbors
 
     @property

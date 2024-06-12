@@ -17,7 +17,6 @@ from symfc.solvers.solver_O2O3 import run_solver_sparse_O2O3
 
 import time
 
-# from scipy.sparse import csr_array
 from symfc.basis_sets.basis_sets_O3 import print_sp_matrix_size
 from symfc.spg_reps import SpgRepsO3
 from symfc.utils.eig_tools import (
@@ -35,11 +34,19 @@ from symfc.utils.utils_O3 import (
 )
 
 from pypolymlp.symfc.dev.matrix_tools_O3 import projector_permutation_lat_trans
+from pypolymlp.symfc.dev.utils_O3 import get_compr_coset_reps_sum_sparse_O3
 from pypolymlp.symfc.dev.zero_tools_O3 import apply_zeros
 
+# from scipy.sparse import csr_array
 
-def permutation_dot_lat_trans_stable(trans_perms, zero_ids=None):
-    """permutation @ lattice translation"""
+
+def permutation_dot_lat_trans_stable(trans_perms, fc_cutoff=None):
+    """Simple implementation of permutation @ lattice translation"""
+    if fc_cutoff is not None:
+        zero_ids = fc_cutoff.find_zero_indices()
+    else:
+        zero_ids = None
+
     n_lp, N = trans_perms.shape
     c_trans = get_lat_trans_compr_matrix_O3(trans_perms)
 
@@ -72,11 +79,7 @@ def run_basis(supercell, fc_cutoff=None, reduce_memory=True, apply_sum_rule=True
             use_mkl=True,
         )
     else:
-        if fc_cutoff is not None:
-            zero_ids = fc_cutoff.find_zero_indices()
-        else:
-            zero_ids = None
-        c_pt = permutation_dot_lat_trans_stable(trans_perms, zero_ids=zero_ids)
+        c_pt = permutation_dot_lat_trans_stable(trans_perms, fc_cutoff=fc_cutoff)
         print_sp_matrix_size(c_pt, " C_perm.T @ C_trans:")
         proj_pt = dot_product_sparse(c_pt.T, c_pt, use_mkl=True)
 
@@ -88,13 +91,16 @@ def run_basis(supercell, fc_cutoff=None, reduce_memory=True, apply_sum_rule=True
     print_sp_matrix_size(c_pt, " C_(perm,trans):")
     t03 = time.time()
 
-    coset_reps_sum = get_compr_coset_reps_sum_O3(spg_reps)
-    print_sp_matrix_size(coset_reps_sum, " R_(coset):")
-    t04 = time.time()
+    if fc_cutoff is not None:
+        proj_rpt = get_compr_coset_reps_sum_sparse_O3(spg_reps, fc_cutoff, c_pt)
+    else:
+        coset_reps_sum = get_compr_coset_reps_sum_O3(spg_reps)
+        print_sp_matrix_size(coset_reps_sum, " R_(coset):")
 
-    proj_rpt = c_pt.T @ coset_reps_sum @ c_pt
-    del coset_reps_sum
-    gc.collect()
+        proj_rpt = c_pt.T @ coset_reps_sum @ c_pt
+        del coset_reps_sum
+        gc.collect()
+    t04 = time.time()
 
     c_rpt = eigsh_projector(proj_rpt)
     del proj_rpt
@@ -109,6 +115,9 @@ def run_basis(supercell, fc_cutoff=None, reduce_memory=True, apply_sum_rule=True
     t06 = time.time()
 
     if apply_sum_rule:
+        """TODO: replace decompr_idx with atomic_decompr_idx
+        to reduce memory allocation
+        """
         proj = compressed_projector_sum_rules_from_compact_compr_mat(
             trans_perms, n_a_compress_mat, use_mkl=True
         )
