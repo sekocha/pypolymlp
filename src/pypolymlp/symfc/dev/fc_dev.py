@@ -28,7 +28,7 @@ from pypolymlp.utils.phonopy_utils import (
 
 """symfc_basis_dev: must be included to FCBasisSetO3 in symfc"""
 from pypolymlp.symfc.dev.symfc_basis_dev import run_basis
-from pypolymlp.symfc.dev.zero_tools_O3 import FCCutoff
+from pypolymlp.symfc.dev.zero_tools_O3 import FCCutoffO3
 
 
 def recover_fc2(coefs, compress_mat, compress_eigvecs, N):
@@ -111,7 +111,7 @@ class PolymlpFC:
         self.__fc3 = None
         self.__disps = None
         self.__forces = None
-        self.__zero_ids = None
+        self.__fc_cutoff = None
 
     def __initialize_supercell(
         self, supercell=None, phono3py_yaml=None, use_phonon_dataset=False
@@ -186,13 +186,9 @@ class PolymlpFC:
 
         return self
 
-    def set_zero_elements(self, cutoff=7.0):
-        # self.__zero_ids = np.array(
-        #    [20,30,102,202,1453,23455]
-        # )
-        fc_cut = FCCutoff(self.__supercell_ph, cutoff=cutoff)
-        self.__zero_ids = fc_cut.find_zero_indices()
-        print("Number of given zero elements:", len(self.__zero_ids))
+    def set_cutoff(self, cutoff=7.0):
+        print("Cutoff radius:", cutoff, "(ang.)")
+        self.__fc_cutoff = FCCutoffO3(self.__supercell_ph, cutoff=cutoff)
         return self
 
     def __compute_forces(self):
@@ -235,13 +231,13 @@ class PolymlpFC:
         if sum_rule_basis:
             compress_mat_fc3, compress_eigvecs_fc3 = run_basis(
                 self.__supercell_ph,
-                zero_ids=self.__zero_ids,
+                fc_cutoff=self.__fc_cutoff,
                 apply_sum_rule=True,
             )
         else:
             compress_mat_fc3, proj_pt = run_basis(
                 self.__supercell_ph,
-                zero_ids=self.__zero_ids,
+                fc_cutoff=self.__fc_cutoff,
                 apply_sum_rule=False,
             )
 
@@ -470,7 +466,7 @@ if __name__ == "__main__":
         polyfc.run_geometry_optimization()
 
     if args.cutoff:
-        polyfc.set_zero_elements(cutoff=args.cutoff)
+        polyfc.set_cutoff(cutoff=args.cutoff)
 
     polyfc.run(write_fc=True)
 
