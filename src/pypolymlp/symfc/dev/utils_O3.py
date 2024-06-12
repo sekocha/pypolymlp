@@ -72,16 +72,16 @@ def get_compr_coset_reps_sum_sparse_O3(spg_reps, fc_cutoff, c_pt):
     )
     match = np.where(atomic_decompr_idx != -1)[0]
     C = csr_array(
-        (
-            np.ones(len(match), dtype=int),
-            (match, atomic_decompr_idx[match]),
-        ),
+        (np.ones(len(match), dtype=int), (match, atomic_decompr_idx[match])),
         shape=(N**3, N**3 // n_lp),
     )
+
     factor = 1 / n_lp / len(spg_reps.unique_rotation_indices)
     for i, _ in enumerate(spg_reps.unique_rotation_indices):
-        mat = spg_reps.get_sigma3_rep(i)
-        mat = mat @ C
-        mat = C.T @ mat
+        print(
+            "Coset sum:", str(i + 1) + "/" + str(len(spg_reps.unique_rotation_indices))
+        )
+        mat = C.T @ spg_reps.get_sigma3_rep(i) @ C
         proj_rpt += c_pt.T @ kron(mat, spg_reps.r_reps[i] * factor) @ c_pt
+
     return proj_rpt

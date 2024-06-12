@@ -37,8 +37,6 @@ from pypolymlp.symfc.dev.matrix_tools_O3 import projector_permutation_lat_trans
 from pypolymlp.symfc.dev.utils_O3 import get_compr_coset_reps_sum_sparse_O3
 from pypolymlp.symfc.dev.zero_tools_O3 import apply_zeros
 
-# from scipy.sparse import csr_array
-
 
 def permutation_dot_lat_trans_stable(trans_perms, fc_cutoff=None):
     """Simple implementation of permutation @ lattice translation"""
@@ -96,7 +94,6 @@ def run_basis(supercell, fc_cutoff=None, reduce_memory=True, apply_sum_rule=True
     else:
         coset_reps_sum = get_compr_coset_reps_sum_O3(spg_reps)
         print_sp_matrix_size(coset_reps_sum, " R_(coset):")
-
         proj_rpt = c_pt.T @ coset_reps_sum @ c_pt
         del coset_reps_sum
         gc.collect()
