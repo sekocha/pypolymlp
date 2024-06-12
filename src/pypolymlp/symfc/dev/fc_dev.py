@@ -28,7 +28,7 @@ from pypolymlp.utils.phonopy_utils import (
 
 """symfc_basis_dev: must be included to FCBasisSetO3 in symfc"""
 from pypolymlp.symfc.dev.symfc_basis_dev import run_basis
-from pypolymlp.symfc.dev.zero_tools_O3 import find_zero_indices
+from pypolymlp.symfc.dev.zero_tools_O3 import FCCutoff
 
 
 def recover_fc2(coefs, compress_mat, compress_eigvecs, N):
@@ -190,7 +190,8 @@ class PolymlpFC:
         # self.__zero_ids = np.array(
         #    [20,30,102,202,1453,23455]
         # )
-        self.__zero_ids = find_zero_indices(self.__supercell_ph, cutoff=cutoff)
+        fc_cut = FCCutoff(self.__supercell_ph, cutoff=cutoff)
+        self.__zero_ids = fc_cut.find_zero_indices()
         print("Number of given zero elements:", len(self.__zero_ids))
         return self
 

@@ -25,7 +25,7 @@ from symfc.utils.eig_tools import (
     eigsh_projector,
     eigsh_projector_sumrule,
 )
-from symfc.utils.matrix_tools_O3 import (  # projector_permutation_lat_trans,
+from symfc.utils.matrix_tools_O3 import (
     compressed_projector_sum_rules_from_compact_compr_mat,
     get_perm_compr_matrix_O3,
 )
@@ -34,7 +34,8 @@ from symfc.utils.utils_O3 import (
     get_lat_trans_compr_matrix_O3,
 )
 
-from pypolymlp.symfc.dev.matrix_tools_O3 import (  # projector_permutation_lat_trans,
+from pypolymlp.symfc.dev.matrix_tools_O3 import (
+    projector_permutation_lat_trans,
     projector_permutation_lat_trans_sparse,
 )
 from pypolymlp.symfc.dev.zero_tools_O3 import apply_zeros
@@ -68,18 +69,19 @@ def run_basis(supercell, zero_ids=None, reduce_memory=True, apply_sum_rule=True)
 
     """permutation @ lattice translation"""
     if reduce_memory:
-        """
-        proj_pt = projector_permutation_lat_trans(
-            trans_perms,
-            use_mkl=True,
-            zero_ids=zero_ids,
-        )
-        """
-        proj_pt = projector_permutation_lat_trans_sparse(
-            trans_perms,
-            use_mkl=True,
-            zero_ids=zero_ids,
-        )
+        sparse = True
+        if sparse:
+            proj_pt = projector_permutation_lat_trans_sparse(
+                trans_perms,
+                use_mkl=True,
+                zero_ids=zero_ids,
+            )
+        else:
+            proj_pt = projector_permutation_lat_trans(
+                trans_perms,
+                use_mkl=True,
+                zero_ids=zero_ids,
+            )
     else:
         c_pt = permutation_dot_lat_trans_stable(trans_perms, zero_ids=zero_ids)
         print_sp_matrix_size(c_pt, " C_perm.T @ C_trans:")
