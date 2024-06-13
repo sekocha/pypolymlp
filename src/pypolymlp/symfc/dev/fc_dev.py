@@ -86,6 +86,7 @@ class PolymlpFC:
         params_dict=None,
         coeffs=None,
         properties=None,
+        cutoff=None,
     ):
         """
         Parameters
@@ -112,8 +113,11 @@ class PolymlpFC:
         self.__disps = None
         self.__forces = None
 
-        self.__cutoff = None
-        self.__fc_cutoff = None
+        if cutoff is not None:
+            self.cutoff = cutoff
+        else:
+            self.__cutoff = None
+            self.__fc_cutoff = None
 
     def __initialize_supercell(
         self, supercell=None, phono3py_yaml=None, use_phonon_dataset=False
@@ -466,7 +470,7 @@ if __name__ == "__main__":
     supercell_matrix = np.diag(args.supercell)
     supercell = phonopy_supercell(unitcell_dict, supercell_matrix)
 
-    polyfc = PolymlpFC(supercell=supercell, pot=args.pot)
+    polyfc = PolymlpFC(supercell=supercell, pot=args.pot, cutoff=args.cutoff)
 
     if args.fc_n_samples is not None:
         polyfc.sample(
@@ -478,9 +482,9 @@ if __name__ == "__main__":
     if args.geometry_optimization:
         polyfc.run_geometry_optimization()
 
-    if args.cutoff:
-        polyfc.cutoff = args.cutoff
-
+    #    if args.cutoff:
+    #        polyfc.cutoff = args.cutoff
+    #
     polyfc.run(write_fc=True)
 
     if args.run_ltc:
