@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 import numpy as np
 from scipy.sparse import csr_array, kron
+from symfc.spg_reps import SpgRepsO3
 from symfc.utils.utils import get_indep_atoms_by_lat_trans
+from symfc.utils.utils_O3 import get_atomic_lat_trans_decompr_indices_O3
 
 from pypolymlp.symfc.dev.zero_tools_O3 import FCCutoffO3
-
-# import time
 
 
 def get_atomic_lat_trans_decompr_indices_sparse_O3(
@@ -61,20 +61,27 @@ def get_atomic_lat_trans_decompr_indices_sparse_O3(
     return indices
 
 
-def get_compr_coset_reps_sum_sparse_O3(spg_reps, fc_cutoff, c_pt, use_mkl=False):
-    """Return compr matrix of sum of coset reps."""
+def get_compr_coset_reps_sum_sparse_O3(
+    spg_reps: SpgRepsO3,
+    fc_cutoff: FCCutoffO3,
+    c_pt: csr_array,
+) -> csr_array:
+    """Return projection matrix of sum of coset reps compressed by c_pt."""
     trans_perms = spg_reps.translation_permutations
     n_lp, N = trans_perms.shape
     size = c_pt.shape[1]
     proj_rpt = csr_array(([], ([], [])), shape=(size, size), dtype="double")
 
-    """Todo: better interface"""
+    """Todo: Better interface"""
     atomic_decompr_idx = get_atomic_lat_trans_decompr_indices_sparse_O3(
         trans_perms, fc_cutoff
     )
     match = np.where(atomic_decompr_idx != -1)[0]
+    col_vec = atomic_decompr_idx[match]
+    data_vec = np.ones(len(match), dtype=int)
+
     C = csr_array(
-        (np.ones(len(match), dtype=int), (match, atomic_decompr_idx[match])),
+        (data_vec, (match, col_vec)),
         shape=(N**3, N**3 // n_lp),
     )
 
@@ -83,19 +90,51 @@ def get_compr_coset_reps_sum_sparse_O3(spg_reps, fc_cutoff, c_pt, use_mkl=False)
         print(
             "Coset sum:", str(i + 1) + "/" + str(len(spg_reps.unique_rotation_indices))
         )
-        #    t1 = time.time()
-        """Bottleneck part"""
-        # proj_pt = dot_product_sparse(
-        #     dot_product_sparse(
-        #         C.T, spg_reps.get_sigma3_rep(i), use_mkl=use_mkl
-        #     ), C, use_mkl=use_mkl
-        # )
-        mat = C.T @ spg_reps.get_sigma3_rep(i) @ C
-        #    t2 = time.time()
-        kron1 = kron(mat, spg_reps.r_reps[i] * factor)
-        #    t3 = time.time()
-        proj_rpt += c_pt.T @ kron1 @ c_pt
-    #    t4 = time.time()
-    #    print(t2-t1, t3-t2, t4-t3)
+        """This part is equivalent to mat = C.T @ spg_reps.get_sigma3_rep(i) @ C"""
+        row, col = spg_reps.get_sigma3_rep_nonzero(i)
+        permutation = np.zeros(len(row), dtype=int)
+        permutation[col] = row
+
+        mat = csr_array(
+            (data_vec, (permutation[match], col_vec)),
+            shape=(N**3, N**3 // n_lp),
+        )
+        mat = C.T @ mat
+        mat = kron(mat, spg_reps.r_reps[i] * factor)
+        proj_rpt += c_pt.T @ mat @ c_pt
 
     return proj_rpt
+
+
+def get_compr_coset_reps_sum_O3(spg_reps: SpgRepsO3) -> csr_array:
+    """Return compr matrix of sum of coset reps."""
+    trans_perms = spg_reps.translation_permutations
+    n_lp, N = trans_perms.shape
+    size = N**3 * 27 // n_lp
+    coset_reps_sum = csr_array(([], ([], [])), shape=(size, size), dtype="double")
+    atomic_decompr_idx = get_atomic_lat_trans_decompr_indices_O3(trans_perms)
+    C = csr_array(
+        (
+            np.ones(N**3, dtype=int),
+            (np.arange(N**3, dtype=int), atomic_decompr_idx),
+        ),
+        shape=(N**3, N**3 // n_lp),
+    )
+    factor = 1 / n_lp / len(spg_reps.unique_rotation_indices)
+    for i, _ in enumerate(spg_reps.unique_rotation_indices):
+        print(
+            "Coset sum:", str(i + 1) + "/" + str(len(spg_reps.unique_rotation_indices))
+        )
+        """This part is equivalent to mat = C.T @ spg_reps.get_sigma3_rep(i) @ C"""
+        row, col = spg_reps.get_sigma3_rep_nonzero(i)
+        permutation = np.zeros(len(row), dtype=int)
+        permutation[col] = row
+
+        mat = csr_array(
+            (np.ones(N**3, dtype=int), (permutation, atomic_decompr_idx)),
+            shape=(N**3, N**3 // n_lp),
+        )
+        mat = C.T @ mat
+        coset_reps_sum += kron(mat, spg_reps.r_reps[i] * factor)
+
+    return coset_reps_sum
