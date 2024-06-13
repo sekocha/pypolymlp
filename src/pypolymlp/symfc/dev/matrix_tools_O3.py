@@ -120,7 +120,7 @@ def projector_permutation_lat_trans(
         [2, 1, 0],
     ]
     for begin, end in zip(*get_batch_slice(n_perm3, n_perm3 // n_batch)):
-        print("Proj (perm.T @ trans) batch:", end)
+        print("Proj (perm.T @ trans):", str(end) + "/" + str(n_perm3))
         batch_size = end - begin
         combinations_perm = combinations[begin:end][:, perms].reshape((-1, 3))
         combinations_perm, combinations333 = N3N3N3_to_NNNand333(

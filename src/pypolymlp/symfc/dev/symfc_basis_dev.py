@@ -17,6 +17,7 @@ from symfc.solvers.solver_O2O3 import run_solver_sparse_O2O3
 
 import time
 
+# from scipy.sparse import csr_array
 from symfc.basis_sets.basis_sets_O3 import print_sp_matrix_size
 from symfc.spg_reps import SpgRepsO3
 from symfc.utils.eig_tools import (
@@ -90,7 +91,12 @@ def run_basis(supercell, fc_cutoff=None, reduce_memory=True, apply_sum_rule=True
     t03 = time.time()
 
     if fc_cutoff is not None:
-        proj_rpt = get_compr_coset_reps_sum_sparse_O3(spg_reps, fc_cutoff, c_pt)
+        proj_rpt = get_compr_coset_reps_sum_sparse_O3(
+            spg_reps, fc_cutoff, c_pt, use_mkl=True
+        )
+        # coset_reps_sum = get_compr_coset_reps_sum_O3(spg_reps)
+        # print_sp_matrix_size(coset_reps_sum, " R_(coset):")
+        # proj_rpt = c_pt.T @ coset_reps_sum @ c_pt
     else:
         coset_reps_sum = get_compr_coset_reps_sum_O3(spg_reps)
         print_sp_matrix_size(coset_reps_sum, " R_(coset):")

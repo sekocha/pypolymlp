@@ -111,6 +111,8 @@ class PolymlpFC:
         self.__fc3 = None
         self.__disps = None
         self.__forces = None
+
+        self.__cutoff = None
         self.__fc_cutoff = None
 
     def __initialize_supercell(
@@ -384,6 +386,17 @@ class PolymlpFC:
     def supercell_dict(self):
         return self.__supercell_dict
 
+    @property
+    def cutoff(self):
+        return self.__cutoff
+
+    @cutoff.setter
+    def cutoff(self, value):
+        print("Cutoff radius:", value, "(ang.)")
+        self.__cutoff = value
+        self.__fc_cutoff = FCCutoffO3(self.__supercell_ph, cutoff=value)
+        return self
+
 
 if __name__ == "__main__":
 
@@ -466,7 +479,7 @@ if __name__ == "__main__":
         polyfc.run_geometry_optimization()
 
     if args.cutoff:
-        polyfc.set_cutoff(cutoff=args.cutoff)
+        polyfc.cutoff = args.cutoff
 
     polyfc.run(write_fc=True)
 

@@ -5,6 +5,8 @@ from symfc.utils.utils import get_indep_atoms_by_lat_trans
 
 from pypolymlp.symfc.dev.zero_tools_O3 import FCCutoffO3
 
+# import time
+
 
 def get_atomic_lat_trans_decompr_indices_sparse_O3(
     trans_perms: np.ndarray, fc_cutoff: FCCutoffO3
@@ -59,7 +61,7 @@ def get_atomic_lat_trans_decompr_indices_sparse_O3(
     return indices
 
 
-def get_compr_coset_reps_sum_sparse_O3(spg_reps, fc_cutoff, c_pt):
+def get_compr_coset_reps_sum_sparse_O3(spg_reps, fc_cutoff, c_pt, use_mkl=False):
     """Return compr matrix of sum of coset reps."""
     trans_perms = spg_reps.translation_permutations
     n_lp, N = trans_perms.shape
@@ -81,7 +83,19 @@ def get_compr_coset_reps_sum_sparse_O3(spg_reps, fc_cutoff, c_pt):
         print(
             "Coset sum:", str(i + 1) + "/" + str(len(spg_reps.unique_rotation_indices))
         )
+        #    t1 = time.time()
+        """Bottleneck part"""
+        # proj_pt = dot_product_sparse(
+        #     dot_product_sparse(
+        #         C.T, spg_reps.get_sigma3_rep(i), use_mkl=use_mkl
+        #     ), C, use_mkl=use_mkl
+        # )
         mat = C.T @ spg_reps.get_sigma3_rep(i) @ C
-        proj_rpt += c_pt.T @ kron(mat, spg_reps.r_reps[i] * factor) @ c_pt
+        #    t2 = time.time()
+        kron1 = kron(mat, spg_reps.r_reps[i] * factor)
+        #    t3 = time.time()
+        proj_rpt += c_pt.T @ kron1 @ c_pt
+    #    t4 = time.time()
+    #    print(t2-t1, t3-t2, t4-t3)
 
     return proj_rpt
