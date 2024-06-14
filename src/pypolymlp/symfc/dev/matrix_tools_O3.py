@@ -4,7 +4,9 @@ import scipy
 from scipy.sparse import csr_array
 from symfc.utils.eig_tools import dot_product_sparse
 from symfc.utils.solver_funcs import get_batch_slice
-from sysfc.utils.utils_O3 import get_lat_trans_decompr_indices_O3
+from symfc.utils.utils_O3 import (  # get_lat_trans_decompr_indices_O3,
+    get_atomic_lat_trans_decompr_indices_O3,
+)
 
 
 def compressed_complement_projector_sum_rules_from_compact_compr_mat(
@@ -13,8 +15,8 @@ def compressed_complement_projector_sum_rules_from_compact_compr_mat(
     """Calculate a complementary projector for sum rules.
 
     This is compressed by C_trans and n_a_compress_mat without
-    allocating C_trans. Batch calculations are used to reduce
-    the amount of memory allocation.
+    allocating C_trans.
+    Memory efficient version using get_atomic_lat_trans_decompr_indices_O3.
 
     Return
     ------
@@ -24,7 +26,8 @@ def compressed_complement_projector_sum_rules_from_compact_compr_mat(
     """
     n_lp, natom = trans_perms.shape
     NNN27 = natom**3 * 27
-    NN27 = natom**2 * 27
+    NNN = natom**3
+    NN = natom**2
 
     proj_size = n_a_compress_mat.shape[1]
     proj_sum_cplmt = csr_array(
@@ -33,33 +36,25 @@ def compressed_complement_projector_sum_rules_from_compact_compr_mat(
         dtype="double",
     )
 
-    decompr_idx = get_lat_trans_decompr_indices_O3(trans_perms)
-    decompr_idx = decompr_idx.reshape((natom, NN27)).T.reshape(-1)
+    decompr_idx = get_atomic_lat_trans_decompr_indices_O3(trans_perms) * 27
+    decompr_idx = decompr_idx.reshape((natom, NN)).T.reshape(-1)
 
-    n_batch = 9
-    if n_batch == 3:
-        batch_size_vector = natom**3 * 9
-        batch_size_matrix = natom**2 * 9
-    elif n_batch == 9:
-        batch_size_vector = natom**3 * 3
-        batch_size_matrix = natom**2 * 3
-    elif n_batch == 27:
-        batch_size_vector = natom**3
-        batch_size_matrix = natom**2
-    elif n_batch == natom:
-        batch_size_vector = natom**2 * 27
+    n_batch = natom
+    if n_batch == natom:
+        batch_size_vector = natom**2
         batch_size_matrix = natom * 27
     else:
-        raise ValueError("n_batch = 9, 27, or N.")
+        raise ValueError("n_batch must be N.")
 
-    for begin, end in zip(*get_batch_slice(NNN27, batch_size_vector)):
-        print("Proj_complement (sum.T @ trans) batch:", end)
+    for begin, end in zip(*get_batch_slice(NNN, batch_size_vector)):
+        print("Proj_complement (sum.T @ trans) batch:", str(end) + "/" + str(NNN))
+        col = np.add.outer(np.arange(27), decompr_idx[begin:end]).reshape(-1)
         c_sum_cplmt = csr_array(
             (
-                np.ones(batch_size_vector, dtype="double"),
+                np.ones(batch_size_vector * 27, dtype="double"),
                 (
                     np.repeat(np.arange(batch_size_matrix), natom),
-                    decompr_idx[begin:end],
+                    col,
                 ),
             ),
             shape=(batch_size_matrix, NNN27 // n_lp),

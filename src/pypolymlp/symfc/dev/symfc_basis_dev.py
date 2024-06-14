@@ -35,6 +35,10 @@ from symfc.utils.utils_O3 import (
     get_lat_trans_compr_matrix_O3,
 )
 
+# from pypolymlp.symfc.dev.matrix_tools_O3 import (
+#     compressed_projector_sum_rules_from_compact_compr_mat,
+# )
+
 
 def permutation_dot_lat_trans_stable(trans_perms, fc_cutoff=None):
     """Simple implementation of permutation @ lattice translation"""

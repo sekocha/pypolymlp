@@ -246,9 +246,8 @@ class PolymlpFC:
             )
 
         trans_perms = SpgRepsO1(self.__supercell_ph).translation_permutations
-        """Bottleneck part of memory allocation
-           (when large NNN333 and small n_basis)"""
 
+        # Bottleneck part of memory allocation
         compress_mat_fc3_full = dot_lat_trans_compr_matrix_O3(
             compress_mat_fc3,
             trans_perms,
