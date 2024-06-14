@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 import numpy as np
-from scipy.sparse import csr_array, kron
+from scipy.sparse import coo_array, csr_array, kron
 from symfc.spg_reps import SpgRepsO3
 from symfc.utils.utils import get_indep_atoms_by_lat_trans
 from symfc.utils.utils_O3 import get_atomic_lat_trans_decompr_indices_O3
 
-from pypolymlp.symfc.dev.zero_tools_O3 import FCCutoffO3
+from pypolymlp.symfc.dev.cutoff_tools_O3 import FCCutoffO3
 
 
 def get_atomic_lat_trans_decompr_indices_sparse_O3(
@@ -91,10 +91,7 @@ def get_compr_coset_reps_sum_sparse_O3(
             "Coset sum:", str(i + 1) + "/" + str(len(spg_reps.unique_rotation_indices))
         )
         """This part is equivalent to mat = C.T @ spg_reps.get_sigma3_rep(i) @ C"""
-        row, col = spg_reps.get_sigma3_rep_nonzero(i)
-        permutation = np.zeros(len(row), dtype=int)
-        permutation[col] = row
-
+        permutation = spg_reps.get_sigma3_rep_permutation(i)
         mat = csr_array(
             (data_vec, (permutation[match], col_vec)),
             shape=(N**3, N**3 // n_lp),
@@ -106,35 +103,35 @@ def get_compr_coset_reps_sum_sparse_O3(
     return proj_rpt
 
 
-def get_compr_coset_reps_sum_O3(spg_reps: SpgRepsO3) -> csr_array:
+def get_compr_coset_reps_sum_O3(
+    spg_reps: SpgRepsO3, c_pt: csr_array = None
+) -> csr_array:
     """Return compr matrix of sum of coset reps."""
     trans_perms = spg_reps.translation_permutations
     n_lp, N = trans_perms.shape
-    size = N**3 * 27 // n_lp
+    size = N**3 * 27 // n_lp if c_pt is None else c_pt.shape[1]
     coset_reps_sum = csr_array(([], ([], [])), shape=(size, size), dtype="double")
     atomic_decompr_idx = get_atomic_lat_trans_decompr_indices_O3(trans_perms)
-    C = csr_array(
-        (
-            np.ones(N**3, dtype=int),
-            (np.arange(N**3, dtype=int), atomic_decompr_idx),
-        ),
-        shape=(N**3, N**3 // n_lp),
-    )
+
     factor = 1 / n_lp / len(spg_reps.unique_rotation_indices)
     for i, _ in enumerate(spg_reps.unique_rotation_indices):
+        """This part is equivalent to mat = C.T @ spg_reps.get_sigma3_rep(i) @ C
+        C: atomic_lat_trans_compr_mat, shape=(NNN, NNN/n_lp)"""
         print(
             "Coset sum:", str(i + 1) + "/" + str(len(spg_reps.unique_rotation_indices))
         )
-        """This part is equivalent to mat = C.T @ spg_reps.get_sigma3_rep(i) @ C"""
-        row, col = spg_reps.get_sigma3_rep_nonzero(i)
-        permutation = np.zeros(len(row), dtype=int)
-        permutation[col] = row
-
+        permutation = spg_reps.get_sigma3_rep_vec(i)
         mat = csr_array(
-            (np.ones(N**3, dtype=int), (permutation, atomic_decompr_idx)),
-            shape=(N**3, N**3 // n_lp),
+            (
+                np.ones(N**3, dtype=int),
+                (atomic_decompr_idx[permutation], atomic_decompr_idx),
+            ),
+            shape=(N**3 // n_lp, N**3 // n_lp),
         )
-        mat = C.T @ mat
-        coset_reps_sum += kron(mat, spg_reps.r_reps[i] * factor)
+        mat = kron(mat, spg_reps.r_reps[i] * factor)
+        if c_pt is not None:
+            mat = c_pt.T @ mat @ c_pt
+
+        coset_reps_sum += mat
 
     return coset_reps_sum

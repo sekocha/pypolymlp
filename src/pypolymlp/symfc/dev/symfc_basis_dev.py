@@ -17,9 +17,9 @@ from symfc.solvers.solver_O2O3 import run_solver_sparse_O2O3
 
 import time
 
-# from scipy.sparse import csr_array
 from symfc.basis_sets.basis_sets_O3 import print_sp_matrix_size
 from symfc.spg_reps import SpgRepsO3
+from symfc.utils.cutoff_tools_O3 import apply_zeros
 from symfc.utils.eig_tools import (
     dot_product_sparse,
     eigsh_projector,
@@ -28,17 +28,12 @@ from symfc.utils.eig_tools import (
 from symfc.utils.matrix_tools_O3 import (
     compressed_projector_sum_rules_from_compact_compr_mat,
     get_perm_compr_matrix_O3,
+    projector_permutation_lat_trans,
 )
-from symfc.utils.utils_O3 import (  # get_compr_coset_reps_sum_O3,
+from symfc.utils.utils_O3 import (
+    get_compr_coset_reps_sum_O3_slicing,
     get_lat_trans_compr_matrix_O3,
 )
-
-from pypolymlp.symfc.dev.matrix_tools_O3 import projector_permutation_lat_trans
-from pypolymlp.symfc.dev.utils_O3 import (
-    get_compr_coset_reps_sum_O3,
-    get_compr_coset_reps_sum_sparse_O3,
-)
-from pypolymlp.symfc.dev.zero_tools_O3 import apply_zeros
 
 
 def permutation_dot_lat_trans_stable(trans_perms, fc_cutoff=None):
@@ -93,9 +88,9 @@ def run_basis(supercell, fc_cutoff=None, reduce_memory=True, apply_sum_rule=True
     t03 = time.time()
 
     if fc_cutoff is not None:
-        proj_rpt = get_compr_coset_reps_sum_sparse_O3(spg_reps, fc_cutoff, c_pt)
+        proj_rpt = get_compr_coset_reps_sum_O3_slicing(spg_reps, c_pt=c_pt)
     else:
-        coset_reps_sum = get_compr_coset_reps_sum_O3(spg_reps)
+        coset_reps_sum = get_compr_coset_reps_sum_O3_slicing(spg_reps)
         print_sp_matrix_size(coset_reps_sum, " R_(coset):")
         proj_rpt = c_pt.T @ coset_reps_sum @ c_pt
         del coset_reps_sum

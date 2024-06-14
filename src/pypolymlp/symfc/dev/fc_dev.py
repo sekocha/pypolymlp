@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import gc
 import time
 
 import numpy as np
@@ -10,8 +9,9 @@ from symfc import Symfc
 from symfc.basis_sets.basis_sets_O2 import FCBasisSetO2
 from symfc.solvers.solver_O2O3 import run_solver_O2O3, run_solver_O2O3_no_sum_rule_basis
 from symfc.spg_reps import SpgRepsO1
+from symfc.utils.cutoff_tools_O3 import FCCutoffO3
 from symfc.utils.matrix_tools_O3 import set_complement_sum_rules
-from symfc.utils.utils_O3 import get_lat_trans_compr_matrix_O3
+from symfc.utils.utils_O3 import dot_lat_trans_compr_matrix_O3
 
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.str_opt.optimization_sym import MinimizeSym
@@ -28,7 +28,6 @@ from pypolymlp.utils.phonopy_utils import (
 
 """symfc_basis_dev: must be included to FCBasisSetO3 in symfc"""
 from pypolymlp.symfc.dev.symfc_basis_dev import run_basis
-from pypolymlp.symfc.dev.zero_tools_O3 import FCCutoffO3
 
 
 def recover_fc2(coefs, compress_mat, compress_eigvecs, N):
@@ -193,8 +192,7 @@ class PolymlpFC:
         return self
 
     def set_cutoff(self, cutoff=7.0):
-        print("Cutoff radius:", cutoff, "(ang.)")
-        self.__fc_cutoff = FCCutoffO3(self.__supercell_ph, cutoff=cutoff)
+        self.cutoff = cutoff
         return self
 
     def __compute_forces(self):
@@ -248,10 +246,13 @@ class PolymlpFC:
             )
 
         trans_perms = SpgRepsO1(self.__supercell_ph).translation_permutations
-        c_trans = get_lat_trans_compr_matrix_O3(trans_perms)
-        compress_mat_fc3_full = c_trans @ compress_mat_fc3
-        del c_trans
-        gc.collect()
+        """Bottleneck part of memory allocation
+           (when large NNN333 and small n_basis)"""
+
+        compress_mat_fc3_full = dot_lat_trans_compr_matrix_O3(
+            compress_mat_fc3,
+            trans_perms,
+        )
 
         t2 = time.time()
         print(" elapsed time (basis sets for fc2 and fc3) =", t2 - t1)
@@ -482,9 +483,6 @@ if __name__ == "__main__":
     if args.geometry_optimization:
         polyfc.run_geometry_optimization()
 
-    #    if args.cutoff:
-    #        polyfc.cutoff = args.cutoff
-    #
     polyfc.run(write_fc=True)
 
     if args.run_ltc:
