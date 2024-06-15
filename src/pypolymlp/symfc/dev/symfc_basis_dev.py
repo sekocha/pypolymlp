@@ -36,7 +36,7 @@ from symfc.utils.utils_O3 import (
 )
 
 # from pypolymlp.symfc.dev.matrix_tools_O3 import (
-#     compressed_projector_sum_rules_from_compact_compr_mat,
+#    compressed_projector_sum_rules_from_compact_compr_mat,
 # )
 
 
@@ -91,14 +91,7 @@ def run_basis(supercell, fc_cutoff=None, reduce_memory=True, apply_sum_rule=True
     print_sp_matrix_size(c_pt, " C_(perm,trans):")
     t03 = time.time()
 
-    if fc_cutoff is not None:
-        proj_rpt = get_compr_coset_reps_sum_O3_slicing(spg_reps, c_pt=c_pt)
-    else:
-        coset_reps_sum = get_compr_coset_reps_sum_O3_slicing(spg_reps)
-        print_sp_matrix_size(coset_reps_sum, " R_(coset):")
-        proj_rpt = c_pt.T @ coset_reps_sum @ c_pt
-        del coset_reps_sum
-        gc.collect()
+    proj_rpt = get_compr_coset_reps_sum_O3_slicing(spg_reps, c_pt=c_pt)
     t04 = time.time()
 
     c_rpt = eigsh_projector(proj_rpt)
@@ -114,9 +107,6 @@ def run_basis(supercell, fc_cutoff=None, reduce_memory=True, apply_sum_rule=True
     t06 = time.time()
 
     if apply_sum_rule:
-        """TODO: replace decompr_idx with atomic_decompr_idx
-        to reduce memory allocation
-        """
         proj = compressed_projector_sum_rules_from_compact_compr_mat(
             trans_perms, n_a_compress_mat, use_mkl=True
         )

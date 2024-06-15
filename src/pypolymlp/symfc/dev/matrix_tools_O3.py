@@ -41,20 +41,20 @@ def compressed_complement_projector_sum_rules_from_compact_compr_mat(
 
     n_batch = natom
     if n_batch == natom:
-        batch_size_vector = natom**2
-        batch_size_matrix = natom * 27
+        batch_size = natom**2
+        batch_size_vector = batch_size * 27
+        batch_size_matrix = natom * 27  # batch_size_vector / natom
     else:
-        raise ValueError("n_batch must be N.")
+        raise ValueError("n_batch must be a multiple of N.")
 
-    for begin, end in zip(*get_batch_slice(NNN, batch_size_vector)):
-        print("Proj_complement (sum.T @ trans) batch:", str(end) + "/" + str(NNN))
-        col = np.add.outer(np.arange(27), decompr_idx[begin:end]).reshape(-1)
+    for begin, end in zip(*get_batch_slice(NNN, batch_size)):
+        print("Complementary P (Sum rule):", str(end) + "/" + str(NNN))
         c_sum_cplmt = csr_array(
             (
-                np.ones(batch_size_vector * 27, dtype="double"),
+                np.ones(batch_size_vector, dtype="double"),
                 (
                     np.repeat(np.arange(batch_size_matrix), natom),
-                    col,
+                    np.add.outer(np.arange(27), decompr_idx[begin:end]).reshape(-1),
                 ),
             ),
             shape=(batch_size_matrix, NNN27 // n_lp),

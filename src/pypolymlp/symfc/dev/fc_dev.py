@@ -7,7 +7,7 @@ import phonopy
 from phono3py.file_IO import write_fc2_to_hdf5, write_fc3_to_hdf5
 from symfc import Symfc
 from symfc.basis_sets.basis_sets_O2 import FCBasisSetO2
-from symfc.solvers.solver_O2O3 import run_solver_O2O3, run_solver_O2O3_no_sum_rule_basis
+from symfc.solvers.solver_O2O3 import run_solver_O2O3_no_sum_rule_basis
 from symfc.spg_reps import SpgRepsO1
 from symfc.utils.cutoff_tools_O3 import FCCutoffO3
 from symfc.utils.matrix_tools_O3 import set_complement_sum_rules
@@ -27,6 +27,7 @@ from pypolymlp.utils.phonopy_utils import (
 )
 
 """symfc_basis_dev: must be included to FCBasisSetO3 in symfc"""
+from pypolymlp.symfc.dev.solver_O2O3 import run_solver_O2O3
 from pypolymlp.symfc.dev.symfc_basis_dev import run_basis
 
 
@@ -245,21 +246,35 @@ class PolymlpFC:
                 apply_sum_rule=False,
             )
 
-        trans_perms = SpgRepsO1(self.__supercell_ph).translation_permutations
-
-        # Bottleneck part of memory allocation
-        compress_mat_fc3_full = dot_lat_trans_compr_matrix_O3(
-            compress_mat_fc3,
-            trans_perms,
-        )
-
         t2 = time.time()
         print(" elapsed time (basis sets for fc2 and fc3) =", t2 - t1)
+
+        """Temporarily used. Better approach is desired to reduce memory assumption."""
+        trans_perms = SpgRepsO1(self.__supercell_ph).translation_permutations
 
         print("----- Solving fc2 and fc3 using run_solver -----")
         t1 = time.time()
         use_mkl = False if N > 400 else True
         if sum_rule_basis:
+            coefs_fc2, coefs_fc3 = run_solver_O2O3(
+                disps,
+                forces,
+                compress_mat_fc2_full,
+                compress_mat_fc3,
+                compress_eigvecs_fc2,
+                compress_eigvecs_fc3,
+                trans_perms,
+                use_mkl=use_mkl,
+                batch_size=batch_size,
+            )
+
+            """
+            from symfc.solvers.solver_O2O3 import run_solver_O2O3
+            # Bottleneck part of memory allocation
+            compress_mat_fc3_full = dot_lat_trans_compr_matrix_O3(
+                compress_mat_fc3,
+                trans_perms,
+            )
             coefs_fc2, coefs_fc3 = run_solver_O2O3(
                 disps,
                 forces,
@@ -270,7 +285,13 @@ class PolymlpFC:
                 use_mkl=use_mkl,
                 batch_size=batch_size,
             )
+            """
+
         else:
+            compress_mat_fc3_full = dot_lat_trans_compr_matrix_O3(
+                compress_mat_fc3,
+                trans_perms,
+            )
             coefs_fc2, coefs_fc3 = run_solver_O2O3_no_sum_rule_basis(
                 disps,
                 forces,
@@ -482,7 +503,7 @@ if __name__ == "__main__":
     if args.geometry_optimization:
         polyfc.run_geometry_optimization()
 
-    polyfc.run(write_fc=True)
+    polyfc.run(write_fc=True, batch_size=args.batch_size)
 
     if args.run_ltc:
         ph3 = phono3py.load(
