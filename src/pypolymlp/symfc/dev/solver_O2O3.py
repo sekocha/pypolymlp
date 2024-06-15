@@ -1,0 +1,214 @@
+"""Solver of 2nd and 3rd order force constants simultaneously."""
+
+import time
+
+import numpy as np
+from scipy.sparse import csr_array
+from symfc.solvers.solver_O2 import get_training_from_full_basis
+from symfc.utils.eig_tools import dot_product_sparse
+from symfc.utils.solver_funcs import get_batch_slice, solve_linear_equation
+from symfc.utils.utils import get_indep_atoms_by_lat_trans
+from symfc.utils.utils_O3 import get_lat_trans_compr_matrix_O3
+
+
+def set_2nd_disps(disps, sparse=True):
+    """Calculate Kronecker products of displacements.
+
+    Parameter
+    ---------
+    disps: shape=(n_supercell, N3)
+
+    Return
+    ------
+    disps_2nd: shape=(n_supercell, NN33)
+    """
+    n_supercell = disps.shape[0]
+    N = disps.shape[1] // 3
+    disps_2nd = (disps[:, :, None] * disps[:, None, :]).reshape((-1, N, 3, N, 3))
+    disps_2nd = disps_2nd.transpose((0, 1, 3, 2, 4)).reshape((n_supercell, -1))
+    """
+    disps_2nd = np.zeros((disps.shape[0], 9 * (N**2)))
+    for i, u_vec in enumerate(disps):
+        u2 = np.kron(u_vec, u_vec).reshape((N, 3, N, 3))
+        disps_2nd[i] = u2.transpose((0, 2, 1, 3)).reshape(-1)
+    """
+    if sparse:
+        return csr_array(disps_2nd)
+    return disps_2nd
+
+
+def _nNN333_to_NN33n3(row, N, n):
+    """Reorder row indices in a sparse matrix (nNN333->NN33n3)."""
+    i, rem = np.divmod(row, 27 * N * N)
+    j, rem = np.divmod(rem, 27 * N)
+    k, rem = np.divmod(rem, 27)
+    a, rem = np.divmod(rem, 9)
+    b, c = np.divmod(rem, 3)
+
+    vec = j * 27 * N * n
+    vec += k * 27 * n
+    vec += i * 3
+    vec += b * 9 * n
+    vec += c * 3 * n + a
+    return vec
+
+
+def csr_nNN333_to_NN33n3(mat, N, n):
+    """Reorder row indices in a sparse matrix (NNn333->NN33n3).
+
+    Return reordered csr_matrix.
+
+    """
+    nNN333, nx = mat.shape
+    row, col = mat.nonzero()
+    row = _nNN333_to_NN33n3(row, N, n)
+    mat = csr_array((mat.data, (row, col)), shape=(nNN333, nx))
+    return mat
+
+
+def prepare_normal_equation(
+    disps,
+    forces,
+    compress_mat_fc2,
+    compact_compress_mat_fc3,
+    compress_eigvecs_fc2,
+    compress_eigvecs_fc3,
+    trans_perms,
+    batch_size=100,
+    use_mkl=False,
+):
+    r"""Calculate X.T @ X and X.T @ y.
+
+    X = displacements @ compress_mat @ compress_eigvecs
+    X = np.hstack([X_fc2, X_fc3])
+
+    displacements (fc2): (n_samples, N3)
+    displacements (fc3): (n_samples, NN33)
+    compress_mat_fc2: (NN33, n_compr)
+    compress_mat_fc3: (NNN333, n_compr_fc3)
+    compress_eigvecs_fc2: (n_compr_fc2, n_basis_fc2)
+    compress_eigvecs_fc3: (n_compr_fc3, n_basis_fc3)
+    Matrix reshapings are appropriately applied to compress_mat
+    and its products.
+
+    X.T @ X and X.T @ y are sequentially calculated using divided dataset.
+    X.T @ X = \sum_i X_i.T @ X_i
+    X.T @ y = \sum_i X_i.T @ y_i (i: batch index)
+    """
+    N3 = disps.shape[1]
+    NN33 = N3 * N3
+    NN333 = N3 * N3 * 3
+    N = N3 // 3
+    n_basis_fc2 = compress_eigvecs_fc2.shape[1]
+    n_basis_fc3 = compress_eigvecs_fc3.shape[1]
+    n_compr_fc3 = compact_compress_mat_fc3.shape[1]
+    n_basis = n_basis_fc2 + n_basis_fc3
+
+    t1 = time.time()
+    full_basis_fc2 = compress_mat_fc2 @ compress_eigvecs_fc2
+    X2, y_all = get_training_from_full_basis(
+        disps, forces, full_basis_fc2.T.reshape((n_basis_fc2, N, N, 3, 3))
+    )
+    t2 = time.time()
+    print("Solver_normal_equation (FC2):    ", t2 - t1)
+
+    mat33 = np.zeros((n_compr_fc3, n_compr_fc3), dtype=float)
+    mat23 = np.zeros((n_basis_fc2, n_compr_fc3), dtype=float)
+    mat3y = np.zeros(n_compr_fc3, dtype=float)
+    begin_batch, end_batch = get_batch_slice(disps.shape[0], batch_size)
+
+    """TODO: Apply indep_atoms with respect to rotations"""
+    """TODO: Full c_trans is not needed."""
+    indep_atoms = get_indep_atoms_by_lat_trans(trans_perms)
+    c_trans = get_lat_trans_compr_matrix_O3(trans_perms)
+
+    t_all1 = time.time()
+    for i_atom in indep_atoms:
+        print("Solver_atom:", i_atom)
+        orbit_atoms = np.unique(trans_perms[:, i_atom])
+        n_atom_orbit = len(orbit_atoms)
+
+        # t1 = time.time()
+        compr_mat = (
+            c_trans[i_atom * NN333 : (i_atom + 1) * NN333] @ compact_compress_mat_fc3
+        )
+        """Algorithm must be reconsidered."""
+        compr_mat = (
+            -0.5 * csr_nNN333_to_NN33n3(compr_mat, N, 1).reshape((NN33, -1)).tocsr()
+        )
+        # t2 = time.time()
+        # print(" Matrix shape change:, t =", t2 - t1)
+
+        for begin, end in zip(begin_batch, end_batch):
+            t01 = time.time()
+            disps_batch = set_2nd_disps(disps[begin:end], sparse=False)
+            X3 = dot_product_sparse(
+                disps_batch, compr_mat, use_mkl=use_mkl, dense=True
+            ).reshape((-1, n_compr_fc3))
+
+            X2_ids = np.array(
+                [i * N3 + i_atom * 3 + a for i in range(begin, end) for a in range(3)]
+            )
+            mat23 += X2[X2_ids].T @ X3
+            mat33 += (X3.T @ X3) * n_atom_orbit
+
+            y_batch = forces[begin:end]
+            for j_atom in orbit_atoms:
+                mat3y += X3.T @ y_batch[:, j_atom * 3 : (j_atom + 1) * 3].reshape(-1)
+
+            t02 = time.time()
+            print("Solver_block:", end, ":, t =", t02 - t01)
+
+    XTX = np.zeros((n_basis, n_basis), dtype=float)
+    XTy = np.zeros(n_basis, dtype=float)
+    XTX[:n_basis_fc2, :n_basis_fc2] = X2.T @ X2
+    XTX[:n_basis_fc2, n_basis_fc2:] = mat23 @ compress_eigvecs_fc3
+    XTX[n_basis_fc2:, :n_basis_fc2] = XTX[:n_basis_fc2, n_basis_fc2:].T
+    XTX[n_basis_fc2:, n_basis_fc2:] = (
+        compress_eigvecs_fc3.T @ mat33 @ compress_eigvecs_fc3
+    )
+    XTy[:n_basis_fc2] = X2.T @ y_all
+    XTy[n_basis_fc2:] = compress_eigvecs_fc3.T @ mat3y
+
+    t_all2 = time.time()
+    print(" (disp @ compr @ eigvecs).T @ (disp @ compr @ eigvecs):", t_all2 - t_all1)
+    return XTX, XTy
+
+
+def run_solver_O2O3(
+    disps,
+    forces,
+    compress_mat_fc2,
+    compact_compress_mat_fc3,
+    compress_eigvecs_fc2,
+    compress_eigvecs_fc3,
+    trans_perms,
+    batch_size=100,
+    use_mkl=False,
+):
+    """Estimate coeffs. in X @ coeffs = y.
+
+    X_fc2 = displacements_fc2 @ compress_mat_fc2 @ compress_eigvecs_fc2
+    X_fc3 = displacements_fc3 @ compress_mat_fc3 @ compress_eigvecs_fc3
+    X = np.hstack([X_fc2, X_fc3])
+
+    Matrix reshapings are appropriately applied.
+    X: features (n_samples * N3, N_basis_fc2 + N_basis_fc3)
+    y: observations (forces), (n_samples * N3)
+
+    """
+    XTX, XTy = prepare_normal_equation(
+        disps,
+        forces,
+        compress_mat_fc2,
+        compact_compress_mat_fc3,
+        compress_eigvecs_fc2,
+        compress_eigvecs_fc3,
+        trans_perms,
+        batch_size=batch_size,
+        use_mkl=use_mkl,
+    )
+    coefs = solve_linear_equation(XTX, XTy)
+    n_basis_fc2 = compress_eigvecs_fc2.shape[1]
+    coefs_fc2, coefs_fc3 = coefs[:n_basis_fc2], coefs[n_basis_fc2:]
+    return coefs_fc2, coefs_fc3
