@@ -7,7 +7,6 @@ from scipy.sparse import csr_array
 from symfc.solvers.solver_O2 import get_training_from_full_basis
 from symfc.utils.eig_tools import dot_product_sparse
 from symfc.utils.solver_funcs import get_batch_slice, solve_linear_equation
-from symfc.utils.utils import get_indep_atoms_by_lat_trans
 from symfc.utils.utils_O3 import get_lat_trans_decompr_indices_O3
 
 
@@ -27,6 +26,7 @@ def set_2nd_disps(disps, sparse=True):
     disps_2nd = (disps[:, :, None] * disps[:, None, :]).reshape((-1, N, 3, N, 3))
     disps_2nd = disps_2nd.transpose((0, 1, 3, 2, 4)).reshape((n_supercell, -1))
     """
+    N = disps.shape[1] // 3
     disps_2nd = np.zeros((disps.shape[0], 9 * (N**2)))
     for i, u_vec in enumerate(disps):
         u2 = np.kron(u_vec, u_vec).reshape((N, 3, N, 3))
@@ -51,8 +51,8 @@ def set_2nd_disps(disps, sparse=True):
 #     row += div * 9 * n
 #     row += rem * 3 * n
 #     return row
-
-
+#
+#
 # def csr_nNN333_to_NN33n3(mat, N, n):
 #     """Reorder row indices in a sparse matrix (NNn333->NN33n3).
 #
@@ -140,16 +140,22 @@ def prepare_normal_equation(
     mat3y = np.zeros(n_compr_fc3, dtype=float)
     begin_batch, end_batch = get_batch_slice(disps.shape[0], batch_size)
 
-    """TODO: Apply indep_atoms with respect to rotations"""
-    indep_atoms = get_indep_atoms_by_lat_trans(trans_perms)
     decompr_idx = get_lat_trans_decompr_indices_O3(trans_perms)
     n_lp, _ = trans_perms.shape
 
+    size_compr = len(decompr_idx) * compact_compress_mat_fc3.shape[1]
+    if size_compr > 1e14:
+        batch_size_atom = N // 4
+    elif size_compr > 1e13:
+        batch_size_atom = N // 2
+    else:
+        batch_size_atom = N
+    begin_batch_atom, end_batch_atom = get_batch_slice(N, batch_size_atom)
+
     t_all1 = time.time()
-    for i_atom in indep_atoms:
-        print("Solver_atom:", i_atom)
-        orbit_atoms = np.unique(trans_perms[:, i_atom])
-        n_atom_orbit = len(orbit_atoms)
+    for begin_i, end_i in zip(begin_batch_atom, end_batch_atom):
+        print("Solver_atoms:", begin_i, "-", end_i - 1)
+        n_atom_batch = end_i - begin_i
         """
         c_trans = get_lat_trans_compr_matrix_O3(trans_perms)
         compr_mat = (
@@ -157,15 +163,16 @@ def prepare_normal_equation(
         )
         compr_mat = (
             - 0.5 * csr_nNN333_to_NN33n3(compr_mat, N, 1).reshape((NN33, -1)).tocsr()
+        )
         """
         t1 = time.time()
         const = -0.5 / np.sqrt(n_lp)
         compr_mat = compact_compress_mat_fc3[
-            decompr_idx[i_atom * NN333 : (i_atom + 1) * NN333]
+            decompr_idx[begin_i * NN333 : end_i * NN333]
         ]
-        compr_mat = const * csr_nNN333_to_NN33_n3nx(compr_mat, N, 1)
+        compr_mat = const * csr_nNN333_to_NN33_n3nx(compr_mat, N, n_atom_batch)
         t2 = time.time()
-        print("Compr Matrix Reshape:, t =", t2 - t1)
+        print("Solver_compr_matrix_reshape:, t =", t2 - t1)
 
         for begin, end in zip(begin_batch, end_batch):
             t01 = time.time()
@@ -175,14 +182,18 @@ def prepare_normal_equation(
             ).reshape((-1, n_compr_fc3))
 
             X2_ids = np.array(
-                [i * N3 + i_atom * 3 + a for i in range(begin, end) for a in range(3)]
+                [
+                    i * N3 + j * 3 + a
+                    for i in range(begin, end)
+                    for j in range(begin_i, end_i)
+                    for a in range(3)
+                ]
             )
-            mat23 += (X2[X2_ids].T @ X3) * n_atom_orbit
-            mat33 += (X3.T @ X3) * n_atom_orbit
+            mat23 += X2[X2_ids].T @ X3
+            mat33 += X3.T @ X3
 
             y_batch = forces[begin:end]
-            for j_atom in orbit_atoms:
-                mat3y += X3.T @ y_batch[:, j_atom * 3 : (j_atom + 1) * 3].reshape(-1)
+            mat3y += X3.T @ y_batch[:, begin_i * 3 : end_i * 3].reshape(-1)
 
             t02 = time.time()
             print("Solver_block:", end, ":, t =", t02 - t01)

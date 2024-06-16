@@ -270,6 +270,7 @@ class PolymlpFC:
 
             """
             from symfc.solvers.solver_O2O3 import run_solver_O2O3
+
             # Bottleneck part of memory allocation
             compress_mat_fc3_full = dot_lat_trans_compr_matrix_O3(
                 compress_mat_fc3,
@@ -353,10 +354,10 @@ class PolymlpFC:
             self.run_fc2fc3(batch_size=batch_size, sum_rule_basis=sum_rule_basis)
 
         if write_fc:
-            if self.__fc2 is None:
+            if self.__fc2 is not None:
                 print("writing fc2.hdf5")
                 write_fc2_to_hdf5(self.__fc2)
-            if self.__fc3 is None:
+            if self.__fc3 is not None:
                 print("writing fc3.hdf5")
                 write_fc3_to_hdf5(self.__fc3)
 
