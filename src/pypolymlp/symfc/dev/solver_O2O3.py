@@ -8,7 +8,7 @@ from symfc.solvers.solver_O2 import get_training_from_full_basis
 from symfc.utils.eig_tools import dot_product_sparse
 from symfc.utils.solver_funcs import get_batch_slice, solve_linear_equation
 from symfc.utils.utils import get_indep_atoms_by_lat_trans
-from symfc.utils.utils_O3 import get_lat_trans_compr_matrix_O3
+from symfc.utils.utils_O3 import get_lat_trans_decompr_indices_O3
 
 
 def set_2nd_disps(disps, sparse=True):
@@ -37,33 +37,57 @@ def set_2nd_disps(disps, sparse=True):
     return disps_2nd
 
 
-def _nNN333_to_NN33n3(row, N, n):
-    """Reorder row indices in a sparse matrix (nNN333->NN33n3)."""
-    i, rem = np.divmod(row, 27 * N * N)
-    j, rem = np.divmod(rem, 27 * N)
-    k, rem = np.divmod(rem, 27)
-    a, rem = np.divmod(rem, 9)
-    b, c = np.divmod(rem, 3)
+# def _nNN333_to_NN33n3(row, N, n):
+#     """Reorder row indices in a sparse matrix (nNN333->NN33n3)."""
+#     row, rem = np.divmod(row, 27 * N * N)
+#     row *= 3
+#     div, rem = np.divmod(rem, 27 * N)
+#     row += div * 27 * N * n
+#     div, rem = np.divmod(rem, 27)
+#     row += div * 27 * n
+#     div, rem = np.divmod(rem, 9)
+#     row += div
+#     div, rem = np.divmod(rem, 3)
+#     row += div * 9 * n
+#     row += rem * 3 * n
+#     return row
 
-    vec = j * 27 * N * n
-    vec += k * 27 * n
-    vec += i * 3
-    vec += b * 9 * n
-    vec += c * 3 * n + a
-    return vec
+
+# def csr_nNN333_to_NN33n3(mat, N, n):
+#     """Reorder row indices in a sparse matrix (NNn333->NN33n3).
+#
+#     Return reordered csr_matrix.
+#
+#     """
+#     nNN333, nx = mat.shape
+#     row, col = mat.nonzero()
+#     row = _nNN333_to_NN33n3(row, N, n)
+#     mat = csr_array((mat.data, (row, col)), shape=(nNN333, nx))
+#     return mat
 
 
-def csr_nNN333_to_NN33n3(mat, N, n):
-    """Reorder row indices in a sparse matrix (NNn333->NN33n3).
+def csr_nNN333_to_NN33_n3nx(mat, N, n):
+    """Reorder and reshape a sparse matrix (nNN333,nx)->(NN33,n3nx).
 
     Return reordered csr_matrix.
-
     """
-    nNN333, nx = mat.shape
+    _, nx = mat.shape
+    NN33 = N**2 * 9
+    n3nx = n * 3 * nx
     row, col = mat.nonzero()
-    row = _nNN333_to_NN33n3(row, N, n)
-    mat = csr_array((mat.data, (row, col)), shape=(nNN333, nx))
-    return mat
+
+    div, rem = np.divmod(row, 27 * N * N)
+    col += div * 3 * nx
+    div, rem = np.divmod(rem, 27 * N)
+    row = div * 9 * N
+    div, rem = np.divmod(rem, 27)
+    row += div * 9
+    div, rem = np.divmod(rem, 9)
+    col += div * nx
+    div, rem = np.divmod(rem, 3)
+    row += div * 3 + rem
+
+    return csr_array((mat.data, (row, col)), shape=(NN33, n3nx))
 
 
 def prepare_normal_equation(
@@ -96,7 +120,6 @@ def prepare_normal_equation(
     X.T @ y = \sum_i X_i.T @ y_i (i: batch index)
     """
     N3 = disps.shape[1]
-    NN33 = N3 * N3
     NN333 = N3 * N3 * 3
     N = N3 // 3
     n_basis_fc2 = compress_eigvecs_fc2.shape[1]
@@ -118,26 +141,31 @@ def prepare_normal_equation(
     begin_batch, end_batch = get_batch_slice(disps.shape[0], batch_size)
 
     """TODO: Apply indep_atoms with respect to rotations"""
-    """TODO: Full c_trans is not needed."""
     indep_atoms = get_indep_atoms_by_lat_trans(trans_perms)
-    c_trans = get_lat_trans_compr_matrix_O3(trans_perms)
+    decompr_idx = get_lat_trans_decompr_indices_O3(trans_perms)
+    n_lp, _ = trans_perms.shape
 
     t_all1 = time.time()
     for i_atom in indep_atoms:
         print("Solver_atom:", i_atom)
         orbit_atoms = np.unique(trans_perms[:, i_atom])
         n_atom_orbit = len(orbit_atoms)
-
-        # t1 = time.time()
+        """
+        c_trans = get_lat_trans_compr_matrix_O3(trans_perms)
         compr_mat = (
             c_trans[i_atom * NN333 : (i_atom + 1) * NN333] @ compact_compress_mat_fc3
         )
-        """Algorithm must be reconsidered."""
         compr_mat = (
-            -0.5 * csr_nNN333_to_NN33n3(compr_mat, N, 1).reshape((NN33, -1)).tocsr()
-        )
-        # t2 = time.time()
-        # print(" Matrix shape change:, t =", t2 - t1)
+            - 0.5 * csr_nNN333_to_NN33n3(compr_mat, N, 1).reshape((NN33, -1)).tocsr()
+        """
+        t1 = time.time()
+        const = -0.5 / np.sqrt(n_lp)
+        compr_mat = compact_compress_mat_fc3[
+            decompr_idx[i_atom * NN333 : (i_atom + 1) * NN333]
+        ]
+        compr_mat = const * csr_nNN333_to_NN33_n3nx(compr_mat, N, 1)
+        t2 = time.time()
+        print("Compr Matrix Reshape:, t =", t2 - t1)
 
         for begin, end in zip(begin_batch, end_batch):
             t01 = time.time()
@@ -149,7 +177,7 @@ def prepare_normal_equation(
             X2_ids = np.array(
                 [i * N3 + i_atom * 3 + a for i in range(begin, end) for a in range(3)]
             )
-            mat23 += X2[X2_ids].T @ X3
+            mat23 += (X2[X2_ids].T @ X3) * n_atom_orbit
             mat33 += (X3.T @ X3) * n_atom_orbit
 
             y_batch = forces[begin:end]
