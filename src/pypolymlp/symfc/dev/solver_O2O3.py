@@ -8,7 +8,7 @@ from scipy.sparse import csr_array
 from symfc.solvers.solver_O2 import get_training_from_full_basis
 from symfc.utils.eig_tools import dot_product_sparse
 from symfc.utils.solver_funcs import get_batch_slice, solve_linear_equation
-from symfc.utils.utils_O3 import get_lat_trans_decompr_indices_O3
+from symfc.utils.utils_O3 import get_atomic_lat_trans_decompr_indices_O3
 
 
 def set_2nd_disps(disps, sparse=True):
@@ -46,22 +46,24 @@ def csr_nNN333_to_NN33_n3nx(mat, N, n, n_batch=10):
     _, nx = mat.shape
     NN33 = N**2 * 9
     n3nx = n * 3 * nx
-    row, col = mat.nonzero()
+    mat = mat.tocoo(copy=False)
 
-    begin_batch, end_batch = get_batch_slice(len(row), len(row) // n_batch)
+    begin_batch, end_batch = get_batch_slice(len(mat.row), len(mat.row) // n_batch)
     for begin, end in zip(begin_batch, end_batch):
-        div, rem = np.divmod(row[begin:end], 27 * N * N)
-        col[begin:end] += div * 3 * nx
+        div, rem = np.divmod(mat.row[begin:end], 27 * N * N)
+        mat.col[begin:end] += div * 3 * nx
         div, rem = np.divmod(rem, 27 * N)
-        row[begin:end] = div * 9 * N
+        mat.row[begin:end] = div * 9 * N
         div, rem = np.divmod(rem, 27)
-        row[begin:end] += div * 9
+        mat.row[begin:end] += div * 9
         div, rem = np.divmod(rem, 9)
-        col[begin:end] += div * nx
+        mat.col[begin:end] += div * nx
         div, rem = np.divmod(rem, 3)
-        row[begin:end] += div * 3 + rem
+        mat.row[begin:end] += div * 3 + rem
 
-    return csr_array((mat.data, (row, col)), shape=(NN33, n3nx))
+    mat.resize((NN33, n3nx))
+    mat = mat.tocsr(copy=False)
+    return mat
 
 
 def prepare_normal_equation(
@@ -94,8 +96,8 @@ def prepare_normal_equation(
     X.T @ y = \sum_i X_i.T @ y_i (i: batch index)
     """
     N3 = disps.shape[1]
-    NN333 = N3 * N3 * 3
     N = N3 // 3
+    NN = N * N
     n_basis_fc2 = compress_eigvecs_fc2.shape[1]
     n_basis_fc3 = compress_eigvecs_fc3.shape[1]
     n_compr_fc3 = compact_compress_mat_fc3.shape[1]
@@ -109,7 +111,7 @@ def prepare_normal_equation(
     t2 = time.time()
     print("Solver_normal_equation (FC2):    ", "{:.3f}".format(t2 - t1))
 
-    decompr_idx = get_lat_trans_decompr_indices_O3(trans_perms)
+    atomic_decompr_idx = get_atomic_lat_trans_decompr_indices_O3(trans_perms)
     n_lp, _ = trans_perms.shape
 
     n_batch = (N // 250 + 1) * (compact_compress_mat_fc3.shape[1] // 20000 + 1)
@@ -139,8 +141,13 @@ def prepare_normal_equation(
             -0.5 * csr_nNN333_to_NN33n3(compr_mat, N, 1).reshape((NN33, -1)).tocsr()
         )
         """
+        decompr_idx = (
+            atomic_decompr_idx[begin_i * NN : end_i * NN, None] * 27
+            + np.arange(27)[None, :]
+        ).reshape(-1)
+
         compr_mat = csr_nNN333_to_NN33_n3nx(
-            compact_compress_mat_fc3[decompr_idx[begin_i * NN333 : end_i * NN333]],
+            compact_compress_mat_fc3[decompr_idx],
             N,
             n_atom_batch,
         )
