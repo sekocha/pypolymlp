@@ -117,16 +117,16 @@ def run_basis(supercell, fc_cutoff=None, reduce_memory=True, apply_sum_rule=True
         t08 = time.time()
 
     print("-----")
-    print("Time (spg. rep.)                        =", t01 - t00)
-    print("Time (proj(perm @ lattice trans.)       =", t02 - t01)
-    print("Time (eigh(perm @ ltrans))              =", t03 - t02)
-    print("Time (coset)                            =", t04 - t03)
-    print("Time (eigh(coset @ perm @ ltrans))      =", t05 - t04)
-    print("Time (c_pt @ c_rpt)                     =", t06 - t05)
+    print("Time (spg. rep.)                        =", "{:.3f}".format(t01 - t00))
+    print("Time (proj(perm @ lattice trans.)       =", "{:.3f}".format(t02 - t01))
+    print("Time (eigh(perm @ ltrans))              =", "{:.3f}".format(t03 - t02))
+    print("Time (coset)                            =", "{:.3f}".format(t04 - t03))
+    print("Time (eigh(coset @ perm @ ltrans))      =", "{:.3f}".format(t05 - t04))
+    print("Time (c_pt @ c_rpt)                     =", "{:.3f}".format(t06 - t05))
 
     if apply_sum_rule:
-        print("Time (proj(coset @ perm @ ltrans @ sum) =", t07 - t06)
-        print("Time (eigh(coset @ perm @ ltrans @ sum) =", t08 - t07)
+        print("Time (proj(coset @ perm @ ltrans @ sum) =", "{:.3f}".format(t07 - t06))
+        print("Time (eigh(coset @ perm @ ltrans @ sum) =", "{:.3f}".format(t08 - t07))
         print("Basis size =", eigvecs.shape)
         return n_a_compress_mat, eigvecs
 

@@ -1,5 +1,6 @@
 """Solver of 2nd and 3rd order force constants simultaneously."""
 
+import itertools
 import time
 
 import numpy as np
@@ -37,36 +38,7 @@ def set_2nd_disps(disps, sparse=True):
     return disps_2nd
 
 
-# def _nNN333_to_NN33n3(row, N, n):
-#     """Reorder row indices in a sparse matrix (nNN333->NN33n3)."""
-#     row, rem = np.divmod(row, 27 * N * N)
-#     row *= 3
-#     div, rem = np.divmod(rem, 27 * N)
-#     row += div * 27 * N * n
-#     div, rem = np.divmod(rem, 27)
-#     row += div * 27 * n
-#     div, rem = np.divmod(rem, 9)
-#     row += div
-#     div, rem = np.divmod(rem, 3)
-#     row += div * 9 * n
-#     row += rem * 3 * n
-#     return row
-#
-#
-# def csr_nNN333_to_NN33n3(mat, N, n):
-#     """Reorder row indices in a sparse matrix (NNn333->NN33n3).
-#
-#     Return reordered csr_matrix.
-#
-#     """
-#     nNN333, nx = mat.shape
-#     row, col = mat.nonzero()
-#     row = _nNN333_to_NN33n3(row, N, n)
-#     mat = csr_array((mat.data, (row, col)), shape=(nNN333, nx))
-#     return mat
-
-
-def csr_nNN333_to_NN33_n3nx(mat, N, n):
+def csr_nNN333_to_NN33_n3nx(mat, N, n, n_batch=10):
     """Reorder and reshape a sparse matrix (nNN333,nx)->(NN33,n3nx).
 
     Return reordered csr_matrix.
@@ -76,16 +48,18 @@ def csr_nNN333_to_NN33_n3nx(mat, N, n):
     n3nx = n * 3 * nx
     row, col = mat.nonzero()
 
-    div, rem = np.divmod(row, 27 * N * N)
-    col += div * 3 * nx
-    div, rem = np.divmod(rem, 27 * N)
-    row = div * 9 * N
-    div, rem = np.divmod(rem, 27)
-    row += div * 9
-    div, rem = np.divmod(rem, 9)
-    col += div * nx
-    div, rem = np.divmod(rem, 3)
-    row += div * 3 + rem
+    begin_batch, end_batch = get_batch_slice(len(row), len(row) // n_batch)
+    for begin, end in zip(begin_batch, end_batch):
+        div, rem = np.divmod(row[begin:end], 27 * N * N)
+        col[begin:end] += div * 3 * nx
+        div, rem = np.divmod(rem, 27 * N)
+        row[begin:end] = div * 9 * N
+        div, rem = np.divmod(rem, 27)
+        row[begin:end] += div * 9
+        div, rem = np.divmod(rem, 9)
+        col[begin:end] += div * nx
+        div, rem = np.divmod(rem, 3)
+        row[begin:end] += div * 3 + rem
 
     return csr_array((mat.data, (row, col)), shape=(NN33, n3nx))
 
@@ -133,70 +107,70 @@ def prepare_normal_equation(
         disps, forces, full_basis_fc2.T.reshape((n_basis_fc2, N, N, 3, 3))
     )
     t2 = time.time()
-    print("Solver_normal_equation (FC2):    ", t2 - t1)
-
-    mat33 = np.zeros((n_compr_fc3, n_compr_fc3), dtype=float)
-    mat23 = np.zeros((n_basis_fc2, n_compr_fc3), dtype=float)
-    mat3y = np.zeros(n_compr_fc3, dtype=float)
-    begin_batch, end_batch = get_batch_slice(disps.shape[0], batch_size)
+    print("Solver_normal_equation (FC2):    ", "{:.3f}".format(t2 - t1))
 
     decompr_idx = get_lat_trans_decompr_indices_O3(trans_perms)
     n_lp, _ = trans_perms.shape
 
-    size_compr = len(decompr_idx) * compact_compress_mat_fc3.shape[1]
-    if size_compr > 1e14:
-        batch_size_atom = N // 4
-    elif size_compr > 1e13:
-        batch_size_atom = N // 2
-    else:
-        batch_size_atom = N
+    n_batch = (N // 250 + 1) * (compact_compress_mat_fc3.shape[1] // 20000 + 1)
+    batch_size_atom = N // n_batch
     begin_batch_atom, end_batch_atom = get_batch_slice(N, batch_size_atom)
 
+    begin_batch, end_batch = get_batch_slice(disps.shape[0], batch_size)
+
+    mat33 = np.zeros((n_compr_fc3, n_compr_fc3), dtype=float)
+    mat23 = np.zeros((n_basis_fc2, n_compr_fc3), dtype=float)
+    mat3y = np.zeros(n_compr_fc3, dtype=float)
+
     t_all1 = time.time()
+    const = -0.5 / np.sqrt(n_lp)
+    compact_compress_mat_fc3 *= const
     for begin_i, end_i in zip(begin_batch_atom, end_batch_atom):
-        print("Solver_atoms:", begin_i, "-", end_i - 1)
+        print("Solver_atoms:", begin_i, "--", end_i - 1)
         n_atom_batch = end_i - begin_i
+
+        t1 = time.time()
         """
         c_trans = get_lat_trans_compr_matrix_O3(trans_perms)
         compr_mat = (
             c_trans[i_atom * NN333 : (i_atom + 1) * NN333] @ compact_compress_mat_fc3
         )
         compr_mat = (
-            - 0.5 * csr_nNN333_to_NN33n3(compr_mat, N, 1).reshape((NN33, -1)).tocsr()
+            -0.5 * csr_nNN333_to_NN33n3(compr_mat, N, 1).reshape((NN33, -1)).tocsr()
         )
         """
-        t1 = time.time()
-        const = -0.5 / np.sqrt(n_lp)
-        compr_mat = compact_compress_mat_fc3[
-            decompr_idx[begin_i * NN333 : end_i * NN333]
-        ]
-        compr_mat = const * csr_nNN333_to_NN33_n3nx(compr_mat, N, n_atom_batch)
+        compr_mat = csr_nNN333_to_NN33_n3nx(
+            compact_compress_mat_fc3[decompr_idx[begin_i * NN333 : end_i * NN333]],
+            N,
+            n_atom_batch,
+        )
         t2 = time.time()
-        print("Solver_compr_matrix_reshape:, t =", t2 - t1)
+        print("Solver_compr_matrix_reshape:, t =", "{:.3f}".format(t2 - t1))
 
         for begin, end in zip(begin_batch, end_batch):
             t01 = time.time()
-            disps_batch = set_2nd_disps(disps[begin:end], sparse=False)
             X3 = dot_product_sparse(
-                disps_batch, compr_mat, use_mkl=use_mkl, dense=True
+                set_2nd_disps(disps[begin:end], sparse=False),
+                compr_mat,
+                use_mkl=use_mkl,
+                dense=True,
             ).reshape((-1, n_compr_fc3))
 
             X2_ids = np.array(
                 [
                     i * N3 + j * 3 + a
-                    for i in range(begin, end)
-                    for j in range(begin_i, end_i)
-                    for a in range(3)
+                    for i, j, a in itertools.product(
+                        *[range(begin, end), range(begin_i, end_i), range(3)]
+                    )
                 ]
             )
+            y_batch = forces[begin:end, begin_i * 3 : end_i * 3].reshape(-1)
             mat23 += X2[X2_ids].T @ X3
             mat33 += X3.T @ X3
-
-            y_batch = forces[begin:end]
-            mat3y += X3.T @ y_batch[:, begin_i * 3 : end_i * 3].reshape(-1)
+            mat3y += X3.T @ y_batch
 
             t02 = time.time()
-            print("Solver_block:", end, ":, t =", t02 - t01)
+            print("Solver_block:", end, ":, t =", "{:.3f}".format(t02 - t01))
 
     XTX = np.zeros((n_basis, n_basis), dtype=float)
     XTy = np.zeros(n_basis, dtype=float)
@@ -209,8 +183,12 @@ def prepare_normal_equation(
     XTy[:n_basis_fc2] = X2.T @ y_all
     XTy[n_basis_fc2:] = compress_eigvecs_fc3.T @ mat3y
 
+    compact_compress_mat_fc3 /= const
     t_all2 = time.time()
-    print(" (disp @ compr @ eigvecs).T @ (disp @ compr @ eigvecs):", t_all2 - t_all1)
+    print(
+        " (disp @ compr @ eigvecs).T @ (disp @ compr @ eigvecs):",
+        "{:.3f}".format(t_all2 - t_all1),
+    )
     return XTX, XTy
 
 

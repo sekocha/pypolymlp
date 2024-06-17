@@ -247,7 +247,7 @@ class PolymlpFC:
             )
 
         t2 = time.time()
-        print(" elapsed time (basis sets for fc2 and fc3) =", t2 - t1)
+        print(" elapsed time (basis sets for fc2 and fc3) =", "{:.3f}".format(t2 - t1))
 
         """Temporarily used. Better approach is desired to reduce memory assumption."""
         trans_perms = SpgRepsO1(self.__supercell_ph).translation_permutations
@@ -267,7 +267,6 @@ class PolymlpFC:
                 use_mkl=use_mkl,
                 batch_size=batch_size,
             )
-
             """
             from symfc.solvers.solver_O2O3 import run_solver_O2O3
 
@@ -287,7 +286,6 @@ class PolymlpFC:
                 batch_size=batch_size,
             )
             """
-
         else:
             compress_mat_fc3_full = dot_lat_trans_compr_matrix_O3(
                 compress_mat_fc3,
@@ -303,7 +301,7 @@ class PolymlpFC:
                 batch_size=batch_size,
             )
         t2 = time.time()
-        print(" elapsed time (solve fc2 + fc3) =", t2 - t1)
+        print(" elapsed time (solve fc2 + fc3) =", "{:.3f}".format(t2 - t1))
 
         t1 = time.time()
         fc2 = recover_fc2(
@@ -319,7 +317,7 @@ class PolymlpFC:
             fc3 = recover_fc3_variant(coefs_fc3, compress_mat_fc3, proj_pt, trans_perms)
 
         t2 = time.time()
-        print(" elapsed time (recover fc2 and fc3) =", t2 - t1)
+        print(" elapsed time (recover fc2 and fc3) =", "{:.3f}".format(t2 - t1))
 
         self.__fc2 = fc2
         self.__fc3 = fc3
