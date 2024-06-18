@@ -35,6 +35,8 @@ from symfc.utils.utils_O3 import (
     get_lat_trans_compr_matrix_O3,
 )
 
+from pypolymlp.symfc.dev.utils_O3 import get_compr_coset_reps_sum_O3_sparse
+
 # from pypolymlp.symfc.dev.matrix_tools_O3 import (
 #    compressed_projector_sum_rules_from_compact_compr_mat,
 # )
@@ -83,26 +85,29 @@ def run_basis(supercell, fc_cutoff=None, reduce_memory=True, apply_sum_rule=True
         print_sp_matrix_size(c_pt, " C_perm.T @ C_trans:")
         proj_pt = dot_product_sparse(c_pt.T, c_pt, use_mkl=True)
 
-    print_sp_matrix_size(proj_pt, " P_(perm,trans):")
+    print_sp_matrix_size(proj_pt, "P_(perm,trans):")
     t02 = time.time()
 
     c_pt = eigsh_projector(proj_pt)
 
-    print_sp_matrix_size(c_pt, " C_(perm,trans):")
+    print_sp_matrix_size(c_pt, "C_(perm,trans):")
     t03 = time.time()
 
-    proj_rpt = get_compr_coset_reps_sum_O3_slicing(spg_reps, c_pt=c_pt)
+    if fc_cutoff is None:
+        proj_rpt = get_compr_coset_reps_sum_O3_slicing(spg_reps, c_pt=c_pt)
+    else:
+        proj_rpt = get_compr_coset_reps_sum_O3_sparse(spg_reps, fc_cutoff, c_pt=c_pt)
     t04 = time.time()
 
     c_rpt = eigsh_projector(proj_rpt)
     del proj_rpt
     gc.collect()
 
-    print_sp_matrix_size(c_rpt, " C_(perm,trans,coset):")
+    print_sp_matrix_size(c_rpt, "C_(perm,trans,coset):")
     t05 = time.time()
 
     n_a_compress_mat = dot_product_sparse(c_pt, c_rpt, use_mkl=True)
-    print_sp_matrix_size(n_a_compress_mat, " C_(n_a_compr):")
+    print_sp_matrix_size(n_a_compress_mat, "C_(n_a_compr):")
 
     t06 = time.time()
 
@@ -110,7 +115,7 @@ def run_basis(supercell, fc_cutoff=None, reduce_memory=True, apply_sum_rule=True
         proj = compressed_projector_sum_rules_from_compact_compr_mat(
             trans_perms, n_a_compress_mat, use_mkl=True
         )
-        print_sp_matrix_size(proj, " P_(perm,trans,coset,sum):")
+        print_sp_matrix_size(proj, "P_(perm,trans,coset,sum):")
         t07 = time.time()
 
         eigvecs = eigsh_projector_sumrule(proj)

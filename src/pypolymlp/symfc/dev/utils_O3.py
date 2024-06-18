@@ -1,11 +1,10 @@
-#!/usr/bin/env python
-import numpy as np
-from scipy.sparse import coo_array, csr_array, kron
-from symfc.spg_reps import SpgRepsO3
-from symfc.utils.utils import get_indep_atoms_by_lat_trans
-from symfc.utils.utils_O3 import get_atomic_lat_trans_decompr_indices_O3
+"""Utility functions for 3rd order force constants."""
 
-from pypolymlp.symfc.dev.cutoff_tools_O3 import FCCutoffO3
+import numpy as np
+from scipy.sparse import csr_array, kron
+from symfc.spg_reps import SpgRepsO3
+from symfc.utils.cutoff_tools_O3 import FCCutoffO3
+from symfc.utils.utils import get_indep_atoms_by_lat_trans
 
 
 def get_atomic_lat_trans_decompr_indices_sparse_O3(
@@ -72,7 +71,6 @@ def get_compr_coset_reps_sum_O3_sparse(
     atomic_decompr_idx = get_atomic_lat_trans_decompr_indices_sparse_O3(
         trans_perms, fc_cutoff
     )
-
     nonzero = np.where(atomic_decompr_idx != -1)[0]
 
     factor = 1 / n_lp / len(spg_reps.unique_rotation_indices)
@@ -84,14 +82,12 @@ def get_compr_coset_reps_sum_O3_sparse(
         )
         permutation = spg_reps.get_sigma3_rep_vec(i)
         atomic_decompr_idx_permuted = atomic_decompr_idx[permutation]
-
-        nonzero_p = np.where(atomic_decompr_idx_permuted[nonzero] != -1)[0]
-        nonzero_p = nonzero[nonzero_p]
+        nonzero = nonzero[atomic_decompr_idx_permuted[nonzero] != -1]
 
         mat = csr_array(
             (
                 np.ones(len(nonzero), dtype="int_"),
-                (atomic_decompr_idx_permuted[nonzero_p], atomic_decompr_idx[nonzero_p]),
+                (atomic_decompr_idx_permuted[nonzero], atomic_decompr_idx[nonzero]),
             ),
             shape=(N**3 // n_lp, N**3 // n_lp),
             dtype="int_",
