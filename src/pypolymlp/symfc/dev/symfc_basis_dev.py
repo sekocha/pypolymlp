@@ -40,8 +40,6 @@ from pypolymlp.symfc.dev.matrix_tools_O3 import (
     compressed_projector_sum_rules_from_compact_compr_mat_lowmem,
 )
 
-# from pypolymlp.symfc.dev.utils_O3 import get_compr_coset_reps_sum_O3_sparse
-
 
 def permutation_dot_lat_trans_stable(trans_perms, fc_cutoff=None):
     """Simple implementation of permutation @ lattice translation"""
@@ -100,15 +98,12 @@ def run_basis(supercell, fc_cutoff=None, reduce_memory=True, apply_sum_rule=True
     print_sp_matrix_size(c_pt, "C_(perm,trans):")
     t03 = time.time()
 
-    if fc_cutoff is None:
-        proj_rpt = get_compr_coset_reps_sum_O3_slicing(
-            spg_reps, atomic_decompr_idx=atomic_decompr_idx, c_pt=c_pt
-        )
-    else:
-        proj_rpt = get_compr_coset_reps_sum_O3_slicing(
-            spg_reps, atomic_decompr_idx=atomic_decompr_idx, c_pt=c_pt
-        )
-        # proj_rpt = get_compr_coset_reps_sum_O3_sparse(spg_reps, fc_cutoff, c_pt=c_pt)
+    proj_rpt = get_compr_coset_reps_sum_O3_slicing(
+        spg_reps,
+        fc_cutoff=fc_cutoff,
+        atomic_decompr_idx=atomic_decompr_idx,
+        c_pt=c_pt,
+    )
     t04 = time.time()
 
     c_rpt = eigsh_projector(proj_rpt)
@@ -124,7 +119,7 @@ def run_basis(supercell, fc_cutoff=None, reduce_memory=True, apply_sum_rule=True
     t06 = time.time()
 
     if apply_sum_rule:
-        if N < 256:
+        if N <= 256:
             proj = compressed_projector_sum_rules_from_compact_compr_mat(
                 trans_perms,
                 n_a_compress_mat,

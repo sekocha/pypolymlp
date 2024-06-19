@@ -37,7 +37,7 @@ def set_disps_NN33(disps, sparse=True):
     return disps_2nd
 
 
-def csr_nN33_to_N3_n3nx(mat, N, n, n_batch=1):
+def reshape_nN33_nx_to_N3_n3nx(mat, N, n, n_batch=1):
     """Reorder and reshape a sparse matrix (nN33,nx)->(N3,n3nx).
 
     Return reordered csr_matrix used for FC2.
@@ -62,7 +62,7 @@ def csr_nN33_to_N3_n3nx(mat, N, n, n_batch=1):
     return mat
 
 
-def csr_nNN333_to_NN33_n3nx(mat, N, n, n_batch=9):
+def reshape_nNN333_nx_to_NN33_n3nx(mat, N, n, n_batch=9):
     """Reorder and reshape a sparse matrix (nNN333,nx)->(NN33,n3nx).
 
     Return reordered csr_matrix used for FC3.
@@ -163,8 +163,7 @@ def prepare_normal_equation_O2O3(
             atomic_decompr_idx_fc2[begin_i * N : end_i * N, None] * 9
             + np.arange(9)[None, :]
         ).reshape(-1)
-
-        compr_mat_fc2 = csr_nN33_to_N3_n3nx(
+        compr_mat_fc2 = reshape_nN33_nx_to_N3_n3nx(
             compact_compress_mat_fc2[decompr_idx],
             N,
             n_atom_batch,
@@ -174,8 +173,7 @@ def prepare_normal_equation_O2O3(
             atomic_decompr_idx_fc3[begin_i * NN : end_i * NN, None] * 27
             + np.arange(27)[None, :]
         ).reshape(-1)
-
-        compr_mat_fc3 = csr_nNN333_to_NN33_n3nx(
+        compr_mat_fc3 = reshape_nNN333_nx_to_NN33_n3nx(
             compact_compress_mat_fc3[decompr_idx],
             N,
             n_atom_batch,
