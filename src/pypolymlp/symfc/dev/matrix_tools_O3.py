@@ -4,9 +4,7 @@ import scipy
 from scipy.sparse import csr_array
 from symfc.utils.eig_tools import dot_product_sparse
 from symfc.utils.solver_funcs import get_batch_slice
-from symfc.utils.utils_O3 import (  # get_lat_trans_decompr_indices_O3,
-    get_atomic_lat_trans_decompr_indices_O3,
-)
+from symfc.utils.utils_O3 import get_atomic_lat_trans_decompr_indices_O3
 
 
 def compressed_complement_projector_sum_rules_from_compact_compr_mat(
@@ -14,6 +12,7 @@ def compressed_complement_projector_sum_rules_from_compact_compr_mat(
     n_a_compress_mat: csr_array,
     atomic_decompr_idx=None,
     use_mkl: bool = False,
+    n_batch=None,
 ) -> csr_array:
     """Calculate a complementary projector for sum rules.
 
@@ -33,36 +32,40 @@ def compressed_complement_projector_sum_rules_from_compact_compr_mat(
     NN = natom**2
 
     proj_size = n_a_compress_mat.shape[1]
-    proj_sum_cplmt = csr_array(
-        ([], ([], [])),
-        shape=(proj_size, proj_size),
-        dtype="double",
-    )
+    proj_sum_cplmt = csr_array((proj_size, proj_size), dtype="double")
 
     if atomic_decompr_idx is None:
         atomic_decompr_idx = get_atomic_lat_trans_decompr_indices_O3(trans_perms)
 
     decompr_idx = atomic_decompr_idx.reshape((natom, NN)).T.reshape(-1) * 27
 
-    n_batch = natom
-    if n_batch == natom:
-        batch_size = natom**2
-        batch_size_vector = batch_size * 27
-        batch_size_matrix = natom * 27  # batch_size_vector / natom
-    else:
-        raise ValueError("n_batch must be a multiple of N.")
+    if n_batch is None:
+        if natom < 256:
+            n_batch = natom // min(natom, 16)
+        else:
+            n_batch = natom // 4
 
+    if n_batch > natom:
+        raise ValueError("n_batch must be smaller than N.")
+
+    batch_size = natom**2 * (natom // n_batch)
     for begin, end in zip(*get_batch_slice(NNN, batch_size)):
         print("Complementary P (Sum rule):", str(end) + "/" + str(NNN))
+        size = end - begin
+        size_vector = size * 27
+        size_matrix = size_vector // natom
+
         c_sum_cplmt = csr_array(
             (
-                np.ones(batch_size_vector, dtype="double"),
+                np.ones(size_vector, dtype="double"),
                 (
-                    np.repeat(np.arange(batch_size_matrix), natom),
-                    np.add.outer(np.arange(27), decompr_idx[begin:end]).reshape(-1),
+                    np.repeat(np.arange(size_matrix), natom),
+                    (decompr_idx[begin:end][None, :] + np.arange(27)[:, None]).reshape(
+                        -1
+                    ),
                 ),
             ),
-            shape=(batch_size_matrix, NNN27 // n_lp),
+            shape=(size_matrix, NNN27 // n_lp),
             dtype="double",
         )
         c_sum_cplmt = dot_product_sparse(c_sum_cplmt, n_a_compress_mat, use_mkl=use_mkl)

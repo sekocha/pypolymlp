@@ -25,8 +25,7 @@ from symfc.utils.eig_tools import (
     eigsh_projector,
     eigsh_projector_sumrule,
 )
-from symfc.utils.matrix_tools_O3 import (
-    compressed_projector_sum_rules_from_compact_compr_mat,
+from symfc.utils.matrix_tools_O3 import (  # compressed_projector_sum_rules_from_compact_compr_mat,
     get_perm_compr_matrix_O3,
     projector_permutation_lat_trans_O3,
 )
@@ -119,6 +118,13 @@ def run_basis(supercell, fc_cutoff=None, reduce_memory=True, apply_sum_rule=True
     t06 = time.time()
 
     if apply_sum_rule:
+        proj = compressed_projector_sum_rules_from_compact_compr_mat_lowmem(
+            trans_perms,
+            n_a_compress_mat,
+            use_mkl=True,
+            atomic_decompr_idx=atomic_decompr_idx,
+        )
+        """
         if N <= 256:
             proj = compressed_projector_sum_rules_from_compact_compr_mat(
                 trans_perms,
@@ -132,7 +138,7 @@ def run_basis(supercell, fc_cutoff=None, reduce_memory=True, apply_sum_rule=True
                 use_mkl=True,
                 atomic_decompr_idx=atomic_decompr_idx,
             )
-
+        """
         print_sp_matrix_size(proj, "P_(perm,trans,coset,sum):")
         t07 = time.time()
 
