@@ -32,7 +32,7 @@ from symfc.utils.matrix_tools_O3 import (
 )
 from symfc.utils.utils_O3 import (
     get_atomic_lat_trans_decompr_indices_O3,
-    get_compr_coset_reps_sum_O3_slicing,
+    get_compr_coset_reps_sum_O3_dev,
     get_lat_trans_compr_matrix_O3,
 )
 
@@ -98,7 +98,7 @@ def run_basis(supercell, fc_cutoff=None, reduce_memory=True, apply_sum_rule=True
     print_sp_matrix_size(c_pt, "C_(perm,trans):")
     t03 = time.time()
 
-    proj_rpt = get_compr_coset_reps_sum_O3_slicing(
+    proj_rpt = get_compr_coset_reps_sum_O3_dev(
         spg_reps,
         fc_cutoff=fc_cutoff,
         atomic_decompr_idx=atomic_decompr_idx,
