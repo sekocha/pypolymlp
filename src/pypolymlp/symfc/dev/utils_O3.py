@@ -61,16 +61,22 @@ def get_atomic_lat_trans_decompr_indices_sparse_O3(
 
 
 def get_compr_coset_reps_sum_O3_sparse(
-    spg_reps: SpgRepsO3, fc_cutoff: FCCutoffO3, c_pt: csr_array = None
+    spg_reps: SpgRepsO3,
+    fc_cutoff: FCCutoffO3,
+    atomic_decompr_idx=None,
+    c_pt: csr_array = None,
 ) -> csr_array:
     """Return compr matrix of sum of coset reps."""
     trans_perms = spg_reps.translation_permutations
     n_lp, N = trans_perms.shape
     size = N**3 * 27 // n_lp if c_pt is None else c_pt.shape[1]
     coset_reps_sum = csr_array(([], ([], [])), shape=(size, size), dtype="double")
-    atomic_decompr_idx = get_atomic_lat_trans_decompr_indices_sparse_O3(
-        trans_perms, fc_cutoff
-    )
+
+    if atomic_decompr_idx is None:
+        print("Preparing lattice translation (Sparse)")
+        atomic_decompr_idx = get_atomic_lat_trans_decompr_indices_sparse_O3(
+            trans_perms, fc_cutoff
+        )
     nonzero = np.where(atomic_decompr_idx != -1)[0]
 
     factor = 1 / n_lp / len(spg_reps.unique_rotation_indices)

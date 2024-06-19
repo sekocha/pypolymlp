@@ -28,18 +28,19 @@ from symfc.utils.eig_tools import (
 from symfc.utils.matrix_tools_O3 import (
     compressed_projector_sum_rules_from_compact_compr_mat,
     get_perm_compr_matrix_O3,
-    projector_permutation_lat_trans,
+    projector_permutation_lat_trans_O3,
 )
 from symfc.utils.utils_O3 import (
+    get_atomic_lat_trans_decompr_indices_O3,
     get_compr_coset_reps_sum_O3_slicing,
     get_lat_trans_compr_matrix_O3,
 )
 
-from pypolymlp.symfc.dev.utils_O3 import get_compr_coset_reps_sum_O3_sparse
+from pypolymlp.symfc.dev.matrix_tools_O3 import (
+    compressed_projector_sum_rules_from_compact_compr_mat_lowmem,
+)
 
-# from pypolymlp.symfc.dev.matrix_tools_O3 import (
-#    compressed_projector_sum_rules_from_compact_compr_mat,
-# )
+# from pypolymlp.symfc.dev.utils_O3 import get_compr_coset_reps_sum_O3_sparse
 
 
 def permutation_dot_lat_trans_stable(trans_perms, fc_cutoff=None):
@@ -67,16 +68,22 @@ def run_basis(supercell, fc_cutoff=None, reduce_memory=True, apply_sum_rule=True
 
     t00 = time.time()
     """space group representations"""
+    print("Preparing SpgReps")
     spg_reps = SpgRepsO3(supercell)
     trans_perms = spg_reps.translation_permutations
     n_lp, N = trans_perms.shape
     print_sp_matrix_size(trans_perms, " trans_perms:")
     t01 = time.time()
 
+    print("Preparing lattice translation")
+    atomic_decompr_idx = get_atomic_lat_trans_decompr_indices_O3(trans_perms)
+    print_sp_matrix_size(atomic_decompr_idx, " atomic_decompr_idx:")
+
     """permutation @ lattice translation"""
     if reduce_memory:
-        proj_pt = projector_permutation_lat_trans(
+        proj_pt = projector_permutation_lat_trans_O3(
             trans_perms,
+            atomic_decompr_idx=atomic_decompr_idx,
             fc_cutoff=fc_cutoff,
             use_mkl=True,
         )
@@ -94,9 +101,14 @@ def run_basis(supercell, fc_cutoff=None, reduce_memory=True, apply_sum_rule=True
     t03 = time.time()
 
     if fc_cutoff is None:
-        proj_rpt = get_compr_coset_reps_sum_O3_slicing(spg_reps, c_pt=c_pt)
+        proj_rpt = get_compr_coset_reps_sum_O3_slicing(
+            spg_reps, atomic_decompr_idx=atomic_decompr_idx, c_pt=c_pt
+        )
     else:
-        proj_rpt = get_compr_coset_reps_sum_O3_sparse(spg_reps, fc_cutoff, c_pt=c_pt)
+        proj_rpt = get_compr_coset_reps_sum_O3_slicing(
+            spg_reps, atomic_decompr_idx=atomic_decompr_idx, c_pt=c_pt
+        )
+        # proj_rpt = get_compr_coset_reps_sum_O3_sparse(spg_reps, fc_cutoff, c_pt=c_pt)
     t04 = time.time()
 
     c_rpt = eigsh_projector(proj_rpt)
@@ -112,9 +124,20 @@ def run_basis(supercell, fc_cutoff=None, reduce_memory=True, apply_sum_rule=True
     t06 = time.time()
 
     if apply_sum_rule:
-        proj = compressed_projector_sum_rules_from_compact_compr_mat(
-            trans_perms, n_a_compress_mat, use_mkl=True
-        )
+        if N < 256:
+            proj = compressed_projector_sum_rules_from_compact_compr_mat(
+                trans_perms,
+                n_a_compress_mat,
+                use_mkl=True,
+            )
+        else:
+            proj = compressed_projector_sum_rules_from_compact_compr_mat_lowmem(
+                trans_perms,
+                n_a_compress_mat,
+                use_mkl=True,
+                atomic_decompr_idx=atomic_decompr_idx,
+            )
+
         print_sp_matrix_size(proj, "P_(perm,trans,coset,sum):")
         t07 = time.time()
 
@@ -133,10 +156,10 @@ def run_basis(supercell, fc_cutoff=None, reduce_memory=True, apply_sum_rule=True
         print("Time (proj(coset @ perm @ ltrans @ sum) =", "{:.3f}".format(t07 - t06))
         print("Time (eigh(coset @ perm @ ltrans @ sum) =", "{:.3f}".format(t08 - t07))
         print("Basis size =", eigvecs.shape)
-        return n_a_compress_mat, eigvecs
+        return n_a_compress_mat, eigvecs, atomic_decompr_idx
 
     print("Basis size =", n_a_compress_mat.shape)
-    return n_a_compress_mat, proj_pt
+    return n_a_compress_mat, proj_pt, atomic_decompr_idx
 
 
 if __name__ == "__main__":

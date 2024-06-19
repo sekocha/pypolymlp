@@ -7,11 +7,9 @@ import phonopy
 from phono3py.file_IO import write_fc2_to_hdf5, write_fc3_to_hdf5
 from symfc import Symfc
 from symfc.basis_sets.basis_sets_O2 import FCBasisSetO2
-from symfc.solvers.solver_O2O3 import run_solver_O2O3_no_sum_rule_basis
 from symfc.spg_reps import SpgRepsO1
 from symfc.utils.cutoff_tools_O3 import FCCutoffO3
 from symfc.utils.matrix_tools_O3 import set_complement_sum_rules
-from symfc.utils.utils_O3 import dot_lat_trans_compr_matrix_O3
 
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.str_opt.optimization_sym import MinimizeSym
@@ -30,12 +28,14 @@ from pypolymlp.utils.phonopy_utils import (
 from pypolymlp.symfc.dev.solver_O2O3 import run_solver_O2O3
 from pypolymlp.symfc.dev.symfc_basis_dev import run_basis
 
+# from symfc.solvers.solver_O2O3 import run_solver_O2O3_no_sum_rule_basis
+
 
 def recover_fc2(coefs, compress_mat, compress_eigvecs, N):
     n_a = compress_mat.shape[0] // (9 * N)
     n_lp = N // n_a
     fc2 = compress_eigvecs @ coefs
-    fc2 = (compress_mat @ fc2).reshape((N, N, 3, 3))
+    fc2 = (compress_mat @ fc2).reshape((n_a, N, 3, 3))
     fc2 /= np.sqrt(n_lp)
     return fc2
 
@@ -230,17 +230,17 @@ class PolymlpFC:
         """ Constructing fc2 basis and fc3 basis """
         t1 = time.time()
         fc2_basis = FCBasisSetO2(self.__supercell_ph, use_mkl=False).run()
-        compress_mat_fc2_full = fc2_basis.compression_matrix
+        compress_mat_fc2 = fc2_basis.compact_compression_matrix
         compress_eigvecs_fc2 = fc2_basis.basis_set
 
         if sum_rule_basis:
-            compress_mat_fc3, compress_eigvecs_fc3 = run_basis(
+            compress_mat_fc3, compress_eigvecs_fc3, atomic_decompr_idx_fc3 = run_basis(
                 self.__supercell_ph,
                 fc_cutoff=self.__fc_cutoff,
                 apply_sum_rule=True,
             )
         else:
-            compress_mat_fc3, proj_pt = run_basis(
+            compress_mat_fc3, proj_pt, atomic_decompr_idx_fc3 = run_basis(
                 self.__supercell_ph,
                 fc_cutoff=self.__fc_cutoff,
                 apply_sum_rule=False,
@@ -259,16 +259,18 @@ class PolymlpFC:
             coefs_fc2, coefs_fc3 = run_solver_O2O3(
                 disps,
                 forces,
-                compress_mat_fc2_full,
+                compress_mat_fc2,
                 compress_mat_fc3,
                 compress_eigvecs_fc2,
                 compress_eigvecs_fc3,
                 trans_perms,
+                atomic_decompr_idx_fc3=atomic_decompr_idx_fc3,
                 use_mkl=use_mkl,
                 batch_size=batch_size,
             )
             """
             from symfc.solvers.solver_O2O3 import run_solver_O2O3
+            from symfc.utils.utils_O3 import dot_lat_trans_compr_matrix_O3
 
             # Bottleneck part of memory allocation
             compress_mat_fc3_full = dot_lat_trans_compr_matrix_O3(
@@ -287,6 +289,8 @@ class PolymlpFC:
             )
             """
         else:
+            raise ValueError("sum_rule_basis=False is not available now.")
+            """
             compress_mat_fc3_full = dot_lat_trans_compr_matrix_O3(
                 compress_mat_fc3,
                 trans_perms,
@@ -300,21 +304,22 @@ class PolymlpFC:
                 use_mkl=use_mkl,
                 batch_size=batch_size,
             )
+            """
         t2 = time.time()
         print(" elapsed time (solve fc2 + fc3) =", "{:.3f}".format(t2 - t1))
 
         t1 = time.time()
-        fc2 = recover_fc2(
-            coefs_fc2, compress_mat_fc2_full, compress_eigvecs_fc2, self.__N
-        )
+        fc2 = recover_fc2(coefs_fc2, compress_mat_fc2, compress_eigvecs_fc2, self.__N)
 
         if sum_rule_basis:
             fc3 = recover_fc3(
                 coefs_fc3, compress_mat_fc3, compress_eigvecs_fc3, self.__N
             )
         else:
+            """
             print("Applying sum rules to fc3")
             fc3 = recover_fc3_variant(coefs_fc3, compress_mat_fc3, proj_pt, trans_perms)
+            """
 
         t2 = time.time()
         print(" elapsed time (recover fc2 and fc3) =", "{:.3f}".format(t2 - t1))

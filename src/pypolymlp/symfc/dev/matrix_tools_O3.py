@@ -10,7 +10,10 @@ from symfc.utils.utils_O3 import (  # get_lat_trans_decompr_indices_O3,
 
 
 def compressed_complement_projector_sum_rules_from_compact_compr_mat(
-    trans_perms, n_a_compress_mat: csr_array, use_mkl: bool = False
+    trans_perms,
+    n_a_compress_mat: csr_array,
+    atomic_decompr_idx=None,
+    use_mkl: bool = False,
 ) -> csr_array:
     """Calculate a complementary projector for sum rules.
 
@@ -36,8 +39,10 @@ def compressed_complement_projector_sum_rules_from_compact_compr_mat(
         dtype="double",
     )
 
-    decompr_idx = get_atomic_lat_trans_decompr_indices_O3(trans_perms) * 27
-    decompr_idx = decompr_idx.reshape((natom, NN)).T.reshape(-1)
+    if atomic_decompr_idx is None:
+        atomic_decompr_idx = get_atomic_lat_trans_decompr_indices_O3(trans_perms)
+
+    decompr_idx = atomic_decompr_idx.reshape((natom, NN)).T.reshape(-1) * 27
 
     n_batch = natom
     if n_batch == natom:
@@ -69,14 +74,20 @@ def compressed_complement_projector_sum_rules_from_compact_compr_mat(
     return proj_sum_cplmt
 
 
-def compressed_projector_sum_rules_from_compact_compr_mat(
-    trans_perms, n_a_compress_mat: csr_array, use_mkl: bool = False
+def compressed_projector_sum_rules_from_compact_compr_mat_lowmem(
+    trans_perms,
+    n_a_compress_mat: csr_array,
+    atomic_decompr_idx=None,
+    use_mkl: bool = False,
 ) -> csr_array:
     """Return projection matrix for sum rule.
 
     This is compressed by C_compr = C_trans @ n_a_compress_mat.
     """
     proj_cplmt = compressed_complement_projector_sum_rules_from_compact_compr_mat(
-        trans_perms, n_a_compress_mat, use_mkl=use_mkl
+        trans_perms,
+        n_a_compress_mat,
+        use_mkl=use_mkl,
+        atomic_decompr_idx=atomic_decompr_idx,
     )
     return scipy.sparse.identity(proj_cplmt.shape[0]) - proj_cplmt
