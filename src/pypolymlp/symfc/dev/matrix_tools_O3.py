@@ -10,6 +10,7 @@ from symfc.utils.utils_O3 import get_atomic_lat_trans_decompr_indices_O3
 def compressed_complement_projector_sum_rules_from_compact_compr_mat(
     trans_perms,
     n_a_compress_mat: csr_array,
+    fc_cutoff=None,
     atomic_decompr_idx=None,
     use_mkl: bool = False,
     n_batch=None,
@@ -39,6 +40,10 @@ def compressed_complement_projector_sum_rules_from_compact_compr_mat(
 
     decompr_idx = atomic_decompr_idx.reshape((natom, NN)).T.reshape(-1) * 27
 
+    if fc_cutoff is not None:
+        nonzero = fc_cutoff.nonzero_atomic_indices()
+        nonzero = nonzero.reshape((natom, NN)).T.reshape(-1)
+
     if n_batch is None:
         if natom < 256:
             n_batch = natom // min(natom, 16)
@@ -49,25 +54,42 @@ def compressed_complement_projector_sum_rules_from_compact_compr_mat(
         raise ValueError("n_batch must be smaller than N.")
 
     batch_size = natom**2 * (natom // n_batch)
+    abc = np.arange(27)
     for begin, end in zip(*get_batch_slice(NNN, batch_size)):
         print("Complementary P (Sum rule):", str(end) + "/" + str(NNN))
         size = end - begin
         size_vector = size * 27
-        size_matrix = size_vector // natom
+        size_row = size_vector // natom
 
-        c_sum_cplmt = csr_array(
-            (
-                np.ones(size_vector, dtype="double"),
+        if fc_cutoff is None:
+            c_sum_cplmt = csr_array(
                 (
-                    np.repeat(np.arange(size_matrix), natom),
-                    (decompr_idx[begin:end][None, :] + np.arange(27)[:, None]).reshape(
-                        -1
+                    np.ones(size_vector, dtype="double"),
+                    (
+                        np.repeat(np.arange(size_row), natom),
+                        (decompr_idx[begin:end][None, :] + abc[:, None]).reshape(-1),
                     ),
                 ),
-            ),
-            shape=(size_matrix, NNN27 // n_lp),
-            dtype="double",
-        )
+                shape=(size_row, NNN27 // n_lp),
+                dtype="double",
+            )
+        else:
+            nonzero_b = nonzero[begin:end]
+            size_data = np.count_nonzero(nonzero_b) * 27
+            c_sum_cplmt = csr_array(
+                (
+                    np.ones(size_data, dtype="double"),
+                    (
+                        np.repeat(np.arange(size_row), natom)[np.tile(nonzero_b, 27)],
+                        (
+                            decompr_idx[begin:end][nonzero_b][None, :] + abc[:, None]
+                        ).reshape(-1),
+                    ),
+                ),
+                shape=(size_row, NNN27 // n_lp),
+                dtype="double",
+            )
+
         c_sum_cplmt = dot_product_sparse(c_sum_cplmt, n_a_compress_mat, use_mkl=use_mkl)
         proj_sum_cplmt += dot_product_sparse(
             c_sum_cplmt.T, c_sum_cplmt, use_mkl=use_mkl
@@ -77,11 +99,13 @@ def compressed_complement_projector_sum_rules_from_compact_compr_mat(
     return proj_sum_cplmt
 
 
-def compressed_projector_sum_rules_from_compact_compr_mat_lowmem(
+def compressed_projector_sum_rules_from_compact_compr_mat_dev(
     trans_perms,
     n_a_compress_mat: csr_array,
+    fc_cutoff=None,
     atomic_decompr_idx=None,
     use_mkl: bool = False,
+    n_batch=None,
 ) -> csr_array:
     """Return projection matrix for sum rule.
 
@@ -92,5 +116,7 @@ def compressed_projector_sum_rules_from_compact_compr_mat_lowmem(
         n_a_compress_mat,
         use_mkl=use_mkl,
         atomic_decompr_idx=atomic_decompr_idx,
+        fc_cutoff=fc_cutoff,
+        n_batch=n_batch,
     )
     return scipy.sparse.identity(proj_cplmt.shape[0]) - proj_cplmt

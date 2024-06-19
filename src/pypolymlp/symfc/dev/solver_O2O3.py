@@ -138,7 +138,7 @@ def prepare_normal_equation_O2O3(
     if atomic_decompr_idx_fc3 is None:
         atomic_decompr_idx_fc3 = get_atomic_lat_trans_decompr_indices_O3(trans_perms)
 
-    NNN333_unit = 27 * 216**3
+    NNN333_unit = 27 * 256**3
     n_batch = min((NNN333 // NNN333_unit + 1) * (n_compr_fc3 // 30000 + 1), N)
     begin_batch_atom, end_batch_atom = get_batch_slice(N, N // n_batch)
     begin_batch, end_batch = get_batch_slice(disps.shape[0], batch_size)

@@ -2,21 +2,9 @@
 import argparse
 import gc
 import signal
-
-import numpy as np
-
-from pypolymlp.core.interface_vasp import Poscar
-from pypolymlp.utils.phonopy_utils import phonopy_supercell
-
-"""
-from pypolymlp.calculator.compute_fcs import recover_fc2, recover_fc3
-from symfc.basis_sets.basis_sets_O2 import FCBasisSetO2
-from symfc.basis_sets.basis_sets_O3 import FCBasisSetO3
-from symfc.solvers.solver_O2O3 import run_solver_sparse_O2O3
-"""
-
 import time
 
+import numpy as np
 from symfc.basis_sets.basis_sets_O3 import print_sp_matrix_size
 from symfc.spg_reps import SpgRepsO3
 from symfc.utils.cutoff_tools_O3 import apply_zeros
@@ -25,7 +13,7 @@ from symfc.utils.eig_tools import (
     eigsh_projector,
     eigsh_projector_sumrule,
 )
-from symfc.utils.matrix_tools_O3 import (  # compressed_projector_sum_rules_from_compact_compr_mat,
+from symfc.utils.matrix_tools_O3 import (
     get_perm_compr_matrix_O3,
     projector_permutation_lat_trans_O3,
 )
@@ -35,9 +23,11 @@ from symfc.utils.utils_O3 import (
     get_lat_trans_compr_matrix_O3,
 )
 
+from pypolymlp.core.interface_vasp import Poscar
 from pypolymlp.symfc.dev.matrix_tools_O3 import (
-    compressed_projector_sum_rules_from_compact_compr_mat_lowmem,
+    compressed_projector_sum_rules_from_compact_compr_mat_dev,
 )
+from pypolymlp.utils.phonopy_utils import phonopy_supercell
 
 
 def permutation_dot_lat_trans_stable(trans_perms, fc_cutoff=None):
@@ -118,26 +108,19 @@ def run_basis(supercell, fc_cutoff=None, reduce_memory=True, apply_sum_rule=True
     t06 = time.time()
 
     if apply_sum_rule:
-        proj = compressed_projector_sum_rules_from_compact_compr_mat_lowmem(
+        proj = compressed_projector_sum_rules_from_compact_compr_mat_dev(
             trans_perms,
             n_a_compress_mat,
             use_mkl=True,
             atomic_decompr_idx=atomic_decompr_idx,
+            fc_cutoff=fc_cutoff,
         )
         """
-        if N <= 256:
-            proj = compressed_projector_sum_rules_from_compact_compr_mat(
-                trans_perms,
-                n_a_compress_mat,
-                use_mkl=True,
-            )
-        else:
-            proj = compressed_projector_sum_rules_from_compact_compr_mat_lowmem(
-                trans_perms,
-                n_a_compress_mat,
-                use_mkl=True,
-                atomic_decompr_idx=atomic_decompr_idx,
-            )
+        proj = compressed_projector_sum_rules_from_compact_compr_mat(
+            trans_perms,
+            n_a_compress_mat,
+            use_mkl=True,
+        )
         """
         print_sp_matrix_size(proj, "P_(perm,trans,coset,sum):")
         t07 = time.time()
