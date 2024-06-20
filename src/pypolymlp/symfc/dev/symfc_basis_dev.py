@@ -6,7 +6,8 @@ import time
 
 import numpy as np
 from symfc.basis_sets.basis_sets_O3 import print_sp_matrix_size
-from symfc.spg_reps import SpgRepsO3
+
+# from symfc.spg_reps import SpgRepsO3
 from symfc.utils.cutoff_tools_O3 import apply_zeros
 from symfc.utils.eig_tools import (
     dot_product_sparse,
@@ -17,9 +18,8 @@ from symfc.utils.matrix_tools_O3 import (
     get_perm_compr_matrix_O3,
     projector_permutation_lat_trans_O3,
 )
-from symfc.utils.utils_O3 import (
+from symfc.utils.utils_O3 import (  # get_compr_coset_reps_sum_O3_dev,
     get_atomic_lat_trans_decompr_indices_O3,
-    get_compr_coset_reps_sum_O3_dev,
     get_lat_trans_compr_matrix_O3,
 )
 
@@ -27,6 +27,8 @@ from pypolymlp.core.interface_vasp import Poscar
 from pypolymlp.symfc.dev.matrix_tools_O3 import (
     compressed_projector_sum_rules_from_compact_compr_mat_dev,
 )
+from pypolymlp.symfc.dev.spg_reps_O3 import SpgRepsO3
+from pypolymlp.symfc.dev.utils_O3 import get_compr_coset_reps_sum_O3_dev
 from pypolymlp.utils.phonopy_utils import phonopy_supercell
 
 
