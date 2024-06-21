@@ -8,6 +8,7 @@ import numpy as np
 from symfc.basis_sets.basis_sets_O3 import print_sp_matrix_size
 
 # from symfc.spg_reps import SpgRepsO3
+from symfc.spg_reps.spg_reps_O3_dev import SpgRepsO3Dev
 from symfc.utils.cutoff_tools_O3 import apply_zeros
 from symfc.utils.eig_tools import (
     dot_product_sparse,
@@ -15,21 +16,58 @@ from symfc.utils.eig_tools import (
     eigsh_projector_sumrule,
 )
 from symfc.utils.matrix_tools_O3 import (
+    compressed_projector_sum_rules_O3,
     get_perm_compr_matrix_O3,
     projector_permutation_lat_trans_O3,
 )
-from symfc.utils.utils_O3 import (  # get_compr_coset_reps_sum_O3_dev,
+from symfc.utils.utils_O2 import _get_atomic_lat_trans_decompr_indices
+from symfc.utils.utils_O3 import (
     get_atomic_lat_trans_decompr_indices_O3,
+    get_compr_coset_reps_sum_O3_dev,
     get_lat_trans_compr_matrix_O3,
 )
 
-from pypolymlp.core.interface_vasp import Poscar
-from pypolymlp.symfc.dev.matrix_tools_O3 import (
-    compressed_projector_sum_rules_from_compact_compr_mat_dev,
+from pypolymlp.symfc.dev.matrix_tools_O2 import (
+    compressed_projector_sum_rules_O2,
+    projector_permutation_lat_trans_O2,
 )
-from pypolymlp.symfc.dev.spg_reps_O3 import SpgRepsO3
-from pypolymlp.symfc.dev.utils_O3 import get_compr_coset_reps_sum_O3_dev
-from pypolymlp.utils.phonopy_utils import phonopy_supercell
+from pypolymlp.symfc.dev.spg_reps_O2_dev import SpgRepsO2Dev
+from pypolymlp.symfc.dev.utils_O2 import get_compr_coset_reps_sum_O2_dev
+
+
+def run_basis_fc2(supercell, fc_cutoff=None):
+
+    spg_reps = SpgRepsO2Dev(supercell)
+    trans_perms = spg_reps.translation_permutations
+    atomic_decompr_idx = _get_atomic_lat_trans_decompr_indices(trans_perms)
+
+    proj_pt = projector_permutation_lat_trans_O2(
+        trans_perms,
+        atomic_decompr_idx=atomic_decompr_idx,
+        fc_cutoff=fc_cutoff,
+        use_mkl=True,
+    )
+    c_pt = eigsh_projector(proj_pt)
+
+    proj_rpt = get_compr_coset_reps_sum_O2_dev(
+        spg_reps,
+        fc_cutoff=fc_cutoff,
+        atomic_decompr_idx=atomic_decompr_idx,
+        c_pt=c_pt,
+    )
+    print(proj_rpt.shape)
+    c_rpt = eigsh_projector(proj_rpt)
+    n_a_compress_mat = dot_product_sparse(c_pt, c_rpt, use_mkl=True)
+
+    proj = compressed_projector_sum_rules_O2(
+        trans_perms,
+        n_a_compress_mat,
+        atomic_decompr_idx=atomic_decompr_idx,
+        fc_cutoff=fc_cutoff,
+        use_mkl=True,
+    )
+    eigvecs = eigsh_projector_sumrule(proj)
+    return n_a_compress_mat, eigvecs, atomic_decompr_idx
 
 
 def permutation_dot_lat_trans_stable(trans_perms, fc_cutoff=None):
@@ -58,7 +96,7 @@ def run_basis(supercell, fc_cutoff=None, reduce_memory=True, apply_sum_rule=True
     t00 = time.time()
     """space group representations"""
     print("Preparing SpgReps")
-    spg_reps = SpgRepsO3(supercell)
+    spg_reps = SpgRepsO3Dev(supercell)
     trans_perms = spg_reps.translation_permutations
     n_lp, N = trans_perms.shape
     print_sp_matrix_size(trans_perms, " trans_perms:")
@@ -74,7 +112,7 @@ def run_basis(supercell, fc_cutoff=None, reduce_memory=True, apply_sum_rule=True
             trans_perms,
             atomic_decompr_idx=atomic_decompr_idx,
             fc_cutoff=fc_cutoff,
-            use_mkl=True,
+            use_mkl=False,
         )
     else:
         c_pt = permutation_dot_lat_trans_stable(trans_perms, fc_cutoff=fc_cutoff)
@@ -110,13 +148,20 @@ def run_basis(supercell, fc_cutoff=None, reduce_memory=True, apply_sum_rule=True
     t06 = time.time()
 
     if apply_sum_rule:
-        proj = compressed_projector_sum_rules_from_compact_compr_mat_dev(
+        proj = compressed_projector_sum_rules_O3(
             trans_perms,
             n_a_compress_mat,
-            use_mkl=True,
             atomic_decompr_idx=atomic_decompr_idx,
             fc_cutoff=fc_cutoff,
+            use_mkl=True,
         )
+        # proj = compressed_projector_sum_rules(
+        #     trans_perms,
+        #     n_a_compress_mat,
+        #     use_mkl=True,
+        #     atomic_decompr_idx=atomic_decompr_idx,
+        #     fc_cutoff=fc_cutoff,
+        # )
         """
         proj = compressed_projector_sum_rules_from_compact_compr_mat(
             trans_perms,
@@ -149,6 +194,9 @@ def run_basis(supercell, fc_cutoff=None, reduce_memory=True, apply_sum_rule=True
 
 
 if __name__ == "__main__":
+
+    from pypolymlp.core.interface_vasp import Poscar
+    from pypolymlp.utils.phonopy_utils import phonopy_supercell
 
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 

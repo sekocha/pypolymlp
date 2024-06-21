@@ -10,7 +10,7 @@ from symfc.spg_reps import SpgRepsBase
 from symfc.utils.utils import SymfcAtoms
 
 
-class SpgRepsO3(SpgRepsBase):
+class SpgRepsO3Dev(SpgRepsBase):
     """Class of reps of space group operations for fc3."""
 
     def __init__(
@@ -31,8 +31,6 @@ class SpgRepsO3(SpgRepsBase):
 
         """
         self._r3_reps: list[csr_array]
-        self._col: np.ndarray
-        self._data: np.ndarray
         super().__init__(supercell, spacegroup_operations=spacegroup_operations)
 
     @property
