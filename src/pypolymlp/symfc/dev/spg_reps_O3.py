@@ -73,11 +73,13 @@ class SpgRepsO3(SpgRepsBase):
         self._r3_reps = r3_reps
 
     def _get_sigma3_rep_data(self, i: int, nonzero: np.ndarray = None) -> np.ndarray:
-        """Compute vector representation of i-th atomic pair permutation matrix."""
+        """Compute vector representation of i-th atomic pair permutation matrix.
+
+        Operation permutation[self._atom_triplets] @ self._coeff is divided
+        to reduce memory allocation.
+        """
         uri = self._unique_rotation_indices
         permutation = self._permutations[uri[i]]
-        """Operations permutation[self._atom_triplets] @ self._coeff are divided
-           to reduce memory allocation."""
         if nonzero is not None:
             triplets = self._atom_triplets[nonzero]
         else:

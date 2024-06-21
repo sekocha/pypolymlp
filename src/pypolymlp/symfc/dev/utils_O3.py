@@ -24,30 +24,32 @@ def get_compr_coset_reps_sum_O3_dev(
         print("Preparing lattice_translation")
         atomic_decompr_idx = get_atomic_lat_trans_decompr_indices_O3(trans_perms)
 
-    if fc_cutoff is not None:
+    if fc_cutoff is None:
+        nonzero = None
+        size_data = N**3
+    else:
         nonzero = fc_cutoff.nonzero_atomic_indices()
-        size_nonzero = np.count_nonzero(nonzero)
+        size_data = np.count_nonzero(nonzero)
 
     factor = 1 / n_lp / len(spg_reps.unique_rotation_indices)
     for i, _ in enumerate(spg_reps.unique_rotation_indices):
         print("Coset sum:", i + 1, "/", len(spg_reps.unique_rotation_indices))
-        if fc_cutoff is None:
+        permutation = spg_reps.get_sigma3_rep(i, nonzero=nonzero)
+        if nonzero is None:
             """Equivalent to mat = C.T @ spg_reps.get_sigma3_rep(i) @ C
             C: atomic_lat_trans_compr_mat, shape=(NNN, NNN/n_lp)"""
-            permutation = spg_reps.get_sigma3_rep(i)
             mat = csr_array(
                 (
-                    np.ones(N**3, dtype="int_"),
+                    np.ones(size_data, dtype="int_"),
                     (atomic_decompr_idx[permutation], atomic_decompr_idx),
                 ),
                 shape=(N**3 // n_lp, N**3 // n_lp),
                 dtype="int_",
             )
         else:
-            permutation = spg_reps.get_sigma3_rep(i, nonzero=nonzero)
             mat = csr_array(
                 (
-                    np.ones(size_nonzero, dtype="int_"),
+                    np.ones(size_data, dtype="int_"),
                     (atomic_decompr_idx[permutation], atomic_decompr_idx[nonzero]),
                 ),
                 shape=(N**3 // n_lp, N**3 // n_lp),
