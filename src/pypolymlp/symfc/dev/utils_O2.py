@@ -2,7 +2,7 @@
 
 import numpy as np
 from scipy.sparse import csr_array, kron
-from symfc.utils.cutoff_tools_O3 import FCCutoffO3
+from symfc.utils.cutoff_tools import FCCutoff
 from symfc.utils.utils_O2 import _get_atomic_lat_trans_decompr_indices
 
 from pypolymlp.symfc.dev.spg_reps_O2_dev import SpgRepsO2Dev
@@ -10,7 +10,7 @@ from pypolymlp.symfc.dev.spg_reps_O2_dev import SpgRepsO2Dev
 
 def get_compr_coset_reps_sum_O2_dev(
     spg_reps: SpgRepsO2Dev,
-    fc_cutoff: FCCutoffO3 = None,
+    fc_cutoff: FCCutoff = None,
     atomic_decompr_idx: np.ndarray = None,
     c_pt: csr_array = None,
 ) -> csr_array:
@@ -28,7 +28,7 @@ def get_compr_coset_reps_sum_O2_dev(
         nonzero = None
         size_data = N**2
     else:
-        nonzero = fc_cutoff.nonzero_atomic_indices()
+        nonzero = fc_cutoff.nonzero_atomic_indices_fc2()
         size_data = np.count_nonzero(nonzero)
 
     factor = 1 / n_lp / len(spg_reps.unique_rotation_indices)

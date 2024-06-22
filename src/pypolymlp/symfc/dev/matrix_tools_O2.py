@@ -1,7 +1,7 @@
 import numpy as np
 import scipy
 from scipy.sparse import csr_array
-from symfc.utils.cutoff_tools_O3 import FCCutoffO3
+from symfc.utils.cutoff_tools import FCCutoff
 from symfc.utils.eig_tools import dot_product_sparse
 from symfc.utils.matrix_tools_O3 import get_combinations
 from symfc.utils.solver_funcs import get_batch_slice
@@ -19,7 +19,7 @@ def N3N3_to_NNand33(combinations_perm: np.ndarray, N: int) -> np.ndarray:
 def projector_permutation_lat_trans_O2(
     trans_perms: np.ndarray,
     atomic_decompr_idx: np.ndarray = None,
-    fc_cutoff: FCCutoffO3 = None,
+    fc_cutoff: FCCutoff = None,
     use_mkl=False,
 ):
     """Calculate a projector for permutation rules compressed by C_trans.
@@ -34,7 +34,7 @@ def projector_permutation_lat_trans_O2(
         dtype='intc'.
         shape=(n_l, N), where n_l and N are the numbers of lattce points and
         atoms in supercell.
-    fc_cutoff : FCCutoffO3
+    fc_cutoff : FCCutoff
 
     Return
     ------
@@ -47,11 +47,7 @@ def projector_permutation_lat_trans_O2(
         atomic_decompr_idx = _get_atomic_lat_trans_decompr_indices(trans_perms)
 
     # (1) for FC2 with single index ia
-    if fc_cutoff is None:
-        combinations = np.array([[i, i] for i in range(3 * natom)], dtype=int)
-    else:
-        combinations = fc_cutoff.combinations1()
-
+    combinations = np.array([[i, i] for i in range(3 * natom)], dtype=int)
     n_perm1 = combinations.shape[0]
     combinations, combinations33 = N3N3_to_NNand33(combinations, natom)
 
@@ -128,14 +124,14 @@ def compressed_projector_sum_rules_O2(
 
     if n_batch > natom:
         raise ValueError("n_batch must be smaller than N.")
-    batch_size = natom**2 * (natom // n_batch)
+    batch_size = natom * (natom // n_batch)
 
     if atomic_decompr_idx is None:
         atomic_decompr_idx = _get_atomic_lat_trans_decompr_indices(trans_perms)
 
     decompr_idx = atomic_decompr_idx.reshape((natom, natom)).T.reshape(-1) * 9
     if fc_cutoff is not None:
-        nonzero = fc_cutoff.nonzero_atomic_indices()
+        nonzero = fc_cutoff.nonzero_atomic_indices_fc2()
         nonzero = nonzero.reshape((natom, natom)).T.reshape(-1)
 
     abc = np.arange(9)

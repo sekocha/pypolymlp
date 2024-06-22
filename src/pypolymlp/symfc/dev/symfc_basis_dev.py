@@ -6,10 +6,8 @@ import time
 
 import numpy as np
 from symfc.basis_sets.basis_sets_O3 import print_sp_matrix_size
-
-# from symfc.spg_reps import SpgRepsO3
 from symfc.spg_reps.spg_reps_O3_dev import SpgRepsO3Dev
-from symfc.utils.cutoff_tools_O3 import apply_zeros
+from symfc.utils.cutoff_tools import apply_zeros
 from symfc.utils.eig_tools import (
     dot_product_sparse,
     eigsh_projector,
@@ -35,41 +33,6 @@ from pypolymlp.symfc.dev.spg_reps_O2_dev import SpgRepsO2Dev
 from pypolymlp.symfc.dev.utils_O2 import get_compr_coset_reps_sum_O2_dev
 
 
-def run_basis_fc2(supercell, fc_cutoff=None):
-
-    spg_reps = SpgRepsO2Dev(supercell)
-    trans_perms = spg_reps.translation_permutations
-    atomic_decompr_idx = _get_atomic_lat_trans_decompr_indices(trans_perms)
-
-    proj_pt = projector_permutation_lat_trans_O2(
-        trans_perms,
-        atomic_decompr_idx=atomic_decompr_idx,
-        fc_cutoff=fc_cutoff,
-        use_mkl=True,
-    )
-    c_pt = eigsh_projector(proj_pt)
-
-    proj_rpt = get_compr_coset_reps_sum_O2_dev(
-        spg_reps,
-        fc_cutoff=fc_cutoff,
-        atomic_decompr_idx=atomic_decompr_idx,
-        c_pt=c_pt,
-    )
-    print(proj_rpt.shape)
-    c_rpt = eigsh_projector(proj_rpt)
-    n_a_compress_mat = dot_product_sparse(c_pt, c_rpt, use_mkl=True)
-
-    proj = compressed_projector_sum_rules_O2(
-        trans_perms,
-        n_a_compress_mat,
-        atomic_decompr_idx=atomic_decompr_idx,
-        fc_cutoff=fc_cutoff,
-        use_mkl=True,
-    )
-    eigvecs = eigsh_projector_sumrule(proj)
-    return n_a_compress_mat, eigvecs, atomic_decompr_idx
-
-
 def permutation_dot_lat_trans_stable(trans_perms, fc_cutoff=None):
     """Simple implementation of permutation @ lattice translation"""
     if fc_cutoff is not None:
@@ -91,7 +54,41 @@ def permutation_dot_lat_trans_stable(trans_perms, fc_cutoff=None):
     return c_pt
 
 
-def run_basis(supercell, fc_cutoff=None, reduce_memory=True, apply_sum_rule=True):
+def run_basis_fc2(supercell, fc_cutoff=None):
+
+    spg_reps = SpgRepsO2Dev(supercell)
+    trans_perms = spg_reps.translation_permutations
+    atomic_decompr_idx = _get_atomic_lat_trans_decompr_indices(trans_perms)
+
+    proj_pt = projector_permutation_lat_trans_O2(
+        trans_perms,
+        atomic_decompr_idx=atomic_decompr_idx,
+        fc_cutoff=fc_cutoff,
+        use_mkl=True,
+    )
+    c_pt = eigsh_projector(proj_pt)
+
+    proj_rpt = get_compr_coset_reps_sum_O2_dev(
+        spg_reps,
+        fc_cutoff=fc_cutoff,
+        atomic_decompr_idx=atomic_decompr_idx,
+        c_pt=c_pt,
+    )
+    c_rpt = eigsh_projector(proj_rpt)
+    n_a_compress_mat = dot_product_sparse(c_pt, c_rpt, use_mkl=True)
+
+    proj = compressed_projector_sum_rules_O2(
+        trans_perms,
+        n_a_compress_mat,
+        atomic_decompr_idx=atomic_decompr_idx,
+        fc_cutoff=fc_cutoff,
+        use_mkl=True,
+    )
+    eigvecs = eigsh_projector_sumrule(proj)
+    return n_a_compress_mat, eigvecs, atomic_decompr_idx
+
+
+def run_basis_fc3(supercell, fc_cutoff=None, reduce_memory=True, apply_sum_rule=True):
 
     t00 = time.time()
     """space group representations"""
@@ -99,7 +96,6 @@ def run_basis(supercell, fc_cutoff=None, reduce_memory=True, apply_sum_rule=True
     spg_reps = SpgRepsO3Dev(supercell)
     trans_perms = spg_reps.translation_permutations
     n_lp, N = trans_perms.shape
-    print_sp_matrix_size(trans_perms, " trans_perms:")
     t01 = time.time()
 
     print("Preparing lattice translation")
@@ -112,7 +108,7 @@ def run_basis(supercell, fc_cutoff=None, reduce_memory=True, apply_sum_rule=True
             trans_perms,
             atomic_decompr_idx=atomic_decompr_idx,
             fc_cutoff=fc_cutoff,
-            use_mkl=False,
+            use_mkl=True,
         )
     else:
         c_pt = permutation_dot_lat_trans_stable(trans_perms, fc_cutoff=fc_cutoff)
@@ -217,7 +213,7 @@ if __name__ == "__main__":
     supercell = phonopy_supercell(unitcell_dict, supercell_matrix)
 
     t1 = time.time()
-    n_a_compress_mat, eigvecs = run_basis(supercell)
+    n_a_compress_mat, eigvecs = run_basis_fc3(supercell)
     # n_a_compress_mat = run_basis(supercell, apply_sum_rule=False)
     t2 = time.time()
     print("Elapsed time (basis sets for fc2 and fc3) =", t2 - t1)

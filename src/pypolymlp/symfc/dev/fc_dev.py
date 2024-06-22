@@ -6,10 +6,11 @@ import phono3py
 import phonopy
 from phono3py.file_IO import write_fc2_to_hdf5, write_fc3_to_hdf5
 from symfc import Symfc
-from symfc.basis_sets.basis_sets_O2 import FCBasisSetO2
+
+# from symfc.basis_sets.basis_sets_O2 import FCBasisSetO2
 from symfc.solvers.solver_O2O3 import run_solver_O2O3_update
 from symfc.spg_reps import SpgRepsO1
-from symfc.utils.cutoff_tools_O3 import FCCutoffO3
+from symfc.utils.cutoff_tools import FCCutoff
 from symfc.utils.matrix_tools_O3 import set_complement_sum_rules
 
 from pypolymlp.calculator.properties import Properties
@@ -26,7 +27,7 @@ from pypolymlp.utils.phonopy_utils import (
 )
 
 """symfc_basis_dev: must be included to FCBasisSetO3 in symfc"""
-from pypolymlp.symfc.dev.symfc_basis_dev import run_basis, run_basis_fc2
+from pypolymlp.symfc.dev.symfc_basis_dev import run_basis_fc2, run_basis_fc3
 
 # from symfc.solvers.solver_O2O3 import run_solver_O2O3_no_sum_rule_basis
 
@@ -233,10 +234,9 @@ class PolymlpFC:
             self.__supercell_ph,
             fc_cutoff=self.__fc_cutoff,
         )
-
-        _ = FCBasisSetO2(self.__supercell_ph, use_mkl=False)
         """
         fc2_basis = FCBasisSetO2(self.__supercell_ph, use_mkl=False).run()
+        atomic_decompr_idx_fc2 = None
         compress_mat_fc2 = fc2_basis.compact_compression_matrix
         compress_eigvecs_fc2 = fc2_basis.basis_set
         """
@@ -244,19 +244,18 @@ class PolymlpFC:
         print(" elapsed time (basis sets for fc2) =", "{:.3f}".format(ta - t1))
         print(compress_eigvecs_fc2.shape)
 
-        if sum_rule_basis:
-            compress_mat_fc3, compress_eigvecs_fc3, atomic_decompr_idx_fc3 = run_basis(
-                self.__supercell_ph,
-                fc_cutoff=self.__fc_cutoff,
-                apply_sum_rule=True,
-            )
-        else:
-            compress_mat_fc3, proj_pt, atomic_decompr_idx_fc3 = run_basis(
-                self.__supercell_ph,
-                fc_cutoff=self.__fc_cutoff,
-                apply_sum_rule=False,
-            )
-
+        compress_mat_fc3, compress_eigvecs_fc3, atomic_decompr_idx_fc3 = run_basis_fc3(
+            self.__supercell_ph,
+            fc_cutoff=self.__fc_cutoff,
+            apply_sum_rule=True,
+        )
+        """
+        compress_mat_fc3, proj_pt, atomic_decompr_idx_fc3 = run_basis_fc3(
+            self.__supercell_ph,
+            fc_cutoff=self.__fc_cutoff,
+            apply_sum_rule=False,
+        )
+        """
         t2 = time.time()
         print(" elapsed time (basis sets for fc2 and fc3) =", "{:.3f}".format(t2 - t1))
 
@@ -275,6 +274,7 @@ class PolymlpFC:
                 compress_eigvecs_fc2,
                 compress_eigvecs_fc3,
                 trans_perms,
+                atomic_decompr_idx_fc2=atomic_decompr_idx_fc2,
                 atomic_decompr_idx_fc3=atomic_decompr_idx_fc3,
                 use_mkl=use_mkl,
                 batch_size=batch_size,
@@ -434,7 +434,7 @@ class PolymlpFC:
     def cutoff(self, value):
         print("Cutoff radius:", value, "(ang.)")
         self.__cutoff = value
-        self.__fc_cutoff = FCCutoffO3(self.__supercell_ph, cutoff=value)
+        self.__fc_cutoff = FCCutoff(self.__supercell_ph, cutoff=value)
         return self
 
 
