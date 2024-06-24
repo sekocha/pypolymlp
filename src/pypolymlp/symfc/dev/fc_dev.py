@@ -6,12 +6,7 @@ import phono3py
 import phonopy
 from phono3py.file_IO import write_fc2_to_hdf5, write_fc3_to_hdf5
 from symfc import Symfc
-
-# from symfc.basis_sets.basis_sets_O2 import FCBasisSetO2
-from symfc.solvers.solver_O2O3 import run_solver_O2O3_update
-from symfc.spg_reps import SpgRepsO1
 from symfc.utils.cutoff_tools import FCCutoff
-from symfc.utils.matrix_tools_O3 import set_complement_sum_rules
 
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.str_opt.optimization_sym import MinimizeSym
@@ -25,55 +20,6 @@ from pypolymlp.utils.phonopy_utils import (
     phonopy_supercell,
     st_dict_to_phonopy_cell,
 )
-
-"""symfc_basis_dev: must be included to FCBasisSetO3 in symfc"""
-from pypolymlp.symfc.dev.symfc_basis_dev import run_basis_fc2, run_basis_fc3
-
-# from symfc.solvers.solver_O2O3 import run_solver_O2O3_no_sum_rule_basis
-
-
-def recover_fc2(coefs, compress_mat, compress_eigvecs, N):
-    n_a = compress_mat.shape[0] // (9 * N)
-    n_lp = N // n_a
-    fc2 = compress_eigvecs @ coefs
-    fc2 = (compress_mat @ fc2).reshape((n_a, N, 3, 3))
-    fc2 /= np.sqrt(n_lp)
-    return fc2
-
-
-def recover_fc3(coefs, compress_mat, compress_eigvecs, N):
-    n_a = compress_mat.shape[0] // (27 * (N**2))
-    n_lp = N // n_a
-    fc3 = compress_eigvecs @ coefs
-    fc3 = (compress_mat @ fc3).reshape((n_a, N, N, 3, 3, 3))
-    fc3 /= np.sqrt(n_lp)
-    return fc3
-
-
-def recover_fc3_variant(
-    coefs,
-    compress_mat,
-    proj_pt,
-    trans_perms,
-    n_iter=10,
-):
-    """if using full compression_matrix
-    fc3 = compress_eigvecs @ coefs
-    fc3 = (compress_mat @ fc3).reshape((N,N,N,3,3,3))
-    """
-    n_lp, N = trans_perms.shape
-    n_a = compress_mat.shape[0] // (27 * (N**2))
-
-    fc3 = compress_mat @ coefs
-    c_sum_cplmt = set_complement_sum_rules(trans_perms)
-
-    for i in range(n_iter):
-        fc3 -= c_sum_cplmt.T @ (c_sum_cplmt @ fc3)
-        fc3 = proj_pt @ fc3
-
-    fc3 = fc3.reshape((n_a, N, N, 3, 3, 3))
-    fc3 /= np.sqrt(n_lp)
-    return fc3
 
 
 class PolymlpFC:
@@ -206,6 +152,7 @@ class PolymlpFC:
         return forces
 
     def run_fc2(self):
+        """Construct fc2 basis and solve FC2"""
 
         symfc = Symfc(
             self.__supercell_ph,
@@ -217,122 +164,48 @@ class PolymlpFC:
         return self
 
     def run_fc2fc3(self, batch_size=100, sum_rule_basis=True):
+        """Construct fc2 + fc3 basis and solve FC2 + FC3"""
+
         """
         disps: (n_str, 3, n_atom) --> (n_str, n_atom, 3)
         forces: (n_str, 3, n_atom) --> (n_str, n_atom, 3)
         """
-        disps = self.__disps.transpose((0, 2, 1))
-        forces = self.__forces.transpose((0, 2, 1))
+        N = self.__forces.shape[2]
+        use_mkl = False if self.__cutoff is None and N > 400 else True
+        symfc = Symfc(
+            self.__supercell_ph,
+            displacements=self.__disps.transpose((0, 2, 1)),
+            forces=self.__forces.transpose((0, 2, 1)),
+            cutoff=self.__cutoff,
+            use_mkl=use_mkl,
+            log_level=1,
+        ).run(orders=[2, 3])
+        self.__fc2, self.__fc3 = symfc.force_constants[2], symfc.force_constants[3]
 
-        n_data, N, _ = forces.shape
-        disps = disps.reshape((n_data, -1))
-        forces = forces.reshape((n_data, -1))
+        # disps = self.__disps.transpose((0, 2, 1))
+        # forces = self.__forces.transpose((0, 2, 1))
 
-        """ Constructing fc2 basis and fc3 basis """
-        t1 = time.time()
+        """
+        from pypolymlp.symfc.dev.symfc_basis_dev import run_basis_fc2
         compress_mat_fc2, compress_eigvecs_fc2, atomic_decompr_idx_fc2 = run_basis_fc2(
             self.__supercell_ph,
             fc_cutoff=None,
         )
         """
-        fc2_basis = FCBasisSetO2(self.__supercell_ph, use_mkl=False).run()
-        atomic_decompr_idx_fc2 = None
-        compress_mat_fc2 = fc2_basis.compact_compression_matrix
-        compress_eigvecs_fc2 = fc2_basis.basis_set
+
         """
-        ta = time.time()
-        print(" elapsed time (basis sets for fc2) =", "{:.3f}".format(ta - t1))
+        from symfc.basis_sets.basis_sets_O2 import FCBasisSetO2
+        from symfc.basis_sets.basis_sets_O3 import FCBasisSetO3
+        from symfc.solvers.solver_O2O3 import FCSolverO2O3
 
-        compress_mat_fc3, compress_eigvecs_fc3, atomic_decompr_idx_fc3 = run_basis_fc3(
-            self.__supercell_ph,
-            fc_cutoff=self.__fc_cutoff,
-            apply_sum_rule=sum_rule_basis,
-        )
-
-        t2 = time.time()
-        print(" elapsed time (basis sets for fc2 and fc3) =", "{:.3f}".format(t2 - t1))
-
-        """Temporarily used. Better approach is desired to reduce memory assumption."""
-        trans_perms = SpgRepsO1(self.__supercell_ph).translation_permutations
-
-        print("----- Solving fc2 and fc3 using run_solver -----")
-        t1 = time.time()
-        use_mkl = False if N > 400 else True
-        if sum_rule_basis:
-            coefs_fc2, coefs_fc3 = run_solver_O2O3_update(
-                disps,
-                forces,
-                compress_mat_fc2,
-                compress_mat_fc3,
-                compress_eigvecs_fc2,
-                compress_eigvecs_fc3,
-                trans_perms,
-                atomic_decompr_idx_fc2=atomic_decompr_idx_fc2,
-                atomic_decompr_idx_fc3=atomic_decompr_idx_fc3,
-                use_mkl=use_mkl,
-                batch_size=batch_size,
-            )
-            print(coefs_fc2)
-            print(coefs_fc3)
-            """
-            from symfc.solvers.solver_O2O3 import run_solver_O2O3
-            from symfc.utils.utils_O3 import dot_lat_trans_compr_matrix_O3
-
-            # Bottleneck part of memory allocation
-            compress_mat_fc3_full = dot_lat_trans_compr_matrix_O3(
-                compress_mat_fc3,
-                trans_perms,
-            )
-            coefs_fc2, coefs_fc3 = run_solver_O2O3(
-                disps,
-                forces,
-                compress_mat_fc2_full,
-                compress_mat_fc3_full,
-                compress_eigvecs_fc2,
-                compress_eigvecs_fc3,
-                use_mkl=use_mkl,
-                batch_size=batch_size,
-            )
-            """
-        else:
-            raise ValueError("sum_rule_basis=False is not available now.")
-            """
-            compress_mat_fc3_full = dot_lat_trans_compr_matrix_O3(
-                compress_mat_fc3,
-                trans_perms,
-            )
-            coefs_fc2, coefs_fc3 = run_solver_O2O3_no_sum_rule_basis(
-                disps,
-                forces,
-                compress_mat_fc2_full,
-                compress_mat_fc3_full,
-                compress_eigvecs_fc2,
-                use_mkl=use_mkl,
-                batch_size=batch_size,
-            )
-            """
-        t2 = time.time()
-        print(" elapsed time (solve fc2 + fc3) =", "{:.3f}".format(t2 - t1))
-
-        t1 = time.time()
-        fc2 = recover_fc2(coefs_fc2, compress_mat_fc2, compress_eigvecs_fc2, self.__N)
-
-        if sum_rule_basis:
-            fc3 = recover_fc3(
-                coefs_fc3, compress_mat_fc3, compress_eigvecs_fc3, self.__N
-            )
-        else:
-            """
-            print("Applying sum rules to fc3")
-            fc3 = recover_fc3_variant(coefs_fc3, compress_mat_fc3, proj_pt, trans_perms)
-            """
-
-        t2 = time.time()
-        print(" elapsed time (recover fc2 and fc3) =", "{:.3f}".format(t2 - t1))
-
-        self.__fc2 = fc2
-        self.__fc3 = fc3
-
+        fc2_basis = FCBasisSetO2(self.__supercell_ph, use_mkl=False).run()
+        fc3_basis = FCBasisSetO3(
+            self.__supercell_ph, cutoff=self.__cutoff, use_mkl=True, log_level=1,
+        ).run()
+        fc_solver = FCSolverO2O3([fc2_basis, fc3_basis], use_mkl=True, log_level=1)
+        fc_solver.solve(disps, forces, batch_size=batch_size)
+        self.__fc2, self.__fc3 = fc_solver.compact_fc
+        """
         return self
 
     def run(
@@ -525,3 +398,30 @@ if __name__ == "__main__":
         ph3.mesh_numbers = args.ltc_mesh
         ph3.init_phph_interaction()
         ph3.run_thermal_conductivity(temperatures=range(0, 1001, 10), write_kappa=True)
+
+# def recover_fc3_variant(
+#     coefs,
+#     compress_mat,
+#     proj_pt,
+#     trans_perms,
+#     n_iter=10,
+# ):
+#     """if using full compression_matrix
+#     fc3 = compress_eigvecs @ coefs
+#     fc3 = (compress_mat @ fc3).reshape((N,N,N,3,3,3))
+#     """
+#     n_lp, N = trans_perms.shape
+#     n_a = compress_mat.shape[0] // (27 * (N**2))
+#
+#     fc3 = compress_mat @ coefs
+#     c_sum_cplmt = set_complement_sum_rules(trans_perms)
+#
+#     for i in range(n_iter):
+#         fc3 -= c_sum_cplmt.T @ (c_sum_cplmt @ fc3)
+#         fc3 = proj_pt @ fc3
+#
+#     fc3 = fc3.reshape((n_a, N, N, 3, 3, 3))
+#     fc3 /= np.sqrt(n_lp)
+#     return fc3
+#
+#
