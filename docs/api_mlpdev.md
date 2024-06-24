@@ -167,6 +167,15 @@ train_energies: (n_train)
 test_disps: (n_test, 3, n_atom)
 test_forces: (n_test, 3, n_atom)
 test_energies: (n_test)
+
+structure_without_disp: supercell structure without displacements, dict
+(keys)
+- 'axis': (3,3), [a, b, c]
+- 'positions': (3, n_atom) [x1, x2, ...]
+- 'n_atoms': [4, 4]
+- 'elements': Element list (e.g.) ['Mg','Mg','Mg','Mg','O','O','O','O']
+- 'types': Atomic type integers (e.g.) [0, 0, 0, 0, 1, 1, 1, 1]
+- 'volume': 64.0 (ang.^3)
 '''
 
 polymlp.set_datasets_displacements(
@@ -176,7 +185,7 @@ polymlp.set_datasets_displacements(
     test_disps,
     test_forces,
     test_energies,
-    st_dict,
+    structure_without_disp,
 )
 polymlp.run(verbose=True)
 ```
