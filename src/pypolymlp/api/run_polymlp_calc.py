@@ -152,6 +152,20 @@ def run():
         default=200,
         help="Batch size for FC solver.",
     )
+    parser.add_argument(
+        "--cutoff",
+        type=float,
+        default=None,
+        help="Cutoff radius for setting zero elements.",
+    )
+    parser.add_argument("--run_ltc", action="store_true", help="Run LTC calculations")
+    parser.add_argument(
+        "--ltc_mesh",
+        type=int,
+        nargs=3,
+        default=[19, 19, 19],
+        help="k-mesh used for phono3py calculation",
+    )
 
     parser.add_argument(
         "--ph_mesh",
@@ -188,16 +202,19 @@ def run():
         supercell = None
         if args.str_yaml is not None:
             _, supercell_dict = load_cells(filename=args.str_yaml)
+            supercell_matrix = supercell_dict["supercell_matrix"]
             supercell = phonopy_supercell(supercell_dict, np.eye(3))
         elif args.poscar is not None:
             unitcell_dict = Poscar(args.poscar).get_structure()
-            supercell = phonopy_supercell(unitcell_dict, np.diag(args.supercell))
+            supercell_matrix = np.diag(args.supercell)
+            supercell = phonopy_supercell(unitcell_dict, supercell_matrix)
 
         polyfc = PolymlpFC(
             supercell=supercell,
             phono3py_yaml=args.phono3py_yaml,
             use_phonon_dataset=False,
             pot=args.pot,
+            cutoff=args.cutoff,
         )
         if args.geometry_optimization:
             polyfc.run_geometry_optimization()
@@ -209,7 +226,23 @@ def run():
                 is_plusminus=args.is_plusminus,
             )
 
-        polyfc.run(batch_size=args.batch_size)
+        polyfc.run(write_fc=True, batch_size=args.batch_size)
+
+        if args.run_ltc:
+            import phono3py
+
+            ph3 = phono3py.load(
+                unitcell_filename=args.poscar,
+                supercell_matrix=supercell_matrix,
+                primitive_matrix="auto",
+                log_level=1,
+            )
+            ph3.mesh_numbers = args.ltc_mesh
+            ph3.init_phph_interaction()
+            ph3.run_thermal_conductivity(
+                temperatures=range(0, 1001, 10),
+                write_kappa=True,
+            )
 
     elif args.phonon:
         from pypolymlp.calculator.compute_phonon import PolymlpPhonon, PolymlpPhononQHA

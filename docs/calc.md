@@ -30,6 +30,10 @@ or
 > pypolymlp-calc --force_constants --pot polymlp.lammps --str_yaml polymlp_str.yaml --fc_n_samples 1000
 > pypolymlp-calc --force_constants --pot polymlp.lammps --poscar POSCAR-unitcell --supercell 3 3 2 --fc_n_samples 1000
 ```
+If a cutoff radius is introduced to evaluate FC3s, use "--cutoff" option as follows.
+```
+pypolymlp-calc --force_constants --pot polymlp.lammps --poscar POSCAR --geometry_optimization --fc_n_samples 300 --disp 0.001 --batch_size 100 --supercell 3 3 2 --cutoff 6
+```
 
 ## Phonon calculations
 

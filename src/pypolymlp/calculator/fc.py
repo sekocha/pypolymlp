@@ -6,6 +6,7 @@ import phono3py
 import phonopy
 from phono3py.file_IO import write_fc2_to_hdf5, write_fc3_to_hdf5
 from symfc import Symfc
+from symfc.basis_sets.basis_sets_O2 import FCBasisSetO2
 from symfc.solvers.solver_O2O3 import run_solver_O2O3_update
 from symfc.spg_reps import SpgRepsO1
 from symfc.utils.cutoff_tools import FCCutoff
@@ -14,8 +15,8 @@ from symfc.utils.matrix_tools_O3 import set_complement_sum_rules
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.str_opt.optimization_sym import MinimizeSym
 
-# from symfc.basis_sets.basis_sets_O2 import FCBasisSetO2
-from pypolymlp.calculator.symfc_basis import run_basis_fc2, run_basis_fc3
+# from pypolymlp.calculator.symfc_basis import run_basis_fc2, run_basis_fc3
+from pypolymlp.calculator.symfc_basis import run_basis_fc3
 from pypolymlp.core.displacements import (
     generate_random_const_displacements,
     get_structures_from_displacements,
@@ -226,6 +227,7 @@ class PolymlpFC:
 
         """ Constructing fc2 basis and fc3 basis """
         t1 = time.time()
+        """
         compress_mat_fc2, compress_eigvecs_fc2, atomic_decompr_idx_fc2 = run_basis_fc2(
             self.__supercell_ph,
             fc_cutoff=None,
@@ -235,7 +237,6 @@ class PolymlpFC:
         atomic_decompr_idx_fc2 = None
         compress_mat_fc2 = fc2_basis.compact_compression_matrix
         compress_eigvecs_fc2 = fc2_basis.basis_set
-        """
         ta = time.time()
         print(" elapsed time (basis sets for fc2) =", "{:.3f}".format(ta - t1))
 
