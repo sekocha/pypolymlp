@@ -134,7 +134,7 @@ def compressed_projector_sum_rules_O2(
         nonzero = fc_cutoff.nonzero_atomic_indices_fc2()
         nonzero = nonzero.reshape((natom, natom)).T.reshape(-1)
 
-    abc = np.arange(9)
+    ab = np.arange(9)
     for begin, end in zip(*get_batch_slice(NN, batch_size)):
         size = end - begin
         size_vector = size * 9
@@ -146,7 +146,7 @@ def compressed_projector_sum_rules_O2(
                     np.ones(size_vector, dtype="double"),
                     (
                         np.repeat(np.arange(size_row), natom),
-                        (decompr_idx[begin:end][None, :] + abc[:, None]).reshape(-1),
+                        (decompr_idx[begin:end][None, :] + ab[:, None]).reshape(-1),
                     ),
                 ),
                 shape=(size_row, NN9 // n_lp),
@@ -161,7 +161,7 @@ def compressed_projector_sum_rules_O2(
                     (
                         np.repeat(np.arange(size_row), natom)[np.tile(nonzero_b, 9)],
                         (
-                            decompr_idx[begin:end][nonzero_b][None, :] + abc[:, None]
+                            decompr_idx[begin:end][nonzero_b][None, :] + ab[:, None]
                         ).reshape(-1),
                     ),
                 ),

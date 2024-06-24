@@ -232,7 +232,7 @@ class PolymlpFC:
         t1 = time.time()
         compress_mat_fc2, compress_eigvecs_fc2, atomic_decompr_idx_fc2 = run_basis_fc2(
             self.__supercell_ph,
-            fc_cutoff=self.__fc_cutoff,
+            fc_cutoff=None,
         )
         """
         fc2_basis = FCBasisSetO2(self.__supercell_ph, use_mkl=False).run()
@@ -242,20 +242,13 @@ class PolymlpFC:
         """
         ta = time.time()
         print(" elapsed time (basis sets for fc2) =", "{:.3f}".format(ta - t1))
-        print(compress_eigvecs_fc2.shape)
 
         compress_mat_fc3, compress_eigvecs_fc3, atomic_decompr_idx_fc3 = run_basis_fc3(
             self.__supercell_ph,
             fc_cutoff=self.__fc_cutoff,
-            apply_sum_rule=True,
+            apply_sum_rule=sum_rule_basis,
         )
-        """
-        compress_mat_fc3, proj_pt, atomic_decompr_idx_fc3 = run_basis_fc3(
-            self.__supercell_ph,
-            fc_cutoff=self.__fc_cutoff,
-            apply_sum_rule=False,
-        )
-        """
+
         t2 = time.time()
         print(" elapsed time (basis sets for fc2 and fc3) =", "{:.3f}".format(t2 - t1))
 
@@ -279,6 +272,8 @@ class PolymlpFC:
                 use_mkl=use_mkl,
                 batch_size=batch_size,
             )
+            print(coefs_fc2)
+            print(coefs_fc3)
             """
             from symfc.solvers.solver_O2O3 import run_solver_O2O3
             from symfc.utils.utils_O3 import dot_lat_trans_compr_matrix_O3
