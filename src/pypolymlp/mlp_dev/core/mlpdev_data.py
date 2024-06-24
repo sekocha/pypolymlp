@@ -304,10 +304,18 @@ class PolymlpDevData:
     @train_dict.setter
     def train_dict(self, dict1):
         self.__train_dict = dict1
+        if "structures" in dict1:
+            self.__multiple_datasets = False
+        else:
+            self.__multiple_datasets = True
 
     @test_dict.setter
     def test_dict(self, dict1):
         self.__test_dict = dict1
+        if "structures" in dict1:
+            self.__multiple_datasets = False
+        else:
+            self.__multiple_datasets = True
 
     @property
     def is_multiple_datasets(self):

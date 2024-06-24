@@ -58,7 +58,7 @@ class Pypolymlp:
         self.test_dft_dict = None
 
         self.__mlp_dict = None
-        self.__multi_datasets = False
+        self.__multiple_datasets = False
 
         """Hybrid models are not available."""
         # self.__hybrid = None
@@ -259,7 +259,7 @@ class Pypolymlp:
                 "include_force": True,
                 "weight": 1.0,
             }
-        self.__multi_datasets = True
+        self.__multiple_datasets = True
         return self
 
     def set_datasets_phono3py(
@@ -292,23 +292,41 @@ class Pypolymlp:
         test_disps,
         test_forces,
         test_energies,
-        st_dict,
+        structure_without_disp,
     ):
-        """
+        """Set datasets from displacements-(energies, forces).
+
         Parameters
         ----------
-        train_disps: (n_train, 3, n_atoms)
-        train_forces: (n_train, 3, n_atoms)
-        train_energies: (n_train)
-        test_disps: (n_test, 3, n_atom)
-        test_forces: (n_test, 3, n_atom)
-        test_energies: (n_test)
+        train_disps: displacements (training data),
+                     shape=(n_train, 3, n_atoms)
+        train_forces: forces (training data),
+                      shape=(n_train, 3, n_atoms)
+        train_energies: energies (training data),
+                      shape=(n_train)
+        test_disps: displacements (test data),
+                    shape=(n_test, 3, n_atom)
+        test_forces: forces (test data),
+                    shape=(n_test, 3, n_atom)
+        test_energies: energies (test data),
+                    shape=(n_test)
+
+        structure_without_disp: structure without displacements, dict
+        - 'axis': (3,3), [a, b, c]
+        - 'positions': (3, n_atom) [x1, x2, ...]
+        - 'n_atoms': [4, 4]
+        - 'elements': Element list (e.g.) ['Mg','Mg','Mg','Mg','O','O','O','O']
+        - 'types': Atomic type integers (e.g.) [0, 0, 0, 0, 1, 1, 1, 1]
+        - 'volume': 64.0 (ang.^3)
         """
         self.train_dft_dict = self.__set_dft_dict(
-            train_disps, train_forces, train_energies, st_dict
+            train_disps,
+            train_forces,
+            train_energies,
+            structure_without_disp,
         )
         self.test_dft_dict = self.__set_dft_dict(
-            test_disps, test_forces, test_energies, st_dict
+            test_disps, test_forces, test_energies, structure_without_disp
         )
         return self
 
