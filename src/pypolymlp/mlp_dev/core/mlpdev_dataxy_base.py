@@ -10,7 +10,7 @@ from pypolymlp.mlp_dev.core.utils_weights import apply_weight_percentage
 
 class PolymlpDevDataXYBase(ABC):
 
-    def __init__(self, params: PolymlpDevData):
+    def __init__(self, params: PolymlpDevData, verbose=True):
         """
         Keys in reg_dict
         ----------------
@@ -22,6 +22,7 @@ class PolymlpDevDataXYBase(ABC):
         """
         self.__params_dict = params.params_dict
         self.__common_params_dict = params.common_params_dict
+        self.__verbose = verbose
 
         self.__train_dict = params.train_dict
         self.__test_dict = params.test_dict
@@ -180,3 +181,7 @@ class PolymlpDevDataXYBase(ABC):
     @property
     def features_class(self):
         return self.__feature_class
+
+    @property
+    def verbose(self):
+        return self.__verbose

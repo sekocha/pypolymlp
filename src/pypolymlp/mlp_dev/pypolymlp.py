@@ -370,9 +370,10 @@ class Pypolymlp:
     def run(
         self,
         file_params=None,
-        path_output="./",
-        verbose=True,
         sequential=False,
+        path_output="./",
+        verbose=False,
+        output_files=False,
     ):
         """Running linear ridge regression to estimate MLP coefficients."""
         polymlp_in = PolymlpDevData()
@@ -388,23 +389,31 @@ class Pypolymlp:
             polymlp_in.train_dict = self.train_dft_dict
             polymlp_in.test_dict = self.test_dft_dict
 
-        polymlp_in.write_polymlp_params_yaml(
-            filename=path_output + "/polymlp_params.yaml"
-        )
+        if output_files:
+            polymlp_in.write_polymlp_params_yaml(
+                filename=path_output + "/polymlp_params.yaml"
+            )
 
         if sequential:
-            polymlp = PolymlpDevDataXYSequential(polymlp_in).run()
+            polymlp = PolymlpDevDataXYSequential(polymlp_in, verbose=verbose).run()
         else:
-            polymlp = PolymlpDevDataXY(polymlp_in).run()
-            polymlp.print_data_shape()
+            polymlp = PolymlpDevDataXY(polymlp_in, verbose=verbose).run()
+            if verbose:
+                polymlp.print_data_shape()
 
-        reg = Regression(polymlp).fit(seq=sequential)
-        reg.save_mlp_lammps(filename=path_output + "/polymlp.lammps")
+        reg = Regression(polymlp, verbose=verbose).fit(seq=sequential)
         self.__mlp_dict = reg.best_model
+        if output_files:
+            reg.save_mlp_lammps(filename=path_output + "/polymlp.lammps")
 
         acc = PolymlpDevAccuracy(reg)
-        acc.compute_error(path_output=path_output)
-        acc.write_error_yaml(filename=path_output + "/polymlp_error.yaml")
+        acc.compute_error(
+            path_output=path_output,
+            verbose=verbose,
+            log_energy=output_files,
+        )
+        if output_files:
+            acc.write_error_yaml(filename=path_output + "/polymlp_error.yaml")
 
         self.__mlp_dict["error"] = {
             "train": acc.error_train_dict,

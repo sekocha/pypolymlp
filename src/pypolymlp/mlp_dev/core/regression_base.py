@@ -17,8 +17,10 @@ class RegressionBase(ABC):
         polymlp_dev: PolymlpDevDataXYBase,
         train_regression_dict=None,
         test_regression_dict=None,
+        verbose=True,
     ):
 
+        self.__verbose = verbose
         self.__params_dict = polymlp_dev.params_dict
         self.__common_params_dict = polymlp_dev.common_params_dict
         self.__hybrid = polymlp_dev.is_hybrid
@@ -59,7 +61,8 @@ class RegressionBase(ABC):
     def compute_inner_products(self, X=None, y=None, A=None, Xy=None):
 
         if X is not None and y is not None:
-            print("Regression: computing inner products ...")
+            if self.__verbose:
+                print("Regression: computing inner products ...")
             A = np.dot(X.T, X)
             Xy = np.dot(X.T, y)
         return A, Xy
@@ -213,3 +216,7 @@ class RegressionBase(ABC):
     @property
     def is_hybrid(self):
         return self.__hybrid
+
+    @property
+    def verbose(self):
+        return self.__verbose

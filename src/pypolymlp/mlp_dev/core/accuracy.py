@@ -101,9 +101,11 @@ class PolymlpDevAccuracy:
     def compute_error(
         self,
         stress_unit="eV",
+        log_energy=True,
         log_force=False,
         log_stress=False,
         path_output="./",
+        verbose=True,
     ):
 
         if self.__multiple_datasets:
@@ -116,7 +118,13 @@ class PolymlpDevAccuracy:
                     output_key = "Train-" + set_id
 
                 self.__error_train[set_id] = self.compute_error_single(
-                    dft_dict, output_key=output_key, path_output=path_output
+                    dft_dict,
+                    output_key=output_key,
+                    path_output=path_output,
+                    log_energy=log_energy,
+                    log_force=log_force,
+                    log_stress=log_stress,
+                    verbose=verbose,
                 )
             for set_id, dft_dict in self.__test_dict.items():
                 if "*" in set_id:
@@ -127,16 +135,32 @@ class PolymlpDevAccuracy:
                     output_key = "Test-" + set_id
 
                 self.__error_test[set_id] = self.compute_error_single(
-                    dft_dict, output_key=output_key, path_output=path_output
+                    dft_dict,
+                    output_key=output_key,
+                    path_output=path_output,
+                    log_energy=log_energy,
+                    log_force=log_force,
+                    log_stress=log_stress,
+                    verbose=verbose,
                 )
         else:
             self.__error_train["1"] = self.compute_error_single(
                 self.__train_dict,
                 output_key="train",
                 path_output=path_output,
+                log_energy=log_energy,
+                log_force=log_force,
+                log_stress=log_stress,
+                verbose=verbose,
             )
             self.__error_test["1"] = self.compute_error_single(
-                self.__test_dict, output_key="test", path_output=path_output
+                self.__test_dict,
+                output_key="test",
+                path_output=path_output,
+                log_energy=log_energy,
+                log_force=log_force,
+                log_stress=log_stress,
+                verbose=verbose,
             )
 
     def compute_error_single(
@@ -144,9 +168,11 @@ class PolymlpDevAccuracy:
         dft_dict,
         output_key="train",
         stress_unit="eV",
+        log_energy=True,
         log_force=False,
         log_stress=False,
         path_output="./",
+        verbose=True,
     ):
 
         strs = dft_dict["structures"]
@@ -157,12 +183,19 @@ class PolymlpDevAccuracy:
         stresses = stresses.reshape(-1)
 
         n_total_atoms = [sum(st["n_atoms"]) for st in strs]
-        rmse_e, true_e, pred_e = self.__compute_rmse(
-            dft_dict["energy"],
-            energies,
-            normalize=n_total_atoms,
-            return_values=True,
-        )
+        if log_energy is False:
+            rmse_e = self.__compute_rmse(
+                dft_dict["energy"],
+                energies,
+                normalize=n_total_atoms,
+            )
+        else:
+            rmse_e, true_e, pred_e = self.__compute_rmse(
+                dft_dict["energy"],
+                energies,
+                normalize=n_total_atoms,
+                return_values=True,
+            )
 
         if log_force is False:
             rmse_f = self.__compute_rmse(dft_dict["force"], forces)
@@ -191,39 +224,41 @@ class PolymlpDevAccuracy:
             )
 
         error_dict = {"energy": rmse_e, "force": rmse_f, "stress": rmse_s}
-        self.print_error(error_dict, key=output_key)
+        if verbose:
+            self.print_error(error_dict, key=output_key)
 
-        os.makedirs(path_output + "/predictions", exist_ok=True)
-        filenames = dft_dict["filenames"]
+        if log_energy or log_force or log_stress:
+            os.makedirs(path_output + "/predictions", exist_ok=True)
+            filenames = dft_dict["filenames"]
 
-        outdata = np.array([true_e, pred_e, (true_e - pred_e) * 1000]).T
-        f = open(path_output + "/predictions/energy." + output_key + ".dat", "w")
-        print("# DFT(eV/atom), MLP(eV/atom), DFT-MLP(meV/atom)", file=f)
-        for d, name in zip(outdata, filenames):
-            print(d[0], d[1], d[2], name, file=f)
-        f.close()
-
-        if log_force:
-            outdata = np.array([true_f, pred_f, (true_f - pred_f)]).T
-            f = open(
-                path_output + "/predictions/force." + output_key + ".dat",
-                "w",
-            )
-            print("# DFT, MLP, DFT-MLP", file=f)
-            for d in outdata:
-                print(d[0], d[1], d[2], file=f)
+            outdata = np.array([true_e, pred_e, (true_e - pred_e) * 1000]).T
+            f = open(path_output + "/predictions/energy." + output_key + ".dat", "w")
+            print("# DFT(eV/atom), MLP(eV/atom), DFT-MLP(meV/atom)", file=f)
+            for d, name in zip(outdata, filenames):
+                print(d[0], d[1], d[2], name, file=f)
             f.close()
 
-        if log_stress:
-            outdata = np.array([true_s, pred_s, (true_s - pred_s)]).T
-            f = open(
-                path_output + "/predictions/stress." + output_key + ".dat",
-                "w",
-            )
-            print("# DFT, MLP, DFT-MLP", file=f)
-            for d in outdata:
-                print(d[0], d[1], d[2], file=f)
-            f.close()
+            if log_force:
+                outdata = np.array([true_f, pred_f, (true_f - pred_f)]).T
+                f = open(
+                    path_output + "/predictions/force." + output_key + ".dat",
+                    "w",
+                )
+                print("# DFT, MLP, DFT-MLP", file=f)
+                for d in outdata:
+                    print(d[0], d[1], d[2], file=f)
+                f.close()
+
+            if log_stress:
+                outdata = np.array([true_s, pred_s, (true_s - pred_s)]).T
+                f = open(
+                    path_output + "/predictions/stress." + output_key + ".dat",
+                    "w",
+                )
+                print("# DFT, MLP, DFT-MLP", file=f)
+                for d in outdata:
+                    print(d[0], d[1], d[2], file=f)
+                f.close()
 
         return error_dict
 

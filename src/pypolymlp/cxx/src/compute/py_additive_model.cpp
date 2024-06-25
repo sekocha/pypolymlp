@@ -58,7 +58,6 @@ PyAdditiveModel::PyAdditiveModel(const std::vector<py::dict>& params_dict_array,
         ModelParams modelp(fp, element_swap);
         modelp_array.emplace_back(modelp);
 
-        std::cout << "Initial setting for computing features" << std::endl;
         const Features f_obj(fp, modelp);
         FunctionFeatures features_obj(fp, modelp, f_obj);
         features_array.emplace_back(features_obj);

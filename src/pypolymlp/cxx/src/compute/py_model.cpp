@@ -51,10 +51,7 @@ PyModel::PyModel(const py::dict& params_dict,
     const ModelParams modelp(fp, element_swap);
     const Features f_obj(fp, modelp);
 
-    std::cout << "Initial setting for computing features" << std::endl;
     FunctionFeatures features_obj(fp, modelp, f_obj);
-    std::cout << "Finished." << std::endl;
-    //
 
     std::vector<bool> force_st;
     vector1i xf_begin, xs_begin;

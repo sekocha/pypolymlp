@@ -48,7 +48,7 @@ class PropertiesSingle:
         stress = np.array(self.obj.get_s())
         return energy, force, stress
 
-    def eval_multiple(self, st_dicts):
+    def eval_multiple(self, st_dicts, verbose=False):
         """
         Return
         ------
@@ -57,11 +57,12 @@ class PropertiesSingle:
         stresses: (n_str, 6) in the order of xx, yy, zz, xy, yz, zx
                     unit: eV/supercell
         """
-        print(
-            "Properties calculations for",
-            len(st_dicts),
-            "structures: Using a fast algorithm",
-        )
+        if verbose:
+            print(
+                "Properties calculations for",
+                len(st_dicts),
+                "structures: Using a fast algorithm",
+            )
         element_order = self.__params_dict["elements"]
         st_dicts = update_types(st_dicts, element_order)
 
@@ -184,7 +185,7 @@ class Properties:
         self.__st_dicts = st_dicts
         return self.__e, self.__f, self.__s
 
-    def save(self, verbose=True):
+    def save(self, verbose=False):
         np.save("polymlp_energies.npy", self.energies)
         np.save("polymlp_forces.npy", self.forces)
         np.save("polymlp_stress_tensors.npy", self.stresses_gpa)

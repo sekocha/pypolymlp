@@ -11,7 +11,7 @@ from pypolymlp.mlp_dev.core.utils_weights import apply_weight_percentage
 
 class PolymlpDevDataXY(PolymlpDevDataXYBase):
 
-    def __init__(self, params: PolymlpDevData):
+    def __init__(self, params: PolymlpDevData, verbose=True):
         """
         Keys in reg_dict
         ----------------
@@ -21,7 +21,7 @@ class PolymlpDevDataXY(PolymlpDevDataXYBase):
         - first_indices [(ebegin, fbegin, sbegin), ...]
         - n_data (ne, nf, ns)
         """
-        super().__init__(params)
+        super().__init__(params, verbose=verbose)
 
     def run(self):
 
@@ -32,8 +32,16 @@ class PolymlpDevDataXY(PolymlpDevDataXYBase):
 
     def compute_features(self):
 
-        f_obj_train = self.features_class(self.params_dict, self.train_dict)
-        f_obj_test = self.features_class(self.params_dict, self.test_dict)
+        f_obj_train = self.features_class(
+            self.params_dict,
+            self.train_dict,
+            print_memory=self.verbose,
+        )
+        f_obj_test = self.features_class(
+            self.params_dict,
+            self.test_dict,
+            print_memory=self.verbose,
+        )
 
         self.train_regression_dict = f_obj_train.regression_dict
         self.test_regression_dict = f_obj_test.regression_dict
@@ -43,7 +51,7 @@ class PolymlpDevDataXY(PolymlpDevDataXYBase):
 
 class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
 
-    def __init__(self, params: PolymlpDevData):
+    def __init__(self, params: PolymlpDevData, verbose=True):
         """
         Keys in reg_dict
         ----------------
@@ -53,7 +61,7 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
         - scales
         - total_n_data,
         """
-        super().__init__(params)
+        super().__init__(params, verbose=verbose)
 
         if not self.is_multiple_datasets:
             raise ValueError(
