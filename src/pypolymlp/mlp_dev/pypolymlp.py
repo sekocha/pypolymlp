@@ -396,3 +396,7 @@ class Pypolymlp:
     @property
     def summary(self):
         return self.__mlp_dict
+
+    @property
+    def coeffs(self):
+        return self.__mlp_dict["coeffs"] / self.__mlp_dict["scales"]

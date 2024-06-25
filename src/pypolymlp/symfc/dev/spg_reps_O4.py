@@ -11,7 +11,7 @@ from symfc.utils.utils import SymfcAtoms
 
 
 class SpgRepsO4(SpgRepsBase):
-    """Class of reps of space group operations for fc3."""
+    """Class of reps of space group operations for fc4."""
 
     def __init__(
         self, supercell: SymfcAtoms, spacegroup_operations: Optional[dict] = None
@@ -35,7 +35,7 @@ class SpgRepsO4(SpgRepsBase):
 
     @property
     def r_reps(self) -> list[csr_array]:
-        """Return 3rd rank tensor rotation matricies."""
+        """Return 4th rank tensor rotation matricies."""
         return self._r4_reps
 
     def get_sigma4_rep(self, i: int, nonzero: np.ndarray = None) -> np.ndarray:
