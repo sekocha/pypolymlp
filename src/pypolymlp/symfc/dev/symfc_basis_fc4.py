@@ -4,8 +4,6 @@ import signal
 import time
 
 import numpy as np
-
-# from symfc.basis_sets import FCBasisSetO4
 from symfc.basis_sets.basis_sets_O4 import FCBasisSetO4
 
 from pypolymlp.core.interface_vasp import Poscar
