@@ -319,24 +319,48 @@ class Pypolymlp:
         - 'types': Atomic type integers (e.g.) [0, 0, 0, 0, 1, 1, 1, 1]
         - 'volume': 64.0 (ang.^3)
         """
+        try:
+            element_order = self.__params_dict["elements"]
+        except KeyError:
+            raise KeyError(
+                "Set parameters using set_params() "
+                "before using set_datasets_displacements."
+            )
+
         self.train_dft_dict = self.__set_dft_dict(
             train_disps,
             train_forces,
             train_energies,
             structure_without_disp,
+            element_order=element_order,
         )
         self.test_dft_dict = self.__set_dft_dict(
-            test_disps, test_forces, test_energies, structure_without_disp
+            test_disps,
+            test_forces,
+            test_energies,
+            structure_without_disp,
+            element_order=element_order,
         )
         return self
 
-    def __set_dft_dict(self, disps, forces, energies, st_dict):
+    def __set_dft_dict(
+        self,
+        disps,
+        forces,
+        energies,
+        st_dict,
+        element_order=None,
+    ):
 
         positions_all = convert_disps_to_positions(
             disps, st_dict["axis"], st_dict["positions"]
         )
         dft_dict = set_dft_dict(
-            forces, energies, positions_all, st_dict, element_order=None
+            forces,
+            energies,
+            positions_all,
+            st_dict,
+            element_order=element_order,
         )
         return dft_dict
 
