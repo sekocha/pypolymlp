@@ -10,7 +10,6 @@ from symfc.basis_sets.basis_sets_O2 import FCBasisSetO2
 from symfc.basis_sets.basis_sets_O3 import FCBasisSetO3
 from symfc.basis_sets.basis_sets_O4 import FCBasisSetO4
 from symfc.solvers.solver_O2O3O4 import FCSolverO2O3O4
-from symfc.utils.cutoff_tools import FCCutoff
 
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.str_opt.optimization_sym import MinimizeSym
@@ -37,7 +36,8 @@ class PolymlpFC:
         params_dict=None,
         coeffs=None,
         properties=None,
-        cutoff=None,
+        cutoff_fc3=None,
+        cutoff_fc4=None,
     ):
         """
         Parameters
@@ -65,11 +65,15 @@ class PolymlpFC:
         self.__disps = None
         self.__forces = None
 
-        if cutoff is not None:
-            self.cutoff = cutoff
+        if cutoff_fc3 is not None:
+            self.cutoff_fc3 = cutoff_fc3
         else:
-            self.__cutoff = None
-            self.__fc_cutoff = None
+            self.__cutoff_fc3 = None
+
+        if cutoff_fc4 is not None:
+            self.cutoff_fc4 = cutoff_fc4
+        else:
+            self.__cutoff_fc4 = None
 
     def __initialize_supercell(
         self, supercell=None, phono3py_yaml=None, use_phonon_dataset=False
@@ -236,13 +240,13 @@ class PolymlpFC:
         fc2_basis = FCBasisSetO2(self.__supercell_ph, use_mkl=False).run()
         fc3_basis = FCBasisSetO3(
             self.__supercell_ph,
-            cutoff=self.__cutoff,
+            cutoff=self.__cutoff_fc3,
             use_mkl=True,
             log_level=1,
         ).run()
         fc4_basis = FCBasisSetO4(
             self.__supercell_ph,
-            cutoff=self.__cutoff,
+            cutoff=self.__cutoff_fc4,
             use_mkl=True,
             log_level=1,
         ).run()
@@ -285,14 +289,13 @@ class PolymlpFC:
 
         if write_fc:
             if self.__fc2 is not None:
-                print("writing fc2.hdf5")
+                print("Writing fc2.hdf5")
                 write_fc2_to_hdf5(self.__fc2)
             if self.__fc3 is not None:
-                print("writing fc3.hdf5")
+                print("Writing fc3.hdf5")
                 write_fc3_to_hdf5(self.__fc3)
             if self.__fc4 is not None:
-                pass
-                # print("writing fc4.hdf5")
+                print("No function to write fc4.hdf5")
 
         return self
 
@@ -338,6 +341,10 @@ class PolymlpFC:
         return self.__fc3
 
     @property
+    def fc4(self):
+        return self.__fc4
+
+    @property
     def supercell_phonopy(self):
         return self.__supercell_ph
 
@@ -346,14 +353,23 @@ class PolymlpFC:
         return self.__supercell_dict
 
     @property
-    def cutoff(self):
-        return self.__cutoff
+    def cutoff_fc3(self):
+        return self.__cutoff_fc3
 
-    @cutoff.setter
-    def cutoff(self, value):
-        print("Cutoff radius:", value, "(ang.)")
-        self.__cutoff = value
-        self.__fc_cutoff = FCCutoff(self.__supercell_ph, cutoff=value)
+    @property
+    def cutoff_fc4(self):
+        return self.__cutoff_fc4
+
+    @cutoff_fc3.setter
+    def cutoff_fc3(self, value):
+        print("Cutoff radius (FC3):", value, "(ang.)")
+        self.__cutoff_fc3 = value
+        return self
+
+    @cutoff_fc4.setter
+    def cutoff_fc4(self, value):
+        print("Cutoff radius (FC4):", value, "(ang.)")
+        self.__cutoff_fc4 = value
         return self
 
 
@@ -406,10 +422,16 @@ if __name__ == "__main__":
         help="Batch size for FC solver.",
     )
     parser.add_argument(
-        "--cutoff",
+        "--cutoff_fc3",
         type=float,
         default=None,
-        help="Cutoff radius for setting zero elements.",
+        help="Cutoff radius for setting zero elements (FC3).",
+    )
+    parser.add_argument(
+        "--cutoff_fc4",
+        type=float,
+        default=None,
+        help="Cutoff radius for setting zero elements (FC4).",
     )
     parser.add_argument("--run_ltc", action="store_true", help="Run LTC calculations")
     parser.add_argument(
@@ -425,7 +447,12 @@ if __name__ == "__main__":
     supercell_matrix = np.diag(args.supercell)
     supercell = phonopy_supercell(unitcell_dict, supercell_matrix)
 
-    polyfc = PolymlpFC(supercell=supercell, pot=args.pot, cutoff=args.cutoff)
+    polyfc = PolymlpFC(
+        supercell=supercell,
+        pot=args.pot,
+        cutoff_fc3=args.cutoff_fc3,
+        cutoff_fc4=args.cutoff_fc4,
+    )
 
     if args.fc_n_samples is not None:
         polyfc.sample(
@@ -449,31 +476,3 @@ if __name__ == "__main__":
         ph3.mesh_numbers = args.ltc_mesh
         ph3.init_phph_interaction()
         ph3.run_thermal_conductivity(temperatures=range(0, 1001, 10), write_kappa=True)
-
-
-# def recover_fc3_variant(
-#     coefs,
-#     compress_mat,
-#     proj_pt,
-#     trans_perms,
-#     n_iter=10,
-# ):
-#     """if using full compression_matrix
-#     fc3 = compress_eigvecs @ coefs
-#     fc3 = (compress_mat @ fc3).reshape((N,N,N,3,3,3))
-#     """
-#     n_lp, N = trans_perms.shape
-#     n_a = compress_mat.shape[0] // (27 * (N**2))
-#
-#     fc3 = compress_mat @ coefs
-#     c_sum_cplmt = set_complement_sum_rules(trans_perms)
-#
-#     for i in range(n_iter):
-#         fc3 -= c_sum_cplmt.T @ (c_sum_cplmt @ fc3)
-#         fc3 = proj_pt @ fc3
-#
-#     fc3 = fc3.reshape((n_a, N, N, 3, 3, 3))
-#     fc3 /= np.sqrt(n_lp)
-#     return fc3
-#
-#
