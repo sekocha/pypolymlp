@@ -6,10 +6,6 @@ import phono3py
 import phonopy
 from phono3py.file_IO import write_fc2_to_hdf5, write_fc3_to_hdf5
 from symfc import Symfc
-from symfc.basis_sets.basis_sets_O2 import FCBasisSetO2
-from symfc.basis_sets.basis_sets_O3 import FCBasisSetO3
-from symfc.basis_sets.basis_sets_O4 import FCBasisSetO4
-from symfc.solvers.solver_O2O3O4 import FCSolverO2O3O4
 
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.str_opt.optimization_sym import MinimizeSym
@@ -23,6 +19,11 @@ from pypolymlp.utils.phonopy_utils import (
     phonopy_supercell,
     st_dict_to_phonopy_cell,
 )
+
+# from symfc.basis_sets.basis_sets_O2 import FCBasisSetO2
+# from symfc.basis_sets.basis_sets_O3 import FCBasisSetO3
+# from symfc.basis_sets.basis_sets_O4 import FCBasisSetO4
+# from symfc.solvers.solver_O2O3O4 import FCSolverO2O3O4
 
 
 class PolymlpFC:
@@ -59,6 +60,12 @@ class PolymlpFC:
             phono3py_yaml=phono3py_yaml,
             use_phonon_dataset=use_phonon_dataset,
         )
+        """
+        np.set_printoptions(precision=15)
+        print(supercell.cell)
+        print(supercell.scaled_positions)
+        print(supercell.numbers)
+        """
         self.__fc2 = None
         self.__fc3 = None
         self.__fc4 = None
@@ -167,15 +174,14 @@ class PolymlpFC:
             self.__supercell_ph,
             displacements=self.__disps.transpose((0, 2, 1)),
             forces=self.__forces.transpose((0, 2, 1)),
-        ).run(orders=[2])
+        ).run(2)
         self.__fc2 = symfc.force_constants[2]
 
         return self
 
     def run_fc2fc3(self, batch_size=100, sum_rule_basis=True):
-        """Construct fc2 + fc3 basis and solve FC2 + FC3"""
+        """Construct fc2 + fc3 basis and solve FC2 + FC3
 
-        """
         disps: (n_str, 3, n_atom) --> (n_str, n_atom, 3)
         forces: (n_str, 3, n_atom) --> (n_str, n_atom, 3)
         """
@@ -188,7 +194,7 @@ class PolymlpFC:
             cutoff=self.__cutoff,
             use_mkl=use_mkl,
             log_level=1,
-        ).run(orders=[2, 3])
+        ).run(3, batch_size=batch_size)
         self.__fc2, self.__fc3 = symfc.force_constants[2], symfc.force_constants[3]
 
         # disps = self.__disps.transpose((0, 2, 1))
@@ -224,37 +230,35 @@ class PolymlpFC:
         disps: (n_str, 3, n_atom) --> (n_str, n_atom, 3)
         forces: (n_str, 3, n_atom) --> (n_str, n_atom, 3)
         """
-        # symfc = Symfc(
-        #     self.__supercell_ph,
-        #     displacements=self.__disps.transpose((0, 2, 1)),
-        #     forces=self.__forces.transpose((0, 2, 1)),
-        #     cutoff=self.__cutoff,
-        #     use_mkl=use_mkl,
-        #     log_level=1,
-        # ).run(orders=[2, 3])
-        # self.__fc2, self.__fc3 = symfc.force_constants[2], symfc.force_constants[3]
-
-        disps = self.__disps.transpose((0, 2, 1))
-        forces = self.__forces.transpose((0, 2, 1))
-
-        fc2_basis = FCBasisSetO2(self.__supercell_ph, use_mkl=False).run()
-        fc3_basis = FCBasisSetO3(
+        cutoff = {3: self.__cutoff_fc3, 4: self.__cutoff_fc4}
+        symfc = Symfc(
             self.__supercell_ph,
-            cutoff=self.__cutoff_fc3,
+            displacements=self.__disps.transpose((0, 2, 1)),
+            forces=self.__forces.transpose((0, 2, 1)),
+            cutoff=cutoff,
             use_mkl=True,
             log_level=1,
-        ).run()
-        fc4_basis = FCBasisSetO4(
-            self.__supercell_ph,
-            cutoff=self.__cutoff_fc4,
-            use_mkl=True,
-            log_level=1,
-        ).run()
-        fc_solver = FCSolverO2O3O4(
-            [fc2_basis, fc3_basis, fc4_basis], use_mkl=True, log_level=1
         )
-        fc_solver.solve(disps, forces, batch_size=batch_size)
-        self.__fc2, self.__fc3, self.__fc4 = fc_solver.compact_fc
+        symfc.run(4, batch_size=batch_size)
+
+        self.__fc2 = symfc.force_constants[2]
+        self.__fc3 = symfc.force_constants[3]
+        self.__fc4 = symfc.force_constants[4]
+
+        """
+        n_a_compress_mat = symfc.basis_set[3].compact_compression_matrix
+        basis_set = symfc.basis_set[3].basis_set
+        compact_basis = n_a_compress_mat @ basis_set
+        print(basis_set.shape)
+        print(np.linalg.norm(compact_basis) ** 2)
+
+        n_a_compress_mat = symfc.basis_set[4].compact_compression_matrix
+        basis_set = symfc.basis_set[4].basis_set
+        compact_basis = n_a_compress_mat @ basis_set
+        print(basis_set.shape)
+        print(np.linalg.norm(compact_basis) ** 2)
+        """
+
         return self
 
     def run(

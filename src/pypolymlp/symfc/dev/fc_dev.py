@@ -158,7 +158,7 @@ class PolymlpFC:
             self.__supercell_ph,
             displacements=self.__disps.transpose((0, 2, 1)),
             forces=self.__forces.transpose((0, 2, 1)),
-        ).run(orders=[2])
+        ).run(2)
         self.__fc2 = symfc.force_constants[2]
 
         return self
@@ -170,16 +170,17 @@ class PolymlpFC:
         disps: (n_str, 3, n_atom) --> (n_str, n_atom, 3)
         forces: (n_str, 3, n_atom) --> (n_str, n_atom, 3)
         """
+        cutoff = {3: self.__cutoff}
         N = self.__forces.shape[2]
         use_mkl = False if self.__cutoff is None and N > 400 else True
         symfc = Symfc(
             self.__supercell_ph,
             displacements=self.__disps.transpose((0, 2, 1)),
             forces=self.__forces.transpose((0, 2, 1)),
-            cutoff=self.__cutoff,
+            cutoff=cutoff,
             use_mkl=use_mkl,
             log_level=1,
-        ).run(orders=[2, 3])
+        ).run(3)
         self.__fc2, self.__fc3 = symfc.force_constants[2], symfc.force_constants[3]
 
         # disps = self.__disps.transpose((0, 2, 1))
