@@ -1,7 +1,7 @@
 # MLP development
 
 ```
-> pypolymlp -i polymlp.in
+> pypolymlp -i polymlp.in --no_sequential
 > cat polymlp.in
 
     n_type 2
@@ -38,13 +38,13 @@
 ## MLP development using a memory-efficient sequential implementation
 
 ```
-> pypolymlp -i polymlp.in --sequential
+> pypolymlp -i polymlp.in
 ```
 
 ## MLP development using hybrid models
 
 ```
-> pypolymlp -i polymlp1.in polymlp2.in (--sequential)
+> pypolymlp -i polymlp1.in polymlp2.in (--no_sequential)
 > cat polymlp1.in
 
     n_type 2

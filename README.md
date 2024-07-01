@@ -9,8 +9,9 @@
 
 - numpy
 - scipy
-- Eigen3 (if building pypolymlp)
-- pybind11 (if building pypolymlp)
+- pyyaml
+- Eigen3
+- pybind11
 - phonopy (if using phonon datasets and/or computing force constants)
 - phono3py (if using phonon datasets and/or computing force constants)
 - symfc (if computing force constants)
@@ -34,7 +35,7 @@
 > conda create -n pypolymlp
 > conda activate pypolymlp
 
-> conda install numpy scipy pybind11 eigen cmake
+> conda install numpy scipy pyyaml pybind11 eigen cmake
 (optional)
 > conda install spglib
 > conda install phono3py
