@@ -4,22 +4,29 @@ import setuptools
 import skbuild
 
 
-def main():
-    """Run setuptools."""
-    # version = _get_version()
+def _get_version() -> str:
+    with open("version.py") as f:
+        for line in f:
+            if "__version__" in line:
+                version = line.split()[2].replace('"', "")
+                return version
 
+
+def main():
+    """Run skbuild.setup."""
+    version = _get_version()
     packages = setuptools.find_packages("./src")
     with open("README.md") as f:
         long_description = f.read()
 
     skbuild.setup(
         name="pypolymlp",
-        version="0.1.3",
+        version=version,
         author="Atsuto Seko",
         author_email="seko@cms.mtl.kyoto-u.ac.jp",
         maintainer="Atsuto Seko",
         maintainer_email="seko@cms.mtl.kyoto-u.ac.jp",
-        description="This is the pypolymlp module.",
+        description="Generator of polynomial machine learning potentials.",
         long_description=long_description,
         long_description_content_type="text/markdown",
         license="BSD-3-Clause",
