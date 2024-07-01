@@ -1,15 +1,17 @@
 [build-system]
 requires = [
-    "setuptools",
+    "setuptools >= 61.0",
     "scikit-build",
     "wheel",
     "cmake",
     "pybind11",
+    "pybind11-global",
     "eigen",
     "numpy",
     "scipy",
     "pyyaml",
 ]
+build-backend = "setuptools.build_meta"
 
 [tool.flake8]
 max-line-length = 88
@@ -20,3 +22,19 @@ line-length = 88
 
 [tool.isort]
 profile = "black"
+
+
+# [project]
+# name = "pypolymlp"
+# version = "0.1.2"
+# requires-python = ">= 3.9"
+# authors = [
+#   {name = "Atsuto Seko", email = "seko@cms.mtl.kyoto-u.ac.jp"},
+# ]
+# maintainers = [
+#   {name = "Atsuto Seko", email = "seko@cms.mtl.kyoto-u.ac.jp"},
+# ]
+# description = "This is the pypolymlp module."
+# readme = "README.md"
+# license = {file = "LICENSE"}
+#
