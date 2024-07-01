@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.13)
 
 project(polymlplib_cmake CXX)
+# find_package(PythonExtensions REQUIRED)
 
 if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.25")
     if(POLICY CMP0148)
@@ -77,6 +78,7 @@ set(SRC_FILES
 
 # add_library(libmlpcpp SHARED ${SRC_FILES})
 pybind11_add_module(libmlpcpp ${SRC_FILES})
+# python_extension_module(libmlpcpp)
 
 target_include_directories(libmlpcpp PRIVATE ${CMAKE_SOURCE_DIR}/src)
 
@@ -87,8 +89,13 @@ target_link_libraries(
     PRIVATE pybind11::module
 )
 
+#install(
+#    TARGETS libmlpcpp
+#    COMPONENT python
+#    LIBRARY DESTINATION ${CMAKE_SOURCE_DIR}/lib
+#)
 install(
     TARGETS libmlpcpp
     COMPONENT python
-    LIBRARY DESTINATION ${CMAKE_SOURCE_DIR}/lib
+    LIBRARY DESTINATION .
 )

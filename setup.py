@@ -1,49 +1,46 @@
 """Setup script."""
 
-import glob
-import os
-import shutil
-
 import setuptools
-from setuptools import setup
+import skbuild
 
-"""Temporary codes"""
 
-os.makedirs("./build/bdist.linux-x86_64/wheel/pypolymlp/cxx/lib", exist_ok=True)
-for file1 in glob.glob("./src/pypolymlp/cxx/lib/*.so"):
-    shutil.copy(file1, "./build/bdist.linux-x86_64/wheel/pypolymlp/cxx/lib")
+def main():
+    """Run setuptools."""
+    # version = _get_version()
 
-# os.makedirs(
-#    './build/bdist.linux-x86_64/wheel/pypolymlp/str_gen/prototypes',
-#    exist_ok=True
-# )
-# shutil.copytree('./src/pypolymlp/str_gen/prototypes/poscars',
-#    './build/bdist.linux-x86_64/wheel/pypolymlp/str_gen/prototypes/poscars',
-#    dirs_exist_ok=True)
-# shutil.copytree('./src/pypolymlp/str_gen/prototypes/list_icsd',
-#    './build/bdist.linux-x86_64/wheel/pypolymlp/str_gen/prototypes/list_icsd',
-#    dirs_exist_ok=True)
+    packages = setuptools.find_packages("./src")
 
-"""Temporary codes (End)"""
-
-setup(
-    name="pypolymlp",
-    version="0.1",
-    setup_requires=["numpy", "setuptools"],
-    description="This is the pypolymlp module.",
-    author="Atsuto Seko",
-    author_email="seko@cms.mtl.kyoto-u.ac.jp",
-    install_requires=["numpy", "scipy"],
-    provides=["pypolymlp"],
-    platforms=["all"],
-    entry_points={
-        "console_scripts": [
-            "pypolymlp=pypolymlp.api.run_polymlp:run",
-            "pypolymlp-calc=pypolymlp.api.run_polymlp_calc:run",
-            "pypolymlp-utils=pypolymlp.api.run_polymlp_utils:run",
-            "pypolymlp-structure=pypolymlp.api.run_polymlp_str:run",
+    skbuild.setup(
+        name="pypolymlp",
+        version="0.1",
+        author="Atsuto Seko",
+        author_email="seko@cms.mtl.kyoto-u.ac.jp",
+        maintainer="Atsuto Seko",
+        maintainer_email="seko@cms.mtl.kyoto-u.ac.jp",
+        description="This is the pypolymlp module.",
+        python_requires=">=3.9",
+        install_requires=[
+            "numpy",
+            "scipy",
+            "pyyaml",
         ],
-    },
-    packages=setuptools.find_packages("./src"),
-    # cmake_install_dir="cxx/lib",
-)
+        provides=["pypolymlp"],
+        platforms=["all"],
+        entry_points={
+            "console_scripts": [
+                "pypolymlp=pypolymlp.api.run_polymlp:run",
+                "pypolymlp-calc=pypolymlp.api.run_polymlp_calc:run",
+                "pypolymlp-utils=pypolymlp.api.run_polymlp_utils:run",
+                "pypolymlp-structure=pypolymlp.api.run_polymlp_str:run",
+            ],
+        },
+        cmake_source_dir="./src/pypolymlp/cxx",
+        cmake_install_dir="./src/pypolymlp/cxx/lib",
+        packages=packages,
+        package_dir={"": "src"},
+        # ext_modules=_get_extensions(build_dir),
+    )
+
+
+if __name__ == "__main__":
+    main()
