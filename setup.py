@@ -15,6 +15,9 @@ def _get_version() -> str:
 def main():
     """Run skbuild.setup."""
     version = _get_version()
+    # print(version)
+    # version = "0.1.5"
+
     packages = setuptools.find_packages("./src")
     with open("README.md") as f:
         long_description = f.read()
@@ -36,6 +39,7 @@ def main():
             "scikit-build",
             "wheel",
             "cmake",
+            "intel-openmp",
             "pybind11",
             "pybind11-global",
             "eigen",

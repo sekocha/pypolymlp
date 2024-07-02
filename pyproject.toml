@@ -4,6 +4,7 @@ requires = [
     "scikit-build",
     "wheel",
     "cmake",
+    "intel-openmp",
     "pybind11",
     "pybind11-global",
     "eigen",
