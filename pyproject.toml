@@ -2,9 +2,9 @@
 requires = [
     "setuptools >= 61.0",
     "scikit-build",
+    "ninja",
     "wheel",
     "cmake",
-    "intel-openmp",
     "pybind11",
     "pybind11-global",
     "eigen",

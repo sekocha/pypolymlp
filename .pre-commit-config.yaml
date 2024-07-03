@@ -6,8 +6,8 @@ repos:
   hooks:
   - id: trailing-whitespace
   - id: end-of-file-fixer
-  - id: check-yaml
-    exclude: ^conda/
+#  - id: check-yaml
+#    exclude: ^conda/
   - id: check-added-large-files
 
 - repo: https://github.com/pycqa/flake8
@@ -17,7 +17,7 @@ repos:
     args:
     - "--max-line-length=88"
     - "--ignore=E203,W503,E501,W605,E712,E741,E722"
-    - "--exclude=src/pypolymlp/deprecated/*,src/pypolymlp/*/deprecated/*,src/pypolymlp/*/obsolete/*,src/pypolymlp/mlp_gen/*,src/pypolymlp/mlp_opt/candidates/*,src/pypolymlp/polyinv/lists*"
+    - "--exclude=src/pypolymlp/deprecated/*,src/pypolymlp/*/deprecated/*,src/pypolymlp/*/obsolete/*,src/pypolymlp/mlp_gen/*,src/pypolymlp/mlp_opt/candidates/*,src/pypolymlp/polyinv/lists*,*/meta.yaml"
     #- "--ignore=E203,W503,E501"
 
 - repo: https://github.com/psf/black

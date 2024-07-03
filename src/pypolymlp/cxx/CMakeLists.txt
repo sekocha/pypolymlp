@@ -36,7 +36,8 @@ endif()
 find_package(pybind11 REQUIRED)
 find_package(Eigen3 REQUIRED)
 message(STATUS "Eigen3 include dir: ${EIGEN3_INCLUDE_DIR}")
-find_package(OpenMP REQUIRED)
+# find_package(OpenMP REQUIRED)
+find_package(OpenMP)
 
 set(SRC_FILES
     src/compute/neighbor.cpp
@@ -80,12 +81,21 @@ pybind11_add_module(libmlpcpp ${SRC_FILES})
 
 target_include_directories(libmlpcpp PRIVATE ${CMAKE_SOURCE_DIR}/src)
 
-target_link_libraries(
-    libmlpcpp
-    PRIVATE OpenMP::OpenMP_CXX
-    PRIVATE Eigen3::Eigen
-    PRIVATE pybind11::module
-)
+if(OpenMP_CXX_FOUND)
+  target_link_libraries(
+      libmlpcpp
+      PRIVATE OpenMP::OpenMP_CXX
+      PRIVATE Eigen3::Eigen
+      PRIVATE pybind11::module
+  )
+else()
+  target_link_libraries(
+      libmlpcpp
+      PRIVATE Eigen3::Eigen
+      PRIVATE pybind11::module
+  )
+  message(WARNING "OpenMP not found. It runs on single thread.")
+endif()
 
 #install(
 #    TARGETS libmlpcpp

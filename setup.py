@@ -1,7 +1,7 @@
 """Setup script."""
 
 import setuptools
-import skbuild
+from skbuild import setup
 
 
 def _get_version() -> str:
@@ -15,14 +15,12 @@ def _get_version() -> str:
 def main():
     """Run skbuild.setup."""
     version = _get_version()
-    # print(version)
-    # version = "0.1.5"
 
     packages = setuptools.find_packages("./src")
     with open("README.md") as f:
         long_description = f.read()
 
-    skbuild.setup(
+    setup(
         name="pypolymlp",
         version=version,
         author="Atsuto Seko",
@@ -30,6 +28,7 @@ def main():
         maintainer="Atsuto Seko",
         maintainer_email="seko@cms.mtl.kyoto-u.ac.jp",
         description="Generator of polynomial machine learning potentials.",
+        url="https://github.com/sekocha/pypolymlp",
         long_description=long_description,
         long_description_content_type="text/markdown",
         license="BSD-3-Clause",
@@ -37,9 +36,10 @@ def main():
         install_requires=[
             "setuptools >= 61.0",
             "scikit-build",
+            "ninja",
             "wheel",
             "cmake",
-            "intel-openmp",
+            "make",
             "pybind11",
             "pybind11-global",
             "eigen",
@@ -57,10 +57,12 @@ def main():
                 "pypolymlp-structure=pypolymlp.api.run_polymlp_str:run",
             ],
         },
-        cmake_source_dir="./src/pypolymlp/cxx",
-        cmake_install_dir="./src/pypolymlp/cxx/lib",
         packages=packages,
         package_dir={"": "src"},
+        include_package_data=True,
+        cmake_source_dir="./src/pypolymlp/cxx",
+        cmake_install_dir="./src/pypolymlp/cxx/lib",
+        cmake_args=["-DSKBUILD=ON", "-GUnix Makefiles"],
     )
 
 
