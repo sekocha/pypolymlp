@@ -17,6 +17,8 @@ def main():
     version = _get_version()
 
     packages = setuptools.find_packages("./src")
+    packages.append("pypolymlp.cxx.lib")
+
     with open("README.md") as f:
         long_description = f.read()
 
@@ -62,7 +64,8 @@ def main():
         include_package_data=True,
         cmake_source_dir="./src/pypolymlp/cxx",
         cmake_install_dir="./src/pypolymlp/cxx/lib",
-        cmake_args=["-DSKBUILD=ON", "-GUnix Makefiles"],
+        # cmake_args=["-DSKBUILD=ON", "-GUnix Makefiles"],
+        cmake_args=["-DSKBUILD=ON"],
     )
 
 
