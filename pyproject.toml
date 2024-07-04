@@ -12,7 +12,6 @@ requires = [
     "numpy",
     "scipy",
     "pyyaml",
-    "distutils",
 ]
 build-backend = "setuptools.build_meta"
 

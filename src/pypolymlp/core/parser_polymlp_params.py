@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 import glob
 import itertools
-from distutils.util import strtobool
 
 import numpy as np
+from setuptools._distutils.util import strtobool
 
 from pypolymlp.core.parser_infile import InputParser
 from pypolymlp.cxx.lib import libmlpcpp
