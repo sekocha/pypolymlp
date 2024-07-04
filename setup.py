@@ -48,6 +48,7 @@ def main():
             "numpy",
             "scipy",
             "pyyaml",
+            "distutils",
         ],
         provides=["pypolymlp"],
         platforms=["all"],

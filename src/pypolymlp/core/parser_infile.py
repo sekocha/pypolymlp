@@ -1,7 +1,6 @@
 #!/usr/bin/env python
-from distutils.util import strtobool
-
 import numpy as np
+from setuptools._distutils.util import strtobool
 
 
 class InputParser:
