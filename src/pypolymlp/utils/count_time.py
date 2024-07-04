@@ -4,14 +4,9 @@ import glob
 import time
 
 import numpy as np
-from phonopy import Phonopy
 
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.core.interface_vasp import Poscar
-from pypolymlp.utils.phonopy_utils import (
-    phonopy_cell_to_st_dict,
-    st_dict_to_phonopy_cell,
-)
 
 
 class PolymlpCost:
@@ -35,6 +30,12 @@ class PolymlpCost:
         self.__set_structure(poscar=poscar)
 
     def __set_structure(self, poscar=None, supercell=[4, 4, 4]):
+        from phonopy import Phonopy
+
+        from pypolymlp.utils.phonopy_utils import (
+            phonopy_cell_to_st_dict,
+            st_dict_to_phonopy_cell,
+        )
 
         if poscar is not None:
             unitcell_dict = Poscar(poscar).get_structure()

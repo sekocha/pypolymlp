@@ -84,10 +84,7 @@ def run():
     parser.add_argument(
         "--precision",
         action="store_true",
-        help=(
-            "Mode: MLP precision calculation.",
-            "This uses only features",
-        ),
+        help="Mode: MLP precision calculation. This uses only features",
     )
 
     parser.add_argument("--pot", nargs="*", type=str, default=None, help="polymlp file")
