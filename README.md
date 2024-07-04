@@ -7,9 +7,11 @@
 
 ## Required libraries and python modules
 
+- python >= 3.9
 - numpy
 - scipy
 - pyyaml
+- setuptools
 - eigen3
 - pybind11
 - openmp (recommended)

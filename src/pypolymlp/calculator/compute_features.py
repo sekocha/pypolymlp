@@ -7,7 +7,7 @@ import numpy as np
 from pypolymlp.core.interface_vasp import parse_structures_from_poscars
 from pypolymlp.core.io_polymlp import load_mlp_lammps
 from pypolymlp.core.parser_polymlp_params import ParamsParser
-from pypolymlp.mlp_gen.features import Features
+from pypolymlp.mlp_dev.core.features import Features
 
 
 def update_types(st_dicts, element_order):

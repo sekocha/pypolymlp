@@ -34,7 +34,7 @@ def main():
         long_description=long_description,
         long_description_content_type="text/markdown",
         license="BSD-3-Clause",
-        python_requires=">=3.8",
+        python_requires=">=3.9",
         install_requires=[
             "setuptools >= 61.0",
             "scikit-build",
@@ -64,8 +64,8 @@ def main():
         include_package_data=True,
         cmake_source_dir="./src/pypolymlp/cxx",
         cmake_install_dir="./src/pypolymlp/cxx/lib",
-        # cmake_args=["-DSKBUILD=ON", "-GUnix Makefiles"],
         cmake_args=["-DSKBUILD=ON"],
+        # cmake_args=["-DSKBUILD=ON", "-GUnix Makefiles"],
     )
 
 

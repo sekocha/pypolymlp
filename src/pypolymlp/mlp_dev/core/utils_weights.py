@@ -69,10 +69,6 @@ def apply_weight_percentage(
     y[ebegin:eend] = weight_e * energy
 
     x[ebegin:eend] *= weight_e[:, np.newaxis]
-    """ numba version
-    import pypolymlp.mlp_gen.numba_support as numba_support
-    numba_support.mat_prod_vec(x[ebegin:eend], weight_e, axis=0)
-    """
 
     if include_force:
         force = dft_dict["force"]
