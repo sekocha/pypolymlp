@@ -126,12 +126,10 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
             begin_ids, end_ids = get_batch_slice(n_str, batch_size)
             for begin, end in zip(begin_ids, end_ids):
                 if verbose:
-                    print("Number of structures:", end - begin)
+                    print("Structures:", end, "/", n_str)
 
                 dft_dict_sliced = slice_dft_dict(dft_dict, begin, end)
                 dft_dict_tmp = {"tmp": dft_dict_sliced}
-                if verbose:
-                    print("Compute features")
                 features = self.features_class(
                     self.params_dict,
                     dft_dict_tmp,
@@ -153,8 +151,6 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
                     )
 
                 if scales is None:
-                    if verbose:
-                        print("Compute quantities for calculationg scales")
                     xe = x[:ne]
                     local1 = np.sum(xe, axis=0)
                     local2 = np.sum(np.square(xe), axis=0)
@@ -166,8 +162,6 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
                 w = np.ones(n_data)
                 total_n_data += n_data
 
-                if verbose:
-                    print("Apply weights")
                 x, y, w = apply_weight_percentage(
                     x,
                     y,
@@ -179,7 +173,6 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
                 )
                 if verbose:
                     print("Compute X.T @ X")
-
                 if n_features > 30000:
                     xtx = self.__sum_large_xtx(xtx, x)
                 else:
@@ -192,6 +185,9 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
 
                 del x, y, w
                 gc.collect()
+
+        if n_features > 30000:
+            xtx = self.__large_transpose_xtx(xtx)
 
         if scales is None:
             n_data = sum([len(d["energy"]) for d in dft_dicts.values()])
@@ -223,16 +219,35 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
         array1 += array2
         return array1
 
-    def __sum_large_xtx(self, xtx, x, n_batch=10):
-
-        if xtx is None:
-            return x.T @ x
+    def __sum_large_xtx(self, xtx, x, n_batch=8):
 
         n_features = x.shape[1]
+        if xtx is None:
+            xtx = np.zeros((n_features, n_features))
+            # xtx = x.T @ x
+            # return xtx
+
         if n_features < n_batch:
             xtx += x.T @ x
         else:
             begin_ids, end_ids = get_batch_slice(n_features, n_features // n_batch)
-            for begin_row, end_row in zip(begin_ids, end_ids):
-                xtx[begin_row:end_row] += x[:, begin_row:end_row].T @ x
+            for i, (begin_row, end_row) in enumerate(zip(begin_ids, end_ids)):
+                if self.verbose:
+                    print("Batch:", end_row, "/", n_features)
+                for j, (begin_col, end_col) in enumerate(zip(begin_ids, end_ids)):
+                    if i <= j:
+                        xtx[begin_row:end_row, begin_col:end_col] += (
+                            x[:, begin_row:end_row].T @ x[:, begin_col:end_col]
+                        )
+        return xtx
+
+    def __large_transpose_xtx(self, xtx, n_batch=8):
+        n_features = xtx.shape[0]
+        begin_ids, end_ids = get_batch_slice(n_features, n_features // n_batch)
+        for i, (begin_row, end_row) in enumerate(zip(begin_ids, end_ids)):
+            for j, (begin_col, end_col) in enumerate(zip(begin_ids, end_ids)):
+                if i > j:
+                    xtx[begin_row:end_row, begin_col:end_col] = xtx[
+                        begin_col:end_col, begin_row:end_row
+                    ].T
         return xtx
