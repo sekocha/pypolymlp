@@ -83,7 +83,13 @@ class RegressionBase(ABC):
 
     def predict_seq(self, coefs_array):
         """computing rmse using xtx, xty and y_sq"""
-        rmse_train_array, rmse_test_array = [], []
+        rmse_train_array = self.predict_seq_train(coefs_array)
+        rmse_test_array = self.predict_seq_test(coefs_array)
+        return rmse_train_array, rmse_test_array
+
+    def predict_seq_train(self, coefs_array):
+        """computing rmse using xtx, xty and y_sq"""
+        rmse_train_array = []
         for coefs in coefs_array.T:
             mse_train = self.__compute_mse(
                 self.__vtrain["xtx"],
@@ -92,6 +98,16 @@ class RegressionBase(ABC):
                 self.__vtrain["total_n_data"],
                 coefs,
             )
+            try:
+                rmse_train_array.append(sqrt(mse_train))
+            except:
+                rmse_train_array.append(0.0)
+        return rmse_train_array
+
+    def predict_seq_test(self, coefs_array):
+        """computing rmse using xtx, xty and y_sq"""
+        rmse_test_array = []
+        for coefs in coefs_array.T:
             mse_test = self.__compute_mse(
                 self.__vtest["xtx"],
                 self.__vtest["xty"],
@@ -99,14 +115,8 @@ class RegressionBase(ABC):
                 self.__vtest["total_n_data"],
                 coefs,
             )
-            try:
-                rmse_train_array.append(sqrt(mse_train))
-            except:
-                rmse_train_array.append(0.0)
-
             rmse_test_array.append(sqrt(mse_test))
-
-        return rmse_train_array, rmse_test_array
+        return rmse_test_array
 
     def __compute_mse(self, xtx, xty, y_sq_norm, size, coefs):
 
@@ -208,6 +218,14 @@ class RegressionBase(ABC):
     @property
     def test_regression_dict(self):
         return self.__vtest
+
+    @train_regression_dict.setter
+    def train_regression_dict(self, dict1):
+        self.__vtrain = dict1
+
+    @test_regression_dict.setter
+    def test_regression_dict(self, dict1):
+        self.__vtest = dict1
 
     @property
     def is_multiple_datasets(self):

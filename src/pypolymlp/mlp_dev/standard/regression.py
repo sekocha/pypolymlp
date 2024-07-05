@@ -24,14 +24,15 @@ class Regression(RegressionBase):
         self.__alphas = [
             pow(10, a) for a in polymlp_dev.common_params_dict["reg"]["alpha"]
         ]
+        self.polymlp_dev = polymlp_dev
 
-    def fit(self, seq=False):
+    def fit(self, seq=False, clear_data=False):
 
         vtrain = self.train_regression_dict
         if seq:
             XTX, XTy = vtrain["xtx"], vtrain["xty"]
             coefs_array = self.__ridge_fit(A=XTX, Xy=XTy)
-            self.__ridge_model_selection_seq(coefs_array)
+            self.__ridge_model_selection_seq(coefs_array, clear_data=clear_data)
         else:
             X, y = vtrain["x"], vtrain["y"]
             coefs_array = self.__ridge_fit(X=X, y=y)
@@ -75,9 +76,17 @@ class Regression(RegressionBase):
 
         return self
 
-    def __ridge_model_selection_seq(self, coefs_array):
+    def __ridge_model_selection_seq(self, coefs_array, clear_data=False):
 
-        rmse_train, rmse_test = self.predict_seq(coefs_array)
+        if clear_data:
+            rmse_train = self.predict_seq_train(coefs_array)
+            self.__clear_train()
+            self.__calc_assign_test()
+            rmse_test = self.predict_seq_test(coefs_array)
+            self.polymlp_dev.clear_test()
+        else:
+            rmse_train, rmse_test = self.predict_seq(coefs_array)
+
         idx = np.argmin(rmse_test)
         self.best_model = {
             "rmse": rmse_test[idx],
@@ -88,6 +97,17 @@ class Regression(RegressionBase):
             self.__print_log(rmse_train, rmse_test)
 
         return self
+
+    def __clear_train(self):
+        if self.verbose:
+            print("Clear training data")
+        self.polymlp_dev.clear_train()
+
+    def __calc_assign_test(self):
+        if self.verbose:
+            print("Calculate X.T @ X for test data")
+        self.polymlp_dev.run_test(verbose=self.verbose, element_swap=False)
+        self.test_regression_dict = self.polymlp_dev.test_regression_dict
 
     def __print_log(self, rmse_train, rmse_test):
 

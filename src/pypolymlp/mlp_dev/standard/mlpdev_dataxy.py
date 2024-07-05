@@ -71,6 +71,13 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
 
     def run(self, batch_size=64, verbose=True, element_swap=False):
 
+        self.run_train(
+            batch_size=batch_size, verbose=verbose, element_swap=element_swap
+        )
+        self.run_test(batch_size=batch_size, verbose=verbose, element_swap=element_swap)
+        return self
+
+    def run_train(self, batch_size=64, verbose=True, element_swap=False):
         self.train_regression_dict = self.compute_products(
             self.train_dict,
             scales=None,
@@ -78,7 +85,9 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
             verbose=verbose,
             element_swap=element_swap,
         )
+        return self
 
+    def run_test(self, batch_size=64, verbose=True, element_swap=False):
         self.test_regression_dict = self.compute_products(
             self.test_dict,
             scales=self.__scales,
@@ -87,7 +96,15 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
             element_swap=element_swap,
         )
 
-        return self
+    def clear_train(self):
+        # del self.train_regression_dict
+        self.train_regression_dict = None
+        gc.collect()
+
+    def clear_test(self):
+        # del self.test_regression_dict
+        self.test_regression_dict = None
+        gc.collect()
 
     def compute_products(
         self,
@@ -113,6 +130,8 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
 
                 dft_dict_sliced = slice_dft_dict(dft_dict, begin, end)
                 dft_dict_tmp = {"tmp": dft_dict_sliced}
+                if verbose:
+                    print("Compute features")
                 features = self.features_class(
                     self.params_dict,
                     dft_dict_tmp,
@@ -124,13 +143,18 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
                 ne, nf, ns = features.regression_dict["n_data"]
 
                 if verbose:
+                    peak_mem = (
+                        x.shape[0] * x.shape[1] + x.shape[1] * x.shape[1]
+                    ) * 8e-9
                     print(
-                        " Estimated memory allocation (X.T @ X):",
-                        "{:.2f}".format(x.shape[1] * x.shape[1] * 16e-9),
+                        " Estimated peak memory allocation (X and X.T @ X):",
+                        "{:.2f}".format(peak_mem),
                         "(GB)",
                     )
 
                 if scales is None:
+                    if verbose:
+                        print("Compute quantities for calculationg scales")
                     xe = x[:ne]
                     local1 = np.sum(xe, axis=0)
                     local2 = np.sum(np.square(xe), axis=0)
@@ -142,6 +166,8 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
                 w = np.ones(n_data)
                 total_n_data += n_data
 
+                if verbose:
+                    print("Apply weights")
                 x, y, w = apply_weight_percentage(
                     x,
                     y,
@@ -151,7 +177,16 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
                     first_indices,
                     min_e=self.min_energy,
                 )
-                xtx = self.__sum_array(xtx, x.T @ x)
+                if verbose:
+                    print("Compute X.T @ X")
+
+                if n_features > 30000:
+                    xtx = self.__sum_large_xtx(xtx, x)
+                else:
+                    xtx = self.__sum_array(xtx, x.T @ x)
+
+                if verbose:
+                    print("Compute X.T @ y")
                 xty = self.__sum_array(xty, x.T @ y)
                 y_sq_norm += y @ y
 
@@ -187,3 +222,17 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
             return array2
         array1 += array2
         return array1
+
+    def __sum_large_xtx(self, xtx, x, n_batch=10):
+
+        if xtx is None:
+            return x.T @ x
+
+        n_features = x.shape[1]
+        if n_features < n_batch:
+            xtx += x.T @ x
+        else:
+            begin_ids, end_ids = get_batch_slice(n_features, n_features // n_batch)
+            for begin_row, end_row in zip(begin_ids, end_ids):
+                xtx[begin_row:end_row] += x[:, begin_row:end_row].T @ x
+        return xtx

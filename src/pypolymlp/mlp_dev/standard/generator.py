@@ -60,10 +60,11 @@ if __name__ == "__main__":
             polymlp = PolymlpDevDataXY(polymlp_in).run()
         polymlp.print_data_shape()
     else:
-        polymlp = PolymlpDevDataXYSequential(polymlp_in).run()
+        # polymlp = PolymlpDevDataXYSequential(polymlp_in).run()
+        polymlp = PolymlpDevDataXYSequential(polymlp_in).run_train()
     t2 = time.time()
 
-    reg = Regression(polymlp).fit(seq=not args.no_sequential)
+    reg = Regression(polymlp).fit(seq=not args.no_sequential, clear_data=True)
     reg.save_mlp_lammps(filename="polymlp.lammps")
     t3 = time.time()
 

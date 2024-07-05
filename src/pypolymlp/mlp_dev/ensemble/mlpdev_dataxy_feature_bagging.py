@@ -84,7 +84,7 @@ class PolymlpDevDataXYFeatureBagging(PolymlpDevDataXYEnsembleBase):
             print("Size (X.T @ X):", n_features_samples, "** 2")
             print(
                 "Estimated memory allocation (X.T @ X):",
-                "{:.2f}".format(pow(n_features_samples, 2) * 16e-9 * n_models),
+                "{:.2f}".format(pow(n_features_samples, 2) * 8e-9 * n_models),
                 "(GB)",
             )
 
