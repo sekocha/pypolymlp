@@ -45,6 +45,12 @@ class RegressionBase(ABC):
         self.__best_model["scales"] = self.__scales = self.__vtrain["scales"]
         self.__coeffs = None
 
+        if self.__hybrid:
+            if "cumulative_n_features" in self.__vtrain:
+                self.__cumulative_n_features = self.__vtrain["cumulative_n_features"]
+            elif "cumulative_n_features" in self.__vtest:
+                self.__cumulative_n_features = self.__vtest["cumulative_n_features"]
+
     @abstractmethod
     def fit(self):
         pass
@@ -137,7 +143,7 @@ class RegressionBase(ABC):
         else:
             save_multiple_mlp_lammps(
                 self.__params_dict,
-                self.__vtrain["cumulative_n_features"],
+                self.__cumulative_n_features,
                 self.__coeffs,
                 self.__scales,
             )
@@ -145,7 +151,7 @@ class RegressionBase(ABC):
 
     def hybrid_division(self, target):
 
-        cumulative = self.__vtrain["cumulative_n_features"]
+        cumulative = self.__cumulative_n_features
         list_target = []
         for i, params_dict in enumerate(self.__params_dict):
             if i == 0:
