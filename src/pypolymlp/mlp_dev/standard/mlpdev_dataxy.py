@@ -3,7 +3,11 @@ import numpy as np
 
 from pypolymlp.mlp_dev.core.mlpdev_data import PolymlpDevData
 from pypolymlp.mlp_dev.core.mlpdev_dataxy_base import PolymlpDevDataXYBase
-from pypolymlp.mlp_dev.core.utils_sequential import get_batch_slice, slice_dft_dict
+from pypolymlp.mlp_dev.core.utils_sequential import (
+    get_batch_slice,
+    slice_dft_dict,
+    sort_dft_dict,
+)
 from pypolymlp.mlp_dev.core.utils_weights import apply_weight_percentage
 
 
@@ -187,11 +191,12 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
             if self.verbose:
                 print("----- Dataset:", set_id, "-----")
             n_str = len(dft_dict["structures"])
+            dft_dict_sorted = sort_dft_dict(dft_dict)
             begin_ids, end_ids = get_batch_slice(n_str, batch_size)
             for begin, end in zip(begin_ids, end_ids):
                 if self.verbose:
                     print("Structures:", end, "/", n_str)
-                dft_dict_sliced = slice_dft_dict(dft_dict, begin, end)
+                dft_dict_sliced = slice_dft_dict(dft_dict_sorted, begin, end)
                 reg_dict = self.__compute_products_single_batch(
                     dft_dict_sliced,
                     reg_dict,
@@ -225,11 +230,14 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
         array1 += array2
         return array1
 
-    def __sum_large_xtx(self, xtx, x, n_batch=8):
+    def __sum_large_xtx(self, xtx, x, n_batch=4):
 
         n_features = x.shape[1]
         if xtx is None:
             xtx = np.zeros((n_features, n_features))
+            bool_sum = False
+        else:
+            bool_sum = True
 
         if n_features < n_batch:
             xtx += x.T @ x
@@ -239,13 +247,17 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
                 if self.verbose:
                     print("Batch:", end_row, "/", n_features)
                 for j, (begin_col, end_col) in enumerate(zip(begin_ids, end_ids)):
-                    if i <= j:
+                    if i <= j and bool_sum:
                         xtx[begin_row:end_row, begin_col:end_col] += (
+                            x[:, begin_row:end_row].T @ x[:, begin_col:end_col]
+                        )
+                    elif i <= j and not bool_sum:
+                        xtx[begin_row:end_row, begin_col:end_col] = (
                             x[:, begin_row:end_row].T @ x[:, begin_col:end_col]
                         )
         return xtx
 
-    def __large_transpose_xtx(self, xtx, n_batch=8):
+    def __large_transpose_xtx(self, xtx, n_batch=4):
         n_features = xtx.shape[0]
         begin_ids, end_ids = get_batch_slice(n_features, n_features // n_batch)
         for i, (begin_row, end_row) in enumerate(zip(begin_ids, end_ids)):

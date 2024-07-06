@@ -36,6 +36,12 @@ def run():
         action="store_true",
         help="Learning curve calculations",
     )
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+        default=None,
+        help="Batch size of feature calculations",
+    )
     args = parser.parse_args()
 
     verbose = True
@@ -43,6 +49,7 @@ def run():
     polymlp_in.parse_infiles(args.infile, verbose=verbose)
     polymlp_in.parse_datasets()
     polymlp_in.write_polymlp_params_yaml(filename="polymlp_params.yaml")
+    n_features = polymlp_in.n_features
 
     if args.learning_curve:
         if len(polymlp_in.train_dict) == 1:
@@ -57,13 +64,24 @@ def run():
     t1 = time.time()
     if args.no_sequential:
         if not args.learning_curve:
-            polymlp = PolymlpDevDataXY(polymlp_in).run()
-        polymlp.print_data_shape()
+            polymlp = PolymlpDevDataXY(polymlp_in, verbose=verbose).run()
+        if verbose:
+            polymlp.print_data_shape()
     else:
-        polymlp = PolymlpDevDataXYSequential(polymlp_in).run()
+        if args.batch_size is None:
+            batch_size = max((10000000 // n_features), 128)
+        else:
+            batch_size = args.batch_size
+        if verbose:
+            print("Batch size:", batch_size)
+        polymlp = PolymlpDevDataXYSequential(polymlp_in, verbose=verbose).run_train(
+            batch_size=batch_size
+        )
     t2 = time.time()
 
-    reg = Regression(polymlp).fit(seq=not args.no_sequential)
+    reg = Regression(polymlp).fit(
+        seq=not args.no_sequential, clear_data=True, batch_size=batch_size
+    )
     reg.save_mlp_lammps(filename="polymlp.lammps")
     t3 = time.time()
 

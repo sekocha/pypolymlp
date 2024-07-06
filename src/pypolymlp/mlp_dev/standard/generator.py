@@ -35,6 +35,12 @@ if __name__ == "__main__":
         action="store_true",
         help="Learning curve calculations",
     )
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+        default=None,
+        help="Batch size of feature calculations",
+    )
     args = parser.parse_args()
 
     verbose = True
@@ -61,7 +67,12 @@ if __name__ == "__main__":
         if verbose:
             polymlp.print_data_shape()
     else:
-        batch_size = max((10000000 // n_features), 64)
+        if args.batch_size is None:
+            batch_size = max((10000000 // n_features), 128)
+        else:
+            batch_size = args.batch_size
+        if verbose:
+            print("Batch size:", batch_size)
         polymlp = PolymlpDevDataXYSequential(polymlp_in, verbose=verbose).run_train(
             batch_size=batch_size
         )
