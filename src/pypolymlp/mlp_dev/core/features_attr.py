@@ -91,6 +91,7 @@ def write_polymlp_params_yaml(params_dict, filename="polymlp_params.yaml"):
             seq_id += 1
 
     f.close()
+    return seq_id
 
 
 if __name__ == "__main__":

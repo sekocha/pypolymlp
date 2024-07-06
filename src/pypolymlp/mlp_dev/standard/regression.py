@@ -26,13 +26,15 @@ class Regression(RegressionBase):
         ]
         self.polymlp_dev = polymlp_dev
 
-    def fit(self, seq=False, clear_data=False):
+    def fit(self, seq=False, clear_data=False, batch_size=128):
 
         vtrain = self.train_regression_dict
         if seq:
             XTX, XTy = vtrain["xtx"], vtrain["xty"]
             coefs_array = self.__ridge_fit(A=XTX, Xy=XTy)
-            self.__ridge_model_selection_seq(coefs_array, clear_data=clear_data)
+            self.__ridge_model_selection_seq(
+                coefs_array, clear_data=clear_data, batch_size=batch_size
+            )
         else:
             X, y = vtrain["x"], vtrain["y"]
             coefs_array = self.__ridge_fit(X=X, y=y)
@@ -76,14 +78,19 @@ class Regression(RegressionBase):
 
         return self
 
-    def __ridge_model_selection_seq(self, coefs_array, clear_data=False):
+    def __ridge_model_selection_seq(
+        self,
+        coefs_array,
+        clear_data=False,
+        batch_size=128,
+    ):
 
         if clear_data:
             rmse_train = self.predict_seq_train(coefs_array)
             self.__clear_train()
-            self.__calc_assign_test()
+            self.__calc_assign_test(batch_size=batch_size)
             rmse_test = self.predict_seq_test(coefs_array)
-            self.polymlp_dev.clear_test()
+            self.__clear_test()
         else:
             rmse_train, rmse_test = self.predict_seq(coefs_array)
 
@@ -100,17 +107,21 @@ class Regression(RegressionBase):
 
     def __clear_train(self):
         if self.verbose:
-            print("Clear training data")
-        self.polymlp_dev.clear_train()
+            print("Clear training X.T @ X")
+        self.delete_train_regression_dict()
 
-    def __calc_assign_test(self):
+    def __clear_test(self):
+        if self.verbose:
+            print("Clear test X.T @ X")
+        self.delete_test_regression_dict()
+
+    def __calc_assign_test(self, batch_size=128):
         if self.verbose:
             print("Calculate X.T @ X for test data")
-        self.polymlp_dev.run_test(verbose=self.verbose, element_swap=False)
+        self.polymlp_dev.run_test(element_swap=False, batch_size=batch_size)
         self.test_regression_dict = self.polymlp_dev.test_regression_dict
 
     def __print_log(self, rmse_train, rmse_test):
-
         print("Regression: model selection ...")
         for a, rmse1, rmse2 in zip(self.__alphas, rmse_train, rmse_test):
             print(

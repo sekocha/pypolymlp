@@ -98,6 +98,7 @@ class PolymlpDevData:
 
         self.__train_dict = None
         self.__test_dict = None
+        self.__n_features = None
 
         self.__multiple_datasets = None
         self.__hybrid = False
@@ -255,11 +256,13 @@ class PolymlpDevData:
     def write_polymlp_params_yaml(self, filename="polymlp_params.yaml"):
 
         if not self.is_hybrid:
-            write_polymlp_params_yaml(self.params_dict, filename=filename)
+            self.__n_features = write_polymlp_params_yaml(
+                self.params_dict, filename=filename
+            )
         else:
             for i, params in enumerate(self.params_dict):
                 filename = "polymlp_params" + str(i + 1) + ".yaml"
-                write_polymlp_params_yaml(params, filename=filename)
+                self.__n_features = write_polymlp_params_yaml(params, filename=filename)
 
     @property
     def params_dict(self):
@@ -300,6 +303,12 @@ class PolymlpDevData:
     @property
     def test_dict(self):
         return self.__test_dict
+
+    @property
+    def n_features(self):
+        if self.__n_features is None:
+            raise ValueError("Run write_polymlp_params_yaml in advance.")
+        return self.__n_features
 
     @train_dict.setter
     def train_dict(self, dict1):

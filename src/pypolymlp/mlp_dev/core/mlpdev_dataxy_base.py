@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import gc
 from abc import ABC, abstractmethod
 
 import numpy as np
@@ -177,6 +178,14 @@ class PolymlpDevDataXYBase(ABC):
     @test_regression_dict.setter
     def test_regression_dict(self, dict1):
         self.__test_reg_dict = dict1
+
+    def delete_train_regression_dict(self):
+        del self.__train_reg_dict
+        gc.collect()
+
+    def delete_test_regression_dict(self):
+        del self.__test_reg_dict
+        gc.collect()
 
     @property
     def features_class(self):

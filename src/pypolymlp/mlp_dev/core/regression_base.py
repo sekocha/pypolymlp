@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import gc
 from abc import ABC, abstractmethod
 from math import sqrt
 
@@ -226,6 +227,14 @@ class RegressionBase(ABC):
     @test_regression_dict.setter
     def test_regression_dict(self, dict1):
         self.__vtest = dict1
+
+    def delete_train_regression_dict(self):
+        del self.__vtrain
+        gc.collect()
+
+    def delete_test_regression_dict(self):
+        del self.__vtest
+        gc.collect()
 
     @property
     def is_multiple_datasets(self):
