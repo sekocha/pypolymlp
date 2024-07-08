@@ -227,31 +227,31 @@ class PolymlpDevData:
     def print_params(self, infile=None):
 
         if infile is not None:
-            print("priority_input:", infile)
+            print("priority_input:", infile, flush=True)
 
         params_dict = self.common_params_dict
-        print("parameters:")
-        print("  n_types:       ", params_dict["n_type"])
-        print("  elements:      ", params_dict["elements"])
-        print("  element_order: ", params_dict["element_order"])
-        print("  atomic_energy: ", params_dict["atomic_energy"])
-        print("  include_force: ", bool(params_dict["include_force"]))
-        print("  include_stress:", bool(params_dict["include_stress"]))
+        print("parameters:", flush=True)
+        print("  n_types:       ", params_dict["n_type"], flush=True)
+        print("  elements:      ", params_dict["elements"], flush=True)
+        print("  element_order: ", params_dict["element_order"], flush=True)
+        print("  atomic_energy: ", params_dict["atomic_energy"], flush=True)
+        print("  include_force: ", bool(params_dict["include_force"]), flush=True)
+        print("  include_stress:", bool(params_dict["include_stress"]), flush=True)
 
         """ todo: Must be revised"""
         if self.is_multiple_datasets is not None:
             if self.is_multiple_datasets:
-                print("  train_data:")
+                print("  train_data:", flush=True)
                 for v in params_dict["dft"]["train"]:
-                    print("  -", v)
-                print("  test_data:")
+                    print("  -", v, flush=True)
+                print("  test_data:", flush=True)
                 for v in params_dict["dft"]["test"]:
-                    print("  -", v)
+                    print("  -", v, flush=True)
             else:
-                print("  train_data:")
-                print("  -", params_dict["dft"]["train"]["phono3py_yaml"])
-                print("  test_data:")
-                print("  -", params_dict["dft"]["test"]["phono3py_yaml"])
+                print("  train_data:", flush=True)
+                print("  -", params_dict["dft"]["train"]["phono3py_yaml"], flush=True)
+                print("  test_data:", flush=True)
+                print("  -", params_dict["dft"]["test"]["phono3py_yaml"], flush=True)
 
     def write_polymlp_params_yaml(self, filename="polymlp_params.yaml"):
 

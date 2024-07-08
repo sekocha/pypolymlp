@@ -69,7 +69,7 @@ class RegressionBase(ABC):
 
         if X is not None and y is not None:
             if self.__verbose:
-                print("Regression: computing inner products ...")
+                print("Regression: computing inner products ...", flush=True)
             A = np.dot(X.T, X)
             Xy = np.dot(X.T, y)
         return A, Xy

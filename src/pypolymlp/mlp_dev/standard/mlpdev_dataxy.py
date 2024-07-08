@@ -128,6 +128,7 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
                 " Estimated peak memory allocation (X and X.T @ X):",
                 "{:.2f}".format(peak_mem),
                 "(GB)",
+                flush=True,
             )
 
         if scales is None:
@@ -154,14 +155,14 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
             min_e=self.min_energy,
         )
         if self.verbose:
-            print("Compute X.T @ X")
+            print("Compute X.T @ X", flush=True)
         if self.__n_features > n_features_threshold:
             reg_dict["xtx"] = self.__sum_large_xtx(reg_dict["xtx"], x)
         else:
             reg_dict["xtx"] = self.__sum_array(reg_dict["xtx"], x.T @ x)
 
         if self.verbose:
-            print("Compute X.T @ y")
+            print("Compute X.T @ y", flush=True)
         reg_dict["xty"] = self.__sum_array(reg_dict["xty"], x.T @ y)
         reg_dict["y_sq_norm"] += y @ y
 
@@ -189,13 +190,13 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
         }
         for set_id, dft_dict in dft_dicts.items():
             if self.verbose:
-                print("----- Dataset:", set_id, "-----")
+                print("----- Dataset:", set_id, "-----", flush=True)
             n_str = len(dft_dict["structures"])
             dft_dict_sorted = sort_dft_dict(dft_dict)
             begin_ids, end_ids = get_batch_slice(n_str, batch_size)
             for begin, end in zip(begin_ids, end_ids):
                 if self.verbose:
-                    print("Structures:", end, "/", n_str)
+                    print("Structures:", end, "/", n_str, flush=True)
                 dft_dict_sliced = slice_dft_dict(dft_dict_sorted, begin, end)
                 reg_dict = self.__compute_products_single_batch(
                     dft_dict_sliced,
@@ -245,7 +246,7 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
             begin_ids, end_ids = get_batch_slice(n_features, n_features // n_batch)
             for i, (begin_row, end_row) in enumerate(zip(begin_ids, end_ids)):
                 if self.verbose:
-                    print("Batch:", end_row, "/", n_features)
+                    print("Batch:", end_row, "/", n_features, flush=True)
                 for j, (begin_col, end_col) in enumerate(zip(begin_ids, end_ids)):
                     if i <= j and bool_sum:
                         xtx[begin_row:end_row, begin_col:end_col] += (

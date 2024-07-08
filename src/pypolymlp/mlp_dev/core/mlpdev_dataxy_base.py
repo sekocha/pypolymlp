@@ -45,17 +45,17 @@ class PolymlpDevDataXYBase(ABC):
 
         x = self.__train_reg_dict["x"]
         ne, nf, ns = self.__train_reg_dict["n_data"]
-        print("Training Dataset:", x.shape)
-        print("   - n (energy) =", ne)
-        print("   - n (force)  =", nf)
-        print("   - n (stress) =", ns)
+        print("Training Dataset:", x.shape, flush=True)
+        print("   - n (energy) =", ne, flush=True)
+        print("   - n (force)  =", nf, flush=True)
+        print("   - n (stress) =", ns, flush=True)
 
         x = self.__test_reg_dict["x"]
         ne, nf, ns = self.__test_reg_dict["n_data"]
-        print("Test Dataset:", x.shape)
-        print("   - n (energy) =", ne)
-        print("   - n (force)  =", nf)
-        print("   - n (stress) =", ns)
+        print("Test Dataset:", x.shape, flush=True)
+        print("   - n (energy) =", ne, flush=True)
+        print("   - n (force)  =", nf, flush=True)
+        print("   - n (stress) =", ns, flush=True)
         return self
 
     def apply_scales(self):

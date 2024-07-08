@@ -73,7 +73,7 @@ def run():
         else:
             batch_size = args.batch_size
         if verbose:
-            print("Batch size:", batch_size)
+            print("Batch size:", batch_size, flush=True)
         polymlp = PolymlpDevDataXYSequential(polymlp_in, verbose=verbose).run_train(
             batch_size=batch_size
         )
@@ -87,8 +87,8 @@ def run():
 
     if verbose:
         mlp_dict = reg.best_model
-        print("  Regression: best model")
-        print("    alpha: ", mlp_dict["alpha"])
+        print("  Regression: best model", flush=True)
+        print("    alpha: ", mlp_dict["alpha"], flush=True)
 
     acc = PolymlpDevAccuracy(reg)
     acc.compute_error()
@@ -96,7 +96,7 @@ def run():
     t4 = time.time()
 
     if verbose:
-        print("  elapsed_time:")
-        print("    features:          ", "{:.3f}".format(t2 - t1), "(s)")
-        print("    regression:        ", "{:.3f}".format(t3 - t2), "(s)")
-        print("    error:             ", "{:.3f}".format(t4 - t3), "(s)")
+        print("  elapsed_time:", flush=True)
+        print("    features:          ", "{:.3f}".format(t2 - t1), "(s)", flush=True)
+        print("    regression:        ", "{:.3f}".format(t3 - t2), "(s)", flush=True)
+        print("    error:             ", "{:.3f}".format(t4 - t3), "(s)", flush=True)

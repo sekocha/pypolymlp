@@ -48,10 +48,12 @@ class Regression(RegressionBase):
         n_features = A.shape[0]
 
         if self.verbose:
-            print("Regression: cholesky decomposition ...")
+            print("Regression: cholesky decomposition ...", flush=True)
         coefs_array = np.zeros((n_features, len(self.__alphas)))
         alpha_prev = 0.0
         for i, alpha in enumerate(self.__alphas):
+            if self.verbose:
+                print("- alpha:", alpha, flush=True)
             add = alpha - alpha_prev
             A.flat[:: n_features + 1] += add
             coefs_array[:, i] = self.solve_linear_equation(A, Xy)
@@ -107,22 +109,22 @@ class Regression(RegressionBase):
 
     def __clear_train(self):
         if self.verbose:
-            print("Clear training X.T @ X")
+            print("Clear training X.T @ X", flush=True)
         self.delete_train_regression_dict()
 
     def __clear_test(self):
         if self.verbose:
-            print("Clear test X.T @ X")
+            print("Clear test X.T @ X", flush=True)
         self.delete_test_regression_dict()
 
     def __calc_assign_test(self, batch_size=128):
         if self.verbose:
-            print("Calculate X.T @ X for test data")
+            print("Calculate X.T @ X for test data", flush=True)
         self.polymlp_dev.run_test(element_swap=False, batch_size=batch_size)
         self.test_regression_dict = self.polymlp_dev.test_regression_dict
 
     def __print_log(self, rmse_train, rmse_test):
-        print("Regression: model selection ...")
+        print("Regression: model selection ...", flush=True)
         for a, rmse1, rmse2 in zip(self.__alphas, rmse_train, rmse_test):
             print(
                 "  - alpha =",
@@ -130,5 +132,6 @@ class Regression(RegressionBase):
                 ": rmse (train, test) =",
                 "{:.5f}".format(rmse1),
                 "{:.5f}".format(rmse2),
+                flush=True,
             )
         return self

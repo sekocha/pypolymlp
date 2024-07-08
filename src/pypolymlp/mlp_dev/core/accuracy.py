@@ -35,12 +35,14 @@ class PolymlpDevAccuracy:
             "  rmse_energy:",
             "{0:13.5f}".format(error["energy"] * 1000),
             "(meV/atom)",
+            flush=True,
         )
         print("  rmse_force: ", "{0:13.5f}".format(error["force"]), "(eV/ang)")
         print(
             "  rmse_stress:",
             "{0:13.5f}".format(error["stress"] * 1000),
             "(meV/atom)",
+            flush=True,
         )
         return self
 

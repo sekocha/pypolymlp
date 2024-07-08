@@ -41,12 +41,12 @@ def write_learning_curve(error_all):
         )
     f.close()
 
-    print("Learning Curve:")
+    print("Learning Curve:", flush=True)
     for n_samples, error in error_all:
-        print("- n_samples:   ", n_samples)
-        print("  rmse_energy: ", "{:.8f}".format(error["energy"] * 1000))
-        print("  rmse_force:  ", "{:.8f}".format(error["force"]))
-        print("  rmse_stress: ", error["stress"])
+        print("- n_samples:   ", n_samples, flush=True)
+        print("  rmse_energy: ", "{:.8f}".format(error["energy"] * 1000), flush=True)
+        print("  rmse_force:  ", "{:.8f}".format(error["force"]), flush=True)
+        print("  rmse_stress: ", error["stress"], flush=True)
 
 
 def learning_curve(polymlp: PolymlpDevDataXY):
@@ -63,9 +63,9 @@ def learning_curve(polymlp: PolymlpDevDataXY):
 
     error_all = []
     n_train = train_reg_dict["first_indices"][0][2]
-    print("Calculating learning curve...")
+    print("Calculating learning curve...", flush=True)
     for n_samples in range(n_train // 10, n_train + 1, n_train // 10):
-        print("------------- n_samples:", n_samples, "-------------")
+        print("------------- n_samples:", n_samples, "-------------", flush=True)
         ids = find_slices(train_reg_dict, total_n_atoms, n_samples)
         train_reg_dict_sample = {
             "x": train_reg_dict["x"][ids],
