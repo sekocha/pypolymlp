@@ -97,13 +97,13 @@ else()
   message(WARNING "OpenMP not found. It runs on single thread.")
 endif()
 
-#install(
-#    TARGETS libmlpcpp
-#    COMPONENT python
-#    LIBRARY DESTINATION ${CMAKE_SOURCE_DIR}/lib
-#)
 install(
     TARGETS libmlpcpp
     COMPONENT python
-    LIBRARY DESTINATION .
+    LIBRARY DESTINATION ${CMAKE_SOURCE_DIR}/lib
 )
+# install(
+#     TARGETS libmlpcpp
+#     COMPONENT python
+#     LIBRARY DESTINATION .
+# )
