@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+"""Pypolymlp API."""
+
 import itertools
 
 import numpy as np
@@ -15,6 +16,7 @@ from pypolymlp.mlp_dev.standard.regression import Regression
 
 
 class Pypolymlp:
+    """Pypolymlp API."""
 
     def __init__(self):
         """
