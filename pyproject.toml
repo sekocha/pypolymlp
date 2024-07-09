@@ -45,7 +45,6 @@ pypolymlp-structure = "pypolymlp.api.run_polymlp_str:run"
 cmake.verbose = true
 logging.level = "INFO"
 cmake.source-dir = "./src/pypolymlp/cxx"
-metadata.version.provider = "scikit_build_core.metadata.setuptools_scm"
 
 sdist.exclude = [
     "conda-recipes",
@@ -58,6 +57,8 @@ sdist.exclude = [
     "src/pypolymlp/mlp_opt/candidates",
     "*__pycache__*",
 ]
+
+metadata.version.provider = "scikit_build_core.metadata.setuptools_scm"
 
 [tool.setuptools_scm]
 write_to = "version.py"

@@ -126,12 +126,22 @@ class Regression(RegressionBase):
     def __print_log(self, rmse_train, rmse_test):
         print("Regression: model selection ...", flush=True)
         for a, rmse1, rmse2 in zip(self.__alphas, rmse_train, rmse_test):
-            print(
-                "  - alpha =",
-                "{:.3e}".format(a),
-                ": rmse (train, test) =",
-                "{:.5f}".format(rmse1),
-                "{:.5f}".format(rmse2),
-                flush=True,
-            )
+            if rmse1 > 1e6:
+                print(
+                    "- alpha =",
+                    "{:.3e}".format(a),
+                    ": rmse (train, test) =",
+                    "{:.5e}".format(rmse1),
+                    "{:.5e}".format(rmse2),
+                    flush=True,
+                )
+            else:
+                print(
+                    "- alpha =",
+                    "{:.3e}".format(a),
+                    ": rmse (train, test) =",
+                    "{:.5f}".format(rmse1),
+                    "{:.5f}".format(rmse2),
+                    flush=True,
+                )
         return self
