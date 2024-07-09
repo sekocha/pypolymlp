@@ -36,7 +36,6 @@ endif()
 find_package(pybind11 REQUIRED)
 find_package(Eigen3 REQUIRED)
 message(STATUS "Eigen3 include dir: ${EIGEN3_INCLUDE_DIR}")
-# find_package(OpenMP REQUIRED)
 find_package(OpenMP)
 
 set(SRC_FILES
