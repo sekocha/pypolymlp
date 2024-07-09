@@ -5,7 +5,10 @@ import numpy as np
 
 from pypolymlp.core.interface_vasp import parse_vaspruns
 from pypolymlp.core.parser_polymlp_params import ParamsParser
-from pypolymlp.mlp_dev.core.features_attr import write_polymlp_params_yaml
+from pypolymlp.mlp_dev.core.features_attr import (
+    get_num_features,
+    write_polymlp_params_yaml,
+)
 
 
 def get_variable_with_max_length(multiple_params_dicts, key):
@@ -260,9 +263,12 @@ class PolymlpDevData:
                 self.params_dict, filename=filename
             )
         else:
+            self.__n_features = 0
             for i, params in enumerate(self.params_dict):
                 filename = "polymlp_params" + str(i + 1) + ".yaml"
-                self.__n_features = write_polymlp_params_yaml(params, filename=filename)
+                self.__n_features += write_polymlp_params_yaml(
+                    params, filename=filename
+                )
 
     @property
     def params_dict(self):
@@ -306,8 +312,12 @@ class PolymlpDevData:
 
     @property
     def n_features(self):
-        if self.__n_features is None:
-            raise ValueError("Run write_polymlp_params_yaml in advance.")
+        if not self.is_hybrid:
+            self.__n_features = get_num_features(self.params_dict)
+        else:
+            self.__n_features = 0
+            for i, params in enumerate(self.params_dict):
+                self.__n_features += get_num_features(params)
         return self.__n_features
 
     @train_dict.setter

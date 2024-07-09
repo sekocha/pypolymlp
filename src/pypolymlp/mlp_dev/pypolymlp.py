@@ -370,11 +370,11 @@ class Pypolymlp:
     def run(
         self,
         file_params=None,
-        # sequential=False,
         sequential=True,
         path_output="./",
         verbose=False,
         output_files=False,
+        batch_size=None,
     ):
         """Running linear ridge regression to estimate MLP coefficients."""
         polymlp_in = PolymlpDevData()
@@ -394,15 +394,26 @@ class Pypolymlp:
             polymlp_in.write_polymlp_params_yaml(
                 filename=path_output + "/polymlp_params.yaml"
             )
+        n_features = polymlp_in.n_features
 
-        if sequential:
-            polymlp = PolymlpDevDataXYSequential(polymlp_in, verbose=verbose).run()
-        else:
+        if not sequential:
             polymlp = PolymlpDevDataXY(polymlp_in, verbose=verbose).run()
             if verbose:
                 polymlp.print_data_shape()
+        else:
+            if batch_size is None:
+                batch_size = max((10000000 // n_features), 128)
+            if verbose:
+                print("Batch size:", batch_size, flush=True)
+            polymlp = PolymlpDevDataXYSequential(polymlp_in, verbose=verbose).run_train(
+                batch_size=batch_size
+            )
 
-        reg = Regression(polymlp, verbose=verbose).fit(seq=sequential)
+        reg = Regression(polymlp).fit(
+            seq=sequential,
+            clear_data=True,
+            batch_size=batch_size,
+        )
         self.__mlp_dict = reg.best_model
         if output_files:
             reg.save_mlp_lammps(filename=path_output + "/polymlp.lammps")

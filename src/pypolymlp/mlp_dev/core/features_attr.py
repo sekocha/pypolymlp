@@ -94,6 +94,12 @@ def write_polymlp_params_yaml(params_dict, filename="polymlp_params.yaml"):
     return seq_id
 
 
+def get_num_features(params_dict):
+    features_attr, polynomial_attr, atomtype_pair_dict = get_features_attr(params_dict)
+    n_fearures = len(features_attr) + len(polynomial_attr)
+    return n_fearures
+
+
 if __name__ == "__main__":
 
     import argparse
