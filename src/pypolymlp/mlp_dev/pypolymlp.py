@@ -370,7 +370,8 @@ class Pypolymlp:
     def run(
         self,
         file_params=None,
-        sequential=False,
+        # sequential=False,
+        sequential=True,
         path_output="./",
         verbose=False,
         output_files=False,
