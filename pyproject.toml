@@ -43,18 +43,22 @@ pypolymlp-structure = "pypolymlp.api.run_polymlp_str:run"
 
 [tool.scikit-build]
 cmake.verbose = true
-logging.level = "INFO"
+logging.level = "DEBUG"
+# logging.level = "INFO"
 # wheel.packages = ["<package>", "src/<package>", "pypolymlp.cxx.lib"]
 cmake.source-dir = "./src/pypolymlp/cxx"
 metadata.version.provider = "scikit_build_core.metadata.setuptools_scm"
-sdist.include = [
-    "LICENCE",
-    "README.md",
-    "docs",
-    "examples",
-    "pyproject.toml",
-    "src",
-    "version.py",
+
+sdist.exclude = [
+    "conda-recipes",
+    "dist",
+    "src/pypolymlp/polyinv",
+    "src/pypolymlp/deprecated",
+    "src/pypolymlp/dev",
+    "src/pypolymlp/test",
+    "src/pypolymlp/cxx/build*",
+    "src/pypolymlp/mlp_opt/candidates",
+    "*__pycache__*",
 ]
 
 [tool.setuptools_scm]
