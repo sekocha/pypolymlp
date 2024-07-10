@@ -2,6 +2,7 @@
 import numpy as np
 from setuptools._distutils.util import strtobool
 
+from pypolymlp.core.data_format import PolymlpParams
 from pypolymlp.core.utils import mass_table
 from pypolymlp.cxx.lib import libmlpcpp
 
@@ -11,7 +12,6 @@ def print_param(dict1, key, fstream, prefix=""):
 
 
 def print_array1d(array, fstream, comment="", fmt=None):
-
     for obj in array:
         if fmt is not None:
             print(fmt.format(obj), end=" ", file=fstream)
@@ -21,12 +21,15 @@ def print_array1d(array, fstream, comment="", fmt=None):
 
 
 def save_multiple_mlp_lammps(
-    multiple_params_dicts, cumulative_n_features, coeffs, scales
+    multiple_params: list[PolymlpParams],
+    cumulative_n_features: int,
+    coeffs: np.ndarray,
+    scales: np.ndarray,
 ):
-
+    """Generate polymlp.lammps files for hybrid polymlp model"""
     multiple_coeffs = []
     multiple_scales = []
-    for i, params_dict in enumerate(multiple_params_dicts):
+    for i, params in enumerate(multiple_params):
         if i == 0:
             begin, end = 0, cumulative_n_features[0]
         else:
@@ -36,7 +39,7 @@ def save_multiple_mlp_lammps(
             )
 
         save_mlp_lammps(
-            params_dict,
+            params,
             coeffs[begin:end],
             scales[begin:end],
             filename="polymlp.lammps." + str(i + 1),
@@ -47,11 +50,16 @@ def save_multiple_mlp_lammps(
     return multiple_coeffs, multiple_scales
 
 
-def save_mlp_lammps(params_dict, coeffs, scales, filename="polymlp.lammps"):
-
+def save_mlp_lammps(
+    params: PolymlpParams,
+    coeffs: np.ndarray,
+    scales: np.ndarray,
+    filename: bool = "polymlp.lammps",
+):
+    """Generate polymlp.lammps file for single polymlp model"""
     f = open(filename, "w")
-    print_array1d(params_dict["elements"], f, comment="elements")
-    model_dict = params_dict["model"]
+    print_array1d(params.elements, f, comment="elements")
+    model_dict = params.model.as_dict()
     print_param(model_dict, "cutoff", f)
     print_param(model_dict, "pair_type", f)
     print_param(model_dict, "feature_type", f)
@@ -79,7 +87,7 @@ def save_mlp_lammps(params_dict, coeffs, scales, filename="polymlp.lammps"):
             file=f,
         )
 
-    mass = [mass_table()[ele] for ele in params_dict["elements"]]
+    mass = [mass_table()[ele] for ele in params.elements]
     print_array1d(mass, f, comment="atomic mass", fmt="{0:15.15e}")
     print("False # electrostatic", file=f)
 
@@ -97,8 +105,18 @@ def __read_var(line, dtype=int, return_list=False):
     return dtype(list1[0])
 
 
+"""TODO: Dataclass"""
+
+
 def load_mlp_lammps(filename="polymlp.lammps"):
-    """
+    """Load polymlp.lammps file.
+
+    Return
+    ------
+    params: PolymlpParams
+    mlp_dict: coeffs and scales
+
+    How to use.
     params_dict, mlp_dict = load_mlp_lammps(filename='mlp.lammps')
     """
 

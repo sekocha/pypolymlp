@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+"""Class of input file parser."""
 
 import glob
 import itertools
@@ -17,6 +17,7 @@ from pypolymlp.cxx.lib import libmlpcpp
 
 
 class ParamsParser:
+    """Class of input file parser."""
 
     def __init__(
         self,
@@ -24,6 +25,12 @@ class ParamsParser:
         multiple_datasets: bool = False,
         parse_vasprun_locations: bool = True,
     ):
+        """Init class.
+
+        Parameters
+        ----------
+        filename: File of input parameters for single polymlp (e.g., polymlp.in).
+        """
 
         self.parser = InputParser(filename)
 
@@ -75,7 +82,6 @@ class ParamsParser:
             dataset_type=dataset_type,
             element_order=element_order,
         )
-        print(dft_test)
 
     def __get_potential_model_params(self, n_type):
 
@@ -136,12 +142,12 @@ class ParamsParser:
             pair_params=pair_params,
             feature_type=feature_type,
             pair_type="gaussian",
-            gtinv_params=gtinv_params,
+            gtinv=gtinv_params,
         )
 
         return model
 
-    def __get_atomic_energy(self, n_type):
+    def __get_atomic_energy(self, n_type: int):
 
         d_atom_e = [0.0 for i in range(n_type)]
         atom_e = self.parser.get_params(
@@ -161,7 +167,9 @@ class ParamsParser:
         return method, tuple(alpha)
 
     def __get_dataset(
-        self, dataset_type: Literal["vasp", "phono3py"], multiple_datasets: bool = False
+        self,
+        dataset_type: Literal["vasp", "phono3py"],
+        multiple_datasets: bool = False,
     ):
         if dataset_type == "vasp":
             if multiple_datasets:
@@ -265,9 +273,9 @@ class ParamsParser:
             dft_test["indices"] = np.arange(int(test[-2]), int(test[-1]))
         else:
             dft_test["indices"] = None
-
         return dft_train, dft_test
 
     @property
     def params(self):
+        """Return parameters for developing polymlp."""
         return self.__params

@@ -1,9 +1,11 @@
-#!/usr/bin/env python
+"""Class of input parser."""
+
 import numpy as np
 from setuptools._distutils.util import strtobool
 
 
 class InputParser:
+    """Class of input parser."""
 
     def __init__(self, fname):
 
