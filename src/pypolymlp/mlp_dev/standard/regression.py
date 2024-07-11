@@ -65,7 +65,7 @@ class Regression(RegressionBase):
         idx = np.argmin(rmse_test)
         self.best_model = PolymlpDataMLP(
             coeffs=coefs_array[:, idx],
-            scales=self.scales,
+            scales=self._scales,
             rmse=rmse_test[idx],
             alpha=self._alphas[idx],
             predictions_train=pred_train[idx],
@@ -94,7 +94,7 @@ class Regression(RegressionBase):
         idx = np.argmin(rmse_test)
         self.best_model = PolymlpDataMLP(
             coeffs=coefs_array[:, idx],
-            scales=self.scales,
+            scales=self._scales,
             rmse=rmse_test[idx],
             alpha=self._alphas[idx],
         )

@@ -13,7 +13,6 @@ from pypolymlp.core.data_format import (
     PolymlpParams,
 )
 from pypolymlp.core.parser_infile import InputParser
-from pypolymlp.cxx.lib import libmlpcpp
 
 
 class ParamsParser:
@@ -106,26 +105,18 @@ class ParamsParser:
                 for i in range(size_gap):
                     gtinv_maxl.append(2)
 
-            sym = [False for i in range(size)]
             version = self.parser.get_params("gtinv_version", default=1, dtype=int)
-            rgi = libmlpcpp.Readgtinv(order, gtinv_maxl, sym, n_type, version)
-            lm_seq = rgi.get_lm_seq()
-            l_comb = rgi.get_l_comb()
-            lm_coeffs = rgi.get_lm_coeffs()
 
             max_l = max(gtinv_maxl)
             gtinv_params = PolymlpGtinvParams(
-                order,
-                gtinv_maxl,
-                sym,
-                lm_seq,
-                l_comb,
-                lm_coeffs,
-                version,
+                order=order,
+                max_l=gtinv_maxl,
+                n_type=n_type,
+                version=version,
             )
         else:
             max_l = 0
-            gtinv_params = None
+            gtinv_params = PolymlpGtinvParams(order=0, max_l=[], n_type=n_type)
 
         d_params1 = [1.0, 1.0, 1]
         params1 = self.parser.get_sequence("gaussian_params1", default=d_params1)

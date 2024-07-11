@@ -1,11 +1,17 @@
 """Pypolymlp API."""
 
 import itertools
+from typing import Literal
 
 import numpy as np
 
-from pypolymlp.core.displacements import convert_disps_to_positions, set_dft_dict
-from pypolymlp.cxx.lib import libmlpcpp
+from pypolymlp.core.data_format import (
+    PolymlpGtinvParams,
+    PolymlpModelParams,
+    PolymlpParams,
+    PolymlpStructure,
+)
+from pypolymlp.core.displacements import convert_disps_to_positions, set_dft_data
 from pypolymlp.mlp_dev.core.accuracy import PolymlpDevAccuracy
 from pypolymlp.mlp_dev.core.mlpdev_data import PolymlpDevData
 from pypolymlp.mlp_dev.standard.mlpdev_dataxy import (
@@ -19,79 +25,35 @@ class Pypolymlp:
     """Pypolymlp API."""
 
     def __init__(self):
-        """
-        Keys in params_dict
-        --------------------
-        - n_type
-        - include_force
-        - include_stress
-        - atomic_energy
-        - dataset_type
-        - model
-          - cutoff
-          - model_type
-          - max_p
-          - max_l
-          - feature_type
-          - pair_type
-          - pair_params
-          - gtinv
-            - order
-            - max_l
-            - lm_seq
-            - l_comb
-            - lm_coeffs
-        - reg
-          - method
-          - alpha
-        - dft
-          - train (dataset locations)
-          - test (dataset locations)
-        """
-        self.__params_dict = dict()
-        self.__params_dict["model"] = dict()
-        self.__params_dict["model"]["gtinv"] = dict()
-        self.__params_dict["reg"] = dict()
-        self.__params_dict["dft"] = dict()
-        self.__params_dict["dft"]["train"] = dict()
-        self.__params_dict["dft"]["test"] = dict()
-
-        self.train_dft_dict = None
-        self.test_dft_dict = None
-
-        self.__mlp_dict = None
+        self._params = None
+        self._train = None
+        self._test = None
+        self._mlp_model = None
         self.__multiple_datasets = False
 
         """Hybrid models are not available."""
         # self.__hybrid = None
 
-    def __set_param(self, tag_params, params, assign_variable):
-
-        if params is not None and tag_params in params:
-            assign_variable = params[tag_params]
-        return assign_variable
-
     def set_params(
         self,
-        elements=None,
-        params=None,
-        include_force=True,
-        include_stress=False,
-        cutoff=6.0,
-        model_type=4,
-        max_p=2,
-        feature_type="gtinv",
-        gaussian_params1=(1.0, 1.0, 1),
-        gaussian_params2=(0.0, 5.0, 7),
-        reg_alpha_params=(-3.0, 1.0, 5),
-        gtinv_order=3,
-        gtinv_maxl=(4, 4, 2, 1, 1),
-        gtinv_version=1,
-        atomic_energy=None,
-        rearrange_by_elements=True,
+        params: PolymlpParams = None,
+        elements: tuple[str] = None,
+        include_force: bool = True,
+        include_stress: bool = False,
+        cutoff: float = 6.0,
+        model_type: Literal[1, 2, 3, 4] = 4,
+        max_p: Literal[1, 2, 3] = 2,
+        feature_type: Literal["pair", "gtinv"] = "gtinv",
+        gaussian_params1: tuple[float, float, int] = (1.0, 1.0, 1),
+        gaussian_params2: tuple[float, float, int] = (0.0, 5.0, 7),
+        reg_alpha_params: tuple[float, float, int] = (-3.0, 1.0, 5),
+        gtinv_order: int = 3,
+        gtinv_maxl: tuple[int] = (4, 4, 2, 1, 1),
+        gtinv_version: Literal[1, 2] = 1,
+        atomic_energy: tuple[float] = None,
+        rearrange_by_elements: bool = True,
     ):
-        """
-        Assign input parameters.
+        """Assign input parameters.
 
         Parameters
         ----------
@@ -120,143 +82,111 @@ class Pypolymlp:
             [maxl for order=2, maxl for order=3, ...]
         atomic_energy: Atomic energies.
         rearrange_by_elements: Set True if not developing special MLPs.
-
-        All parameters are stored in self.__params_dict.
         """
-        if params is None:
-            params = dict()
 
-        self.__params_dict["elements"] = self.__set_param("elements", params, elements)
-        if self.__params_dict["elements"] is None:
-            raise ValueError("elements must be provided.")
+        if params is not None:
+            self._params = params
+        else:
+            n_type = len(elements)
+            if len(gaussian_params1) != 3:
+                raise ValueError("len(gaussian_params1) != 3")
+            if len(gaussian_params2) != 3:
+                raise ValueError("len(gaussian_params2) != 3")
+            params1 = self._sequence(gaussian_params1)
+            params2 = self._sequence(gaussian_params2)
+            pair_params = list(itertools.product(params1, params2))
+            pair_params.append([0.0, 0.0])
 
-        n_type = len(self.__params_dict["elements"])
-        self.__params_dict["n_type"] = n_type
+            if atomic_energy is None:
+                atomic_energy = tuple([0.0 for i in range(n_type)])
 
-        self.__params_dict["include_force"] = self.__set_param(
-            "include_force", params, include_force
-        )
-        self.__params_dict["include_stress"] = self.__set_param(
-            "include_stress", params, include_stress
-        )
+            element_order = elements if rearrange_by_elements else None
 
-        model = self.__params_dict["model"]
-        model["cutoff"] = self.__set_param("cutoff", params, cutoff)
-        model["model_type"] = self.__set_param("model_type", params, model_type)
-        if model["model_type"] > 4:
-            raise ValueError("model_type != 1, 2, 3, or 4")
+            if feature_type == "gtinv":
+                gtinv = PolymlpGtinvParams(
+                    order=gtinv_order,
+                    max_l=gtinv_maxl,
+                    n_type=n_type,
+                    version=gtinv_version,
+                )
+                max_l = max(gtinv_maxl)
+            else:
+                gtinv = None
+                max_l = 0
 
-        model["max_p"] = self.__set_param("max_p", params, max_p)
-        if model["max_p"] > 3:
-            raise ValueError("model_type != 1, 2, or 3")
-
-        model["feature_type"] = self.__set_param("feature_type", params, feature_type)
-        if model["feature_type"] != "gtinv" and model["feature_type"] != "pair":
-            raise ValueError("feature_type != gtinv or pair")
-
-        model["pair_type"] = "gaussian"
-
-        gaussian_params1 = self.__set_param(
-            "gaussian_params1", params, gaussian_params1
-        )
-        gaussian_params2 = self.__set_param(
-            "gaussian_params2", params, gaussian_params2
-        )
-        if len(gaussian_params1) != 3:
-            raise ValueError("len(gaussian_params1) != 3")
-        if len(gaussian_params2) != 3:
-            raise ValueError("len(gaussian_params2) != 3")
-        params1 = self.__sequence(gaussian_params1)
-        params2 = self.__sequence(gaussian_params2)
-        model["pair_params"] = list(itertools.product(params1, params2))
-        model["pair_params"].append([0.0, 0.0])
-
-        gtinv_dict = self.__params_dict["model"]["gtinv"]
-        if model["feature_type"] == "gtinv":
-            gtinv_dict["order"] = self.__set_param("gtinv_order", params, gtinv_order)
-            gtinv_dict["max_l"] = self.__set_param("gtinv_maxl", params, gtinv_maxl)
-            gtinv_dict["max_l"] = list(gtinv_dict["max_l"])
-
-            size = gtinv_dict["order"] - 1
-            if len(gtinv_dict["max_l"]) < size:
-                raise ValueError("size (gtinv_maxl) !=", size)
-
-            gtinv_sym = [False for i in range(size)]
-            gtinv_dict["version"] = self.__set_param(
-                "gtinv_version", params, gtinv_version
+            model = PolymlpModelParams(
+                cutoff=cutoff,
+                model_type=model_type,
+                max_p=max_p,
+                max_l=max_l,
+                pair_params=pair_params,
+                feature_type=feature_type,
+                pair_type="gaussian",
+                gtinv=gtinv,
             )
-            rgi = libmlpcpp.Readgtinv(
-                gtinv_dict["order"],
-                gtinv_dict["max_l"],
-                gtinv_sym,
-                n_type,
-                gtinv_dict["version"],
+
+            self._params = PolymlpParams(
+                n_type=n_type,
+                elements=elements,
+                atomic_energy=atomic_energy,
+                model=model,
+                regression_alpha=np.linspace(
+                    reg_alpha_params[0], reg_alpha_params[1], reg_alpha_params[2]
+                ),
+                include_force=include_force,
+                include_stress=include_stress,
+                element_order=element_order,
             )
-            gtinv_dict["lm_seq"] = rgi.get_lm_seq()
-            gtinv_dict["l_comb"] = rgi.get_l_comb()
-            gtinv_dict["lm_coeffs"] = rgi.get_lm_coeffs()
-            model["max_l"] = max(gtinv_dict["max_l"])
-        else:
-            gtinv_dict["order"] = 0
-            gtinv_dict["max_l"] = []
-            gtinv_dict["lm_seq"] = []
-            gtinv_dict["l_comb"] = []
-            gtinv_dict["lm_coeffs"] = []
-            model["max_l"] = 0
 
-        reg_alpha_params = self.__set_param(
-            "reg_alpha_params", params, reg_alpha_params
-        )
-        if len(reg_alpha_params) != 3:
-            raise ValueError("len(reg_alpha_params) != 3")
-        self.__params_dict["reg"]["method"] = "ridge"
-        self.__params_dict["reg"]["alpha"] = self.__sequence(reg_alpha_params)
-
-        atomic_energy = self.__set_param("atomic_energy", params, atomic_energy)
-        if atomic_energy is None:
-            self.__params_dict["atomic_energy"] = [0.0 for i in range(n_type)]
-        else:
-            if len(atomic_energy) != n_type:
-                raise ValueError("len(atomic_energy) != n_type")
-            self.__params_dict["atomic_energy"] = atomic_energy
-
-        if rearrange_by_elements:
-            self.__params_dict["element_order"] = self.__params_dict["elements"]
-        else:
-            self.__params_dict["element_order"] = None
         return self
 
-    def set_datasets_vasp(self, train_vaspruns, test_vaspruns):
-        """
+    def set_datasets_vasp(self, train_vaspruns: list[str], test_vaspruns: list[str]):
+        """Set single DFT dataset in vasp format.
+
         Parameters
         ----------
         train_vaspruns: vasprun files for training dataset (list)
         test_vaspruns: vasprun files for test dataset (list)
         """
-        self.__params_dict["dataset_type"] = "vasp"
-        self.__params_dict["dft"]["train"] = sorted(train_vaspruns)
-        self.__params_dict["dft"]["test"] = sorted(test_vaspruns)
+        if self._params is None:
+            raise KeyError(
+                "Set parameters using set_params() " "before using set_datasets."
+            )
+
+        self._params.dataset_type = "vasp"
+        self._params.dft_train = sorted(train_vaspruns)
+        self._params.dft_test = sorted(test_vaspruns)
+        self.__multiple_datasets = False
         return self
 
-    def set_multiple_datasets_vasp(self, train_vaspruns, test_vaspruns):
-        """
+    def set_multiple_datasets_vasp(
+        self,
+        train_vaspruns: list[list[str]],
+        test_vaspruns: list[list[str]],
+    ):
+        """Set multiple DFT datasets in vasp format.
+
         Parameters
         ----------
         train_vaspruns: list of list containing vasprun files (training)
         test_vaspruns: list of list containing vasprun files (test)
         """
-        self.__params_dict["dataset_type"] = "vasp"
-        self.__params_dict["dft"]["train"] = dict()
-        self.__params_dict["dft"]["test"] = dict()
+        if self._params is None:
+            raise KeyError(
+                "Set parameters using set_params() " "before using set_datasets."
+            )
+
+        self._params.dataset_type = "vasp"
+        self._params.dft_train = dict()
+        self._params.dft_test = dict()
         for i, vaspruns in enumerate(train_vaspruns):
-            self.__params_dict["dft"]["train"]["dataset" + str(i + 1)] = {
+            self._params.dft_train["dataset" + str(i + 1)] = {
                 "vaspruns": sorted(vaspruns),
                 "include_force": True,
                 "weight": 1.0,
             }
-
         for i, vaspruns in enumerate(test_vaspruns):
-            self.__params_dict["dft"]["test"]["dataset" + str(i + 1)] = {
+            self._params.dft_test["dataset" + str(i + 1)] = {
                 "vaspruns": sorted(vaspruns),
                 "include_force": True,
                 "weight": 1.0,
@@ -266,107 +196,100 @@ class Pypolymlp:
 
     def set_datasets_phono3py(
         self,
-        train_yaml,
-        test_yaml,
-        train_energy_dat=None,
-        test_energy_dat=None,
-        train_ids=None,
-        test_ids=None,
+        train_yaml: str,
+        test_yaml: str,
+        train_energy_dat: str = None,
+        test_energy_dat: str = None,
+        train_ids: tuple[int] = None,
+        test_ids: tuple[int] = None,
     ):
+        """Set single DFT dataset in phono3py format."""
+        if self._params is None:
+            raise KeyError(
+                "Set parameters using set_params() " "before using set_datasets."
+            )
 
-        self.__params_dict["dataset_type"] = "phono3py"
-        data = self.__params_dict["dft"]
-        data["train"], data["test"] = dict(), dict()
-        data["train"]["phono3py_yaml"] = train_yaml
-        data["train"]["energy"] = train_energy_dat
-        data["test"]["phono3py_yaml"] = test_yaml
-        data["test"]["energy"] = test_energy_dat
-
-        data["train"]["indices"] = train_ids
-        data["test"]["indices"] = test_ids
+        self._params.dataset_type = "phono3py"
+        self._params.dft_train = {
+            "phono3py_yaml": train_yaml,
+            "energy": train_energy_dat,
+            "indices": train_ids,
+        }
+        self._params.dft_test = {
+            "phono3py_yaml": test_yaml,
+            "energy": test_energy_dat,
+            "indices": test_ids,
+        }
         return self
 
     def set_datasets_displacements(
         self,
-        train_disps,
-        train_forces,
-        train_energies,
-        test_disps,
-        test_forces,
-        test_energies,
-        structure_without_disp,
+        train_disps: np.ndarray,
+        train_forces: np.ndarray,
+        train_energies: np.ndarray,
+        test_disps: np.ndarray,
+        test_forces: np.ndarray,
+        test_energies: np.ndarray,
+        structure_without_disp: PolymlpStructure,
     ):
-        """Set datasets from displacements-(energies, forces).
+        """Set datasets from displacements-(energies, forces) sets.
 
         Parameters
         ----------
-        train_disps: displacements (training data),
-                     shape=(n_train, 3, n_atoms)
-        train_forces: forces (training data),
-                      shape=(n_train, 3, n_atoms)
-        train_energies: energies (training data),
-                      shape=(n_train)
-        test_disps: displacements (test data),
-                    shape=(n_test, 3, n_atom)
-        test_forces: forces (test data),
-                    shape=(n_test, 3, n_atom)
-        test_energies: energies (test data),
-                    shape=(n_test)
-
-        structure_without_disp: structure without displacements, dict
-        - 'axis': (3,3), [a, b, c]
-        - 'positions': (3, n_atom) [x1, x2, ...]
-        - 'n_atoms': [4, 4]
-        - 'elements': Element list (e.g.) ['Mg','Mg','Mg','Mg','O','O','O','O']
-        - 'types': Atomic type integers (e.g.) [0, 0, 0, 0, 1, 1, 1, 1]
-        - 'volume': 64.0 (ang.^3)
+        train_disps: Displacements (training), shape=(n_train, 3, n_atoms).
+        train_forces: Forces (training), shape=(n_train, 3, n_atoms).
+        train_energies: Energies (training), shape=(n_train).
+        test_disps: Displacements (test), shape=(n_test, 3, n_atom).
+        test_forces: Forces (test data), shape=(n_test, 3, n_atom).
+        test_energies: Energies (test data), shape=(n_test).
+        structure_without_disp: Structure without displacements, PolymlpStructure
         """
-        try:
-            element_order = self.__params_dict["elements"]
-        except KeyError:
+        if self._params is None:
             raise KeyError(
                 "Set parameters using set_params() "
                 "before using set_datasets_displacements."
             )
 
-        self.train_dft_dict = self.__set_dft_dict(
+        self._train = self._set_dft_data(
             train_disps,
             train_forces,
             train_energies,
             structure_without_disp,
-            element_order=element_order,
+            element_order=self._params.element_order,
         )
-        self.test_dft_dict = self.__set_dft_dict(
+        self._test = self._set_dft_data(
             test_disps,
             test_forces,
             test_energies,
             structure_without_disp,
-            element_order=element_order,
+            element_order=self._params.element_order,
         )
         return self
 
-    def __set_dft_dict(
+    def _set_dft_data(
         self,
-        disps,
-        forces,
-        energies,
-        st_dict,
+        disps: np.ndarray,
+        forces: np.ndarray,
+        energies: np.ndarray,
+        structure_without_disp: PolymlpStructure,
         element_order=None,
     ):
 
         positions_all = convert_disps_to_positions(
-            disps, st_dict["axis"], st_dict["positions"]
+            disps,
+            structure_without_disp.axis,
+            structure_without_disp.positions,
         )
-        dft_dict = set_dft_dict(
+        dft = set_dft_data(
             forces,
             energies,
             positions_all,
-            st_dict,
+            structure_without_disp,
             element_order=element_order,
         )
-        return dft_dict
+        return dft
 
-    def __sequence(self, params):
+    def _sequence(self, params):
         return np.linspace(float(params[0]), float(params[1]), int(params[2]))
 
     def run(
@@ -378,19 +301,19 @@ class Pypolymlp:
         output_files=False,
         batch_size=None,
     ):
-        """Running linear ridge regression to estimate MLP coefficients."""
+        """Run linear ridge regression to estimate MLP coefficients."""
         polymlp_in = PolymlpDevData()
         if file_params is not None:
             polymlp_in.parse_infiles(file_params, verbose=True)
-            self.__params_dict = polymlp_in.params_dict
+            self._params = polymlp_in.params
         else:
-            polymlp_in.params_dict = self.__params_dict
+            polymlp_in.params = self._params
 
-        if self.train_dft_dict is None:
+        if self._train is None:
             polymlp_in.parse_datasets()
         else:
-            polymlp_in.train_dict = self.train_dft_dict
-            polymlp_in.test_dict = self.test_dft_dict
+            polymlp_in.train = self._train
+            polymlp_in.test = self._test
 
         if output_files:
             polymlp_in.write_polymlp_params_yaml(
@@ -416,7 +339,7 @@ class Pypolymlp:
             clear_data=True,
             batch_size=batch_size,
         )
-        self.__mlp_dict = reg.best_model
+        self._mlp_model = reg.best_model
         if output_files:
             reg.save_mlp_lammps(filename=path_output + "/polymlp.lammps")
 
@@ -429,21 +352,18 @@ class Pypolymlp:
         if output_files:
             acc.write_error_yaml(filename=path_output + "/polymlp_error.yaml")
 
-        self.__mlp_dict["error"] = {
-            "train": acc.error_train_dict,
-            "test": acc.error_test_dict,
-        }
-
+        self._mlp_model.error_train = acc.error_train_dict
+        self._mlp_model.error_test = acc.error_test_dict
         return self
 
     @property
-    def parameters(self):
-        return self.__params_dict
+    def parameters(self) -> PolymlpParams:
+        return self._params
 
     @property
     def summary(self):
-        return self.__mlp_dict
+        return self._mlp_model
 
     @property
     def coeffs(self):
-        return self.__mlp_dict["coeffs"] / self.__mlp_dict["scales"]
+        return self._mlp_model.coeffs / self._mlp_model.scales

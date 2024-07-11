@@ -188,7 +188,7 @@ class FeaturesHybrid:
 
     @property
     def x(self):
-        return self.__x
+        return self._x
 
     @property
     def first_indices(self):

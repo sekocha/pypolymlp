@@ -5,6 +5,8 @@ from typing import Literal, Optional, Self, Union
 
 import numpy as np
 
+from pypolymlp.cxx.lib import libmlpcpp
+
 
 @dataclass
 class PolymlpStructure:
@@ -46,14 +48,41 @@ class PolymlpGtinvParams:
 
     order: int
     max_l: tuple[int]
-    sym: tuple[bool]
-    lm_seq: list
-    l_comb: list
-    lm_coeffs: list
+    n_type: int
+    sym: tuple[bool] = (False, False, False, False, False)
+    lm_seq: Optional[list] = None
+    l_comb: Optional[list] = None
+    lm_coeffs: Optional[list] = None
     version: int = 1
+
+    def __post_init__(self):
+        self.check_errors()
+        if self.order > 0:
+            self.get_invariances()
+        else:
+            self.lm_seq = []
+            self.l_comb = []
+            self.lm_coeffs = []
 
     def as_dict(self) -> dict:
         return asdict(self)
+
+    def check_errors(self):
+        size = self.order - 1
+        if len(self.max_l) < size:
+            raise ValueError("Size (gtinv_maxl) <", size)
+
+    def get_invariances(self):
+        rgi = libmlpcpp.Readgtinv(
+            self.order,
+            self.max_l,
+            self.sym,
+            self.n_type,
+            self.version,
+        )
+        self.lm_seq = rgi.get_lm_seq()
+        self.l_comb = rgi.get_l_comb()
+        self.lm_coeffs = rgi.get_lm_coeffs()
 
 
 @dataclass
@@ -80,19 +109,25 @@ class PolymlpModelParams:
     """
 
     cutoff: float
-    model_type: int
-    max_p: int
+    model_type: Literal[1, 2, 3, 4]
+    max_p: Literal[1, 2, 3]
     max_l: int
     pair_params: list[list[float]]
     feature_type: Literal["pair", "gtinv"] = "gtinv"
     pair_type: str = "gaussian"
     gtinv: Optional[PolymlpGtinvParams] = None
 
+    def __post_init__(self):
+        self.check_errors()
+
     def as_dict(self) -> dict:
         model_dict = asdict(self)
         if self.gtinv is not None:
             model_dict["gtinv"] = self.gtinv.as_dict()
         return model_dict
+
+    def check_errors(self):
+        pass
 
 
 @dataclass
@@ -117,7 +152,7 @@ class PolymlpParams:
     dft_train: Optional[Union[list, dict]] = None
     dft_test: Optional[Union[list, dict]] = None
     regression_method: str = "ridge"
-    regression_alpha: tuple[float, float, int] = (-3.0, 1.0, 5)
+    regression_alpha: tuple[float] = tuple(np.linspace(-3.0, 1.0, 5))
     include_force: bool = True
     include_stress: bool = True
     dataset_type: Literal["vasp", "phonon3py"] = "vasp"
@@ -125,10 +160,19 @@ class PolymlpParams:
     element_swap: bool = False
     print_memory: bool = False
 
+    def __post_init__(self):
+        self.check_errors()
+
     def as_dict(self) -> dict:
         params_dict = asdict(self)
         params_dict["model"] = self.model.as_dict()
         return params_dict
+
+    def check_errors(self):
+        if len(self.elements) != self.n_type:
+            raise ValueError("len(elements) != n_type")
+        if len(self.atomic_energy) != self.n_type:
+            raise ValueError("len(atomic_energy) != n_type")
 
 
 @dataclass
@@ -247,3 +291,5 @@ class PolymlpDataMLP:
     alpha: Optional[float] = None
     predictions_train: Optional[np.ndarray] = None
     predictions_test: Optional[np.ndarray] = None
+    error_train: Optional[dict] = None
+    error_test: Optional[dict] = None

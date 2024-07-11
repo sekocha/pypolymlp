@@ -6,6 +6,7 @@ from math import sqrt
 from typing import Optional
 
 import numpy as np
+from scipy.linalg.lapack import get_lapack_funcs
 
 from pypolymlp.core.data_format import (
     PolymlpDataDFT,
@@ -16,8 +17,6 @@ from pypolymlp.core.data_format import (
 from pypolymlp.core.io_polymlp import save_mlp_lammps, save_multiple_mlp_lammps
 from pypolymlp.core.utils import rmse
 from pypolymlp.mlp_dev.core.mlpdev_dataxy_base import PolymlpDevDataXYBase
-
-# from scipy.linalg.lapack import get_lapack_funcs
 
 
 class RegressionBase(ABC):
@@ -71,9 +70,9 @@ class RegressionBase(ABC):
         x = scipy.linalg.solve(A, b, check_finite=False, assume_a='pos')
         """
         # x = scipy.linalg.solve(A, b, check_finite=False, assume_a='pos')
-        # (posv,) = get_lapack_funcs(("posv",), (A, b))
-        # _, x, _ = posv(A, b, lower=False, overwrite_a=False, overwrite_b=False)
-        x = np.linalg.solve(A, b)
+        (posv,) = get_lapack_funcs(("posv",), (A, b))
+        _, x, _ = posv(A, b, lower=False, overwrite_a=False, overwrite_b=False)
+        # x = np.linalg.solve(A, b)
         # L = np.linalg.cholesky(A)
         # x = np.linalg.solve(L.T, np.linalg.solve(L, b))
         return x
@@ -164,7 +163,7 @@ class RegressionBase(ABC):
     def hybrid_division(self, target):
         cumulative = self._cumulative_n_features
         list_target = []
-        for i, params_dict in enumerate(self._params_dict):
+        for i, params in enumerate(self._params):
             if i == 0:
                 begin, end = 0, cumulative[0]
             else:
