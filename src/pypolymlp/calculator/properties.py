@@ -26,15 +26,15 @@ class PropertiesSingle:
         self, pot: str = None, params: PolymlpParams = None, coeffs: np.ndarray = None
     ):
         if pot is not None:
-            self.__params, mlp_dict = load_mlp_lammps(filename=pot)
-            self.__coeffs = mlp_dict["coeffs"] / mlp_dict["scales"]
+            self._params, mlp_dict = load_mlp_lammps(filename=pot)
+            self._coeffs = mlp_dict["coeffs"] / mlp_dict["scales"]
         else:
-            self.__params = params
-            self.__coeffs = coeffs
+            self._params = params
+            self._coeffs = coeffs
 
-        self.__params.element_swap = False
+        self._params.element_swap = False
         self.obj = libmlpcpp.PotentialPropertiesFast(
-            self.__params.as_dict(), self.__coeffs
+            self._params.as_dict(), self._coeffs
         )
 
     def eval(self, st: PolymlpStructure):
@@ -46,7 +46,7 @@ class PropertiesSingle:
         force: unit: eV/angstrom (3, n_atom)
         stress: unit: eV/supercell: (6) in the order of xx, yy, zz, xy, yz, zx
         """
-        st = update_types([st], self.__params.element_order)[0]
+        st = update_types([st], self._params.element_order)[0]
 
         positions_c = st.axis @ st.positions
         self.obj.eval(st.axis, positions_c, st.types)
@@ -72,7 +72,7 @@ class PropertiesSingle:
                 len(structures),
                 "structures: Using a fast algorithm",
             )
-        structures = update_types(structures, self.__params.element_order)
+        structures = update_types(structures, self._params.element_order)
 
         axis_array = [st.axis for st in structures]
         types_array = [st.types for st in structures]
@@ -95,7 +95,7 @@ class PropertiesSingle:
 
     @property
     def params(self):
-        return self.__params
+        return self._params
 
 
 class PropertiesHybrid:
@@ -176,32 +176,32 @@ class Properties:
     def eval(self, st: PolymlpStructure):
         """Evaluate properties for a single structure."""
         e, f, s = self.prop.eval(st)
-        self.__e, self.__f, self.__s = [e], [f], [s]
-        self.__structures = [st]
+        self._e, self._f, self._s = [e], [f], [s]
+        self._structures = [st]
         return e, f, s
 
     def eval_multiple(self, structures: list[PolymlpStructure]):
         """Evaluate properties for multiple structures."""
-        self.__e, self.__f, self.__s = self.prop.eval_multiple(structures)
-        self.__structures = structures
-        return self.__e, self.__f, self.__s
+        self._e, self._f, self._s = self.prop.eval_multiple(structures)
+        self._structures = structures
+        return self._e, self._f, self._s
 
     def eval_phonopy(self, str_ph):
         from pypolymlp.utils.phonopy_utils import phonopy_cell_to_structure
 
         st = phonopy_cell_to_structure(str_ph)
         e, f, s = self.prop.eval(st)
-        self.__e, self.__f, self.__s = [e], [f], [s]
-        self.__structures = [st]
+        self._e, self._f, self._s = [e], [f], [s]
+        self._structures = [st]
         return e, f, s
 
     def eval_multiple_phonopy(self, str_ph_list):
         from pypolymlp.utils.phonopy_utils import phonopy_cell_to_structure
 
         structures = [phonopy_cell_to_structure(str_ph) for str_ph in str_ph_list]
-        self.__e, self.__f, self.__s = self.prop.eval_multiple(structures)
-        self.__structures = structures
-        return self.__e, self.__f, self.__s
+        self._e, self._f, self._s = self.prop.eval_multiple(structures)
+        self._structures = structures
+        return self._e, self._f, self._s
 
     def save(self, verbose=False):
         np.save("polymlp_energies.npy", self.energies)
@@ -236,19 +236,19 @@ class Properties:
 
     @property
     def energies(self):
-        return self.__e
+        return self._e
 
     @property
     def forces(self):
-        return self.__f
+        return self._f
 
     @property
     def stresses(self):
-        return self.__s
+        return self._s
 
     @property
     def stresses_gpa(self):
-        return convert_stresses_in_gpa(self.__s, self.__structures)
+        return convert_stresses_in_gpa(self._s, self._structures)
 
 
 if __name__ == "__main__":

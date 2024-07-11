@@ -111,7 +111,11 @@ class Pypolymlp:
                 )
                 max_l = max(gtinv_maxl)
             else:
-                gtinv = None
+                gtinv = PolymlpGtinvParams(
+                    order=0,
+                    max_l=[],
+                    n_type=n_type,
+                )
                 max_l = 0
 
             model = PolymlpModelParams(
@@ -128,8 +132,8 @@ class Pypolymlp:
             self._params = PolymlpParams(
                 n_type=n_type,
                 elements=elements,
-                atomic_energy=atomic_energy,
                 model=model,
+                atomic_energy=atomic_energy,
                 regression_alpha=np.linspace(
                     reg_alpha_params[0], reg_alpha_params[1], reg_alpha_params[2]
                 ),

@@ -147,8 +147,8 @@ class PolymlpParams:
 
     n_type: int
     elements: tuple[str]
-    atomic_energy: tuple[float]
     model: PolymlpModelParams
+    atomic_energy: Optional[tuple[float]] = (0.0, 0.0)
     dft_train: Optional[Union[list, dict]] = None
     dft_test: Optional[Union[list, dict]] = None
     regression_method: str = "ridge"

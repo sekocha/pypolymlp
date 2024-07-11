@@ -68,10 +68,10 @@ class ParamsParser:
             dft_train, dft_test = None, None
 
         self.__params = PolymlpParams(
-            n_type,
-            elements,
-            atomic_energy,
-            model,
+            n_type=n_type,
+            elements=elements,
+            model=model,
+            atomic_energy=atomic_energy,
             dft_train=dft_train,
             dft_test=dft_test,
             regression_method=reg_method,
