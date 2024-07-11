@@ -29,7 +29,7 @@ class Pypolymlp:
         self._train = None
         self._test = None
         self._mlp_model = None
-        self.__multiple_datasets = False
+        self._multiple_datasets = False
 
         """Hybrid models are not available."""
         # self.__hybrid = None
@@ -156,7 +156,7 @@ class Pypolymlp:
         self._params.dataset_type = "vasp"
         self._params.dft_train = sorted(train_vaspruns)
         self._params.dft_test = sorted(test_vaspruns)
-        self.__multiple_datasets = False
+        self._multiple_datasets = False
         return self
 
     def set_multiple_datasets_vasp(
@@ -191,7 +191,7 @@ class Pypolymlp:
                 "include_force": True,
                 "weight": 1.0,
             }
-        self.__multiple_datasets = True
+        self._multiple_datasets = True
         return self
 
     def set_datasets_phono3py(
@@ -264,6 +264,9 @@ class Pypolymlp:
             structure_without_disp,
             element_order=self._params.element_order,
         )
+        self._train = [self._train]
+        self._test = [self._test]
+        self._multiple_datasets = True
         return self
 
     def _set_dft_data(
@@ -295,13 +298,14 @@ class Pypolymlp:
     def run(
         self,
         file_params=None,
-        sequential=False,
+        sequential=None,
         path_output="./",
         verbose=False,
         output_files=False,
         batch_size=None,
     ):
         """Run linear ridge regression to estimate MLP coefficients."""
+
         polymlp_in = PolymlpDevData()
         if file_params is not None:
             polymlp_in.parse_infiles(file_params, verbose=True)
@@ -320,6 +324,9 @@ class Pypolymlp:
                 filename=path_output + "/polymlp_params.yaml"
             )
         n_features = polymlp_in.n_features
+
+        if sequential is None:
+            sequential = True if polymlp_in.is_multiple_datasets else False
 
         if not sequential:
             polymlp = PolymlpDevDataXY(polymlp_in, verbose=verbose).run()
