@@ -102,10 +102,10 @@ class PolymlpDevData:
                 self.parse_multiple_datasets()
         elif self._params.dataset_type == "phono3py":
             self._parse_single_dataset()
-            self._params.dft_train = {"train1": self._params.dft_train}
-            self._params.dft_test = {"test1": self._params.dft_test}
-            self._train.name = "train1"
-            self._test.name = "test1"
+            self._params.dft_train = {"train_phono3py": self._params.dft_train}
+            self._params.dft_test = {"test_phono3py": self._params.dft_test}
+            self._train.name = "train_phono3py"
+            self._test.name = "test_phono3py"
             self._train = [self._train]
             self._test = [self._test]
             self._multiple_datasets = True
@@ -124,7 +124,6 @@ class PolymlpDevData:
             self._train = parse_vaspruns(dft_train, element_order=element_order)
             self._test = parse_vaspruns(dft_test, element_order=element_order)
         elif self._params.dataset_type == "phono3py":
-            """TODO"""
             from pypolymlp.core.interface_phono3py_ver3 import parse_phono3py_yaml
 
             self._train = parse_phono3py_yaml(

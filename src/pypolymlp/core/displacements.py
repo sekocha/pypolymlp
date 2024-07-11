@@ -28,16 +28,16 @@ def set_dft_data(
     dft: DFT training or test dataset in PolymlpDataDFT format
     """
     stresses = np.zeros(forces.shape[0] * 6)
-    forces, structures = [], []
+    forces_update, structures = [], []
     for positions_iter, forces_iter in zip(positions_all, forces):
         st = copy.deepcopy(structure)
         st.positions = positions_iter
         if element_order is not None:
             st, forces_iter = permute_atoms(st, forces_iter, element_order)
 
-        forces.extend(forces_iter.T.reshape(-1))
+        forces_update.extend(forces_iter.T.reshape(-1))
         structures.append(st)
-    forces = np.array(forces)
+    forces = np.array(forces_update)
     volumes = np.array([st.volume for st in structures])
 
     if element_order is not None:

@@ -70,9 +70,12 @@ class RegressionBase(ABC):
         x = np.linalg.solve(A, b)
         x = scipy.linalg.solve(A, b, check_finite=False, assume_a='pos')
         """
+        # x = scipy.linalg.solve(A, b, check_finite=False, assume_a='pos')
         # (posv,) = get_lapack_funcs(("posv",), (A, b))
         # _, x, _ = posv(A, b, lower=False, overwrite_a=False, overwrite_b=False)
         x = np.linalg.solve(A, b)
+        # L = np.linalg.cholesky(A)
+        # x = np.linalg.solve(L.T, np.linalg.solve(L, b))
         return x
 
     def compute_inner_products(self, X=None, y=None, A=None, Xy=None):

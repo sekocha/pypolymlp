@@ -61,7 +61,11 @@ class PolymlpDevDataXYBase(ABC):
         ne, nf, ns = self._train_xy.n_data
         self._scales = np.std(x[:ne], axis=0)
 
+        print(ne, nf, ns)
+        print(self._train_xy.x[0, :10])
+        print(self._scales[:10])
         self._train_xy.x /= self._scales
+        print(self._train_xy.x[0, :10])
         self._test_xy.x /= self._scales
 
         self._train_xy.scales = self._scales
