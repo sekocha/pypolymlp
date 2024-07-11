@@ -1,196 +1,193 @@
-#!/usr/bin/env python
+"""Base class for PolymlpDevDataXY."""
+
 import gc
 from abc import ABC, abstractmethod
+from typing import Union
 
 import numpy as np
 
+from pypolymlp.core.data_format import PolymlpDataDFT, PolymlpDataXY
 from pypolymlp.mlp_dev.core.features import Features, FeaturesHybrid
 from pypolymlp.mlp_dev.core.mlpdev_data import PolymlpDevData
 from pypolymlp.mlp_dev.core.utils_weights import apply_weight_percentage
 
 
 class PolymlpDevDataXYBase(ABC):
+    """Base class for PolymlpDevDataXY."""
 
-    def __init__(self, params: PolymlpDevData, verbose=True):
-        """
-        Keys in reg_dict
-        ----------------
-        - x
-        - y
-        - first_indices [(ebegin, fbegin, sbegin), ...]
-        - n_data (ne, nf, ns)
-        - scales
-        """
-        self.__params_dict = params.params_dict
-        self.__common_params_dict = params.common_params_dict
-        self.__verbose = verbose
+    def __init__(self, polymlp_dev_data: PolymlpDevData, verbose: bool = True):
+        self._params = polymlp_dev_data.params
+        self._common_params = polymlp_dev_data.common_params
+        self._verbose = verbose
 
-        self.__train_dict = params.train_dict
-        self.__test_dict = params.test_dict
-        self.__min_energy = params.min_energy
+        self._train = polymlp_dev_data.train
+        self._test = polymlp_dev_data.test
+        self._min_energy = polymlp_dev_data.min_energy
 
-        self.__multiple_datasets = params.is_multiple_datasets
-        self.__hybrid = params.is_hybrid
+        self._multiple_datasets = polymlp_dev_data.is_multiple_datasets
+        self._hybrid = polymlp_dev_data.is_hybrid
 
         if self.is_hybrid is False:
-            self.__feature_class = Features
+            self._feature_class = Features
         else:
-            self.__feature_class = FeaturesHybrid
+            self._feature_class = FeaturesHybrid
 
-        self.__train_reg_dict = None
-        self.__test_reg_dict = None
-        self.__scales = None
+        self._train_xy = None
+        self._test_xy = None
+        self._scales = None
 
     def print_data_shape(self):
 
-        x = self.__train_reg_dict["x"]
-        ne, nf, ns = self.__train_reg_dict["n_data"]
+        x = self._train_xy.x
+        ne, nf, ns = self._train_xy.n_data
         print("Training Dataset:", x.shape, flush=True)
-        print("   - n (energy) =", ne, flush=True)
-        print("   - n (force)  =", nf, flush=True)
-        print("   - n (stress) =", ns, flush=True)
+        print("- n (energy) =", ne, flush=True)
+        print("- n (force)  =", nf, flush=True)
+        print("- n (stress) =", ns, flush=True)
 
-        x = self.__test_reg_dict["x"]
-        ne, nf, ns = self.__test_reg_dict["n_data"]
+        x = self._test_xy.x
+        ne, nf, ns = self._test_xy.n_data
         print("Test Dataset:", x.shape, flush=True)
-        print("   - n (energy) =", ne, flush=True)
-        print("   - n (force)  =", nf, flush=True)
-        print("   - n (stress) =", ns, flush=True)
+        print("- n (energy) =", ne, flush=True)
+        print("- n (force)  =", nf, flush=True)
+        print("- n (stress) =", ns, flush=True)
         return self
 
     def apply_scales(self):
+        if self._train_xy is None:
+            raise ValueError("Not found: PolymlpDataXY.")
 
-        if self.__train_reg_dict is None:
-            raise ValueError("Not found: regression_dict.")
+        x = self._train_xy.x
+        ne, nf, ns = self._train_xy.n_data
+        self._scales = np.std(x[:ne], axis=0)
 
-        x = self.__train_reg_dict["x"]
-        ne, nf, ns = self.__train_reg_dict["n_data"]
-        self.__scales = np.std(x[:ne], axis=0)
+        self._train_xy.x /= self._scales
+        self._test_xy.x /= self._scales
 
-        self.__train_reg_dict["x"] /= self.__scales
-        self.__test_reg_dict["x"] /= self.__scales
-
-        self.__train_reg_dict["scales"] = self.__scales
-        self.__test_reg_dict["scales"] = self.__scales
+        self._train_xy.scales = self._scales
+        self._test_xy.scales = self._scales
 
         return self
 
     def apply_weights(self, weight_stress=0.1):
+        if self._train_xy is None:
+            raise ValueError("Not found: PolymlpDataXY")
 
-        if self.__train_reg_dict is None:
-            raise ValueError("Not found: regression_dict.")
-
-        self.__train_reg_dict = self.__apply_weights_single_set(
-            self.__train_dict,
-            self.__train_reg_dict,
+        self._train_xy = self._apply_weights_single_set(
+            self._train,
+            self._train_xy,
             weight_stress=weight_stress,
         )
-        self.__test_reg_dict = self.__apply_weights_single_set(
-            self.__test_dict,
-            self.__test_reg_dict,
+        self._test_xy = self._apply_weights_single_set(
+            self._test,
+            self._test_xy,
             weight_stress=weight_stress,
         )
 
-    def __apply_weights_single_set(self, dft_dict_all, reg_dict, weight_stress=0.1):
+    def _apply_weights_single_set(
+        self,
+        data_dft: Union[PolymlpDataDFT, list[PolymlpDataDFT]],
+        data_xy: PolymlpDataXY,
+        weight_stress: float = 0.1,
+    ) -> PolymlpDataXY:
 
-        first_indices = reg_dict["first_indices"]
-        x = reg_dict["x"]
+        first_indices = data_xy.first_indices
+        x = data_xy.x
         n_data, n_features = x.shape
         y = np.zeros(n_data)
         w = np.ones(n_data)
 
-        if self.__multiple_datasets is False:
+        if self._multiple_datasets is False:
             indices = first_indices[0]
             x, y, w = apply_weight_percentage(
                 x,
                 y,
                 w,
-                dft_dict_all,
-                self.__common_params_dict,
+                data_dft,
+                self._common_params,
                 indices,
                 weight_stress=weight_stress,
-                min_e=self.__min_energy,
+                min_e=self._min_energy,
             )
         else:
-            for dft_dict, indices in zip(dft_dict_all.values(), first_indices):
+            for dft, indices in zip(data_dft, first_indices):
                 x, y, w = apply_weight_percentage(
                     x,
                     y,
                     w,
-                    dft_dict,
-                    self.__common_params_dict,
+                    dft,
+                    self._common_params,
                     indices,
                     weight_stress=weight_stress,
-                    min_e=self.__min_energy,
+                    min_e=self._min_energy,
                 )
 
-        reg_dict["x"] = x
-        reg_dict["y"] = y
-        reg_dict["weight"] = w
-        reg_dict["scales"] = self.__scales
-
-        return reg_dict
+        data_xy.x = x
+        data_xy.y = y
+        data_xy.weight = w
+        data_xy.scales = self._scales
+        return data_xy
 
     @abstractmethod
     def run(self):
         pass
 
     @property
-    def params_dict(self):
-        return self.__params_dict
+    def params(self):
+        return self._params
 
     @property
-    def common_params_dict(self):
-        return self.__common_params_dict
+    def common_params(self):
+        return self._common_params
 
     @property
-    def train_dict(self):
-        return self.__train_dict
+    def train(self) -> PolymlpDataDFT:
+        return self._train
 
     @property
-    def test_dict(self):
-        return self.__test_dict
+    def test(self) -> PolymlpDataDFT:
+        return self._test
 
     @property
-    def is_multiple_datasets(self):
-        return self.__multiple_datasets
+    def train_xy(self) -> PolymlpDataXY:
+        return self._train_xy
 
     @property
-    def is_hybrid(self):
-        return self.__hybrid
+    def test_xy(self) -> PolymlpDataXY:
+        return self._test_xy
 
-    @property
-    def min_energy(self):
-        return self.__min_energy
+    @train_xy.setter
+    def train_xy(self, data: PolymlpDataXY):
+        self._train_xy = data
 
-    @property
-    def train_regression_dict(self):
-        return self.__train_reg_dict
+    @test_xy.setter
+    def test_xy(self, data: PolymlpDataXY):
+        self._test_xy = data
 
-    @property
-    def test_regression_dict(self):
-        return self.__test_reg_dict
-
-    @train_regression_dict.setter
-    def train_regression_dict(self, dict1):
-        self.__train_reg_dict = dict1
-
-    @test_regression_dict.setter
-    def test_regression_dict(self, dict1):
-        self.__test_reg_dict = dict1
-
-    def delete_train_regression_dict(self):
-        del self.__train_reg_dict
+    def delete_train_xy(self):
+        del self._train_xy
         gc.collect()
 
-    def delete_test_regression_dict(self):
-        del self.__test_reg_dict
+    def delete_test_xy(self):
+        del self._test_xy
         gc.collect()
 
     @property
     def features_class(self):
-        return self.__feature_class
+        return self._feature_class
+
+    @property
+    def is_multiple_datasets(self):
+        return self._multiple_datasets
+
+    @property
+    def is_hybrid(self):
+        return self._hybrid
+
+    @property
+    def min_energy(self):
+        return self._min_energy
 
     @property
     def verbose(self):
-        return self.__verbose
+        return self._verbose

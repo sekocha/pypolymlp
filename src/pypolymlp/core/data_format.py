@@ -123,6 +123,7 @@ class PolymlpParams:
     dataset_type: Literal["vasp", "phonon3py"] = "vasp"
     element_order: Optional[tuple[str]] = None
     element_swap: bool = False
+    print_memory: bool = False
 
     def as_dict(self) -> dict:
         params_dict = asdict(self)
@@ -131,7 +132,7 @@ class PolymlpParams:
 
 
 @dataclass
-class PolymlpDFTDataset:
+class PolymlpDataDFT:
     """Dataclass of DFT dataset used for developing polymlp.
 
     Parameters
@@ -161,3 +162,88 @@ class PolymlpDFTDataset:
             [e - st.n_atoms @ atom_e for e, st in zip(self.energies, self.structures)]
         )
         return self
+
+    def slice(self, begin, end, name="sliced"):
+        """Slice DFT data in PolymlpDataDFT."""
+        begin_f = sum(self.total_n_atoms[:begin]) * 3
+        end_f = sum(self.total_n_atoms[:end]) * 3
+        dft_dict_sliced = PolymlpDataDFT(
+            energies=self.energies[begin:end],
+            forces=self.forces[begin_f:end_f],
+            stresses=self.stresses[begin * 6 : end * 6],
+            volumes=self.volumes[begin:end],
+            structures=self.structures[begin:end],
+            total_n_atoms=self.total_n_atoms[begin:end],
+            files=self.files[begin:end],
+            elements=self.elements,
+            include_force=self.include_force,
+            weight=self.weight,
+            name=name,
+        )
+        return dft_dict_sliced
+
+    def sort(self) -> Self:
+        ids = np.argsort(self.total_n_atoms)
+        ids_stress = ((ids * 6)[:, None] + np.arange(6)[None, :]).reshape(-1)
+        force_end = np.cumsum(self.total_n_atoms * 3)
+        force_begin = np.insert(force_end[:-1], 0, 0)
+        ids_force = np.array(
+            [i for b, e in zip(force_begin[ids], force_end[ids]) for i in range(b, e)]
+        )
+
+        self.energies = self.energies[ids]
+        self.forces = self.forces[ids_force]
+        self.stresses = self.stresses[ids_stress]
+        self.volumes = self.volumes[ids]
+        self.total_n_atoms = self.total_n_atoms[ids]
+        self.structures = [self.structures[i] for i in ids]
+        self.files = [self.files[i] for i in ids]
+        return self
+
+
+@dataclass
+class PolymlpDataXY:
+    """Dataclass of dataset used for performing regression.
+
+    Parameters
+    ----------
+    x: Predictor matrix, shape=(total_n_data, n_features)
+    y: Observation vector, shape=(total_n_data)
+    xtx: x.T @ x
+    xty: x.T @ y
+    scales: Scales of x, shape=(n_features)
+    weights: Weights for data, shape=(total_n_data)
+    n_data: Number of data (energy, force, stress)
+    """
+
+    x: Optional[np.ndarray] = None
+    y: Optional[np.ndarray] = None
+    xtx: Optional[np.ndarray] = None
+    xty: Optional[np.ndarray] = None
+    scales: Optional[np.ndarray] = None
+    weights: Optional[np.ndarray] = None
+    n_data: Optional[tuple[int, int, int]] = None
+    first_indices: Optional[list[tuple[int, int, int]]] = None
+    cumulative_n_features: Optional[int] = None
+    xe_sum: Optional[np.ndarray] = None
+    xe_sq_sum: Optional[np.ndarray] = None
+    y_sq_norm: float = 0.0
+    total_n_data: int = 0
+
+
+@dataclass
+class PolymlpDataMLP:
+    """Dataclass of regression results.
+
+    Parameters
+    ----------
+    coeffs: MLP coefficients, shape=(n_features).
+    scales: Scales of x, shape=(n_features).
+    """
+
+    coeffs: Optional[np.ndarray] = None
+    scales: Optional[np.ndarray] = None
+    rmse: Optional[float] = None
+    alpha: Optional[float] = None
+    predictions_train: Optional[np.ndarray] = None
+    predictions_test: Optional[np.ndarray] = None

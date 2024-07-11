@@ -105,9 +105,6 @@ def __read_var(line, dtype=int, return_list=False):
     return dtype(list1[0])
 
 
-"""TODO: Dataclass"""
-
-
 def load_mlp_lammps(filename="polymlp.lammps"):
     """Load polymlp.lammps file.
 
@@ -120,6 +117,7 @@ def load_mlp_lammps(filename="polymlp.lammps"):
     params_dict, mlp_dict = load_mlp_lammps(filename='mlp.lammps')
     """
 
+    """TODO: Dataclass"""
     mlp_dict = dict()
     params_dict = dict()
     params_dict["model"] = model_dict = dict()

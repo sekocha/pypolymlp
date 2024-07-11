@@ -5,11 +5,11 @@ import xml.etree.ElementTree as ET
 
 import numpy as np
 
-from pypolymlp.core.data_format import PolymlpDFTDataset, PolymlpStructure
+from pypolymlp.core.data_format import PolymlpDataDFT, PolymlpStructure
 from pypolymlp.core.utils import permute_atoms
 
 
-def parse_vaspruns(vaspruns, element_order=None):
+def parse_vaspruns(vaspruns: list[str], element_order: bool = None) -> PolymlpDataDFT:
 
     kbar_to_eV = 1 / 1602.1766208
     energies, forces, stresses, volumes, structures = [], [], [], [], []
@@ -48,7 +48,7 @@ def parse_vaspruns(vaspruns, element_order=None):
     else:
         elements = element_order
 
-    dft = PolymlpDFTDataset(
+    dft = PolymlpDataDFT(
         np.array(energies),
         np.array(forces),
         np.array(stresses),

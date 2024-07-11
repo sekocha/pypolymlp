@@ -3,7 +3,7 @@ import copy
 
 import numpy as np
 
-from pypolymlp.core.data_format import PolymlpDFTDataset, PolymlpStructure
+from pypolymlp.core.data_format import PolymlpDataDFT, PolymlpStructure
 from pypolymlp.core.utils import permute_atoms
 
 
@@ -13,7 +13,7 @@ def set_dft_data(
     positions_all: np.ndarray,
     structure: PolymlpStructure,
     element_order: list[str] = None,
-) -> PolymlpDFTDataset:
+) -> PolymlpDataDFT:
     """Generate DFT dataset dataclass from a force-position dataset.
 
     Parameters
@@ -25,7 +25,7 @@ def set_dft_data(
 
     Return
     ------
-    dft: DFT training or test dataset in PolymlpDFTDataset format
+    dft: DFT training or test dataset in PolymlpDataDFT format
     """
     stresses = np.zeros(forces.shape[0] * 6)
     forces, structures = [], []
@@ -49,7 +49,7 @@ def set_dft_data(
     total_n_atoms = np.array([sum(st.n_atoms) for st in structures])
     files = ["disp-" + str(i + 1).zfill(5) for i, _ in enumerate(structures)]
 
-    dft = PolymlpDFTDataset(
+    dft = PolymlpDataDFT(
         energies,
         forces,
         stresses,

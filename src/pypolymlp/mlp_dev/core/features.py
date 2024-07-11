@@ -1,20 +1,28 @@
-#!/usr/bin/env python
+"""Class of computing features"""
+
+from typing import Union
+
 import numpy as np
 
+from pypolymlp.core.data_format import (
+    PolymlpDataDFT,
+    PolymlpDataXY,
+    PolymlpParams,
+    PolymlpStructure,
+)
 from pypolymlp.cxx.lib import libmlpcpp
 
 
-def multiple_dft_dicts_to_mlpcpp_obj(multiple_dft_dicts):
+def multiple_dft_to_mlpcpp_obj(multiple_dft: list[PolymlpDataDFT]):
 
     n_st_dataset, force_dataset = [], []
     axis_array, positions_c_array = [], []
     types_array, n_atoms_sum_array = [], []
 
-    for _, dft_dict in multiple_dft_dicts.items():
-        structures = dft_dict["structures"]
-        n_st_dataset.append(len(structures))
-        force_dataset.append(dft_dict["include_force"])
-        res = structures_to_mlpcpp_obj(structures)
+    for dft in multiple_dft:
+        n_st_dataset.append(len(dft.structures))
+        force_dataset.append(dft.include_force)
+        res = structures_to_mlpcpp_obj(dft.structures)
         axis_array.extend(res[0])
         positions_c_array.extend(res[1])
         types_array.extend(res[2])
@@ -30,31 +38,35 @@ def multiple_dft_dicts_to_mlpcpp_obj(multiple_dft_dicts):
     )
 
 
-def structures_to_mlpcpp_obj(structures):
+def structures_to_mlpcpp_obj(structures: PolymlpStructure):
 
-    axis_array = [st["axis"] for st in structures]
-    positions_c_array = [np.dot(st["axis"], st["positions"]) for st in structures]
-    types_array = [st["types"] for st in structures]
-    n_atoms_sum_array = [sum(st["n_atoms"]) for st in structures]
+    axis_array = [st.axis for st in structures]
+    positions_c_array = [st.axis @ st.positions for st in structures]
+    types_array = [st.types for st in structures]
+    n_atoms_sum_array = [sum(st.n_atoms) for st in structures]
     return (axis_array, positions_c_array, types_array, n_atoms_sum_array)
 
 
 class Features:
 
-    def __init__(self, params_dict, dft_dict, print_memory=True, element_swap=False):
+    def __init__(
+        self,
+        params: PolymlpParams,
+        dft: Union[PolymlpDataDFT, list[PolymlpDataDFT]],
+        print_memory: bool = True,
+        element_swap: bool = False,
+    ):
 
-        if "structures" in dft_dict:
-            structures = dft_dict["structures"]
-            n_st_dataset = [len(structures)]
-            force_dataset = [params_dict["include_force"]]
+        if isinstance(dft, PolymlpDataDFT):
+            n_st_dataset = [len(dft.structures)]
+            force_dataset = [dft.include_force]
             (
                 axis_array,
                 positions_c_array,
                 types_array,
                 n_atoms_sum_array,
-            ) = structures_to_mlpcpp_obj(structures)
+            ) = structures_to_mlpcpp_obj(dft.structures)
         else:
-            res = multiple_dft_dicts_to_mlpcpp_obj(dft_dict)
             (
                 axis_array,
                 positions_c_array,
@@ -62,12 +74,12 @@ class Features:
                 n_atoms_sum_array,
                 n_st_dataset,
                 force_dataset,
-            ) = res
+            ) = multiple_dft_to_mlpcpp_obj(dft)
 
-        params_dict["element_swap"] = element_swap
-        params_dict["print_memory"] = print_memory
+        params.element_swap = element_swap
+        params.print_memory = print_memory
         obj = libmlpcpp.PotentialModel(
-            params_dict,
+            params.as_dict(),
             axis_array,
             positions_c_array,
             types_array,
@@ -75,7 +87,7 @@ class Features:
             force_dataset,
             n_atoms_sum_array,
         )
-        self.__x = obj.get_x()
+        self._x = obj.get_x()
         fbegin, sbegin = obj.get_fbegin(), obj.get_sbegin()
         ne, nf, ns = obj.get_n_data()
 
@@ -85,50 +97,48 @@ class Features:
             ei += n
         ebegin = np.array(ebegin)
 
-        self.__reg_dict = {
-            "x": self.__x,
-            "first_indices": list(zip(ebegin, fbegin, sbegin)),
-            "n_data": (ne, nf, ns),
-        }
+        self._xy = PolymlpDataXY(
+            x=self._x,
+            first_indices=list(zip(ebegin, fbegin, sbegin)),
+            n_data=(ne, nf, ns),
+        )
 
     @property
-    def regression_dict(self):
-        return self.__reg_dict
+    def data_xy(self):
+        return self._xy
 
     @property
     def x(self):
-        return self.__x
+        return self._x
 
     @property
     def first_indices(self):
-        return self.__reg_dict["first_indices"]
+        return self._xy.first_indices
 
     @property
     def n_data(self):
-        return self.__reg_dict["n_data"]
+        return self._xy.n_data
 
 
 class FeaturesHybrid:
 
     def __init__(
         self,
-        hybrid_params_dicts,
-        dft_dicts,
-        print_memory=True,
-        element_swap=False,
+        hybrid_params: list[PolymlpParams],
+        dft: Union[PolymlpDataDFT, list[PolymlpDataDFT]],
+        print_memory: bool = True,
+        element_swap: bool = False,
     ):
-        if "structures" in dft_dicts:
-            structures = dft_dicts["structures"]
-            n_st_dataset = [len(structures)]
-            force_dataset = [hybrid_params_dicts[0]["include_force"]]
+        if isinstance(dft, PolymlpDataDFT):
+            n_st_dataset = [len(dft.structures)]
+            force_dataset = [dft.include_force]
             (
                 axis_array,
                 positions_c_array,
                 types_array,
                 n_atoms_sum_array,
-            ) = structures_to_mlpcpp_obj(structures)
+            ) = structures_to_mlpcpp_obj(dft.structures)
         else:
-            res = multiple_dft_dicts_to_mlpcpp_obj(dft_dicts)
             (
                 axis_array,
                 positions_c_array,
@@ -136,11 +146,13 @@ class FeaturesHybrid:
                 n_atoms_sum_array,
                 n_st_dataset,
                 force_dataset,
-            ) = res
+            ) = multiple_dft_to_mlpcpp_obj(dft)
 
-        for params_dict in hybrid_params_dicts:
-            params_dict["element_swap"] = element_swap
-            params_dict["print_memory"] = print_memory
+        hybrid_params_dicts = []
+        for params in hybrid_params:
+            params.element_swap = element_swap
+            params.print_memory = print_memory
+            hybrid_params_dicts.append(params.as_dict())
 
         obj = libmlpcpp.PotentialAdditiveModel(
             hybrid_params_dicts,
@@ -152,7 +164,7 @@ class FeaturesHybrid:
             n_atoms_sum_array,
         )
 
-        self.__x = obj.get_x()
+        self._x = obj.get_x()
         fbegin, sbegin = obj.get_fbegin(), obj.get_sbegin()
         cumulative_n_features = obj.get_cumulative_n_features()
         ne, nf, ns = obj.get_n_data()
@@ -163,16 +175,16 @@ class FeaturesHybrid:
             ei += n
         ebegin = np.array(ebegin)
 
-        self.__reg_dict = {
-            "x": self.__x,
-            "first_indices": list(zip(ebegin, fbegin, sbegin)),
-            "n_data": (ne, nf, ns),
-            "cumulative_n_features": cumulative_n_features,
-        }
+        self._xy = PolymlpDataXY(
+            x=self._x,
+            first_indices=list(zip(ebegin, fbegin, sbegin)),
+            n_data=(ne, nf, ns),
+            cumulative_n_features=cumulative_n_features,
+        )
 
     @property
-    def regression_dict(self):
-        return self.__reg_dict
+    def data_xy(self):
+        return self._xy
 
     @property
     def x(self):
@@ -180,12 +192,12 @@ class FeaturesHybrid:
 
     @property
     def first_indices(self):
-        return self.__reg_dict["first_indices"]
+        return self._xy.first_indices
 
     @property
     def n_data(self):
-        return self.__reg_dict["n_data"]
+        return self._xy.n_data
 
     @property
     def cumulative_n_features(self):
-        return self.__reg_dict["cumulative_n_features"]
+        return self._xy.cumulative_n_features

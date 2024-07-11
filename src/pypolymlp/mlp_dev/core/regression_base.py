@@ -1,77 +1,87 @@
-#!/usr/bin/env python
+"""Base class for regression"""
+
 import gc
 from abc import ABC, abstractmethod
 from math import sqrt
+from typing import Optional
 
 import numpy as np
-from scipy.linalg.lapack import get_lapack_funcs
 
+from pypolymlp.core.data_format import (
+    PolymlpDataDFT,
+    PolymlpDataMLP,
+    PolymlpDataXY,
+    PolymlpParams,
+)
 from pypolymlp.core.io_polymlp import save_mlp_lammps, save_multiple_mlp_lammps
 from pypolymlp.core.utils import rmse
 from pypolymlp.mlp_dev.core.mlpdev_dataxy_base import PolymlpDevDataXYBase
 
+# from scipy.linalg.lapack import get_lapack_funcs
+
 
 class RegressionBase(ABC):
+    """Base class for regression"""
 
     def __init__(
         self,
         polymlp_dev: PolymlpDevDataXYBase,
-        train_regression_dict=None,
-        test_regression_dict=None,
-        verbose=True,
+        train_xy: Optional[PolymlpDataXY] = None,
+        test_xy: Optional[PolymlpDataXY] = None,
+        verbose: bool = True,
     ):
 
-        self.__verbose = verbose
-        self.__params_dict = polymlp_dev.params_dict
-        self.__common_params_dict = polymlp_dev.common_params_dict
-        self.__hybrid = polymlp_dev.is_hybrid
+        self._verbose = verbose
+        self._params = polymlp_dev.params
+        self._common_params = polymlp_dev.common_params
+        self._hybrid = polymlp_dev.is_hybrid
 
-        self.__multiple_datasets = polymlp_dev.is_multiple_datasets
+        self._multiple_datasets = polymlp_dev.is_multiple_datasets
 
-        if train_regression_dict is None:
-            self.__vtrain = polymlp_dev.train_regression_dict
+        if train_xy is None:
+            self._train_xy = polymlp_dev.train_xy
         else:
-            self.__vtrain = train_regression_dict
+            self._train_xy = train_xy
 
-        if test_regression_dict is None:
-            self.__vtest = polymlp_dev.test_regression_dict
+        if test_xy is None:
+            self._test_xy = polymlp_dev.test_xy
         else:
-            self.__vtest = test_regression_dict
+            self._test_xy = test_xy
 
-        self.__train_dict = polymlp_dev.train_dict
-        self.__test_dict = polymlp_dev.test_dict
+        self._train = polymlp_dev.train
+        self._test = polymlp_dev.test
+        self._scales = self._train_xy.scales
+        self._best_model = None
 
-        self.__best_model = dict()
-        self.__best_model["scales"] = self.__scales = self.__vtrain["scales"]
-        self.__coeffs = None
-
-        if self.__hybrid:
-            if "cumulative_n_features" in self.__vtrain:
-                self.__cumulative_n_features = self.__vtrain["cumulative_n_features"]
-            elif "cumulative_n_features" in self.__vtest:
-                self.__cumulative_n_features = self.__vtest["cumulative_n_features"]
+        if self._hybrid:
+            if self._train_xy is not None:
+                self._cumulative_n_features = self._train_xy.cumulative_n_features
+            elif self._test_xy is not None:
+                self._cumulative_n_features = self._test_xy.cumulative_n_features
 
     @abstractmethod
     def fit(self):
         pass
 
     def solve_linear_equation(self, A, b):
-        """
+        """Solve Ax = b.
+
         numpy and scipy implementations
         x = np.linalg.solve(A, b)
         x = scipy.linalg.solve(A, b, check_finite=False, assume_a='pos')
         """
-        (posv,) = get_lapack_funcs(("posv",), (A, b))
-        _, x, _ = posv(A, b, lower=False, overwrite_a=False, overwrite_b=False)
+        # (posv,) = get_lapack_funcs(("posv",), (A, b))
+        # _, x, _ = posv(A, b, lower=False, overwrite_a=False, overwrite_b=False)
+        x = np.linalg.solve(A, b)
         return x
 
     def compute_inner_products(self, X=None, y=None, A=None, Xy=None):
-
+        """Compute X.T @ X and X.T @ y."""
         if X is not None and y is not None:
-            if self.__verbose:
+            if self._verbose:
                 print("Regression: computing inner products ...", flush=True)
-            A = np.dot(X.T, X)
-            Xy = np.dot(X.T, y)
+            A = X.T @ X
+            Xy = X.T @ y
         return A, Xy
 
     def rmse(self, true, pred):
@@ -81,28 +91,28 @@ class RegressionBase(ABC):
         return [rmse(true, p) for p in pred_list]
 
     def predict(self, coefs_array):
-        """computing rmse using X and y"""
-        pred_train = np.dot(self.__vtrain["x"], coefs_array).T
-        pred_test = np.dot(self.__vtest["x"], coefs_array).T
-        rmse_train = self.rmse_list(self.__vtrain["y"], pred_train)
-        rmse_test = self.rmse_list(self.__vtest["y"], pred_test)
+        """Compute rmse using X and y"""
+        pred_train = (self._train_xy.x @ coefs_array).T
+        pred_test = (self._test_xy.x @ coefs_array).T
+        rmse_train = self.rmse_list(self._train_xy.y, pred_train)
+        rmse_test = self.rmse_list(self._test_xy.y, pred_test)
         return pred_train, pred_test, rmse_train, rmse_test
 
     def predict_seq(self, coefs_array):
-        """computing rmse using xtx, xty and y_sq"""
+        """Compute rmse (train and test) using xtx, xty and y_sq"""
         rmse_train_array = self.predict_seq_train(coefs_array)
         rmse_test_array = self.predict_seq_test(coefs_array)
         return rmse_train_array, rmse_test_array
 
     def predict_seq_train(self, coefs_array):
-        """computing rmse using xtx, xty and y_sq"""
+        """Compute rmse (train) using xtx, xty and y_sq"""
         rmse_train_array = []
         for coefs in coefs_array.T:
-            mse_train = self.__compute_mse(
-                self.__vtrain["xtx"],
-                self.__vtrain["xty"],
-                self.__vtrain["y_sq_norm"],
-                self.__vtrain["total_n_data"],
+            mse_train = self._compute_mse(
+                self._train_xy.xtx,
+                self._train_xy.xty,
+                self._train_xy.y_sq_norm,
+                self._train_xy.total_n_data,
                 coefs,
             )
             try:
@@ -112,48 +122,46 @@ class RegressionBase(ABC):
         return rmse_train_array
 
     def predict_seq_test(self, coefs_array):
-        """computing rmse using xtx, xty and y_sq"""
+        """Computing rmse (test) using xtx, xty and y_sq"""
         rmse_test_array = []
         for coefs in coefs_array.T:
-            mse_test = self.__compute_mse(
-                self.__vtest["xtx"],
-                self.__vtest["xty"],
-                self.__vtest["y_sq_norm"],
-                self.__vtest["total_n_data"],
+            mse_test = self._compute_mse(
+                self._test_xy.xtx,
+                self._test_xy.xty,
+                self._test_xy.y_sq_norm,
+                self._test_xy.total_n_data,
                 coefs,
             )
             rmse_test_array.append(sqrt(mse_test))
         return rmse_test_array
 
-    def __compute_mse(self, xtx, xty, y_sq_norm, size, coefs):
-
-        v1 = np.dot(coefs, np.dot(xtx, coefs))
-        v2 = -2 * np.dot(coefs, xty)
+    def _compute_mse(self, xtx, xty, y_sq_norm, size, coefs):
+        v1 = coefs @ (xtx @ coefs)
+        v2 = -2 * coefs @ xty
         return (v1 + v2 + y_sq_norm) / size
 
     def save_mlp_lammps(self, filename="polymlp.lammps"):
-
-        if self.__hybrid is False:
+        """Save polymlp.lammps files"""
+        if self._hybrid is False:
             save_mlp_lammps(
-                self.__params_dict,
-                self.__coeffs,
-                self.__scales,
+                self._params,
+                self._coeffs,
+                self._scales,
                 filename=filename,
             )
         else:
             save_multiple_mlp_lammps(
-                self.__params_dict,
-                self.__cumulative_n_features,
-                self.__coeffs,
-                self.__scales,
+                self._params,
+                self._cumulative_n_features,
+                self._coeffs,
+                self._scales,
             )
         return self
 
     def hybrid_division(self, target):
-
-        cumulative = self.__cumulative_n_features
+        cumulative = self._cumulative_n_features
         list_target = []
-        for i, params_dict in enumerate(self.__params_dict):
+        for i, params_dict in enumerate(self._params_dict):
             if i == 0:
                 begin, end = 0, cumulative[0]
             else:
@@ -168,88 +176,90 @@ class RegressionBase(ABC):
         ----
         coeffs, scales, rmse, alpha, predictions (train, test)
         """
-        return self.__best_model
+        return self._best_model
 
     @property
     def coeffs(self):
-        if self.__hybrid:
-            return self.hybrid_division(self.__coeffs)
-        return self.__coeffs
+        if self._hybrid:
+            return self.hybrid_division(self._coeffs)
+        return self._coeffs
 
     @property
     def scales(self):
-        if self.__hybrid:
-            return self.hybrid_division(self.__scales)
-        return self.__scales
+        if self._hybrid:
+            return self.hybrid_division(self._scales)
+        return self._scales
 
     @best_model.setter
-    def best_model(self, dict1):
-        self.__best_model.update(dict1)
-        self.__coeffs = self.__best_model["coeffs"]
-        self.__scales = self.__best_model["scales"]
+    def best_model(self, model: PolymlpDataMLP):
+        self._best_model = model
+        self._coeffs = self._best_model.coeffs
+        self._scales = self._best_model.scales
 
     @property
     def coeffs_vector(self):
-        return self.__coeffs
+        return self._coeffs
 
     @property
     def scales_vector(self):
-        return self.__scales
+        return self._scales
 
     @coeffs.setter
     def coeffs(self, array):
-        self.__coeffs = array
-        self.__best_model["coeffs"] = array
+        self._coeffs = array
+        self._best_model.coeffs = array
 
     @scales.setter
     def scales(self, array):
-        self.__scales = array
-        self.__best_model["scales"] = array
+        self._scales = array
+        self._best_model.scales = array
 
     @property
-    def params_dict(self):
-        return self.__params_dict
+    def params(self) -> PolymlpParams:
+        return self._params
 
     @property
-    def train_dict(self):
-        return self.__train_dict
+    def train(self) -> PolymlpDataDFT:
+        return self._train
 
     @property
-    def test_dict(self):
-        return self.__test_dict
+    def test(self) -> PolymlpDataDFT:
+        return self._test
 
     @property
-    def train_regression_dict(self):
-        return self.__vtrain
+    def train_xy(self) -> PolymlpDataXY:
+        return self._train_xy
 
     @property
-    def test_regression_dict(self):
-        return self.__vtest
+    def test_xy(self) -> PolymlpDataXY:
+        return self._test_xy
 
-    @train_regression_dict.setter
-    def train_regression_dict(self, dict1):
-        self.__vtrain = dict1
+    @train_xy.setter
+    def train_xy(self, xy: PolymlpDataXY):
+        self._train_xy = xy
 
-    @test_regression_dict.setter
-    def test_regression_dict(self, dict1):
-        self.__vtest = dict1
+    @test_xy.setter
+    def test_xy(self, xy: PolymlpDataXY):
+        self._test_xy = xy
 
-    def delete_train_regression_dict(self):
-        del self.__vtrain
+    def delete_train_xy(self):
+        del self._train_xy
         gc.collect()
+        self._train_xy = None
 
-    def delete_test_regression_dict(self):
-        del self.__vtest
+    def delete_test_xy(self):
+        del self._test_xy
         gc.collect()
+        self._test_xy = None
 
     @property
-    def is_multiple_datasets(self):
-        return self.__multiple_datasets
+    def is_multiple_datasets(self) -> bool:
+        return self._multiple_datasets
 
     @property
-    def is_hybrid(self):
-        return self.__hybrid
+    def is_hybrid(self) -> bool:
+        return self._hybrid
 
     @property
-    def verbose(self):
-        return self.__verbose
+    def verbose(self) -> bool:
+        return self._verbose

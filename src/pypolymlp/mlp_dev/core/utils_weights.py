@@ -1,8 +1,13 @@
-#!/usr/bin/env python
+"""Functions for applying weights"""
+
+from typing import Optional
+
 import numpy as np
 
+from pypolymlp.core.data_format import PolymlpDataDFT, PolymlpParams
 
-def __set_weight_energy_data(energy, total_n_atoms, min_e=None):
+
+def _set_weight_energy_data(energy, total_n_atoms, min_e=None):
 
     # todo: more appropriate procedure for finding weight values
     e_per_atom = energy / total_n_atoms
@@ -17,7 +22,7 @@ def __set_weight_energy_data(energy, total_n_atoms, min_e=None):
     return weight_e
 
 
-def __set_weight_force_data(force):
+def _set_weight_force_data(force):
 
     log1 = np.log10(np.abs(force))
     w1 = np.array([pow(10, -v) for v in log1])
@@ -25,7 +30,7 @@ def __set_weight_force_data(force):
     return weight_f
 
 
-def __set_weight_stress_data(stress, weight_stress):
+def _set_weight_stress_data(stress, weight_stress):
 
     log1 = np.log10(np.abs(stress))
     w1 = np.array([pow(5, -v) for v in log1])
@@ -34,69 +39,51 @@ def __set_weight_stress_data(stress, weight_stress):
 
 
 def apply_weight_percentage(
-    x,
-    y,
-    w,
-    dft_dict,
-    params_dict,
-    first_indices,
-    weight_stress=0.1,
-    min_e=None,
+    x: np.ndarray,
+    y: np.ndarray,
+    w: np.ndarray,
+    dft: PolymlpDataDFT,
+    params: PolymlpParams,
+    first_indices: list,
+    weight_stress: float = 0.1,
+    min_e: Optional[float] = None,
 ):
 
-    if "include_force" in dft_dict:
-        include_force = dft_dict["include_force"]
-    else:
-        include_force = params_dict["include_force"]
-
+    include_force = dft.include_force
     if include_force is False:
         include_stress = False
     else:
-        include_stress = params_dict["include_stress"]
+        include_stress = params.include_stress
 
     ebegin, fbegin, sbegin = first_indices
-    eend = ebegin + len(dft_dict["energy"])
+    eend = ebegin + len(dft.energies)
     if include_force:
-        fend = fbegin + len(dft_dict["force"])
-        send = sbegin + len(dft_dict["stress"])
+        fend = fbegin + len(dft.forces)
+        send = sbegin + len(dft.stresses)
 
-    energy = dft_dict["energy"]
-    weight_e = __set_weight_energy_data(energy, dft_dict["total_n_atoms"], min_e=min_e)
-    if "weight" in dft_dict:
-        weight_e *= dft_dict["weight"]
+    weight_e = _set_weight_energy_data(dft.energies, dft.total_n_atoms, min_e=min_e)
+    weight_e *= dft.weight
 
     w[ebegin:eend] = weight_e
-    y[ebegin:eend] = weight_e * energy
+    y[ebegin:eend] = weight_e * dft.energies
 
     x[ebegin:eend] *= weight_e[:, np.newaxis]
 
     if include_force:
-        force = dft_dict["force"]
-        weight_f = __set_weight_force_data(force)
-        if "weight" in dft_dict:
-            weight_f *= dft_dict["weight"]
+        weight_f = _set_weight_force_data(dft.forces)
+        weight_f *= dft.weight
         w[fbegin:fend] = weight_f
-        y[fbegin:fend] = weight_f * force
+        y[fbegin:fend] = weight_f * dft.forces
         x[fbegin:fend] *= weight_f[:, np.newaxis]
-        """ numba version
-        numba_support.mat_prod_vec(x[fbegin:fend], weight_f, axis=0)
-        """
 
-        if include_stress:
-            stress = dft_dict["stress"]
-            if "weight" in dft_dict:
-                weight_const = weight_stress * dft_dict["weight"]
-            else:
-                weight_const = weight_stress
-            weight_s = __set_weight_stress_data(stress, weight_const)
-            w[sbegin:send] = weight_s
-            y[sbegin:send] = weight_s * stress
-            x[sbegin:send] *= weight_s[:, np.newaxis]
-            """ numba version
-            numba_support.mat_prod_vec(x[sbegin:send], weight_s, axis=0)
-            """
-        else:
-            x[sbegin:send, :] = 0.0
-            y[sbegin:send] = 0.0
-            w[sbegin:send] = 0.0
+    if include_stress:
+        weight_const = weight_stress * dft.weight
+        weight_s = _set_weight_stress_data(dft.stresses, weight_const)
+        w[sbegin:send] = weight_s
+        y[sbegin:send] = weight_s * dft.stresses
+        x[sbegin:send] *= weight_s[:, np.newaxis]
+    else:
+        x[sbegin:send, :] = 0.0
+        y[sbegin:send] = 0.0
+        w[sbegin:send] = 0.0
     return x, y, w
