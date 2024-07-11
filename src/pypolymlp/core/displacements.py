@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 import copy
 
 import numpy as np
@@ -50,12 +51,12 @@ def set_dft_data(
     files = ["disp-" + str(i + 1).zfill(5) for i, _ in enumerate(structures)]
 
     dft = PolymlpDataDFT(
-        energies,
-        forces,
-        stresses,
-        volumes,
-        structures,
-        total_n_atoms,
+        energies=energies,
+        forces=forces,
+        stresses=stresses,
+        volumes=volumes,
+        structures=structures,
+        total_n_atoms=total_n_atoms,
         files=files,
         elements=elements,
         include_force=True,

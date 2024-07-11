@@ -27,11 +27,12 @@ class PolymlpStructure:
     n_atoms: Union[np.ndarray, list]
     elements: Union[np.ndarray, list]
     types: Union[np.ndarray, list]
-    volume: float
+    volume: Optional[float] = None
     supercell_matrix: Optional[np.ndarray] = None
     positions_cartesian: Optional[np.ndarray] = None
     valence: Optional[list] = None
     n_unitcells: Optional[int] = None
+    axis_inv: Optional[np.ndarray] = None
     comment: Optional[str] = None
 
 
@@ -44,6 +45,9 @@ class PolymlpGtinvParams:
     order: Maximum order of polynomial invariants.
     max_l: Maximum angular numbers of polynomial invariants.
            [maxl for order=2, maxl for order=3, ...]
+    n_type: Number of atom types.
+
+    lm_seq, l_comb, and lm_coeffs are automatically generated for given max_l.
     """
 
     order: int
@@ -60,9 +64,7 @@ class PolymlpGtinvParams:
         if self.order > 0:
             self.get_invariances()
         else:
-            self.lm_seq = []
-            self.l_comb = []
-            self.lm_coeffs = []
+            self.lm_seq, self._l_comb, self.lm_coeffs = [], [], []
 
     def as_dict(self) -> dict:
         return asdict(self)
@@ -138,11 +140,14 @@ class PolymlpParams:
     ----------
     n_type: Number of atomic types.
     elements: Element species, (e.g., ['Mg','O']).
+    model: Model parameters in PolymlpModelParams.
     atomic_energy: Atomic energies (in eV).
-    include_force: Considering force entries.
-    include_stress: Considering stress entries.
+    dft_train, dft_test: Location of DFT datasets.
+                         Their data structures depend on the dataset type.
     regression_alpha: Parameters for penalty term in linear ridge regression.
-                      Parameters are given as np.linspace(p[0], p[1], p[2]).
+                      alphas = np.linspace(p[0], p[1], p[2]).
+    include_force: Consider force entries.
+    include_stress: Consider stress entries.
     """
 
     n_type: int
@@ -186,6 +191,8 @@ class PolymlpDataDFT:
     stresses: Stress tensor elements, shape=(n_str * 6).
     volumes: Volumes, shape=(n_str).
     structures: Structures, list[PolymlpStructure]
+    total_n_atoms: Numbers of atoms in structures.
+    files: File names of structures.
     """
 
     energies: np.ndarray
@@ -201,13 +208,14 @@ class PolymlpDataDFT:
     name: str = "dataset"
 
     def apply_atomic_energy(self, atom_e: tuple[float]) -> Self:
+        """Subtract atomic energies from energies."""
         atom_e = np.array(atom_e)
         self.energies = np.array(
             [e - st.n_atoms @ atom_e for e, st in zip(self.energies, self.structures)]
         )
         return self
 
-    def slice(self, begin, end, name="sliced"):
+    def slice(self, begin: int, end: int, name: str = "sliced"):
         """Slice DFT data in PolymlpDataDFT."""
         begin_f = sum(self.total_n_atoms[:begin]) * 3
         end_f = sum(self.total_n_atoms[:end]) * 3
@@ -247,7 +255,7 @@ class PolymlpDataDFT:
 
 @dataclass
 class PolymlpDataXY:
-    """Dataclass of dataset used for performing regression.
+    """Dataclass of X, y, and related properties used for regression.
 
     Parameters
     ----------

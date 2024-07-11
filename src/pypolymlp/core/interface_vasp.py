@@ -10,7 +10,7 @@ from pypolymlp.core.utils import permute_atoms
 
 
 def parse_vaspruns(vaspruns: list[str], element_order: bool = None) -> PolymlpDataDFT:
-
+    """Parse vasprun.xml files and return DFT dataset in PolymlpDataDFT."""
     kbar_to_eV = 1 / 1602.1766208
     energies, forces, stresses, volumes, structures = [], [], [], [], []
     for vasp in vaspruns:
@@ -49,49 +49,56 @@ def parse_vaspruns(vaspruns: list[str], element_order: bool = None) -> PolymlpDa
         elements = element_order
 
     dft = PolymlpDataDFT(
-        np.array(energies),
-        np.array(forces),
-        np.array(stresses),
-        np.array(volumes),
-        structures,
-        total_n_atoms,
+        energies=np.array(energies),
+        forces=np.array(forces),
+        stresses=np.array(stresses),
+        volumes=np.array(volumes),
+        structures=structures,
+        total_n_atoms=total_n_atoms,
         files=vaspruns,
         elements=elements,
     )
     return dft
 
 
-def parse_structures_from_vaspruns(vaspruns):
+def parse_structures_from_vaspruns(vaspruns: list[str]) -> list[PolymlpStructure]:
+    """Parse vasprun.xml files and return structures."""
     return [Vasprun(f).get_structure() for f in vaspruns]
 
 
-def parse_structures_from_poscars(poscars):
+def parse_structures_from_poscars(poscars: list[str]):
+    """Parse POSCAR files and return structures."""
     return [Poscar(f).structure for f in poscars]
 
 
 class Vasprun:
+    """Class for parsing vasprun.xml"""
 
     def __init__(self, name):
         self._root = ET.parse(name).getroot()
-        self.__structure = None
+        self._structure = None
 
-    def get_energy(self):
+    def get_energy(self) -> float:
+        """Parse vasprun and return energy."""
         e = self._root.find("calculation").find("energy")
         return float(e[1].text)
 
-    def get_energy_smearing_delta(self):
+    def get_energy_smearing_delta(self) -> float:
+        """Parse vasprun and return smearing delta F."""
         e = self._root.find("calculation").find("energy")
         return float(e[2].text)
 
-    def get_forces(self):
+    def get_forces(self) -> np.ndarray:
+        """Parse vasprun and return forces."""
         f = self._root.find(".//*[@name='forces']")
-        return self.__varray_to_nparray(f).T
+        return self._varray_to_nparray(f).T
 
-    def get_stress(self):  # unit: kbar
+    def get_stress(self) -> np.ndarray:
+        """Parse vasprun and return stress tensor in kbar."""
         f = self._root.find(".//*[@name='stress']")
-        return self.__varray_to_nparray(f)
+        return self._varray_to_nparray(f)
 
-    def get_properties(self):
+    def get_properties(self) -> dict:
         property_dict = {
             "energy": self.get_energy(),
             "force": self.get_forces(),
@@ -99,9 +106,10 @@ class Vasprun:
         }
         return property_dict
 
-    def get_structure(self, valence=False):
-        if self.__structure is not None:
-            return self.__structure
+    def get_structure(self, valence: bool = False) -> PolymlpStructure:
+        """Parse vasprun and return structure."""
+        if self._structure is not None:
+            return self._structure
 
         st = self._root.find(".//*[@name='finalpos']")
         st1 = st.find(".//*[@name='basis']")
@@ -110,14 +118,14 @@ class Vasprun:
         st4 = self._root.findall(".//*[@name='atomtypes']/set/rc")
         st5 = self._root.findall(".//*[@name='atoms']/set/rc")
 
-        axis = self.__varray_to_nparray(st1).T
-        positions = self.__varray_to_nparray(st2).T
+        axis = self._varray_to_nparray(st1).T
+        positions = self._varray_to_nparray(st2).T
         volume = float(st3.text)
 
-        tmp1 = self.__read_rc_set(st4)
+        tmp1 = self._read_rc_set(st4)
         n_atoms = [int(x) for x in list(np.array(tmp1)[:, 0])]
 
-        tmp2 = self.__read_rc_set(st5)
+        tmp2 = self._read_rc_set(st5)
         elements = list(np.array(tmp2)[:, 0])
         elements = ["Zr" if e == "r" else e for e in elements]
         types = [int(x) - 1 for x in list(np.array(tmp2)[:, 1])]
@@ -130,7 +138,7 @@ class Vasprun:
         else:
             valence = None
 
-        self.__structure = PolymlpStructure(
+        self._structure = PolymlpStructure(
             axis,
             positions,
             n_atoms,
@@ -139,9 +147,9 @@ class Vasprun:
             volume,
             valence=valence,
         )
-        return self.__structure
+        return self._structure
 
-    def get_scstep(self):
+    def get_scstep(self) -> np.ndarray:
         scsteps = self._root.find("calculation").findall("scstep")
         e_history = []
         for sc in scsteps:
@@ -149,12 +157,12 @@ class Vasprun:
             e_history.append(float(e0.text))
         return np.array(e_history)
 
-    def __varray_to_nparray(self, varray):
+    def _varray_to_nparray(self, varray):
         nparray = [[float(x) for x in v1.text.split()] for v1 in varray]
         nparray = np.array(nparray)
         return nparray
 
-    def __read_rc_set(self, obj):
+    def _read_rc_set(self, obj):
         rc_set = []
         for rc in obj:
             c_set = [c.text.replace(" ", "") for c in rc.findall("c")]
@@ -162,24 +170,24 @@ class Vasprun:
         return rc_set
 
     @property
-    def structure(self):
-        return self.__structure
+    def structure(self) -> PolymlpStructure:
+        """Return structure"""
+        return self._structure
 
 
 class Poscar:
+    """Class for parsing POSCAR."""
 
-    def __init__(self, filename, selective_dynamics=False):
+    def __init__(self, filename: str, selective_dynamics: bool = False):
+        self._parse(filename, selective_dynamics=selective_dynamics)
 
-        self.__parse(filename, selective_dynamics=selective_dynamics)
-
-    def __parse(self, filename, selective_dynamics=False):
+    def _parse(self, filename: str, selective_dynamics: bool = False):
 
         f = open(filename, "r")
         lines = f.readlines()
         f.close()
 
         comment = lines[0].replace("\n", "")
-
         axis_const = float(lines[1].split()[0])
         axis1 = [float(x) for x in lines[2].split()[0:3]]
         axis2 = [float(x) for x in lines[3].split()[0:3]]
@@ -216,7 +224,7 @@ class Poscar:
         positions = np.array(positions).T
         volume = np.linalg.det(axis)
 
-        self.__structure = PolymlpStructure(
+        self._structure = PolymlpStructure(
             axis,
             positions,
             n_atoms,
@@ -227,8 +235,9 @@ class Poscar:
         )
 
     @property
-    def structure(self):
-        return self.__structure
+    def structure(self) -> PolymlpStructure:
+        """Return structure."""
+        return self._structure
 
 
 class Outcar:

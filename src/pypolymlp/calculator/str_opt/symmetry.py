@@ -6,7 +6,7 @@ import numpy as np
 import spglib
 from symfc.basis_sets.basis_sets_O1 import FCBasisSetO1
 
-from pypolymlp.utils.phonopy_utils import st_dict_to_phonopy_cell
+from pypolymlp.utils.phonopy_utils import structure_to_phonopy_cell
 
 """Atomic Coodinates"""
 
@@ -29,7 +29,7 @@ def basis_cartesian_to_fractional_coordinates(basis_c, unitcell):
 
 def construct_basis_cartesian(cell):
 
-    cell_ph = st_dict_to_phonopy_cell(cell)
+    cell_ph = structure_to_phonopy_cell(cell)
 
     try:
         fc_basis = FCBasisSetO1(cell_ph).run()
@@ -58,7 +58,7 @@ def normalize_vector(vec):
 
 def standardize_cell(cell):
 
-    cell_ph = st_dict_to_phonopy_cell(cell)
+    cell_ph = structure_to_phonopy_cell(cell)
 
     map_numbers = dict()
     for n, t in zip(cell_ph.numbers, cell["types"]):
@@ -85,7 +85,7 @@ def standardize_cell(cell):
 def basis_cell(cell):
 
     cell_copy = standardize_cell(cell)
-    cell_ph = st_dict_to_phonopy_cell(cell_copy)
+    cell_ph = structure_to_phonopy_cell(cell_copy)
 
     """basis (row): In the order of ax, bx, cx, ay, by, cy, az, bz, cz"""
     spg_info = spglib.get_symmetry_dataset(

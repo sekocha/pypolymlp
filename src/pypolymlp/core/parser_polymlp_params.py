@@ -57,17 +57,17 @@ class ParamsParser:
         else:
             include_stress = False
 
-        atomic_energy = self.__get_atomic_energy(n_type)
-        reg_method, reg_alpha = self.__get_regression_params()
-        model = self.__get_potential_model_params(n_type)
+        atomic_energy = self._get_atomic_energy(n_type)
+        reg_method, reg_alpha = self._get_regression_params()
+        model = self._get_potential_model_params(n_type)
 
         if parse_vasprun_locations:
             dataset_type = self.parser.get_params("dataset_type", default="vasp")
-            dft_train, dft_test = self.__get_dataset(dataset_type, multiple_datasets)
+            dft_train, dft_test = self._get_dataset(dataset_type, multiple_datasets)
         else:
             dft_train, dft_test = None, None
 
-        self.__params = PolymlpParams(
+        self._params = PolymlpParams(
             n_type=n_type,
             elements=elements,
             model=model,
@@ -82,7 +82,7 @@ class ParamsParser:
             element_order=element_order,
         )
 
-    def __get_potential_model_params(self, n_type):
+    def _get_potential_model_params(self, n_type: int):
 
         cutoff = self.parser.get_params("cutoff", default=6.0, dtype=float)
         model_type = self.parser.get_params("model_type", default=1, dtype=int)
@@ -138,7 +138,7 @@ class ParamsParser:
 
         return model
 
-    def __get_atomic_energy(self, n_type: int):
+    def _get_atomic_energy(self, n_type: int):
 
         d_atom_e = [0.0 for i in range(n_type)]
         atom_e = self.parser.get_params(
@@ -150,27 +150,27 @@ class ParamsParser:
         )
         return tuple(atom_e)
 
-    def __get_regression_params(self):
+    def _get_regression_params(self):
 
         method = "ridge"
         d_alpha = [-3, 1, 5]
         alpha = self.parser.get_sequence("reg_alpha_params", default=d_alpha)
         return method, tuple(alpha)
 
-    def __get_dataset(
+    def _get_dataset(
         self,
         dataset_type: Literal["vasp", "phono3py"],
         multiple_datasets: bool = False,
     ):
         if dataset_type == "vasp":
             if multiple_datasets:
-                return self.__get_multiple_vasprun_sets()
+                return self._get_multiple_vasprun_sets()
             else:
-                return self.__get_single_vasprun_set()
+                return self._get_single_vasprun_set()
         elif dataset_type == "phono3py":
-            return self.__get_phono3py_set()
+            return self._get_phono3py_set()
 
-    def __get_single_vasprun_set(self):
+    def _get_single_vasprun_set(self):
 
         train = self.parser.get_params("train_data", default=None)
         test = self.parser.get_params("test_data", default=None)
@@ -179,7 +179,7 @@ class ParamsParser:
         dft_test = sorted(glob.glob(test))
         return dft_train, dft_test
 
-    def __get_multiple_vasprun_sets(self):
+    def _get_multiple_vasprun_sets(self):
 
         train = self.parser.get_train()
         test = self.parser.get_test()
@@ -221,7 +221,7 @@ class ParamsParser:
             dft_test[set_id]["weight"] = float(params[2])
         return dft_train, dft_test
 
-    def __get_phono3py_set(self):
+    def _get_phono3py_set(self):
         """
         Format
         ------
@@ -267,6 +267,6 @@ class ParamsParser:
         return dft_train, dft_test
 
     @property
-    def params(self):
+    def params(self) -> PolymlpModelParams:
         """Return parameters for developing polymlp."""
-        return self.__params
+        return self._params

@@ -5,34 +5,20 @@ import numpy as np
 from pypolymlp.core.data_format import PolymlpStructure
 
 
-def rmse(y_true, y_pred):
+def rmse(y_true: np.ndarray, y_pred: np.ndarray):
+    """Compute root mean square errors."""
     return np.sqrt(np.mean(np.square(y_true - y_pred)))
-
-
-def precision(x, alpha=0.0001):
-
-    # std = np.std(x[:50], axis=0)
-    # for col, val in enumerate(std):
-    #    if abs(val) > 1e-15:
-    #        x[:,col] /= val
-
-    prod = x.T @ x
-    for i in range(x.shape[1]):
-        prod[i, i] += alpha
-
-    var = np.linalg.inv(prod)
-    # ave = np.average(x, axis=0)
-    # dx = x - ave
-    prec = np.mean([x1.T @ var @ x1 for x1 in x])
-    return prec
 
 
 def permute_atoms(
     st: PolymlpStructure,
-    force: list[np.ndarray],
+    force: np.ndarray,
     element_order: list[str],
-):
+) -> tuple[PolymlpStructure, np.ndarray]:
+    """Permute atoms in structure and forces.
 
+    The orders of atoms and forces are compatible with the element order.
+    """
     positions, n_atoms, elements, types = [], [], [], []
     force_permute = []
     for atomtype, ele in enumerate(element_order):
@@ -54,6 +40,7 @@ def permute_atoms(
 
 
 def mass_table():
+    """Get mass dictionary."""
 
     mass_table = {
         "H": 1.008,
@@ -170,3 +157,21 @@ def kjmol_to_ev(e):
 
 def ev_to_kjmol(e):
     return e * 96.48533212331002
+
+
+def precision(x, alpha=0.0001):
+
+    # std = np.std(x[:50], axis=0)
+    # for col, val in enumerate(std):
+    #    if abs(val) > 1e-15:
+    #        x[:,col] /= val
+
+    prod = x.T @ x
+    for i in range(x.shape[1]):
+        prod[i, i] += alpha
+
+    var = np.linalg.inv(prod)
+    # ave = np.average(x, axis=0)
+    # dx = x - ave
+    prec = np.mean([x1.T @ var @ x1 for x1 in x])
+    return prec

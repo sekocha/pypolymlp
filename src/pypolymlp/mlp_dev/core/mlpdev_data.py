@@ -124,7 +124,7 @@ class PolymlpDevData:
             self._train = parse_vaspruns(dft_train, element_order=element_order)
             self._test = parse_vaspruns(dft_test, element_order=element_order)
         elif self._params.dataset_type == "phono3py":
-            from pypolymlp.core.interface_phono3py_ver3 import parse_phono3py_yaml
+            from pypolymlp.core.interface_phono3py import parse_phono3py_yaml
 
             self._train = parse_phono3py_yaml(
                 dft_train["phono3py_yaml"],

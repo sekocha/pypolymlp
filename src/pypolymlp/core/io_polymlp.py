@@ -10,11 +10,11 @@ from pypolymlp.core.data_format import (
 from pypolymlp.core.utils import mass_table
 
 
-def print_param(dict1, key, fstream, prefix=""):
+def _print_param(dict1, key, fstream, prefix=""):
     print(str(dict1[key]), "#", prefix + key, file=fstream)
 
 
-def print_array1d(array, fstream, comment="", fmt=None):
+def _print_array1d(array, fstream, comment="", fmt=None):
     for obj in array:
         if fmt is not None:
             print(fmt.format(obj), end=" ", file=fstream)
@@ -28,7 +28,7 @@ def save_multiple_mlp_lammps(
     cumulative_n_features: int,
     coeffs: np.ndarray,
     scales: np.ndarray,
-):
+) -> tuple[list[np.ndarray], list[np.ndarray]]:
     """Generate polymlp.lammps files for hybrid polymlp model"""
     multiple_coeffs = []
     multiple_scales = []
@@ -61,25 +61,25 @@ def save_mlp_lammps(
 ):
     """Generate polymlp.lammps file for single polymlp model"""
     f = open(filename, "w")
-    print_array1d(params.elements, f, comment="elements")
+    _print_array1d(params.elements, f, comment="elements")
     model_dict = params.model.as_dict()
-    print_param(model_dict, "cutoff", f)
-    print_param(model_dict, "pair_type", f)
-    print_param(model_dict, "feature_type", f)
-    print_param(model_dict, "model_type", f)
-    print_param(model_dict, "max_p", f)
-    print_param(model_dict, "max_l", f)
+    _print_param(model_dict, "cutoff", f)
+    _print_param(model_dict, "pair_type", f)
+    _print_param(model_dict, "feature_type", f)
+    _print_param(model_dict, "model_type", f)
+    _print_param(model_dict, "max_p", f)
+    _print_param(model_dict, "max_l", f)
 
     if model_dict["feature_type"] == "gtinv":
         gtinv_dict = model_dict["gtinv"]
-        print_param(gtinv_dict, "order", f, prefix="gtinv_")
-        print_array1d(gtinv_dict["max_l"], f, comment="gtinv_max_l")
+        _print_param(gtinv_dict, "order", f, prefix="gtinv_")
+        _print_array1d(gtinv_dict["max_l"], f, comment="gtinv_max_l")
         gtinv_sym = [0 for _ in gtinv_dict["max_l"]]
-        print_array1d(gtinv_sym, f, comment="gtinv_sym")
+        _print_array1d(gtinv_sym, f, comment="gtinv_sym")
 
     print(len(coeffs), "# n_coeffs", file=f)
-    print_array1d(coeffs, f, comment="reg. coeffs", fmt="{0:15.15e}")
-    print_array1d(scales, f, comment="scales", fmt="{0:15.15e}")
+    _print_array1d(coeffs, f, comment="reg. coeffs", fmt="{0:15.15e}")
+    _print_array1d(scales, f, comment="scales", fmt="{0:15.15e}")
 
     print(len(model_dict["pair_params"]), "# n_params", file=f)
     for obj in model_dict["pair_params"]:
@@ -91,16 +91,16 @@ def save_mlp_lammps(
         )
 
     mass = [mass_table()[ele] for ele in params.elements]
-    print_array1d(mass, f, comment="atomic mass", fmt="{0:15.15e}")
+    _print_array1d(mass, f, comment="atomic mass", fmt="{0:15.15e}")
     print("False # electrostatic", file=f)
 
     if model_dict["feature_type"] == "gtinv":
-        print_param(gtinv_dict, "version", f, prefix="gtinv_")
+        _print_param(gtinv_dict, "version", f, prefix="gtinv_")
 
     f.close()
 
 
-def __read_var(line, dtype=int, return_list=False):
+def _read_var(line, dtype=int, return_list=False):
 
     list1 = line.split("#")[0].split()
     if return_list:
@@ -113,11 +113,11 @@ def load_mlp_lammps(filename="polymlp.lammps"):
 
     Return
     ------
-    params: PolymlpParams
-    mlp_dict: coeffs and scales
+    params: Parameters in PolymlpParams.
+    mlp_dict: polymlp model coefficients (coeffs and scales).
 
     How to use.
-    params, mlp_dict = load_mlp_lammps(filename='mlp.lammps')
+    params, mlp_dict = load_mlp_lammps(filename='polymlp.lammps')
     """
 
     f = open(filename)
@@ -125,30 +125,30 @@ def load_mlp_lammps(filename="polymlp.lammps"):
     f.close()
 
     idx = 0
-    elements = __read_var(lines[idx], str, return_list=True)
+    elements = _read_var(lines[idx], str, return_list=True)
     element_order = elements
     n_type = len(elements)
     idx += 1
 
-    cutoff = __read_var(lines[idx], float)
+    cutoff = _read_var(lines[idx], float)
     idx += 1
-    pair_type = __read_var(lines[idx], str)
+    pair_type = _read_var(lines[idx], str)
     idx += 1
-    feature_type = __read_var(lines[idx], str)
+    feature_type = _read_var(lines[idx], str)
     idx += 1
-    model_type = __read_var(lines[idx])
+    model_type = _read_var(lines[idx])
     idx += 1
-    max_p = __read_var(lines[idx])
+    max_p = _read_var(lines[idx])
     idx += 1
-    max_l = __read_var(lines[idx])
+    max_l = _read_var(lines[idx])
     idx += 1
 
     if feature_type == "gtinv":
-        gtinv_order = __read_var(lines[idx])
+        gtinv_order = _read_var(lines[idx])
         idx += 1
-        gtinv_maxl = __read_var(lines[idx], return_list=True)
+        gtinv_maxl = _read_var(lines[idx], return_list=True)
         idx += 1
-        gtinv_sym = __read_var(lines[idx], strtobool, return_list=True)
+        gtinv_sym = _read_var(lines[idx], strtobool, return_list=True)
         idx += 1
     else:
         gtinv_order = 0
@@ -156,31 +156,31 @@ def load_mlp_lammps(filename="polymlp.lammps"):
         gtinv_sym = []
         max_l = 0
 
-    _ = __read_var(lines[idx])
+    _ = _read_var(lines[idx])
     idx += 1
-    coeffs = np.array(__read_var(lines[idx], float, return_list=True))
+    coeffs = np.array(_read_var(lines[idx], float, return_list=True))
     idx += 1
-    scales = np.array(__read_var(lines[idx], float, return_list=True))
+    scales = np.array(_read_var(lines[idx], float, return_list=True))
     idx += 1
 
-    n_pair_params = __read_var(lines[idx])
+    n_pair_params = _read_var(lines[idx])
     idx += 1
     pair_params = []
     for n in range(n_pair_params):
-        params = __read_var(lines[idx], float, return_list=True)
+        params = _read_var(lines[idx], float, return_list=True)
         pair_params.append(params)
         idx += 1
 
-    _ = __read_var(lines[idx], float, return_list=True)  # mass
+    _ = _read_var(lines[idx], float, return_list=True)  # mass
     idx += 1
 
-    _ = __read_var(lines[idx], strtobool)  # electrostatic
+    _ = _read_var(lines[idx], strtobool)  # electrostatic
     idx += 1
 
     if feature_type == "gtinv":
         try:
             if "gtinv_version" in lines[idx]:
-                gtinv_version = __read_var(lines[idx], int)
+                gtinv_version = _read_var(lines[idx], int)
                 idx += 1
             else:
                 gtinv_version = 1
