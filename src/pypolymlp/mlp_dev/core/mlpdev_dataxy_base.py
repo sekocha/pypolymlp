@@ -67,6 +67,7 @@ class PolymlpDevDataXYBase(ABC):
         ne, nf, ns = self.__train_reg_dict["n_data"]
         self.__scales = np.std(x[:ne], axis=0)
 
+        np.printoptions(suppress=True)
         self.__train_reg_dict["x"] /= self.__scales
         self.__test_reg_dict["x"] /= self.__scales
 

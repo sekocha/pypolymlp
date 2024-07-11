@@ -62,6 +62,7 @@ def run():
             )
 
     t1 = time.time()
+    batch_size = None
     if args.no_sequential:
         if not args.learning_curve:
             polymlp = PolymlpDevDataXY(polymlp_in, verbose=verbose).run()
