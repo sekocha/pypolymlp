@@ -9,21 +9,17 @@ from symfc import Symfc
 
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.str_opt.optimization_sym import MinimizeSym
+from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.displacements import (
     generate_random_const_displacements,
     get_structures_from_displacements,
 )
-from pypolymlp.core.interface_phono3py_ver3 import parse_phono3py_yaml_fcs
+from pypolymlp.core.interface_phono3py import parse_phono3py_yaml_fcs
 from pypolymlp.utils.phonopy_utils import (
-    phonopy_cell_to_st_dict,
+    phonopy_cell_to_structure,
     phonopy_supercell,
-    st_dict_to_phonopy_cell,
+    structure_to_phonopy_cell,
 )
-
-# from symfc.basis_sets.basis_sets_O2 import FCBasisSetO2
-# from symfc.basis_sets.basis_sets_O3 import FCBasisSetO3
-# from symfc.basis_sets.basis_sets_O4 import FCBasisSetO4
-# from symfc.solvers.solver_O2O3O4 import FCSolverO2O3O4
 
 
 class PolymlpFC:
@@ -34,7 +30,7 @@ class PolymlpFC:
         phono3py_yaml=None,
         use_phonon_dataset=False,
         pot=None,
-        params_dict=None,
+        params=None,
         coeffs=None,
         properties=None,
         cutoff_fc3=None,
@@ -47,13 +43,13 @@ class PolymlpFC:
         pot, (params_dict and coeffs), or Properties object: polynomal MLP
         """
 
-        if pot is None and params_dict is None and properties is None:
+        if pot is None and params is None and properties is None:
             self.prop = None
         else:
             if properties is not None:
                 self.prop = properties
             else:
-                self.prop = Properties(pot=pot, params_dict=params_dict, coeffs=coeffs)
+                self.prop = Properties(pot=pot, params=params, coeffs=coeffs)
 
         self.__initialize_supercell(
             supercell=supercell,
@@ -87,11 +83,11 @@ class PolymlpFC:
     ):
 
         if supercell is not None:
-            if isinstance(supercell, dict):
+            if isinstance(supercell, PolymlpStructure):
                 self.__supercell_dict = supercell
-                self.__supercell_ph = st_dict_to_phonopy_cell(supercell)
+                self.__supercell_ph = structure_to_phonopy_cell(supercell)
             elif isinstance(supercell, phonopy.structure.cells.Supercell):
-                self.__supercell_dict = phonopy_cell_to_st_dict(supercell)
+                self.__supercell_dict = phonopy_cell_to_structure(supercell)
                 self.__supercell_ph = supercell
             else:
                 raise ValueError(
@@ -105,7 +101,7 @@ class PolymlpFC:
                     phono3py_yaml, use_phonon_dataset=use_phonon_dataset
                 )
             )
-            self.__supercell_dict = phonopy_cell_to_st_dict(self.__supercell_ph)
+            self.__supercell_dict = phonopy_cell_to_structure(self.__supercell_ph)
 
         else:
             raise ValueError(
@@ -141,15 +137,13 @@ class PolymlpFC:
         print("E0:", minobj.energy)
         print("n_iter:", minobj.n_iter)
         print("Fractional coordinate changes:")
-        diff_positions = (
-            self.__supercell_dict["positions"] - minobj.structure["positions"]
-        )
+        diff_positions = self.__supercell_dict.positions - minobj.structure.positions
         print(diff_positions.T)
         print("Success:", minobj.success)
 
         if minobj.success:
             self.__supercell_dict = minobj.structure
-            self.__supercell_ph = st_dict_to_phonopy_cell(self.__supercell_dict)
+            self.__supercell_ph = structure_to_phonopy_cell(self.__supercell_dict)
             if self.__disps is not None:
                 self.displacements = self.__disps
 
@@ -447,7 +441,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    unitcell_dict = Poscar(args.poscar).get_structure()
+    unitcell_dict = Poscar(args.poscar).structure
     supercell_matrix = np.diag(args.supercell)
     supercell = phonopy_supercell(unitcell_dict, supercell_matrix)
 

@@ -1,29 +1,30 @@
-#!/usr/bin/env python
+"""Functions for computing structural features."""
+
 import argparse
 import signal
 
 import numpy as np
 
+from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.interface_vasp import parse_structures_from_poscars
 from pypolymlp.core.io_polymlp import load_mlp_lammps
 from pypolymlp.core.parser_polymlp_params import ParamsParser
 from pypolymlp.mlp_dev.core.features import Features
 
 
-def update_types(st_dicts, element_order):
+def update_types(structures: list[PolymlpStructure], element_order):
 
-    for st in st_dicts:
-        types = np.ones(len(st["types"]), dtype=int) * 1000
-        elements = np.array(st["elements"])
+    for st in structures:
+        types = np.ones(len(st.types), dtype=int) * 1000
+        elements = np.array(st.elements)
         for i, ele in enumerate(element_order):
             types[elements == ele] = i
-        st["types"] = types
+        st.types = types
         if np.any(types == 1000):
-            print("elements (structure) =", st["elements"])
+            print("elements (structure) =", st.elements)
             print("elements (polymlp.lammps) =", element_order)
             raise ("Elements in structure are not found in polymlp.lammps")
-
-    return st_dicts
+    return structures
 
 
 def compute_from_polymlp_lammps(

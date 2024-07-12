@@ -1,10 +1,12 @@
-#!/usr/bin/env python
+"""Class for computing prediction errors."""
+
 import itertools
 import os
 
 import numpy as np
 
 from pypolymlp.calculator.properties import Properties
+from pypolymlp.core.data_format import PolymlpParams
 from pypolymlp.core.utils import rmse
 from pypolymlp.mlp_dev.core.regression_base import RegressionBase
 
@@ -18,15 +20,15 @@ class PolymlpDevAccuracy:
         else:
             coeffs_rescale = reg.coeffs / reg.scales
 
-        self.__prop = Properties(params_dict=reg.params_dict, coeffs=coeffs_rescale)
+        self._prop = Properties(params=reg.params, coeffs=coeffs_rescale)
 
-        self.__params_dict = reg.params_dict
-        self.__train_dict = reg.train_dict
-        self.__test_dict = reg.test_dict
-        self.__multiple_datasets = reg.is_multiple_datasets
-        self.__hybrid = reg.is_hybrid
-        self.__error_train = dict()
-        self.__error_test = dict()
+        self._params = reg.params
+        self._train = reg.train
+        self._test = reg.test
+        self._multiple_datasets = reg.is_multiple_datasets
+        self._hybrid = reg.is_hybrid
+        self._error_train = dict()
+        self._error_test = dict()
 
     def print_error(self, error, key="train"):
 
@@ -48,15 +50,15 @@ class PolymlpDevAccuracy:
 
     def write_error_yaml(self, filename="polymlp_error.yaml"):
 
-        self.__write_error_yaml(self.__error_train, tag="train", filename=filename)
-        self.__write_error_yaml(
-            self.__error_test,
+        self._write_error_yaml(self._error_train, tag="train", filename=filename)
+        self._write_error_yaml(
+            self._error_test,
             tag="test",
             filename=filename,
             initialize=False,
         )
 
-    def __write_error_yaml(
+    def _write_error_yaml(
         self,
         error,
         tag="train",
@@ -85,7 +87,7 @@ class PolymlpDevAccuracy:
             print("", file=f)
         f.close()
 
-    def __compute_rmse(
+    def _compute_rmse(
         self, true_values, pred_values, normalize=None, return_values=False
     ):
 
@@ -110,17 +112,17 @@ class PolymlpDevAccuracy:
         verbose=True,
     ):
 
-        if self.__multiple_datasets:
-            for set_id, dft_dict in self.__train_dict.items():
-                if "*" in set_id:
-                    output_key = ".".join(set_id.split("*")[0].split("/")[:-1]).replace(
-                        "..", ""
-                    )
+        if self._multiple_datasets:
+            for dft in self._train:
+                if "*" in dft.name:
+                    output_key = ".".join(
+                        dft.name.split("*")[0].split("/")[:-1]
+                    ).replace("..", "")
                 else:
-                    output_key = "Train-" + set_id
+                    output_key = "Train-" + dft.name
 
-                self.__error_train[set_id] = self.compute_error_single(
-                    dft_dict,
+                self._error_train[dft.name] = self.compute_error_single(
+                    dft,
                     output_key=output_key,
                     path_output=path_output,
                     log_energy=log_energy,
@@ -128,16 +130,16 @@ class PolymlpDevAccuracy:
                     log_stress=log_stress,
                     verbose=verbose,
                 )
-            for set_id, dft_dict in self.__test_dict.items():
-                if "*" in set_id:
-                    output_key = ".".join(set_id.split("*")[0].split("/")[:-1]).replace(
-                        "..", ""
-                    )
+            for dft in self._test:
+                if "*" in dft.name:
+                    output_key = ".".join(
+                        dft.name.split("*")[0].split("/")[:-1]
+                    ).replace("..", "")
                 else:
-                    output_key = "Test-" + set_id
+                    output_key = "Test-" + dft.name
 
-                self.__error_test[set_id] = self.compute_error_single(
-                    dft_dict,
+                self._error_test[dft.name] = self.compute_error_single(
+                    dft,
                     output_key=output_key,
                     path_output=path_output,
                     log_energy=log_energy,
@@ -146,8 +148,8 @@ class PolymlpDevAccuracy:
                     verbose=verbose,
                 )
         else:
-            self.__error_train["1"] = self.compute_error_single(
-                self.__train_dict,
+            self._error_train[self._train.name] = self.compute_error_single(
+                self._train,
                 output_key="train",
                 path_output=path_output,
                 log_energy=log_energy,
@@ -155,8 +157,8 @@ class PolymlpDevAccuracy:
                 log_stress=log_stress,
                 verbose=verbose,
             )
-            self.__error_test["1"] = self.compute_error_single(
-                self.__test_dict,
+            self._error_test[self._test.name] = self.compute_error_single(
+                self._test,
                 output_key="test",
                 path_output=path_output,
                 log_energy=log_energy,
@@ -167,7 +169,7 @@ class PolymlpDevAccuracy:
 
     def compute_error_single(
         self,
-        dft_dict,
+        dft,
         output_key="train",
         stress_unit="eV",
         log_energy=True,
@@ -177,49 +179,47 @@ class PolymlpDevAccuracy:
         verbose=True,
     ):
 
-        strs = dft_dict["structures"]
-        energies, forces, stresses = self.__prop.eval_multiple(strs)
+        strs = dft.structures
+        energies, forces, stresses = self._prop.eval_multiple(strs)
         forces = np.array(
             list(itertools.chain.from_iterable([f.T.reshape(-1) for f in forces]))
         )
         stresses = stresses.reshape(-1)
 
-        n_total_atoms = [sum(st["n_atoms"]) for st in strs]
+        n_total_atoms = [sum(st.n_atoms) for st in strs]
         if log_energy is False:
-            rmse_e = self.__compute_rmse(
-                dft_dict["energy"],
+            rmse_e = self._compute_rmse(
+                dft.energies,
                 energies,
                 normalize=n_total_atoms,
             )
         else:
-            rmse_e, true_e, pred_e = self.__compute_rmse(
-                dft_dict["energy"],
+            rmse_e, true_e, pred_e = self._compute_rmse(
+                dft.energies,
                 energies,
                 normalize=n_total_atoms,
                 return_values=True,
             )
 
         if log_force is False:
-            rmse_f = self.__compute_rmse(dft_dict["force"], forces)
+            rmse_f = self._compute_rmse(dft.forces, forces)
         else:
-            rmse_f, true_f, pred_f = self.__compute_rmse(
-                dft_dict["force"], forces, return_values=True
+            rmse_f, true_f, pred_f = self._compute_rmse(
+                dft.forces, forces, return_values=True
             )
 
         if stress_unit == "eV":
             normalize = np.repeat(n_total_atoms, 6)
         elif stress_unit == "GPa":
             eV_to_GPa = 160.21766208
-            volumes = [st["volume"] for st in strs]
+            volumes = [st.volume for st in strs]
             normalize = np.repeat(volumes, 6) / eV_to_GPa
 
         if log_stress is False:
-            rmse_s = self.__compute_rmse(
-                dft_dict["stress"], stresses, normalize=normalize
-            )
+            rmse_s = self._compute_rmse(dft.stresses, stresses, normalize=normalize)
         else:
-            rmse_s, true_s, pred_s = self.__compute_rmse(
-                dft_dict["stress"],
+            rmse_s, true_s, pred_s = self._compute_rmse(
+                dft.stresses,
                 stresses,
                 normalize=normalize,
                 return_values=True,
@@ -231,12 +231,11 @@ class PolymlpDevAccuracy:
 
         if log_energy or log_force or log_stress:
             os.makedirs(path_output + "/predictions", exist_ok=True)
-            filenames = dft_dict["filenames"]
 
             outdata = np.array([true_e, pred_e, (true_e - pred_e) * 1000]).T
             f = open(path_output + "/predictions/energy." + output_key + ".dat", "w")
             print("# DFT(eV/atom), MLP(eV/atom), DFT-MLP(meV/atom)", file=f)
-            for d, name in zip(outdata, filenames):
+            for d, name in zip(outdata, dft.files):
                 print(d[0], d[1], d[2], name, file=f)
             f.close()
 
@@ -265,24 +264,24 @@ class PolymlpDevAccuracy:
         return error_dict
 
     @property
-    def params_dict(self):
-        return self.__params_dict
+    def params(self) -> PolymlpParams:
+        return self._params
 
     @property
-    def is_multiple_datasets(self):
-        return self.__multiple_datasets
+    def is_multiple_datasets(self) -> bool:
+        return self._multiple_datasets
 
     @property
-    def is_hybrid(self):
-        return self.__hybrid
+    def is_hybrid(self) -> bool:
+        return self._hybrid
 
     @property
-    def error_train_dict(self):
-        return self.__error_train
+    def error_train_dict(self) -> dict:
+        return self._error_train
 
     @property
-    def error_test_dict(self):
-        return self.__error_test
+    def error_test_dict(self) -> dict:
+        return self._error_test
 
 
 # def __compute_rmse(true_values,

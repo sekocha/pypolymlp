@@ -81,15 +81,17 @@ def run():
     t2 = time.time()
 
     reg = Regression(polymlp).fit(
-        seq=not args.no_sequential, clear_data=True, batch_size=batch_size
+        seq=not args.no_sequential,
+        clear_data=True,
+        batch_size=batch_size,
     )
     reg.save_mlp_lammps(filename="polymlp.lammps")
     t3 = time.time()
 
     if verbose:
-        mlp_dict = reg.best_model
+        mlp = reg.best_model
         print("  Regression: best model", flush=True)
-        print("    alpha: ", mlp_dict["alpha"], flush=True)
+        print("    alpha: ", mlp.alpha, flush=True)
 
     acc = PolymlpDevAccuracy(reg)
     acc.compute_error()

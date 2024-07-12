@@ -46,7 +46,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    unitcell_dict = Poscar(args.poscar).get_structure()
+    unitcell_dict = Poscar(args.poscar).structure
     supercell_matrix = np.diag(args.supercell)
 
     supercell = phonopy_supercell(unitcell_dict, supercell_matrix)
