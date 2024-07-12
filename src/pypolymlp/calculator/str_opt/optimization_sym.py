@@ -2,7 +2,7 @@
 
 import copy
 import sys
-from typing import Optional, Union
+from typing import Literal, Optional, Union
 
 import numpy as np
 from scipy.optimize import minimize
@@ -59,25 +59,21 @@ class MinimizeSym:
             elements = params.elements
 
         self._verbose = verbose
-
         cell = update_types([cell], elements)[0]
 
         self._relax_cell = relax_cell
         self._relax_positions = relax_positions
 
-        self._energy = None
-        self._force = None
-        self._stress = None
-        self._res = None
-
         if relax_cell:
-            self._basis_axis, self.structure = basis_cell(cell)
-            if not np.allclose(cell.axis, self.structure.axis):
+            self._basis_axis, cell_update = basis_cell(cell)
+            if not np.allclose(cell.axis, cell_update.axis):
                 if self._verbose:
                     print("- Input structure is standarized by spglib.")
         else:
             self._basis_axis = None
-            self.structure = cell
+            cell_update = cell
+
+        self.structure = cell_update
 
         self._basis_f = None
         self._split = 0
@@ -93,9 +89,14 @@ class MinimizeSym:
 
         self._positions_f0 = copy.deepcopy(self.structure.positions)
         self.structure = self._set_structure(self.structure)
+
+        self._energy = None
+        self._force = None
+        self._stress = None
+        self._res = None
         self._n_atom = len(self.structure.elements)
 
-    def _set_structure(self, cell):
+    def _set_structure(self, cell: PolymlpStructure):
 
         self.structure = copy.deepcopy(cell)
         self.structure.axis_inv = np.linalg.inv(cell.axis)
@@ -106,7 +107,7 @@ class MinimizeSym:
     def _set_x0(self):
 
         if self._relax_cell:
-            xs = self._basis_axis.T @ self.st_dict["axis"].reshape(-1)
+            xs = self._basis_axis.T @ self.structure.axis.reshape(-1)
             if self._relax_positions:
                 xf = np.zeros(self._basis_f.shape[1])
                 self._x0 = np.concatenate([xf, xs], 0)
@@ -119,12 +120,10 @@ class MinimizeSym:
                 raise ValueError("No degree of freedom to be optimized.")
         return self._x0
 
-    """ no cell relaxation"""
-
     def fun_fix_cell(self, x, args=None):
-
+        """Target function when performing no cell optimization."""
         self.to_st_dict_fix_cell(x)
-        self._energy, self._force, _ = self.prop.eval(self.st_dict)
+        self._energy, self._force, _ = self.prop.eval(self.structure)
 
         if self._energy < -1e3 * self._n_atom:
             print("Energy =", self._energy)
@@ -135,26 +134,25 @@ class MinimizeSym:
         return self._energy
 
     def jac_fix_cell(self, x, args=None):
-
+        """Target Jacobian function when performing no cell optimization."""
         if self._basis_f is not None:
-            prod = -self._force.T @ self.st_dict["axis"]
+            prod = -self._force.T @ self.structure.axis
             derivatives = self._basis_f.T @ prod.reshape(-1)
             return derivatives
         return []
 
     def to_st_dict_fix_cell(self, x):
-
+        """Convert x to structure."""
         if self._basis_f is not None:
             disps_f = (self._basis_f @ x).reshape(-1, 3).T
-            self.st_dict["positions"] = self._positions_f0 + disps_f
-        return self.st_dict
-
-    """ with cell relaxation"""
+            self.structure.positions = self._positions_f0 + disps_f
+        return self.structure
 
     def fun_relax_cell(self, x, args=None):
+        """Target function when performing cell optimization."""
 
         self.to_st_dict_relax_cell(x)
-        (self._energy, self._force, self._stress) = self.prop.eval(self.st_dict)
+        (self._energy, self._force, self._stress) = self.prop.eval(self.structure)
 
         if self._energy < -1e3 * self._n_atom:
             print("Energy =", self._energy)
@@ -164,6 +162,7 @@ class MinimizeSym:
         return self._energy
 
     def jac_relax_cell(self, x, args=None):
+        """Target Jacobian function when performing cell optimization."""
 
         derivatives = np.zeros(len(x))
         if self._relax_positions:
@@ -172,42 +171,45 @@ class MinimizeSym:
         return derivatives
 
     def to_st_dict_relax_cell(self, x):
-
+        """Convert x to structure."""
         x_positions, x_cells = x[: self._split], x[self._split :]
 
         axis = self._basis_axis @ x_cells
-        self.st_dict["axis"] = axis.reshape((3, 3))
-        self.st_dict["volume"] = np.linalg.det(self.st_dict["axis"])
-        self.st_dict["axis_inv"] = np.linalg.inv(self.st_dict["axis"])
+        axis = axis.reshape((3, 3))
+        self.structure.axis = axis
+        self.structure.volume = np.linalg.det(axis)
+        self.structure.axis_inv = np.linalg.inv(axis)
 
         if self._relax_positions:
-            self.st_dict = self.to_st_dict_fix_cell(x_positions)
-        return self.st_dict
+            self.structure = self.to_st_dict_fix_cell(x_positions)
+        return self.structure
 
     def derivatives_by_axis(self):
-
+        """Compute derivatives with respect to axis elements."""
         sigma = [
             [self._stress[0], self._stress[3], self._stress[5]],
             [self._stress[3], self._stress[1], self._stress[4]],
             [self._stress[5], self._stress[4], self._stress[2]],
         ]
-        derivatives_s = -np.array(sigma) @ self.st_dict["axis_inv"].T
+        derivatives_s = -np.array(sigma) @ self.structure.axis_inv.T
 
         """derivatives_s: In the order of ax, bx, cx, ay, by, cy, az, bz, cz"""
         return self._basis_axis.T @ derivatives_s.reshape(-1)
 
-    def run(self, gtol=1e-4, method="BFGS"):
-        """
+    def run(
+        self,
+        gtol: float = 1e-4,
+        method: Literal["BFGS", "CG", "L-BFGS-B"] = "BFGS",
+    ):
+        """Run geometry optimization.
+
         Parameters
         ----------
-        method: CG, BFGS, or L-BFGS-B
+        method: Optimization method, CG, BFGS, or L-BFGS-B.
         """
-        print("Using", method, "method")
-        options = {
-            "gtol": gtol,
-            "disp": True,
-        }
-
+        if self._verbose:
+            print("Using", method, "method")
+        options = {"gtol": gtol, "disp": True}
         if self._relax_cell:
             fun = self.fun_relax_cell
             jac = self.jac_relax_cell
@@ -215,15 +217,19 @@ class MinimizeSym:
             fun = self.fun_fix_cell
             jac = self.jac_fix_cell
 
-        print("Number of degrees of freedom:", len(self._x0))
+        if self._verbose:
+            print("Number of degrees of freedom:", len(self._x0))
         self._res = minimize(fun, self._x0, method=method, jac=jac, options=options)
         self._x0 = self._res.x
         return self
 
     @property
     def structure(self):
-        self.st_dict = refine_positions(self.st_dict)
-        return self.st_dict
+        return self._structure
+
+    @structure.setter
+    def structure(self, st: PolymlpStructure):
+        self._structure = refine_positions(st)
 
     @property
     def energy(self):
@@ -248,16 +254,16 @@ class MinimizeSym:
         return -self._res.jac
 
     def print_structure(self):
-        self.st_dict = refine_positions(self.st_dict)
+        self.structure = refine_positions(self.structure)
         print("Axis basis vectors:")
-        for a in self.st_dict["axis"].T:
+        for a in self.structure.axis.T:
             print(" -", list(a))
         print("Fractional coordinates:")
-        for p, e in zip(self.st_dict["positions"].T, self.st_dict["elements"]):
+        for p, e in zip(self.structure.positions.T, self.structure.elements):
             print(" -", e, list(p))
 
     def write_poscar(self, filename="POSCAR_eqm"):
-        write_poscar_file(self.st_dict, filename=filename)
+        write_poscar_file(self.structure, filename=filename)
 
 
 if __name__ == "__main__":

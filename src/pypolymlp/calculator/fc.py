@@ -175,9 +175,7 @@ class PolymlpFC:
             print("E0:", minobj.energy)
             print("n_iter:", minobj.n_iter)
             print("Fractional coordinate changes:")
-            diff_positions = (
-                self._supercell_dict["positions"] - minobj.structure["positions"]
-            )
+            diff_positions = self._supercell.positions - minobj.structure.positions
             print(diff_positions.T)
             print("Success:", minobj.success)
 

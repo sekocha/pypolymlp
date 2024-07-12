@@ -153,7 +153,7 @@ class PolymlpParams:
     n_type: int
     elements: tuple[str]
     model: PolymlpModelParams
-    atomic_energy: Optional[tuple[float]] = (0.0, 0.0)
+    atomic_energy: Optional[tuple[float]] = None
     dft_train: Optional[Union[list, dict]] = None
     dft_test: Optional[Union[list, dict]] = None
     regression_method: str = "ridge"
@@ -176,8 +176,9 @@ class PolymlpParams:
     def check_errors(self):
         if len(self.elements) != self.n_type:
             raise ValueError("len(elements) != n_type")
-        if len(self.atomic_energy) != self.n_type:
-            raise ValueError("len(atomic_energy) != n_type")
+        if self.atomic_energy is not None:
+            if len(self.atomic_energy) != self.n_type:
+                raise ValueError("len(atomic_energy) != n_type")
 
 
 @dataclass
