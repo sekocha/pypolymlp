@@ -18,7 +18,7 @@ maintainers = [{ name = "Atsuto Seko", email = "seko@cms.mtl.kyoto-u.ac.jp" }]
 requires-python = ">=3.9"
 dependencies = [
     "numpy>=1.17.0",
-    "scipy<=1.13.1",
+    "scipy",
     "PyYAML>=5.3",
     "setuptools >= 61.0",
 ]
