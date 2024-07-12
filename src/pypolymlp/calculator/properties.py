@@ -187,6 +187,7 @@ class Properties:
         return self._e, self._f, self._s
 
     def eval_phonopy(self, str_ph):
+        """Evaluate properties for a single structure in phonopy format."""
         from pypolymlp.utils.phonopy_utils import phonopy_cell_to_structure
 
         st = phonopy_cell_to_structure(str_ph)
@@ -196,6 +197,7 @@ class Properties:
         return e, f, s
 
     def eval_multiple_phonopy(self, str_ph_list):
+        """Evaluate properties for multiple structures in phonopy format."""
         from pypolymlp.utils.phonopy_utils import phonopy_cell_to_structure
 
         structures = [phonopy_cell_to_structure(str_ph) for str_ph in str_ph_list]
