@@ -8,7 +8,7 @@
 ## Required libraries and python modules
 
 - python >= 3.9
-- numpy
+- numpy < 2.0.0
 - scipy
 - pyyaml
 - setuptools
@@ -19,7 +19,28 @@
 - phono3py (if using phonon datasets and/or computing force constants)
 - symfc (if computing force constants)
 - spglib (optional)
-- joblib (optional)
+
+## How to install pypolymlp
+- Install from conda-forge
+Coming soon.
+
+- Install from pypi
+```
+conda create -n pypolymlp-env
+conda activate pypolymlp-env
+conda install -c conda-forge numpy scipy pybind11 eigen cmake cxx-compiler
+pip install pypolymlp
+```
+
+- Install from GitHub
+```
+git clone https://github.com/sekocha/pypolymlp.git
+cd pypolymlp
+conda create -n pypolymlp-env
+conda activate pypolymlp-env
+conda install -c conda-forge numpy scipy pybind11 eigen cmake cxx-compiler
+pip install . -vvv
+```
 
 ## How to use pypolymlp
 
