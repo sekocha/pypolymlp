@@ -40,7 +40,7 @@ conda activate pypolymlp-env
 conda install -c conda-forge numpy scipy pybind11 eigen cmake cxx-compiler
 pip install . -vvv
 ```
-Building c++ codes in pypolymlp may require a significant amount of time.
+Building C++ codes in pypolymlp may require a significant amount of time.
 
 ## How to use pypolymlp
 

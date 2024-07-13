@@ -8,7 +8,7 @@ from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
 polymlp = Pypolymlp()
 polymlp.run(file_params='polymlp.in', verbose=True)
 
-params_dict = polymlp.parameters
+params = polymlp.parameters
 mlp_dict = polymlp.summary
 ```
 
@@ -59,31 +59,6 @@ polymlp.set_params(
     gaussian_params2=[0.0,7.0,8],
     atomic_energy=[-0.00040000,-1.85321219],
 )
-train_vaspruns = glob.glob('vaspruns/train/vasprun-*.xml.polymlp')
-test_vaspruns = glob.glob('vaspruns/test/vasprun-*.xml.polymlp')
-polymlp.set_datasets_vasp(train_vaspruns, test_vaspruns)
-polymlp.run(verbose=True)
-```
-or
-```python
-import numpy as np
-import glob
-from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
-
-params = {
-    'elements': ['Mg','O'],
-    'cutoff' : 8.0,
-    'model_type' : 3,
-    'max_p' : 2,
-    'gtinv_order' : 3,
-    'gtinv_maxl' : [4,4],
-    'gaussian_params2' : [0.0, 7.0, 8],
-    'atomic_energy' : [-0.00040000,-1.85321219],
-}
-
-polymlp = Pypolymlp()
-polymlp.set_params(params=params)
-
 train_vaspruns = glob.glob('vaspruns/train/vasprun-*.xml.polymlp')
 test_vaspruns = glob.glob('vaspruns/test/vasprun-*.xml.polymlp')
 polymlp.set_datasets_vasp(train_vaspruns, test_vaspruns)
@@ -145,6 +120,7 @@ polymlp.run(verbose=True)
 
 ```python
 from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
+from pypolymlp.core.data_format import PolymlpStructure
 
 polymlp = Pypolymlp()
 polymlp.set_params(
@@ -168,7 +144,7 @@ test_disps: (n_test, 3, n_atom)
 test_forces: (n_test, 3, n_atom)
 test_energies: (n_test)
 
-structure_without_disp: supercell structure without displacements, dict
+structure_without_disp: supercell structure without displacements, PolymlpStructure format.
 (keys)
 - 'axis': (3,3), [a, b, c]
 - 'positions': (3, n_atom) [x1, x2, ...]
@@ -176,7 +152,20 @@ structure_without_disp: supercell structure without displacements, dict
 - 'elements': Element list (e.g.) ['Mg','Mg','Mg','Mg','O','O','O','O']
 - 'types': Atomic type integers (e.g.) [0, 0, 0, 0, 1, 1, 1, 1]
 - 'volume': 64.0 (ang.^3)
+
 '''
+structure_without_disp = PolymlpStructure(
+    axis = axis,
+    positions = positions,
+    n_atoms = n_atoms,
+    elements = elements,
+    types = types,
+)
+
+'''
+Structure can also be generated from POSCAR as follows.
+'''
+structure_without_disp = Poscar('POSCAR').structure
 
 polymlp.set_datasets_displacements(
     train_disps,
@@ -193,24 +182,6 @@ polymlp.run(verbose=True)
 ## From multiple sets of vasprun.xml files
 
 ```python
-import numpy as np
-import glob
-from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
-
-params = {
-    'elements': ['Mg','O'],
-    'cutoff' : 8.0,
-    'model_type' : 3,
-    'max_p' : 2,
-    'gtinv_order' : 3,
-    'gtinv_maxl' : [4,4],
-    'gaussian_params2' : [0.0, 7.0, 8],
-    'atomic_energy' : [-0.00040000,-1.85321219],
-}
-
-polymlp = Pypolymlp()
-polymlp.set_params(params=params)
-
 train_vaspruns1 = glob.glob('vaspruns/train1/vasprun-*.xml.polymlp')
 train_vaspruns2 = glob.glob('vaspruns/train2/vasprun-*.xml.polymlp')
 test_vaspruns1 = glob.glob('vaspruns/test1/vasprun-*.xml.polymlp')
@@ -220,6 +191,5 @@ polymlp.set_multiple_datasets_vasp(
     [test_vaspruns1, test_vaspruns2]
 )
 
-#polymlp.run(verbose=True, sequential=False)
-polymlp.run(verbose=True, sequential=True)
+polymlp.run(verbose=True)
 ```
