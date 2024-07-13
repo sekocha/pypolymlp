@@ -72,7 +72,7 @@ energy_all, forces_all, stress_all = prop.eval_multiple_phonopy(supercells)
 - Conversion of a phonopy cell class object into a structure dictionary
 ```python
 from pypolymlp.utils.phonopy_utils import phonopy_cell_to_structure
-st_dict = phonopy_cell_to_structure(cell_phonopy)
+structure = phonopy_cell_to_structure(cell_phonopy)
 ```
 
 

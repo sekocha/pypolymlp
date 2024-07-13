@@ -165,6 +165,7 @@ structure_without_disp = PolymlpStructure(
 '''
 Structure can also be generated from POSCAR as follows.
 '''
+from pypolymlp.core.interface_vasp import Poscar
 structure_without_disp = Poscar('POSCAR').structure
 
 polymlp.set_datasets_displacements(
