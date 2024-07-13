@@ -38,6 +38,15 @@ class PolymlpStructure:
     def __post_init__(self):
         if self.volume is None:
             self.volume = np.linalg.det(self.axis)
+        self.check_errors()
+
+    def check_errors(self):
+        assert self.axis.shape[0] == 3
+        assert self.axis.shape[1] == 3
+        assert self.positions.shape[0] == 3
+        assert self.positions.shape[1] == len(self.elements)
+        assert len(self.elements) == len(self.types)
+        assert len(self.elements) == sum(self.n_atoms)
 
 
 @dataclass
@@ -75,8 +84,7 @@ class PolymlpGtinvParams:
 
     def check_errors(self):
         size = self.order - 1
-        if len(self.max_l) < size:
-            raise ValueError("Size (gtinv_maxl) <", size)
+        assert len(self.max_l) >= size
 
     def get_invariances(self):
         rgi = libmlpcpp.Readgtinv(
@@ -178,11 +186,9 @@ class PolymlpParams:
         return params_dict
 
     def check_errors(self):
-        if len(self.elements) != self.n_type:
-            raise ValueError("len(elements) != n_type")
+        assert len(self.elements) == self.n_type
         if self.atomic_energy is not None:
-            if len(self.atomic_energy) != self.n_type:
-                raise ValueError("len(atomic_energy) != n_type")
+            assert len(self.atomic_energy) == self.n_type
 
 
 @dataclass
@@ -211,6 +217,17 @@ class PolymlpDataDFT:
     include_force: bool = True
     weight: float = 1.0
     name: str = "dataset"
+
+    def __post_init__(self):
+        self.check_errors()
+
+    def check_errors(self):
+        assert self.energies.shape[0] * 6 == self.stresses.shape[0]
+        assert self.energies.shape[0] == self.volumes.shape[0]
+        assert self.energies.shape[0] == len(self.structures)
+        assert self.energies.shape[0] == self.total_n_atoms.shape[0]
+        assert self.energies.shape[0] == len(self.files)
+        assert self.forces.shape[0] == np.sum(self.total_n_atoms) * 3
 
     def apply_atomic_energy(self, atom_e: tuple[float]) -> Self:
         """Subtract atomic energies from energies."""

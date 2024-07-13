@@ -88,10 +88,8 @@ class Pypolymlp:
             self._params = params
         else:
             n_type = len(elements)
-            if len(gaussian_params1) != 3:
-                raise ValueError("len(gaussian_params1) != 3")
-            if len(gaussian_params2) != 3:
-                raise ValueError("len(gaussian_params2) != 3")
+
+            assert len(gaussian_params1) == len(gaussian_params2) == 3
             params1 = self._sequence(gaussian_params1)
             params2 = self._sequence(gaussian_params2)
             pair_params = list(itertools.product(params1, params2))
@@ -99,6 +97,8 @@ class Pypolymlp:
 
             if atomic_energy is None:
                 atomic_energy = tuple([0.0 for i in range(n_type)])
+            else:
+                assert len(atomic_energy) == n_type
 
             element_order = elements if rearrange_by_elements else None
 
@@ -253,6 +253,12 @@ class Pypolymlp:
                 "Set parameters using set_params() "
                 "before using set_datasets_displacements."
             )
+        assert train_disps.shape[1] == 3
+        assert test_disps.shape[1] == 3
+        assert train_disps.shape[0] == train_energies.shape[0]
+        assert test_disps.shape[0] == test_energies.shape[0]
+        assert train_disps.shape == train_forces.shape
+        assert test_disps.shape == test_forces.shape
 
         self._train = self._set_dft_data(
             train_disps,
@@ -303,10 +309,10 @@ class Pypolymlp:
         self,
         file_params=None,
         sequential=None,
+        batch_size=None,
         path_output="./",
         verbose=False,
         output_files=False,
-        batch_size=None,
     ):
         """Run linear ridge regression to estimate MLP coefficients."""
 
@@ -369,12 +375,29 @@ class Pypolymlp:
 
     @property
     def parameters(self) -> PolymlpParams:
+        """Return parameters of developed polymlp."""
         return self._params
 
     @property
     def summary(self):
+        """Return summary of developed polymlp.
+
+        Attributes
+        ----------
+        coeffs: MLP coefficients.
+        scales: Scales of features. scaled_coeffs (= coeffs / scales)
+                must be used for calculating properties.
+        rmse: Root-mean-square error for test data.
+        alpha, beta: Optimal regurlarization parameters.
+        predictions_train, predictions_test: Predicted energy values.
+        error_train, error_test: Root-mean square error for each dataset.
+        """
         return self._mlp_model
 
     @property
     def coeffs(self):
+        """Return scaled coefficients.
+
+        It is appropriate to use the scaled coefficient to calculate properties.
+        """
         return self._mlp_model.coeffs / self._mlp_model.scales

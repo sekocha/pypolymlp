@@ -270,9 +270,9 @@ class PolymlpFC:
 
     @displacements.setter
     def displacements(self, disps: np.ndarray):
-        """disps: Displacements (n_str, 3, n_atom)"""
+        """Set displacements, shape=(n_str, 3, n_atom)."""
         if not disps.shape[1] == 3 or not disps.shape[2] == self._N:
-            raise ValueError("displacements must have a shape of " "(n_str, 3, n_atom)")
+            raise ValueError("Displacements must have a shape of " "(n_str, 3, n_atom)")
         self._disps = disps
         self._structures = get_structures_from_displacements(
             self._disps,
@@ -281,9 +281,9 @@ class PolymlpFC:
 
     @forces.setter
     def forces(self, f: np.ndarray):
-        """forces: shape=(n_str, 3, n_atom)"""
+        """Set forces, shape=(n_str, 3, n_atom)."""
         if not f.shape[1] == 3 or not f.shape[2] == self._N:
-            raise ValueError("forces must have a shape of " "(n_str, 3, n_atom)")
+            raise ValueError("Forces must have a shape of " "(n_str, 3, n_atom)")
         self._forces = f
 
     @structures.setter

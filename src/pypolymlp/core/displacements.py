@@ -28,6 +28,11 @@ def set_dft_data(
     ------
     dft: DFT training or test dataset in PolymlpDataDFT format
     """
+    assert forces.shape[1] == 3
+    assert positions_all.shape[1] == 3
+    assert forces.shape[2] == positions_all.shape[2]
+    assert forces.shape[0] == energies.shape[0] == positions_all.shape[0]
+
     stresses = np.zeros(forces.shape[0] * 6)
     forces_update, structures = [], []
     for positions_iter, forces_iter in zip(positions_all, forces):
@@ -71,7 +76,10 @@ def convert_disps_to_positions(disps, axis, positions):
     Parameters
     ----------
     disps: Displacements, shape=(n_str, 3, n_atoms)
+    axis: Axis of base structure.
+    positions: Positions of base structure.
     """
+    assert disps.shape[1] == 3
     axis_inv = np.linalg.inv(axis)
     positions_all = np.array([positions + (axis_inv @ d) for d in disps])
     return positions_all
@@ -81,7 +89,13 @@ def get_structures_from_multiple_positions(
     positions_all: np.ndarray,
     structure: PolymlpStructure,
 ) -> list[PolymlpStructure]:
-    """positions_all: (n_str, 3, n_atom)"""
+    """Convert positions into structures.
+
+    Parameters
+    ----------
+    positions_all: Positions, shape=(n_str, 3, n_atom).
+    structure: Base structure.
+    """
     structures = []
     for positions_iter in positions_all:
         st = copy.deepcopy(structure)
@@ -99,6 +113,11 @@ def get_structures_from_displacements(
     Parameters
     ----------
     disps: Displacements, shape=(n_str, 3, n_atoms)
+    structure: Base structure.
+
+    Retrun
+    ------
+    List of structures with displacements.
     """
     positions_all = convert_disps_to_positions(
         disps,
@@ -114,7 +133,17 @@ def generate_random_const_displacements(
     displacements: float = 0.03,
     is_plusminus: bool = False,
 ) -> tuple[np.ndarray, list[PolymlpStructure]]:
-    """Generate a set of structures including random displacements"""
+    """Generate a set of structures including random displacements
+
+    Parameters
+    ----------
+    structure: Base structure.
+
+    Return
+    ------
+    disps: Displacements, shape=(n_str, 3, n_atoms)
+    structures: Structures, shape=(n_str)
+    """
     disps = []
     for i in range(n_samples):
         rand = np.random.randn(3, structure.positions.shape[1])
