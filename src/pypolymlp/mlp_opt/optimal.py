@@ -57,7 +57,7 @@ def find_optimal_mlps(dirs, key, use_force=False, use_logscale_time=False):
                     break
             if system is None:
                 params, _ = load_mlp_lammps(glob.glob(dir_pot + "/polymlp.lammps*")[0])
-                system = "-".join(params["elements"])
+                system = "-".join(params.elements)
 
         if match_d is not None:
             abspath = os.path.abspath(dir_pot)

@@ -25,6 +25,15 @@ class PropertiesSingle:
     def __init__(
         self, pot: str = None, params: PolymlpParams = None, coeffs: np.ndarray = None
     ):
+        """Init method.
+
+        Parameters
+        ----------
+        pot: polymlp file.
+        params: Parameters for polymlp.
+        coeffs: Polymlp coefficients.
+        """
+
         if pot is not None:
             self._params, mlp_dict = load_mlp_lammps(filename=pot)
             self._coeffs = mlp_dict["coeffs"] / mlp_dict["scales"]
@@ -107,6 +116,15 @@ class PropertiesHybrid:
         params: list[PolymlpParams] = None,
         coeffs: list[np.ndarray] = None,
     ):
+        """Init method.
+
+        Parameters
+        ----------
+        pot: polymlp file.
+        params: Parameters for polymlp.
+        coeffs: Polymlp coefficients.
+        """
+
         if pot is not None:
             if not isinstance(pot, list):
                 raise ValueError("Parameters in PropertiesHybrid must be lists.")
@@ -153,6 +171,16 @@ class Properties:
         params: Union[PolymlpParams, list[PolymlpParams]] = None,
         coeffs: Union[np.ndarray, list[np.ndarray]] = None,
     ):
+        """Init method.
+
+        Parameters
+        ----------
+        pot: polymlp file.
+        params: Parameters for polymlp.
+        coeffs: Polymlp coefficients.
+
+        Any one of pot and (params, coeffs) is needed.
+        """
 
         if pot is not None:
             if isinstance(pot, list):

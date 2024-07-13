@@ -35,6 +35,10 @@ class PolymlpStructure:
     axis_inv: Optional[np.ndarray] = None
     comment: Optional[str] = None
 
+    def __post_init__(self):
+        if self.volume is None:
+            self.volume = np.linalg.det(self.axis)
+
 
 @dataclass
 class PolymlpGtinvParams:
@@ -64,7 +68,7 @@ class PolymlpGtinvParams:
         if self.order > 0:
             self.get_invariances()
         else:
-            self.lm_seq, self._l_comb, self.lm_coeffs = [], [], []
+            self.lm_seq, self.l_comb, self.lm_coeffs = [], [], []
 
     def as_dict(self) -> dict:
         return asdict(self)

@@ -88,7 +88,7 @@ class Minimize:
     def to_st_dict_fix_cell(self, x):
         """Convert x to structure."""
         self.structure.positions = x.reshape((-1, 3)).T
-        return self.st_dict
+        return self.structure
 
     def fun_relax_cell(self, x, args=None):
         """Target function when performing cell optimization."""

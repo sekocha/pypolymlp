@@ -54,7 +54,10 @@ def set_structures(args):
 def compute_features(structures: list[PolymlpStructure], args, force: bool = False):
     if args.pot is not None:
         return compute_from_polymlp_lammps(
-            structures, pot=args.pot, return_mlp_dict=False, force=force
+            structures,
+            pot=args.pot,
+            return_mlp_dict=False,
+            force=force,
         )
     infile = args.infile[0]
     return compute_from_infile(infile, structures, force=force)
@@ -178,6 +181,15 @@ def run():
         "--ph_tstep", type=float, default=100, help="Temperature (step)"
     )
     parser.add_argument("--ph_pdos", action="store_true", help="Compute phonon PDOS")
+
+    parser.add_argument(
+        "-i",
+        "--infile",
+        nargs="*",
+        type=str,
+        default=["polymlp.in"],
+        help="Input file name",
+    )
     args = parser.parse_args()
 
     if args.properties:
@@ -246,15 +258,14 @@ def run():
         from pypolymlp.calculator.compute_phonon import PolymlpPhonon, PolymlpPhononQHA
 
         print("Mode: Phonon calculations")
-
         if args.str_yaml is not None:
-            unitcell_dict, supercell_dict = load_cells(filename=args.str_yaml)
-            supercell_matrix = supercell_dict["supercell_matrix"]
+            unitcell, supercell = load_cells(filename=args.str_yaml)
+            supercell_matrix = supercell.supercell_matrix
         elif args.poscar is not None:
-            unitcell_dict = Poscar(args.poscar).get_structure()
+            unitcell = Poscar(args.poscar).structure
             supercell_matrix = np.diag(args.supercell)
 
-        ph = PolymlpPhonon(unitcell_dict, supercell_matrix, pot=args.pot)
+        ph = PolymlpPhonon(unitcell, supercell_matrix, pot=args.pot)
         ph.produce_force_constants(displacements=args.disp)
         ph.compute_properties(
             mesh=args.ph_mesh,
@@ -264,7 +275,8 @@ def run():
             t_step=args.ph_tstep,
         )
 
-        qha = PolymlpPhononQHA(unitcell_dict, supercell_matrix, pot=args.pot)
+        print("Mode: Phonon calculations (QHA)")
+        qha = PolymlpPhononQHA(unitcell, supercell_matrix, pot=args.pot)
         qha.run()
         qha.write_qha()
 

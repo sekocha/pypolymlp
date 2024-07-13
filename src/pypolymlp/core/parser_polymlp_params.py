@@ -65,6 +65,7 @@ class ParamsParser:
             dataset_type = self.parser.get_params("dataset_type", default="vasp")
             dft_train, dft_test = self._get_dataset(dataset_type, multiple_datasets)
         else:
+            dataset_type = "vasp"
             dft_train, dft_test = None, None
 
         self._params = PolymlpParams(

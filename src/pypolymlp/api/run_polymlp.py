@@ -16,7 +16,6 @@ from pypolymlp.mlp_dev.standard.regression import Regression
 def run():
 
     signal.signal(signal.SIGINT, signal.SIG_DFL)
-
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-i",
@@ -52,6 +51,7 @@ def run():
     n_features = polymlp_in.n_features
 
     if args.learning_curve:
+        t1 = time.time()
         if len(polymlp_in.train_dict) == 1:
             args.no_sequential = True
             polymlp = PolymlpDevDataXY(polymlp_in).run()
@@ -60,25 +60,28 @@ def run():
             raise ValueError(
                 "A single dataset is required " "for learning curve option"
             )
-
-    t1 = time.time()
-    batch_size = None
-    if args.no_sequential:
-        if not args.learning_curve:
-            polymlp = PolymlpDevDataXY(polymlp_in, verbose=verbose).run()
-        if verbose:
-            polymlp.print_data_shape()
+        polymlp.print_data_shape()
+        t2 = time.time()
     else:
-        if args.batch_size is None:
-            batch_size = max((10000000 // n_features), 128)
+        batch_size = None
+        if not args.no_sequential:
+            if args.batch_size is None:
+                batch_size = max((10000000 // n_features), 128)
+            else:
+                batch_size = args.batch_size
+            if verbose:
+                print("Batch size:", batch_size, flush=True)
+
+        t1 = time.time()
+        if args.no_sequential:
+            polymlp = PolymlpDevDataXY(polymlp_in, verbose=verbose).run()
+            if verbose:
+                polymlp.print_data_shape()
         else:
-            batch_size = args.batch_size
-        if verbose:
-            print("Batch size:", batch_size, flush=True)
-        polymlp = PolymlpDevDataXYSequential(polymlp_in, verbose=verbose).run_train(
-            batch_size=batch_size
-        )
-    t2 = time.time()
+            polymlp = PolymlpDevDataXYSequential(polymlp_in, verbose=verbose).run_train(
+                batch_size=batch_size
+            )
+        t2 = time.time()
 
     reg = Regression(polymlp).fit(
         seq=not args.no_sequential,

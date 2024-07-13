@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import copy
 from math import sqrt
 
 import numpy as np
@@ -13,7 +12,7 @@ from pypolymlp.utils.phonopy_utils import structure_to_phonopy_cell
 def basis_cartesian_to_fractional_coordinates(
     basis_c: np.ndarray,
     unitcell: PolymlpStructure,
-):
+) -> np.ndarray:
     """Convert basis set in Cartesian coord. to basis set in fractional coordinates."""
     n_basis = basis_c.shape[1]
     n_atom = len(unitcell.elements)
@@ -29,7 +28,7 @@ def basis_cartesian_to_fractional_coordinates(
     return basis_f
 
 
-def construct_basis_cartesian(cell: PolymlpStructure):
+def construct_basis_cartesian(cell: PolymlpStructure) -> np.ndarray:
     """Generate a basis set for atomic positions in Cartesian coordinates."""
     cell_ph = structure_to_phonopy_cell(cell)
     try:
@@ -39,7 +38,7 @@ def construct_basis_cartesian(cell: PolymlpStructure):
     return fc_basis.full_basis_set.toarray()
 
 
-def construct_basis_fractional_coordinates(cell: PolymlpStructure):
+def construct_basis_fractional_coordinates(cell: PolymlpStructure) -> np.ndarray:
     """Generate a basis set for atomic positions in fractional coordinates."""
     basis_c = construct_basis_cartesian(cell)
     if basis_c is None:
@@ -48,17 +47,18 @@ def construct_basis_fractional_coordinates(cell: PolymlpStructure):
     return basis_f
 
 
-def _normalize_vector(vec):
+def _normalize_vector(vec: np.ndarray) -> np.ndarray:
     return vec / np.linalg.norm(vec)
 
 
-def standardize_cell(cell: PolymlpStructure):
+def standardize_cell(cell: PolymlpStructure) -> PolymlpStructure:
     """Standardize cell."""
     cell_ph = structure_to_phonopy_cell(cell)
 
-    map_numbers = dict()
-    for n, t in zip(cell_ph.numbers, cell.types):
+    map_numbers, map_elements = dict(), dict()
+    for n, t, e in zip(cell_ph.numbers, cell.types, cell.elements):
         map_numbers[n] = t
+        map_elements[t] = e
 
     lattice, scaled_positions, numbers = spglib.standardize_cell(
         (cell_ph.cell, cell_ph.scaled_positions, cell_ph.numbers),
@@ -66,18 +66,28 @@ def standardize_cell(cell: PolymlpStructure):
     )
     types = [map_numbers[n] for n in numbers]
 
-    scaled_positions_reorder = []
+    scaled_positions_reorder, types_reorder = [], []
+    n_atoms = []
     for i in range(max(types) + 1):
-        scaled_positions_reorder.extend(scaled_positions[np.array(types) == i])
+        ids = np.array(types) == i
+        scaled_positions_reorder.extend(scaled_positions[ids])
+        types_reorder.extend([types[i] for i in ids])
+        n_atoms.append(np.count_nonzero(ids))
     scaled_positions_reorder = np.array(scaled_positions_reorder)
+    elements = [map_elements[t] for t in types]
 
-    cell_copy = copy.deepcopy(cell)
-    cell_copy.axis = lattice.T
-    cell_copy.positions = scaled_positions_reorder.T
-    return cell_copy
+    cell_standardized = PolymlpStructure(
+        axis=lattice.T,
+        positions=scaled_positions_reorder.T,
+        n_atoms=n_atoms,
+        elements=elements,
+        types=types,
+    )
+    return cell_standardized
 
 
-def basis_cell(cell: PolymlpStructure):
+def basis_cell(cell: PolymlpStructure) -> tuple[np.ndarray, PolymlpStructure]:
+    """Generate a basis set for axis matrix."""
 
     cell_copy = standardize_cell(cell)
     cell_ph = structure_to_phonopy_cell(cell_copy)

@@ -1,6 +1,6 @@
 """Class of computing features"""
 
-from typing import Union
+from typing import Optional, Union
 
 import numpy as np
 
@@ -52,29 +52,40 @@ class Features:
     def __init__(
         self,
         params: PolymlpParams,
-        dft: Union[PolymlpDataDFT, list[PolymlpDataDFT]],
+        dft: Optional[Union[PolymlpDataDFT, list[PolymlpDataDFT]]] = None,
+        structures: Optional[list[PolymlpStructure]] = None,
         print_memory: bool = True,
         element_swap: bool = False,
     ):
 
-        if isinstance(dft, PolymlpDataDFT):
-            n_st_dataset = [len(dft.structures)]
-            force_dataset = [dft.include_force]
-            (
-                axis_array,
-                positions_c_array,
-                types_array,
-                n_atoms_sum_array,
-            ) = structures_to_mlpcpp_obj(dft.structures)
+        if dft is not None:
+            if isinstance(dft, PolymlpDataDFT):
+                n_st_dataset = [len(dft.structures)]
+                force_dataset = [dft.include_force]
+                (
+                    axis_array,
+                    positions_c_array,
+                    types_array,
+                    n_atoms_sum_array,
+                ) = structures_to_mlpcpp_obj(dft.structures)
+            else:
+                (
+                    axis_array,
+                    positions_c_array,
+                    types_array,
+                    n_atoms_sum_array,
+                    n_st_dataset,
+                    force_dataset,
+                ) = multiple_dft_to_mlpcpp_obj(dft)
         else:
+            n_st_dataset = [len(structures)]
+            force_dataset = [params.include_force]
             (
                 axis_array,
                 positions_c_array,
                 types_array,
                 n_atoms_sum_array,
-                n_st_dataset,
-                force_dataset,
-            ) = multiple_dft_to_mlpcpp_obj(dft)
+            ) = structures_to_mlpcpp_obj(structures)
 
         params.element_swap = element_swap
         params.print_memory = print_memory
@@ -125,28 +136,39 @@ class FeaturesHybrid:
     def __init__(
         self,
         hybrid_params: list[PolymlpParams],
-        dft: Union[PolymlpDataDFT, list[PolymlpDataDFT]],
+        dft: Optional[Union[PolymlpDataDFT, list[PolymlpDataDFT]]] = None,
+        structures: Optional[list[PolymlpStructure]] = None,
         print_memory: bool = True,
         element_swap: bool = False,
     ):
-        if isinstance(dft, PolymlpDataDFT):
-            n_st_dataset = [len(dft.structures)]
-            force_dataset = [dft.include_force]
-            (
-                axis_array,
-                positions_c_array,
-                types_array,
-                n_atoms_sum_array,
-            ) = structures_to_mlpcpp_obj(dft.structures)
+        if dft is not None:
+            if isinstance(dft, PolymlpDataDFT):
+                n_st_dataset = [len(dft.structures)]
+                force_dataset = [dft.include_force]
+                (
+                    axis_array,
+                    positions_c_array,
+                    types_array,
+                    n_atoms_sum_array,
+                ) = structures_to_mlpcpp_obj(dft.structures)
+            else:
+                (
+                    axis_array,
+                    positions_c_array,
+                    types_array,
+                    n_atoms_sum_array,
+                    n_st_dataset,
+                    force_dataset,
+                ) = multiple_dft_to_mlpcpp_obj(dft)
         else:
+            n_st_dataset = [len(structures)]
+            force_dataset = [hybrid_params[0].include_force]
             (
                 axis_array,
                 positions_c_array,
                 types_array,
                 n_atoms_sum_array,
-                n_st_dataset,
-                force_dataset,
-            ) = multiple_dft_to_mlpcpp_obj(dft)
+            ) = structures_to_mlpcpp_obj(structures)
 
         hybrid_params_dicts = []
         for params in hybrid_params:

@@ -142,7 +142,7 @@ class PolymlpEOS:
             print("  volume:      ", self._v0, file=f)
             print(
                 "  n_atoms:     ",
-                list(self._unitcell_dict["n_atoms"]),
+                list(self._unitcell.n_atoms),
                 file=f,
             )
             print("", file=f)

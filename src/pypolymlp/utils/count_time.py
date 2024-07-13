@@ -10,6 +10,7 @@ import numpy as np
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.interface_vasp import Poscar
+from pypolymlp.core.io_polymlp import load_mlp_lammps
 
 
 class PolymlpCost:
@@ -24,17 +25,12 @@ class PolymlpCost:
 
         self.pot_path = pot_path
         self.pot = pot
-
         if pot_path is None:
-            prop = Properties(pot=pot)
+            pot_elements = pot
         else:
-            pot = sorted(glob.glob(pot_path[0] + "/polymlp.lammps*"))
-            prop = Properties(pot=pot)
-
-        if isinstance(prop.params_dict, list):
-            self.elements = prop.params[0].elements
-        else:
-            self.elements = prop.params.elements
+            pot_elements = sorted(glob.glob(pot_path[0] + "/polymlp.lammps*"))[0]
+        params, _ = load_mlp_lammps(filename=pot_elements)
+        self.elements = params.elements
 
         self.__set_structure(poscar=poscar)
 
@@ -136,6 +132,7 @@ class PolymlpCost:
             for dir1 in pot_dirs:
                 print("------- Target MLP:", dir1, "-------")
                 pot = sorted(glob.glob(dir1 + "/polymlp.lammps*"))
+                print(pot)
                 cost1, cost2 = self.run_single(pot, n_calc=n_calc)
                 self.write_single_yaml(
                     cost1, cost2, filename=dir1 + "/polymlp_cost.yaml"
