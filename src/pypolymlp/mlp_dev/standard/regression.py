@@ -18,6 +18,7 @@ class Regression(RegressionBase):
         test_xy: Optional[PolymlpDataXY] = None,
         verbose: bool = True,
     ):
+        """Init method."""
 
         super().__init__(
             polymlp_dev,
@@ -29,7 +30,14 @@ class Regression(RegressionBase):
         self.polymlp_dev = polymlp_dev
 
     def fit(self, seq=False, clear_data=False, batch_size=128):
-        """Estimate polymlp coefficients."""
+        """Estimate polymlp coefficients.
+
+        Parameters
+        ----------
+        seq: Use sequential regression.
+        clear_data: Clear training X.T @ X data to reduce memory
+        batch_size: Batch size for computing test X.T @ X.
+        """
         if seq:
             coefs_array = self._ridge_fit(A=self.train_xy.xtx, Xy=self.train_xy.xty)
             self._ridge_model_selection_seq(

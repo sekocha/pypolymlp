@@ -302,6 +302,7 @@ class PolymlpDataMLP:
     scales: Optional[np.ndarray] = None
     rmse: Optional[float] = None
     alpha: Optional[float] = None
+    beta: Optional[float] = None
     predictions_train: Optional[np.ndarray] = None
     predictions_test: Optional[np.ndarray] = None
     error_train: Optional[dict] = None

@@ -37,36 +37,61 @@ if __name__ == "__main__":
         default=["polymlp.lammps"],
         help="MLP file used for regularization.",
     )
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+        default=None,
+        help="Batch size of feature calculations",
+    )
     args = parser.parse_args()
 
     verbose = True
-
-    """params_dict and polymlp_in.params_dict must be the same"""
-    params_dict, mlp_dict = load_mlp_lammps_flexible(args.pot)
+    """TODO: params and polymlp_in.params must be the same.
+    If they are different, exception must be returned.
+    """
+    params, mlp_dict = load_mlp_lammps_flexible(args.pot)
 
     polymlp_in = PolymlpDevData()
-    polymlp_in.parse_infiles(args.infile, verbose=True)
+    polymlp_in.parse_infiles(args.infile, verbose=verbose)
     polymlp_in.parse_datasets()
     polymlp_in.write_polymlp_params_yaml(filename="polymlp_params.yaml")
+    n_features = polymlp_in.n_features
+
+    batch_size = None
+    if not args.no_sequential:
+        if args.batch_size is None:
+            batch_size = max((10000000 // n_features), 128)
+        else:
+            batch_size = args.batch_size
+        if verbose:
+            print("Batch size:", batch_size, flush=True)
 
     t1 = time.time()
     if args.no_sequential:
-        polymlp = PolymlpDevDataXY(polymlp_in).run()
+        polymlp = PolymlpDevDataXY(polymlp_in, verbose=verbose).run()
         polymlp.print_data_shape()
     else:
-        polymlp = PolymlpDevDataXYSequential(polymlp_in).run()
+        polymlp = PolymlpDevDataXYSequential(polymlp_in, verbose=verbose).run_train(
+            batch_size=batch_size
+        )
     t2 = time.time()
 
     reg = RegressionTransfer(polymlp)
-    reg.fit(mlp_dict["coeffs"], mlp_dict["scales"], seq=not args.no_sequential)
+    reg.fit(
+        mlp_dict["coeffs"],
+        mlp_dict["scales"],
+        seq=not args.no_sequential,
+        clear_data=True,
+        batch_size=batch_size,
+    )
     reg.save_mlp_lammps(filename="polymlp.lammps")
     t3 = time.time()
 
     if verbose:
-        mlp_dict = reg.best_model
+        mlp = reg.best_model
         print("  Regression: best model")
-        print("    alpha: ", mlp_dict["alpha"])
-        print("    beta: ", mlp_dict["beta"])
+        print("    alpha: ", mlp.alpha)
+        print("    beta: ", mlp.beta)
 
     acc = PolymlpDevAccuracy(reg)
     acc.compute_error()
