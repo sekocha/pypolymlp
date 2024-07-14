@@ -16,7 +16,7 @@ from pypolymlp.utils.phonopy_utils import phonopy_cell_to_structure
 
 def parse_phono3py_yaml(
     yamlfile: str,
-    energies_filename: str = None,
+    energies_filename: Optional[str] = None,
     element_order: Optional[list[str]] = None,
     select_ids: Optional[list[int]] = None,
     return_displacements: bool = False,

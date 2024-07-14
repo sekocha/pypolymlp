@@ -115,6 +115,54 @@ polymlp.set_datasets_phono3py(
 polymlp.run(verbose=True)
 ```
 
+## MLP development using POSCAR files
+
+```python
+from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
+from pypolymlp.core.interface_vasp import parse_structures_from_poscars
+
+polymlp = Pypolymlp()
+polymlp.set_params(
+    ['Ag','I'],
+    cutoff=8.0,
+    model_type=3,
+    max_p=2,
+    gtinv_order=3,
+    gtinv_maxl=[4,4],
+    gaussian_params2=[0.0,7.0,10],
+    atomic_energy=[-0.19820116,-0.21203241],
+)
+
+train_poscars = glob.glob('poscars/train/POSCAR-*')
+test_poscars = glob.glob('poscars/test/POSCAR-*')
+
+train_structures = parse_structures_from_poscars(train_poscars)
+test_structures = parse_structures_from_poscars(test_poscars)
+
+"""
+DFT values must be prepared by the following settings.
+
+train_energies: shape=(n_train), unit: eV/cell.
+test_energies: shape=(n_test), unit: eV/cell.
+train_forces: shape=(n_train, (3, n_atom)), unit: eV/ang.
+test_forces: shape=(n_test, (3, n_atom)), unit: eV/ang.
+train_stresses: shape=(n_train, 3, 3), unit: eV/cell
+test_stresses: shape=(n_test, 3, 3), unit: eV/cell
+"""
+
+polymlp.set_datasets_structures(
+    train_structures = train_structures,
+    test_structures = test_structures,
+    train_energies = train_energies,
+    test_energies = test_energies,
+    train_forces = train_forces,
+    test_forces = test_forces,
+    train_stresses = train_stresses,
+    test_stresses = test_stresses,
+)
+polymlp.run(verbose=True)
+```
+
 
 ## MLP development using displacements and forces
 

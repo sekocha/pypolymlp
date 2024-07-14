@@ -1,7 +1,7 @@
 """Pypolymlp API."""
 
 import itertools
-from typing import Literal
+from typing import Literal, Optional
 
 import numpy as np
 
@@ -12,6 +12,10 @@ from pypolymlp.core.data_format import (
     PolymlpStructure,
 )
 from pypolymlp.core.displacements import convert_disps_to_positions, set_dft_data
+from pypolymlp.core.interface_vasp import (
+    parse_structures_from_poscars,
+    set_data_from_structures,
+)
 from pypolymlp.mlp_dev.core.accuracy import PolymlpDevAccuracy
 from pypolymlp.mlp_dev.core.mlpdev_data import PolymlpDevData
 from pypolymlp.mlp_dev.standard.mlpdev_dataxy import (
@@ -25,13 +29,14 @@ class Pypolymlp:
     """Pypolymlp API."""
 
     def __init__(self):
+        """Init method."""
         self._params = None
         self._train = None
         self._test = None
         self._mlp_model = None
         self._multiple_datasets = False
 
-        """Hybrid models are not available."""
+        """Hybrid models are not available at this time."""
         # self.__hybrid = None
 
     def set_params(
@@ -260,14 +265,14 @@ class Pypolymlp:
         assert train_disps.shape == train_forces.shape
         assert test_disps.shape == test_forces.shape
 
-        self._train = self._set_dft_data(
+        self._train = self._set_dft_data_from_displacements(
             train_disps,
             train_forces,
             train_energies,
             structure_without_disp,
             element_order=self._params.element_order,
         )
-        self._test = self._set_dft_data(
+        self._test = self._set_dft_data_from_displacements(
             test_disps,
             test_forces,
             test_energies,
@@ -279,7 +284,76 @@ class Pypolymlp:
         self._multiple_datasets = True
         return self
 
-    def _set_dft_data(
+    def set_datasets_structures(
+        self,
+        train_structures: Optional[list[PolymlpStructure]] = None,
+        test_structures: Optional[list[PolymlpStructure]] = None,
+        train_energies: Optional[np.ndarray] = None,
+        test_energies: Optional[np.ndarray] = None,
+        train_forces: Optional[list[np.ndarray]] = None,
+        test_forces: Optional[list[np.ndarray]] = None,
+        train_stresses: Optional[np.ndarray] = None,
+        test_stresses: Optional[np.ndarray] = None,
+    ):
+        """Set datasets from structures-(energies, forces, stresses) sets.
+
+        Parameters
+        ----------
+        train_structures: Structures in PolymlpStructure format (training).
+        test_structures: Structures in PolymlpStructure format (test).
+        train_energies: Energies (training), shape=(n_train) in eV/cell.
+        test_energies: Energies (test data), shape=(n_test) in eV/cell.
+        train_forces: Forces (training), shape = n_train x (3, n_atoms_i) in eV/ang.
+        test_forces: Forces (test), shape= n_test x (3, n_atoms_i) in eV/ang.
+        train_stresses: Stress tensors (training), shape=(n_train, 3, 3), in eV/cell.
+        test_stresses: Stress tensors (test data), shape=(n_test, 3, 3) in eV/cell.
+        """
+        if self._params is None:
+            raise KeyError(
+                "Set parameters using set_params() "
+                "before using set_datasets_displacements."
+            )
+        assert train_structures is not None
+        assert test_structures is not None
+        assert train_energies is not None
+        assert test_energies is not None
+        assert len(train_structures) == len(train_energies)
+        assert len(test_structures) == len(test_energies)
+        if train_forces is not None:
+            assert len(train_structures) == len(train_forces)
+            assert train_forces[0].shape[0] == 3
+        if test_forces is not None:
+            assert len(test_structures) == len(test_forces)
+            assert test_forces[0].shape[0] == 3
+        if train_stresses is not None:
+            assert len(train_structures) == len(train_stresses)
+            assert train_stresses[0].shape[0] == 3
+            assert train_stresses[0].shape[1] == 3
+        if test_stresses is not None:
+            assert len(test_structures) == len(test_stresses)
+            assert test_stresses[0].shape[0] == 3
+            assert test_stresses[0].shape[1] == 3
+
+        self._train = set_data_from_structures(
+            train_structures,
+            train_energies,
+            train_forces,
+            train_stresses,
+            element_order=self._params.element_order,
+        )
+        self._test = set_data_from_structures(
+            test_structures,
+            test_energies,
+            test_forces,
+            test_stresses,
+            element_order=self._params.element_order,
+        )
+        self._train = [self._train]
+        self._test = [self._test]
+        self._multiple_datasets = True
+        return self
+
+    def _set_dft_data_from_displacements(
         self,
         disps: np.ndarray,
         forces: np.ndarray,
@@ -372,6 +446,9 @@ class Pypolymlp:
         self._mlp_model.error_train = acc.error_train_dict
         self._mlp_model.error_test = acc.error_test_dict
         return self
+
+    def get_structures_from_poscars(self, poscars: list[str]) -> list[PolymlpStructure]:
+        return parse_structures_from_poscars(poscars)
 
     @property
     def parameters(self) -> PolymlpParams:
