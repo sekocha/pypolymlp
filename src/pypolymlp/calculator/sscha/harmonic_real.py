@@ -230,6 +230,7 @@ class HarmonicReal:
     def run(
         self, t: int = 1000, n_samples: int = 100, eliminate_outliers: bool = True
     ):
+        """Run harmonic real-space part of SSCHA."""
 
         if self.fc2 is None:
             raise ValueError("FC2 is required for HarmonicReal.")
