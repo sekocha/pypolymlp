@@ -35,6 +35,7 @@ class PolymlpStructure:
     axis_inv: Optional[np.ndarray] = None
     comment: Optional[str] = None
     name: Optional[str] = None
+    masses: Optional[int] = None
 
     def __post_init__(self):
         if self.volume is None:
