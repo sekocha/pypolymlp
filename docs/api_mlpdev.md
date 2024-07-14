@@ -119,7 +119,6 @@ polymlp.run(verbose=True)
 
 ```python
 from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
-from pypolymlp.core.interface_vasp import parse_structures_from_poscars
 
 polymlp = Pypolymlp()
 polymlp.set_params(
@@ -134,10 +133,10 @@ polymlp.set_params(
 )
 
 train_poscars = glob.glob('poscars/train/POSCAR-*')
-test_poscars = glob.glob('poscars/test/POSCAR-*')
+train_structures = polymlp.get_structures_from_poscars(train_poscars)
 
-train_structures = parse_structures_from_poscars(train_poscars)
-test_structures = parse_structures_from_poscars(test_poscars)
+test_poscars = glob.glob('poscars/test/POSCAR-*')
+test_structures = polymlp.get_structures_from_poscars(test_poscars)
 
 """
 DFT values must be prepared by the following settings.
@@ -146,8 +145,8 @@ train_energies: shape=(n_train), unit: eV/cell.
 test_energies: shape=(n_test), unit: eV/cell.
 train_forces: shape=(n_train, (3, n_atom)), unit: eV/ang.
 test_forces: shape=(n_test, (3, n_atom)), unit: eV/ang.
-train_stresses: shape=(n_train, 3, 3), unit: eV/cell
-test_stresses: shape=(n_test, 3, 3), unit: eV/cell
+train_stresses: shape=(n_train, 3, 3), unit: eV/cell.
+test_stresses: shape=(n_test, 3, 3), unit: eV/cell.
 """
 
 polymlp.set_datasets_structures(
