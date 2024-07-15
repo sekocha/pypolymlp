@@ -43,6 +43,8 @@ class PolymlpStructure:
         self.check_errors()
 
     def check_errors(self):
+        self.axis = np.array(self.axis)
+        self.positions = np.array(self.positions)
         assert self.axis.shape[0] == 3
         assert self.axis.shape[1] == 3
         assert self.positions.shape[0] == 3

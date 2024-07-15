@@ -3,8 +3,8 @@
 import numpy as np
 from phonopy import Phonopy
 
-from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.calculator.properties import Properties
+from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.utils.phonopy_utils import phonopy_cell_to_structure
 
 
@@ -12,10 +12,7 @@ class HarmonicReciprocal:
     """Class for harmonic contribution in reciprocal space."""
 
     def __init__(
-        self, 
-        phonopy_obj: Phonopy, 
-        properties: Properties, 
-        fc2: np.ndarray = None
+        self, phonopy_obj: Phonopy, properties: Properties, fc2: np.ndarray = None
     ):
         """Init method.
 
@@ -27,7 +24,7 @@ class HarmonicReciprocal:
         """
 
         self.ph = phonopy_obj
-        self._n_atom = len(self.ph.supercell.number)
+        self._n_atom = len(self.ph.supercell.numbers)
 
         self.prop = properties
         self.fc2 = fc2

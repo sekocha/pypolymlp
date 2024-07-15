@@ -7,7 +7,7 @@ import numpy as np
 
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.sscha.harmonic_real import HarmonicReal
-from pypolymlp.calculator.sscha.sscha_io import Restart  # save_cell,
+from pypolymlp.calculator.sscha.sscha_utils import Restart
 from pypolymlp.utils.vasp_utils import write_poscar_file
 
 if __name__ == "__main__":
@@ -87,10 +87,3 @@ if __name__ == "__main__":
         filename = "sscha_poscars/POSCAR-" + str(i).zfill(4)
         write_poscar_file(st, filename=filename)
     print("sscha_poscars/POSCAR* are generated.")
-
-    """
-    f = open('sscha_cells.yaml', 'w')
-    save_cell(res.unitcell, tag='unitcell', fstream=f)
-    save_cell(ph_real.supercell, tag='supercell', fstream=f)
-    f.close()
-    """

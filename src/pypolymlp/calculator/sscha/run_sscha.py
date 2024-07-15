@@ -4,9 +4,9 @@ import os
 from typing import Optional
 
 import numpy as np
-import Symfc
 from phono3py.file_IO import read_fc2_from_hdf5, write_fc2_to_hdf5
 from phonopy import Phonopy
+from symfc import Symfc
 
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.sscha.harmonic_real import HarmonicReal
@@ -140,6 +140,8 @@ class PolymlpSSCHA:
 
         disp_norms = np.linalg.norm(self.ph_real.displacements, axis=1)
 
+        print("temperature:      ", "{:.1f}".format(self._sscha_current.temperature))
+        print("number of samples:", disp_norms.shape[0])
         print("convergence score:      ", "{:.6f}".format(self._sscha_current.delta))
         print("displacements:")
         print("  average disp. (Ang.): ", "{:.6f}".format(np.mean(disp_norms)))
@@ -226,6 +228,8 @@ class PolymlpSSCHA:
             )
             if self._verbose:
                 self._print_progress()
+
+            delta = self._sscha_current.delta
             n_iter += 1
 
         converge = True if delta < tol else False
@@ -274,6 +278,11 @@ class PolymlpSSCHA:
     def logs(self) -> list[PolymlpDataSSCHA]:
         """Return SSCHA progress."""
         return self._sscha_log
+
+    @property
+    def n_fc_basis(self) -> int:
+        """Number of FC basis vectors."""
+        return self._symfc.basis_set[2].basis_set.shape[1]
 
     @property
     def force_constants(self) -> np.ndarray:
@@ -333,11 +342,11 @@ def run_sscha(
     )
 
     sscha.set_initial_force_constants(algorithm=args.init, filename=args.init_file)
-    freq = sscha.run_frequencies(qmesh=args.mesh)
+    freq = sscha._run_frequencies(qmesh=args.mesh)
     if verbose:
         print("Frequency (min):  ", "{:.6f}".format(np.min(freq)))
         print("Frequency (max):  ", "{:.6f}".format(np.max(freq)))
-        print("Number of FC2 basis vectors:", sscha.fc2_basis.basis_set.shape[1])
+        print("Number of FC2 basis vectors:", sscha.n_fc_basis)
 
     for temp in args.temperatures:
         if verbose:
@@ -369,7 +378,7 @@ if __name__ == "__main__":
     import argparse
     import signal
 
-    from pypolymlp.calculator.sscha.sscha_io import (
+    from pypolymlp.calculator.sscha.sscha_utils import (
         Restart,
         n_samples_setting,
         print_parameters,
