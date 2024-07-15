@@ -3,21 +3,16 @@
 import os
 from typing import Optional
 
-from collections import defaultdict
 import numpy as np
-
+import Symfc
 from phono3py.file_IO import read_fc2_from_hdf5, write_fc2_to_hdf5
 from phonopy import Phonopy
-import Symfc
-
-from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
-from pypolymlp.calculator.sscha.harmonic_real import HarmonicReal
-from pypolymlp.calculator.sscha.harmonic_reciprocal import HarmonicReciprocal
-from pypolymlp.calculator.sscha.sscha_utils import (
-    save_sscha_yaml, PolymlpDataSSCHA,
-)
 
 from pypolymlp.calculator.properties import Properties
+from pypolymlp.calculator.sscha.harmonic_real import HarmonicReal
+from pypolymlp.calculator.sscha.harmonic_reciprocal import HarmonicReciprocal
+from pypolymlp.calculator.sscha.sscha_utils import PolymlpDataSSCHA, save_sscha_yaml
+from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
 from pypolymlp.core.utils import ev_to_kjmol
 from pypolymlp.utils.phonopy_utils import (
     phonopy_cell_to_structure,
@@ -42,7 +37,7 @@ class PolymlpSSCHA:
         Parameters
         ----------
         unitcell: Unitcell in PolymlpStructure format
-        supercell_matrix: Supercell matrix. 
+        supercell_matrix: Supercell matrix.
         pot: polymlp file.
         params: Parameters for polymlp.
         coeffs: Polymlp coefficients.
@@ -68,7 +63,7 @@ class PolymlpSSCHA:
         self.supercell_polymlp.supercell_matrix = supercell_matrix
         self.supercell_polymlp.n_unitcells = self.n_unitcells
 
-        self._symfc = Symfc(self.phonopy.supercell, use_mkl = True)
+        self._symfc = Symfc(self.phonopy.supercell, use_mkl=True)
         self._symfc.compute_basis_set(2)
 
         self.ph_real = HarmonicReal(self.supercell_polymlp, self.prop)
@@ -87,19 +82,19 @@ class PolymlpSSCHA:
         self.ph_recip.compute_thermal_properties(t=t, qmesh=qmesh)
 
         res = PolymlpDataSSCHA(
-            temperature = t,
-            static_potential = self._unit_kjmol(self.ph_real.static_potential),
-            harmonic_potential = self._unit_kjmol(
+            temperature=t,
+            static_potential=self._unit_kjmol(self.ph_real.static_potential),
+            harmonic_potential=self._unit_kjmol(
                 self.ph_real.average_harmonic_potential
             ),
-            harmonic_free_energy = self.ph_recip.free_energy, # kJ/mol
-            average_potential = self._unit_kjmol(self.ph_real.average_full_potential),
-            anharmonic_free_energy = self._unit_kjmol(
+            harmonic_free_energy=self.ph_recip.free_energy,  # kJ/mol
+            average_potential=self._unit_kjmol(self.ph_real.average_full_potential),
+            anharmonic_free_energy=self._unit_kjmol(
                 self.ph_real.average_anharmonic_potential
             ),
         )
         return res
-    
+
     def _run_solver_fc2(self):
         """Estimate FC2 from a forces-displacements dataset."""
         self._symfc.displacements = self.ph_real.displacements.transpose((0, 2, 1))
@@ -108,6 +103,7 @@ class PolymlpSSCHA:
         return self._symfc.force_constants[2]
 
     def _recover_fc2(self, coefs):
+        """Recover FC2 from coefficients for basis set."""
         basis_set = self._symfc.basis_set[2]
         compr_mat = basis_set.compression_matrix
         fc = basis_set.basis_set @ coefs
@@ -119,7 +115,11 @@ class PolymlpSSCHA:
         return norm1 / norm2
 
     def _single_iter(
-        self, t=1000, n_samples=100, qmesh=[10, 10, 10], mixing=0.5,
+        self,
+        t=1000,
+        n_samples=100,
+        qmesh=[10, 10, 10],
+        mixing=0.5,
     ) -> tuple[np.ndarray, float]:
         """Run a standard single sscha iteration."""
 
@@ -202,7 +202,7 @@ class PolymlpSSCHA:
         qmesh: q-point mesh to calculate harmonic properties from effective FC2s.
         max_iter: Maximum number of iterations in SSCHA.
         tol: Convergence tolerance for FC2.
-        mixing: Mixing parameter. 
+        mixing: Mixing parameter.
                 FCs are updated by FC2 = FC2(new) * mixing + FC2(old) * (1-mixing).
         initialize_history: Initialize history logs.
         """
@@ -219,7 +219,10 @@ class PolymlpSSCHA:
                 print("------------- Iteration :", n_iter, "-------------")
 
             self.fc2 = self._single_iter(
-                t=t, n_samples=n_samples, qmesh=qmesh, mixing=mixing,
+                t=t,
+                n_samples=n_samples,
+                qmesh=qmesh,
+                mixing=mixing,
             )
             if self._verbose:
                 self._print_progress()
@@ -244,11 +247,11 @@ class PolymlpSSCHA:
         path_log = "./sscha/" + str(self.properties.temperature) + "/"
         os.makedirs(path_log, exist_ok=True)
         save_sscha_yaml(
-            self._unitcell, 
-            self._supercell_matrix, 
-            self.logs, 
-            args, 
-            filename=path_log + "sscha_results.yaml"
+            self._unitcell,
+            self._supercell_matrix,
+            self.logs,
+            args,
+            filename=path_log + "sscha_results.yaml",
         )
         write_fc2_to_hdf5(self.force_constants, filename=path_log + "fc2.hdf5")
         self._write_dos(filename=path_log + "total_dos.dat")
@@ -295,13 +298,12 @@ def run_sscha(
     properties: Optional[Properties] = None,
     verbose: bool = True,
 ):
-
     """Run sscha iterations.
 
     Parameters
     ----------
     unitcell: Unitcell in PolymlpStructure format
-    supercell_matrix: Supercell matrix. 
+    supercell_matrix: Supercell matrix.
     pot: polymlp file.
     params: Parameters for polymlp.
     coeffs: Polymlp coefficients.
@@ -316,18 +318,18 @@ def run_sscha(
     temperatures: Temperatures.
     tol: Convergence tolerance for FCs.
     max_iter: Maximum number of iterations.
-    mixing: Mixing parameter. 
+    mixing: Mixing parameter.
             FCs are updated by FC2 = FC2(new) * mixing + FC2(old) * (1-mixing).
     """
 
     sscha = PolymlpSSCHA(
         unitcell,
         supercell_matrix,
-        pot = pot,
-        params = params,
-        coeffs = coeffs,
-        properties = properties,
-        verbose = verbose,
+        pot=pot,
+        params=params,
+        coeffs=coeffs,
+        properties=properties,
+        verbose=verbose,
     )
 
     sscha.set_initial_force_constants(algorithm=args.init, filename=args.init_file)
@@ -490,6 +492,6 @@ if __name__ == "__main__":
     args = n_samples_setting(args, n_atom)
 
     print_parameters(supercell_matrix, args)
-    print_structure(unitcell_dict)
+    print_structure(unitcell)
 
     run_sscha(unitcell, supercell_matrix, args, pot=args.pot)
