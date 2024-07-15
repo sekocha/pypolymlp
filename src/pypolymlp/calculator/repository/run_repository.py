@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+"""Main file to perform repository prediction and generation."""
+
 import argparse
 
 from pypolymlp.calculator.repository.repository_file_generation import (

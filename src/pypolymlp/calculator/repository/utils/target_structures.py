@@ -46,12 +46,12 @@ def get_structure_list_alloy2(system, dir_DFT):
     for st, (code, n_atom, sup) in structure_list.items():
         vasprun = dir_DFT + "/" + str(code) + "/vasprun.xml"
         if os.path.exists(vasprun):
-            st_dict = Vasprun(vasprun).get_structure()
+            structure = Vasprun(vasprun).get_structure()
             structure_dict[st] = {
                 "icsd_id": code,
                 "n_atom": n_atom,
                 "phonon_supercell": sup,
-                "structure": st_dict,
+                "structure": structure,
             }
 
     return structure_dict
@@ -149,12 +149,12 @@ def get_structure_list_element1(elements, dir_DFT):
     for st, (code, n_atom, sup) in structure_list.items():
         vasprun = dir_DFT + "/" + str(code) + "/vasprun.xml"
         if os.path.exists(vasprun):
-            st_dict = Vasprun(vasprun).get_structure()
+            structure = Vasprun(vasprun).get_structure()
             structure_dict[st] = {
                 "icsd_id": code,
                 "n_atom": n_atom,
                 "phonon_supercell": sup,
-                "structure": st_dict,
+                "structure": structure,
             }
 
     return structure_dict

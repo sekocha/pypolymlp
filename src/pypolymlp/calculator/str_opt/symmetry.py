@@ -71,7 +71,7 @@ def standardize_cell(cell: PolymlpStructure) -> PolymlpStructure:
     for i in range(max(types) + 1):
         ids = np.array(types) == i
         scaled_positions_reorder.extend(scaled_positions[ids])
-        types_reorder.extend([types[i] for i in ids])
+        types_reorder.extend(np.array(types)[ids])
         n_atoms.append(np.count_nonzero(ids))
     scaled_positions_reorder = np.array(scaled_positions_reorder)
     elements = [map_elements[t] for t in types]
