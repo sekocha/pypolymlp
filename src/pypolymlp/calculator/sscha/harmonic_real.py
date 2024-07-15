@@ -148,13 +148,6 @@ class HarmonicReal:
         self._tp_dict["free_energy"] = f_total_kJmol
         return self._tp_dict
 
-    def _harmonic_potential(self, disp):
-
-        N3 = self.fc2.shape[0] * self.fc2.shape[2]
-        fc2 = np.transpose(self.fc2, (0, 2, 1, 3))
-        fc2 = np.reshape(fc2, (N3, N3))
-        return 0.5 * disp @ (fc2 @ disp)
-
     def _get_distribution(self, t=1000, n_samples=100):
 
         freq = self._hide_imaginary_modes(self._mesh_dict["frequencies"])
@@ -184,11 +177,21 @@ class HarmonicReal:
         disps = disps.reshape((n_samples, -1, 3)).transpose((0, 2, 1))
         return disps
 
+    def _harmonic_potential(self, disp):
+        """Calculate harmonic potentials of a supercell."""
+
+        N3 = self.fc2.shape[0] * self.fc2.shape[2]
+        fc2 = np.transpose(self.fc2, (0, 2, 1, 3))
+        fc2 = np.reshape(fc2, (N3, N3))
+        return 0.5 * disp @ (fc2 @ disp)
+
     def _calc_harmonic_potentials(self, t=1000, disps=None):
-        """
+        """Calculate harmonic potentials of supercells in an iteration.
+
         Parameters
         ----------
-        disps: Displacements, None or shape=(n_samples, 3, n_atom).
+        t: Temperature (K).
+        disps: Displacements, shape=(n_samples, 3, n_atom) or None.
         """
         if disps is None:
             tp_dict = self._compute_properties(t=t)
@@ -230,7 +233,14 @@ class HarmonicReal:
     def run(
         self, t: int = 1000, n_samples: int = 100, eliminate_outliers: bool = True
     ):
-        """Run harmonic real-space part of SSCHA."""
+        """Run harmonic real-space part of SSCHA.
+
+        Parameters
+        ----------
+        t: Temperature (K).
+        n_samples: Number of sample structures.
+        eliminate_outliers: Eliminate structures showing extreme energy values.
+        """
 
         if self.fc2 is None:
             raise ValueError("FC2 is required for HarmonicReal.")
@@ -254,7 +264,7 @@ class HarmonicReal:
 
     @force_constants.setter
     def force_constants(self, fc2: np.ndarray):
-        """Set FC2, shape=(n_atom, n_atom, 3, 3)"""
+        """Set FC2, shape=(n_atom, n_atom, 3, 3)."""
         assert fc2.shape[0] == fc2.shape[1] == self._n_atom
         assert fc2.shape[2] == fc2.shape[3] == 3
         self.fc2 = fc2

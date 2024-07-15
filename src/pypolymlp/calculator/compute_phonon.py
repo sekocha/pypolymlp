@@ -31,7 +31,8 @@ class PolymlpPhonon:
 
         Parameters
         ----------
-        unitcell: unitcell in PolymlpStructure format
+        unitcell: Unitcell in PolymlpStructure format
+        supercell_matrix: Supercell matrix. 
         pot: polymlp file.
         params: Parameters for polymlp.
         coeffs: Polymlp coefficients.
