@@ -17,7 +17,7 @@ authors = [{ name = "Atsuto Seko", email = "seko@cms.mtl.kyoto-u.ac.jp" }]
 maintainers = [{ name = "Atsuto Seko", email = "seko@cms.mtl.kyoto-u.ac.jp" }]
 requires-python = ">=3.9"
 dependencies = [
-    "numpy >= 1.17.0 < 2.0.0",
+    "numpy < 2.0.0",
     "scipy",
     "PyYAML >= 5.3",
     "setuptools >= 61.0",
@@ -40,6 +40,7 @@ pypolymlp = "pypolymlp.api.run_polymlp:run"
 pypolymlp-calc = "pypolymlp.api.run_polymlp_calc:run"
 pypolymlp-utils = "pypolymlp.api.run_polymlp_utils:run"
 pypolymlp-structure = "pypolymlp.api.run_polymlp_str:run"
+pypolymlp-sscha = "pypolymlp.api.run_polymlp_sscha:run"
 
 [tool.scikit-build]
 cmake.verbose = true
