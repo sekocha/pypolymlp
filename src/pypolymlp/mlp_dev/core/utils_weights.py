@@ -76,14 +76,14 @@ def apply_weight_percentage(
         y[fbegin:fend] = weight_f * dft.forces
         x[fbegin:fend] *= weight_f[:, np.newaxis]
 
-    if include_stress:
-        weight_const = weight_stress * dft.weight
-        weight_s = _set_weight_stress_data(dft.stresses, weight_const)
-        w[sbegin:send] = weight_s
-        y[sbegin:send] = weight_s * dft.stresses
-        x[sbegin:send] *= weight_s[:, np.newaxis]
-    else:
-        x[sbegin:send, :] = 0.0
-        y[sbegin:send] = 0.0
-        w[sbegin:send] = 0.0
+        if include_stress:
+            weight_const = weight_stress * dft.weight
+            weight_s = _set_weight_stress_data(dft.stresses, weight_const)
+            w[sbegin:send] = weight_s
+            y[sbegin:send] = weight_s * dft.stresses
+            x[sbegin:send] *= weight_s[:, np.newaxis]
+        else:
+            x[sbegin:send, :] = 0.0
+            y[sbegin:send] = 0.0
+            w[sbegin:send] = 0.0
     return x, y, w
