@@ -15,10 +15,13 @@
 - eigen3
 - pybind11
 - openmp (recommended)
+
+[Optional]
 - phonopy (if using phonon datasets and/or computing force constants)
 - phono3py (if using phonon datasets and/or computing force constants)
 - symfc (if computing force constants)
-- spglib (optional)
+- sparse_dot_mkl (if computing force constants)
+- spglib
 
 ## How to install pypolymlp
 - Install from conda-forge: Coming soon.
