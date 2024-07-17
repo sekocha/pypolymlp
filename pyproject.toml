@@ -2,6 +2,7 @@
 requires = [
     "scikit-build-core",
     "setuptools_scm[toml]>=6.0",
+    "cmake",
     "pybind11",
     "pybind11-global",
     "eigen",
