@@ -162,10 +162,19 @@ class Pypolymlp:
                 "Set parameters using set_params() " "before using set_datasets."
             )
 
-        self._params.dataset_type = "vasp"
-        self._params.dft_train = sorted(train_vaspruns)
-        self._params.dft_test = sorted(test_vaspruns)
-        self._multiple_datasets = False
+        self._params.dft_train = dict()
+        self._params.dft_test = dict()
+        self._params.dft_train["dataset1"] = {
+            "vaspruns": sorted(train_vaspruns),
+            "include_force": self._params.include_force,
+            "weight": 1.0,
+        }
+        self._params.dft_test["dataset1"] = {
+            "vaspruns": sorted(test_vaspruns),
+            "include_force": self._params.include_force,
+            "weight": 1.0,
+        }
+        self._multiple_datasets = True
         return self
 
     def set_multiple_datasets_vasp(
@@ -191,13 +200,13 @@ class Pypolymlp:
         for i, vaspruns in enumerate(train_vaspruns):
             self._params.dft_train["dataset" + str(i + 1)] = {
                 "vaspruns": sorted(vaspruns),
-                "include_force": True,
+                "include_force": self._params.include_force,
                 "weight": 1.0,
             }
         for i, vaspruns in enumerate(test_vaspruns):
             self._params.dft_test["dataset" + str(i + 1)] = {
                 "vaspruns": sorted(vaspruns),
-                "include_force": True,
+                "include_force": self._params.include_force,
                 "weight": 1.0,
             }
         self._multiple_datasets = True
