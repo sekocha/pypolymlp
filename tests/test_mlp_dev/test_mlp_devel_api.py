@@ -222,9 +222,6 @@ def test_mlp_devel_api_phono3py():
     assert error_test["force"] == pytest.approx(0.00028682553, rel=1e-3)
 
 
-#    np.testing.assert_allclose(, [0.5] * 13824)
-
-
 def test_mlp_devel_api_displacements():
     """Test API for MLP development using displacements."""
     polymlp = Pypolymlp()
