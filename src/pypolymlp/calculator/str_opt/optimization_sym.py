@@ -73,12 +73,12 @@ class MinimizeSym:
             self._basis_axis = None
             cell_update = cell
 
-        self.structure = cell_update
+        self._structure = cell_update
 
         self._basis_f = None
         self._split = 0
         if relax_positions:
-            self._basis_f = construct_basis_fractional_coordinates(self.structure)
+            self._basis_f = construct_basis_fractional_coordinates(self._structure)
             if self._basis_f is None:
                 self._relax_positions = False
             else:
@@ -87,27 +87,32 @@ class MinimizeSym:
         if self._relax_cell is False and self._relax_positions is False:
             raise ValueError("No degree of freedom to be optimized.")
 
-        self._positions_f0 = copy.deepcopy(self.structure.positions)
-        self.structure = self._set_structure(self.structure)
+        self._positions_f0 = copy.deepcopy(self._structure.positions)
+        self._structure = self._set_structure(self._structure)
 
         self._energy = None
         self._force = None
         self._stress = None
         self._res = None
-        self._n_atom = len(self.structure.elements)
+        self._n_atom = len(self._structure.elements)
+
+        if verbose:
+            e0, f0, _ = self.prop.eval(self._structure)
+            print("Energy (Initial structure):", e0)
 
     def _set_structure(self, cell: PolymlpStructure):
 
-        self.structure = copy.deepcopy(cell)
-        self.structure.axis_inv = np.linalg.inv(cell.axis)
-        self.structure.volume = np.linalg.det(cell.axis)
+        self._structure = copy.deepcopy(cell)
+        self._structure = refine_positions(self._structure)
+        self._structure.axis_inv = np.linalg.inv(cell.axis)
+        self._structure.volume = np.linalg.det(cell.axis)
         self._set_x0()
-        return self.structure
+        return self._structure
 
     def _set_x0(self):
 
         if self._relax_cell:
-            xs = self._basis_axis.T @ self.structure.axis.reshape(-1)
+            xs = self._basis_axis.T @ self._structure.axis.reshape(-1)
             if self._relax_positions:
                 xf = np.zeros(self._basis_f.shape[1])
                 self._x0 = np.concatenate([xf, xs], 0)
@@ -122,11 +127,15 @@ class MinimizeSym:
 
     def fun_fix_cell(self, x, args=None):
         """Target function when performing no cell optimization."""
-        self.to_st_dict_fix_cell(x)
-        self._energy, self._force, _ = self.prop.eval(self.structure)
+        self._to_structure_fix_cell(x)
+        self._energy, self._force, _ = self.prop.eval(self._structure)
 
         if self._energy < -1e3 * self._n_atom:
             print("Energy =", self._energy)
+            print("Axis :")
+            print(self._structure.axis.T)
+            print("Fractional coordinates:")
+            print(self._structure.positions.T)
             raise ValueError(
                 "Geometry optimization failed: " "Huge negative energy value."
             )
@@ -136,26 +145,31 @@ class MinimizeSym:
     def jac_fix_cell(self, x, args=None):
         """Target Jacobian function when performing no cell optimization."""
         if self._basis_f is not None:
-            prod = -self._force.T @ self.structure.axis
+            prod = -self._force.T @ self._structure.axis
             derivatives = self._basis_f.T @ prod.reshape(-1)
             return derivatives
         return []
 
-    def to_st_dict_fix_cell(self, x):
+    def _to_structure_fix_cell(self, x):
         """Convert x to structure."""
         if self._basis_f is not None:
             disps_f = (self._basis_f @ x).reshape(-1, 3).T
-            self.structure.positions = self._positions_f0 + disps_f
-        return self.structure
+            self._structure.positions = self._positions_f0 + disps_f
+            self._structure = refine_positions(self._structure)
+        return self._structure
 
     def fun_relax_cell(self, x, args=None):
         """Target function when performing cell optimization."""
 
-        self.to_st_dict_relax_cell(x)
-        (self._energy, self._force, self._stress) = self.prop.eval(self.structure)
+        self._to_structure_relax_cell(x)
+        (self._energy, self._force, self._stress) = self.prop.eval(self._structure)
 
         if self._energy < -1e3 * self._n_atom:
             print("Energy =", self._energy)
+            print("Axis :")
+            print(self._structure.axis.T)
+            print("Fractional coordinates:")
+            print(self._structure.positions.T)
             raise ValueError(
                 "Geometry optimization failed: " "Huge negative energy value."
             )
@@ -170,19 +184,19 @@ class MinimizeSym:
         derivatives[self._split :] = self.derivatives_by_axis()
         return derivatives
 
-    def to_st_dict_relax_cell(self, x):
+    def _to_structure_relax_cell(self, x):
         """Convert x to structure."""
         x_positions, x_cells = x[: self._split], x[self._split :]
 
         axis = self._basis_axis @ x_cells
         axis = axis.reshape((3, 3))
-        self.structure.axis = axis
-        self.structure.volume = np.linalg.det(axis)
-        self.structure.axis_inv = np.linalg.inv(axis)
+        self._structure.axis = axis
+        self._structure.volume = np.linalg.det(axis)
+        self._structure.axis_inv = np.linalg.inv(axis)
 
         if self._relax_positions:
-            self.structure = self.to_st_dict_fix_cell(x_positions)
-        return self.structure
+            self._structure = self._to_structure_fix_cell(x_positions)
+        return self._structure
 
     def derivatives_by_axis(self):
         """Compute derivatives with respect to axis elements."""
@@ -191,7 +205,7 @@ class MinimizeSym:
             [self._stress[3], self._stress[1], self._stress[4]],
             [self._stress[5], self._stress[4], self._stress[2]],
         ]
-        derivatives_s = -np.array(sigma) @ self.structure.axis_inv.T
+        derivatives_s = -np.array(sigma) @ self._structure.axis_inv.T
 
         """derivatives_s: In the order of ax, bx, cx, ay, by, cy, az, bz, cz"""
         return self._basis_axis.T @ derivatives_s.reshape(-1)
@@ -254,16 +268,16 @@ class MinimizeSym:
         return -self._res.jac
 
     def print_structure(self):
-        self.structure = refine_positions(self.structure)
+        self._structure = refine_positions(self._structure)
         print("Axis basis vectors:")
-        for a in self.structure.axis.T:
+        for a in self._structure.axis.T:
             print(" -", list(a))
         print("Fractional coordinates:")
-        for p, e in zip(self.structure.positions.T, self.structure.elements):
+        for p, e in zip(self._structure.positions.T, self._structure.elements):
             print(" -", e, list(p))
 
     def write_poscar(self, filename="POSCAR_eqm"):
-        write_poscar_file(self.structure, filename=filename)
+        write_poscar_file(self._structure, filename=filename)
 
 
 if __name__ == "__main__":

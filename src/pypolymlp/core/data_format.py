@@ -43,6 +43,7 @@ class PolymlpStructure:
         self.check_errors()
 
     def check_errors(self):
+        """Check errors."""
         self.axis = np.array(self.axis)
         self.positions = np.array(self.positions)
         assert self.axis.shape[0] == 3
@@ -79,18 +80,21 @@ class PolymlpGtinvParams:
     def __post_init__(self):
         self.check_errors()
         if self.order > 0:
-            self.get_invariances()
+            self.get_invariants()
         else:
             self.lm_seq, self.l_comb, self.lm_coeffs = [], [], []
 
     def as_dict(self) -> dict:
+        """Convert the dataclass to dict."""
         return asdict(self)
 
     def check_errors(self):
+        """Check errors."""
         size = self.order - 1
         assert len(self.max_l) >= size
 
-    def get_invariances(self):
+    def get_invariants(self):
+        """Read polynomial invariants."""
         rgi = libmlpcpp.Readgtinv(
             self.order,
             self.max_l,
@@ -139,6 +143,7 @@ class PolymlpModelParams:
         self.check_errors()
 
     def as_dict(self) -> dict:
+        """Convert the dataclass to dict."""
         model_dict = asdict(self)
         if self.gtinv is not None:
             model_dict["gtinv"] = self.gtinv.as_dict()
@@ -185,11 +190,13 @@ class PolymlpParams:
         self.check_errors()
 
     def as_dict(self) -> dict:
+        """Convert the dataclass to dict."""
         params_dict = asdict(self)
         params_dict["model"] = self.model.as_dict()
         return params_dict
 
     def check_errors(self):
+        """Check errors."""
         assert len(self.elements) == self.n_type
         if self.atomic_energy is not None:
             assert len(self.atomic_energy) == self.n_type
@@ -226,6 +233,7 @@ class PolymlpDataDFT:
         self.check_errors()
 
     def check_errors(self):
+        """Check errors."""
         assert self.energies.shape[0] * 6 == self.stresses.shape[0]
         assert self.energies.shape[0] == self.volumes.shape[0]
         assert self.energies.shape[0] == len(self.structures)
@@ -261,6 +269,7 @@ class PolymlpDataDFT:
         return dft_dict_sliced
 
     def sort(self) -> Self:
+        """Sort DFT data in terms of the number of atoms."""
         ids = np.argsort(self.total_n_atoms)
         ids_stress = ((ids * 6)[:, None] + np.arange(6)[None, :]).reshape(-1)
         force_end = np.cumsum(self.total_n_atoms * 3)

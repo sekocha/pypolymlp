@@ -50,30 +50,38 @@ class Minimize:
         self._verbose = verbose
         cell = update_types([cell], elements)[0]
 
-        self.structure = self._set_structure(cell)
+        self._structure = self._set_structure(cell)
 
         self._energy = None
         self._force = None
         self._stress = None
         self._relax_cell = False
         self._res = None
-        self._n_atom = len(self.structure.elements)
+        self._n_atom = len(self._structure.elements)
+
+        if verbose:
+            e0, f0, _ = self.prop.eval(self._structure)
+            print("Energy (Initial structure):", e0)
 
     def _set_structure(self, cell: PolymlpStructure):
 
-        self.structure = copy.deepcopy(cell)
-        self.structure.axis_inv = np.linalg.inv(cell.axis)
-        self.structure.volume = np.linalg.det(cell.axis)
-        return self.structure
+        self._structure = copy.deepcopy(cell)
+        self._structure = refine_positions(self._structure)
+        self._structure.axis_inv = np.linalg.inv(cell.axis)
+        self._structure.volume = np.linalg.det(cell.axis)
+        return self._structure
 
     def fun_fix_cell(self, x, args=None):
         """Target function when performing no cell optimization."""
-
-        self.to_st_dict_fix_cell(x)
-        self._energy, self._force, _ = self.prop.eval(self.structure)
+        self._to_structure_fix_cell(x)
+        self._energy, self._force, _ = self.prop.eval(self._structure)
 
         if self._energy < -1e3 * self._n_atom:
-            print("Energy =", self._energy)
+            print("Energy :", self._energy)
+            print("Axis :")
+            print(self._structure.axis.T)
+            print("Fractional coordinates:")
+            print(self._structure.positions.T)
             raise ValueError(
                 "Geometry optimization failed: " "Huge negative energy value."
             )
@@ -81,23 +89,28 @@ class Minimize:
 
     def jac_fix_cell(self, x, args=None):
         """Target Jacobian function when performing no cell optimization."""
-        prod = -self._force.T @ self.structure.axis
+        prod = -self._force.T @ self._structure.axis
         derivatives = prod.reshape(-1)
         return derivatives
 
-    def to_st_dict_fix_cell(self, x):
+    def _to_structure_fix_cell(self, x):
         """Convert x to structure."""
-        self.structure.positions = x.reshape((-1, 3)).T
-        return self.structure
+        self._structure.positions = x.reshape((-1, 3)).T
+        self._structure = refine_positions(self._structure)
+        return self._structure
 
     def fun_relax_cell(self, x, args=None):
         """Target function when performing cell optimization."""
 
-        self.to_st_dict_relax_cell(x)
-        (self._energy, self._force, self._stress) = self.prop.eval(self.structure)
+        self._to_structure_relax_cell(x)
+        (self._energy, self._force, self._stress) = self.prop.eval(self._structure)
 
-        if self._energy < -1e8:
+        if self._energy < -1e3 * self._n_atom:
             print("Energy =", self._energy)
+            print("Axis :")
+            print(self._structure.axis.T)
+            print("Fractional coordinates:")
+            print(self._structure.positions.T)
             raise ValueError(
                 "Geometry optimization failed: " "Huge negative energy value."
             )
@@ -113,19 +126,20 @@ class Minimize:
             [self._stress[3], self._stress[1], self._stress[4]],
             [self._stress[5], self._stress[4], self._stress[2]],
         ]
-        derivatives_s = -np.array(sigma) @ self.structure.axis_inv.T
+        derivatives_s = -np.array(sigma) @ self._structure.axis_inv.T
         derivatives[-9:] = derivatives_s.reshape(-1)
         return derivatives
 
-    def to_st_dict_relax_cell(self, x):
+    def _to_structure_relax_cell(self, x):
         """Convert x to structure."""
         x_positions, x_cells = x[:-9], x[-9:]
 
-        self.structure.axis = x_cells.reshape((3, 3))
-        self.structure.volume = np.linalg.det(self.structure.axis)
-        self.structure.axis_inv = np.linalg.inv(self.structure.axis)
-        self.structure.positions = x_positions.reshape((-1, 3)).T
-        return self.structure
+        self._structure.axis = x_cells.reshape((3, 3))
+        self._structure.volume = np.linalg.det(self._structure.axis)
+        self._structure.axis_inv = np.linalg.inv(self._structure.axis)
+        self._structure.positions = x_positions.reshape((-1, 3)).T
+        self._structure = refine_positions(self._structure)
+        return self._structure
 
     def run(
         self,
@@ -147,13 +161,15 @@ class Minimize:
         if relax_cell:
             fun = self.fun_relax_cell
             jac = self.jac_relax_cell
-            xf = self.structure.positions.T.reshape(-1)
-            xs = self.structure.axis.reshape(-1)
+            xf = self._structure.positions.T.reshape(-1)
+            xs = self._structure.axis.reshape(-1)
             self._x0 = np.concatenate([xf, xs], 0)
+            self._x_prev = copy.deepcopy(self._x0)
         else:
             fun = self.fun_fix_cell
             jac = self.jac_fix_cell
-            self._x0 = self.structure.positions.T.reshape(-1)
+            self._x0 = self._structure.positions.T.reshape(-1)
+            self._x_prev = copy.deepcopy(self._x0)
 
         self._res = minimize(fun, self._x0, method=method, jac=jac, options=options)
         self._x0 = self._res.x
@@ -190,16 +206,16 @@ class Minimize:
         return -self._res.jac.reshape((-1, 3)).T
 
     def print_structure(self):
-        self.structure = refine_positions(self.structure)
+        self._structure = refine_positions(self._structure)
         print("Axis basis vectors:")
-        for a in self.structure.axis.T:
+        for a in self._structure.axis.T:
             print(" -", list(a))
         print("Fractional coordinates:")
-        for p, e in zip(self.structure.positions.T, self.structure.elements):
+        for p, e in zip(self._structure.positions.T, self._structure.elements):
             print(" -", e, list(p))
 
     def write_poscar(self, filename="POSCAR_eqm"):
-        write_poscar_file(self.structure, filename=filename)
+        write_poscar_file(self._structure, filename=filename)
 
 
 if __name__ == "__main__":
