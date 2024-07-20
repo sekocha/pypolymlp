@@ -23,6 +23,7 @@ class ParamsParser:
         filename: str,
         multiple_datasets: bool = False,
         parse_vasprun_locations: bool = True,
+        prefix: str = "./",
     ):
         """Init class.
 
@@ -63,7 +64,9 @@ class ParamsParser:
 
         if parse_vasprun_locations:
             dataset_type = self.parser.get_params("dataset_type", default="vasp")
-            dft_train, dft_test = self._get_dataset(dataset_type, multiple_datasets)
+            dft_train, dft_test = self._get_dataset(
+                dataset_type, multiple_datasets, prefix=prefix
+            )
         else:
             dataset_type = "vasp"
             dft_train, dft_test = None, None
@@ -162,25 +165,26 @@ class ParamsParser:
         self,
         dataset_type: Literal["vasp", "phono3py"],
         multiple_datasets: bool = False,
+        prefix: str = "/",
     ):
         if dataset_type == "vasp":
             if multiple_datasets:
-                return self._get_multiple_vasprun_sets()
+                return self._get_multiple_vasprun_sets(prefix=prefix)
             else:
-                return self._get_single_vasprun_set()
+                return self._get_single_vasprun_set(prefix=prefix)
         elif dataset_type == "phono3py":
-            return self._get_phono3py_set()
+            return self._get_phono3py_set(prefix=prefix)
 
-    def _get_single_vasprun_set(self):
+    def _get_single_vasprun_set(self, prefix="."):
 
         train = self.parser.get_params("train_data", default=None)
         test = self.parser.get_params("test_data", default=None)
 
-        dft_train = sorted(glob.glob(train))
-        dft_test = sorted(glob.glob(test))
+        dft_train = sorted(glob.glob(prefix + "/" + train))
+        dft_test = sorted(glob.glob(prefix + "/" + test))
         return dft_train, dft_test
 
-    def _get_multiple_vasprun_sets(self):
+    def _get_multiple_vasprun_sets(self, prefix="."):
 
         train = self.parser.get_train()
         test = self.parser.get_test()
@@ -211,18 +215,18 @@ class ParamsParser:
         for params in train:
             set_id = params[0]
             dft_train[set_id] = dict()
-            dft_train[set_id]["vaspruns"] = sorted(glob.glob(set_id))
+            dft_train[set_id]["vaspruns"] = sorted(glob.glob(prefix + "/" + set_id))
             dft_train[set_id]["include_force"] = strtobool(params[1])
             dft_train[set_id]["weight"] = float(params[2])
         for params in test:
             set_id = params[0]
             dft_test[set_id] = dict()
-            dft_test[set_id]["vaspruns"] = sorted(glob.glob(set_id))
+            dft_test[set_id]["vaspruns"] = sorted(glob.glob(prefix + "/" + set_id))
             dft_test[set_id]["include_force"] = strtobool(params[1])
             dft_test[set_id]["weight"] = float(params[2])
         return dft_train, dft_test
 
-    def _get_phono3py_set(self):
+    def _get_phono3py_set(self, prefix="."):
         """
         Format
         ------
@@ -244,12 +248,12 @@ class ParamsParser:
         phono3py_sample = self.parser.get_params("phono3py_sample", default="sequence")
 
         dft_train, dft_test = dict(), dict()
-        dft_train["phono3py_yaml"] = train[0]
-        dft_test["phono3py_yaml"] = test[0]
+        dft_train["phono3py_yaml"] = prefix + "/" + train[0]
+        dft_test["phono3py_yaml"] = prefix + "/" + test[0]
 
         if len(train) == 2 or len(train) == 4:
-            dft_train["energy"] = train[1]
-            dft_test["energy"] = test[1]
+            dft_train["energy"] = prefix + "/" + train[1]
+            dft_test["energy"] = prefix + "/" + test[1]
 
         if len(train) > 2:
             if phono3py_sample == "sequence":

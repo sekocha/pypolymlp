@@ -68,21 +68,22 @@ class PolymlpDevData:
     def parse_infiles(
         self,
         infiles: Union[str, list[str]],
+        prefix: str = ".",
         verbose: bool = True,
     ) -> Self:
         """Parse input files for developing polymlp."""
         if isinstance(infiles, list) is False:
-            p = ParamsParser(infiles, multiple_datasets=True)
+            p = ParamsParser(infiles, multiple_datasets=True, prefix=prefix)
             self._params = p.params
             priority_infile = infiles
         else:
             priority_infile = infiles[0]
             if len(infiles) == 1:
-                p = ParamsParser(priority_infile, multiple_datasets=True)
+                p = ParamsParser(priority_infile, multiple_datasets=True, prefix=prefix)
                 self._params = p.params
             else:
                 self._hybrid_params = [
-                    ParamsParser(infile, multiple_datasets=True).params
+                    ParamsParser(infile, multiple_datasets=True, prefix=prefix).params
                     for infile in infiles
                 ]
                 self._params = set_common_params(self._hybrid_params)

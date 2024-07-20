@@ -1,4 +1,4 @@
-"""Tests of polynomial MLP development"""
+"""Tests of polynomial MLP development using API"""
 
 import glob
 from pathlib import Path
@@ -13,7 +13,7 @@ from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
 cwd = Path(__file__).parent
 
 
-def test_mlp_devel_api_single_dataset():
+def test_mlp_develi_single_dataset():
     polymlp = Pypolymlp()
     polymlp.set_params(
         elements=["Mg", "O"],
@@ -235,8 +235,8 @@ def test_mlp_devel_api_displacements():
         gaussian_params2=[0.0, 7.0, 10],
         atomic_energy=[-0.19820116, -0.21203241],
     )
-    yamlfile = "data-AgI/phono3py_params_wurtzite_AgI.yaml.xz"
-    energy_dat = "data-AgI/energies_ltc_wurtzite_AgI_fc3-forces.dat"
+    yamlfile = cwd / "data-AgI/phono3py_params_wurtzite_AgI.yaml.xz"
+    energy_dat = cwd / "data-AgI/energies_ltc_wurtzite_AgI_fc3-forces.dat"
     train_ids = np.arange(5)
     test_ids = np.arange(95, 100)
 
