@@ -236,7 +236,7 @@ class ParamsParser:
             dft_test[set_id]["weight"] = float(params[2])
         return dft_train, dft_test
 
-    def _get_phono3py_set(self, prefix="."):
+    def _get_phono3py_set(self, prefix=None):
         """
         Format
         ------
@@ -258,12 +258,20 @@ class ParamsParser:
         phono3py_sample = self.parser.get_params("phono3py_sample", default="sequence")
 
         dft_train, dft_test = dict(), dict()
-        dft_train["phono3py_yaml"] = prefix + "/" + train[0]
-        dft_test["phono3py_yaml"] = prefix + "/" + test[0]
+        if prefix is None:
+            dft_train["phono3py_yaml"] = train[0]
+            dft_test["phono3py_yaml"] = test[0]
+        else:
+            dft_train["phono3py_yaml"] = prefix + "/" + train[0]
+            dft_test["phono3py_yaml"] = prefix + "/" + test[0]
 
         if len(train) == 2 or len(train) == 4:
-            dft_train["energy"] = prefix + "/" + train[1]
-            dft_test["energy"] = prefix + "/" + test[1]
+            if prefix is None:
+                dft_train["energy"] = train[1]
+                dft_test["energy"] = test[1]
+            else:
+                dft_train["energy"] = prefix + "/" + train[1]
+                dft_test["energy"] = prefix + "/" + test[1]
 
         if len(train) > 2:
             if phono3py_sample == "sequence":

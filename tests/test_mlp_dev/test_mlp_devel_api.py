@@ -35,8 +35,8 @@ def test_mlp_develi_single_dataset():
     polymlp.set_datasets_vasp(train_vaspruns1, test_vaspruns1)
 
     polymlp.run(verbose=True, sequential=True)
-    error_train1 = polymlp.summary.error_train["dataset1"]
-    error_test1 = polymlp.summary.error_test["dataset1"]
+    error_train1 = polymlp.summary.error_train["train_single"]
+    error_test1 = polymlp.summary.error_test["test_single"]
 
     assert error_train1["energy"] == pytest.approx(3.1791594630511444e-05, abs=1e-8)
     assert error_train1["force"] == pytest.approx(0.003822251017162934, abs=1e-6)
@@ -146,8 +146,8 @@ def test_mlp_devel_api_structure():
 
     polymlp.run(verbose=True, sequential=True)
 
-    error_train = polymlp.summary.error_train["dataset"]
-    error_test = polymlp.summary.error_test["dataset"]
+    error_train = polymlp.summary.error_train["train_single"]
+    error_test = polymlp.summary.error_test["test_single"]
 
     assert error_train["energy"] == pytest.approx(3.163e-5, abs=1e-8)
     assert error_train["force"] == pytest.approx(0.00382465, abs=1e-6)
@@ -174,8 +174,8 @@ def test_mlp_devel_api_structure():
     )
     polymlp.run(verbose=True, sequential=True)
 
-    error_train = polymlp.summary.error_train["dataset"]
-    error_test = polymlp.summary.error_test["dataset"]
+    error_train = polymlp.summary.error_train["train_single"]
+    error_test = polymlp.summary.error_test["test_single"]
 
     assert error_train["energy"] == pytest.approx(3.163e-5, abs=1e-8)
     assert error_train["force"] == pytest.approx(0.00382465, abs=1e-6)
@@ -213,8 +213,8 @@ def test_mlp_devel_api_phono3py():
     )
     polymlp.run(verbose=True)
 
-    error_train = polymlp.summary.error_train["train_phono3py"]
-    error_test = polymlp.summary.error_test["test_phono3py"]
+    error_train = polymlp.summary.error_train["train_single"]
+    error_test = polymlp.summary.error_test["test_single"]
 
     assert error_train["energy"] == pytest.approx(4.888e-07, abs=1e-8)
     assert error_train["force"] == pytest.approx(0.000115243611, rel=1e-3)
@@ -264,8 +264,8 @@ def test_mlp_devel_api_displacements():
     )
     polymlp.run(verbose=True)
 
-    error_train = polymlp.summary.error_train["dataset"]
-    error_test = polymlp.summary.error_test["dataset"]
+    error_train = polymlp.summary.error_train["train_single"]
+    error_test = polymlp.summary.error_test["test_single"]
 
     assert error_train["energy"] == pytest.approx(4.888e-07, abs=1e-8)
     assert error_train["force"] == pytest.approx(0.000115243611, rel=1e-3)

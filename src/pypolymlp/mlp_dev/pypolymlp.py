@@ -164,12 +164,12 @@ class Pypolymlp:
 
         self._params.dft_train = dict()
         self._params.dft_test = dict()
-        self._params.dft_train["dataset1"] = {
+        self._params.dft_train["train_single"] = {
             "vaspruns": sorted(train_vaspruns),
             "include_force": self._params.include_force,
             "weight": 1.0,
         }
-        self._params.dft_test["dataset1"] = {
+        self._params.dft_test["test_single"] = {
             "vaspruns": sorted(test_vaspruns),
             "include_force": self._params.include_force,
             "weight": 1.0,
@@ -288,6 +288,8 @@ class Pypolymlp:
             structure_without_disp,
             element_order=self._params.element_order,
         )
+        self._train.name = "train_single"
+        self._test.name = "test_single"
         self._train = [self._train]
         self._test = [self._test]
         self._multiple_datasets = True
@@ -357,6 +359,8 @@ class Pypolymlp:
             test_stresses,
             element_order=self._params.element_order,
         )
+        self._train.name = "train_single"
+        self._test.name = "test_single"
         self._train = [self._train]
         self._test = [self._test]
         self._multiple_datasets = True

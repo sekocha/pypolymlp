@@ -6,12 +6,12 @@ from typing import Self, Union
 import numpy as np
 
 from pypolymlp.core.data_format import PolymlpDataDFT, PolymlpParams
-from pypolymlp.core.interface_vasp import parse_vaspruns
 from pypolymlp.core.parser_polymlp_params import ParamsParser
 from pypolymlp.mlp_dev.core.features_attr import (
     get_num_features,
     write_polymlp_params_yaml,
 )
+from pypolymlp.mlp_dev.core.parser_datasets import ParserDatasets
 
 
 def get_variable_with_max_length(
@@ -94,92 +94,13 @@ class PolymlpDevData:
         return self
 
     def parse_datasets(self):
-        if self._params.dataset_type == "vasp":
-            if isinstance(self._params.dft_train, list):
-                raise ValueError(
-                    "Multiple_datasets format is needed for using vasprun files."
-                )
-            else:
-                self.parse_multiple_datasets()
-        elif self._params.dataset_type == "phono3py":
-            self._parse_single_dataset()
-            self._params.dft_train = {"train_phono3py": self._params.dft_train}
-            self._params.dft_test = {"test_phono3py": self._params.dft_test}
-            self._train.name = "train_phono3py"
-            self._test.name = "test_phono3py"
-            self._train = [self._train]
-            self._test = [self._test]
-            self._multiple_datasets = True
-        else:
-            raise ValueError("Only dataset types of vasp and phono3py are available.")
-
-    def _parse_single_dataset(self) -> Self:
-
+        """Parse DFT datasets."""
         if self._params is None:
-            raise ValueError("PolymlpParams object is needed.")
+            raise ValueError("PolymlpParams object is required.")
 
-        element_order = self._params.element_order
-        dft_train = self._params.dft_train
-        dft_test = self._params.dft_test
-        if self._params.dataset_type == "vasp":
-            self._train = parse_vaspruns(dft_train, element_order=element_order)
-            self._test = parse_vaspruns(dft_test, element_order=element_order)
-        elif self._params.dataset_type == "phono3py":
-            from pypolymlp.core.interface_phono3py import parse_phono3py_yaml
-
-            self._train = parse_phono3py_yaml(
-                dft_train["phono3py_yaml"],
-                dft_train["energy"],
-                element_order=element_order,
-                select_ids=dft_train["indices"],
-                use_phonon_dataset=False,
-            )
-            self._test = parse_phono3py_yaml(
-                dft_test["phono3py_yaml"],
-                dft_test["energy"],
-                element_order=element_order,
-                select_ids=dft_test["indices"],
-                use_phonon_dataset=False,
-            )
-
-        self._train.name = "train_single"
-        self._train.include_force = self._params.include_force
-        self._train.apply_atomic_energy(self._params.atomic_energy)
-
-        self._test.name = "test_single"
-        self._test.include_force = self._params.include_force
-        self._test.apply_atomic_energy(self._params.atomic_energy)
-        return self
-
-    def parse_multiple_datasets(self):
-
-        if self._params is None:
-            raise ValueError("PolymlpParams object is needed.")
-
-        if self._params.dataset_type == "vasp":
-            element_order = self._params.element_order
-            self._train = []
-            for name, dict1 in self._params.dft_train.items():
-                dft = parse_vaspruns(dict1["vaspruns"], element_order=element_order)
-                dft.apply_atomic_energy(self._params.atomic_energy)
-                dft.name = name
-                dft.include_force = dict1["include_force"]
-                dft.weight = dict1["weight"]
-                self._train.append(dft)
-
-            self._test = []
-            for name, dict1 in self._params.dft_test.items():
-                dft = parse_vaspruns(dict1["vaspruns"], element_order=element_order)
-                dft.apply_atomic_energy(self._params.atomic_energy)
-                dft.name = name
-                dft.include_force = dict1["include_force"]
-                dft.weight = dict1["weight"]
-                self._test.append(dft)
-        else:
-            raise KeyError("Only dataset_type = vasp is available.")
-
-        self._multiple_datasets = True
-        return self
+        parser = ParserDatasets(self._params)
+        self._train = parser.train
+        self._test = parser.test
 
     def print_params(self, infile=None):
         """Print parameters."""
@@ -299,7 +220,6 @@ class PolymlpDevData:
     def min_energy(self) -> float:
         if self._multiple_datasets:
             min_e = 1e10
-            print(self._train)
             for dft in self._train:
                 e_per_atom = dft.energies / dft.total_n_atoms
                 min_e_trial = np.min(e_per_atom)
