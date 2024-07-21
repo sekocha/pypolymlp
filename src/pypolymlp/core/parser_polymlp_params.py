@@ -23,7 +23,7 @@ class ParamsParser:
         filename: str,
         multiple_datasets: bool = False,
         parse_vasprun_locations: bool = True,
-        prefix: str = "./",
+        prefix: str = None,
     ):
         """Init class.
 
@@ -175,16 +175,20 @@ class ParamsParser:
         elif dataset_type == "phono3py":
             return self._get_phono3py_set(prefix=prefix)
 
-    def _get_single_vasprun_set(self, prefix="."):
+    def _get_single_vasprun_set(self, prefix=None):
 
         train = self.parser.get_params("train_data", default=None)
         test = self.parser.get_params("test_data", default=None)
 
-        dft_train = sorted(glob.glob(prefix + "/" + train))
-        dft_test = sorted(glob.glob(prefix + "/" + test))
+        if prefix is None:
+            dft_train = sorted(glob.glob(train))
+            dft_test = sorted(glob.glob(test))
+        else:
+            dft_train = sorted(glob.glob(prefix + "/" + train))
+            dft_test = sorted(glob.glob(prefix + "/" + test))
         return dft_train, dft_test
 
-    def _get_multiple_vasprun_sets(self, prefix="."):
+    def _get_multiple_vasprun_sets(self, prefix=None):
 
         train = self.parser.get_train()
         test = self.parser.get_test()
@@ -215,13 +219,19 @@ class ParamsParser:
         for params in train:
             set_id = params[0]
             dft_train[set_id] = dict()
-            dft_train[set_id]["vaspruns"] = sorted(glob.glob(prefix + "/" + set_id))
+            if prefix is None:
+                dft_train[set_id]["vaspruns"] = sorted(glob.glob(set_id))
+            else:
+                dft_train[set_id]["vaspruns"] = sorted(glob.glob(prefix + "/" + set_id))
             dft_train[set_id]["include_force"] = strtobool(params[1])
             dft_train[set_id]["weight"] = float(params[2])
         for params in test:
             set_id = params[0]
             dft_test[set_id] = dict()
-            dft_test[set_id]["vaspruns"] = sorted(glob.glob(prefix + "/" + set_id))
+            if prefix is None:
+                dft_test[set_id]["vaspruns"] = sorted(glob.glob(set_id))
+            else:
+                dft_test[set_id]["vaspruns"] = sorted(glob.glob(prefix + "/" + set_id))
             dft_test[set_id]["include_force"] = strtobool(params[1])
             dft_test[set_id]["weight"] = float(params[2])
         return dft_train, dft_test

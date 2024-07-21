@@ -68,7 +68,7 @@ class PolymlpDevData:
     def parse_infiles(
         self,
         infiles: Union[str, list[str]],
-        prefix: str = ".",
+        prefix: str = None,
         verbose: bool = True,
     ) -> Self:
         """Parse input files for developing polymlp."""
@@ -299,6 +299,7 @@ class PolymlpDevData:
     def min_energy(self) -> float:
         if self._multiple_datasets:
             min_e = 1e10
+            print(self._train)
             for dft in self._train:
                 e_per_atom = dft.energies / dft.total_n_atoms
                 min_e_trial = np.min(e_per_atom)
