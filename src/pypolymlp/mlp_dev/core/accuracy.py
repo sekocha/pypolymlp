@@ -1,6 +1,7 @@
 """Class for computing prediction errors."""
 
 import itertools
+import math
 import os
 
 import numpy as np
@@ -208,6 +209,18 @@ class PolymlpDevAccuracy:
                 dft.forces, forces, return_values=True
             )
 
+        true_f1 = dft.forces.reshape((-1, 3))
+        pred_f1 = forces.reshape((-1, 3))
+        norm_t = np.linalg.norm(true_f1, axis=1)
+        norm_p = np.linalg.norm(pred_f1, axis=1)
+        direction_t = true_f1 / norm_t[:, None]
+        direction_p = pred_f1 / norm_p[:, None]
+        cosine = [dt @ dp for dt, dp in zip(direction_t, direction_p)]
+
+        rmse_percent_f_norm = np.average(np.abs((norm_p - norm_t) / norm_t))
+        rmse_percent_f_direction = np.average(np.abs(cosine))
+        rmse_percent_f_direction = math.degrees(math.acos(rmse_percent_f_direction))
+
         if stress_unit == "eV":
             normalize = np.repeat(n_total_atoms, 6)
         elif stress_unit == "GPa":
@@ -225,7 +238,13 @@ class PolymlpDevAccuracy:
                 return_values=True,
             )
 
-        error_dict = {"energy": rmse_e, "force": rmse_f, "stress": rmse_s}
+        error_dict = {
+            "energy": rmse_e,
+            "force": rmse_f,
+            "stress": rmse_s,
+            "percent_force_norm": rmse_percent_f_norm,
+            "percent_force_direction": rmse_percent_f_direction,
+        }
         if verbose:
             self.print_error(error_dict, key=output_key)
 
