@@ -218,8 +218,8 @@ class PolymlpDevAccuracy:
         cosine = [dt @ dp for dt, dp in zip(direction_t, direction_p)]
 
         rmse_percent_f_norm = np.average(np.abs((norm_p - norm_t) / norm_t))
-        rmse_percent_f_direction = np.average(np.abs(cosine))
-        rmse_percent_f_direction = math.degrees(math.acos(rmse_percent_f_direction))
+        rmse_f_direction = np.average(np.abs(cosine))
+        rmse_f_direction = math.degrees(math.acos(rmse_f_direction))
 
         if stress_unit == "eV":
             normalize = np.repeat(n_total_atoms, 6)
@@ -243,7 +243,7 @@ class PolymlpDevAccuracy:
             "force": rmse_f,
             "stress": rmse_s,
             "percent_force_norm": rmse_percent_f_norm,
-            "percent_force_direction": rmse_percent_f_direction,
+            "force_direction": rmse_f_direction,
         }
         if verbose:
             self.print_error(error_dict, key=output_key)
