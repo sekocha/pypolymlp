@@ -4,7 +4,6 @@ from dataclasses import asdict, dataclass
 from typing import Literal, Optional, Union
 
 import numpy as np
-from typing_extensions import Self
 
 from pypolymlp.cxx.lib import libmlpcpp
 
@@ -242,7 +241,7 @@ class PolymlpDataDFT:
         assert self.energies.shape[0] == len(self.files)
         assert self.forces.shape[0] == np.sum(self.total_n_atoms) * 3
 
-    def apply_atomic_energy(self, atom_e: tuple[float]) -> Self:
+    def apply_atomic_energy(self, atom_e: tuple[float]):
         """Subtract atomic energies from energies."""
         atom_e = np.array(atom_e)
         self.energies = np.array(
@@ -269,7 +268,7 @@ class PolymlpDataDFT:
         )
         return dft_dict_sliced
 
-    def sort(self) -> Self:
+    def sort(self):
         """Sort DFT data in terms of the number of atoms."""
         ids = np.argsort(self.total_n_atoms)
         ids_stress = ((ids * 6)[:, None] + np.arange(6)[None, :]).reshape(-1)
