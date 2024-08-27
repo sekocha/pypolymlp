@@ -1,9 +1,10 @@
 """Class of preparing data structures for developing polymlp."""
 
 import copy
-from typing import Self, Union
+from typing import Union
 
 import numpy as np
+from typing_extensions import Self
 
 from pypolymlp.core.data_format import PolymlpDataDFT, PolymlpParams
 from pypolymlp.core.parser_polymlp_params import ParamsParser

@@ -1,9 +1,10 @@
 """Dataclasses used for developing polymlp."""
 
 from dataclasses import asdict, dataclass
-from typing import Literal, Optional, Self, Union
+from typing import Literal, Optional, Union
 
 import numpy as np
+from typing_extensions import Self
 
 from pypolymlp.cxx.lib import libmlpcpp
 
