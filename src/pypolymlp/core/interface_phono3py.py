@@ -37,6 +37,10 @@ def parse_phono3py_yaml(
     disps, forces = ph3.phonon_dataset
     supercell, positions_all = ph3.structure_dataset
 
+    for ele in element_order:
+        if not np.any(ph3.supercell_phono3py.symbols == ele):
+            raise ValueError("Element " + ele + " is not found in phono3py.yaml.")
+
     if energies_filename is not None:
         energies = np.loadtxt(energies_filename)[1:, 1]
     else:

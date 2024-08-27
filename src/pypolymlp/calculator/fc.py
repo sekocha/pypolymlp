@@ -100,7 +100,7 @@ class PolymlpFC:
 
         elif phono3py_yaml is not None:
             if self._verbose:
-                print("Supercell is read from:", phono3py_yaml)
+                print("Supercell is read from:", phono3py_yaml, flush=True)
             (self._supercell_ph, self._disps, self._st_dicts) = parse_phono3py_yaml_fcs(
                 phono3py_yaml, use_phonon_dataset=use_phonon_dataset
             )
@@ -160,7 +160,7 @@ class PolymlpFC:
         """
 
         if self._verbose:
-            print("Running geometry optimization")
+            print("Running geometry optimization", flush=True)
 
         try:
             minobj = MinimizeSym(self._supercell, properties=self.prop)
@@ -170,14 +170,14 @@ class PolymlpFC:
 
         minobj.run(gtol=gtol, method=method)
         if self._verbose:
-            print("Residual forces:")
-            print(minobj.residual_forces.T)
-            print("E0:", minobj.energy)
-            print("n_iter:", minobj.n_iter)
-            print("Fractional coordinate changes:")
+            print("Residual forces:", flush=True)
+            print(minobj.residual_forces.T, flush=True)
+            print("E0:", minobj.energy, flush=True)
+            print("n_iter:", minobj.n_iter, flush=True)
+            print("Fractional coordinate changes:", flush=True)
             diff_positions = self._supercell.positions - minobj.structure.positions
-            print(diff_positions.T)
-            print("Success:", minobj.success)
+            print(diff_positions.T, flush=True)
+            print("Success:", minobj.success, flush=True)
 
         if minobj.success:
             self._supercell = minobj.structure
@@ -230,28 +230,32 @@ class PolymlpFC:
 
         if forces is None:
             if self._verbose:
-                print("Computing forces using polymlp")
+                print("Computing forces using polymlp", flush=True)
             t1 = time.time()
             self.forces = self._compute_forces()
             t2 = time.time()
             if self._verbose:
-                print(" elapsed time (computing forces) =", t2 - t1)
+                print(" elapsed time (computing forces) =", t2 - t1, flush=True)
         else:
             self.forces = forces
 
+        t1 = time.time()
         if only_fc2:
             self.run_fc2()
         else:
             self.run_fc2fc3(batch_size=batch_size)
+        t2 = time.time()
+        if self._verbose:
+            print("Time (Symfc basis and solver)", t2 - t1, flush=True)
 
         if write_fc:
             if self._fc2 is not None:
                 if self._verbose:
-                    print("writing fc2.hdf5")
+                    print("writing fc2.hdf5", flush=True)
                 write_fc2_to_hdf5(self._fc2)
             if self._fc3 is not None:
                 if self._verbose:
-                    print("writing fc3.hdf5")
+                    print("writing fc3.hdf5", flush=True)
                 write_fc3_to_hdf5(self._fc3)
 
         return self
@@ -312,7 +316,7 @@ class PolymlpFC:
 
     @cutoff.setter
     def cutoff(self, value):
-        print("Cutoff radius:", value, "(ang.)")
+        print("Cutoff radius:", value, "(ang.)", flush=True)
         self._cutoff = value
         self._fc_cutoff = FCCutoff(self._supercell_ph, cutoff=value)
         return self

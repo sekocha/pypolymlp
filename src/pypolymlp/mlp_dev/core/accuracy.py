@@ -221,6 +221,11 @@ class PolymlpDevAccuracy:
         rmse_f_direction = np.average(np.abs(cosine))
         rmse_f_direction = math.degrees(math.acos(rmse_f_direction))
 
+        # for i, (t, p) in enumerate(zip(true_f1, pred_f1)):
+        #    ist = i // 96 + 1
+        #    iatom = i % 96 + 1
+        #    print(ist, iatom, np.linalg.norm(t-p), t, p)
+
         if stress_unit == "eV":
             normalize = np.repeat(n_total_atoms, 6)
         elif stress_unit == "GPa":
