@@ -21,7 +21,7 @@ from pypolymlp.calculator.repository.utils.figure_utils_summary import (
     plot_mlp_distribution,
 )
 from pypolymlp.core.interface_vasp import Poscar
-from pypolymlp.utils.phonopy_utils import st_dict_to_phonopy_cell
+from pypolymlp.utils.phonopy_utils import structure_to_phonopy_cell
 from pypolymlp.utils.structure_utils import get_lattice_constants
 
 
@@ -29,54 +29,54 @@ class PolymlpRepositoryGeneration:
 
     def __init__(self, path_data="./"):
 
-        self.__path_data = path_data
+        self._path_data = path_data
         yamlfile = path_data + "/polymlp_summary_convex.yaml"
-        yamldata_convex = self.__read_yaml(yamlfile)
-        self.__system = yamldata_convex["system"]
-        self.__yamldata_convex = yamldata_convex["polymlps"]
+        yamldata_convex = self._read_yaml(yamlfile)
+        self._system = yamldata_convex["system"]
+        self._yamldata_convex = yamldata_convex["polymlps"]
 
-        self.__pot_ids = [d["id"] for d in self.__yamldata_convex]
-        self.__costs = [float(d["cost_single"]) for d in self.__yamldata_convex]
+        self._pot_ids = [d["id"] for d in self._yamldata_convex]
+        self._costs = [float(d["cost_single"]) for d in self._yamldata_convex]
 
         yamlfile = path_data + "/polymlp_summary/prediction.yaml"
         if os.path.exists(yamlfile):
-            yamldata = self.__read_yaml(yamlfile)
-            self.__target_list = yamldata["structures"]
+            yamldata = self._read_yaml(yamlfile)
+            self._target_list = yamldata["structures"]
         else:
             print("Warning: structure list is not found.")
 
-    def __read_yaml(self, yamlfile):
+    def _read_yaml(self, yamlfile):
 
         f = open(yamlfile)
         yamldata = yaml.safe_load(f)
         f.close()
         return yamldata
 
-    def __single_lattice_constants(
+    def _single_lattice_constants(
         self, poscar, filename="polymlp_lattice_constants.yaml"
     ):
 
         try:
-            cell = Poscar(poscar).get_structure()
+            cell = Poscar(poscar).structure
         except:
             return 0
 
-        cell_ph = st_dict_to_phonopy_cell(cell)
+        cell_ph = structure_to_phonopy_cell(cell)
 
         lattice, _, _ = spglib.standardize_cell(
             (cell_ph.cell, cell_ph.scaled_positions, cell_ph.numbers),
             to_primitive=False,
         )
-        cell["axis"] = lattice.T
+        cell.axis = lattice.T
         a, b, c, calpha, cbeta, cgamma = get_lattice_constants(cell)
-        volume = np.linalg.det(cell["axis"])
+        volume = np.linalg.det(cell.axis)
 
-        self.__write_lattice_constants_yaml(
+        self._write_lattice_constants_yaml(
             a, b, c, calpha, cbeta, cgamma, volume, filename=filename
         )
         return 1
 
-    def __write_lattice_constants_yaml(
+    def _write_lattice_constants_yaml(
         self,
         a,
         b,
@@ -101,29 +101,29 @@ class PolymlpRepositoryGeneration:
 
     def run_lattice_constants(self):
 
-        for target in self.__target_list:
+        for target in self._target_list:
             st = target["st_type"]
-            for pot_id, cost in zip(self.__pot_ids, self.__costs):
+            for pot_id, cost in zip(self._pot_ids, self._costs):
                 path_output = (
-                    "/".join([self.__path_data, pot_id, "predictions", st]) + "/"
+                    "/".join([self._path_data, pot_id, "predictions", st]) + "/"
                 )
                 POSCAR_file = path_output + "/POSCAR_eqm"
-                self.__single_lattice_constants(
+                self._single_lattice_constants(
                     POSCAR_file,
                     filename=path_output + "polymlp_lattice_constants.yaml",
                 )
 
-            path_output = "/".join([self.__path_data, "vasp", st]) + "/"
+            path_output = "/".join([self._path_data, "vasp", st]) + "/"
             POSCAR_file = path_output + "/POSCAR"
-            self.__single_lattice_constants(
+            self._single_lattice_constants(
                 POSCAR_file,
                 filename=path_output + "polymlp_lattice_constants.yaml",
             )
 
     def run_mlp_distribution(self, dpi=300):
 
-        yamlfile = self.__path_data + "/polymlp_summary_all.yaml"
-        yamldata = self.__read_yaml(yamlfile)["polymlps"]
+        yamlfile = self._path_data + "/polymlp_summary_all.yaml"
+        yamldata = self._read_yaml(yamlfile)["polymlps"]
 
         d_all = [
             [
@@ -143,15 +143,15 @@ class PolymlpRepositoryGeneration:
                 d["rmse_force"],
                 d["id"],
             ]
-            for d in self.__yamldata_convex
+            for d in self._yamldata_convex
         ]
         d_all, d_convex = np.array(d_all), np.array(d_convex)
 
-        path_output = self.__path_data + "/polymlp_summary/"
+        path_output = self._path_data + "/polymlp_summary/"
         plot_mlp_distribution(
             d_all,
             d_convex,
-            self.__system,
+            self._system,
             path_output=path_output,
             dpi=dpi,
         )
@@ -163,13 +163,13 @@ class PolymlpRepositoryGeneration:
         eos_dict = defaultdict(dict)
         e_eqm_dict = defaultdict(dict)
         eqm_props_dict = dict()
-        for target in self.__target_list:
+        for target in self._target_list:
             st = target["st_type"]
             eqm_props = []
-            for pot_id, cost in zip(self.__pot_ids, self.__costs):
+            for pot_id, cost in zip(self._pot_ids, self._costs):
                 yamlfile = "/".join(
                     [
-                        self.__path_data,
+                        self._path_data,
                         pot_id,
                         "predictions",
                         st,
@@ -177,7 +177,7 @@ class PolymlpRepositoryGeneration:
                     ]
                 )
                 if os.path.exists(yamlfile):
-                    yamldata = self.__read_yaml(yamlfile)
+                    yamldata = self._read_yaml(yamlfile)
 
                     if "equilibrium" in yamldata:
                         eqm_data = yamldata["equilibrium"]
@@ -190,36 +190,36 @@ class PolymlpRepositoryGeneration:
 
                     yamlfile = "/".join(
                         [
-                            self.__path_data,
+                            self._path_data,
                             pot_id,
                             "predictions",
                             st,
                             "polymlp_eos.yaml",
                         ]
                     )
-                    yamldata = self.__read_yaml(yamlfile)
+                    yamldata = self._read_yaml(yamlfile)
                     eos_data = yamldata["eos_data"]["volume_helmholtz"]
                     eos_data = np.array(eos_data, dtype=float) / n_atom_sum
                     eos_dict[pot_id][st] = eos_data
 
             eqm_props_dict[st] = np.array(eqm_props)
 
-        path_output = self.__path_data + "/polymlp_summary/"
+        path_output = self._path_data + "/polymlp_summary/"
         plot_eqm_properties(
             eqm_props_dict,
-            self.__system,
+            self._system,
             path_output=path_output,
             dpi=dpi,
         )
 
         # emin = ([np.min(prop[:,1]) for prop in eqm_props_dict.values()])
-        for pot_id in self.__pot_ids:
-            path_output = "/".join([self.__path_data, pot_id, "predictions"])
+        for pot_id in self._pot_ids:
+            path_output = "/".join([self._path_data, pot_id, "predictions"])
             if pot_id in eos_dict:
                 emin = min(e_eqm_dict[pot_id].values())
                 plot_eos(
                     eos_dict[pot_id],
-                    self.__system,
+                    self._system,
                     pot_id,
                     emin=emin,
                     path_output=path_output,
@@ -227,7 +227,7 @@ class PolymlpRepositoryGeneration:
                 )
                 plot_eos_separate(
                     eos_dict[pot_id],
-                    self.__system,
+                    self._system,
                     pot_id,
                     emin=emin,
                     path_output=path_output,
@@ -238,8 +238,8 @@ class PolymlpRepositoryGeneration:
 
     def run_energy_distribution(self, dpi=300):
 
-        for pot_id in self.__pot_ids:
-            path_output = "/".join([self.__path_data, pot_id, "energy_dist"])
+        for pot_id in self._pot_ids:
+            path_output = "/".join([self._path_data, pot_id, "energy_dist"])
             file_train = "/".join([path_output, "energy-train.dat"])
             file_test = "/".join([path_output, "energy-test.dat"])
             data_train = np.loadtxt(file_train, dtype=float, skiprows=1)
@@ -248,7 +248,7 @@ class PolymlpRepositoryGeneration:
             plot_energy(
                 data_train,
                 data_test,
-                self.__system,
+                self._system,
                 pot_id,
                 path_output=path_output,
                 dpi=dpi,
@@ -257,15 +257,15 @@ class PolymlpRepositoryGeneration:
 
     def run_icsd_prediction(self, dpi=300):
 
-        for pot_id in self.__pot_ids:
-            path_output = "/".join([self.__path_data, pot_id, "predictions"])
+        for pot_id in self._pot_ids:
+            path_output = "/".join([self._path_data, pot_id, "predictions"])
             yamlfile = "/".join([path_output, "polymlp_icsd_pred.yaml"])
             if os.path.exists(yamlfile):
-                yamldata = self.__read_yaml(yamlfile)
+                yamldata = self._read_yaml(yamlfile)
                 icsd_dict = yamldata["icsd_predictions"]
                 plot_icsd_prediction(
                     icsd_dict,
-                    self.__system,
+                    self._system,
                     pot_id,
                     path_output=path_output,
                     dpi=dpi,
@@ -276,10 +276,10 @@ class PolymlpRepositoryGeneration:
 
     def run_phonon(self, dpi=300):
 
-        for pot_id in self.__pot_ids:
+        for pot_id in self._pot_ids:
             phonon_dict = dict()
-            path_output = "/".join([self.__path_data, pot_id, "predictions"])
-            for target in self.__target_list:
+            path_output = "/".join([self._path_data, pot_id, "predictions"])
+            for target in self._target_list:
                 st = target["st_type"]
                 yamlfile = "/".join(
                     [
@@ -289,7 +289,7 @@ class PolymlpRepositoryGeneration:
                     ]
                 )
                 if os.path.exists(yamlfile):
-                    yamldata = self.__read_yaml(yamlfile)
+                    yamldata = self._read_yaml(yamlfile)
 
                     n_atom = int(yamldata["natom"])
                     datafile = "/".join(
@@ -300,7 +300,7 @@ class PolymlpRepositoryGeneration:
 
             plot_phonon(
                 phonon_dict,
-                self.__system,
+                self._system,
                 pot_id,
                 path_output=path_output,
                 dpi=dpi,
@@ -310,11 +310,11 @@ class PolymlpRepositoryGeneration:
 
     def run_phonon_qha(self, dpi=300):
 
-        for pot_id in self.__pot_ids:
+        for pot_id in self._pot_ids:
             thermal_expansion_dict = dict()
             bm_dict = dict()
-            path_output = "/".join([self.__path_data, pot_id, "predictions"])
-            for target in self.__target_list:
+            path_output = "/".join([self._path_data, pot_id, "predictions"])
+            for target in self._target_list:
                 st = target["st_type"]
                 datafile = "/".join(
                     [
@@ -338,14 +338,14 @@ class PolymlpRepositoryGeneration:
             if len(bm_dict) > 0:
                 plot_phonon_qha_thermal_expansion(
                     thermal_expansion_dict,
-                    self.__system,
+                    self._system,
                     pot_id,
                     path_output=path_output,
                     dpi=dpi,
                 )
                 plot_phonon_qha_bulk_modulus(
                     bm_dict,
-                    self.__system,
+                    self._system,
                     pot_id,
                     path_output=path_output,
                     dpi=dpi,

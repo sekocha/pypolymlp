@@ -18,6 +18,13 @@ if __name__ == "__main__":
         help="Supercell size (diagonal components)",
     )
     parser.add_argument(
+        "--phonon_supercell",
+        nargs=3,
+        type=int,
+        default=None,
+        help="Phonon supercell size (diagonal components)",
+    )
+    parser.add_argument(
         "--mesh",
         type=int,
         nargs=3,
@@ -26,12 +33,19 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
+    if args.phonon_supercell is not None:
+        phonon_supercell = args.phonon_supercell
+    else:
+        phonon_supercell = args.supercell
+
     ph3 = phono3py.load(
         unitcell_filename=args.poscar,
         supercell_matrix=args.supercell,
+        phonon_supercell_matrix=phonon_supercell,
         primitive_matrix="auto",
         log_level=1,
     )
+
     ph3.mesh_numbers = args.mesh
     ph3.init_phph_interaction()
     ph3.run_thermal_conductivity(temperatures=range(0, 1001, 10), write_kappa=True)

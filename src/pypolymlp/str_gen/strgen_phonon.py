@@ -17,29 +17,30 @@ def run_strgen_phonon(
     use_phonopy=True,
 ):
 
-    unitcell = Poscar(filename).get_structure()
+    unitcell = Poscar(filename).structure
     if use_phonopy:
         from pypolymlp.utils.phonopy_utils import phonopy_supercell
 
         supercell = phonopy_supercell(
-            unitcell, supercell_diag=supercell_size, return_phonopy=False
+            unitcell,
+            supercell_diag=supercell_size,
+            return_phonopy=False,
         )
     else:
         supercell = supercell_diagonal(unitcell, size=supercell_size)
 
-    _, st_dicts = generate_random_const_displacements(
-        supercell, n_samples=n_samples, displacements=displacements
+    _, structures = generate_random_const_displacements(
+        supercell,
+        n_samples=n_samples,
+        displacements=displacements,
     )
 
     os.makedirs("poscars_phonon", exist_ok=True)
     write_poscar_file(supercell, filename="poscars_phonon/poscar-00000")
-    for i, st in enumerate(st_dicts):
-        write_poscar_file(
-            st,
-            filename="poscars_phonon/poscar-" + str(i + 1).zfill(5),
-            header="pypolymlp: disp.-" + str(i + 1).zfill(5),
-        )
-
+    for i, st in enumerate(structures):
+        filename = "poscars_phonon/poscar-" + str(i + 1).zfill(5)
+        header = "pypolymlp: disp.-" + str(i + 1).zfill(5)
+        write_poscar_file(st, filename=filename, header=header)
     save_cells(unitcell, supercell, filename="polymlp_str.yaml")
 
 

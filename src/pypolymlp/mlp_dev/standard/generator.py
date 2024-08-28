@@ -35,14 +35,20 @@ if __name__ == "__main__":
         action="store_true",
         help="Learning curve calculations",
     )
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+        default=None,
+        help="Batch size of feature calculations",
+    )
     args = parser.parse_args()
 
     verbose = True
-
     polymlp_in = PolymlpDevData()
-    polymlp_in.parse_infiles(args.infile, verbose=True)
+    polymlp_in.parse_infiles(args.infile, verbose=verbose)
     polymlp_in.parse_datasets()
     polymlp_in.write_polymlp_params_yaml(filename="polymlp_params.yaml")
+    n_features = polymlp_in.n_features
 
     if args.learning_curve:
         if len(polymlp_in.train_dict) == 1:
@@ -57,20 +63,31 @@ if __name__ == "__main__":
     t1 = time.time()
     if args.no_sequential:
         if not args.learning_curve:
-            polymlp = PolymlpDevDataXY(polymlp_in).run()
-        polymlp.print_data_shape()
+            polymlp = PolymlpDevDataXY(polymlp_in, verbose=verbose).run()
+        if verbose:
+            polymlp.print_data_shape()
     else:
-        polymlp = PolymlpDevDataXYSequential(polymlp_in).run()
+        if args.batch_size is None:
+            batch_size = max((10000000 // n_features), 128)
+        else:
+            batch_size = args.batch_size
+        if verbose:
+            print("Batch size:", batch_size, flush=True)
+        polymlp = PolymlpDevDataXYSequential(polymlp_in, verbose=verbose).run_train(
+            batch_size=batch_size
+        )
     t2 = time.time()
 
-    reg = Regression(polymlp).fit(seq=not args.no_sequential)
+    reg = Regression(polymlp).fit(
+        seq=not args.no_sequential, clear_data=True, batch_size=batch_size
+    )
     reg.save_mlp_lammps(filename="polymlp.lammps")
     t3 = time.time()
 
     if verbose:
         mlp_dict = reg.best_model
-        print("  Regression: best model")
-        print("    alpha: ", mlp_dict["alpha"])
+        print("  Regression: best model", flush=True)
+        print("    alpha: ", mlp_dict["alpha"], flush=True)
 
     acc = PolymlpDevAccuracy(reg)
     acc.compute_error()
@@ -78,7 +95,7 @@ if __name__ == "__main__":
     t4 = time.time()
 
     if verbose:
-        print("  elapsed_time:")
-        print("    features:          ", "{:.3f}".format(t2 - t1), "(s)")
-        print("    regression:        ", "{:.3f}".format(t3 - t2), "(s)")
-        print("    error:             ", "{:.3f}".format(t4 - t3), "(s)")
+        print("  elapsed_time:", flush=True)
+        print("    features:          ", "{:.3f}".format(t2 - t1), "(s)", flush=True)
+        print("    regression:        ", "{:.3f}".format(t3 - t2), "(s)", flush=True)
+        print("    error:             ", "{:.3f}".format(t4 - t3), "(s)", flush=True)

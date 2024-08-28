@@ -21,8 +21,8 @@ def run_fc2(supercell):
 
 def run_fc3(supercell):
 
-    fc3_basis = FCBasisSetO3(supercell, use_mkl=False).run()
-    # fc3_basis = FCBasisSetO3(supercell, use_mkl=True).run()
+    # fc3_basis = FCBasisSetO3(supercell, use_mkl=False).run()
+    fc3_basis = FCBasisSetO3(supercell, use_mkl=True).run()
     compress_mat_fc3 = fc3_basis.compression_matrix
     compress_eigvecs_fc3 = fc3_basis.basis_set
     return compress_mat_fc3, compress_eigvecs_fc3
@@ -46,7 +46,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    unitcell_dict = Poscar(args.poscar).get_structure()
+    unitcell_dict = Poscar(args.poscar).structure
     supercell_matrix = np.diag(args.supercell)
 
     supercell = phonopy_supercell(unitcell_dict, supercell_matrix)

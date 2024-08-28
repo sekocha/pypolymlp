@@ -1,38 +1,51 @@
-#!/usr/bin/env python
-import sys
+"""Interface for phono3py."""
+
+from typing import Optional
 
 import numpy as np
 import phono3py
 
+from pypolymlp.core.data_format import PolymlpDataDFT, PolymlpStructure
 from pypolymlp.core.displacements import (
     convert_disps_to_positions,
     get_structures_from_multiple_positions,
-    set_dft_dict,
+    set_dft_data,
 )
-from pypolymlp.utils.phonopy_utils import phonopy_cell_to_st_dict
+from pypolymlp.utils.phonopy_utils import phonopy_cell_to_structure
 
 
 def parse_phono3py_yaml(
-    yaml_filename,
-    energies_filename=None,
-    element_order=None,
-    select_ids=None,
-    return_displacements=False,
-    use_phonon_dataset=False,
-):
-    """yaml_filename: phono3py yaml file
-    energies_filename: first line gives the energy of perfect supercell
+    yamlfile: str,
+    energies_filename: Optional[str] = None,
+    element_order: Optional[list[str]] = None,
+    select_ids: Optional[list[int]] = None,
+    return_displacements: bool = False,
+    use_phonon_dataset: bool = False,
+) -> PolymlpDataDFT:
+    """Read phono3py.yaml and return DFT dataclass.
+
+    Parameters
+    ----------
+    yamlfile: phono3py yaml file
+    energies_filename: Energies.
+                       The first line must give the energy of perfect supercell
 
     phono3py.yaml must be composed of datasets for a fixed composition.
     """
-    ph3 = Phono3pyYaml(yaml_filename, use_phonon_dataset=use_phonon_dataset)
-    disps, forces = ph3.get_phonon_dataset()
-    st_dict, positions_all = ph3.get_structure_dataset()
+
+    ph3 = Phono3pyYaml(yamlfile, use_phonon_dataset=use_phonon_dataset)
+    disps, forces = ph3.phonon_dataset
+    supercell, positions_all = ph3.structure_dataset
+
+    if not np.all(np.isin(element_order, ph3.supercell_phono3py.symbols)):
+        raise ValueError("Elements in the input file are not found in phono3py.yaml.")
 
     if energies_filename is not None:
         energies = np.loadtxt(energies_filename)[1:, 1]
     else:
-        energies = None
+        energies = ph3.energies
+        if energies is None:
+            raise ValueError("No energy entry in phono3py.yaml or no energy file.")
 
     if select_ids is not None:
         select_ids = np.array(select_ids)
@@ -41,82 +54,119 @@ def parse_phono3py_yaml(
         energies = energies[select_ids]
         disps = disps[select_ids]
 
-    dft_dict = set_dft_dict(
+    dft = set_dft_data(
         forces,
         energies,
         positions_all,
-        st_dict,
+        supercell,
         element_order=element_order,
     )
-    dft_dict["include_force"] = True
-    dft_dict["weight"] = 1.0
-
     if return_displacements:
-        return dft_dict, disps
-    return dft_dict
+        return dft, disps
+    return dft
 
 
-def parse_structures_from_phono3py_yaml(phono3py_yaml, select_ids=None):
-
+def parse_structures_from_phono3py_yaml(
+    phono3py_yaml: str, select_ids: Optional[list[int]] = None
+) -> list[PolymlpStructure]:
+    """Parse phono3py.yaml and return structures."""
     ph3 = Phono3pyYaml(phono3py_yaml)
-    st_dict, positions_all = ph3.get_structure_dataset()
-    st_dicts = get_structures_from_multiple_positions(st_dict, positions_all)
     if select_ids is not None:
-        st_dicts = [st_dicts[i] for i in select_ids]
-    return st_dicts
+        return [ph3.supercells[i] for i in select_ids]
+    return ph3.supercells
 
 
-def parse_phono3py_yaml_fcs(phono3py_yaml, use_phonon_dataset=False):
-    """disps: (n_str, 3, n_atoms)
-    forces: (n_str, 3, n_atoms)
+def parse_phono3py_yaml_fcs(phono3py_yaml: str, use_phonon_dataset: bool = False):
+    """Parse phono3py.yaml and return displacements and structures.
+
+    Return
+    ------
+    supercell_phono3py: Equilibrium structure.
+    displacements: Displacements, shape=(n_str, 3, n_atoms)
+    supercells: Supercells with displacements.
     """
     ph3 = Phono3pyYaml(phono3py_yaml, use_phonon_dataset=use_phonon_dataset)
-    disps, _ = ph3.get_phonon_dataset()
-    st_dict, positions_all = ph3.get_structure_dataset()
-    st_dicts = get_structures_from_multiple_positions(st_dict, positions_all)
-    return ph3.supercell, disps, st_dicts
+    return (ph3.supercell_phono3py, ph3.displacements, ph3.supercells)
 
 
 class Phono3pyYaml:
+    """Class for phono3py.yaml"""
 
-    def __init__(self, yaml_filename, use_phonon_dataset=False):
-        """displacements: (n_samples, 3, n_atom)
-        forces: (n_samples, 3, n_atom)
-        positions_all: (n_samples, 3, n_atom)
-        """
-        ph3 = phono3py.load(yaml_filename, produce_fc=False, log_level=1)
+    def __init__(self, yamlfile: str, use_phonon_dataset: bool = False):
+        self._ph3 = phono3py.load(yamlfile, produce_fc=False, log_level=1)
         if use_phonon_dataset is False:
-            self.supercell = ph3.supercell
-            self.st_dict = phonopy_cell_to_st_dict(ph3.supercell)
-            self.displacements = ph3.displacements.transpose((0, 2, 1))
-            self.forces = ph3.forces.transpose((0, 2, 1))
+            self._supercell = self._ph3.supercell
+            self._displacements = self._ph3.displacements.transpose((0, 2, 1))
+            self._forces = self._ph3.forces.transpose((0, 2, 1))
+            try:
+                self._energies = self._ph3.supercell_energies
+            except:
+                self._energies = None
         else:
             print("Using phono3py.phonon_*** dataset")
-            self.supercell = ph3.phonon_supercell
-            self.st_dict = phonopy_cell_to_st_dict(self.supercell)
-            self.displacements = ph3.phonon_dataset["displacements"]
-            self.displacements = self.displacements.transpose((0, 2, 1))
-            self.forces = ph3.phonon_dataset["forces"]
-            self.forces = self.forces.transpose((0, 2, 1))
+            self._supercell = self._ph3.phonon_supercell
+            self._displacements = self._ph3.phonon_dataset["displacements"]
+            self._displacements = self._displacements.transpose((0, 2, 1))
+            self._forces = self._ph3.phonon_dataset["forces"]
+            self._forces = self._forces.transpose((0, 2, 1))
+            """TODO: Must be revised"""
+            self._energies = None
 
-        self.positions_all = convert_disps_to_positions(
-            self.displacements,
-            self.st_dict["axis"],
-            self.st_dict["positions"],
+        self._supercell_polymlp = phonopy_cell_to_structure(self._supercell)
+        self._positions_all = convert_disps_to_positions(
+            self._displacements,
+            self._supercell_polymlp.axis,
+            self._supercell_polymlp.positions,
         )
 
-    def get_phonon_dataset(self):
-        """displacements: (n_samples, 3, n_atom)
-        forces: (n_samples, 3, n_atom)
-        """
+    @property
+    def phono3py(self):
+        """Return phono3py object."""
+        return self._ph3
+
+    @property
+    def supercell_phono3py(self):
+        """Return equilibrium supercell in Phonopy format."""
+        return self._supercell
+
+    @property
+    def supercell_polymlp(self) -> PolymlpStructure:
+        """Return equilibrium supercell in PolymlpStructure format."""
+        return self._supercell_polymlp
+
+    @property
+    def displacements(self) -> np.ndarray:
+        """Return displacements, shape=(n_samples, 3, n_atom)."""
+        return self._displacements
+
+    @property
+    def forces(self) -> np.ndarray:
+        """Return forces, shape=(n_samples, 3, n_atom)."""
+        return self._forces
+
+    @property
+    def energies(self):
+        """Retrun energies, shape=(n_samples)."""
+        return self._energies
+
+    @property
+    def phonon_dataset(self) -> tuple[np.ndarray, np.ndarray]:
+        """Return displacements and forces"""
         return (self.displacements, self.forces)
 
-    def get_structure_dataset(self):
-        """positions_all: (n_samples, 3, n_atom)"""
-        return (self.st_dict, self.positions_all)
+    @property
+    def structure_dataset(self) -> tuple[PolymlpStructure, np.ndarray]:
+        """Return equilibrium structures and positions.
 
+        Return
+        ------
+        positions_all: shape=(n_samples, 3, n_atom)
+        """
+        return (self.supercell_polymlp, self._positions_all)
 
-if __name__ == "__main__":
-
-    dft_dict = parse_phono3py_yaml(sys.argv[1], sys.argv[2], select_ids=range(200))
-    print(dft_dict["filenames"])
+    def supercells(self) -> list[PolymlpStructure]:
+        """Return supercells with displacements in PolymlpStructure format."""
+        return get_structures_from_multiple_positions(
+            self._positions_all,
+            self.supercell_polymlp,
+        )

@@ -7,7 +7,7 @@ from phono3py.file_IO import write_fc3_to_hdf5
 from pypolymlp.calculator.fc import PolymlpFC
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.sscha.harmonic_real import HarmonicReal
-from pypolymlp.calculator.sscha.sscha_io import Restart
+from pypolymlp.calculator.sscha.sscha_utils import Restart
 
 if __name__ == "__main__":
 

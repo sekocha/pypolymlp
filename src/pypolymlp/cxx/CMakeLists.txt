@@ -36,7 +36,6 @@ endif()
 find_package(pybind11 REQUIRED)
 find_package(Eigen3 REQUIRED)
 message(STATUS "Eigen3 include dir: ${EIGEN3_INCLUDE_DIR}")
-# find_package(OpenMP REQUIRED)
 find_package(OpenMP)
 
 set(SRC_FILES
@@ -97,13 +96,13 @@ else()
   message(WARNING "OpenMP not found. It runs on single thread.")
 endif()
 
-#install(
-#    TARGETS libmlpcpp
-#    COMPONENT python
-#    LIBRARY DESTINATION ${CMAKE_SOURCE_DIR}/lib
-#)
 install(
     TARGETS libmlpcpp
     COMPONENT python
-    LIBRARY DESTINATION .
+    LIBRARY DESTINATION ${CMAKE_SOURCE_DIR}/lib
 )
+# install(
+#     TARGETS libmlpcpp
+#     COMPONENT python
+#     LIBRARY DESTINATION .
+# )

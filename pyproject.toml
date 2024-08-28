@@ -1,19 +1,71 @@
 [build-system]
 requires = [
-    "setuptools >= 61.0",
-    "scikit-build",
-    "ninja",
-    "wheel",
+    "scikit-build-core",
+    "setuptools_scm[toml]>=6.0",
     "cmake",
-    "make",
     "pybind11",
     "pybind11-global",
     "eigen",
-    "numpy",
-    "scipy",
-    "pyyaml",
 ]
-build-backend = "setuptools.build_meta"
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "pypolymlp"
+dynamic = ["version"]
+readme = { file = "README.md", content-type = "text/markdown" }
+description = "This is the pypolymlp module."
+authors = [{ name = "Atsuto Seko", email = "seko@cms.mtl.kyoto-u.ac.jp" }]
+maintainers = [{ name = "Atsuto Seko", email = "seko@cms.mtl.kyoto-u.ac.jp" }]
+requires-python = ">=3.9"
+dependencies = [
+    "numpy < 2.0.0",
+    "scipy",
+    "PyYAML >= 5.3",
+    "setuptools >= 61.0",
+]
+license = { file = "LICENSE" }
+
+[project.optional-dependencies]
+symfc = ["symfc"]
+phonopy = ["phonopy"]
+phono3py = ["phono3py"]
+spglib = ["spglib"]
+tools = ["symfc", "phonopy", "phono3py", "spglib"]
+
+[project.urls]
+Homepage = "https://github.com/sekocha/pypolymlp"
+Repository = "https://github.com/sekocha/pypolymlp"
+
+[project.scripts]
+pypolymlp = "pypolymlp.api.run_polymlp:run"
+pypolymlp-calc = "pypolymlp.api.run_polymlp_calc:run"
+pypolymlp-utils = "pypolymlp.api.run_polymlp_utils:run"
+pypolymlp-structure = "pypolymlp.api.run_polymlp_str:run"
+pypolymlp-sscha = "pypolymlp.api.run_polymlp_sscha:run"
+
+[tool.scikit-build]
+cmake.verbose = true
+logging.level = "INFO"
+cmake.source-dir = "./src/pypolymlp/cxx"
+
+sdist.exclude = [
+    "conda-recipes",
+    "dist",
+    "src/pypolymlp/polyinv",
+    "src/pypolymlp/deprecated",
+    "src/pypolymlp/dev",
+    "src/pypolymlp/test",
+    "src/pypolymlp/cxx/build*",
+    "src/pypolymlp/mlp_opt/candidates",
+    "*__pycache__*",
+]
+
+metadata.version.provider = "scikit_build_core.metadata.setuptools_scm"
+
+[tool.setuptools_scm]
+write_to = "_version.py"
+version_scheme = "post-release"
+local_scheme = "no-local-version"
 
 [tool.flake8]
 max-line-length = 88

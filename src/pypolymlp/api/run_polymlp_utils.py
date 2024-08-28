@@ -153,8 +153,8 @@ def run():
 
         sc = SymCell(args.poscar, symprec=args.symprec)
         if args.refine_cell:
-            st_dict = sc.refine_cell()
-            print_poscar(st_dict)
-            write_poscar_file(st_dict)
+            structure = sc.refine_cell()
+            print_poscar(structure)
+            write_poscar_file(structure)
         if args.space_group:
             print(" space_group = ", sc.get_spacegroup())

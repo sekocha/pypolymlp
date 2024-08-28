@@ -3,13 +3,14 @@ from collections import defaultdict
 
 import numpy as np
 
+from pypolymlp.core.data_format import PolymlpParams
 from pypolymlp.cxx.lib import libmlpcpp
 
 
-def get_features_attr(params_dict, element_swap=False):
+def get_features_attr(params: PolymlpParams, element_swap: bool = False):
 
-    params_dict["element_swap"] = element_swap
-    obj = libmlpcpp.FeaturesAttr(params_dict)
+    params.element_swap = element_swap
+    obj = libmlpcpp.FeaturesAttr(params.as_dict())
 
     type_comb_pair = obj.get_type_comb_pair()
     atomtype_pair_dict = defaultdict(list)
@@ -21,24 +22,24 @@ def get_features_attr(params_dict, element_swap=False):
     radial_ids = obj.get_radial_ids()
     tcomb_ids = obj.get_tcomb_ids()
     polynomial_attr = obj.get_polynomial_ids()
-    if params_dict["model"]["feature_type"] == "pair":
+    if params.model.feature_type == "pair":
         features_attr = list(zip(radial_ids, tcomb_ids))
-    elif params_dict["model"]["feature_type"] == "gtinv":
+    elif params.model.feature_type == "gtinv":
         gtinv_ids = obj.get_gtinv_ids()
         features_attr = list(zip(radial_ids, gtinv_ids, tcomb_ids))
 
     return features_attr, polynomial_attr, atomtype_pair_dict
 
 
-def write_polymlp_params_yaml(params_dict, filename="polymlp_params.yaml"):
+def write_polymlp_params_yaml(params, filename="polymlp_params.yaml"):
 
     f = open(filename, "w")
 
-    features_attr, polynomial_attr, atomtype_pair_dict = get_features_attr(params_dict)
+    features_attr, polynomial_attr, atomtype_pair_dict = get_features_attr(params)
 
-    elements = np.array(params_dict["elements"])
+    elements = np.array(params.elements)
     print("radial_params:", file=f)
-    for i, p in enumerate(params_dict["model"]["pair_params"]):
+    for i, p in enumerate(params.model.pair_params):
         print("- radial_id: ", i, file=f)
         print("  params:    ", list(p), file=f)
         print("", file=f)
@@ -55,7 +56,7 @@ def write_polymlp_params_yaml(params_dict, filename="polymlp_params.yaml"):
 
     print("features:", file=f)
     seq_id = 0
-    if params_dict["model"]["feature_type"] == "pair":
+    if params.model.feature_type == "pair":
         for i, attr in enumerate(features_attr):
             print("- id:               ", seq_id, file=f)
             print("  feature_id:       ", i, file=f)
@@ -65,8 +66,8 @@ def write_polymlp_params_yaml(params_dict, filename="polymlp_params.yaml"):
             seq_id += 1
         print("", file=f)
 
-    elif params_dict["model"]["feature_type"] == "gtinv":
-        gtinv_dict = params_dict["model"]["gtinv"]
+    elif params.model.feature_type == "gtinv":
+        gtinv = params.model.gtinv
         for i, attr in enumerate(features_attr):
             print("- id:               ", seq_id, file=f)
             print("  feature_id:       ", i, file=f)
@@ -74,7 +75,7 @@ def write_polymlp_params_yaml(params_dict, filename="polymlp_params.yaml"):
             print("  gtinv_id:         ", attr[1], file=f)
             print(
                 "  l_combination:    ",
-                gtinv_dict["l_comb"][attr[1]],
+                gtinv.l_comb[attr[1]],
                 file=f,
             )
             print("  atomtype_pair_ids:", attr[2], file=f)
@@ -91,6 +92,13 @@ def write_polymlp_params_yaml(params_dict, filename="polymlp_params.yaml"):
             seq_id += 1
 
     f.close()
+    return seq_id
+
+
+def get_num_features(params):
+    features_attr, polynomial_attr, atomtype_pair_dict = get_features_attr(params)
+    n_fearures = len(features_attr) + len(polynomial_attr)
+    return n_fearures
 
 
 if __name__ == "__main__":

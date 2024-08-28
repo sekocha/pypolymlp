@@ -1,14 +1,18 @@
-#!/usr/bin/env python
+"""Class for calculating properties."""
+
+from typing import Union
+
 import numpy as np
 
 from pypolymlp.calculator.compute_features import update_types
+from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
 from pypolymlp.core.io_polymlp import load_mlp_lammps
 from pypolymlp.cxx.lib import libmlpcpp
 
 
-def convert_stresses_in_gpa(stresses, st_dicts):
-
-    volumes = np.array([st["volume"] for st in st_dicts])
+def convert_stresses_in_gpa(stresses: np.ndarray, structures: list[PolymlpStructure]):
+    """Calculate stress tensor values in GPa."""
+    volumes = np.array([st.volume for st in structures])
     stresses_gpa = np.zeros(stresses.shape)
     for i in range(6):
         stresses_gpa[:, i] = stresses[:, i] / volumes * 160.21766208
@@ -16,40 +20,54 @@ def convert_stresses_in_gpa(stresses, st_dicts):
 
 
 class PropertiesSingle:
+    """Class for calculating properties using a single polymlp model."""
 
-    def __init__(self, pot=None, params_dict=None, coeffs=None):
+    def __init__(
+        self, pot: str = None, params: PolymlpParams = None, coeffs: np.ndarray = None
+    ):
+        """Init method.
+
+        Parameters
+        ----------
+        pot: polymlp file.
+        params: Parameters for polymlp.
+        coeffs: Polymlp coefficients.
+        """
 
         if pot is not None:
-            self.__params_dict, mlp_dict = load_mlp_lammps(filename=pot)
-            self.__coeffs = mlp_dict["coeffs"] / mlp_dict["scales"]
+            self._params, mlp_dict = load_mlp_lammps(filename=pot)
+            self._coeffs = mlp_dict["coeffs"] / mlp_dict["scales"]
         else:
-            self.__params_dict = params_dict
-            self.__coeffs = coeffs
+            self._params = params
+            self._coeffs = coeffs
 
-        self.__params_dict["element_swap"] = False
-        self.obj = libmlpcpp.PotentialPropertiesFast(self.__params_dict, self.__coeffs)
+        self._params.element_swap = False
+        self.obj = libmlpcpp.PotentialPropertiesFast(
+            self._params.as_dict(), self._coeffs
+        )
 
-    def eval(self, st_dict):
-        """
+    def eval(self, st: PolymlpStructure):
+        """Evaluate properties for a single structure.
+
         Return
         ------
         energy: unit: eV/supercell
         force: unit: eV/angstrom (3, n_atom)
         stress: unit: eV/supercell: (6) in the order of xx, yy, zz, xy, yz, zx
         """
-        element_order = self.__params_dict["elements"]
-        st_dict = update_types([st_dict], element_order)[0]
+        st = update_types([st], self._params.element_order)[0]
 
-        positions_c = st_dict["axis"] @ st_dict["positions"]
-        self.obj.eval(st_dict["axis"], positions_c, st_dict["types"])
+        positions_c = st.axis @ st.positions
+        self.obj.eval(st.axis, positions_c, st.types)
 
         energy = self.obj.get_e()
         force = np.array(self.obj.get_f()).T
         stress = np.array(self.obj.get_s())
         return energy, force, stress
 
-    def eval_multiple(self, st_dicts, verbose=False):
-        """
+    def eval_multiple(self, structures: list[PolymlpStructure], verbose: bool = False):
+        """Evaluate properties for multiple structures.
+
         Return
         ------
         energies: unit: eV/supercell (n_str)
@@ -60,15 +78,14 @@ class PropertiesSingle:
         if verbose:
             print(
                 "Properties calculations for",
-                len(st_dicts),
+                len(structures),
                 "structures: Using a fast algorithm",
             )
-        element_order = self.__params_dict["elements"]
-        st_dicts = update_types(st_dicts, element_order)
+        structures = update_types(structures, self._params.element_order)
 
-        axis_array = [st["axis"] for st in st_dicts]
-        types_array = [st["types"] for st in st_dicts]
-        positions_c_array = [st["axis"] @ st["positions"] for st in st_dicts]
+        axis_array = [st.axis for st in structures]
+        types_array = [st.types for st in structures]
+        positions_c_array = [st.axis @ st.positions for st in structures]
 
         """
         PotentialProperties.eval_multiple: Return
@@ -86,57 +103,84 @@ class PropertiesSingle:
         return energies, forces, stresses
 
     @property
-    def params_dict(self):
-        return self.__params_dict
+    def params(self):
+        return self._params
 
 
 class PropertiesHybrid:
+    """Class for calculating properties using a hybrid polymlp model."""
 
-    def __init__(self, pot=None, params_dict=None, coeffs=None):
+    def __init__(
+        self,
+        pot: str = None,
+        params: list[PolymlpParams] = None,
+        coeffs: list[np.ndarray] = None,
+    ):
+        """Init method.
+
+        Parameters
+        ----------
+        pot: polymlp file.
+        params: Parameters for polymlp.
+        coeffs: Polymlp coefficients.
+        """
 
         if pot is not None:
             if not isinstance(pot, list):
                 raise ValueError("Parameters in PropertiesHybrid must be lists.")
             self.props = [PropertiesSingle(pot=p) for p in pot]
         else:
-            if not isinstance(params_dict, list) or not isinstance(coeffs, list):
+            if not isinstance(params, list) or not isinstance(coeffs, list):
                 raise ValueError("Parameters in PropertiesHybrid must be lists.")
             self.props = [
-                PropertiesSingle(params_dict=p, coeffs=c)
-                for p, c in zip(params_dict, coeffs)
+                PropertiesSingle(params=p, coeffs=c) for p, c in zip(params, coeffs)
             ]
 
-    def eval(self, st_dict):
-
-        energy, force, stress = self.props[0].eval(st_dict)
+    def eval(self, st: PolymlpStructure):
+        """Evaluate properties for a single structure."""
+        energy, force, stress = self.props[0].eval(st)
         for prop in self.props[1:]:
-            e_single, f_single, s_single = prop.eval(st_dict)
+            e_single, f_single, s_single = prop.eval(st)
             energy += e_single
             force += f_single
             stress += s_single
-
         return energy, force, stress
 
-    def eval_multiple(self, st_dicts):
-
-        energies, forces, stresses = self.props[0].eval_multiple(st_dicts)
+    def eval_multiple(self, structures: list[PolymlpStructure]):
+        """Evaluate properties for multiple structures."""
+        energies, forces, stresses = self.props[0].eval_multiple(structures)
         for prop in self.props[1:]:
-            e_single, f_single, s_single = prop.eval_multiple(st_dicts)
+            e_single, f_single, s_single = prop.eval_multiple(structures)
             energies += e_single
             for i, f1 in enumerate(f_single):
                 forces[i] += f1
             stresses += s_single
-
         return energies, forces, stresses
 
     @property
-    def params_dict(self):
-        return [prop.params_dict for prop in self.props]
+    def params(self):
+        return [prop.params for prop in self.props]
 
 
 class Properties:
+    """Class for calculating properties."""
 
-    def __init__(self, pot=None, params_dict=None, coeffs=None):
+    def __init__(
+        self,
+        pot: str = None,
+        params: Union[PolymlpParams, list[PolymlpParams]] = None,
+        coeffs: Union[np.ndarray, list[np.ndarray]] = None,
+    ):
+        """Init method.
+
+        Parameters
+        ----------
+        pot: polymlp file.
+        params: Parameters for polymlp.
+        coeffs: Polymlp coefficients.
+
+        Any one of pot and (params, coeffs) is needed.
+        """
 
         if pot is not None:
             if isinstance(pot, list):
@@ -147,43 +191,47 @@ class Properties:
             else:
                 self.prop = PropertiesSingle(pot=pot)
         else:
-            if isinstance(params_dict, list) and isinstance(coeffs, list):
-                if len(params_dict) > 1 and len(coeffs) > 1:
-                    self.prop = PropertiesHybrid(params_dict=params_dict, coeffs=coeffs)
+            if isinstance(params, list) and isinstance(coeffs, list):
+                if len(params) > 1 and len(coeffs) > 1:
+                    self.prop = PropertiesHybrid(params=params, coeffs=coeffs)
                 else:
                     self.prop = PropertiesSingle(
-                        params_dict=params_dict[0], coeffs=coeffs[0]
+                        params_dict=params[0], coeffs=coeffs[0]
                     )
             else:
-                self.prop = PropertiesSingle(params_dict=params_dict, coeffs=coeffs)
+                self.prop = PropertiesSingle(params=params, coeffs=coeffs)
 
-    def eval(self, st_dict):
-        e, f, s = self.prop.eval(st_dict)
-        self.__e, self.__f, self.__s = [e], [f], [s]
-        self.__st_dicts = [st_dict]
+    def eval(self, st: PolymlpStructure):
+        """Evaluate properties for a single structure."""
+        e, f, s = self.prop.eval(st)
+        self._e, self._f, self._s = [e], [f], [s]
+        self._structures = [st]
         return e, f, s
 
-    def eval_multiple(self, st_dicts):
-        self.__e, self.__f, self.__s = self.prop.eval_multiple(st_dicts)
-        self.__st_dicts = st_dicts
-        return self.__e, self.__f, self.__s
+    def eval_multiple(self, structures: list[PolymlpStructure]):
+        """Evaluate properties for multiple structures."""
+        self._e, self._f, self._s = self.prop.eval_multiple(structures)
+        self._structures = structures
+        return self._e, self._f, self._s
 
     def eval_phonopy(self, str_ph):
-        from pypolymlp.utils.phonopy_utils import phonopy_cell_to_st_dict
+        """Evaluate properties for a single structure in phonopy format."""
+        from pypolymlp.utils.phonopy_utils import phonopy_cell_to_structure
 
-        st_dict = phonopy_cell_to_st_dict(str_ph)
-        e, f, s = self.prop.eval(st_dict)
-        self.__e, self.__f, self.__s = [e], [f], [s]
-        self.__st_dicts = [st_dict]
+        st = phonopy_cell_to_structure(str_ph)
+        e, f, s = self.prop.eval(st)
+        self._e, self._f, self._s = [e], [f], [s]
+        self._structures = [st]
         return e, f, s
 
     def eval_multiple_phonopy(self, str_ph_list):
-        from pypolymlp.utils.phonopy_utils import phonopy_cell_to_st_dict
+        """Evaluate properties for multiple structures in phonopy format."""
+        from pypolymlp.utils.phonopy_utils import phonopy_cell_to_structure
 
-        st_dicts = [phonopy_cell_to_st_dict(str_ph) for str_ph in str_ph_list]
-        self.__e, self.__f, self.__s = self.prop.eval_multiple(st_dicts)
-        self.__st_dicts = st_dicts
-        return self.__e, self.__f, self.__s
+        structures = [phonopy_cell_to_structure(str_ph) for str_ph in str_ph_list]
+        self._e, self._f, self._s = self.prop.eval_multiple(structures)
+        self._structures = structures
+        return self._e, self._f, self._s
 
     def save(self, verbose=False):
         np.save("polymlp_energies.npy", self.energies)
@@ -213,24 +261,24 @@ class Properties:
         return self
 
     @property
-    def params_dict(self):
-        return self.prop.params_dict
+    def params(self):
+        return self.prop.params
 
     @property
     def energies(self):
-        return self.__e
+        return self._e
 
     @property
     def forces(self):
-        return self.__f
+        return self._f
 
     @property
     def stresses(self):
-        return self.__s
+        return self._s
 
     @property
     def stresses_gpa(self):
-        return convert_stresses_in_gpa(self.__s, self.__st_dicts)
+        return convert_stresses_in_gpa(self._s, self._structures)
 
 
 if __name__ == "__main__":

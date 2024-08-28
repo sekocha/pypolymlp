@@ -40,16 +40,16 @@ def get_icsd_data1(elements, path_vasp):
     icsd_data = dict()
     for file1 in files:
         v = Vasprun(file1)
-        e, st_dict = v.get_energy(), v.get_structure()
-        e -= sum([float(atom_e[ele]) for ele in st_dict["elements"]])
-        e /= sum(st_dict["n_atoms"])
+        e, structure = v.get_energy(), v.get_structure()
+        e -= sum([float(atom_e[ele]) for ele in structure.elements])
+        e /= sum(structure.n_atoms)
 
         icsd_id = file1.split("/")[-2]
         key = "icsd-" + icsd_id + "-[" + structure_types[icsd_id] + "]"
         icsd_data[key] = {
             "DFT_energy": e,
             "MLP_energy": None,
-            "structure": st_dict,
+            "structure": structure,
             "icsd_id": icsd_id,
         }
 

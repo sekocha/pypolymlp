@@ -9,18 +9,19 @@ from pypolymlp.utils.vasp_utils import write_poscar_file
 
 def run_strgen_volume(filename, eps_min=0.8, eps_max=2.0, n_eps=10):
 
-    st_dict = Poscar(filename).get_structure()
-    st_dicts = multiple_isotropic_volume_changes(
-        st_dict, eps_min=eps_min, eps_max=eps_max, n_eps=n_eps
+    st = Poscar(filename).structure
+    structures = multiple_isotropic_volume_changes(
+        st,
+        eps_min=eps_min,
+        eps_max=eps_max,
+        n_eps=n_eps,
     )
 
     os.makedirs("poscars_volume", exist_ok=True)
-    for i, st in enumerate(st_dicts):
-        write_poscar_file(
-            st,
-            filename="poscars_volume/poscar-" + str(i + 1).zfill(3),
-            header="pypolymlp: volume-" + str(i + 1).zfill(3),
-        )
+    for i, st in enumerate(structures):
+        filename = "poscars_volume/poscar-" + str(i + 1).zfill(3)
+        header = "pypolymlp: volume-" + str(i + 1).zfill(3)
+        write_poscar_file(st, filename=filename, header=header)
 
 
 if __name__ == "__main__":
