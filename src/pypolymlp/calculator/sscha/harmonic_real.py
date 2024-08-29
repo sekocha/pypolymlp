@@ -4,10 +4,10 @@ from typing import Optional
 
 import numpy as np
 
+from pypolymlp.calculator.properties import Properties
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.displacements import get_structures_from_displacements
 from pypolymlp.core.utils import mass_table
-from pypolymlp.calculator.properties import Properties
 
 const_avogadro = 6.02214076e23
 const_planck = 6.62607015e-22
@@ -17,17 +17,17 @@ const_amplitude = 1.010758017933576
 
 
 class HarmonicReal:
-
     """Class for harmonic contribution in real space.
 
     Constants
     ---------
     const_sq_angfreq_to_sq_freq_thz:
         1.602176634e-19 (eV->J) * 6.02214076e23 (avogadro) * 0.1 / (4 * pi^2)
-    
+
     const_amplitude: J*s/THz -> atomic_mass * angstrom^2
         6.62607015e-34 * 6.02214076e23 * 1e11 / (4 * pi * pi)
     """
+
     def __init__(
         self,
         supercell: PolymlpStructure,
@@ -40,7 +40,7 @@ class HarmonicReal:
 
         Parameters
         ----------
-        supercell: Supercell structure. 
+        supercell: Supercell structure.
         properties: Properties class object to calculate energies and forces.
         n_unitcells: Number of unitcells in supercell
         fc2: Second-order force constants.
@@ -214,7 +214,7 @@ class HarmonicReal:
         if self._verbose:
             entire_ids = set(list(range(len(energies))))
             outlier_ids = entire_ids - ids
-            if len(outlier_ids) > 0:
+            if self._verbose and len(outlier_ids) > 0:
                 print("Outliers are eliminated.")
                 print("- Average potential energy:", "{:f}".format(e_ave))
                 for i in sorted(outlier_ids):
@@ -230,9 +230,7 @@ class HarmonicReal:
         self._energies_full = self._energies_full[ids]
         return self
 
-    def run(
-        self, t: int = 1000, n_samples: int = 100, eliminate_outliers: bool = True
-    ):
+    def run(self, t: int = 1000, n_samples: int = 100, eliminate_outliers: bool = True):
         """Run harmonic real-space part of SSCHA.
 
         Parameters
@@ -250,8 +248,12 @@ class HarmonicReal:
         self._supercells = get_structures_from_displacements(
             self._disps, self.supercell
         )
+        if self._verbose:
+            print("Computing energies and forces using MLP.")
         energies, self._forces = self.compute_polymlp_properties(self._supercells)
         self._energies_full = energies - self._e0
+        if self._verbose:
+            print("Eliminating outliers.")
         self._eliminate_outliers()
 
         self._energies_harm = self._calc_harmonic_potentials(t=t, disps=self._disps)

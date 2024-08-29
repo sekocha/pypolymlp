@@ -63,7 +63,7 @@ class PolymlpSSCHA:
         self.supercell_polymlp.supercell_matrix = supercell_matrix
         self.supercell_polymlp.n_unitcells = self.n_unitcells
 
-        self._symfc = Symfc(self.phonopy.supercell, use_mkl=True)
+        self._symfc = Symfc(self.phonopy.supercell, use_mkl=True, log_level=0)
         self._symfc.compute_basis_set(2)
 
         self.ph_real = HarmonicReal(self.supercell_polymlp, self.prop)
@@ -127,6 +127,8 @@ class PolymlpSSCHA:
         self.ph_real.run(t=t, n_samples=n_samples, eliminate_outliers=True)
         self._sscha_current = self._compute_sscha_properties(t=t, qmesh=qmesh)
 
+        if self._verbose:
+            print("Running symfc solver.")
         fc2_new = self._run_solver_fc2()
         fc2_new = fc2_new * mixing + self.fc2 * (1 - mixing)
         delta = self._convergence_score(self.fc2, fc2_new)

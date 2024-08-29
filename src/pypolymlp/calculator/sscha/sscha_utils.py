@@ -174,7 +174,7 @@ def temperature_setting(args):
 def n_samples_setting(args, n_atom_supercell=None):
 
     if args.n_samples is None:
-        n_samples_unit = round(3200 / n_atom_supercell)
+        n_samples_unit = round(6400 / n_atom_supercell)
         args.n_samples_init = 20 * n_samples_unit
         args.n_samples_final = 100 * n_samples_unit
     else:
