@@ -16,6 +16,7 @@ from pypolymlp.core.interface_vasp import (
     parse_structures_from_poscars,
     set_data_from_structures,
 )
+from pypolymlp.core.io_polymlp import load_mlp_lammps
 from pypolymlp.mlp_dev.core.accuracy import PolymlpDevAccuracy
 from pypolymlp.mlp_dev.core.mlpdev_data import PolymlpDevData
 from pypolymlp.mlp_dev.standard.mlpdev_dataxy import (
@@ -33,6 +34,7 @@ class Pypolymlp:
         self._params = None
         self._train = None
         self._test = None
+        self._reg = None
         self._mlp_model = None
         self._multiple_datasets = False
 
@@ -438,16 +440,16 @@ class Pypolymlp:
                 batch_size=batch_size
             )
 
-        reg = Regression(polymlp).fit(
+        self._reg = Regression(polymlp).fit(
             seq=sequential,
             clear_data=True,
             batch_size=batch_size,
         )
-        self._mlp_model = reg.best_model
+        self._mlp_model = self._reg.best_model
         if output_files:
-            reg.save_mlp_lammps(filename=path_output + "/polymlp.lammps")
+            self._reg.save_mlp_lammps(filename=path_output + "/polymlp.lammps")
 
-        acc = PolymlpDevAccuracy(reg)
+        acc = PolymlpDevAccuracy(self._reg)
         acc.compute_error(
             path_output=path_output,
             verbose=verbose,
@@ -491,3 +493,13 @@ class Pypolymlp:
         It is appropriate to use the scaled coefficient to calculate properties.
         """
         return self._mlp_model.coeffs / self._mlp_model.scales
+
+    def save_mlp(self, filename="polymlp.lammps"):
+        """Save polynomial MLP as file."""
+        self._reg.save_mlp_lammps(filename=filename)
+
+    def load_mlp(self, filename="polymlp.lammps"):
+        """Load polynomial MLP from file."""
+        self._params, mlp_dict = load_mlp_lammps(filename)
+        self._mlp_model.coeffs = mlp_dict["coeffs"]
+        self._mlp_model.scales = mlp_dict["scales"]
