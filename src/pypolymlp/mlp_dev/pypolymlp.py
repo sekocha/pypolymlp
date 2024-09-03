@@ -6,6 +6,7 @@ from typing import Literal, Optional
 import numpy as np
 
 from pypolymlp.core.data_format import (
+    PolymlpDataMLP,
     PolymlpGtinvParams,
     PolymlpModelParams,
     PolymlpParams,
@@ -501,5 +502,7 @@ class Pypolymlp:
     def load_mlp(self, filename="polymlp.lammps"):
         """Load polynomial MLP from file."""
         self._params, mlp_dict = load_mlp_lammps(filename)
-        self._mlp_model.coeffs = mlp_dict["coeffs"]
-        self._mlp_model.scales = mlp_dict["scales"]
+        self._mlp_model = PolymlpDataMLP(
+            coeffs=mlp_dict["coeffs"],
+            scales=mlp_dict["scales"],
+        )
