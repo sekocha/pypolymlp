@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+"""Compute FCs using a vasp dataset."""
+
 import itertools
 
 import numpy as np
@@ -25,6 +26,10 @@ def calc_displacements(positions_array, original_positions, axis):
 
 
 if __name__ == "__main__":
+
+    """How to use.
+    python3 ~/git/pypolymlp/src/pypolymlp/symfc/compute_fcs_from_vasp.py --str_yaml $dir/polymlp_str.yaml --vaspruns $dir/finished/{00001..00100}/vasprun.xml.polymlp --vasprun_residual $dir/finished/00000/vasprun.xml.polymlp
+    """
 
     import argparse
     import signal
