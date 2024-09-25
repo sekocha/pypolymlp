@@ -71,6 +71,7 @@ class PolymlpFC:
         )
         self._fc2 = None
         self._fc3 = None
+        self._symfc = None
         self._disps = None
         self._forces = None
 
@@ -187,31 +188,52 @@ class PolymlpFC:
 
         return self
 
-    def run_fc2(self):
+    def run_fc2(self, use_mkl: bool = True, is_compact_fc: bool = True):
         """Construct fc2 basis and solve FC2"""
 
-        symfc = Symfc(
+        self._symfc = Symfc(
             self._supercell_ph,
             displacements=self._disps.transpose((0, 2, 1)),
             forces=self._forces.transpose((0, 2, 1)),
-        ).run(2)
-        self._fc2 = symfc.force_constants[2]
+            use_mkl=use_mkl,
+            log_level=1,
+        ).run(2, is_compact_fc=is_compact_fc)
+        self._fc2 = self._symfc.force_constants[2]
 
         return self
 
-    def run_fc2fc3(self, batch_size: int = 100, use_mkl: bool = True):
+    def run_fc2fc3(
+        self,
+        batch_size: int = 100,
+        use_mkl: bool = True,
+        is_compact_fc: bool = True,
+    ):
         """Construct fc2 + fc3 basis and solve FC2 + FC3"""
 
         cutoff = {3: self._cutoff}
-        symfc = Symfc(
+        self._symfc = Symfc(
             self._supercell_ph,
             displacements=self._disps.transpose((0, 2, 1)),
             forces=self._forces.transpose((0, 2, 1)),
             cutoff=cutoff,
             use_mkl=use_mkl,
             log_level=1,
-        ).run(3, batch_size=batch_size)
-        self._fc2, self._fc3 = symfc.force_constants[2], symfc.force_constants[3]
+        ).run(3, batch_size=batch_size, is_compact_fc=is_compact_fc)
+        self._fc2, self._fc3 = (
+            self._symfc.force_constants[2],
+            self._symfc.force_constants[3],
+        )
+        if self._verbose:
+            print(
+                "Basis size (FC2):",
+                self._symfc.basis_set[2].basis_set.shape,
+                flush=True,
+            )
+            print(
+                "Basis size (FC3):",
+                self._symfc.basis_set[3].basis_set.shape,
+                flush=True,
+            )
 
         return self
 
@@ -222,6 +244,7 @@ class PolymlpFC:
         batch_size: int = 100,
         write_fc: bool = True,
         only_fc2: bool = False,
+        is_compact_fc: bool = True,
     ):
         """Calculate forces using polymlp and estimate FCs."""
 
@@ -241,9 +264,9 @@ class PolymlpFC:
 
         t1 = time.time()
         if only_fc2:
-            self.run_fc2()
+            self.run_fc2(is_compact_fc=is_compact_fc)
         else:
-            self.run_fc2fc3(batch_size=batch_size)
+            self.run_fc2fc3(batch_size=batch_size, is_compact_fc=is_compact_fc)
         t2 = time.time()
         if self._verbose:
             print("Time (Symfc basis and solver)", t2 - t1, flush=True)
@@ -301,6 +324,10 @@ class PolymlpFC:
     @property
     def fc3(self):
         return self._fc3
+
+    @property
+    def symfc_obj(self):
+        return self._symfc
 
     @property
     def supercell_phonopy(self):

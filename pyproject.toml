@@ -18,7 +18,7 @@ authors = [{ name = "Atsuto Seko", email = "seko@cms.mtl.kyoto-u.ac.jp" }]
 maintainers = [{ name = "Atsuto Seko", email = "seko@cms.mtl.kyoto-u.ac.jp" }]
 requires-python = ">=3.9"
 dependencies = [
-    "numpy < 2.0.0",
+    "numpy !=2.0.*",
     "scipy",
     "PyYAML >= 5.3",
     "setuptools >= 61.0",
