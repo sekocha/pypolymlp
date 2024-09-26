@@ -8,7 +8,7 @@
 ## Required libraries and python modules
 
 - python >= 3.9
-- numpy < 2.0.0
+- numpy != 2.0.*
 - scipy
 - pyyaml
 - setuptools
