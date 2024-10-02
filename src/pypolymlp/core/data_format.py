@@ -138,6 +138,7 @@ class PolymlpModelParams:
     feature_type: Literal["pair", "gtinv"] = "gtinv"
     pair_type: str = "gaussian"
     gtinv: Optional[PolymlpGtinvParams] = None
+    pair_params_conditional: Optional[dict] = None
 
     def __post_init__(self):
         self.check_errors()

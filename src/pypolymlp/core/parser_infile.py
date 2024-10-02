@@ -14,11 +14,11 @@ class InputParser:
         f.close()
 
         self.train, self.test = [], []
-        self.__data = dict()
+        self._data = dict()
         for line in lines:
             d = line.split()
             if len(d) > 1:
-                self.__data[d[0]] = d[1:]
+                self._data[d[0]] = d[1:]
                 if "train_data" == d[0]:
                     self.train.append(d[1:])
                 elif "test_data" == d[0]:
@@ -34,7 +34,7 @@ class InputParser:
         return_array=False,
     ):
         try:
-            params = list(self.__data[tag])
+            params = list(self._data[tag])
         except KeyError:
             if required:
                 raise KeyError(" Tag", tag, "is not found.")
