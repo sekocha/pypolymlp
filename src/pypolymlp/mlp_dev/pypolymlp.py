@@ -131,10 +131,10 @@ class Pypolymlp:
                 model_type=model_type,
                 max_p=max_p,
                 max_l=max_l,
-                pair_params=pair_params,
                 feature_type=feature_type,
-                pair_type="gaussian",
                 gtinv=gtinv,
+                pair_type="gaussian",
+                pair_params=pair_params,
             )
 
             self._params = PolymlpParams(

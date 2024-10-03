@@ -201,10 +201,10 @@ def load_mlp_lammps(filename="polymlp.lammps"):
         model_type=model_type,
         max_p=max_p,
         max_l=max_l,
-        pair_params=pair_params,
         feature_type=feature_type,
-        pair_type=pair_type,
         gtinv=gtinv,
+        pair_type=pair_type,
+        pair_params=pair_params,
     )
     params = PolymlpParams(
         n_type=n_type,

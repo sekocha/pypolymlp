@@ -47,8 +47,8 @@ def run():
     polymlp_in = PolymlpDevData()
     polymlp_in.parse_infiles(args.infile, verbose=verbose)
     polymlp_in.parse_datasets()
-    polymlp_in.write_polymlp_params_yaml(filename="polymlp_params.yaml")
-    n_features = polymlp_in.n_features
+    # polymlp_in.write_polymlp_params_yaml(filename="polymlp_params.yaml")
+    # n_features = polymlp_in.n_features
 
     if args.learning_curve:
         t1 = time.time()
@@ -66,7 +66,8 @@ def run():
         batch_size = None
         if not args.no_sequential:
             if args.batch_size is None:
-                batch_size = max((10000000 // n_features), 128)
+                # batch_size = max((10000000 // n_features), 128)
+                batch_size = 100000
             else:
                 batch_size = args.batch_size
             if verbose:
