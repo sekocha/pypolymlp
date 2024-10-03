@@ -122,7 +122,7 @@ class ParamsParser:
             max_l = 0
             gtinv_params = PolymlpGtinvParams(order=0, max_l=[], n_type=n_type)
 
-        pair_params, pair_params_conditional = self._get_pair_params(cutoff)
+        pair_params, pair_params_cond = self._get_pair_params(cutoff)
         model = PolymlpModelParams(
             cutoff,
             model_type,
@@ -132,21 +132,43 @@ class ParamsParser:
             feature_type=feature_type,
             pair_type="gaussian",
             gtinv=gtinv_params,
-            pair_params_conditional=pair_params_conditional,
+            pair_params_conditional=pair_params_cond,
         )
 
         return model
 
     def _get_pair_params(self, cutoff):
-        d_params1 = [1.0, 1.0, 1]
-        params1 = self.parser.get_sequence("gaussian_params1", default=d_params1)
-        d_params2 = [0.0, cutoff - 1.0, 7]
-        params2 = self.parser.get_sequence("gaussian_params2", default=d_params2)
-        pair_params = list(itertools.product(params1, params2))
-        pair_params.append((0.0, 0.0))
+        # d_params1 = [1.0, 1.0, 1]
+        # params1 = self.parser.get_sequence("gaussian_params1", default=d_params1)
+        # d_params2 = [0.0, cutoff - 1.0, 7]
+        # params2 = self.parser.get_sequence("gaussian_params2", default=d_params2)
+        # pair_params = list(itertools.product(params1, params2))
+        # pair_params.append((0.0, 0.0))
 
-        pair_params_conditional = None
-        return pair_params, pair_params_conditional
+        d_params1 = [1.0, 1.0, 1]
+        d_params2 = [0.0, cutoff - 1.0, 7]
+        params1, cond_params1, cond1 = self.parser.get_gaussian_params(
+            "gaussian_params1",
+            default=d_params1,
+        )
+        params2, cond_params2, cond2 = self.parser.get_gaussian_params(
+            "gaussian_params2",
+            default=d_params2,
+        )
+
+        cond = cond1 or cond2
+        if cond:
+            pair_params = None
+            pair_params_cond = dict()
+            for k, v in cond_params1.items():
+                pair_params_cond[k] = list(itertools.product(v, cond_params2[k]))
+        else:
+            pair_params = list(itertools.product(params1, params2))
+            pair_params.append((0.0, 0.0))
+            pair_params_cond = None
+        print(pair_params)
+        print(pair_params_cond)
+        return pair_params, pair_params_cond
 
     def _get_atomic_energy(self, n_type: int):
 
