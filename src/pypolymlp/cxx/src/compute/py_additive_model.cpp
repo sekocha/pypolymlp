@@ -20,48 +20,18 @@ PyAdditiveModel::PyAdditiveModel(const std::vector<py::dict>& params_dict_array,
     std::vector<FunctionFeatures> features_array;
     bool element_swap, print_memory;
     for (const auto& params_dict: params_dict_array){
-        const int n_type = params_dict["n_type"].cast<int>();
+        struct feature_params fp;
         element_swap = params_dict["element_swap"].cast<bool>();
         print_memory = params_dict["print_memory"].cast<bool>();
-
-        const py::dict& model = params_dict["model"].cast<py::dict>();
-        const auto& pair_params = model["pair_params"].cast<vector2d>();
-        const double& cutoff = model["cutoff"].cast<double>();
-        const std::string& pair_type = model["pair_type"].cast<std::string>();
-        const std::string& feature_type
-                = model["feature_type"].cast<std::string>();
-        const int& model_type = model["model_type"].cast<int>();
-        const int& maxp = model["max_p"].cast<int>();
-        const int& maxl = model["max_l"].cast<int>();
-
-        const py::dict& gtinv = model["gtinv"].cast<py::dict>();
-        const auto& lm_array = gtinv["lm_seq"].cast<vector3i>();
-        const auto& l_comb = gtinv["l_comb"].cast<vector2i>();
-        const auto& lm_coeffs = gtinv["lm_coeffs"].cast<vector2d>();
-
-        const bool force = false;
-        struct feature_params fp = {n_type,
-                                    force,
-                                    pair_params,
-                                    cutoff,
-                                    pair_type,
-                                    feature_type,
-                                    model_type,
-                                    maxp,
-                                    maxl,
-                                    lm_array,
-                                    l_comb,
-                                    lm_coeffs};
+        convert_params_dict_to_feature_params(params_dict, fp);
         fp_array.emplace_back(fp);
 
-        // added for local_fast and model_fast
         ModelParams modelp(fp, element_swap);
         modelp_array.emplace_back(modelp);
-
         const Features f_obj(fp, modelp);
+
         FunctionFeatures features_obj(fp, modelp, f_obj);
         features_array.emplace_back(features_obj);
-        //
     }
 
     std::vector<bool> force_st;

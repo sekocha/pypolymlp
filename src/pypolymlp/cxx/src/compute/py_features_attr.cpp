@@ -9,6 +9,10 @@
 
 PyFeaturesAttr::PyFeaturesAttr(const py::dict& params_dict){
 
+    struct feature_params fp;
+    const bool& element_swap = params_dict["element_swap"].cast<bool>();
+    convert_params_dict_to_feature_params(params_dict, fp);
+/*
     const int n_type = params_dict["n_type"].cast<int>();
     const bool& element_swap = params_dict["element_swap"].cast<bool>();
 
@@ -39,13 +43,14 @@ PyFeaturesAttr::PyFeaturesAttr(const py::dict& params_dict){
                                 lm_array,
                                 l_comb,
                                 lm_coeffs};
-
+*/
     ModelParams modelp(fp, element_swap);
     type_comb_pair = modelp.get_type_comb_pair();
-    const int n_fn = pair_params.size();
+    // TODO: must be revised.
+    const int n_fn = fp.params.size();
     const int n_tc = type_comb_pair.size();
 
-    if (feature_type == "pair"){
+    if (fp.des_type == "pair"){
         for (int tc = 0; tc < n_tc; ++tc){
             for (int n = 0; n < n_fn; ++n){
                 radial_ids.emplace_back(n);
@@ -53,7 +58,7 @@ PyFeaturesAttr::PyFeaturesAttr(const py::dict& params_dict){
             }
         }
     }
-    else if (feature_type == "gtinv"){
+    else if (fp.des_type == "gtinv"){
         const auto& linear_all = modelp.get_linear_term_gtinv();
         for (int n = 0; n < n_fn; ++n){
             for (auto& linear: linear_all){
