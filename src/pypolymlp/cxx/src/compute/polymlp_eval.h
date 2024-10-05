@@ -24,8 +24,8 @@ class PolymlpEval {
     };
 
     struct DataPolyMLP pot;
-    vector2i type_comb;
-    void set_type_comb();
+    vector2i type_pairs;
+    //void set_type_pairs();
 
     /* for feature_type = pair */
     void compute_antc(const vector2d& positions_c,

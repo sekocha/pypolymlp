@@ -20,35 +20,28 @@ LocalFast::LocalFast(const int& n_atom_i,
     n_type = fp.n_type;
     n_fn = modelp.get_n_fn();
 
-    set_type_comb(modelp);
+    set_type_pairs(modelp);
 
 }
 
 LocalFast::~LocalFast(){}
 
-void LocalFast::set_type_comb(const ModelParams& modelp){
+void LocalFast::set_type_pairs(const ModelParams& modelp){
 
-    // for gtinv
-    if (fp.des_type == "gtinv"){
-        type_comb.resize(n_type);
-        for (int type2 = 0; type2 < n_type; ++type2){
-            for (size_t i = 0; i < modelp.get_type_comb_pair().size(); ++i){
-                const auto &tc = modelp.get_type_comb_pair()[i];
-                if (tc[type1].size() > 0 and tc[type1][0] == type2){
-                    type_comb[type2] = i;
-                    break;
-                }
-            }
-        }
-    }
-    else if (fp.des_type == "pair"){
+    type_pairs = modelp.get_type_pairs()[type1];
+
+    if (fp.des_type == "pair"){
+        size_pair = n_fn * n_type;
+        for (int type2 = 0; type2 < n_type; ++type2) type2_array.emplace_back(type2);
+        /*
         size_pair = 0;
-        for (const auto& tc: modelp.get_type_comb_pair()){
+        for (const auto& tc: modelp.get_type_pairs()){
             if (tc[type1].size() > 0) {
                 size_pair += n_fn;
                 type2_array.emplace_back(tc[type1][0]);
             }
         }
+        */
     }
 }
 
@@ -258,7 +251,7 @@ void LocalFast::compute_anlm(const vector2d& dis_a,
     double dis,cc;
 
     for (int type2 = 0; type2 < n_type; ++type2){
-        const int tc12 = type_comb[type2];
+        const int tc12 = type_pairs[type2];
         for (size_t j = 0; j < dis_a[type2].size(); ++j){
             dis = dis_a[type2][j];
             if (dis < fp.cutoff){
@@ -307,7 +300,7 @@ void LocalFast::compute_anlm_d(const vector2d& dis_a,
     int atom2, ylmkey;
 
     for (int type2 = 0; type2 < n_type; ++type2){
-        const int tc12 = type_comb[type2];
+        const int tc12 = type_pairs[type2];
         for (size_t j = 0; j < dis_a[type2].size(); ++j){
             dis = dis_a[type2][j];
             delx = diff_a[type2][j][0];

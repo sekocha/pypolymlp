@@ -46,7 +46,7 @@ struct feature_params {
     int n_type;
     bool force;
     vector2d params;
-    vector4d params_conditional;
+    vector3i params_conditional;
     double cutoff;
     std::string pair_type;
     std::string des_type;

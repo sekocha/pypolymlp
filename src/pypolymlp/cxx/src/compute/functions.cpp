@@ -84,20 +84,16 @@ void convert_params_dict_to_feature_params(const py::dict& params_dict,
     const auto& lm_coeffs = gtinv["lm_coeffs"].cast<vector2d>();
 
     const bool& pair_cond = model["pair_conditional"].cast<bool>();
-
-    vector2d pair_params;
-    vector4d pair_params_cond;
-    if (pair_cond == false){
-        pair_params = model["pair_params"].cast<vector2d>();
-    }
-    else {
+    const auto& pair_params = model["pair_params"].cast<vector2d>();
+    vector3i pair_params_cond;
+    if (pair_cond == true){
         const auto& dict1 = model["pair_params_conditional"].cast<py::dict>();
         pair_params_cond.resize(n_type);
         for (int i = 0; i < n_type; ++i){
             pair_params_cond[i].resize(n_type);
             for (int j = 0; j <= i; ++j){
                 py::tuple tup = py::make_tuple(j, i);
-                const auto& params = dict1[tup].cast<vector2d>();
+                const auto& params = dict1[tup].cast<vector1i>();
                 pair_params_cond[j][i] = params;
             }
         }

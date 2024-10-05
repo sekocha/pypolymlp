@@ -20,27 +20,29 @@ PolymlpEval::PolymlpEval(const feature_params& fp, const vector1d& coeffs){
     pot.modelp = ModelParams(pot.fp, icharge);
     const Features f_obj(pot.fp, pot.modelp);
     pot.p_obj = Potential(f_obj, coeffs_rev);
-    set_type_comb();
+
+    type_pairs = pot.modelp.get_type_pairs();
 
 }
 
 PolymlpEval::~PolymlpEval(){}
+/*
+void PolymlpEval::set_type_pairs(){
 
-void PolymlpEval::set_type_comb(){
-
-    type_comb = vector2i(pot.fp.n_type, vector1i(pot.fp.n_type));
+    type_pairs = vector2i(pot.fp.n_type, vector1i(pot.fp.n_type));
     for (int type1 = 0; type1 < pot.fp.n_type; ++type1){
         for (int type2 = 0; type2 < pot.fp.n_type; ++type2){
-            for (size_t i = 0; i < pot.modelp.get_type_comb_pair().size(); ++i){
-                const auto &tc = pot.modelp.get_type_comb_pair()[i];
+            for (size_t i = 0; i < pot.modelp.get_type_pairs().size(); ++i){
+                const auto &tc = pot.modelp.get_type_pairs()[i];
                 if (tc[type1].size() > 0 and tc[type1][0] == type2){
-                    type_comb[type1][type2] = i;
+                    type_pairs[type1][type2] = i;
                     break;
                 }
             }
         }
     }
 }
+*/
 
 void PolymlpEval::eval(const vector2d& positions_c,
                        const vector1i& types,
@@ -102,7 +104,7 @@ void PolymlpEval::eval_pair(const vector2d& positions_c,
                 e_ij = 0.0, f_ij = 0.0;
                 int head_key(0);
                 for (const auto& ntc: ntc_map){
-                    if (type_comb[type1][type2] == ntc.tc){
+                    if (type_pairs[type1][type2] == ntc.tc){
                         const auto& prod_ei = prod_sum_e[i][head_key];
                         const auto& prod_ej = prod_sum_e[j][head_key];
                         const auto& prod_fi = prod_sum_f[i][head_key];
@@ -160,7 +162,7 @@ void PolymlpEval::compute_antc(const vector2d& positions_c,
                 get_fn_(dis, pot.fp, fn);
                 int idx(0);
                 for (const auto& ntc: ntc_map){
-                    if (type_comb[type1][type2] == ntc.tc){
+                    if (type_pairs[type1][type2] == ntc.tc){
                         antc[i][idx] += fn[ntc.n];
                         antc[j][idx] += fn[ntc.n];
                     }
@@ -279,7 +281,7 @@ void PolymlpEval::eval_gtinv(const vector2d& positions_c,
                          ylm, ylm_dx, ylm_dy, ylm_dz);
 
                 e_ij = 0.0, fx = 0.0, fy = 0.0, fz = 0.0;
-                const int tc12 = type_comb[type1][type2];
+                const int tc12 = type_pairs[type1][type2];
                 for (const auto& nlmtc: nlmtc_map_no_conj){
                     const auto& lm_attr = nlmtc.lm;
                     const int ylmkey = lm_attr.ylmkey;
@@ -364,7 +366,7 @@ void PolymlpEval::compute_anlmtc(const vector2d& positions_c,
                 const auto &sph = cartesian_to_spherical_(vector1d{dx,dy,dz});
                 get_fn_(dis, pot.fp, fn);
                 get_ylm_(sph[0], sph[1], pot.fp.maxl, ylm);
-                const int tc12 = type_comb[type1][type2];
+                const int tc12 = type_pairs[type1][type2];
                 for (const auto& nlmtc: nlmtc_map_no_conj){
                     const auto& lm_attr = nlmtc.lm;
                     const int idx = nlmtc.nlmtc_noconj_key;

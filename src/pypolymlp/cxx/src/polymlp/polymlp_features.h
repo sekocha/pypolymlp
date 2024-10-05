@@ -50,7 +50,7 @@ class Features {
     std::vector<lmAttribute> lm_map;
     std::vector<nlmtcAttribute> nlmtc_map_no_conjugate, nlmtc_map;
     std::vector<ntcAttribute> ntc_map;
-    vector3i type_comb_pair;
+    vector2i type_pairs;
 
     vector2i feature_combinations;
     MultipleFeatures mfeatures;

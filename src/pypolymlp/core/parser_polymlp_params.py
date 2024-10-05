@@ -47,6 +47,7 @@ class ParamsParser:
             "rearrange_by_elements", default=True, dtype=bool
         )
         element_order = elements if rearrange else None
+        self._elements = elements
         if element_order is not None:
             self._atomtypes = dict()
             for i, ele in enumerate(element_order):
@@ -144,26 +145,34 @@ class ParamsParser:
 
     def _get_pair_params(self, cutoff):
 
-        params1, cond_params1, cond1 = self.parser.get_gaussian_params(
-            "gaussian_params1",
-            default=(1.0, 1.0, 1),
-        )
-        params2, cond_params2, cond2 = self.parser.get_gaussian_params(
+        params1 = self.parser.get_sequence("gaussian_params1", default=(1.0, 1.0, 1))
+        params2 = self.parser.get_sequence(
             "gaussian_params2",
             default=(0.0, cutoff - 1.0, 7),
         )
+        pair_params = list(itertools.product(params1, params2))
+        pair_params.append((0.0, 0.0))
 
-        pair_params_cond = dict()
-        cond = cond1 or cond2
+        distance = self.parser.distance
+        cond = False if len(distance) == 0 else True
+
+        element_pairs = itertools.combinations_with_replacement(self._elements, 2)
+        pair_params_indices = dict()
         if cond:
-            pair_params = [[]]
-            for k, v in cond_params1.items():
-                key = (self._atomtypes[k[0]], self._atomtypes[k[1]])
-                pair_params_cond[key] = list(itertools.product(v, cond_params2[k]))
-        else:
-            pair_params = list(itertools.product(params1, params2))
-            pair_params.append((0.0, 0.0))
-        return pair_params, pair_params_cond, cond
+            for ele_pair in element_pairs:
+                key = (self._atomtypes[ele_pair[0]], self._atomtypes[ele_pair[1]])
+                if ele_pair not in distance:
+                    pair_params_indices[key] = list(range(len(pair_params)))
+                else:
+                    match = [len(pair_params) - 1]
+                    for dis in distance[ele_pair]:
+                        for i, p in enumerate(pair_params[:-1]):
+                            if dis < p[1] + 1 / p[0] and dis > p[1] - 1 / p[0]:
+                                match.append(i)
+                    pair_params_indices[key] = sorted(set(match))
+        print(cond)
+        print(pair_params)
+        return pair_params, pair_params_indices, cond
 
     def _get_atomic_energy(self, n_type: int):
 

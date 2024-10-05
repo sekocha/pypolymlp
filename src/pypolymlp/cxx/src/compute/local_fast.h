@@ -20,9 +20,9 @@ class LocalFast{
 
     int n_atom, atom1, type1, n_fn, n_des, n_type, size_pair;
     struct feature_params fp;
-    vector1i type2_array, type_comb;
+    vector1i type2_array, type_pairs;
 
-    void set_type_comb(const ModelParams& modelp);
+    void set_type_pairs(const ModelParams& modelp);
     void compute_linear_features(
         const vector1d& prod_anlmtc,
         const FunctionFeatures& features,

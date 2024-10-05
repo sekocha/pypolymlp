@@ -23,9 +23,9 @@ Features::Features(){}
 Features::Features(const feature_params& fp, const ModelParams& modelp){
 
     n_fn = fp.params.size();
-    n_tc = modelp.get_n_type_comb();
+    n_tc = modelp.get_n_type_pairs();
     n_type = modelp.get_n_type();
-    type_comb_pair = modelp.get_type_comb_pair();
+    type_pairs = modelp.get_type_pairs();
 
     MultipleFeatures mfeatures1;
     if (fp.des_type == "pair"){
@@ -58,12 +58,19 @@ MultipleFeatures Features::set_linear_features_pair(){
     std::vector<SingleFeature> feature_array;
     for (int tc = 0; tc < n_tc; ++tc){
         vector1i type1;
-        for (auto& tcp1: type_comb_pair[tc]){
+        for (int t1 = 0; t1 < n_type; ++t1){
+            const auto& tp_t1 = type_pairs[t1];
+            if (std::find(tp_t1.begin(), tp_t1.end(), tc) != tp_t1.end()){
+                type1.emplace_back(t1);
+            }
+        }
+        /*
+        for (auto& tcp1: type_pairs[tc]){
             for (auto& tcp2: tcp1){
                 type1.emplace_back(tcp2);
             }
         }
-
+        */
         for (int n = 0; n < n_fn; ++n){
             SingleFeature feature;
             SingleTerm single;

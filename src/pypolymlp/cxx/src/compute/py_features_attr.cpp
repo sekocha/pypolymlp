@@ -45,10 +45,10 @@ PyFeaturesAttr::PyFeaturesAttr(const py::dict& params_dict){
                                 lm_coeffs};
 */
     ModelParams modelp(fp, element_swap);
-    type_comb_pair = modelp.get_type_comb_pair();
+    type_pairs = modelp.get_type_pairs();
     // TODO: must be revised.
     const int n_fn = fp.params.size();
-    const int n_tc = type_comb_pair.size();
+    const int n_tc = modelp.get_n_type_pairs();
 
     if (fp.des_type == "pair"){
         for (int tc = 0; tc < n_tc; ++tc){
@@ -91,6 +91,6 @@ const vector2i& PyFeaturesAttr::get_tcomb_ids() const{
 const vector2i& PyFeaturesAttr::get_polynomial_ids() const{
     return polynomial_ids;
 }
-const vector3i& PyFeaturesAttr::get_type_comb_pair() const{
-    return type_comb_pair;
+const vector2i& PyFeaturesAttr::get_type_pairs() const{
+    return type_pairs;
 }

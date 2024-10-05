@@ -77,7 +77,7 @@ PYBIND11_MODULE(libmlpcpp, m) {
                 py::return_value_policy::reference_internal)
         .def("get_polynomial_ids", &PyFeaturesAttr::get_polynomial_ids,
                 py::return_value_policy::reference_internal)
-        .def("get_type_comb_pair", &PyFeaturesAttr::get_type_comb_pair,
+        .def("get_type_pairs", &PyFeaturesAttr::get_type_pairs,
                 py::return_value_policy::reference_internal)
         ;
 
