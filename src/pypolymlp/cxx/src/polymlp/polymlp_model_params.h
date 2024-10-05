@@ -57,7 +57,6 @@ class ModelParams{
     bool check_type_pairs(const vector1i& index, const int& type1) const;
     void uniq_gtinv_type(const feature_params& fp);
 
-//    bool check_type(const vector2i &type1_array);
     vector1i intersection_types_in_polynomial(const vector2i &type1_array);
 
     void initial_setting(const struct feature_params& fp);
@@ -82,10 +81,8 @@ class ModelParams{
     const vector1i& get_comb2_indices(const int type) const;
     const vector1i& get_comb3_indices(const int type) const;
 
-    const std::vector<struct LinearTermGtinv>& get_linear_term_gtinv() const;
-
     const vector2i& get_type_pairs() const;
-//    vector1i get_type_pairs(const vector1i& tc_index, const int& type1);
+    const std::vector<struct LinearTermGtinv>& get_linear_term_gtinv() const;
 
 };
 

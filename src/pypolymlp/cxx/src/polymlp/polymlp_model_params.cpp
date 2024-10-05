@@ -26,150 +26,33 @@ ModelParams::ModelParams(const struct feature_params& fp, const bool icharge){
 ModelParams::~ModelParams(){}
 
 void ModelParams::set_type_pairs(){
-    // Setting two elements in one array such as {0,1}, ... is unavailable.
-    // If using such a setting, codes for computing features should be revised.
+
     type_pairs.resize(n_type);
     for (auto& tp1: type_pairs) tp1.resize(n_type);
 
-    if (n_type == 1) {
-        n_type_pairs = 1;
-        type_pairs[0][0] = 0;
+    int tp = 0;
+    for (int i = 0; i < n_type; ++i){
+        for (int j = 0; j < n_type; ++j){
+            if (i <= j){
+                type_pairs[i][j] = type_pairs[j][i] = tp;
+                ++tp;
+            }
+        }
     }
-    else if (n_type == 2) {
-        n_type_pairs = 3;
-        type_pairs[0][0] = 0;
-        type_pairs[0][1] = type_pairs[1][0] = 1;
-        type_pairs[1][1] = 2;
-    }
-    else if (n_type == 3) {
-        n_type_pairs = 6;
-        type_pairs[0][0] = 0;
-        type_pairs[0][1] = type_pairs[1][0] = 1;
-        type_pairs[0][2] = type_pairs[2][0] = 2;
-        type_pairs[1][1] = 3;
-        type_pairs[1][2] = type_pairs[2][1] = 4;
-        type_pairs[2][2] = 5;
-    }
-    else if (n_type == 4) {
-        n_type_pairs = 10;
-        type_pairs[0][0] = 0;
-        type_pairs[0][1] = type_pairs[1][0] = 1;
-        type_pairs[0][2] = type_pairs[2][0] = 2;
-        type_pairs[0][3] = type_pairs[3][0] = 3;
-        type_pairs[1][1] = 4;
-        type_pairs[1][2] = type_pairs[2][1] = 5;
-        type_pairs[1][3] = type_pairs[3][1] = 6;
-        type_pairs[2][2] = 7;
-        type_pairs[2][3] = type_pairs[3][2] = 8;
-        type_pairs[3][3] = 9;
-    }
-    else if (n_type == 5) {
-        n_type_pairs = 15;
-        type_pairs[0][0] = 0;
-        type_pairs[0][1] = type_pairs[1][0] = 1;
-        type_pairs[0][2] = type_pairs[2][0] = 2;
-        type_pairs[0][3] = type_pairs[3][0] = 3;
-        type_pairs[0][4] = type_pairs[4][0] = 4;
-        type_pairs[1][1] = 5;
-        type_pairs[1][2] = type_pairs[2][1] = 6;
-        type_pairs[1][3] = type_pairs[3][1] = 7;
-        type_pairs[1][4] = type_pairs[4][1] = 8;
-        type_pairs[2][2] = 9;
-        type_pairs[2][3] = type_pairs[3][2] = 10;
-        type_pairs[2][4] = type_pairs[4][2] = 11;
-        type_pairs[3][3] = 12;
-        type_pairs[3][4] = type_pairs[4][3] = 13;
-        type_pairs[4][4] = 14;
-    }
-    else if (n_type == 6) {
-        n_type_pairs = 21;
-        type_pairs[0][0] = 0;
-        type_pairs[0][1] = type_pairs[1][0] = 1;
-        type_pairs[0][2] = type_pairs[2][0] = 2;
-        type_pairs[0][3] = type_pairs[3][0] = 3;
-        type_pairs[0][4] = type_pairs[4][0] = 4;
-        type_pairs[0][5] = type_pairs[5][0] = 5;
-        type_pairs[1][1] = 6;
-        type_pairs[1][2] = type_pairs[2][1] = 7;
-        type_pairs[1][3] = type_pairs[3][1] = 8;
-        type_pairs[1][4] = type_pairs[4][1] = 9;
-        type_pairs[1][5] = type_pairs[5][1] = 10;
-        type_pairs[2][2] = 11;
-        type_pairs[2][3] = type_pairs[3][2] = 12;
-        type_pairs[2][4] = type_pairs[4][2] = 13;
-        type_pairs[2][5] = type_pairs[5][2] = 14;
-        type_pairs[3][3] = 15;
-        type_pairs[3][4] = type_pairs[4][3] = 16;
-        type_pairs[3][5] = type_pairs[5][3] = 17;
-        type_pairs[4][4] = 18;
-        type_pairs[4][5] = type_pairs[5][4] = 19;
-        type_pairs[5][5] = 20;
-    }
-    else if (n_type == 7) {
-        n_type_pairs = 28;
-        type_pairs[0][0] = 0;
-        type_pairs[0][1] = type_pairs[1][0] = 1;
-        type_pairs[0][2] = type_pairs[2][0] = 2;
-        type_pairs[0][3] = type_pairs[3][0] = 3;
-        type_pairs[0][4] = type_pairs[4][0] = 4;
-        type_pairs[0][5] = type_pairs[5][0] = 5;
-        type_pairs[0][6] = type_pairs[6][0] = 6;
-        type_pairs[1][1] = 7;
-        type_pairs[1][2] = type_pairs[2][1] = 8;
-        type_pairs[1][3] = type_pairs[3][1] = 9;
-        type_pairs[1][4] = type_pairs[4][1] = 10;
-        type_pairs[1][5] = type_pairs[5][1] = 11;
-        type_pairs[1][6] = type_pairs[6][1] = 12;
-        type_pairs[2][2] = 13;
-        type_pairs[2][3] = type_pairs[3][2] = 14;
-        type_pairs[2][4] = type_pairs[4][2] = 15;
-        type_pairs[2][5] = type_pairs[5][2] = 16;
-        type_pairs[2][6] = type_pairs[6][2] = 17;
-        type_pairs[3][3] = 18;
-        type_pairs[3][4] = type_pairs[4][3] = 19;
-        type_pairs[3][5] = type_pairs[5][3] = 20;
-        type_pairs[3][6] = type_pairs[6][3] = 21;
-        type_pairs[4][4] = 22;
-        type_pairs[4][5] = type_pairs[5][4] = 23;
-        type_pairs[4][6] = type_pairs[6][4] = 24;
-        type_pairs[5][5] = 25;
-        type_pairs[5][6] = type_pairs[6][5] = 26;
-        type_pairs[6][6] = 27;
-    }
-    else {
-        std::cout << "Polymlp is now available for up to 7-ary systems." << std::endl;
-        exit(8);
-    }
+    n_type_pairs = tp;
 }
 
 void ModelParams::set_type_pairs_charge(){
-    // Setting two elements in one array such as {0,1}, ... is unavailable.
-    // If using such a setting, codes for computing features should be revised.
-    type_pairs.resize(n_type);
-    for (auto& tp1: type_pairs) tp1.resize(n_type);
 
-    if (n_type == 2) {
-        n_type_pairs = 4;
-        type_pairs[0][0] = 0;
-        type_pairs[0][1] = 1;
-        type_pairs[1][0] = 2;
-        type_pairs[1][1] = 3;
+    int tp = 0;
+    type_pairs.resize(n_type);
+    for (int i = 0; i < n_type; ++i){
+        for (int j = 0; j < n_type; ++j){
+            type_pairs[i].emplace_back(tp);
+            ++tp;
+        }
     }
-    else if (n_type == 3) {
-        n_type_pairs = 9;
-        type_pairs[0][0] = 0;
-        type_pairs[0][1] = 1;
-        type_pairs[0][2] = 2;
-        type_pairs[1][0] = 3;
-        type_pairs[1][1] = 4;
-        type_pairs[1][2] = 5;
-        type_pairs[2][0] = 6;
-        type_pairs[2][1] = 7;
-        type_pairs[2][2] = 8;
-    }
-    else {
-        exit(8);
-    }
+    n_type_pairs = n_type * n_type;
 }
 
 void ModelParams::initial_setting(const struct feature_params& fp){
@@ -295,51 +178,6 @@ void ModelParams::uniq_gtinv_type(const feature_params& fp){
     }
 }
 
-/*
-void ModelParams::uniq_gtinv_type(const feature_params& fp){
-
-    const vector2i &l_comb = fp.l_comb;
-    vector1i pinput(type_pairs.size());
-    for (size_t i = 0; i < type_pairs.size(); ++i) pinput[i] = i;
-
-    const int gtinv_order = (*(l_comb.end()-1)).size();
-    vector3i perm_array(gtinv_order);
-    for (int i = 0; i < gtinv_order; ++i){
-        vector2i perm;
-        Permutenr(pinput, vector1i({}), perm, i+1);
-        for (const auto& p1: perm){
-            for (int type1 = 0; type1 < n_type; ++type1){
-                if (check_type_pairs(p1, type1) == true){
-                    perm_array[i].emplace_back(p1);
-                    break;
-                }
-            }
-        }
-    }
-
-    for (size_t i = 0; i < l_comb.size(); ++i){
-        const vector1i& lc = l_comb[i];
-        std::set<std::multiset<std::pair<int,int> > > uniq_lmt;
-        for (const auto &p: perm_array[lc.size()-1]){
-            std::multiset<std::pair<int, int> > tmp;
-            for (size_t j = 0; j < p.size(); ++j){
-                tmp.insert(std::make_pair(lc[j], p[j]));
-            }
-            uniq_lmt.insert(tmp);
-        }
-        for (const auto& lt: uniq_lmt){
-            vector1i tc, t1a;
-            for (const auto& lt1: lt) tc.emplace_back(lt1.second);
-            for (int type1 = 0; type1 < n_type; ++type1){
-                if (check_type_pairs(tc, type1) == true)
-                    t1a.emplace_back(type1);
-            }
-            linear_array_g.emplace_back(LinearTermGtinv({int(i),tc,t1a}));
-        }
-    }
-}
-*/
-
 void ModelParams::combination1_gtinv(){
 
     int i_comb;
@@ -406,23 +244,6 @@ void ModelParams::combination3_gtinv(const vector1i& iarray){
         }
     }
 }
-/*
-bool ModelParams::check_type(const vector2i &type1_array){
-
-    for (int type1 = 0; type1 < n_type; ++type1){
-        bool tag = true;
-        for (const auto &t1: type1_array){
-            if (std::find(t1.begin(),t1.end(),type1) == t1.end()){
-                tag = false;
-                break;
-            }
-        }
-        if (tag == true) return true;
-    }
-    return false;
-}
-*/
-
 
 vector1i ModelParams::intersection_types_in_polynomial(
     const vector2i &type1_array
@@ -444,7 +265,6 @@ vector1i ModelParams::intersection_types_in_polynomial(
             back_inserter(intersection_tmp));
         intersection = intersection_tmp;
     }
-
     return intersection;
 }
 
@@ -530,17 +350,6 @@ bool ModelParams::check_type_pairs(const vector1i& tp_comb, const int& type1) co
     return true;
 }
 
-/*
-bool ModelParams::check_type_pairs(const vector1i& index, const int& type1) const{
-    vector1i size;
-    for (const auto& p2: index){
-        size.emplace_back(type_pairs[p2][type1].size());
-    }
-    int minsize = *std::min_element(size.begin(), size.end());
-    return minsize > 0;
-}
-*/
-
 const int& ModelParams::get_n_type() const { return n_type; }
 const int& ModelParams::get_n_type_pairs() const { return n_type_pairs; }
 const int& ModelParams::get_n_fn() const { return n_fn; }
@@ -563,16 +372,6 @@ const vector2i& ModelParams::get_type_pairs() const{
     return type_pairs;
 }
 
-/*
-vector1i ModelParams::get_type_pairs(const vector1i& tc_index, const int& type1){
-    vector1i all;
-    for (const auto& i: tc_index)
-        all.emplace_back(type_pairs[i][type1][0]);
-    return all;
-}
-*/
-
-const std::vector<struct LinearTermGtinv>&
-ModelParams::get_linear_term_gtinv() const{
+const std::vector<struct LinearTermGtinv>& ModelParams::get_linear_term_gtinv() const{
     return linear_array_g;
 }
