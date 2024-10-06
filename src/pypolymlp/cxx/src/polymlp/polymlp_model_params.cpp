@@ -11,21 +11,21 @@ ModelParams::ModelParams(){}
 ModelParams::ModelParams(const struct feature_params& fp){
 
     n_type = fp.n_type;
-    set_type_pairs();
+    set_type_pairs(fp);
     initial_setting(fp);
 }
 
 ModelParams::ModelParams(const struct feature_params& fp, const bool icharge){
 
     n_type = fp.n_type;
-    if (icharge == false) set_type_pairs();
-    else set_type_pairs_charge();
+    if (icharge == false) set_type_pairs(fp);
+    else set_type_pairs_charge(fp);
     initial_setting(fp);
 }
 
 ModelParams::~ModelParams(){}
 
-void ModelParams::set_type_pairs(){
+void ModelParams::set_type_pairs(const struct feature_params& fp){
 
     type_pairs.resize(n_type);
     for (auto& tp1: type_pairs) tp1.resize(n_type);
@@ -35,6 +35,7 @@ void ModelParams::set_type_pairs(){
         for (int j = 0; j < n_type; ++j){
             if (i <= j){
                 type_pairs[i][j] = type_pairs[j][i] = tp;
+                tp_nlist_map.emplace_back(fp.params_conditional[i][j]);
                 ++tp;
             }
         }
@@ -42,13 +43,14 @@ void ModelParams::set_type_pairs(){
     n_type_pairs = tp;
 }
 
-void ModelParams::set_type_pairs_charge(){
+void ModelParams::set_type_pairs_charge(const feature_params& fp){
 
     int tp = 0;
     type_pairs.resize(n_type);
     for (int i = 0; i < n_type; ++i){
         for (int j = 0; j < n_type; ++j){
             type_pairs[i].emplace_back(tp);
+            tp_nlist_map.emplace_back(fp.params_conditional[i][j]);
             ++tp;
         }
     }
@@ -114,21 +116,22 @@ void ModelParams::initial_setting(const struct feature_params& fp){
     }
 }
 
-void ModelParams::enumerate_tp_combs(const feature_params& fp, vector3i& tp_comb_candidates){
+
+void ModelParams::enumerate_tp_combs(const feature_params& fp){
 
     const vector2i& l_comb = fp.l_comb;
     vector1i pinput(n_type_pairs);
     for (int i = 0; i < n_type_pairs; ++i) pinput[i] = i;
 
     const int gtinv_order = (*(l_comb.end() - 1)).size();
-    tp_comb_candidates.resize(gtinv_order + 1);
+    tp_combs.resize(gtinv_order + 1);
     for (int order = 1; order <= gtinv_order; ++order){
         vector2i perm;
         Permutenr(pinput, vector1i({}), perm, order);
         for (const auto& p1: perm){
             for (int type1 = 0; type1 < n_type; ++type1){
                 if (check_type_pairs(p1, type1) == true){
-                    tp_comb_candidates[order].emplace_back(p1);
+                    tp_combs[order].emplace_back(p1);
                     break;
                 }
             }
@@ -136,10 +139,17 @@ void ModelParams::enumerate_tp_combs(const feature_params& fp, vector3i& tp_comb
     }
 }
 
+
+int ModelParams::find_tp_comb_id(const vector2i& tp_comb_ref, const vector1i& tp_comb){
+
+    const auto iter = std::find(tp_comb_ref.begin(), tp_comb_ref.end(), tp_comb);
+    const int index = std::distance(tp_comb_ref.begin(), iter);
+    return index;
+}
+
 void ModelParams::uniq_gtinv_type(const feature_params& fp){
 
-    vector3i tp_comb_candidates;
-    enumerate_tp_combs(fp, tp_comb_candidates);
+    enumerate_tp_combs(fp);
     /*
     int order = 0;
     for (auto& v1: tp_comb_candidates){
@@ -157,23 +167,29 @@ void ModelParams::uniq_gtinv_type(const feature_params& fp){
     for (size_t i = 0; i < l_comb_all.size(); ++i){
         const vector1i& l_comb = l_comb_all[i];
         const int order = l_comb.size();
+        const auto& tp_combs_ref = tp_combs[order];
 
-        std::set<std::multiset<std::pair<int,int> > > uniq_lmt;
-        for (const auto &tp_comb: tp_comb_candidates[order]){
+        std::set<std::multiset<std::pair<int, int> > > uniq_lmt;
+        for (const auto &tp_comb: tp_combs_ref){
             std::multiset<std::pair<int, int> > tmp;
             for (size_t j = 0; j < tp_comb.size(); ++j){
                 tmp.insert(std::make_pair(l_comb[j], tp_comb[j]));
             }
             uniq_lmt.insert(tmp);
         }
+
         for (const auto& lt: uniq_lmt){
-            vector1i tc, t1a;
-            for (const auto& lt1: lt) tc.emplace_back(lt1.second);
+            vector1i tp_comb;
+            for (const auto& lt1: lt) tp_comb.emplace_back(lt1.second);
+
+            const int tp_comb_id = find_tp_comb_id(tp_combs_ref, tp_comb);
+
+            vector1i t1a;
             for (int type1 = 0; type1 < n_type; ++type1){
-                if (check_type_pairs(tc, type1) == true)
+                if (check_type_pairs(tp_comb, type1) == true)
                     t1a.emplace_back(type1);
             }
-            linear_array_g.emplace_back(LinearTermGtinv({int(i),tc,t1a}));
+            linear_array_g.emplace_back(LinearTermGtinv({int(i),tp_comb,t1a}));
         }
     }
 }

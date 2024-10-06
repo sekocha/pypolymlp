@@ -36,13 +36,16 @@ class ModelParams{
 
     int n_type, n_fn, n_des, n_coeff_all, n_type_pairs;
     vector2i comb, comb2, comb3, comb1_indices, comb2_indices, comb3_indices;
+
     vector2i type_pairs;
+    vector2i tp_nlist_map;
+    vector3i tp_combs;
 
     std::vector<struct LinearTermGtinv> linear_array_g;
 
-    void set_type_pairs();
-    void set_type_pairs_charge();
-    void enumerate_tp_combs(const feature_params& fp, vector3i& tp_comb_candidates);
+    void set_type_pairs(const feature_params& fp);
+    void set_type_pairs_charge(const feature_params& fp);
+    void enumerate_tp_combs(const feature_params& fp);
 
     void combination1();
     void combination2(const vector1i& iarray);
@@ -60,6 +63,8 @@ class ModelParams{
     vector1i intersection_types_in_polynomial(const vector2i &type1_array);
 
     void initial_setting(const struct feature_params& fp);
+
+    int find_tp_comb_id(const vector2i& tp_comb_ref, const vector1i& tp_comb);
 
     public:
 
