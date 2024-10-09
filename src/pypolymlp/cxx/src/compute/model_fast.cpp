@@ -25,7 +25,7 @@ ModelFast::ModelFast(const vector3d& dis_array,
     model_type = fp.model_type;
     maxp = fp.maxp;
 
-    n_linear_features = modelp.get_n_des();
+    n_linear_features = modelp.get_n_linear_features();
 
     const int size = modelp.get_n_coeff_all();
     xe_sum = vector1d(size, 0.0);

@@ -20,23 +20,17 @@
 
 Features::Features(){}
 
-Features::Features(const feature_params& fp, const ModelParams& modelp){
+Features::Features(const feature_params& fp){
 
-    n_fn = fp.params.size();
-    n_tc = modelp.get_n_type_pairs();
-    n_type = modelp.get_n_type();
-    type_pairs = modelp.get_type_pairs();
+    mapping = Mapping(fp);
+    modelp = ModelParams(fp, mapping);
+
+//    n_type = fp.n_type;
+//    type_pairs = mapping.get_type_pairs();
 
     MultipleFeatures mfeatures1;
-    if (fp.des_type == "pair"){
-        set_mapping_ntc();
-        mfeatures = set_linear_features_pair();
-    }
-    else if (fp.des_type == "gtinv"){
-        set_mapping_lm(fp.maxl);
-        set_mapping_nlmtc();
-        mfeatures = set_linear_features(fp, modelp);
-    }
+    if (fp.feature_type == "pair") mfeatures = set_linear_features_pair();
+    else if (fp.feature_type == "gtinv") mfeatures = set_linear_features(fp);
 
     // this part can be revised in a recursive form
     for (size_t i = 0; i < mfeatures.size(); ++i){
@@ -51,9 +45,10 @@ Features::Features(const feature_params& fp, const ModelParams& modelp){
 }
 
 Features::~Features(){}
-
+/*
 MultipleFeatures Features::set_linear_features_pair(){
 
+    // TODO: MUST BE REVISED.
     // The order of tc and n must be fixed.
     std::vector<SingleFeature> feature_array;
     for (int tc = 0; tc < n_tc; ++tc){
@@ -64,13 +59,6 @@ MultipleFeatures Features::set_linear_features_pair(){
                 type1.emplace_back(t1);
             }
         }
-        /*
-        for (auto& tcp1: type_pairs[tc]){
-            for (auto& tcp2: tcp1){
-                type1.emplace_back(tcp2);
-            }
-        }
-        */
         for (int n = 0; n < n_fn; ++n){
             SingleFeature feature;
             SingleTerm single;
@@ -84,157 +72,62 @@ MultipleFeatures Features::set_linear_features_pair(){
     }
     return feature_array;
 }
+*/
 
-MultipleFeatures Features::set_linear_features(const feature_params& fp,
-                                               const ModelParams& modelp){
+MultipleFeatures Features::set_linear_features(const feature_params& fp){
 
     const vector3i& lm_array = fp.lm_array;
     const vector2d& lm_coeffs = fp.lm_coeffs;
+    const auto& tp_combs = modelp.get_tp_combs();
+    MapFromVec map_nlmtp_to_key = mapping.get_nlmtp_to_key();
 
-    // The order of n and linear must be fixed.
     std::vector<SingleFeature> feature_array;
-    for (int n = 0; n < n_fn; ++n){
-        for (const auto& linear: modelp.get_linear_term_gtinv()){
-            const int lm_idx = linear.lmindex;
-            const auto& tc_array = linear.tcomb_index;
-            const auto& type1 = linear.type1;
-            const auto& lm_list = lm_array[lm_idx];
-            const auto& coeff_list = lm_coeffs[lm_idx];
+    for (const auto& linear: modelp.get_linear_terms()){
+        const int n = linear.n;
+        const int n_id = linear.n_id;
+        const int lm_comb_id = linear.lm_comb_id;
+        const int tp_comb_id = linear.tp_comb_id;
+        const int order = linear.order;
+        const auto& tp_comb = tp_combs[order][tp_comb_id];
+        const auto& type1 = linear.type1;
 
-            SingleFeature feature;
-            for (size_t i = 0; i < lm_list.size(); ++i){
-                SingleTerm single;
-                single.coeff = coeff_list[i];
-                single.type1 = type1;
-                for (size_t j = 0; j < lm_list[i].size(); ++j){
-                    const auto lm = lm_list[i][j];
-                    const auto tc = tc_array[j];
-                    const int key = mapping_nlmtc_to_key(tc, lm, n);
-                    single.nlmtc_keys.emplace_back(key);
-                }
-                std::sort(single.nlmtc_keys.begin(), single.nlmtc_keys.end());
-                feature.emplace_back(single);
+        const auto& lm_list = lm_array[lm_comb_id];
+        const auto& coeff_list = lm_coeffs[lm_comb_id];
+
+        SingleFeature feature;
+        for (size_t i = 0; i < lm_list.size(); ++i){
+            SingleTerm single;
+            single.coeff = coeff_list[i];
+            single.type1 = type1;
+            for (size_t j = 0; j < lm_list[i].size(); ++j){
+                const auto lm = lm_list[i][j];
+                const auto tp = tp_comb[j];
+                int key = map_nlmtp_to_key[vector1i({n, lm, tp})];
+                single.nlmtp_keys.emplace_back(key);
             }
-            feature_array.emplace_back(feature);
+            std::sort(single.nlmtp_keys.begin(), single.nlmtp_keys.end());
+            feature.emplace_back(single);
         }
+        feature_array.emplace_back(feature);
     }
     return feature_array;
 }
 
-int Features::mapping_nlmtc_to_key(const int tc, const int lm, const int n){
-    return n * (n_lm_all * n_tc) + lm * n_tc + tc;
-}
-
-int Features::mapping_ntc_to_key(const int tc, const int n){
-    return n * n_tc + tc;
-}
-
-// for des_type == pair
-void Features::set_mapping_ntc(){
-
-    int ntc_key(0);
-    for (int n = 0; n < n_fn; ++n){
-        for (int tc = 0; tc < n_tc; ++tc){
-            ntcAttribute ntc = {n, tc, ntc_key};
-            ntc_map.emplace_back(ntc);
-            ++ntc_key;
-        }
-    }
-}
-
-// for des_type == gtinv
-void Features::set_mapping_nlmtc(){
-
-    int nlmtc_key(0), nlmtc_noconj_key(0), conj_key, conj_key_add;
-    for (int n = 0; n < n_fn; ++n){
-        for (int lm = 0; lm < n_lm_all; ++lm){
-            const auto& lm_attr = lm_map[lm];
-            conj_key_add = 2 * lm_attr.m * n_tc;
-            for (int tc = 0; tc < n_tc; ++tc){
-                conj_key = nlmtc_key - conj_key_add;
-                nlmtcAttribute nlmtcs = {n, lm_attr, tc, nlmtc_key, conj_key,
-                                         nlmtc_noconj_key};
-                nlmtc_map.emplace_back(nlmtcs);
-                ++nlmtc_key;
-                if (lm_attr.conj == false) {
-                    nlmtc_map_no_conjugate.emplace_back(nlmtcs);
-                    ++nlmtc_noconj_key;
-                }
-            }
-        }
-    }
-    n_nlmtc_all = n_tc * n_lm_all * n_fn;
-}
-
-void Features::set_mapping_lm(const int maxl){
-
-    int ylm_key;
-    double cc, sign_j;
-    bool conj;
-    for (int l = 0; l < maxl + 1; ++l){
-        if (l % 2 == 0){
-            sign_j = 1;
-        }
-        else {
-            sign_j = -1;
-        }
-        for (int m = -l; m < l + 1; ++m){
-            if (m % 2 == 0) {
-                cc = 1;
-            }
-            else {
-                cc = -1;
-            }
-            if (m < 1) {
-                ylm_key = (l+3)*l/2 + m;
-                conj = false;
-            }
-            else {
-                ylm_key = (l+3)*l/2 - m;
-                conj = true;
-            }
-            lmAttribute lm_attr = {l, m, ylm_key, conj, cc, sign_j};
-            lm_map.emplace_back(lm_attr);
-        }
-    }
-
-    n_lm_all = lm_map.size();
-    n_lm = (n_lm_all + maxl + 1) / 2;
-}
-
-const int Features::get_n_features() const {
-    return mfeatures.size();
-}
+const int Features::get_n_features() const { return mfeatures.size(); }
 const int Features::get_n_feature_combinations() const {
     return feature_combinations.size();
-}
-const int Features::get_n_nlmtc_all() const {
-    return n_nlmtc_all;
 }
 const MultipleFeatures& Features::get_features() const {
     return mfeatures;
 }
-const std::vector<lmAttribute>& Features::get_lm_map() const {
-    return lm_map;
-}
-const std::vector<nlmtcAttribute>&
-Features::get_nlmtc_map_no_conjugate() const {
-    return nlmtc_map_no_conjugate;
-}
-const std::vector<nlmtcAttribute>& Features::get_nlmtc_map() const {
-    return nlmtc_map;
-}
-const std::vector<ntcAttribute>& Features::get_ntc_map() const {
-    return ntc_map;
-}
 const vector2i& Features::get_feature_combinations() const {
     return feature_combinations;
 }
-const int Features::get_n_type() const {
-    return n_type;
+const Mapping& Features::get_mapping() const {
+    return mapping;
 }
 
-
+/*
 // not used
 SingleFeature Features::product_features(const SingleFeature& feature1,
                                          const SingleFeature& feature2){
@@ -255,3 +148,4 @@ SingleFeature Features::product_features(const SingleFeature& feature1,
     }
     return feature;
 }
+*/

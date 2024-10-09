@@ -49,7 +49,7 @@ struct feature_params {
     vector3i params_conditional;
     double cutoff;
     std::string pair_type;
-    std::string des_type;
+    std::string feature_type;
     int model_type;
     int maxp;
     int maxl;

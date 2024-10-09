@@ -224,7 +224,7 @@ void FunctionFeatures::set_polynomials(const ModelParams& modelp){
     polynomials2.resize(n_type);
     polynomials3.resize(n_type);
 
-    const int n_linear_features = modelp.get_n_des();
+    const int n_linear_features = modelp.get_n_linear_features();
     const auto& comb2 = modelp.get_comb2();
     const auto& comb3 = modelp.get_comb3();
 

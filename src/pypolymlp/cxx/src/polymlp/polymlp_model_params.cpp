@@ -1,5 +1,4 @@
 /****************************************************************************
-
         Copyright (C) 2024 Atsuto Seko
                 seko@cms.mtl.kyoto-u.ac.jp
 
@@ -8,122 +7,76 @@
 #include "polymlp_model_params.h"
 
 ModelParams::ModelParams(){}
-ModelParams::ModelParams(const struct feature_params& fp){
+ModelParams::ModelParams(const feature_params& fp, const Mapping& mapping){
 
     n_type = fp.n_type;
-    set_type_pairs(fp);
-    initial_setting(fp);
-}
-
-ModelParams::ModelParams(const struct feature_params& fp, const bool icharge){
-
-    n_type = fp.n_type;
-    if (icharge == false) set_type_pairs(fp);
-    else set_type_pairs_charge(fp);
-    initial_setting(fp);
+    type_pairs = mapping.get_type_pairs();
+    initial_setting(fp, mapping);
 }
 
 ModelParams::~ModelParams(){}
 
-void ModelParams::set_type_pairs(const struct feature_params& fp){
 
-    type_pairs.resize(n_type);
-    for (auto& tp1: type_pairs) tp1.resize(n_type);
+void ModelParams::initial_setting(const feature_params& fp, const Mapping& mapping){
 
-    int tp = 0;
-    for (int i = 0; i < n_type; ++i){
-        for (int j = 0; j < n_type; ++j){
-            if (i <= j){
-                type_pairs[i][j] = type_pairs[j][i] = tp;
-                tp_nlist_map.emplace_back(fp.params_conditional[i][j]);
-                ++tp;
-            }
-        }
+    n_type = fp.n_type;
+    n_fn = fp.params.size();
+
+    if (fp.feature_type == "pair"){
+        n_linear_features = mapping.get_ntp_attrs().size();
     }
-    n_type_pairs = tp;
-}
-
-void ModelParams::set_type_pairs_charge(const feature_params& fp){
-
-    int tp = 0;
-    type_pairs.resize(n_type);
-    for (int i = 0; i < n_type; ++i){
-        for (int j = 0; j < n_type; ++j){
-            type_pairs[i].emplace_back(tp);
-            tp_nlist_map.emplace_back(fp.params_conditional[i][j]);
-            ++tp;
-        }
-    }
-    n_type_pairs = n_type * n_type;
-}
-
-void ModelParams::initial_setting(const struct feature_params& fp){
-
-    n_type = fp.n_type, n_fn = fp.params.size();
-
-    if (fp.des_type == "pair") n_des = n_fn * n_type_pairs;
-    else if (fp.des_type == "gtinv"){
-        uniq_gtinv_type(fp);
-        n_des = n_fn * linear_array_g.size();
+    else if (fp.feature_type == "gtinv"){
+        uniq_gtinv_type(fp, mapping);
+        n_linear_features = linear_terms.size();
     }
 
-    vector1i polynomial_index;
+    vector1i polynomial_indices;
     if (fp.model_type == 2){
-        for (int n = 0; n < n_des; ++n)
-            polynomial_index.emplace_back(n);
-    }
-    else if (fp.model_type == 3 and fp.des_type == "gtinv"){
-        for (size_t i = 0; i < linear_array_g.size(); ++i){
-            const auto& lin = linear_array_g[i];
-            if (lin.tcomb_index.size() == 1){
-                for (int n = 0; n < n_fn; ++n){
-                    polynomial_index.emplace_back(n*linear_array_g.size()+i);
-                }
-            }
+        for (int n = 0; n < n_linear_features; ++n){
+            polynomial_indices.emplace_back(n);
         }
-        std::sort(polynomial_index.begin(),polynomial_index.end());
     }
-    else if (fp.model_type == 4 and fp.des_type == "gtinv"){
-        for (size_t i = 0; i < linear_array_g.size(); ++i){
-            const auto& lin = linear_array_g[i];
-            if (lin.tcomb_index.size() < 3 ){
-                for (int n = 0; n < n_fn; ++n){
-                    polynomial_index.emplace_back(n*linear_array_g.size()+i);
-                }
-            }
+    else if (fp.model_type == 3 and fp.feature_type == "gtinv"){
+        for (int n = 0; n < n_linear_features; ++n){
+            if (linear_terms[n].order == 1) polynomial_indices.emplace_back(n);
         }
-        std::sort(polynomial_index.begin(),polynomial_index.end());
+    }
+    else if (fp.model_type == 4 and fp.feature_type == "gtinv"){
+        for (int n = 0; n < n_linear_features; ++n){
+            if (linear_terms[n].order < 3) polynomial_indices.emplace_back(n);
+        }
     }
 
     comb1_indices.resize(n_type);
     comb2_indices.resize(n_type);
     comb3_indices.resize(n_type);
 
-    if (fp.des_type == "pair") combination1();
-    else if (fp.des_type == "gtinv") combination1_gtinv();
+    if (fp.feature_type == "pair") combination1();
+    else if (fp.feature_type == "gtinv") combination1_gtinv();
 
-    if (fp.model_type == 1) n_coeff_all = n_des * fp.maxp;
+    if (fp.model_type == 1) n_coeff_all = n_linear_features * fp.maxp;
     else if (fp.model_type > 1){
-        if (fp.des_type == "pair"){
-            if (fp.maxp > 1) combination2(polynomial_index);
-            if (fp.maxp > 2) combination3(polynomial_index);
+        if (fp.feature_type == "pair"){
+            if (fp.maxp > 1) combination2(polynomial_indices);
+            if (fp.maxp > 2) combination3(polynomial_indices);
         }
-        else if (fp.des_type == "gtinv"){
-            if (fp.maxp > 1) combination2_gtinv(polynomial_index);
-            if (fp.maxp > 2) combination3_gtinv(polynomial_index);
+        else if (fp.feature_type == "gtinv"){
+            if (fp.maxp > 1) combination2_gtinv(polynomial_indices);
+            if (fp.maxp > 2) combination3_gtinv(polynomial_indices);
         }
-        n_coeff_all = n_des + comb2.size() + comb3.size();
+        n_coeff_all = n_linear_features + comb2.size() + comb3.size();
     }
 }
 
 
-void ModelParams::enumerate_tp_combs(const feature_params& fp){
+void ModelParams::enumerate_tp_combs(const feature_params& fp, const Mapping& mapping){
 
     const vector2i& l_comb = fp.l_comb;
+    const int gtinv_order = (*(l_comb.end() - 1)).size();
+
     vector1i pinput(n_type_pairs);
     for (int i = 0; i < n_type_pairs; ++i) pinput[i] = i;
 
-    const int gtinv_order = (*(l_comb.end() - 1)).size();
     tp_combs.resize(gtinv_order + 1);
     for (int order = 1; order <= gtinv_order; ++order){
         vector2i perm;
@@ -137,6 +90,35 @@ void ModelParams::enumerate_tp_combs(const feature_params& fp){
             }
         }
     }
+
+    const auto& tp_nlist_map = mapping.get_type_pair_to_nlist();
+    params_conditional.resize(gtinv_order + 1);
+    for (int order = 1; order <= gtinv_order; ++order){
+        for (const auto& tp_comb: tp_combs[order]){
+            vector1i intersection;
+            int iter = 0;
+            for (const auto& tp: tp_comb){
+                if (iter == 0) intersection = tp_nlist_map[tp];
+                else {
+                    intersection = vector_intersection(
+                        intersection, tp_nlist_map[tp]
+                    );
+                }
+                ++iter;
+            }
+            params_conditional[order].emplace_back(intersection);
+        }
+    }
+}
+
+vector1i ModelParams::vector_intersection(vector1i v1, vector1i v2){
+    vector1i v3;
+    std::sort(v1.begin(), v1.end());
+    std::sort(v2.begin(), v2.end());
+    std::set_intersection(
+        v1.begin(), v1.end(), v2.begin(), v2.end(), back_inserter(v3)
+    );
+    return v3;
 }
 
 
@@ -147,27 +129,19 @@ int ModelParams::find_tp_comb_id(const vector2i& tp_comb_ref, const vector1i& tp
     return index;
 }
 
-void ModelParams::uniq_gtinv_type(const feature_params& fp){
+void ModelParams::uniq_gtinv_type(const feature_params& fp, const Mapping& mapping){
 
-    enumerate_tp_combs(fp);
-    /*
-    int order = 0;
-    for (auto& v1: tp_comb_candidates){
-        std::cout << "order = " << order << std::endl;
-        for (auto& v2: v1){
-            for (auto& v3: v2){
-                std::cout << v3 << " ";
-            }
-            std::cout << std::endl;
-        }
-    }
-    */
+    enumerate_tp_combs(fp, mapping);
+    std::vector<std::vector<LinearTerm> > _linear_terms(n_fn);
 
-    const vector2i& l_comb_all = fp.l_comb;
-    for (size_t i = 0; i < l_comb_all.size(); ++i){
-        const vector1i& l_comb = l_comb_all[i];
+    for (size_t lm_comb_id = 0; lm_comb_id < fp.l_comb.size(); ++lm_comb_id){
+        const vector1i& l_comb = fp.l_comb[lm_comb_id];
+        const auto& lm_list = fp.lm_array[lm_comb_id];
+        const auto& coeff_list = fp.lm_coeffs[lm_comb_id];
         const int order = l_comb.size();
+
         const auto& tp_combs_ref = tp_combs[order];
+        const auto& n_list_ref = params_conditional[order];
 
         std::set<std::multiset<std::pair<int, int> > > uniq_lmt;
         for (const auto &tp_comb: tp_combs_ref){
@@ -183,26 +157,34 @@ void ModelParams::uniq_gtinv_type(const feature_params& fp){
             for (const auto& lt1: lt) tp_comb.emplace_back(lt1.second);
 
             const int tp_comb_id = find_tp_comb_id(tp_combs_ref, tp_comb);
-
+            const auto& n_list = n_list_ref[tp_comb_id];
             vector1i t1a;
             for (int type1 = 0; type1 < n_type; ++type1){
                 if (check_type_pairs(tp_comb, type1) == true)
                     t1a.emplace_back(type1);
             }
-            linear_array_g.emplace_back(LinearTermGtinv({int(i),tp_comb,t1a}));
+
+            for (int n_id = 0; n_id < n_list.size(); ++n_id){
+                const LinearTerm linear = {
+                    n_list[n_id], n_id, int(lm_comb_id), tp_comb_id, order, t1a
+                };
+                _linear_terms[n_list[n_id]].emplace_back(linear);
+            }
+        }
+    }
+
+    for (const auto& linear_terms_n: _linear_terms){
+        for (const auto& linear: linear_terms_n){
+            linear_terms.emplace_back(linear);
         }
     }
 }
 
 void ModelParams::combination1_gtinv(){
 
-    int i_comb;
-    for (int n = 0; n < n_fn; ++n){
-        for (size_t i = 0; i < linear_array_g.size(); ++i){
-            i_comb = n * linear_array_g.size() + i;
-            for (const auto& type: linear_array_g[i].type1){
-                comb1_indices[type].emplace_back(i_comb);
-            }
+    for (size_t i_comb = 0; i_comb < linear_terms.size(); ++i_comb){
+        for (const auto& type: linear_terms[i_comb].type1){
+            comb1_indices[type].emplace_back(int(i_comb));
         }
     }
 }
@@ -211,17 +193,15 @@ void ModelParams::combination2_gtinv(const vector1i& iarray){
 
     vector2i type_array;
     vector1i intersection;
-    int i_comb(0), t1, t2;
+    int i_comb(0);
     for (size_t i1 = 0; i1 < iarray.size(); ++i1){
-        t1 = seq2igtinv(iarray[i1]);
-        const auto &type1_1 = linear_array_g[t1].type1;
+        const auto& type1_1 = linear_terms[i1].type1;
         for (size_t i2 = 0; i2 <= i1; ++i2){
-            t2 = seq2igtinv(iarray[i2]);
-            const auto &type1_2 = linear_array_g[t2].type1;
+            const auto& type1_2 = linear_terms[i2].type1;
             type_array = {type1_1, type1_2};
             intersection = intersection_types_in_polynomial(type_array);
             if (intersection.size() > 0){
-                comb2.push_back(vector1i({iarray[i2],iarray[i1]}));
+                comb2.push_back(vector1i({iarray[i2], iarray[i1]}));
                 for (const auto& type: intersection){
                     comb2_indices[type].emplace_back(i_comb);
                 }
@@ -235,22 +215,18 @@ void ModelParams::combination3_gtinv(const vector1i& iarray){
 
     vector2i type_array;
     vector1i intersection;
-    int i_comb(0), t1, t2, t3;
+    int i_comb(0);
     for (size_t i1 = 0; i1 < iarray.size(); ++i1){
-        t1 = seq2igtinv(iarray[i1]);
-        const auto &type1_1 = linear_array_g[t1].type1;
+        const auto& type1_1 = linear_terms[i1].type1;
         for (size_t i2 = 0; i2 <= i1; ++i2){
-            t2 = seq2igtinv(iarray[i2]);
-            const auto &type1_2 = linear_array_g[t2].type1;
+            const auto& type1_2 = linear_terms[i2].type1;
             for (size_t i3 = 0; i3 <= i2; ++i3){
-                t3 = seq2igtinv(iarray[i3]);
-                const auto &type1_3 = linear_array_g[t3].type1;
+                const auto& type1_3 = linear_terms[i3].type1;
                 type_array = {type1_1, type1_2, type1_3};
                 intersection = intersection_types_in_polynomial(type_array);
-
                 if (intersection.size() > 0){
                     comb3.push_back
-                        (vector1i({iarray[i3],iarray[i2],iarray[i1]}));
+                        (vector1i({iarray[i3], iarray[i2], iarray[i1]}));
                     for (const auto& type: intersection){
                         comb3_indices[type].emplace_back(i_comb);
                     }
@@ -287,14 +263,16 @@ vector1i ModelParams::intersection_types_in_polynomial(
 int ModelParams::seq2typecomb(const int& seq){
     return seq/n_fn;
 }
+/*
 int ModelParams::seq2igtinv(const int& seq){
     return seq % linear_array_g.size();
 }
+*/
 
 void ModelParams::combination1(){
 
     int t1;
-    for (int i = 0; i < n_des; ++i){
+    for (int i = 0; i < n_linear_features; ++i){
         t1 = seq2typecomb(i);
         for (int type1 = 0; type1 < n_type; ++type1){
             if (check_type_pairs(vector1i({t1}), type1) == true){
@@ -361,15 +339,18 @@ bool ModelParams::check_type_pairs(const vector1i& tp_comb, const int& type1) co
 
     const auto& tp_type1 = type_pairs[type1];
     for (const auto& tp: tp_comb){
-        if (std::find(tp_type1.begin(), tp_type1.end(), tp) == tp_type1.end()) return false;
+        if (std::find(tp_type1.begin(), tp_type1.end(), tp) == tp_type1.end()){
+            return false;
+        }
     }
     return true;
 }
 
-const int& ModelParams::get_n_type() const { return n_type; }
-const int& ModelParams::get_n_type_pairs() const { return n_type_pairs; }
-const int& ModelParams::get_n_fn() const { return n_fn; }
-const int& ModelParams::get_n_des() const { return n_des; }
+//const int& ModelParams::get_n_type() const { return n_type; }
+//const int& ModelParams::get_n_type_pairs() const { return n_type_pairs; }
+//const int& ModelParams::get_n_fn() const { return n_fn; }
+
+const int& ModelParams::get_n_linear_features() const { return n_linear_features; }
 const int& ModelParams::get_n_coeff_all() const { return n_coeff_all; }
 const vector2i& ModelParams::get_comb2() const { return comb2; }
 const vector2i& ModelParams::get_comb3() const{ return comb3; }
@@ -384,10 +365,25 @@ const vector1i& ModelParams::get_comb3_indices(const int type) const {
     return comb3_indices[type];
 }
 
-const vector2i& ModelParams::get_type_pairs() const{
-    return type_pairs;
-}
-
 const std::vector<struct LinearTermGtinv>& ModelParams::get_linear_term_gtinv() const{
     return linear_array_g;
 }
+const std::vector<struct LinearTerm>& ModelParams::get_linear_terms() const{
+    return linear_terms;
+}
+const vector3i& ModelParams::get_tp_combs() const{
+    return tp_combs;
+}
+
+/*
+    int order = 0;
+    for (auto& v1: tp_comb_candidates){
+        std::cout << "order = " << order << std::endl;
+        for (auto& v2: v1){
+            for (auto& v3: v2){
+                std::cout << v3 << " ";
+            }
+            std::cout << std::endl;
+        }
+    }
+    */
