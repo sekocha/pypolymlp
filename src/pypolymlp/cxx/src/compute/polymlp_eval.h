@@ -11,6 +11,7 @@
 #include "mlpcpp.h"
 
 #include "polymlp/polymlp_functions_interface.h"
+#include "polymlp/polymlp_mapping.h"
 #include "polymlp/polymlp_model_params.h"
 #include "polymlp/polymlp_features.h"
 #include "polymlp/polymlp_potential.h"
@@ -19,25 +20,25 @@ class PolymlpEval {
 
     struct DataPolyMLP {
         struct feature_params fp;
+        Mapping mapping;
         ModelParams modelp;
         Potential p_obj;
     };
 
     struct DataPolyMLP pot;
     vector2i type_pairs;
-    //void set_type_pairs();
 
     /* for feature_type = pair */
-    void compute_antc(const vector2d& positions_c,
+    void compute_antp(const vector2d& positions_c,
                       const vector1i& types,
                       const vector2i& neighbor_half,
                       const vector3d& neighbor_diff,
-                      vector2d& antc);
+                      vector2d& antp);
 
-    void compute_sum_of_prod_antc(const vector1i& types,
-                                  const vector2d& antc,
-                                  vector2d& prod_antc_sum_e,
-                                  vector2d& prod_antc_sum_f);
+    void compute_sum_of_prod_antp(const vector1i& types,
+                                  const vector2d& antp,
+                                  vector2d& prod_antp_sum_e,
+                                  vector2d& prod_antp_sum_f);
 
     void eval_pair(const vector2d& positions_c,
                    const vector1i& types,
@@ -48,20 +49,20 @@ class PolymlpEval {
                    vector1d& stress);
 
     /* for feature_type = gtinv */
-    void compute_anlmtc(const vector2d& positions_c,
+    void compute_anlmtp(const vector2d& positions_c,
                         const vector1i& types,
                         const vector2i& neighbor_half,
                         const vector3d& neighbor_diff,
-                        vector2dc& anlmtc);
-    void compute_anlmtc_conjugate(const vector2d& anlmtc_r,
-                                  const vector2d& anlmtc_i,
-                                  vector2dc& anlmtc);
-    void compute_sum_of_prod_anlmtc(const vector1i& types,
-                                    const vector2dc& anlmtc,
+                        vector2dc& anlmtp);
+    void compute_anlmtp_conjugate(const vector2d& anlmtp_r,
+                                  const vector2d& anlmtp_i,
+                                  vector2dc& anlmtp);
+    void compute_sum_of_prod_anlmtp(const vector1i& types,
+                                    const vector2dc& anlmtp,
                                     vector2dc& prod_sum_e,
                                     vector2dc& prod_sum_f);
 
-    void compute_linear_features(const vector1d& prod_anlmtc,
+    void compute_linear_features(const vector1d& prod_anlmtp,
                                  const int type1,
                                  vector1d& feature_values);
     template<typename T>

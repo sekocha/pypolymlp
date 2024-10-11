@@ -11,8 +11,8 @@
 #include <cmath>
 
 #include "mlpcpp.h"
+#include "polymlp/polymlp_mapping.h"
 #include "polymlp/polymlp_functions_interface.h"
-#include "polymlp/polymlp_model_params.h"
 #include "compute/features.h"
 #include "compute/functions.h"
 
@@ -22,7 +22,6 @@ class LocalFast{
     struct feature_params fp;
     vector1i type2_array, type_pairs;
 
-    void set_type_pairs(const ModelParams& modelp);
     void compute_linear_features(
         const vector1d& prod_anlmtc,
         const FunctionFeatures& features,
@@ -68,7 +67,7 @@ class LocalFast{
         const int& atom1_i,
         const int& type1_i,
         const struct feature_params& fp_i,
-        const ModelParams& modelp
+        const Mapping& mapping
     );
     ~LocalFast();
 

@@ -9,8 +9,8 @@
 #define __FEATURE
 
 #include "mlpcpp.h"
+#include "polymlp/polymlp_mapping.h"
 #include "polymlp/polymlp_model_params.h"
-#include "polymlp/polymlp_features.h"
 #include "polymlp/polymlp_features.h"
 
 
@@ -22,7 +22,7 @@ struct FeatureSingleTerm {
 struct FeatureSingleTermDeriv {
     double coeff;
     int prod_key;
-    int nlmtc_key;
+    int nlmtp_key;
 };
 
 struct PolynomialTerm {
@@ -39,10 +39,9 @@ typedef std::unordered_map<vector1i,int,HashVI> ProdMapFromKeys;
 
 class FunctionFeatures {
 
-    std::vector<lmAttribute> lm_map;
-    std::vector<nlmtcAttribute> nlmtc_map_no_conjugate, nlmtc_map;
-
-    int n_nlmtc_all, n_type;
+    Mapping mapping;
+    ModelParams modelp;
+    int n_type;
 
     vector3i prod_map, prod_map_deriv;
     std::vector<ProdMapFromKeys> prod_map_from_keys, prod_map_deriv_from_keys;
@@ -71,18 +70,11 @@ class FunctionFeatures {
     public:
 
     FunctionFeatures();
-    FunctionFeatures(
-        const feature_params& fp,
-        const ModelParams& modelp,
-        const Features& f_obj
-    );
+    FunctionFeatures(const Features& f_obj);
     ~FunctionFeatures();
 
-    const std::vector<lmAttribute>& get_lm_map() const;
-    const std::vector<nlmtcAttribute>& get_nlmtc_map_no_conjugate() const;
-    const std::vector<nlmtcAttribute>& get_nlmtc_map() const;
-    const int get_n_nlmtc_all() const;
-
+    const Mapping& get_mapping() const;
+    const ModelParams& get_model_params() const;
     const vector2i& get_prod_map(const int t) const;
     const vector2i& get_prod_map_deriv(const int t) const;
     const FeatureVector& get_linear_features(const int t) const;

@@ -10,21 +10,14 @@
 
 FunctionFeatures::FunctionFeatures(){}
 
-FunctionFeatures::FunctionFeatures(
-    const feature_params& fp,
-    const ModelParams& modelp,
-    const Features& f_obj
-){
+FunctionFeatures::FunctionFeatures(const Features& f_obj){
 
+    mapping = f_obj.get_mapping();
+    modelp = f_obj.get_model_params();
     n_type = f_obj.get_n_type();
 
-    if (fp.des_type == "gtinv"){
-        lm_map = f_obj.get_lm_map();
-        nlmtc_map = f_obj.get_nlmtc_map();
-        nlmtc_map_no_conjugate = f_obj.get_nlmtc_map_no_conjugate();
-
-        n_nlmtc_all = f_obj.get_n_nlmtc_all();
-
+    const auto& ntp_attrs = mapping.get_ntp_attrs();
+    if (ntp_attrs.size() == 0){
         prod_map.resize(n_type);
         prod_map_from_keys.resize(n_type);
 
@@ -37,7 +30,6 @@ FunctionFeatures::FunctionFeatures(
         set_mapping_prod(f_obj);
         set_features_using_mappings(f_obj);
     }
-
     set_polynomials(modelp);
 
 }
@@ -54,10 +46,10 @@ void FunctionFeatures::set_mapping_prod(const Features& f_obj){
         const auto type1 = sfeature[0].type1;
         for (const auto& sterm: sfeature){
             for (const auto& t1: type1){
-                nonequiv_keys[t1].insert(sterm.nlmtc_keys);
+                nonequiv_keys[t1].insert(sterm.nlmtp_keys);
             }
-            for (size_t i = 0; i < sterm.nlmtc_keys.size(); ++i){
-                const vector1i keys = erase_a_key(sterm.nlmtc_keys, i);
+            for (size_t i = 0; i < sterm.nlmtp_keys.size(); ++i){
+                const vector1i keys = erase_a_key(sterm.nlmtp_keys, i);
                 for (const auto& t1: type1){
                     nonequiv_deriv_keys[t1].insert(keys);
                 }
@@ -90,7 +82,7 @@ void FunctionFeatures::set_features_using_mappings(const Features& f_obj){
         for (const auto& t1: type1){
             std::unordered_map<int, double> sfeature_map;
             for (const auto& sterm: sfeature){
-                const int prod_key = prod_map_from_keys[t1][sterm.nlmtc_keys];
+                const int prod_key = prod_map_from_keys[t1][sterm.nlmtp_keys];
                 if (sfeature_map.count(prod_key) == 0){
                     sfeature_map[prod_key] = sterm.coeff;
                 }
@@ -107,11 +99,11 @@ void FunctionFeatures::set_features_using_mappings(const Features& f_obj){
         for (const auto& t1: type1){
             std::unordered_map<vector1i, double, HashVI> sfeature_map;
             for (const auto& sterm: sfeature){
-                for (size_t i = 0; i < sterm.nlmtc_keys.size(); ++i){
-                    const vector1i keys = erase_a_key(sterm.nlmtc_keys, i);
+                for (size_t i = 0; i < sterm.nlmtp_keys.size(); ++i){
+                    const vector1i keys = erase_a_key(sterm.nlmtp_keys, i);
                     const int prod_key = prod_map_deriv_from_keys[t1][keys];
-                    const int nlmtc_key = sterm.nlmtc_keys[i];
-                    vector1i map_key = {prod_key, nlmtc_key};
+                    const int nlmtp_key = sterm.nlmtp_keys[i];
+                    vector1i map_key = {prod_key, nlmtp_key};
                     if (sfeature_map.count(map_key) == 0){
                         sfeature_map[map_key] = sterm.coeff;
                     }
@@ -139,8 +131,8 @@ void FunctionFeatures::sort_linear_features_deriv(){
             std::sort(sfeature.begin(), sfeature.end(),
                     [](const FeatureSingleTermDeriv& lhs,
                         const FeatureSingleTermDeriv& rhs){
-                    if (lhs.nlmtc_key != rhs.nlmtc_key){
-                        return lhs.nlmtc_key < rhs.nlmtc_key;
+                    if (lhs.nlmtp_key != rhs.nlmtp_key){
+                        return lhs.nlmtp_key < rhs.nlmtp_key;
                     }
                     else {
                         return lhs.prod_key < rhs.prod_key;
@@ -164,20 +156,20 @@ void FunctionFeatures::set_features_using_mappings_simple(const Features& f_obj)
         const auto type1 = sfeature[0].type1;
         for (const auto& sterm: sfeature){
             for (const auto& t1: type1){
-                const int prod_key = prod_map_from_keys[t1][sterm.nlmtc_keys];
+                const int prod_key = prod_map_from_keys[t1][sterm.nlmtp_keys];
                 FeatureSingleTerm fsterm = {sterm.coeff, prod_key};
                 linear_features[t1][idx].emplace_back(fsterm);
             }
         }
 
         for (const auto& sterm: sfeature){
-            for (size_t i = 0; i < sterm.nlmtc_keys.size(); ++i){
-                const int nlmtc_key = sterm.nlmtc_keys[i];
-                const vector1i keys = erase_a_key(sterm.nlmtc_keys, i);
+            for (size_t i = 0; i < sterm.nlmtp_keys.size(); ++i){
+                const int nlmtp_key = sterm.nlmtp_keys[i];
+                const vector1i keys = erase_a_key(sterm.nlmtp_keys, i);
                 for (const auto& t1: type1){
                     const int prod_key = prod_map_deriv_from_keys[t1][keys];
                     FeatureSingleTermDeriv fsterm
-                            = {sterm.coeff, prod_key, nlmtc_key};
+                            = {sterm.coeff, prod_key, nlmtp_key};
                     linear_features_deriv[t1][idx].emplace_back(fsterm);
                 }
             }
@@ -255,20 +247,12 @@ void FunctionFeatures::set_polynomials(const ModelParams& modelp){
     }
 }
 
-const std::vector<lmAttribute>& FunctionFeatures::get_lm_map() const {
-    return lm_map;
+const Mapping& FunctionFeatures::get_mapping() const {
+    return mapping;
 }
-const std::vector<nlmtcAttribute>&
-FunctionFeatures::get_nlmtc_map_no_conjugate() const{
-    return nlmtc_map_no_conjugate;
+const ModelParams& FunctionFeatures::get_model_params() const {
+    return modelp;
 }
-const std::vector<nlmtcAttribute>& FunctionFeatures::get_nlmtc_map() const {
-    return nlmtc_map;
-}
-const int FunctionFeatures::get_n_nlmtc_all() const {
-    return n_nlmtc_all;
-}
-
 
 const vector2i& FunctionFeatures::get_prod_map(const int t) const {
     return prod_map[t];

@@ -26,11 +26,11 @@ void Permutenr
     }
 }
 
-struct LinearTermGtinv {
-    int lmindex;
-    vector1i tcomb_index;
-    vector1i type1;
-};
+//struct LinearTermGtinv {
+//    int lmindex;
+//    vector1i tcomb_index;
+//    vector1i type1;
+//};
 
 struct LinearTerm {
     int n;
@@ -50,13 +50,13 @@ class ModelParams{
     vector2i type_pairs;
     vector3i tp_combs, params_conditional;
 
-    std::vector<struct LinearTermGtinv> linear_array_g;
     std::vector<struct LinearTerm> linear_terms;
 
     void initial_setting(const feature_params& fp, const Mapping& mapping);
+    void polynomial_setting(const feature_params& fp);
+
     void enumerate_tp_combs(const feature_params& fp, const Mapping& mapping);
     void uniq_gtinv_type(const feature_params& fp, const Mapping& mapping);
-
 
     void combination1();
     void combination2(const vector1i& iarray);
@@ -67,7 +67,7 @@ class ModelParams{
 
     vector1i vector_intersection(vector1i v1, vector1i v2);
     vector1i intersection_types_in_polynomial(const vector2i &type1_array);
-    bool check_type_pairs(const vector1i& index, const int& type1) const;
+    bool check_type_in_type_pairs(const vector1i& tp_comb, const int& type1) const;
     int find_tp_comb_id(const vector2i& tp_comb_ref, const vector1i& tp_comb);
 
     int seq2typecomb(const int& seq);
@@ -94,7 +94,7 @@ class ModelParams{
 //    const vector2i& get_type_pairs() const;
 //    const vector2i& get_type_pair_to_nlist() const;
 
-    const std::vector<struct LinearTermGtinv>& get_linear_term_gtinv() const;
+//    const std::vector<struct LinearTermGtinv>& get_linear_term_gtinv() const;
     const std::vector<struct LinearTerm>& get_linear_terms() const;
 
     const vector3i& get_tp_combs() const;

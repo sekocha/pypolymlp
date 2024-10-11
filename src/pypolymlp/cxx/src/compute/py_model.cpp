@@ -20,11 +20,10 @@ PyModel::PyModel(const py::dict& params_dict,
     const bool& print_memory = params_dict["print_memory"].cast<bool>();
     convert_params_dict_to_feature_params(params_dict, fp);
 
-    // added for local_fast and model_fast
-    const ModelParams modelp(fp, element_swap);
-    const Features f_obj(fp, modelp);
-
-    FunctionFeatures features_obj(fp, modelp, f_obj);
+    std::cout << "Features" << std::endl;
+    const Features f_obj(fp);
+    std::cout << "FunctionFeatures" << std::endl;
+    FunctionFeatures features_obj(f_obj);
 
     std::vector<bool> force_st;
     vector1i xf_begin, xs_begin;
@@ -33,10 +32,12 @@ PyModel::PyModel(const py::dict& params_dict,
         xf_begin, xs_begin, force_st
     );
 
+    std::cout << "Neighbor" << std::endl;
     Neighbor neigh(axis[0], positions_c[0], types[0], fp.n_type, fp.cutoff);
+    std::cout << "ModelFast1" << std::endl;
     ModelFast mod(
         neigh.get_dis_array(), neigh.get_diff_array(), neigh.get_atom2_array(),
-        types[0], fp, modelp, features_obj
+        types[0], fp, features_obj
     );
 
     const int n_features = mod.get_xe_sum().size();
@@ -69,7 +70,7 @@ PyModel::PyModel(const py::dict& params_dict,
         ModelFast mod(neigh.get_dis_array(),
                       neigh.get_diff_array(),
                       neigh.get_atom2_array(),
-                      types[i], fp1, modelp, features_obj);
+                      types[i], fp1, features_obj);
 
         const auto &xe = mod.get_xe_sum();
         for (size_t j = 0; j < xe.size(); ++j) x_all(i,j) = xe[j];

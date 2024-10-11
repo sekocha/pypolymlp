@@ -28,7 +28,6 @@ class ModelFast{
         const vector4d& diff_array_all,
         const vector3i& atom2_array_all,
         const struct feature_params& fp,
-        const ModelParams& modelp,
         const FunctionFeatures& features
     );
 
@@ -37,7 +36,6 @@ class ModelFast{
         const vector4d& diff_array,
         const vector3i& atom2_array,
         const struct feature_params& fp,
-        const ModelParams& modelp,
         const FunctionFeatures& features
     );
 
@@ -96,7 +94,6 @@ class ModelFast{
         const vector3i& atom2_array_all,
         const vector1i& types_i,
         const struct feature_params& fp,
-        const ModelParams& modelp,
         const FunctionFeatures& features
     );
     ~ModelFast();

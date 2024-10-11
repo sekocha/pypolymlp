@@ -158,20 +158,19 @@ class ParamsParser:
 
         element_pairs = itertools.combinations_with_replacement(self._elements, 2)
         pair_params_indices = dict()
-        if cond:
-            for ele_pair in element_pairs:
-                key = (self._atomtypes[ele_pair[0]], self._atomtypes[ele_pair[1]])
-                if ele_pair not in distance:
-                    pair_params_indices[key] = list(range(len(pair_params)))
-                else:
-                    match = [len(pair_params) - 1]
-                    for dis in distance[ele_pair]:
-                        for i, p in enumerate(pair_params[:-1]):
-                            if dis < p[1] + 1 / p[0] and dis > p[1] - 1 / p[0]:
-                                match.append(i)
-                    pair_params_indices[key] = sorted(set(match))
-        print(cond)
-        print(pair_params)
+        for ele_pair in element_pairs:
+            key = (self._atomtypes[ele_pair[0]], self._atomtypes[ele_pair[1]])
+            if ele_pair not in distance:
+                pair_params_indices[key] = list(range(len(pair_params)))
+            else:
+                match = [len(pair_params) - 1]
+                for dis in distance[ele_pair]:
+                    for i, p in enumerate(pair_params[:-1]):
+                        if dis < p[1] + 1 / p[0] and dis > p[1] - 1 / p[0]:
+                            match.append(i)
+                pair_params_indices[key] = sorted(set(match))
+        print(pair_params_indices)
+
         return pair_params, pair_params_indices, cond
 
     def _get_atomic_energy(self, n_type: int):

@@ -14,19 +14,17 @@ ModelFast::ModelFast(const vector3d& dis_array,
                      const vector3i& atom2_array,
                      const vector1i& types_i,
                      const struct feature_params& fp,
-                     const ModelParams& modelp,
                      const FunctionFeatures& features){
 
     types = types_i;
-
     n_atom = dis_array.size();
     n_type = fp.n_type;
     force = fp.force;
     model_type = fp.model_type;
     maxp = fp.maxp;
 
+    const auto& modelp = features.get_model_params();
     n_linear_features = modelp.get_n_linear_features();
-
     const int size = modelp.get_n_coeff_all();
     xe_sum = vector1d(size, 0.0);
     if (force == true){
@@ -34,10 +32,10 @@ ModelFast::ModelFast(const vector3d& dis_array,
         xs_sum = vector2d(6, vector1d(size,0.0));
     }
 
-    if (fp.des_type == "pair")
-        pair(dis_array, diff_array, atom2_array, fp, modelp, features);
-    else if (fp.des_type == "gtinv")
-        gtinv(dis_array, diff_array, atom2_array, fp, modelp, features);
+    if (fp.feature_type == "pair")
+        pair(dis_array, diff_array, atom2_array, fp, features);
+    else if (fp.feature_type == "gtinv")
+        gtinv(dis_array, diff_array, atom2_array, fp, features);
 }
 
 ModelFast::~ModelFast(){}
@@ -46,15 +44,15 @@ void ModelFast::pair(const vector3d& dis_array,
                      const vector4d& diff_array,
                      const vector3i& atom2_array,
                      const struct feature_params& fp,
-                     const ModelParams& modelp,
                      const FunctionFeatures& features){
 
+    const auto& mapping = features.get_mapping();
     //#ifdef _OPENMP
     //#pragma omp parallel for //reduction(+:xe_sum, xf_sum, xs_sum)
     //#endif
     for (int atom1 = 0; atom1 < n_atom; ++atom1){
         vector1d de; vector2d dfx, dfy, dfz, ds;
-        LocalFast local(n_atom, atom1, types[atom1], fp, modelp);
+        LocalFast local(n_atom, atom1, types[atom1], fp, mapping);
         if (force == false) local.pair(dis_array[atom1], de);
         else {
             local.pair_d(
@@ -70,15 +68,15 @@ void ModelFast::gtinv(const vector3d& dis_array,
                       const vector4d& diff_array,
                       const vector3i& atom2_array,
                       const struct feature_params& fp,
-                      const ModelParams& modelp,
                       const FunctionFeatures& features){
 
+    const auto& mapping = features.get_mapping();
     //#ifdef _OPENMP
     //#pragma omp parallel for //reduction(+:xe_sum, xf_sum, xs_sum)
     //#endif
     for (int atom1 = 0; atom1 < n_atom; ++atom1){
         vector1d de; vector2d dfx, dfy, dfz, ds;
-        LocalFast local(n_atom, atom1, types[atom1], fp, modelp);
+        LocalFast local(n_atom, atom1, types[atom1], fp, mapping);
         if (force == false) {
             local.gtinv(
                 dis_array[atom1], diff_array[atom1], features, de

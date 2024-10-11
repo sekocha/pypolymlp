@@ -24,13 +24,11 @@ PyAdditiveModel::PyAdditiveModel(const std::vector<py::dict>& params_dict_array,
         element_swap = params_dict["element_swap"].cast<bool>();
         print_memory = params_dict["print_memory"].cast<bool>();
         convert_params_dict_to_feature_params(params_dict, fp);
+        const Features f_obj(fp);
+        FunctionFeatures features_obj(f_obj);
+
         fp_array.emplace_back(fp);
-
-        ModelParams modelp(fp, element_swap);
-        modelp_array.emplace_back(modelp);
-        const Features f_obj(fp, modelp);
-
-        FunctionFeatures features_obj(fp, modelp, f_obj);
+//        modelp_array.emplace_back(f_obj.get_model_params());
         features_array.emplace_back(features_obj);
     }
 
@@ -60,7 +58,7 @@ PyAdditiveModel::PyAdditiveModel(const std::vector<py::dict>& params_dict_array,
                       neigh.get_diff_array(),
                       neigh.get_atom2_array(),
                       types_mod, fp,
-                      modelp_array[imodel], features_array[imodel]);
+                      features_array[imodel]);
 
         n_features += mod.get_xe_sum().size();
         cumulative_n_features.emplace_back(n_features);
@@ -85,7 +83,7 @@ PyAdditiveModel::PyAdditiveModel(const std::vector<py::dict>& params_dict_array,
         std::set<int> uniq_types(types[i].begin(), types[i].end());
         for (size_t n = 0; n < cumulative_n_features.size(); ++n){
             struct feature_params fp1 = fp_array[n];
-            const auto& modelp1 = modelp_array[n];
+//            const auto& modelp1 = modelp_array[n];
             const auto& features1 = features_array[n];
             fp1.force = force_st[i];
 
@@ -105,7 +103,7 @@ PyAdditiveModel::PyAdditiveModel(const std::vector<py::dict>& params_dict_array,
                           neigh.get_diff_array(),
                           neigh.get_atom2_array(),
                           types_mod, fp1,
-                          modelp1, features1);
+                          features1);
 
             const auto &xe = mod.get_xe_sum();
             for (size_t j = 0; j < xe.size(); ++j)

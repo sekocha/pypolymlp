@@ -9,6 +9,7 @@
 #define __PYFEATURESATTR
 
 #include "mlpcpp.h"
+#include "polymlp/polymlp_mapping.h"
 #include "polymlp/polymlp_model_params.h"
 #include "compute/functions.h"
 

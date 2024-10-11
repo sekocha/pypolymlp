@@ -22,10 +22,13 @@ Features::Features(){}
 
 Features::Features(const feature_params& fp){
 
+    std::cout << "Mapping" << std::endl;
     mapping = Mapping(fp);
+    std::cout << "Mapping: finished" << std::endl;
     modelp = ModelParams(fp, mapping);
-
-//    n_type = fp.n_type;
+    std::cout << "ModelParams: finished" << std::endl;
+    n_type = fp.n_type;
+    std::cout << n_type << std::endl;
 //    type_pairs = mapping.get_type_pairs();
 
     MultipleFeatures mfeatures1;
@@ -45,9 +48,9 @@ Features::Features(const feature_params& fp){
 }
 
 Features::~Features(){}
-/*
-MultipleFeatures Features::set_linear_features_pair(){
 
+MultipleFeatures Features::set_linear_features_pair(){
+/*
     // TODO: MUST BE REVISED.
     // The order of tc and n must be fixed.
     std::vector<SingleFeature> feature_array;
@@ -71,8 +74,10 @@ MultipleFeatures Features::set_linear_features_pair(){
         }
     }
     return feature_array;
+    */
+    std::vector<SingleFeature> feature_array;
+    return feature_array;
 }
-*/
 
 MultipleFeatures Features::set_linear_features(const feature_params& fp){
 
@@ -113,6 +118,7 @@ MultipleFeatures Features::set_linear_features(const feature_params& fp){
     return feature_array;
 }
 
+const int Features::get_n_type() const { return n_type; }
 const int Features::get_n_features() const { return mfeatures.size(); }
 const int Features::get_n_feature_combinations() const {
     return feature_combinations.size();
@@ -126,26 +132,6 @@ const vector2i& Features::get_feature_combinations() const {
 const Mapping& Features::get_mapping() const {
     return mapping;
 }
-
-/*
-// not used
-SingleFeature Features::product_features(const SingleFeature& feature1,
-                                         const SingleFeature& feature2){
-    SingleFeature feature;
-    for (const auto& term1: feature1){
-        for (const auto& term2: feature2){
-            SingleTerm single;
-            single.coeff = term1.coeff * term2.coeff;
-            for (const auto& key: term1.nlmtc_keys){
-                single.nlmtc_keys.emplace_back(key);
-            }
-            for (const auto& key: term2.nlmtc_keys){
-                single.nlmtc_keys.emplace_back(key);
-            }
-            std::sort(single.nlmtc_keys.begin(), single.nlmtc_keys.end());
-            feature.emplace_back(single);
-        }
-    }
-    return feature;
+const ModelParams& Features::get_model_params() const {
+    return modelp;
 }
-*/
