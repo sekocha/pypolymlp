@@ -88,7 +88,7 @@ MultipleFeatures Features::set_linear_features(const feature_params& fp){
     std::vector<SingleFeature> feature_array;
     for (const auto& linear: modelp.get_linear_terms()){
         const int n = linear.n;
-        const int n_id = linear.n_id;
+        //const int n_id = linear.n_id;
         const int lm_comb_id = linear.lm_comb_id;
         const int tp_comb_id = linear.tp_comb_id;
         const int order = linear.order;

@@ -133,6 +133,8 @@ int ModelParams::find_tp_comb_id(const vector2i& tp_comb_ref, const vector1i& tp
 void ModelParams::uniq_gtinv_type(const feature_params& fp, const Mapping& mapping){
 
     enumerate_tp_combs(fp, mapping);
+
+    const auto& n_ids = mapping.get_n_ids();
     std::vector<std::vector<LinearTerm> > _linear_terms(n_fn);
 
     for (size_t lm_comb_id = 0; lm_comb_id < fp.l_comb.size(); ++lm_comb_id){
@@ -156,19 +158,20 @@ void ModelParams::uniq_gtinv_type(const feature_params& fp, const Mapping& mappi
 
             const int tp_comb_id = find_tp_comb_id(tp_combs_ref, tp_comb);
             const auto& n_list = n_list_ref[tp_comb_id];
-            vector1i t1a;
 
+            vector1i t1a;
             for (int type1 = 0; type1 < n_type; ++type1){
                 if (check_type_in_type_pairs(tp_comb, type1) == true){
                     t1a.emplace_back(type1);
                 }
             }
 
-            for (size_t n_id = 0; n_id < n_list.size(); ++n_id){
+            int n_ids = 0;
+            for (const auto n: n_list){
                 const LinearTerm linear = {
-                    n_list[n_id], int(n_id), int(lm_comb_id), tp_comb_id, order, t1a
+                    n, n_ids, int(lm_comb_id), tp_comb_id, order, t1a
                 };
-                _linear_terms[n_list[n_id]].emplace_back(linear);
+                _linear_terms[n].emplace_back(linear);
             }
         }
     }
@@ -178,7 +181,7 @@ void ModelParams::uniq_gtinv_type(const feature_params& fp, const Mapping& mappi
             linear_terms.emplace_back(linear);
         }
     }
-
+/*
     vector1i list = {79, 144, 597, 601, 602, 603};
     //for (int i = 79; i < 80; ++i){
     for (auto i: list){
@@ -198,6 +201,7 @@ void ModelParams::uniq_gtinv_type(const feature_params& fp, const Mapping& mappi
         }
         std::cout << std::endl;
     }
+    */
 
     /*
     int i = 0;
