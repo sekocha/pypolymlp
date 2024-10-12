@@ -119,8 +119,17 @@ void ModelFast::model_linear(const vector1d& de,
                              const int type1){
 
     const auto& poly = features.get_polynomial1(type1);
+    //if (type1 == 1){
+    //    std::cout << de[39] << std::endl;
+    //}
     for (size_t tlocal = 0; tlocal < poly.size(); ++tlocal){
         const auto& pterm = poly[tlocal];
+        /*
+        if (pterm.seq_id == 79){
+            std::cout << "ml: " << pterm.seq_id
+                << " " << tlocal << " " << de[tlocal] << std::endl;
+        }
+        */
         xe_sum[pterm.seq_id] += de[tlocal];
     }
     if (force == true){

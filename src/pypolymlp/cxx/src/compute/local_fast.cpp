@@ -165,7 +165,11 @@ void LocalFast::compute_linear_features(const vector1d& prod_anlmtp,
             val = 0.0;
             for (const auto& sterm: sfeature){
                 val += sterm.coeff * prod_anlmtp[sterm.prod_key];
+                //if (idx == 39){
+                //    std::cout << sterm.coeff << " " << prod_anlmtp[sterm.prod_key] << std::endl;
+                //}
             }
+            //if (idx == 39) std::cout << "val:" << val << std::endl;
             dn[idx] = val;
             ++idx;
         }
@@ -232,7 +236,6 @@ void LocalFast::compute_anlm(const vector2d& dis_a,
     const auto& tp_to_params = mapping.get_type_pair_to_params();
     anlm = vector1dc(n_nlmtp_all, 0.0);
 
-    vector1d fn;
     vector1dc ylm;
     int ylmkey;
     double dis,cc;
@@ -245,6 +248,7 @@ void LocalFast::compute_anlm(const vector2d& dis_a,
             if (dis < fp.cutoff){
                 const vector1d &sph = cartesian_to_spherical_(diff_a[type2][j]);
                 params = tp_to_params[tp];
+                vector1d fn;
                 get_fn_(dis, fp, params, fn);
                 get_ylm_(sph[0], sph[1], fp.maxl, ylm);
                 for (const auto& nlmtp: nlmtp_attrs_no_conj){
@@ -284,7 +288,6 @@ void LocalFast::compute_anlm_d(const vector2d& dis_a,
     anlm_dfz = vector2dc(n_nlmtp_all, vector1dc(n_atom, 0.0));
     anlm_ds = vector2dc(n_nlmtp_all, vector1dc(6, 0.0));
 
-    vector1d fn,fn_d;
     vector1dc ylm,ylm_dx,ylm_dy,ylm_dz;
     double delx,dely,delz,dis,cc;
     dc d1,valx,valy,valz;
@@ -302,6 +305,7 @@ void LocalFast::compute_anlm_d(const vector2d& dis_a,
                 atom2 = atom2_a[type2][j];
                 const vector1d &sph = cartesian_to_spherical_(diff_a[type2][j]);
                 params = tp_to_params[tp];
+                vector1d fn, fn_d;
                 get_fn_(dis, fp, params, fn, fn_d);
                 get_ylm_(dis, sph[0], sph[1], fp.maxl,
                          ylm, ylm_dx, ylm_dy, ylm_dz);

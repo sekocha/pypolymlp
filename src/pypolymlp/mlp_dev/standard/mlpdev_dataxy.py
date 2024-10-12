@@ -177,6 +177,8 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
         else:
             self._scales = scales
 
+        self._scales[np.abs(self._scales) < 1e-30] = 1.0
+
         data_xy.xtx /= self._scales[:, np.newaxis]
         data_xy.xtx /= self._scales[np.newaxis, :]
         data_xy.xty /= self._scales

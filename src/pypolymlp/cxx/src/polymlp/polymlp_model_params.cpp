@@ -179,6 +179,26 @@ void ModelParams::uniq_gtinv_type(const feature_params& fp, const Mapping& mappi
         }
     }
 
+    vector1i list = {79, 144, 597, 601, 602, 603};
+    //for (int i = 79; i < 80; ++i){
+    for (auto i: list){
+        auto linear =  linear_terms[i];
+        std::cout << i << " : " << linear.n << " " << linear.lm_comb_id << " [";
+        for (auto l: fp.l_comb[linear.lm_comb_id]){
+            std::cout << l << ",";
+        }
+        std::cout << std::endl;
+        std::cout << ", [";
+        for (auto t: tp_combs[linear.order][linear.tp_comb_id]){
+            std::cout << t << ",";
+        }
+        std::cout << std::endl;
+        for (auto t: linear.type1){
+            std::cout << t << ",";
+        }
+        std::cout << std::endl;
+    }
+
     /*
     int i = 0;
     for (const auto& linear: linear_terms){

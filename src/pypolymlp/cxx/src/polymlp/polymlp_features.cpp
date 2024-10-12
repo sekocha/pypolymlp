@@ -28,7 +28,6 @@ Features::Features(const feature_params& fp){
     modelp = ModelParams(fp, mapping);
     std::cout << "ModelParams: finished" << std::endl;
     n_type = fp.n_type;
-    std::cout << n_type << std::endl;
 //    type_pairs = mapping.get_type_pairs();
 
     MultipleFeatures mfeatures1;

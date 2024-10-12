@@ -102,6 +102,10 @@ class Features:
         fbegin, sbegin = obj.get_fbegin(), obj.get_sbegin()
         ne, nf, ns = obj.get_n_data()
 
+        for col in range(self._x.shape[1]):
+            if np.all(np.abs(self._x[:, col]) < 1e-15):
+                print(col)
+
         ebegin, ei = [], 0
         for n in n_st_dataset:
             ebegin.append(ei)

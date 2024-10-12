@@ -228,6 +228,7 @@ void FunctionFeatures::set_polynomials(const ModelParams& modelp){
             PolynomialTerm pterm = {i, vector1i{}};
             polynomials1[type1].emplace_back(pterm);
             map1[i] = tlocal_id;
+            if (i == 79) std::cout << "t_local: " << tlocal_id << std::endl;
             ++tlocal_id;
         }
         begin = n_linear_features;
