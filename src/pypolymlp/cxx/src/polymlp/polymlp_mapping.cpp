@@ -107,7 +107,8 @@ void Mapping::set_nlmtp_attrs(){
     for (int n = 0; n < n_fn; ++n){
         for (int lm = 0; lm < n_lm_all; ++lm){
             const auto& lm_attr = lm_attrs[lm];
-            conj_key_add = 2 * lm_attr.m * n_type_pairs;
+            //conj_key_add = 2 * lm_attr.m * n_type_pairs;
+            conj_key_add = 2 * lm_attr.m * map_n_to_tplist[n].size();
             for (const auto& tp: map_n_to_tplist[n]){
                 conj_key = nlmtp_key - conj_key_add;
                 n_id = n_id_list[tp][n];
