@@ -16,30 +16,23 @@ PyFeaturesAttr::PyFeaturesAttr(const py::dict& params_dict){
     Mapping mapping(fp);
     ModelParams modelp(fp, mapping);
     type_pairs = mapping.get_type_pairs();
-    // TODO: must be revised.
-    const int n_fn = fp.params.size();
-    const int n_tp = mapping.get_n_type_pairs();
 
     if (fp.feature_type == "pair"){
-        for (int tp = 0; tp < n_tp; ++tp){
-            for (int n = 0; n < n_fn; ++n){
-                radial_ids.emplace_back(n);
-                tcomb_ids.emplace_back(vector1i({tp}));
-            }
+        const auto& ntp_attrs = mapping.get_ntp_attrs();
+        for (const auto& ntp: ntp_attrs){
+            radial_ids.emplace_back(ntp.n);
+            tcomb_ids.emplace_back(vector1i({ntp.tp}));
         }
     }
-    /*
-    else if (fp.des_type == "gtinv"){
-        const auto& linear_all = modelp.get_linear_term_gtinv();
-        for (int n = 0; n < n_fn; ++n){
-            for (auto& linear: linear_all){
-                radial_ids.emplace_back(n);
-                gtinv_ids.emplace_back(linear.lmindex);
-                tcomb_ids.emplace_back(linear.tcomb_index);
-            }
+    else if (fp.feature_type == "gtinv"){
+        const auto& linear_terms = modelp.get_linear_terms();
+        const auto& tp_combs = modelp.get_tp_combs();
+        for (const auto& linear: linear_terms){
+            radial_ids.emplace_back(linear.n);
+            gtinv_ids.emplace_back(linear.lm_comb_id);
+            tcomb_ids.emplace_back(tp_combs[linear.order][linear.tp_comb_id]);
         }
     }
-    */
 
     for (const auto& comb2: modelp.get_comb2()){
         polynomial_ids.emplace_back(comb2);
