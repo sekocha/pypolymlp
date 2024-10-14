@@ -23,12 +23,9 @@ Features::Features(){}
 Features::Features(const feature_params& fp){
 
     n_type = fp.n_type;
-    std::cout << "Mapping" << std::endl;
     mapping = Mapping(fp);
-    std::cout << "ModelParams" << std::endl;
     modelp = ModelParams(fp, mapping);
 
-    std::cout << "SetLinearFeatures" << std::endl;
     MultipleFeatures mfeatures1;
     if (fp.feature_type == "pair") mfeatures = set_linear_features_pair();
     else if (fp.feature_type == "gtinv") mfeatures = set_linear_features(fp);

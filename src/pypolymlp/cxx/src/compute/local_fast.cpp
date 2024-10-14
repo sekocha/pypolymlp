@@ -70,6 +70,7 @@ void LocalFast::pair_d(const vector2d& dis_a,
 
     int atom2, col;
     double dis,delx,dely,delz,valx,valy,valz;
+    vector2d params;
 
     for (int type2 = 0; type2 < n_type; ++type2){
         const int tp = type_pairs[type2];
@@ -80,8 +81,9 @@ void LocalFast::pair_d(const vector2d& dis_a,
             delz = diff_a[type2][j][2];
             atom2 = atom2_a[type2][j];
 
+            params = tp_to_params[tp];
             vector1d fn,fn_d;
-            get_fn_(dis, fp, fn, fn_d);
+            get_fn_(dis, fp, params, fn, fn_d);
             col = 0;
             for (const auto& ntp: ntp_attrs){
                 if (tp == ntp.tp){

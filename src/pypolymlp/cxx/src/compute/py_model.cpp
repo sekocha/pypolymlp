@@ -21,7 +21,6 @@ PyModel::PyModel(const py::dict& params_dict,
     convert_params_dict_to_feature_params(params_dict, fp);
 
     const Features f_obj(fp);
-    std::cout << "FunctionFeatures" << std::endl;
     const FunctionFeatures features_obj(f_obj);
 
     std::vector<bool> force_st;
@@ -32,7 +31,6 @@ PyModel::PyModel(const py::dict& params_dict,
     );
 
     Neighbor neigh(axis[0], positions_c[0], types[0], fp.n_type, fp.cutoff);
-    std::cout << "ModelFast1" << std::endl;
     ModelFast mod(
         neigh.get_dis_array(), neigh.get_diff_array(), neigh.get_atom2_array(),
         types[0], fp, features_obj

@@ -169,7 +169,6 @@ class ParamsParser:
                         if dis < p[1] + 1 / p[0] and dis > p[1] - 1 / p[0]:
                             match.append(i)
                 pair_params_indices[key] = sorted(set(match))
-        print(pair_params_indices)
 
         return pair_params, pair_params_indices, cond
 
