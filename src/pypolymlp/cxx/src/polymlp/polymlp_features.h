@@ -36,10 +36,6 @@ class Features {
     MultipleFeatures set_linear_features_pair();
     MultipleFeatures set_linear_features(const feature_params& fp);
 
-    //// not used
-    //SingleFeature product_features(const SingleFeature& feature1,
-    //                               const SingleFeature& feature2);
-
     public:
 
     Features();

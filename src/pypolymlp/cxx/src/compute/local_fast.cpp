@@ -13,86 +13,98 @@ LocalFast::LocalFast(const int& n_atom_i,
                      const int& atom1_i,
                      const int& type1_i,
                      const struct feature_params& fp_i,
-                     const Mapping& mapping){
+                     const FunctionFeatures& features){
 
     n_atom = n_atom_i, atom1 = atom1_i, type1 = type1_i,
     fp = fp_i;
     n_type = fp.n_type;
-    n_fn = fp.params.size();
 
+    const auto& mapping = features.get_mapping();
     type_pairs = mapping.get_type_pairs()[type1];
-    if (fp.feature_type == "pair"){
-        size_pair = n_fn * n_type;
-        for (int type2 = 0; type2 < n_type; ++type2) type2_array.emplace_back(type2);
-    }
 }
 
 LocalFast::~LocalFast(){}
 
-// Use params.
-void LocalFast::pair(const vector2d& dis_a, vector1d& dn){
+void LocalFast::pair(const vector2d& dis_a,
+                     const FunctionFeatures& features,
+                     vector1d& dn){
 
-    dn = vector1d(size_pair, 0.0);
+    const auto& mapping = features.get_mapping();
+    const auto& ntp_attrs = mapping.get_ntp_attrs(type1);
+    const auto& tp_to_params = mapping.get_type_pair_to_params();
 
-    vector1d fn;
-    int begin, i_type2(0);
-    for (const auto& type2: type2_array){
-        begin = i_type2 * n_fn;
+    dn = vector1d(ntp_attrs.size(), 0.0);
+    vector2d params;
+    for (int type2 = 0; type2 < n_type; ++type2){
+        const int tp = type_pairs[type2];
         for (const auto& dis: dis_a[type2]){
-            get_fn_(dis, fp, fn);
-            for (int n = 0; n < n_fn; ++n) dn[begin+n] += fn[n];
+            params = tp_to_params[tp];
+            vector1d fn;
+            get_fn_(dis, fp, params, fn);
+            int key(0);
+            for (const auto& ntp: ntp_attrs){
+                if (tp == ntp.tp) dn[key] += fn[ntp.n_id];
+                ++key;
+            }
         }
-        ++i_type2;
     }
 }
 
 void LocalFast::pair_d(const vector2d& dis_a,
                        const vector3d& diff_a,
                        const vector2i& atom2_a,
+                      const FunctionFeatures& features,
                        vector1d& dn,
                        vector2d& dn_dfx,
                        vector2d& dn_dfy,
                        vector2d& dn_dfz,
                        vector2d& dn_ds){
 
-    dn = vector1d(size_pair, 0.0);
-    dn_dfx = dn_dfy = dn_dfz = vector2d(size_pair, vector1d(n_atom, 0.0));
-    dn_ds = vector2d(size_pair, vector1d(6, 0.0));
+    const auto& mapping = features.get_mapping();
+    const auto& ntp_attrs = mapping.get_ntp_attrs(type1);
+    const auto& tp_to_params = mapping.get_type_pair_to_params();
 
-    int atom2, begin, col, i_type2(0);
+    dn = vector1d(ntp_attrs.size(), 0.0);
+    dn_dfx = dn_dfy = dn_dfz = vector2d(ntp_attrs.size(), vector1d(n_atom, 0.0));
+    dn_ds = vector2d(ntp_attrs.size(), vector1d(6, 0.0));
+
+    int atom2, col;
     double dis,delx,dely,delz,valx,valy,valz;
-    vector1d fn,fn_d;
 
-    for (const auto& type2: type2_array){
-        begin = i_type2 * n_fn;
+    for (int type2 = 0; type2 < n_type; ++type2){
+        const int tp = type_pairs[type2];
         for (size_t j = 0; j < dis_a[type2].size(); ++j){
             dis = dis_a[type2][j];
             delx = diff_a[type2][j][0];
             dely = diff_a[type2][j][1];
             delz = diff_a[type2][j][2];
             atom2 = atom2_a[type2][j];
+
+            vector1d fn,fn_d;
             get_fn_(dis, fp, fn, fn_d);
-            for (int n = 0; n < n_fn; ++n){
-                col = begin + n;
-                dn[col] += fn[n];
-                valx = fn_d[n] * delx / dis;
-                valy = fn_d[n] * dely / dis;
-                valz = fn_d[n] * delz / dis;
-                dn_dfx[col][atom1] += valx;
-                dn_dfy[col][atom1] += valy;
-                dn_dfz[col][atom1] += valz;
-                dn_dfx[col][atom2] -= valx;
-                dn_dfy[col][atom2] -= valy;
-                dn_dfz[col][atom2] -= valz;
-                dn_ds[col][0] -= valx * delx;
-                dn_ds[col][1] -= valy * dely;
-                dn_ds[col][2] -= valz * delz;
-                dn_ds[col][3] -= valx * dely;
-                dn_ds[col][4] -= valy * delz;
-                dn_ds[col][5] -= valz * delx;
+            col = 0;
+            for (const auto& ntp: ntp_attrs){
+                if (tp == ntp.tp){
+                    dn[col] += fn[ntp.n_id];
+                    valx = fn_d[ntp.n_id] * delx / dis;
+                    valy = fn_d[ntp.n_id] * dely / dis;
+                    valz = fn_d[ntp.n_id] * delz / dis;
+                    dn_dfx[col][atom1] += valx;
+                    dn_dfy[col][atom1] += valy;
+                    dn_dfz[col][atom1] += valz;
+                    dn_dfx[col][atom2] -= valx;
+                    dn_dfy[col][atom2] -= valy;
+                    dn_dfz[col][atom2] -= valz;
+                    dn_ds[col][0] -= valx * delx;
+                    dn_ds[col][1] -= valy * dely;
+                    dn_ds[col][2] -= valz * delz;
+                    dn_ds[col][3] -= valx * dely;
+                    dn_ds[col][4] -= valy * delz;
+                    dn_ds[col][5] -= valz * delx;
+                }
+                ++col;
             }
         }
-        ++i_type2;
     }
 }
 
@@ -165,11 +177,7 @@ void LocalFast::compute_linear_features(const vector1d& prod_anlmtp,
             val = 0.0;
             for (const auto& sterm: sfeature){
                 val += sterm.coeff * prod_anlmtp[sterm.prod_key];
-                //if (idx == 39){
-                //    std::cout << sterm.coeff << " " << prod_anlmtp[sterm.prod_key] << std::endl;
-                //}
             }
-            //if (idx == 39) std::cout << "val:" << val << std::endl;
             dn[idx] = val;
             ++idx;
         }

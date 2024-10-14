@@ -202,14 +202,6 @@ vector1i FunctionFeatures::erase_a_key(const vector1i& original, const int idx){
     return keys;
 }
 
-/*
-void FunctionFeatures::print_keys(const vector1i& keys){
-    for (const auto& k: keys)
-        std::cout << k << " ";
-    std::cout << std::endl;
-}
-*/
-
 void FunctionFeatures::set_polynomials(const ModelParams& modelp){
 
     polynomials1.resize(n_type);
@@ -228,7 +220,6 @@ void FunctionFeatures::set_polynomials(const ModelParams& modelp){
             PolynomialTerm pterm = {i, vector1i{}};
             polynomials1[type1].emplace_back(pterm);
             map1[i] = tlocal_id;
-            if (i == 79) std::cout << "t_local: " << tlocal_id << std::endl;
             ++tlocal_id;
         }
         begin = n_linear_features;

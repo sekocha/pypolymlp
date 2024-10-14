@@ -270,7 +270,7 @@ void PolymlpEval::eval_gtinv(const vector2d& positions_c,
             if (dis < pot.fp.cutoff){
                 tp = type_pairs[type1][type2];
                 params = tp_to_params[tp];
-                const auto& sph= cartesian_to_spherical_(vector1d{dx,dy,dz});
+                const auto& sph = cartesian_to_spherical_(vector1d{dx,dy,dz});
                 get_fn_(dis, pot.fp, params, fn, fn_d);
                 get_ylm_(dis, sph[0], sph[1], pot.fp.maxl,
                          ylm, ylm_dx, ylm_dy, ylm_dz);

@@ -25,10 +25,8 @@ PyAdditiveModel::PyAdditiveModel(const std::vector<py::dict>& params_dict_array,
         print_memory = params_dict["print_memory"].cast<bool>();
         convert_params_dict_to_feature_params(params_dict, fp);
         const Features f_obj(fp);
-        FunctionFeatures features_obj(f_obj);
-
+        const FunctionFeatures features_obj(f_obj);
         fp_array.emplace_back(fp);
-//        modelp_array.emplace_back(f_obj.get_model_params());
         features_array.emplace_back(features_obj);
     }
 
@@ -83,7 +81,6 @@ PyAdditiveModel::PyAdditiveModel(const std::vector<py::dict>& params_dict_array,
         std::set<int> uniq_types(types[i].begin(), types[i].end());
         for (size_t n = 0; n < cumulative_n_features.size(); ++n){
             struct feature_params fp1 = fp_array[n];
-//            const auto& modelp1 = modelp_array[n];
             const auto& features1 = features_array[n];
             fp1.force = force_st[i];
 

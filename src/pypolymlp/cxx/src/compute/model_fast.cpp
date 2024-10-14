@@ -52,11 +52,11 @@ void ModelFast::pair(const vector3d& dis_array,
     //#endif
     for (int atom1 = 0; atom1 < n_atom; ++atom1){
         vector1d de; vector2d dfx, dfy, dfz, ds;
-        LocalFast local(n_atom, atom1, types[atom1], fp, mapping);
-        if (force == false) local.pair(dis_array[atom1], de);
+        LocalFast local(n_atom, atom1, types[atom1], fp, features);
+        if (force == false) local.pair(dis_array[atom1], features, de);
         else {
             local.pair_d(
-                dis_array[atom1], diff_array[atom1], atom2_array[atom1],
+                dis_array[atom1], diff_array[atom1], atom2_array[atom1], features,
                 de, dfx, dfy, dfz, ds
             );
         }
@@ -76,7 +76,7 @@ void ModelFast::gtinv(const vector3d& dis_array,
     //#endif
     for (int atom1 = 0; atom1 < n_atom; ++atom1){
         vector1d de; vector2d dfx, dfy, dfz, ds;
-        LocalFast local(n_atom, atom1, types[atom1], fp, mapping);
+        LocalFast local(n_atom, atom1, types[atom1], fp, features);
         if (force == false) {
             local.gtinv(
                 dis_array[atom1], diff_array[atom1], features, de
@@ -119,17 +119,8 @@ void ModelFast::model_linear(const vector1d& de,
                              const int type1){
 
     const auto& poly = features.get_polynomial1(type1);
-    //if (type1 == 1){
-    //    std::cout << de[39] << std::endl;
-    //}
     for (size_t tlocal = 0; tlocal < poly.size(); ++tlocal){
         const auto& pterm = poly[tlocal];
-        /*
-        if (pterm.seq_id == 79){
-            std::cout << "ml: " << pterm.seq_id
-                << " " << tlocal << " " << de[tlocal] << std::endl;
-        }
-        */
         xe_sum[pterm.seq_id] += de[tlocal];
     }
     if (force == true){

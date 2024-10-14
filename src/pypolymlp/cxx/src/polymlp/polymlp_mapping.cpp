@@ -10,7 +10,10 @@
 Mapping::Mapping(){}
 Mapping::Mapping(const struct feature_params& fp){
 
-    set_numbers(fp);
+    n_type = fp.n_type;
+    n_fn = fp.params.size();
+    maxl = fp.maxl;
+
     set_type_pairs(fp);
     set_map_n_to_tplist();
     if (fp.feature_type == "pair") set_ntp_attrs();
@@ -18,12 +21,6 @@ Mapping::Mapping(const struct feature_params& fp){
 }
 
 Mapping::~Mapping(){}
-
-void Mapping::set_numbers(const struct feature_params& fp){
-    n_type = fp.n_type;
-    n_fn = fp.params.size();
-    maxl = fp.maxl;
-}
 
 void Mapping::set_type_pairs(const struct feature_params& fp){
 
@@ -40,14 +37,6 @@ void Mapping::set_type_pairs(const struct feature_params& fp){
                 for (const auto& n: map_tp_to_nlist[tp]){
                     params_match.emplace_back(fp.params[n]);
                 }
-                /*
-                for (auto p1: params_match){
-                    for (auto p2: p1){
-                        std::cout << p2 << " ";
-                    }
-                    std::cout << std::endl;
-                }
-                */
                 map_tp_to_params.emplace_back(params_match);
                 ++tp;
             }
@@ -86,7 +75,7 @@ void Mapping::set_map_n_to_tplist(){
 }
 
 void Mapping::set_ntp_attrs(){
-    // for feature_type == pair
+
     int ntp_key(0), n_id;
     for (int tp = 0; tp < n_type_pairs; ++tp){
         for (const auto& n: map_tp_to_nlist[tp]){
@@ -97,19 +86,29 @@ void Mapping::set_ntp_attrs(){
             ++ntp_key;
         }
     }
+    n_ntp_all = ntp_attrs.size();
+
+    ntp_attrs_type.resize(n_type);
+    for (const auto& ntp: ntp_attrs){
+        for (int type1 = 0; type1 < n_type; ++type1){
+            const auto& tp_array = type_pairs[type1];
+            if (std::find(tp_array.begin(), tp_array.end(), ntp.tp) != tp_array.end()){
+                ntp_attrs_type[type1].emplace_back(ntp);
+            }
+        }
+    }
 }
 
 void Mapping::set_nlmtp_attrs(){
-    // for feature_type == gtinv
-    set_lm_attrs();
 
+    set_lm_attrs();
     int nlmtp_key(0), nlmtp_noconj_key(0), conj_key, conj_key_add, n_id;
     for (int n = 0; n < n_fn; ++n){
+        const auto& tp_list = map_n_to_tplist[n];
         for (int lm = 0; lm < n_lm_all; ++lm){
             const auto& lm_attr = lm_attrs[lm];
-            //conj_key_add = 2 * lm_attr.m * n_type_pairs;
-            conj_key_add = 2 * lm_attr.m * map_n_to_tplist[n].size();
-            for (const auto& tp: map_n_to_tplist[n]){
+            conj_key_add = 2 * lm_attr.m * tp_list.size();
+            for (const auto& tp: tp_list){
                 conj_key = nlmtp_key - conj_key_add;
                 n_id = n_id_list[tp][n];
                 nlmtpAttr nlmtps = {
@@ -160,13 +159,13 @@ void Mapping::set_lm_attrs(){
             lm_attrs.emplace_back(lm_attr);
         }
     }
-
     n_lm_all = lm_attrs.size();
     n_lm = (n_lm_all + maxl + 1) / 2;
 }
 
 
 const int Mapping::get_n_type_pairs() const { return n_type_pairs; }
+const int Mapping::get_n_ntp_all() const { return n_ntp_all; }
 const int Mapping::get_n_nlmtp_all() const { return n_nlmtp_all; }
 
 const vector2i& Mapping::get_type_pairs() const {
@@ -187,6 +186,9 @@ const vector3d& Mapping::get_type_pair_to_params() const {
 
 const std::vector<ntpAttr>& Mapping::get_ntp_attrs() const {
     return ntp_attrs;
+}
+const std::vector<ntpAttr>& Mapping::get_ntp_attrs(const int type1) const {
+    return ntp_attrs_type[type1];
 }
 const std::vector<nlmtpAttr>& Mapping::get_nlmtp_attrs_no_conjugate() const {
     return nlmtp_attrs_no_conjugate;

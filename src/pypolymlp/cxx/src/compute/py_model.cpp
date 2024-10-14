@@ -20,10 +20,9 @@ PyModel::PyModel(const py::dict& params_dict,
     const bool& print_memory = params_dict["print_memory"].cast<bool>();
     convert_params_dict_to_feature_params(params_dict, fp);
 
-    std::cout << "Features" << std::endl;
     const Features f_obj(fp);
     std::cout << "FunctionFeatures" << std::endl;
-    FunctionFeatures features_obj(f_obj);
+    const FunctionFeatures features_obj(f_obj);
 
     std::vector<bool> force_st;
     vector1i xf_begin, xs_begin;
@@ -32,7 +31,6 @@ PyModel::PyModel(const py::dict& params_dict,
         xf_begin, xs_begin, force_st
     );
 
-    std::cout << "Neighbor" << std::endl;
     Neighbor neigh(axis[0], positions_c[0], types[0], fp.n_type, fp.cutoff);
     std::cout << "ModelFast1" << std::endl;
     ModelFast mod(
@@ -148,55 +146,3 @@ Eigen::MatrixXd& PyModel::get_x(){ return x_all; }
 const vector1i& PyModel::get_fbegin() const{ return xf_begin_dataset; }
 const vector1i& PyModel::get_sbegin() const{ return xs_begin_dataset; }
 const vector1i& PyModel::get_n_data() const{ return n_data; }
-
-/*
-PyModelSingleStruct::PyModelSingleStruct(const py::dict& params_dict,
-                                         const vector2d& axis,
-                                         const vector2d& positions_c,
-                                         const vector1i& types){
-
-    const int n_type = params_dict["n_type"].cast<int>();
-    const bool& element_swap = params_dict["element_swap"].cast<bool>();
-
-    const py::dict& model = params_dict["model"].cast<py::dict>();
-    const auto& pair_params = model["pair_params"].cast<vector2d>();
-    const double& cutoff = model["cutoff"].cast<double>();
-    const std::string& pair_type = model["pair_type"].cast<std::string>();
-    const std::string& feature_type = model["feature_type"].cast<std::string>();
-    const int& model_type = model["model_type"].cast<int>();
-    const int& maxp = model["max_p"].cast<int>();
-    const int& maxl = model["max_l"].cast<int>();
-
-    const py::dict& gtinv = model["gtinv"].cast<py::dict>();
-    const auto& lm_array = gtinv["lm_seq"].cast<vector3i>();
-    const auto& l_comb = gtinv["l_comb"].cast<vector2i>();
-    const auto& lm_coeffs = gtinv["lm_coeffs"].cast<vector2d>();
-
-    const bool force = false;
-    struct feature_params fp = {n_type,
-                                force,
-                                pair_params,
-                                cutoff,
-                                pair_type,
-                                feature_type,
-                                model_type,
-                                maxp,
-                                maxl,
-                                lm_array,
-                                l_comb,
-                                lm_coeffs};
-
-    Neighbor neigh(axis, positions_c, types, fp.n_type, fp.cutoff);
-    Model mod(neigh.get_dis_array(),
-              neigh.get_diff_array(),
-              neigh.get_atom2_array(),
-              types,
-              fp,
-              element_swap);
-    xe = mod.get_xe_sum();
-}
-
-PyModelSingleStruct::~PyModelSingleStruct(){}
-
-const vector1d& PyModelSingleStruct::get_x() const{ return xe; }
-*/

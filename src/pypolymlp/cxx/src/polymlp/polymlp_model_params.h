@@ -26,15 +26,8 @@ void Permutenr
     }
 }
 
-//struct LinearTermGtinv {
-//    int lmindex;
-//    vector1i tcomb_index;
-//    vector1i type1;
-//};
-
 struct LinearTerm {
     int n;
-    int n_id;
     int lm_comb_id;
     int tp_comb_id;
     int order;
@@ -48,27 +41,28 @@ class ModelParams{
     vector2i comb, comb2, comb3, comb1_indices, comb2_indices, comb3_indices;
 
     vector2i type_pairs;
-    vector3i tp_combs, params_conditional;
+    vector3i tp_combs, nonzero_n_list;
 
     std::vector<struct LinearTerm> linear_terms;
 
     void initial_setting(const feature_params& fp, const Mapping& mapping);
-    void polynomial_setting(const feature_params& fp);
+    void polynomial_setting(const feature_params& fp, const Mapping& mapping);
 
-    void enumerate_tp_combs(const feature_params& fp, const Mapping& mapping);
+    void enumerate_tp_combs(const int gtinv_order);
+    void enumerate_nonzero_n(const Mapping& mapping);
+    bool check_type_in_type_pairs(const vector1i& tp_comb, const int& type1) const;
+    vector1i vector_intersection(vector1i v1, vector1i v2);
+    int find_tp_comb_id(const vector2i& tp_comb_ref, const vector1i& tp_comb);
+
     void uniq_gtinv_type(const feature_params& fp, const Mapping& mapping);
 
-    void combination1();
-    void combination2(const vector1i& iarray);
-    void combination3(const vector1i& iarray);
+    void combination1(const Mapping& mapping);
+    void combination2(const vector1i& iarray, const Mapping& mapping);
+    void combination3(const vector1i& iarray, const Mapping& mapping);
     void combination1_gtinv();
     void combination2_gtinv(const vector1i& iarray);
     void combination3_gtinv(const vector1i& iarray);
-
-    vector1i vector_intersection(vector1i v1, vector1i v2);
     vector1i intersection_types_in_polynomial(const vector2i &type1_array);
-    bool check_type_in_type_pairs(const vector1i& tp_comb, const int& type1) const;
-    int find_tp_comb_id(const vector2i& tp_comb_ref, const vector1i& tp_comb);
 
     int seq2typecomb(const int& seq);
 
@@ -78,25 +72,16 @@ class ModelParams{
     ModelParams(const feature_params& fp, const Mapping& mapping);
     ~ModelParams();
 
-//    const int& get_n_type() const;
-//    const int& get_n_type_pairs() const;
-//    const int& get_n_fn() const;
     const int& get_n_linear_features() const;
     const int& get_n_coeff_all() const;
 
     const vector2i& get_comb2() const;
     const vector2i& get_comb3() const;
-
     const vector1i& get_comb1_indices(const int type) const;
     const vector1i& get_comb2_indices(const int type) const;
     const vector1i& get_comb3_indices(const int type) const;
 
-//    const vector2i& get_type_pairs() const;
-//    const vector2i& get_type_pair_to_nlist() const;
-
-//    const std::vector<struct LinearTermGtinv>& get_linear_term_gtinv() const;
     const std::vector<struct LinearTerm>& get_linear_terms() const;
-
     const vector3i& get_tp_combs() const;
 };
 
