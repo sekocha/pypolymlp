@@ -11,10 +11,10 @@
 #include "mlpcpp.h"
 #include "polymlp/polymlp_model_params.h"
 #include "polymlp/polymlp_features.h"
+#include "compute/py_params.h"
 #include "compute/neighbor.h"
 #include "compute/model_fast.h"
 #include "compute/features.h"
-#include "compute/functions.h"
 
 #include <Eigen/Core>
 #include <pybind11/pybind11.h>
