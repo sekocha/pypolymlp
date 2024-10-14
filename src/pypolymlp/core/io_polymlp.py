@@ -1,4 +1,7 @@
-#!/usr/bin/env python
+"""Class for saving and loading polymlp.lammps files"""
+
+import itertools
+
 import numpy as np
 from setuptools._distutils.util import strtobool
 
@@ -97,6 +100,15 @@ def save_mlp_lammps(
     if model_dict["feature_type"] == "gtinv":
         _print_param(gtinv_dict, "version", f, prefix="gtinv_")
 
+    print(len(model_dict["pair_params_conditional"]), "# n_type_pairs", file=f)
+    for atomtypes, n_ids in model_dict["pair_params_conditional"].items():
+        for v in atomtypes:
+            print(v, end=" ", file=f)
+        print("# atom type pair", file=f)
+        for v in n_ids:
+            print(v, end=" ", file=f)
+        print("# pair params indices ", file=f)
+
     f.close()
 
 
@@ -189,6 +201,23 @@ def load_mlp_lammps(filename="polymlp.lammps"):
     else:
         gtinv_version = 1
 
+    pair_params_cond = dict()
+    try:
+        if "n_type_pairs" in lines[idx]:
+            pair_cond = True
+            n_type_pairs = _read_var(lines[idx], int)
+            idx += 1
+            for _ in range(n_type_pairs):
+                atomtypes = _read_var(lines[idx], int, return_list=True)
+                idx += 1
+                params = _read_var(lines[idx], int, return_list=True)
+                idx += 1
+                pair_params_cond[tuple(atomtypes)] = params
+    except:
+        pair_cond = False
+        for atomtypes in itertools.combinations_with_replacement(range(n_type), 2):
+            pair_params_cond[atomtypes] = list(range(n_pair_params))
+
     gtinv = PolymlpGtinvParams(
         order=gtinv_order,
         max_l=gtinv_maxl,
@@ -204,7 +233,9 @@ def load_mlp_lammps(filename="polymlp.lammps"):
         feature_type=feature_type,
         gtinv=gtinv,
         pair_type=pair_type,
+        pair_conditional=pair_cond,
         pair_params=pair_params,
+        pair_params_conditional=pair_params_cond,
     )
     params = PolymlpParams(
         n_type=n_type,
