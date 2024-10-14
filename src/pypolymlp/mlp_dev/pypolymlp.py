@@ -44,7 +44,7 @@ class Pypolymlp:
 
     def set_params(
         self,
-        params: PolymlpParams = None,
+        params: Optional[PolymlpParams] = None,
         elements: tuple[str] = None,
         include_force: bool = True,
         include_stress: bool = False,
@@ -54,6 +54,7 @@ class Pypolymlp:
         feature_type: Literal["pair", "gtinv"] = "gtinv",
         gaussian_params1: tuple[float, float, int] = (1.0, 1.0, 1),
         gaussian_params2: tuple[float, float, int] = (0.0, 5.0, 7),
+        distance: Optional[dict] = None,
         reg_alpha_params: tuple[float, float, int] = (-3.0, 1.0, 5),
         gtinv_order: int = 3,
         gtinv_maxl: tuple[int] = (4, 4, 2, 1, 1),
@@ -82,6 +83,8 @@ class Pypolymlp:
             Parameters are given as np.linspace(p[0], p[1], p[2]),
             where p[0], p[1], and p[2] are given by gaussian_params1
             and gaussian_params2.
+        distance: Interatomic distances for element pairs.
+            (e.g.) distance = {(Sr, Sr): [3.5, 4.8], (Ti, Ti): [2.5, 5.5]}
         reg_alpha_params: Parameters for penalty term in
             linear ridge regression. Parameters are given as
             np.linspace(p[0], p[1], p[2]).
@@ -126,6 +129,10 @@ class Pypolymlp:
                 )
                 max_l = 0
 
+            pair_params_cond, pair_cond = self._set_pair_params_conditional(
+                pair_params, elements, distance
+            )
+
             model = PolymlpModelParams(
                 cutoff=cutoff,
                 model_type=model_type,
@@ -134,7 +141,9 @@ class Pypolymlp:
                 feature_type=feature_type,
                 gtinv=gtinv,
                 pair_type="gaussian",
+                pair_conditional=pair_cond,
                 pair_params=pair_params,
+                pair_params_conditional=pair_params_cond,
             )
 
             self._params = PolymlpParams(
@@ -151,6 +160,40 @@ class Pypolymlp:
             )
 
         return self
+
+    def _set_pair_params_conditional(
+        self,
+        pair_params: np.ndarray,
+        elements: list,
+        distance: dict,
+    ):
+        """Set active parameter indices for element pairs."""
+        if distance is None:
+            cond = False
+            distance = dict()
+        else:
+            cond = True
+            for k in distance.keys():
+                k = sorted(k, key=lambda x: elements.index(x))
+
+        atomtypes = dict()
+        for i, ele in enumerate(elements):
+            atomtypes[ele] = i
+
+        element_pairs = itertools.combinations_with_replacement(elements, 2)
+        pair_params_indices = dict()
+        for ele_pair in element_pairs:
+            key = (atomtypes[ele_pair[0]], atomtypes[ele_pair[1]])
+            if ele_pair not in distance:
+                pair_params_indices[key] = list(range(len(pair_params)))
+            else:
+                match = [len(pair_params) - 1]
+                for dis in distance[ele_pair]:
+                    for i, p in enumerate(pair_params[:-1]):
+                        if dis < p[1] + 1 / p[0] and dis > p[1] - 1 / p[0]:
+                            match.append(i)
+                pair_params_indices[key] = sorted(set(match))
+        return pair_params_indices, cond
 
     def set_datasets_vasp(self, train_vaspruns: list[str], test_vaspruns: list[str]):
         """Set single DFT dataset in vasp format.
