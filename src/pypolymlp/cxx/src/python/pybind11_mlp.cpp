@@ -95,4 +95,18 @@ PYBIND11_MODULE(libmlpcpp, m) {
                 py::return_value_policy::reference_internal)
         ;
 
+    py::class_<Neighbor>(m, "Neighbor")
+        .def(py::init<const vector2d&,
+                      const vector2d&,
+                      const vector1i&,
+                      const int&,
+                      const double&>())
+        .def("get_distances", &Neighbor::get_dis_array,
+                py::return_value_policy::reference_internal)
+        .def("get_differences", &Neighbor::get_diff_array,
+                py::return_value_policy::reference_internal)
+        .def("get_neighbor_indices", &Neighbor::get_atom2_array,
+                py::return_value_policy::reference_internal)
+        ;
+
 }
