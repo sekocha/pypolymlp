@@ -22,8 +22,6 @@ class LocalFast{
     struct feature_params fp;
     vector1i type2_array, type_pairs;
 
-    vector1i argsort(const vector1i& vec);
-
     void compute_linear_features(
         const vector1d& prod_anlmtc,
         const FunctionFeatures& features,

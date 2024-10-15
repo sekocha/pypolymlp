@@ -1,0 +1,23 @@
+cutoff 8.0
+model_type 2
+max_p 2
+
+gaussian_params1 1.0 1.0 1
+gaussian_params2 0.0 7.0 8
+
+distance Sr Sr 3.9 5.5
+distance Sr Ti 3.4 6.5
+distance Ti Ti 3.9 5.5
+
+feature_type pair
+reg_alpha_params -3 1 5
+
+include_force True
+include_stress False
+
+train_data data-SrTiO3/vaspruns/train1/vasprun.xml.* True 1.0
+test_data data-SrTiO3/vaspruns/test1/vasprun.xml.* True 1.0
+
+n_type 3
+elements Sr Ti O
+atomic_energy -0.02805273 -2.44987314 -1.85321219
