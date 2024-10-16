@@ -52,7 +52,7 @@ def run_single_structure(
         print("Geometry optimization has failed.")
         return 0
 
-    if minobj.success is False:
+    if minobj.success == False:
         print("Geometry optimization has failed.")
         return 0
 

@@ -188,7 +188,7 @@ class PolymlpDevAccuracy:
         stresses = stresses.reshape(-1)
 
         n_total_atoms = [sum(st.n_atoms) for st in strs]
-        if log_energy is False:
+        if log_energy == False:
             rmse_e = self._compute_rmse(
                 dft.energies,
                 energies,
@@ -202,7 +202,7 @@ class PolymlpDevAccuracy:
                 return_values=True,
             )
 
-        if log_force is False:
+        if log_force == False:
             rmse_f = self._compute_rmse(dft.forces, forces)
         else:
             rmse_f, true_f, pred_f = self._compute_rmse(
@@ -233,7 +233,7 @@ class PolymlpDevAccuracy:
             volumes = [st.volume for st in strs]
             normalize = np.repeat(volumes, 6) / eV_to_GPa
 
-        if log_stress is False:
+        if log_stress == False:
             rmse_s = self._compute_rmse(dft.stresses, stresses, normalize=normalize)
         else:
             rmse_s, true_s, pred_s = self._compute_rmse(

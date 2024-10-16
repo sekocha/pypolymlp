@@ -92,7 +92,7 @@ class PolymlpDevData:
         verbose: bool = True,
     ):
         """Parse input files for developing polymlp."""
-        if isinstance(infiles, list) is False:
+        if isinstance(infiles, list) == False:
             p = ParamsParser(infiles, multiple_datasets=True, prefix=prefix)
             self._params = p.params
             priority_infile = infiles

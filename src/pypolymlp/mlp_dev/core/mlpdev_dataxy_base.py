@@ -27,7 +27,7 @@ class PolymlpDevDataXYBase(ABC):
         self._multiple_datasets = polymlp_dev_data.is_multiple_datasets
         self._hybrid = polymlp_dev_data.is_hybrid
 
-        if self.is_hybrid is False:
+        if self.is_hybrid == False:
             self._feature_class = Features
         else:
             self._feature_class = FeaturesHybrid
@@ -98,7 +98,7 @@ class PolymlpDevDataXYBase(ABC):
         y = np.zeros(n_data)
         w = np.ones(n_data)
 
-        if self._multiple_datasets is False:
+        if self._multiple_datasets == False:
             indices = first_indices[0]
             x, y, w = apply_weight_percentage(
                 x,

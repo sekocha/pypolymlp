@@ -329,7 +329,7 @@ class Pypolymlp:
         """
         Running linear ridge regression to estimate MLP coefficients.
         """
-        if self.__multi_dataset is False:
+        if self.__multi_dataset == False:
             if file_params is not None:
                 self.__mlp_dict = run_generator_single_dataset(file_params, log=log)
             else:
@@ -354,7 +354,7 @@ class Pypolymlp:
                 self.__mlp_dict = run_sequential_generator_multiple_datasets(
                     file_params, path_output=path_output
                 )
-            elif file_params is not None and sequential is False:
+            elif file_params is not None and sequential == False:
                 self.__mlp_dict = run_generator_multiple_datasets(
                     file_params, path_output=path_output
                 )
