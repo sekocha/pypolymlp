@@ -10,6 +10,33 @@ from pypolymlp.core.io_polymlp import load_mlp_lammps
 from pypolymlp.cxx.lib import libmlpcpp
 
 
+def find_active_atoms(
+    structures: list[PolymlpStructure],
+    element_order: list[str],
+):
+    """Reconstruct structures only using active atoms."""
+    structures_active = []
+    active_atoms_all = []
+    for st in structures:
+        active_atoms = np.array(
+            [i for i, ele in enumerate(st.elements) if ele in element_order]
+        )
+        types = np.array([element_order.index(st.elements[i]) for i in active_atoms])
+        n_atoms = [np.count_nonzero(types == i) for i in range(len(element_order))]
+
+        st_active = PolymlpStructure(
+            axis=st.axis,
+            positions=st.positions[:, active_atoms],
+            n_atoms=n_atoms,
+            elements=np.array(st.elements)[active_atoms],
+            types=types,
+        )
+        structures_active.append(st_active)
+        active_atoms_all.append(active_atoms)
+
+    return structures_active, active_atoms_all
+
+
 def convert_stresses_in_gpa(stresses: np.ndarray, structures: list[PolymlpStructure]):
     """Calculate stress tensor values in GPa."""
     volumes = np.array([st.volume for st in structures])
@@ -55,14 +82,25 @@ class PropertiesSingle:
         force: unit: eV/angstrom (3, n_atom)
         stress: unit: eV/supercell: (6) in the order of xx, yy, zz, xy, yz, zx
         """
-        st = update_types([st], self._params.element_order)[0]
+        if self._params.type_full:
+            st_calc = update_types([st], self._params.element_order)[0]
+        else:
+            st_calc, active_atoms = find_active_atoms([st], self._params.element_order)
+            st_calc = st_calc[0]
+            active_atoms = active_atoms[0]
 
-        positions_c = st.axis @ st.positions
-        self.obj.eval(st.axis, positions_c, st.types)
+        positions_c = st_calc.axis @ st_calc.positions
+        self.obj.eval(st_calc.axis, positions_c, st_calc.types)
 
         energy = self.obj.get_e()
         force = np.array(self.obj.get_f()).T
         stress = np.array(self.obj.get_s())
+
+        if self._params.type_full is False:
+            force_full = np.zeros((3, len(st.types)))
+            force_full[:, active_atoms] = force
+            force = force_full
+
         return energy, force, stress
 
     def eval_multiple(self, structures: list[PolymlpStructure], verbose: bool = False):
@@ -81,11 +119,16 @@ class PropertiesSingle:
                 len(structures),
                 "structures: Using a fast algorithm",
             )
-        structures = update_types(structures, self._params.element_order)
+        if self._params.type_full:
+            structures_calc = update_types(structures, self._params.element_order)
+        else:
+            structures_calc, active_atoms = find_active_atoms(
+                structures, self._params.element_order
+            )
 
-        axis_array = [st.axis for st in structures]
-        types_array = [st.types for st in structures]
-        positions_c_array = [st.axis @ st.positions for st in structures]
+        axis_array = [st.axis for st in structures_calc]
+        types_array = [st.types for st in structures_calc]
+        positions_c_array = [st.axis @ st.positions for st in structures_calc]
 
         """
         PotentialProperties.eval_multiple: Return
@@ -100,6 +143,15 @@ class PropertiesSingle:
         energies = np.array(self.obj.get_e_array())
         stresses = np.array(self.obj.get_s_array())
         forces = [np.array(f).T for f in self.obj.get_f_array()]
+
+        if self._params.type_full is False:
+            forces_full = []
+            for st, f, atoms in zip(structures, forces, active_atoms):
+                f_full = np.zeros((3, len(st.types)))
+                f_full[:, atoms] = f
+                forces_full.append(f_full)
+            forces = forces_full
+
         return energies, forces, stresses
 
     @property

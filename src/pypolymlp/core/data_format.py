@@ -191,7 +191,7 @@ class PolymlpParams:
     element_swap: bool = False
     print_memory: bool = False
     type_indices: Optional[list] = None
-    type_full: bool = True
+    type_full: Optional[bool] = None
 
     def __post_init__(self):
         self.check_errors()

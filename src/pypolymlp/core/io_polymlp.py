@@ -109,6 +109,13 @@ def save_mlp_lammps(
             print(v, end=" ", file=f)
         print("# pair params indices ", file=f)
 
+    if params.type_full is not None:
+        print(int(params.type_full), "# type_full", file=f)
+        _print_array1d(params.type_indices, f, comment="type_indices")
+    else:
+        print("1 # type_full", file=f)
+        _print_array1d(np.arange(params.n_type), f, comment="type_indices")
+
     f.close()
 
 
