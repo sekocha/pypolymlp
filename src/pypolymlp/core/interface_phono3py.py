@@ -94,7 +94,7 @@ class Phono3pyYaml:
 
     def __init__(self, yamlfile: str, use_phonon_dataset: bool = False):
         self._ph3 = phono3py.load(yamlfile, produce_fc=False, log_level=1)
-        if use_phonon_dataset is False:
+        if use_phonon_dataset == False:
             self._supercell = self._ph3.supercell
             self._displacements = self._ph3.displacements.transpose((0, 2, 1))
             self._forces = self._ph3.forces.transpose((0, 2, 1))

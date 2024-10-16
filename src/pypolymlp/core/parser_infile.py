@@ -66,7 +66,7 @@ class InputParser:
         else:
             params = np.array(params).astype(dtype)
 
-        if size == 1 and return_array is False:
+        if size == 1 and return_array == False:
             return params[0]
         return params
 

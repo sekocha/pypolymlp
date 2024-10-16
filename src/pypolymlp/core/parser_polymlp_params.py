@@ -239,7 +239,7 @@ class ParamsParser:
                 shortage.append(1.0)
             params.extend(shortage)
 
-        if self.include_force is False:
+        if self.include_force == False:
             for params in train:
                 params[1] = "False"
             for params in test:

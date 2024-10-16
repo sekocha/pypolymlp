@@ -96,7 +96,7 @@ class PropertiesSingle:
         force = np.array(self.obj.get_f()).T
         stress = np.array(self.obj.get_s())
 
-        if self._params.type_full is False:
+        if self._params.type_full == False:
             force_full = np.zeros((3, len(st.types)))
             force_full[:, active_atoms] = force
             force = force_full
