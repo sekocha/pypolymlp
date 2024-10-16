@@ -225,6 +225,16 @@ def load_mlp_lammps(filename="polymlp.lammps"):
         for atomtypes in itertools.combinations_with_replacement(range(n_type), 2):
             pair_params_cond[atomtypes] = list(range(n_pair_params))
 
+    try:
+        if "type_full" in lines[idx]:
+            type_full = _read_var(lines[idx], strtobool)
+            idx += 1
+            type_indices = _read_var(lines[idx], int, return_list=True)
+            idx += 1
+    except:
+        type_full = True
+        type_indices = list(range(n_type))
+
     gtinv = PolymlpGtinvParams(
         order=gtinv_order,
         max_l=gtinv_maxl,
@@ -249,6 +259,8 @@ def load_mlp_lammps(filename="polymlp.lammps"):
         elements=elements,
         model=model,
         element_order=element_order,
+        type_full=type_full,
+        type_indices=type_indices,
     )
     mlp_dict = {"coeffs": coeffs, "scales": scales}
     return params, mlp_dict

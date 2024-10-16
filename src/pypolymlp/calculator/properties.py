@@ -144,7 +144,7 @@ class PropertiesSingle:
         stresses = np.array(self.obj.get_s_array())
         forces = [np.array(f).T for f in self.obj.get_f_array()]
 
-        if self._params.type_full is False:
+        if self._params.type_full == False:
             forces_full = []
             for st, f, atoms in zip(structures, forces, active_atoms):
                 f_full = np.zeros((3, len(st.types)))
