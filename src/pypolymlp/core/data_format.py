@@ -190,6 +190,8 @@ class PolymlpParams:
     element_order: Optional[tuple[str]] = None
     element_swap: bool = False
     print_memory: bool = False
+    type_indices: Optional[list] = None
+    type_full: bool = True
 
     def __post_init__(self):
         self.check_errors()

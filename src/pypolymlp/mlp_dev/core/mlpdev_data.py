@@ -50,6 +50,26 @@ def set_common_params(multiple_params: list[PolymlpParams]) -> PolymlpParams:
     return common_params
 
 
+def set_unique_types(
+    multiple_params: list[PolymlpParams],
+    common_params: PolymlpParams,
+):
+    """Set type indices for hybrid models."""
+    n_type = common_params.n_type
+    elements = common_params.elements
+    for single in multiple_params:
+        single.elements = sorted(single.elements, key=lambda x: elements.index(x))
+
+    for single in multiple_params:
+        if single.n_type == n_type:
+            single.type_full = True
+            single.type_indices = list(range(n_type))
+        else:
+            single.type_full = False
+            single.type_indices = [elements.index(ele) for ele in single.elements]
+    return multiple_params
+
+
 class PolymlpDevData:
     """Class of preparing data structures for developing polymlp."""
 
@@ -87,6 +107,9 @@ class PolymlpDevData:
                     for infile in infiles
                 ]
                 self._params = set_common_params(self._hybrid_params)
+                self._hybrid_params = set_unique_types(
+                    self._hybrid_params, self._params
+                )
                 self._hybrid = True
 
         if verbose:
