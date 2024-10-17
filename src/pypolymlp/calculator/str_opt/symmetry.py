@@ -43,6 +43,8 @@ def construct_basis_fractional_coordinates(cell: PolymlpStructure) -> np.ndarray
     basis_c = construct_basis_cartesian(cell)
     if basis_c is None:
         return None
+    elif basis_c.size == 0:
+        return None
     basis_f = basis_cartesian_to_fractional_coordinates(basis_c, cell)
     return basis_f
 
