@@ -13,7 +13,7 @@ from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
 cwd = Path(__file__).parent
 
 
-def test_mlp_develi_single_dataset():
+def test_mlp_devel_api_single_dataset():
     polymlp = Pypolymlp()
     polymlp.set_params(
         elements=["Mg", "O"],
@@ -271,3 +271,40 @@ def test_mlp_devel_api_displacements():
     assert error_train["force"] == pytest.approx(0.000115243611, rel=1e-3)
     assert error_test["energy"] == pytest.approx(4.50450e-07, abs=1e-8)
     assert error_test["force"] == pytest.approx(0.00028682553, rel=1e-3)
+
+
+def test_mlp_devel_api_distance():
+
+    polymlp = Pypolymlp()
+
+    distance_dict = {
+        ("Sr", "Sr"): [3.9, 5.5],
+        ("Sr", "Ti"): [3.4, 6.5],
+        ("Ti", "Ti"): [3.9, 5.5],
+    }
+
+    polymlp.set_params(
+        elements=["Sr", "Ti", "O"],
+        cutoff=8.0,
+        model_type=3,
+        max_p=2,
+        gtinv_order=3,
+        gtinv_maxl=[4, 4],
+        gaussian_params2=[0.0, 7.0, 8],
+        atomic_energy=[-0.02805273, -2.44987314, -1.85321219],
+        distance=distance_dict,
+    )
+
+    train_vaspruns1 = glob.glob(str(cwd) + "/data-SrTiO3/vaspruns/train1/vasprun.xml.*")
+    test_vaspruns1 = glob.glob(str(cwd) + "/data-SrTiO3/vaspruns/test1/vasprun.xml.*")
+    polymlp.set_datasets_vasp(train_vaspruns1, test_vaspruns1)
+
+    polymlp.run(verbose=True, sequential=True)
+    error_train1 = polymlp.summary.error_train["train_single"]
+    error_test1 = polymlp.summary.error_test["test_single"]
+
+    assert error_train1["energy"] == pytest.approx(0.0015997025381622896, abs=1e-8)
+    assert error_train1["force"] == pytest.approx(0.01742941204519919, abs=1e-6)
+
+    assert error_test1["energy"] == pytest.approx(0.0011914132092445697, abs=1e-8)
+    assert error_test1["force"] == pytest.approx(0.02750490198874777, abs=1e-6)

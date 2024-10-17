@@ -11,8 +11,8 @@
 #include <cmath>
 
 #include "mlpcpp.h"
+#include "polymlp/polymlp_mapping.h"
 #include "polymlp/polymlp_functions_interface.h"
-#include "polymlp/polymlp_model_params.h"
 #include "compute/features.h"
 #include "compute/functions.h"
 
@@ -20,9 +20,8 @@ class LocalFast{
 
     int n_atom, atom1, type1, n_fn, n_des, n_type, size_pair;
     struct feature_params fp;
-    vector1i type2_array, type_comb;
+    vector1i type2_array, type_pairs;
 
-    void set_type_comb(const ModelParams& modelp);
     void compute_linear_features(
         const vector1d& prod_anlmtc,
         const FunctionFeatures& features,
@@ -68,15 +67,25 @@ class LocalFast{
         const int& atom1_i,
         const int& type1_i,
         const struct feature_params& fp_i,
-        const ModelParams& modelp
+        const FunctionFeatures& features
     );
     ~LocalFast();
 
-    void pair(const vector2d& dis_a, vector1d& dn);
+    void pair(
+        const vector2d& dis_a,
+        const FunctionFeatures& features,
+        vector1d& dn
+    );
     void pair_d(
-        const vector2d& dis_a, const vector3d& diff_a, const vector2i& atom2_a,
-        vector1d& dn, vector2d& dn_dfx, vector2d& dn_dfy,
-        vector2d& dn_dfz, vector2d& dn_ds
+        const vector2d& dis_a,
+        const vector3d& diff_a,
+        const vector2i& atom2_a,
+        const FunctionFeatures& features,
+        vector1d& dn,
+        vector2d& dn_dfx,
+        vector2d& dn_dfy,
+        vector2d& dn_dfz,
+        vector2d& dn_ds
     );
 
     void gtinv(

@@ -18,6 +18,7 @@
 #include "compute/py_additive_model.h"
 #include "compute/py_properties_fast.h"
 #include "compute/py_features_attr.h"
+#include "compute/neighbor.h"
 #include "polymlp/polymlp_read_gtinv.h"
 
 namespace py = pybind11;

@@ -85,7 +85,7 @@ class Phono3pyYaml:
         positions_all: (n_samples, 3, n_atom)
         """
         ph3 = phono3py.load(yaml_filename, produce_fc=False, log_level=1)
-        if use_phonon_dataset is False:
+        if use_phonon_dataset == False:
             self.supercell = ph3.supercell
             self.st_dict = phonopy_cell_to_st_dict(ph3.supercell)
             self.displacements = ph3.displacements.transpose((0, 2, 1))

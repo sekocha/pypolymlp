@@ -11,6 +11,7 @@
 #include "mlpcpp.h"
 #include "compute/neighbor_half.h"
 #include "compute/polymlp_eval.h"
+#include "compute/py_params.h"
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>

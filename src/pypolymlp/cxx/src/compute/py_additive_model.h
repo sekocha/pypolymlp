@@ -9,8 +9,8 @@
 #define __PY_ADDITIVE_MODEL
 
 #include "mlpcpp.h"
-#include "polymlp/polymlp_model_params.h"
 #include "polymlp/polymlp_features.h"
+#include "compute/py_params.h"
 #include "compute/neighbor.h"
 #include "compute/model_fast.h"
 #include "compute/features.h"
@@ -34,9 +34,16 @@ class PyAdditiveModel {
                    std::vector<int>& xs_begin,
                    std::vector<bool>& force);
 
-    vector1i modify_types(const std::vector<int>& types_orig,
-                          const int n_type_orig,
-                          const int n_type);
+    void find_active_atoms(
+        const bool type_full,
+        const vector1i& type_indices,
+        const vector1i& types_old,
+        const vector2d& positions_c_old,
+        vector1i& active_atoms,
+        vector1i& types_active,
+        vector2d& positions_c_active
+    );
+
     public:
 
     PyAdditiveModel(const std::vector<py::dict>& params_dict_array,

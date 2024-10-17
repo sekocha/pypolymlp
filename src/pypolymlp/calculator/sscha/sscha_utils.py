@@ -165,7 +165,7 @@ def temperature_setting(args):
         if np.isclose(args.temp_step, round(args.temp_step)):
             args.temp_step = int(args.temp_step)
         temp_array = np.arange(args.temp_min, args.temp_max + 1, args.temp_step)
-        if args.ascending_temp is False:
+        if args.ascending_temp == False:
             temp_array = temp_array[::-1]
     args.temperatures = temp_array
     return args

@@ -50,7 +50,7 @@ def apply_weight_percentage(
 ):
 
     include_force = dft.include_force
-    if include_force is False:
+    if include_force == False:
         include_stress = False
     else:
         include_stress = params.include_stress

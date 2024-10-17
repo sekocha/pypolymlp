@@ -77,7 +77,7 @@ PYBIND11_MODULE(libmlpcpp, m) {
                 py::return_value_policy::reference_internal)
         .def("get_polynomial_ids", &PyFeaturesAttr::get_polynomial_ids,
                 py::return_value_policy::reference_internal)
-        .def("get_type_comb_pair", &PyFeaturesAttr::get_type_comb_pair,
+        .def("get_type_pairs", &PyFeaturesAttr::get_type_pairs,
                 py::return_value_policy::reference_internal)
         ;
 
@@ -95,30 +95,18 @@ PYBIND11_MODULE(libmlpcpp, m) {
                 py::return_value_policy::reference_internal)
         ;
 
-}
+    py::class_<Neighbor>(m, "Neighbor")
+        .def(py::init<const vector2d&,
+                      const vector2d&,
+                      const vector1i&,
+                      const int&,
+                      const double&>())
+        .def("get_distances", &Neighbor::get_dis_array,
+                py::return_value_policy::reference_internal)
+        .def("get_differences", &Neighbor::get_diff_array,
+                py::return_value_policy::reference_internal)
+        .def("get_neighbor_indices", &Neighbor::get_atom2_array,
+                py::return_value_policy::reference_internal)
+        ;
 
-/*
-    py::class_<PyModelSingleStruct>(m, "PotentialModelSingleStruct")
-        .def(py::init<const py::dict&,
-                      const vector2d&,
-                      const vector2d&,
-                      const vector1i&>())
-        .def("get_x", &PyModelSingleStruct::get_x,
-                py::return_value_policy::reference_internal)
-        ;
-*/
-/*
-    py::class_<PyProperties>(m, "PotentialProperties")
-        .def(py::init<const py::dict&,
-                      const vector1d&,
-                      const vector3d&,
-                      const vector3d&,
-                      const vector2i&>())
-        .def("get_e", &PyProperties::get_e,
-                py::return_value_policy::reference_internal)
-        .def("get_f", &PyProperties::get_f,
-                py::return_value_policy::reference_internal)
-        .def("get_s", &PyProperties::get_s,
-                py::return_value_policy::reference_internal)
-        ;
-*/
+}

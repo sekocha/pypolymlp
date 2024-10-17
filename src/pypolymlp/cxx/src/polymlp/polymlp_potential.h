@@ -9,6 +9,7 @@
 #define __POLYMLP_POTENTIAL
 
 #include "polymlp_mlpcpp.h"
+#include "polymlp_mapping.h"
 #include "polymlp_features.h"
 
 
@@ -45,11 +46,10 @@ class Potential {
     vector3i prod_map, prod_map_erased, prod_features_map;
     vector2i type1_feature_combs;
 
-    std::vector<lmAttribute> lm_map;
-    std::vector<nlmtcAttribute> nlmtc_map_no_conjugate, nlmtc_map;
-    std::vector<ntcAttribute> ntc_map;
+    Mapping mapping;
+    std::vector<nlmtpAttr> nlmtp_attrs;
 
-    int n_nlmtc_all, n_type;
+    int n_type;
     bool eliminate_conj, separate_erased;
 
     void set_mapping_prod(const Features& f_obj, const bool erased);
@@ -75,19 +75,13 @@ class Potential {
     Potential(const Features& f_obj, const vector1d& pot);
     ~Potential();
 
-    const std::vector<lmAttribute>& get_lm_map() const;
-    const std::vector<nlmtcAttribute>& get_nlmtc_map_no_conjugate() const;
-    const std::vector<nlmtcAttribute>& get_nlmtc_map() const;
-    const std::vector<ntcAttribute>& get_ntc_map() const;
-
+    const Mapping& get_mapping() const;
     const vector2i& get_prod_map(const int t) const;
     const vector2i& get_prod_map_erased(const int t) const;
     const vector2i& get_prod_features_map(const int t) const;
     const MappedMultipleFeatures& get_linear_features(const int t) const;
-    const PotentialModel& get_potential_model(const int type1,
-                                              const int head_key) const;
+    const PotentialModel& get_potential_model(const int type1, const int head_key) const;
 
-    const int get_n_nlmtc_all() const;
 };
 
 #endif

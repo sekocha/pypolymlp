@@ -70,11 +70,11 @@ def compute_features(pot, summary, coeffs=True, scales=True):
     st_dicts = parse_structures_from_poscars(poscars)
     x, mlp_dict = compute_from_polymlp_lammps(st_dicts, pot=pot, return_mlp_dict=True)
     rec_n_atoms_sums = [1.0 / item["n_atoms_sum"] for item in summary]
-    if coeffs is True and scales is True:
+    if coeffs == True and scales == True:
         weights = mlp_dict["coeffs"] / mlp_dict["scales"]
-    elif coeffs is False and scales is True:
+    elif coeffs == False and scales == True:
         weights = 1.0 / mlp_dict["scales"]
-    elif coeffs is True and scales is False:
+    elif coeffs == True and scales == False:
         weights = mlp_dict["coeffs"]
     else:
         weights = 1.0

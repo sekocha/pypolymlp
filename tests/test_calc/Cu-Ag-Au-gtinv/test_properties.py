@@ -38,6 +38,24 @@ def test_eval2():
     np.testing.assert_allclose(stresses2, stresses_true, atol=1e-5)
 
 
+def test_eval3():
+    prop = Properties(pot=cwd / "polymlp.lammps")
+    unitcell = Poscar(cwd / "POSCAR4").structure
+
+    energy, forces, stresses = prop.eval(unitcell)
+    assert energy == pytest.approx(-156.20431533922547, abs=1e-12)
+    assert forces[0][0] == pytest.approx(0.0053143900922453646, abs=1e-12)
+    stresses_true = [
+        -1.41413638e00,
+        -1.28681668e00,
+        -1.37342653e00,
+        5.42957694e-02,
+        0.0,
+        0.0,
+    ]
+    np.testing.assert_allclose(stresses, stresses_true, atol=1e-5)
+
+
 def test_eval_multiple1():
     prop = Properties(pot=cwd / "polymlp.lammps")
     unitcell1 = Poscar(cwd / "POSCAR").structure

@@ -134,10 +134,12 @@ class PolymlpModelParams:
     model_type: Literal[1, 2, 3, 4]
     max_p: Literal[1, 2, 3]
     max_l: int
-    pair_params: list[list[float]]
     feature_type: Literal["pair", "gtinv"] = "gtinv"
-    pair_type: str = "gaussian"
     gtinv: Optional[PolymlpGtinvParams] = None
+    pair_type: str = "gaussian"
+    pair_conditional: bool = False
+    pair_params: Optional[list[list[float]]] = None
+    pair_params_conditional: Optional[dict] = None
 
     def __post_init__(self):
         self.check_errors()
@@ -150,7 +152,10 @@ class PolymlpModelParams:
         return model_dict
 
     def check_errors(self):
-        pass
+        if self.pair_params is None and self.pair_params_conditional is None:
+            raise KeyError(
+                "Either of pair_params or pair_params_conditional is required."
+            )
 
 
 @dataclass
@@ -185,6 +190,8 @@ class PolymlpParams:
     element_order: Optional[tuple[str]] = None
     element_swap: bool = False
     print_memory: bool = False
+    type_indices: Optional[list] = None
+    type_full: Optional[bool] = None
 
     def __post_init__(self):
         self.check_errors()

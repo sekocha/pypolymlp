@@ -8,7 +8,7 @@
 ## Required libraries and python modules
 
 - python >= 3.9
-- numpy < 2.0.0
+- numpy != 2.0.*
 - scipy
 - pyyaml
 - setuptools
@@ -24,7 +24,12 @@
 - spglib
 
 ## How to install pypolymlp
-- Install from conda-forge: Coming soon.
+- Install from conda-forge
+```
+conda create -n pypolymlp-env
+conda activate pypolymlp-env
+conda install -c conda-forge pypolymlp
+```
 
 - Install from PyPI
 ```
@@ -33,6 +38,7 @@ conda activate pypolymlp-env
 conda install -c conda-forge numpy scipy pybind11 eigen cmake cxx-compiler
 pip install pypolymlp
 ```
+Building C++ codes in pypolymlp may require a significant amount of time.
 
 - Install from GitHub
 ```

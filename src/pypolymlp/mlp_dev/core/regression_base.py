@@ -144,7 +144,7 @@ class RegressionBase(ABC):
 
     def save_mlp_lammps(self, filename="polymlp.lammps"):
         """Save polymlp.lammps files"""
-        if self._hybrid is False:
+        if self._hybrid == False:
             save_mlp_lammps(
                 self._params,
                 self._coeffs,

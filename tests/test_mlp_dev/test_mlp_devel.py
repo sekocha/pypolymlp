@@ -16,6 +16,38 @@ from pypolymlp.mlp_dev.standard.regression import Regression
 cwd = Path(__file__).parent
 
 
+def _parse_data(filename):
+    polymlp_in = PolymlpDevData()
+    polymlp_in.parse_infiles(filename, verbose=True, prefix=str(cwd))
+    polymlp_in.parse_datasets()
+    return polymlp_in
+
+
+def test_mlp_devel_hybrid_flexible():
+
+    files = sorted(
+        glob.glob(str(cwd) + "/infile-hybrid-flexible/polymlp*_hybrid_flexible.in")
+    )
+    polymlp_in = _parse_data(files)
+    assert polymlp_in.n_features == 7672
+
+    polymlp = PolymlpDevDataXYSequential(polymlp_in).run_train(batch_size=1000)
+    reg = Regression(polymlp).fit(seq=True, clear_data=True, batch_size=1000)
+    acc = PolymlpDevAccuracy(reg)
+    acc.compute_error(log_energy=False)
+
+    tag_train1 = "data-SrTiO3/vaspruns/train1/vasprun.xml.*"
+    tag_test1 = "data-SrTiO3/vaspruns/test1/vasprun.xml.*"
+    error_train1 = acc.error_train_dict[tag_train1]
+    error_test1 = acc.error_test_dict[tag_test1]
+
+    assert error_train1["energy"] == pytest.approx(0.0015957929458760023, abs=1e-8)
+    assert error_train1["force"] == pytest.approx(0.01733181715196406, abs=1e-6)
+
+    assert error_test1["energy"] == pytest.approx(0.0011686020194212627, abs=1e-8)
+    assert error_test1["force"] == pytest.approx(0.026877376582754797, abs=1e-6)
+
+
 def _check_errors_single_dataset_MgO(error_train1, error_test1):
     assert error_train1["energy"] == pytest.approx(3.1791594630511444e-05, abs=1e-8)
     assert error_train1["force"] == pytest.approx(0.003822251017162934, abs=1e-6)
@@ -67,13 +99,6 @@ def _check_errors_pair_single_dataset_MgO(error_train1, error_test1):
     assert error_test1["energy"] == pytest.approx(0.0005652094573942398, abs=1e-8)
     assert error_test1["force"] == pytest.approx(0.03225765365792877, abs=1e-6)
     assert error_test1["stress"] == pytest.approx(0.008968003568397519, abs=1e-5)
-
-
-def _parse_data(filename):
-    polymlp_in = PolymlpDevData()
-    polymlp_in.parse_infiles(filename, verbose=True, prefix=str(cwd))
-    polymlp_in.parse_datasets()
-    return polymlp_in
 
 
 def test_mlp_devel_pair_single_dataset_seq():
@@ -192,3 +217,42 @@ def test_mlp_devel_multiple_datasets_noseq():
     _check_errors_multiple_datasets_MgO(
         error_train1, error_train2, error_test1, error_test2
     )
+
+
+def test_mlp_devel_distance():
+
+    polymlp_in = _parse_data(str(cwd) + "/polymlp.in.SrTiO3.gtinv.distance")
+    assert polymlp_in.n_features == 5452
+
+    polymlp = PolymlpDevDataXYSequential(polymlp_in).run_train(batch_size=1000)
+    reg = Regression(polymlp).fit(seq=True, clear_data=True, batch_size=1000)
+    acc = PolymlpDevAccuracy(reg)
+    acc.compute_error(log_energy=False)
+
+    tag_train = "data-SrTiO3/vaspruns/train1/vasprun.xml.*"
+    tag_test = "data-SrTiO3/vaspruns/test1/vasprun.xml.*"
+    error_train1 = acc.error_train_dict[tag_train]
+    error_test1 = acc.error_test_dict[tag_test]
+
+    assert error_train1["energy"] == pytest.approx(0.0015997025381622896, abs=1e-8)
+    assert error_train1["force"] == pytest.approx(0.01742941204519919, abs=1e-6)
+
+    assert error_test1["energy"] == pytest.approx(0.0011914132092445697, abs=1e-8)
+    assert error_test1["force"] == pytest.approx(0.02750490198874777, abs=1e-6)
+
+    polymlp_in = _parse_data(str(cwd) + "/polymlp.in.SrTiO3.pair.distance")
+    assert polymlp_in.n_features == 695
+
+    polymlp = PolymlpDevDataXYSequential(polymlp_in).run_train(batch_size=1000)
+    reg = Regression(polymlp).fit(seq=True, clear_data=True, batch_size=1000)
+    acc = PolymlpDevAccuracy(reg)
+    acc.compute_error(log_energy=False)
+
+    error_train1 = acc.error_train_dict[tag_train]
+    error_test1 = acc.error_test_dict[tag_test]
+
+    assert error_train1["energy"] == pytest.approx(0.002882025973254201, abs=1e-8)
+    assert error_train1["force"] == pytest.approx(0.11969042804382464, abs=1e-6)
+
+    assert error_test1["energy"] == pytest.approx(0.002675778970795183, abs=1e-8)
+    assert error_test1["force"] == pytest.approx(0.13474707920071752, abs=1e-6)

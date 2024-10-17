@@ -165,7 +165,7 @@ if __name__ == "__main__":
             volume = res.unitcell_volume
 
             ftotal_all[temp].append([volume, f_sum])
-            if imag is False:
+            if imag == False:
                 ftotal_all_noimag[temp].append([volume, f_sum])
 
         if args.electronic is not None:
@@ -175,7 +175,7 @@ if __name__ == "__main__":
                 volume = res.unitcell_volume
 
                 ftotal_all_with_elf[temp].append([volume, f_sum])
-                if imag is False:
+                if imag == False:
                     ftotal_all_with_elf_noimag[temp].append([volume, f_sum])
 
     write_yaml(ftotal_all, filename="summary_eos.yaml")

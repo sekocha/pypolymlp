@@ -12,12 +12,11 @@ def get_features_attr(params: PolymlpParams, element_swap: bool = False):
     params.element_swap = element_swap
     obj = libmlpcpp.FeaturesAttr(params.as_dict())
 
-    type_comb_pair = obj.get_type_comb_pair()
+    type_pairs = obj.get_type_pairs()
     atomtype_pair_dict = defaultdict(list)
-    for i, tc_pair in enumerate(type_comb_pair):
-        for type1, type2s in enumerate(tc_pair):
-            for type2 in type2s:
-                atomtype_pair_dict[i].append([type1, type2])
+    for type1, tps in enumerate(type_pairs):
+        for type2, tp in enumerate(tps):
+            atomtype_pair_dict[tp].append([type1, type2])
 
     radial_ids = obj.get_radial_ids()
     tcomb_ids = obj.get_tcomb_ids()

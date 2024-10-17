@@ -1,0 +1,21 @@
+cutoff 5.0
+model_type 4
+max_p 2
+
+gaussian_params1 1.0 1.0 1
+gaussian_params2 1.0 3.0 5
+
+feature_type gtinv
+gtinv_order 3
+gtinv_maxl 8 8
+
+reg_alpha_params -3 1 5
+
+include_force True
+include_stress False
+
+train_data data-SrTiO3/vaspruns/train1/vasprun.xml.* True 1.0
+test_data data-SrTiO3/vaspruns/test1/vasprun.xml.* True 1.0
+
+n_type 1
+elements O

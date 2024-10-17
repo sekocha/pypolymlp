@@ -41,7 +41,7 @@ class SymCell:
 
     def refine_cell(self, standardize_cell=False) -> PolymlpStructure:
 
-        if standardize_cell is False:
+        if standardize_cell == False:
             try:
                 lattice1, position1, types1 = spglib.refine_cell(
                     self.cell, symprec=self.symprec

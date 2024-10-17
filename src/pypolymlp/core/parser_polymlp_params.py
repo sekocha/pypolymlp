@@ -47,6 +47,11 @@ class ParamsParser:
             "rearrange_by_elements", default=True, dtype=bool
         )
         element_order = elements if rearrange else None
+        self._elements = elements
+        if element_order is not None:
+            self._atomtypes = dict()
+            for i, ele in enumerate(element_order):
+                self._atomtypes[ele] = i
 
         self.include_force = include_force = self.parser.get_params(
             "include_force", default=True, dtype=bool
@@ -122,25 +127,50 @@ class ParamsParser:
             max_l = 0
             gtinv_params = PolymlpGtinvParams(order=0, max_l=[], n_type=n_type)
 
-        d_params1 = [1.0, 1.0, 1]
-        params1 = self.parser.get_sequence("gaussian_params1", default=d_params1)
-        d_params2 = [0.0, cutoff - 1.0, 7]
-        params2 = self.parser.get_sequence("gaussian_params2", default=d_params2)
-        pair_params = list(itertools.product(params1, params2))
-        pair_params.append([0.0, 0.0])
-
+        pair_params, pair_params_cond, pair_cond = self._get_pair_params(cutoff)
         model = PolymlpModelParams(
             cutoff,
             model_type,
             max_p,
             max_l,
-            pair_params=pair_params,
             feature_type=feature_type,
-            pair_type="gaussian",
             gtinv=gtinv_params,
+            pair_type="gaussian",
+            pair_conditional=pair_cond,
+            pair_params=pair_params,
+            pair_params_conditional=pair_params_cond,
         )
 
         return model
+
+    def _get_pair_params(self, cutoff):
+
+        params1 = self.parser.get_sequence("gaussian_params1", default=(1.0, 1.0, 1))
+        params2 = self.parser.get_sequence(
+            "gaussian_params2",
+            default=(0.0, cutoff - 1.0, 7),
+        )
+        pair_params = list(itertools.product(params1, params2))
+        pair_params.append((0.0, 0.0))
+
+        distance = self.parser.distance
+        cond = False if len(distance) == 0 else True
+
+        element_pairs = itertools.combinations_with_replacement(self._elements, 2)
+        pair_params_indices = dict()
+        for ele_pair in element_pairs:
+            key = (self._atomtypes[ele_pair[0]], self._atomtypes[ele_pair[1]])
+            if ele_pair not in distance:
+                pair_params_indices[key] = list(range(len(pair_params)))
+            else:
+                match = [len(pair_params) - 1]
+                for dis in distance[ele_pair]:
+                    for i, p in enumerate(pair_params[:-1]):
+                        if dis < p[1] + 1 / p[0] and dis > p[1] - 1 / p[0]:
+                            match.append(i)
+                pair_params_indices[key] = sorted(set(match))
+
+        return pair_params, pair_params_indices, cond
 
     def _get_atomic_energy(self, n_type: int):
 
@@ -209,7 +239,7 @@ class ParamsParser:
                 shortage.append(1.0)
             params.extend(shortage)
 
-        if self.include_force is False:
+        if self.include_force == False:
             for params in train:
                 params[1] = "False"
             for params in test:

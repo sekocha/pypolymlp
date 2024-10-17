@@ -50,7 +50,7 @@ class PolymlpEOS:
 
     def _set_eps(self, eps_min=0.7, eps_max=2.0, eps_int=0.03, fine_grid=True):
 
-        if fine_grid is False:
+        if fine_grid == False:
             eps_seq = np.arange(eps_min, eps_max + 0.01, eps_int)
         else:
             eps_seq = []

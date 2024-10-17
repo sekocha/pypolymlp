@@ -9,58 +9,28 @@
 
 PyFeaturesAttr::PyFeaturesAttr(const py::dict& params_dict){
 
-    const int n_type = params_dict["n_type"].cast<int>();
+    struct feature_params fp;
     const bool& element_swap = params_dict["element_swap"].cast<bool>();
+    convert_params_dict_to_feature_params(params_dict, fp);
 
-    const py::dict& model = params_dict["model"].cast<py::dict>();
-    const auto& pair_params = model["pair_params"].cast<vector2d>();
-    const double& cutoff = model["cutoff"].cast<double>();
-    const std::string& pair_type = model["pair_type"].cast<std::string>();
-    const std::string& feature_type = model["feature_type"].cast<std::string>();
-    const int& model_type = model["model_type"].cast<int>();
-    const int& maxp = model["max_p"].cast<int>();
-    const int& maxl = model["max_l"].cast<int>();
+    Mapping mapping(fp);
+    ModelParams modelp(fp, mapping);
+    type_pairs = mapping.get_type_pairs();
 
-    const py::dict& gtinv = model["gtinv"].cast<py::dict>();
-    const auto& lm_array = gtinv["lm_seq"].cast<vector3i>();
-    const auto& l_comb = gtinv["l_comb"].cast<vector2i>();
-    const auto& lm_coeffs = gtinv["lm_coeffs"].cast<vector2d>();
-
-    const bool force = false;
-    struct feature_params fp = {n_type,
-                                force,
-                                pair_params,
-                                cutoff,
-                                pair_type,
-                                feature_type,
-                                model_type,
-                                maxp,
-                                maxl,
-                                lm_array,
-                                l_comb,
-                                lm_coeffs};
-
-    ModelParams modelp(fp, element_swap);
-    type_comb_pair = modelp.get_type_comb_pair();
-    const int n_fn = pair_params.size();
-    const int n_tc = type_comb_pair.size();
-
-    if (feature_type == "pair"){
-        for (int tc = 0; tc < n_tc; ++tc){
-            for (int n = 0; n < n_fn; ++n){
-                radial_ids.emplace_back(n);
-                tcomb_ids.emplace_back(vector1i({tc}));
-            }
+    if (fp.feature_type == "pair"){
+        const auto& ntp_attrs = mapping.get_ntp_attrs();
+        for (const auto& ntp: ntp_attrs){
+            radial_ids.emplace_back(ntp.n);
+            tcomb_ids.emplace_back(vector1i({ntp.tp}));
         }
     }
-    else if (feature_type == "gtinv"){
-        const auto& linear_all = modelp.get_linear_term_gtinv();
-        for (int n = 0; n < n_fn; ++n){
-            for (auto& linear: linear_all){
-                radial_ids.emplace_back(n);
-                gtinv_ids.emplace_back(linear.lmindex);
-                tcomb_ids.emplace_back(linear.tcomb_index);
-            }
+    else if (fp.feature_type == "gtinv"){
+        const auto& linear_terms = modelp.get_linear_terms();
+        const auto& tp_combs = modelp.get_tp_combs();
+        for (const auto& linear: linear_terms){
+            radial_ids.emplace_back(linear.n);
+            gtinv_ids.emplace_back(linear.lm_comb_id);
+            tcomb_ids.emplace_back(tp_combs[linear.order][linear.tp_comb_id]);
         }
     }
 
@@ -86,6 +56,6 @@ const vector2i& PyFeaturesAttr::get_tcomb_ids() const{
 const vector2i& PyFeaturesAttr::get_polynomial_ids() const{
     return polynomial_ids;
 }
-const vector3i& PyFeaturesAttr::get_type_comb_pair() const{
-    return type_comb_pair;
+const vector2i& PyFeaturesAttr::get_type_pairs() const{
+    return type_pairs;
 }

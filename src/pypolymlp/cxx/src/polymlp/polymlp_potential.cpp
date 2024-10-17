@@ -29,24 +29,24 @@ Potential::Potential(){}
 
 Potential::Potential(const Features& f_obj, const vector1d& pot){
 
-    lm_map = f_obj.get_lm_map();
-    nlmtc_map = f_obj.get_nlmtc_map();
-    nlmtc_map_no_conjugate = f_obj.get_nlmtc_map_no_conjugate();
-    ntc_map = f_obj.get_ntc_map();
-    n_nlmtc_all = f_obj.get_n_nlmtc_all();
+    mapping = f_obj.get_mapping();
+    nlmtp_attrs = mapping.get_nlmtp_attrs();
     n_type = f_obj.get_n_type();
 
     int size;
-    if (ntc_map.size() > 0){
+    const auto& ntp_attrs = mapping.get_ntp_attrs();
+    if (ntp_attrs.size() > 0){
         eliminate_conj = false;
         separate_erased = false;
-        size = ntc_map.size();
+        size = ntp_attrs.size();
     }
     else {
+        const auto& nlmtp_attrs_no_conjugate = mapping.get_nlmtp_attrs_no_conjugate();
+        const int n_nlmtp_all = mapping.get_n_nlmtp_all();
         eliminate_conj = true;
         separate_erased = true;
-        if (eliminate_conj == true) size = nlmtc_map_no_conjugate.size();
-        else size = n_nlmtc_all;
+        if (eliminate_conj == true) size = nlmtp_attrs_no_conjugate.size();
+        else size = n_nlmtp_all;
     }
     potential_model_each_key = PotentialModelEachKey(n_type);
     for (int t1 = 0; t1 < n_type; ++t1)
@@ -84,19 +84,16 @@ void Potential::set_mapping_prod(const Features& f_obj, const bool erased){
 
     std::vector<std::set<vector1i> > nonequiv_keys(n_type);
 
-//    int count1(0), count2(0);
     const auto& mfeatures = f_obj.get_features();
     for (const auto& sfeature: mfeatures){
         const auto type1 = sfeature[0].type1;
         for (const auto& sterm: sfeature){
             for (const auto& t1: type1){
-                nonequiv_keys[t1].insert(sterm.nlmtc_keys);
- //               ++count2;
+                nonequiv_keys[t1].insert(sterm.nlmtp_keys);
             }
             if (erased == true){
-                for (size_t i = 0; i < sterm.nlmtc_keys.size(); ++i){
-                    //int head_key = sterm.nlmtc_keys[i];
-                    const vector1i keys = erase_a_key(sterm.nlmtc_keys, i);
+                for (size_t i = 0; i < sterm.nlmtp_keys.size(); ++i){
+                    const vector1i keys = erase_a_key(sterm.nlmtp_keys, i);
                     for (const auto& t1: type1){
                         nonequiv_keys[t1].insert(keys);
                     }
@@ -120,13 +117,13 @@ void Potential::set_mapping_prod_erased(const Features& f_obj){
     for (const auto& sfeature: mfeatures){
         const auto type1 = sfeature[0].type1;
         for (const auto& sterm: sfeature){
-            for (size_t i = 0; i < sterm.nlmtc_keys.size(); ++i){
-                int head_key = sterm.nlmtc_keys[i];
+            for (size_t i = 0; i < sterm.nlmtp_keys.size(); ++i){
+                int head_key = sterm.nlmtp_keys[i];
                 bool append = true;
                 if (eliminate_conj == true and
-                    nlmtc_map[head_key].lm.conj == true) append = false;
+                    nlmtp_attrs[head_key].lm.conj == true) append = false;
                 if (append == true){
-                    const vector1i keys = erase_a_key(sterm.nlmtc_keys, i);
+                    const vector1i keys = erase_a_key(sterm.nlmtp_keys, i);
                     for (const auto& t1: type1){
                         nonequiv_keys[t1].insert(keys);
                     }
@@ -156,7 +153,7 @@ void Potential::set_features_using_mappings(const Features& f_obj){
             std::unordered_map<int, double> sfeature_map;
             // finding nonequivalent features
             for (const auto& sterm: sfeature){
-                const int prod_key = prod_map_from_keys[t1][sterm.nlmtc_keys];
+                const int prod_key = prod_map_from_keys[t1][sterm.nlmtp_keys];
                 if (sfeature_map.count(prod_key) == 0){
                     sfeature_map[prod_key] = sterm.coeff;
                 }
@@ -240,7 +237,7 @@ void Potential::set_terms_using_mappings(const Features& f_obj,
     for (const auto& comb: feature_combinations){
         int n_prods(0);
         for (size_t ci = 0; ci < comb.size(); ++ci){
-            n_prods += mfeatures[comb[ci]][0].nlmtc_keys.size();
+            n_prods += mfeatures[comb[ci]][0].nlmtp_keys.size();
         }
 
         const auto& type1 = type1_feature_combs[idx];
@@ -252,12 +249,12 @@ void Potential::set_terms_using_mappings(const Features& f_obj,
                         = prod_features_map_from_keys[t1][f_keys];
                 const auto& sfeature = mfeatures[head_c];
                 for (const auto& sterm: sfeature){
-                    const int n_order = sterm.nlmtc_keys.size();
+                    const int n_order = sterm.nlmtp_keys.size();
                     const double coeff_f = pot[idx] * sterm.coeff;
                     const double coeff_e = coeff_f / double(n_prods);
                     for (int i = 0; i < n_order; ++i){
-                        const int head_key = sterm.nlmtc_keys[i];
-                        vector1i keys = erase_a_key(sterm.nlmtc_keys, i);
+                        const int head_key = sterm.nlmtp_keys[i];
+                        vector1i keys = erase_a_key(sterm.nlmtp_keys, i);
                         int prod_key;
                         if (separate_erased == true){
                             prod_key = prod_map_erased_from_keys[t1][keys];
@@ -273,7 +270,7 @@ void Potential::set_terms_using_mappings(const Features& f_obj,
 
                         bool append = true;
                         if (eliminate_conj == true and
-                            nlmtc_map[head_key].lm.conj == true) append = false;
+                            nlmtp_attrs[head_key].lm.conj == true) append = false;
 
                         if (append == true){
                             if (nonequiv_map[t1].count(keys_all) == 0){
@@ -312,9 +309,9 @@ void Potential::set_terms_using_mappings(const Features& f_obj,
                 potential_model_each_key[t1][head_key].emplace_back(pterm);
             }
             else {
-                const auto& nlmtc = nlmtc_map[head_key];
-                if (nlmtc.lm.conj == false){
-                    int noconj_key = nlmtc.nlmtc_noconj_key;
+                const auto& nlmtp = nlmtp_attrs[head_key];
+                if (nlmtp.lm.conj == false){
+                    int noconj_key = nlmtp.nlmtp_noconj_key;
                     potential_model_each_key[t1][noconj_key]
                                                 .emplace_back(pterm);
                 }
@@ -370,20 +367,9 @@ void Potential::print_keys(const vector1i& keys){
     std::cout << std::endl;
 }
 
-const std::vector<lmAttribute>& Potential::get_lm_map() const {
-    return lm_map;
+const Mapping& Potential::get_mapping() const {
+    return mapping;
 }
-const std::vector<nlmtcAttribute>&
-Potential::get_nlmtc_map_no_conjugate() const{
-    return nlmtc_map_no_conjugate;
-}
-const std::vector<nlmtcAttribute>& Potential::get_nlmtc_map() const {
-    return nlmtc_map;
-}
-const std::vector<ntcAttribute>& Potential::get_ntc_map() const {
-    return ntc_map;
-}
-
 const vector2i& Potential::get_prod_map(const int t) const {
     return prod_map[t];
 }
@@ -393,24 +379,9 @@ const vector2i& Potential::get_prod_map_erased(const int t) const {
 const vector2i& Potential::get_prod_features_map(const int t) const {
     return prod_features_map[t];
 }
-const int Potential::get_n_nlmtc_all() const {
-    return n_nlmtc_all;
-}
-/*
-const vector2i& Potential::get_prod_map_type() const {
-    return prod_map_type;
-}
-const vector2i& Potential::get_prod_map_erased_type() const {
-    return prod_map_erased_type;
-}
-*/
-
-const MappedMultipleFeatures&
-Potential::get_linear_features(const int t) const {
+const MappedMultipleFeatures& Potential::get_linear_features(const int t) const {
     return linear_features[t];
 }
-
-const PotentialModel& Potential::get_potential_model(const int type1,
-                                                     const int head_key) const {
+const PotentialModel& Potential::get_potential_model(const int type1, const int head_key) const {
     return potential_model_each_key[type1][head_key];
 }

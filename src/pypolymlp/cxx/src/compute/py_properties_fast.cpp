@@ -10,35 +10,7 @@
 PyPropertiesFast::PyPropertiesFast(const py::dict& params_dict,
                                    const vector1d& coeffs){
 
-    const int n_type = params_dict["n_type"].cast<int>();
-
-    const py::dict& model = params_dict["model"].cast<py::dict>();
-    const auto& pair_params = model["pair_params"].cast<vector2d>();
-    const double& cutoff = model["cutoff"].cast<double>();
-    const std::string& pair_type = model["pair_type"].cast<std::string>();
-    const std::string& feature_type = model["feature_type"].cast<std::string>();
-    const int& model_type = model["model_type"].cast<int>();
-    const int& maxp = model["max_p"].cast<int>();
-    const int& maxl = model["max_l"].cast<int>();
-
-    const py::dict& gtinv = model["gtinv"].cast<py::dict>();
-    const auto& lm_array = gtinv["lm_seq"].cast<vector3i>();
-    const auto& l_comb = gtinv["l_comb"].cast<vector2i>();
-    const auto& lm_coeffs = gtinv["lm_coeffs"].cast<vector2d>();
-
-    const bool force = true;
-    fp = {n_type,
-          force,
-          pair_params,
-          cutoff,
-          pair_type,
-          feature_type,
-          model_type,
-          maxp,
-          maxl,
-          lm_array,
-          l_comb,
-          lm_coeffs};
+    convert_params_dict_to_feature_params(params_dict, fp);
     polymlp = PolymlpEval(fp, coeffs);
 }
 

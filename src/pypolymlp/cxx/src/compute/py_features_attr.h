@@ -9,7 +9,9 @@
 #define __PYFEATURESATTR
 
 #include "mlpcpp.h"
+#include "polymlp/polymlp_mapping.h"
 #include "polymlp/polymlp_model_params.h"
+#include "compute/py_params.h"
 
 #include <Eigen/Core>
 #include <pybind11/pybind11.h>
@@ -21,7 +23,7 @@ class PyFeaturesAttr {
 
     vector1i radial_ids, gtinv_ids;
     vector2i tcomb_ids, polynomial_ids;
-    vector3i type_comb_pair;
+    vector2i type_pairs;
 
     public:
 
@@ -32,7 +34,7 @@ class PyFeaturesAttr {
     const vector1i& get_gtinv_ids() const;
     const vector2i& get_tcomb_ids() const;
     const vector2i& get_polynomial_ids() const;
-    const vector3i& get_type_comb_pair() const;
+    const vector2i& get_type_pairs() const;
 
 };
 

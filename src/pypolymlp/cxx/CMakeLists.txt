@@ -39,9 +39,18 @@ message(STATUS "Eigen3 include dir: ${EIGEN3_INCLUDE_DIR}")
 find_package(OpenMP)
 
 set(SRC_FILES
+    src/polymlp/polymlp_mapping.cpp
+    src/polymlp/polymlp_model_params.cpp
+    src/polymlp/polymlp_features.cpp
+    src/polymlp/polymlp_read_gtinv.cpp
+    src/polymlp/polymlp_basis_function.cpp
+    src/polymlp/polymlp_functions_interface.cpp
+    src/polymlp/polymlp_mlipkk_spherical_harmonics.cpp
+    src/polymlp/polymlp_potential.cpp
     src/compute/neighbor.cpp
     src/compute/neighbor_half.cpp
     src/compute/neighbor_cell.cpp
+    src/compute/py_params.cpp
     src/compute/py_model.cpp
     src/compute/py_properties_fast.cpp
     src/compute/py_additive_model.cpp
@@ -52,13 +61,6 @@ set(SRC_FILES
     src/compute/local_fast.cpp
     src/compute/model_fast.cpp
     src/python/pybind11_mlp.cpp
-    src/polymlp/polymlp_read_gtinv.cpp
-    src/polymlp/polymlp_basis_function.cpp
-    src/polymlp/polymlp_functions_interface.cpp
-    src/polymlp/polymlp_model_params.cpp
-    src/polymlp/polymlp_mlipkk_spherical_harmonics.cpp
-    src/polymlp/polymlp_features.cpp
-    src/polymlp/polymlp_potential.cpp
     src/polymlp/polymlp_gtinv_data.cpp
     src/polymlp/polymlp_gtinv_data_order1.cpp
     src/polymlp/polymlp_gtinv_data_order2.cpp

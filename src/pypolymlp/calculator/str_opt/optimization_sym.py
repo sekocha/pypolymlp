@@ -84,7 +84,7 @@ class MinimizeSym:
             else:
                 self._split = self._basis_f.shape[1]
 
-        if self._relax_cell is False and self._relax_positions is False:
+        if self._relax_cell == False and self._relax_positions == False:
             raise ValueError("No degree of freedom to be optimized.")
 
         self._positions_f0 = copy.deepcopy(self._structure.positions)
