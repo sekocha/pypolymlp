@@ -1,5 +1,6 @@
 """Tests of neighbor calculations."""
 
+import glob
 from pathlib import Path
 
 import numpy as np
@@ -43,5 +44,18 @@ def test_eval1():
     assert energy == pytest.approx(-31.642024569145274, abs=1e-12)
     assert forces[0][0] == pytest.approx(0.0, abs=1e-12)
     stresses_true = [0.21674893, 0.21674893, 0.21674893, 0, 0, 0]
+    stresses = convert_stresses_in_gpa(np.array([stresses]), [unitcell])[0]
+    np.testing.assert_allclose(stresses, stresses_true, atol=1e-5)
+
+
+def test_eval_flexible1():
+    unitcell = Poscar(cwd / "POSCAR").structure
+
+    files = sorted(glob.glob(str(cwd) + "/polymlp.lammps.flexible.*"))
+    prop = Properties(pot=files)
+    energy, forces, stresses = prop.eval(unitcell)
+    assert energy == pytest.approx(-31.64262794659518, abs=1e-12)
+    assert forces[0][0] == pytest.approx(0.0, abs=1e-12)
+    stresses_true = [0.05689321, 0.05689321, 0.05689321, 0, 0, 0]
     stresses = convert_stresses_in_gpa(np.array([stresses]), [unitcell])[0]
     np.testing.assert_allclose(stresses, stresses_true, atol=1e-5)
