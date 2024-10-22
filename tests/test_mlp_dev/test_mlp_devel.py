@@ -23,6 +23,49 @@ def _parse_data(filename):
     return polymlp_in
 
 
+def test_mlp_devel_hybrid_flexible_alloy():
+
+    files = sorted(glob.glob(str(cwd) + "/polymlp.in.Ag-Au.*"))
+    polymlp_in = _parse_data(files)
+    assert polymlp_in.n_features == 790
+
+    polymlp = PolymlpDevDataXYSequential(polymlp_in).run_train(batch_size=1000)
+    reg = Regression(polymlp).fit(seq=True, clear_data=True, batch_size=1000)
+    acc = PolymlpDevAccuracy(reg)
+    acc.compute_error(log_energy=False)
+
+    tag_train1 = "data-Ag-Au/vaspruns/train-disp1/*.polymlp"
+    tag_train2 = "data-Ag-Au/vaspruns/train-standard-Ag1/*.polymlp"
+    tag_train3 = "data-Ag-Au/vaspruns/train-standard-Au1/*.polymlp"
+    tag_test1 = "data-Ag-Au/vaspruns/test-disp1/*.polymlp"
+    tag_test2 = "data-Ag-Au/vaspruns/test-standard-Ag1/*.polymlp"
+    tag_test3 = "data-Ag-Au/vaspruns/test-standard-Au1/*.polymlp"
+    error_train1 = acc.error_train_dict[tag_train1]
+    error_train2 = acc.error_train_dict[tag_train2]
+    error_train3 = acc.error_train_dict[tag_train3]
+    error_test1 = acc.error_test_dict[tag_test1]
+    error_test2 = acc.error_test_dict[tag_test2]
+    error_test3 = acc.error_test_dict[tag_test3]
+
+    assert error_train1["energy"] == pytest.approx(0.005714896601496177, abs=1e-8)
+    assert error_train1["force"] == pytest.approx(0.03787574853676284, abs=1e-6)
+    assert error_train1["stress"] == pytest.approx(0.09112941418627805, abs=1e-5)
+
+    assert error_test1["energy"] == pytest.approx(0.005856437090626224, abs=1e-8)
+    assert error_test1["force"] == pytest.approx(0.03669204873660227, abs=1e-6)
+    assert error_test1["stress"] == pytest.approx(0.10038157705917868, abs=1e-5)
+
+    assert error_train2["energy"] == pytest.approx(0.012298087188725068, abs=1e-8)
+    assert error_train2["force"] == pytest.approx(0.05182914502932192, abs=1e-6)
+    assert error_train3["energy"] == pytest.approx(0.004038061027003977, abs=1e-8)
+    assert error_train3["force"] == pytest.approx(0.03427719245990994, abs=1e-6)
+
+    assert error_test2["energy"] == pytest.approx(0.016152217081171592, abs=1e-8)
+    assert error_test2["force"] == pytest.approx(0.06657513354721871, abs=1e-6)
+    assert error_test3["energy"] == pytest.approx(0.03960687938768066, abs=1e-8)
+    assert error_test3["force"] == pytest.approx(0.040258801388977375, abs=1e-6)
+
+
 def test_mlp_devel_hybrid_flexible():
 
     files = sorted(

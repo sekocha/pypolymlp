@@ -17,6 +17,7 @@ def find_active_atoms(
     """Reconstruct structures only using active atoms."""
     structures_active = []
     active_atoms_all = []
+    active_bools = []
     for st in structures:
         active_atoms = np.array(
             [i for i, ele in enumerate(st.elements) if ele in element_order]
@@ -24,17 +25,21 @@ def find_active_atoms(
         types = np.array([element_order.index(st.elements[i]) for i in active_atoms])
         n_atoms = [np.count_nonzero(types == i) for i in range(len(element_order))]
 
-        st_active = PolymlpStructure(
-            axis=st.axis,
-            positions=st.positions[:, active_atoms],
-            n_atoms=n_atoms,
-            elements=np.array(st.elements)[active_atoms],
-            types=types,
-        )
-        structures_active.append(st_active)
-        active_atoms_all.append(active_atoms)
+        if len(active_atoms) > 0:
+            st_active = PolymlpStructure(
+                axis=st.axis,
+                positions=st.positions[:, active_atoms],
+                n_atoms=n_atoms,
+                elements=np.array(st.elements)[active_atoms],
+                types=types,
+            )
+            structures_active.append(st_active)
+            active_atoms_all.append(active_atoms)
+            active_bools.append(True)
+        else:
+            active_bools.append(False)
 
-    return structures_active, active_atoms_all
+    return structures_active, active_atoms_all, np.array(active_bools)
 
 
 def convert_stresses_in_gpa(stresses: np.ndarray, structures: list[PolymlpStructure]):
@@ -85,21 +90,31 @@ class PropertiesSingle:
         if self._params.type_full:
             st_calc = update_types([st], self._params.element_order)[0]
         else:
-            st_calc, active_atoms = find_active_atoms([st], self._params.element_order)
-            st_calc = st_calc[0]
-            active_atoms = active_atoms[0]
+            st_calc, active_atoms, _ = find_active_atoms(
+                [st], self._params.element_order
+            )
+            if len(st_calc) > 0:
+                st_calc = st_calc[0]
+                active_atoms = active_atoms[0]
+            else:
+                st_calc = None
 
-        positions_c = st_calc.axis @ st_calc.positions
-        self.obj.eval(st_calc.axis, positions_c, st_calc.types)
+        if st_calc is not None:
+            positions_c = st_calc.axis @ st_calc.positions
+            self.obj.eval(st_calc.axis, positions_c, st_calc.types)
 
-        energy = self.obj.get_e()
-        force = np.array(self.obj.get_f()).T
-        stress = np.array(self.obj.get_s())
+            energy = self.obj.get_e()
+            force = np.array(self.obj.get_f()).T
+            stress = np.array(self.obj.get_s())
 
-        if self._params.type_full == False:
-            force_full = np.zeros((3, len(st.types)))
-            force_full[:, active_atoms] = force
-            force = force_full
+            if self._params.type_full == False:
+                force_full = np.zeros((3, len(st.types)))
+                force_full[:, active_atoms] = force
+                force = force_full
+        else:
+            energy = 0.0
+            force = np.zeros((3, len(st.types)))
+            stress = np.zeros(6)
 
         return energy, force, stress
 
@@ -122,35 +137,52 @@ class PropertiesSingle:
         if self._params.type_full:
             structures_calc = update_types(structures, self._params.element_order)
         else:
-            structures_calc, active_atoms = find_active_atoms(
+            structures_calc, active_atoms, active_bools = find_active_atoms(
                 structures, self._params.element_order
             )
 
-        axis_array = [st.axis for st in structures_calc]
-        types_array = [st.types for st in structures_calc]
-        positions_c_array = [st.axis @ st.positions for st in structures_calc]
+        if len(structures_calc) > 0:
+            axis_array = [st.axis for st in structures_calc]
+            types_array = [st.types for st in structures_calc]
+            positions_c_array = [st.axis @ st.positions for st in structures_calc]
 
-        """
-        PotentialProperties.eval_multiple: Return
-        ------------------------------------------
-        energies = obj.get_e(), (n_str)
-        forces = obj.get_f(), (n_str, n_atom, 3)
-        stresses = obj.get_s(), (n_str, 6)
-                    in the order of xx, yy, zz, xy, yz, zx
-        """
-        self.obj.eval_multiple(axis_array, positions_c_array, types_array)
+            """
+            PotentialProperties.eval_multiple: Return
+            ------------------------------------------
+            energies = obj.get_e(), (n_str)
+            forces = obj.get_f(), (n_str, n_atom, 3)
+            stresses = obj.get_s(), (n_str, 6)
+                        in the order of xx, yy, zz, xy, yz, zx
+            """
+            self.obj.eval_multiple(axis_array, positions_c_array, types_array)
 
-        energies = np.array(self.obj.get_e_array())
-        stresses = np.array(self.obj.get_s_array())
-        forces = [np.array(f).T for f in self.obj.get_f_array()]
+            energies = np.array(self.obj.get_e_array())
+            stresses = np.array(self.obj.get_s_array())
+            forces = [np.array(f).T for f in self.obj.get_f_array()]
+        else:
+            energies, forces, stresses = [], [], []
 
         if self._params.type_full == False:
-            forces_full = []
-            for st, f, atoms in zip(structures, forces, active_atoms):
+            energies_full, forces_full, stresses_full = [], [], []
+            i = 0
+            for iall, active in enumerate(active_bools):
+                st = structures[iall]
                 f_full = np.zeros((3, len(st.types)))
-                f_full[:, atoms] = f
-                forces_full.append(f_full)
+                if active:
+                    atoms = active_atoms[i]
+                    f_full[:, atoms] = forces[i]
+                    energies_full.append(energies[i])
+                    forces_full.append(f_full)
+                    stresses_full.append(stresses[i])
+                    i += 1
+                else:
+                    energies_full.append(0.0)
+                    forces_full.append(f_full)
+                    stresses_full.append(np.zeros(6))
+
+            energies = np.array(energies_full)
             forces = forces_full
+            stresses = np.array(stresses_full)
 
         return energies, forces, stresses
 
