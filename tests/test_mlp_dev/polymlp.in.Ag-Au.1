@@ -1,0 +1,24 @@
+feature_type gtinv
+cutoff 6.0
+gaussian_params1 1.0 1.0 1
+gaussian_params2 0.0 5.0 7
+reg_alpha_params -4 3 15
+
+model_type 3
+max_p 2
+gtinv_order 2
+gtinv_maxl 4
+
+include_force True
+include_stress True
+
+n_type 2
+elements Ag Au
+atomic_energy -0.19820116 -0.18494148
+
+train_data data-Ag-Au/vaspruns/train-disp1/*.polymlp True 1.0
+train_data data-Ag-Au/vaspruns/train-standard-Ag1/*.polymlp True 1.0
+train_data data-Ag-Au/vaspruns/train-standard-Au1/*.polymlp True 1.0
+test_data data-Ag-Au/vaspruns/test-disp1/*.polymlp True 1.0
+test_data data-Ag-Au/vaspruns/test-standard-Ag1/*.polymlp True 1.0
+test_data data-Ag-Au/vaspruns/test-standard-Au1/*.polymlp True 1.0
