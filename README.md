@@ -24,11 +24,13 @@
 - spglib
 
 ## How to install pypolymlp
-| Version | Downloads | Last Update | Platform |
-| ---- | ---- | ---- | ---- |
-| ![badge](https://anaconda.org/conda-forge/pypolymlp/badges/version.svg) | ![badge](https://anaconda.org/conda-forge/pypolymlp/badges/downloads.svg) | ![badge](https://anaconda.org/conda-forge/pypolymlp/badges/latest_release_date.svg) | ![badge](https://anaconda.org/conda-forge/pypolymlp/badges/platforms.svg) |
 
 - Install from conda-forge
+
+| Version | Last Update | Downloads | Platform | License |
+| ---- | ---- | ---- | ---- | ---- |
+| ![badge](https://anaconda.org/conda-forge/pypolymlp/badges/version.svg) | ![badge](https://anaconda.org/conda-forge/pypolymlp/badges/latest_release_date.svg) | ![badge](https://anaconda.org/conda-forge/pypolymlp/badges/downloads.svg)| ![badge](https://anaconda.org/conda-forge/pypolymlp/badges/platforms.svg) | ![badge](https://anaconda.org/conda-forge/pypolymlp/badges/license.svg) |
+
 ```
 conda create -n pypolymlp-env
 conda activate pypolymlp-env
