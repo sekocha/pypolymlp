@@ -26,7 +26,7 @@
 ## How to install pypolymlp
 | Version | Downloads | Last Update | Platform |
 | ---- | ---- | ---- | ---- |
-| ![badge](https://anaconda.org/conda-forge/pypolymlp/badges/version.svg) | https://anaconda.org/conda-forge/pypolymlp/badges/downloads.svg | https://anaconda.org/conda-forge/pypolymlp/badges/latest_release_date.svg | https://anaconda.org/conda-forge/pypolymlp/badges/platforms.svg |
+| ![badge](https://anaconda.org/conda-forge/pypolymlp/badges/version.svg) | ![badge](https://anaconda.org/conda-forge/pypolymlp/badges/downloads.svg) | ![badge](https://anaconda.org/conda-forge/pypolymlp/badges/latest_release_date.svg) | ![badge](https://anaconda.org/conda-forge/pypolymlp/badges/platforms.svg) |
 
 - Install from conda-forge
 ```
