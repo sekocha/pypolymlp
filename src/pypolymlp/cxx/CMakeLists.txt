@@ -47,6 +47,7 @@ set(SRC_FILES
     src/polymlp/polymlp_functions_interface.cpp
     src/polymlp/polymlp_mlipkk_spherical_harmonics.cpp
     src/polymlp/polymlp_potential.cpp
+    src/polymlp/polymlp_products.cpp
     src/compute/neighbor.cpp
     src/compute/neighbor_half.cpp
     src/compute/neighbor_cell.cpp
@@ -57,7 +58,6 @@ set(SRC_FILES
     src/compute/py_features_attr.cpp
     src/compute/polymlp_eval.cpp
     src/compute/features.cpp
-    src/compute/functions.cpp
     src/compute/local_fast.cpp
     src/compute/model_fast.cpp
     src/python/pybind11_mlp.cpp

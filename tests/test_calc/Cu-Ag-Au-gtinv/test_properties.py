@@ -30,7 +30,8 @@ def test_eval2():
     energy, forces, stresses = prop.eval(unitcell)
     energy2, forces2, stresses2 = prop.eval(unitcell2)
 
-    assert energy == energy2 == pytest.approx(-164.22234804626612, abs=1e-12)
+    assert energy == pytest.approx(-164.22234804626612, abs=1e-12)
+    assert energy2 == pytest.approx(-164.22234804626612, abs=1e-12)
     assert forces[0][0] == pytest.approx(0.0, abs=1e-12)
     assert forces2[0][0] == pytest.approx(0.0, abs=1e-12)
     stresses_true = [1.723271e-05, 1.723271e-05, 1.723271e-05, 0.0, 0.0, 0.0]
@@ -69,7 +70,8 @@ def test_eval_multiple1():
     energies, forces, stresses = prop.eval_multiple([unitcell1, unitcell2, unitcell3])
 
     assert energies[0] == pytest.approx(-10.114213158625798, abs=1e-12)
-    assert energies[1] == energies[2] == pytest.approx(-164.22234804626612, abs=1e-12)
+    assert energies[1] == pytest.approx(-164.22234804626612, abs=1e-12)
+    assert energies[2] == pytest.approx(-164.22234804626612, abs=1e-12)
     assert forces[0][0][0] == pytest.approx(0.0, abs=1e-12)
     assert forces[1][0][0] == pytest.approx(0.0, abs=1e-12)
     assert forces[2][0][0] == pytest.approx(0.0, abs=1e-12)

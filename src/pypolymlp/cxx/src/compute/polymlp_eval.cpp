@@ -499,7 +499,7 @@ void PolymlpEval::compute_linear_features(const vector1d& prod_anlmtp,
         ++idx;
     }
 }
-
+/*
 template<typename T>
 void PolymlpEval::compute_products(const vector2i& map,
                                    const std::vector<T>& element,
@@ -560,3 +560,4 @@ double PolymlpEval::prod_real(const dc& val1, const dc& val2){
 dc PolymlpEval::prod_real_and_complex(const double val1, const dc& val2){
     return dc(val1 * val2.real(), val1 * val2.imag());
 }
+*/

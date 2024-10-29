@@ -13,8 +13,8 @@
 #include "mlpcpp.h"
 #include "polymlp/polymlp_mapping.h"
 #include "polymlp/polymlp_functions_interface.h"
+#include "polymlp/polymlp_products.h"
 #include "compute/features.h"
-#include "compute/functions.h"
 
 class LocalFast{
 
