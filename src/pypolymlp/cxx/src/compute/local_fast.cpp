@@ -150,7 +150,7 @@ void LocalFast::gtinv_d(const vector2d& dis_a,
     vector1d prod_anlmtp;
     vector1dc prod_anlmtp_d;
     compute_products_real(prod_map, anlmtp, prod_anlmtp);
-    compute_products(prod_map_d, anlmtp, prod_anlmtp_d);
+    compute_products<dc>(prod_map_d, anlmtp, prod_anlmtp_d);
 
     compute_linear_features(prod_anlmtp, features, dn);
     compute_linear_features_deriv(

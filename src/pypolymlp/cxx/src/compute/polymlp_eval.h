@@ -11,6 +11,8 @@
 #include "mlpcpp.h"
 
 #include "polymlp/polymlp_functions_interface.h"
+#include "polymlp/polymlp_products.h"
+
 #include "polymlp/polymlp_mapping.h"
 #include "polymlp/polymlp_model_params.h"
 #include "polymlp/polymlp_features.h"
@@ -65,6 +67,7 @@ class PolymlpEval {
     void compute_linear_features(const vector1d& prod_anlmtp,
                                  const int type1,
                                  vector1d& feature_values);
+    /*
     template<typename T>
     void compute_products(const vector2i& map,
                           const std::vector<T>& element,
@@ -76,6 +79,7 @@ class PolymlpEval {
 
     double prod_real(const dc& val1, const dc& val2);
     dc prod_real_and_complex(const double val1, const dc& val2);
+    */
 
     void eval_gtinv(const vector2d& positions_c,
                     const vector1i& types,
