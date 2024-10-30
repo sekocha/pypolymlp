@@ -3,7 +3,23 @@
 ## Polynomial machine learning potentials
 
 - [Polynomial machine learning potential repository](http://cms.mtl.kyoto-u.ac.jp/seko/mlp-repository/index.html)
-- [A. Seko, J. Appl. Phys. 133, 011101 (2023)](https://doi.org/10.1063/5.0129045)
+
+## Citation of pypolymlp
+
+“Tutorial: Systematic development of polynomial machine learning potentials for elemental and alloy systems”, [A. Seko, J. Appl. Phys. 133, 011101 (2023)](https://doi.org/10.1063/5.0129045)
+
+```
+@article{pypolymlp,
+    author = {Seko, Atsuto},
+    title = "{"Tutorial: Systematic development of polynomial machine learning potentials for elemental and alloy systems"}",
+    journal = {J. Appl. Phys.},
+    volume = {133},
+    number = {1},
+    pages = {011101},
+    year = {2023},
+    month = {01},
+}
+```
 
 ## Required libraries and python modules
 
