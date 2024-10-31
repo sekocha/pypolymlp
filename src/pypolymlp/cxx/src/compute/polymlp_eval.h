@@ -67,19 +67,6 @@ class PolymlpEval {
     void compute_linear_features(const vector1d& prod_anlmtp,
                                  const int type1,
                                  vector1d& feature_values);
-    /*
-    template<typename T>
-    void compute_products(const vector2i& map,
-                          const std::vector<T>& element,
-                          std::vector<T>& prod_vals);
-
-    void compute_products_real(const vector2i& map,
-                               const vector1dc& element,
-                               vector1d& prod_vals);
-
-    double prod_real(const dc& val1, const dc& val2);
-    dc prod_real_and_complex(const double val1, const dc& val2);
-    */
 
     void eval_gtinv(const vector2d& positions_c,
                     const vector1i& types,

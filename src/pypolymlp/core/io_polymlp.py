@@ -104,7 +104,7 @@ def save_mlp_lammps(
     for atomtypes, n_ids in model_dict["pair_params_conditional"].items():
         for v in atomtypes:
             print(v, end=" ", file=f)
-        print("# atom type pair", file=f)
+        print(len(n_ids), "# atom type pair", file=f)
         for v in n_ids:
             print(v, end=" ", file=f)
         print("# pair params indices ", file=f)
@@ -215,7 +215,7 @@ def load_mlp_lammps(filename="polymlp.lammps"):
             n_type_pairs = _read_var(lines[idx], int)
             idx += 1
             for _ in range(n_type_pairs):
-                atomtypes = _read_var(lines[idx], int, return_list=True)
+                atomtypes = _read_var(lines[idx], int, return_list=True)[0:2]
                 idx += 1
                 params = _read_var(lines[idx], int, return_list=True)
                 idx += 1

@@ -60,6 +60,8 @@ struct feature_params {
     vector2d lm_coeffs;
 };
 
+
+
 // Hash function must be examined
 class HashVI {
     public:

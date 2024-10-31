@@ -72,7 +72,6 @@ void PolymlpEval::eval_pair(const vector2d& positions_c,
     int type1, type2, tp;
     double dx, dy, dz, dis, e_ij, f_ij, fx, fy, fz;
     vector1d fn, fn_d;
-    vector2d params;
     for (int i = 0; i < n_atom; ++i) {
         type1 = types[i];
         const vector1i& neighbor_i = neighbor_half[i];
@@ -86,7 +85,7 @@ void PolymlpEval::eval_pair(const vector2d& positions_c,
             dis = sqrt(dx*dx + dy*dy + dz*dz);
             if (dis < pot.fp.cutoff){
                 tp = type_pairs[type1][type2];
-                params = tp_to_params[tp];
+                const auto& params = tp_to_params[tp];
                 get_fn_(dis, pot.fp, params, fn, fn_d);
                 e_ij = 0.0, f_ij = 0.0;
                 int head_key(0);
@@ -135,7 +134,6 @@ void PolymlpEval::compute_antp(const vector2d& positions_c,
     int type1, type2, tp;
     double dx, dy, dz, dis;
     vector1d fn;
-    vector2d params;
     for (int i = 0; i < n_atom; ++i) {
         type1 = types[i];
         const vector1i& neighbor_i = neighbor_half[i];
@@ -149,7 +147,7 @@ void PolymlpEval::compute_antp(const vector2d& positions_c,
             if (dis < pot.fp.cutoff){
                 type2 = types[j];
                 tp = type_pairs[type1][type2];
-                params = tp_to_params[tp];
+                const auto& params = tp_to_params[tp];
                 get_fn_(dis, pot.fp, params, fn);
                 int idx(0);
                 for (const auto& ntp: ntp_attrs){
@@ -253,7 +251,6 @@ void PolymlpEval::eval_gtinv(const vector2d& positions_c,
     dc val, valx, valy, valz, d1;
     vector1d fn, fn_d;
     vector1dc ylm, ylm_dx, ylm_dy, ylm_dz;
-    vector2d params;
 
     for (int i = 0; i < n_atom; ++i) {
         type1 = types[i];
@@ -269,7 +266,7 @@ void PolymlpEval::eval_gtinv(const vector2d& positions_c,
             dis = sqrt(dx*dx + dy*dy + dz*dz);
             if (dis < pot.fp.cutoff){
                 tp = type_pairs[type1][type2];
-                params = tp_to_params[tp];
+                const auto& params = tp_to_params[tp];
                 const auto& sph = cartesian_to_spherical_(vector1d{dx,dy,dz});
                 get_fn_(dis, pot.fp, params, fn, fn_d);
                 get_ylm_(dis, sph[0], sph[1], pot.fp.maxl,
@@ -346,7 +343,6 @@ void PolymlpEval::compute_anlmtp(const vector2d& positions_c,
     int type1, type2, tp;
     double dx, dy, dz, dis;
     vector1d fn; vector1dc ylm; dc val;
-    vector2d params;
     for (int i = 0; i < n_atom; ++i) {
         type1 = types[i];
         const vector1i& neighbor_i = neighbor_half[i];
@@ -361,7 +357,7 @@ void PolymlpEval::compute_anlmtp(const vector2d& positions_c,
                 type2 = types[j];
                 const auto &sph = cartesian_to_spherical_(vector1d{dx,dy,dz});
                 tp = type_pairs[type1][type2];
-                params = tp_to_params[tp];
+                const auto& params = tp_to_params[tp];
                 get_fn_(dis, pot.fp, params, fn);
                 get_ylm_(sph[0], sph[1], pot.fp.maxl, ylm);
                 for (const auto& nlmtp: nlmtp_attrs_no_conj){
@@ -499,65 +495,3 @@ void PolymlpEval::compute_linear_features(const vector1d& prod_anlmtp,
         ++idx;
     }
 }
-/*
-template<typename T>
-void PolymlpEval::compute_products(const vector2i& map,
-                                   const std::vector<T>& element,
-                                   std::vector<T>& prod_vals){
-
-    prod_vals = std::vector<T>(map.size());
-
-    int idx(0);
-    T val_p;
-    for (const auto& prod: map){
-        if (prod.size() > 0){
-            auto iter = prod.begin();
-            val_p = element[*iter];
-            ++iter;
-            while (iter != prod.end()){
-                val_p *= element[*iter];
-                ++iter;
-            }
-        }
-        else val_p = 1.0;
-
-        prod_vals[idx] = val_p;
-        ++idx;
-    }
-}
-
-void PolymlpEval::compute_products_real(const vector2i& map,
-                                        const vector1dc& element,
-                                        vector1d& prod_vals){
-
-    prod_vals = vector1d(map.size());
-
-    int idx(0);
-    dc val_p;
-    for (const auto& prod: map){
-        if (prod.size() > 1) {
-            auto iter = prod.begin() + 1;
-            val_p = element[*iter];
-            ++iter;
-            while (iter != prod.end()){
-                val_p *= element[*iter];
-                ++iter;
-            }
-            prod_vals[idx] = prod_real(val_p, element[*(prod.begin())]);
-        }
-        else if (prod.size() == 1){
-            prod_vals[idx] = element[*(prod.begin())].real();
-        }
-        else prod_vals[idx] = 1.0;
-        ++idx;
-    }
-}
-
-double PolymlpEval::prod_real(const dc& val1, const dc& val2){
-    return val1.real() * val2.real() - val1.imag() * val2.imag();
-}
-
-dc PolymlpEval::prod_real_and_complex(const double val1, const dc& val2){
-    return dc(val1 * val2.real(), val1 * val2.imag());
-}
-*/
