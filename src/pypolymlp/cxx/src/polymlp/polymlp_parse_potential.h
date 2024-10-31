@@ -9,22 +9,28 @@
 #define __POLYMLP_PARSE_POTENTIAL
 
 #include "polymlp_mlpcpp.h"
+#include "polymlp_read_gtinv.h"
 
-void parse_elements(std::ifstream& input, DataPolyMLP& pot);
-void parse_basic_params(std::ifstream& input, DataPolyMLP& pot);
-int parse_gtinv_params(
-    std::ifstream& input, DataPolyMLP& pot, vector1i& gtinv_maxl, std::vector<bool>& gtinv_sym
+
+void parse_elements(
+    std::ifstream& input, std::vector<std::string>& ele
 );
-void parse_reg_coeffs(std::ifstream& input, DataPolyMLP& pot, vector1d& reg_coeffs);
-int parse_gaussians(std::ifstream& input, DataPolyMLP& pot);
-void parse_params_conditional(std::ifstream& input, DataPolyMLP& pot);
-bool parse_type_indices(std::ifstream& input, DataPolyMLP& pot, vector1i& type_indices);
+void parse_basic_params(std::ifstream& input, feature_params& fp);
+int parse_gtinv_params(
+    std::ifstream& input,
+    vector1i& gtinv_maxl,
+    std::vector<bool>& gtinv_sym
+);
+void parse_reg_coeffs(std::ifstream& input, vector1d& reg_coeffs);
+int parse_gaussians(std::ifstream& input, feature_params& fp);
+void parse_params_conditional(std::ifstream& input);
+bool parse_type_indices(std::ifstream& input, vector1i& type_indices);
 
 void parse_polymlp(
-    const char *file, 
-    DataPolyMLP& pot, 
-    vector1d& reg_coeffs, 
-    std::vector<std::string>& ele, 
+    const char *file,
+    feature_params& fp,
+    vector1d& reg_coeffs,
+    std::vector<std::string>& ele,
     vector1d& mass
 );
 
@@ -42,7 +48,6 @@ T get_value(std::ifstream& input){
     return val;
 }
 
-
 template<typename T>
 T get_value(std::ifstream& input, std::string& tag){
 
@@ -58,7 +63,6 @@ T get_value(std::ifstream& input, std::string& tag){
 
     return val;
 }
-
 
 template<typename T>
 std::vector<T> get_value_array(std::ifstream& input, const int& size){

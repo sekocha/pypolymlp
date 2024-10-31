@@ -62,7 +62,6 @@ void Readgtinv::screening(const int& gtinv_order,
     }
 
 }
-
 void Readgtinv::screening_ver2(const int& gtinv_order,
                                const vector1i& gtinv_maxl,
                                const int& n_type){
