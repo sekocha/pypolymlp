@@ -21,9 +21,9 @@ pair # feature_type
 2.431000000000000e+01 1.600000000000000e+01 # atomic mass
 False # electrostatic
 3 # n_type_pairs
-0 0 # atom type pair
+0 0 9 # atom type pair
 0 1 2 3 4 5 6 7 8 # pair params indices
-0 1 # atom type pair
+0 1 9 # atom type pair
 0 1 2 3 4 5 6 7 8 # pair params indices
-1 1 # atom type pair
+1 1 9 # atom type pair
 0 1 2 3 4 5 6 7 8 # pair params indices
