@@ -60,6 +60,7 @@ def compute_features(structures: list[PolymlpStructure], args, force: bool = Fal
             force=force,
         )
     infile = args.infile[0]
+    print(infile)
     return compute_from_infile(infile, structures, force=force)
 
 

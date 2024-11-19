@@ -1,5 +1,5 @@
 n_type 2
-elements Mg O
+elements Na Cl
 
 feature_type gtinv
 cutoff 8.0
