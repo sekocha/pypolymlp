@@ -238,6 +238,7 @@ def print_array2d(array, tag, fstream, indent_l=0):
 def save_cell(cell: PolymlpStructure, tag="unitcell", fstream=None, filename=None):
     """Write structure to a file."""
 
+    np.set_printoptions(legacy="1.25")
     if fstream is None:
         fstream = open(filename, "w")
 
@@ -269,6 +270,7 @@ def save_sscha_yaml(
 ):
     """Write SSCHA results to a file."""
 
+    np.set_printoptions(legacy="1.25")
     properties = sscha_log[-1]
 
     f = open(filename, "w")
@@ -297,9 +299,9 @@ def save_sscha_yaml(
 
     save_cell(unitcell, tag="unitcell", fstream=f)
     print("supercell_matrix:", file=f)
-    print(" -", list(supercell_matrix[0]), file=f)
-    print(" -", list(supercell_matrix[1]), file=f)
-    print(" -", list(supercell_matrix[2]), file=f)
+    print(" -", list(supercell_matrix[0].astype(int)), file=f)
+    print(" -", list(supercell_matrix[1].astype(int)), file=f)
+    print(" -", list(supercell_matrix[2].astype(int)), file=f)
     print("", file=f)
 
     print("logs:", file=f)
