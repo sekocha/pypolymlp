@@ -1,5 +1,6 @@
 """Class for saving and loading polymlp.lammps files"""
 
+import io
 import itertools
 
 import numpy as np
@@ -139,9 +140,11 @@ def load_mlp_lammps(filename="polymlp.lammps"):
     params, mlp_dict = load_mlp_lammps(filename='polymlp.lammps')
     """
 
-    f = open(filename)
-    lines = f.readlines()
-    f.close()
+    if isinstance(filename, io.IOBase):
+        lines = filename.readlines()
+    else:
+        with open(filename) as f:
+            lines = f.readlines()
 
     idx = 0
     elements = _read_var(lines[idx], str, return_list=True)

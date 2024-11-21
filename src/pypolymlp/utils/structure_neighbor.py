@@ -29,8 +29,8 @@ def find_active_distances(structure, cutoff, decimals=1):
         new_dict[key] = np.unique(np.round(v, decimals=decimals))
 
     distances_dict = new_dict
-    for k, v in distances_dict.items():
-        print(k, v)
+    # for k, v in distances_dict.items():
+    #     print(k, v)
 
     return distances_dict
 

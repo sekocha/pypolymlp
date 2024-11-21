@@ -71,6 +71,7 @@ class PolymlpFC:
         )
         self._fc2 = None
         self._fc3 = None
+        self._fc4 = None
         self._symfc = None
         self._disps = None
         self._forces = None
@@ -188,29 +189,18 @@ class PolymlpFC:
 
         return self
 
-    def run_fc2(self, use_mkl: bool = True, is_compact_fc: bool = True):
-        """Construct fc2 basis and solve FC2"""
-
-        self._symfc = Symfc(
-            self._supercell_ph,
-            displacements=self._disps.transpose((0, 2, 1)),
-            forces=self._forces.transpose((0, 2, 1)),
-            use_mkl=use_mkl,
-            log_level=1,
-        ).run(2, is_compact_fc=is_compact_fc)
-        self._fc2 = self._symfc.force_constants[2]
-
-        return self
-
-    def run_fc2fc3(
-        self,
-        batch_size: int = 100,
-        use_mkl: bool = True,
-        is_compact_fc: bool = True,
+    def run_fc(
+        self, orders: tuple = (2, 3), use_mkl: bool = True, is_compact_fc: bool = True
     ):
-        """Construct fc2 + fc3 basis and solve FC2 + FC3"""
+        """Construct fc basis and solve FCs."""
 
-        cutoff = {3: self._cutoff}
+        if self._cutoff is not None:
+            cutoff = dict()
+            for order in orders:
+                cutoff[order] = self._cutoff
+        else:
+            cutoff = None
+
         self._symfc = Symfc(
             self._supercell_ph,
             displacements=self._disps.transpose((0, 2, 1)),
@@ -218,32 +208,24 @@ class PolymlpFC:
             cutoff=cutoff,
             use_mkl=use_mkl,
             log_level=1,
-        ).run(3, batch_size=batch_size, is_compact_fc=is_compact_fc)
-        self._fc2, self._fc3 = (
-            self._symfc.force_constants[2],
-            self._symfc.force_constants[3],
         )
-        if self._verbose:
-            print(
-                "Basis size (FC2):",
-                self._symfc.basis_set[2].basis_set.shape,
-                flush=True,
-            )
-            print(
-                "Basis size (FC3):",
-                self._symfc.basis_set[3].basis_set.shape,
-                flush=True,
-            )
-
+        self._symfc.run(orders=orders, is_compact_fc=is_compact_fc)
+        for order in orders:
+            if order == 2:
+                self._fc2 = self._symfc.force_constants[2]
+            elif order == 3:
+                self._fc3 = self._symfc.force_constants[3]
+            elif order == 4:
+                self._fc4 = self._symfc.force_constants[4]
         return self
 
     def run(
         self,
         disps: Optional[np.ndarray] = None,
         forces: Optional[np.ndarray] = None,
+        orders: tuple = (2, 3),
         batch_size: int = 100,
         write_fc: bool = True,
-        only_fc2: bool = False,
         is_compact_fc: bool = True,
     ):
         """Calculate forces using polymlp and estimate FCs."""
@@ -263,13 +245,29 @@ class PolymlpFC:
             self.forces = forces
 
         t1 = time.time()
-        if only_fc2:
-            self.run_fc2(is_compact_fc=is_compact_fc)
-        else:
-            self.run_fc2fc3(batch_size=batch_size, is_compact_fc=is_compact_fc)
+        self.run_fc(orders=orders, is_compact_fc=is_compact_fc)
         t2 = time.time()
         if self._verbose:
             print("Time (Symfc basis and solver)", t2 - t1, flush=True)
+            for order in orders:
+                if order == 2:
+                    print(
+                        "Basis size (FC2):",
+                        self._symfc.basis_set[2].basis_set.shape,
+                        flush=True,
+                    )
+                elif order == 3:
+                    print(
+                        "Basis size (FC3):",
+                        self._symfc.basis_set[3].basis_set.shape,
+                        flush=True,
+                    )
+                elif order == 4:
+                    print(
+                        "Basis size (FC4):",
+                        self._symfc.basis_set[4].basis_set.shape,
+                        flush=True,
+                    )
 
         if write_fc:
             if self._fc2 is not None:
@@ -324,6 +322,10 @@ class PolymlpFC:
     @property
     def fc3(self):
         return self._fc3
+
+    @property
+    def fc4(self):
+        return self._fc4
 
     @property
     def symfc_obj(self):
