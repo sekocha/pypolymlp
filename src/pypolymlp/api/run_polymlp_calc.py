@@ -160,6 +160,14 @@ def run():
         default=None,
         help="Cutoff radius for setting zero elements.",
     )
+    parser.add_argument(
+        "--fc_orders",
+        nargs="*",
+        type=int,
+        default=(2, 3),
+        help="FC orders.",
+    )
+
     parser.add_argument("--run_ltc", action="store_true", help="Run LTC calculations")
     parser.add_argument(
         "--ltc_mesh",
@@ -237,7 +245,7 @@ def run():
                 is_plusminus=args.is_plusminus,
             )
 
-        polyfc.run(write_fc=True, batch_size=args.batch_size)
+        polyfc.run(orders=args.fc_orders, write_fc=True, batch_size=args.batch_size)
 
         if args.run_ltc:
             import phono3py

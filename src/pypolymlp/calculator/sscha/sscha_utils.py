@@ -10,7 +10,7 @@ from phono3py.file_IO import read_fc2_from_hdf5
 
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.utils import kjmol_to_ev
-from pypolymlp.utils.phonopy_utils import phonopy_supercell
+from pypolymlp.utils.phonopy_utils import phonopy_supercell, structure_to_phonopy_cell
 
 
 @dataclass
@@ -114,6 +114,10 @@ class Restart:
     @property
     def unitcell(self):
         return self._unitcell
+
+    @property
+    def unitcell_phonopy(self):
+        return structure_to_phonopy_cell(self._unitcell)
 
     @property
     def supercell_matrix(self):
