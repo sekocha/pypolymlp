@@ -12,7 +12,7 @@ void compute_products_real(const vector2i& map, const vector1dc& element, vector
     prod_vals = vector1d(map.size());
 
     int idx(0);
-    dc val_p; 
+    dc val_p;
     for (const auto& prod: map){
         if (prod.size() > 1) {
             auto iter = prod.begin() + 1;

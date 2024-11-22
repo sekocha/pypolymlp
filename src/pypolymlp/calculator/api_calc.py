@@ -1,15 +1,13 @@
 """API Class for calculating properties."""
 
-from typing import Union, Optional
+from typing import Optional, Union
 
 import numpy as np
 
-from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
-from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.compute_elastic import PolymlpElastic
-from pypolymlp.calculator.compute_features import (
-    compute_from_polymlp_lammps
-)
+from pypolymlp.calculator.compute_features import compute_from_polymlp_lammps
+from pypolymlp.calculator.properties import Properties
+from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
 
 
 class PolymlpCalc:
@@ -40,17 +38,17 @@ class PolymlpCalc:
             self._prop = Properties(pot=pot, params=params, coeffs=coeffs)
         else:
             self._prop = properties
- 
+
         self._verbose = verbose
 
-    def eval(self, st: PolymlpStructure):
+    def eval(self, st: Union[PolymlpStructure, list[PolymlpStructure]]):
         """Evaluate properties for a single structure.
 
         Returns
         -------
         e: Energy. shape=(n_str,), unit: eV/supercell
         f: Forces. shape=(n_str, 3, natom), unit: eV/angstrom.
-        s: Stress tensors. shape=(n_str, 6), 
+        s: Stress tensors. shape=(n_str, 6),
             unit: eV/supercell in the order of xx, yy, zz, xy, yz, zx.
         """
         # from pypolymlp.utils.phonopy_utils import phonopy_cell_to_structure
@@ -58,15 +56,15 @@ class PolymlpCalc:
         if isinstance(st, PolymlpStructure):
             return self._prop.eval(st)
         elif isinstance(st, list):
-            return self._prop.eval_multiple(structures)
+            return self._prop.eval_multiple(st)
         raise RuntimeError("Invalid structure type.")
 
     def save_properties(self):
         """Save properties.
 
-        Numpy files of polymlp_energies.npy, polymlp_forces.npy, 
+        Numpy files of polymlp_energies.npy, polymlp_forces.npy,
         and polymlp_stress_tensors.npy are generated.
-        They contain the energy values, forces, and stress tensors 
+        They contain the energy values, forces, and stress tensors
         for structures used for the latest run of self.eval.
         """
         self._prop.save(verbose=self._verbose)
@@ -78,8 +76,8 @@ class PolymlpCalc:
         return self
 
     def run_features(
-        self, 
-        structures: list[PolymlpStructure], 
+        self,
+        structures: list[PolymlpStructure],
         develop_infile: Optional[str] = None,
     ):
         """Compute features.
@@ -90,9 +88,12 @@ class PolymlpCalc:
         develop_infile: A pypolymlp input file for developing MLP.
         """
         if develop_infile is None:
+            pass
 
     def run_elastic_constants(
-        self, structure: PolymlpStructure, poscar: str,
+        self,
+        structure: PolymlpStructure,
+        poscar: str,
     ):
         """Run elastic constant calculations.
 
@@ -104,9 +105,9 @@ class PolymlpCalc:
         """
         self.unicell = structure
         self._elastic = PolymlpElastic(
-            unitcell = structure,
-            unitcell = poscar,
-            properties=self._prop, 
+            unitcell=structure,
+            unitcell=poscar,
+            properties=self._prop,
             verbose=self._verbose,
         )
         self._elastic.run()
@@ -114,7 +115,7 @@ class PolymlpCalc:
 
     def write_elastic_constants(self, filename="polymlp_elastic.yaml"):
         """Save elastic constants to a file."""
-        self._elastic.write_elastic_constants(filename = filename)
+        self._elastic.write_elastic_constants(filename=filename)
 
     @property
     def properties(self) -> Properties:
@@ -156,7 +157,7 @@ class PolymlpCalc:
         """Return unit cell."""
         return self._unitcell
 
-    @setter.unitcell
+    @unitcell.setter
     def unitcell(self, cell):
         """Set unit cell."""
         self._unitcell = cell
@@ -165,4 +166,3 @@ class PolymlpCalc:
     def elastic_constants(self) -> np.ndarray:
         """Return elastic constants."""
         return self._elastic.elastic_constants
-
