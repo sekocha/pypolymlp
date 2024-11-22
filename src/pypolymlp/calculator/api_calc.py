@@ -5,12 +5,14 @@ from typing import Optional, Union
 import numpy as np
 
 from pypolymlp.calculator.compute_elastic import PolymlpElastic
+from pypolymlp.calculator.compute_eos import PolymlpEOS
 from pypolymlp.calculator.compute_features import (
     compute_from_infile,
     compute_from_polymlp_lammps,
 )
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
+from pypolymlp.core.interface_vasp import parse_structures_from_poscars
 
 
 class PolymlpCalc:
@@ -36,15 +38,36 @@ class PolymlpCalc:
         Any one of pot, (params, coeffs), and properties is needed.
         """
         if pot is None and params is None and properties is None:
-            raise RuntimeError("Poly. MLP not defined.")
+            raise RuntimeError("polymlp not defined.")
+
         if properties is None:
             self._prop = Properties(pot=pot, params=params, coeffs=coeffs)
         else:
             self._prop = properties
 
         self._verbose = verbose
+        self._unitcell = None
+        self._structures = None
 
-    def eval(self, st: Union[PolymlpStructure, list[PolymlpStructure]]):
+        self._elastic = None
+        self._eos = None
+
+    def parse_poscars(self, poscars: list[str]) -> list[PolymlpStructure]:
+        """Parse POSCAR files.
+
+        Retruns
+        -------
+        structures: list[PolymlpStructure], Structures.
+        """
+        if isinstance(poscars, str):
+            poscars = [poscars]
+        self.structures = parse_structures_from_poscars(poscars)
+        return self.structures
+
+    def eval(
+        self,
+        structures: Optional[Union[PolymlpStructure, list[PolymlpStructure]]] = None,
+    ):
         """Evaluate properties for a single structure.
 
         Returns
@@ -56,11 +79,9 @@ class PolymlpCalc:
         """
         # from pypolymlp.utils.phonopy_utils import phonopy_cell_to_structure
         # st = phonopy_cell_to_structure(str_ph)
-        if isinstance(st, PolymlpStructure):
-            return self._prop.eval(st)
-        elif isinstance(st, list):
-            return self._prop.eval_multiple(st)
-        raise RuntimeError("Invalid structure type.")
+        if structures is not None:
+            self.structures = structures
+        return self._prop.eval_multiple(self.structures)
 
     def save_properties(self):
         """Save properties.
@@ -80,7 +101,7 @@ class PolymlpCalc:
 
     def run_features(
         self,
-        structures: list[PolymlpStructure],
+        structures: Optional[PolymlpStructure, list[PolymlpStructure]] = None,
         develop_infile: Optional[str] = None,
         features_force: bool = False,
         features_stress: bool = False,
@@ -97,9 +118,12 @@ class PolymlpCalc:
         features: Structural features. shape=(n_str, n_features)
             if features_force == False and features_stress == False.
         """
+        if structures is not None:
+            self.structures = structures
+
         if develop_infile is None:
             features = compute_from_polymlp_lammps(
-                structures,
+                self.structures,
                 params=self.params,
                 force=features_force,
                 stress=features_stress,
@@ -108,7 +132,7 @@ class PolymlpCalc:
         else:
             features = compute_from_infile(
                 develop_infile,
-                structures,
+                self.structures,
                 force=features_force,
                 stress=features_stress,
             )
@@ -131,7 +155,7 @@ class PolymlpCalc:
         self.unicell = structure
         self._elastic = PolymlpElastic(
             unitcell=structure,
-            unitcell=poscar,
+            unitcell_poscar=poscar,
             properties=self._prop,
             verbose=self._verbose,
         )
@@ -141,6 +165,56 @@ class PolymlpCalc:
     def write_elastic_constants(self, filename="polymlp_elastic.yaml"):
         """Save elastic constants to a file."""
         self._elastic.write_elastic_constants(filename=filename)
+
+    def run_eos(
+        self,
+        structure: Optional[PolymlpStructure] = None,
+        eps_min: float = 0.7,
+        eps_max: float = 2.0,
+        eps_step: float = 0.03,
+        fine_grid: bool = True,
+        eos_fit: bool = False,
+    ):
+        """Run EOS calculations.
+
+        pymatgen is required if eos_fit = True.
+
+        Parameters
+        ----------
+        structure: Equilibrium structure.
+        eps_min: Lower bound of volume change.
+        eps_max: Upper bound of volume change.
+        eps_step: Interval of volume change.
+        fine_grid: Use a fine grid around equilibrium structure.
+        eos_fit: Fit vinet EOS curve using volume-energy data.
+
+        volumes = np.arange(eps_min, eps_max, eps_step) * eq_volume
+
+        Returns
+        -------
+        self: PolymlpCalc
+        """
+        if structure is not None:
+            self.structures = structure
+
+        self.unitcell = self.first_structure
+        self._eos = PolymlpEOS(
+            unitcell=self.unitcell,
+            properties=self._prop,
+            verbose=self._verbose,
+        )
+        self._eos.run(
+            eps_min=eps_min,
+            eps_max=eps_max,
+            eps_int=eps_step,
+            fine_grid=fine_grid,
+            eos_fit=eos_fit,
+        )
+        return self
+
+    def write_eos(self, filename="polymlp_eos.yaml"):
+        """Save EOS to a file."""
+        self._eos.write_eos_yaml(filename=filename)
 
     @property
     def properties(self) -> Properties:
@@ -175,7 +249,24 @@ class PolymlpCalc:
     @property
     def structures(self) -> list[PolymlpStructure]:
         """Return structures for the final calculation."""
-        return self._prop._structures
+        return self._structures
+
+    @property
+    def first_structure(self) -> PolymlpStructure:
+        """Return the first structure for the final calculation."""
+        return self._structures[0]
+
+    @structures.setter
+    def structures(
+        self, structures: Union[PolymlpStructure, list[PolymlpStructure]]
+    ) -> list[PolymlpStructure]:
+        """Set structures."""
+        if isinstance(structures, PolymlpStructure):
+            self._structures = [structures]
+        elif isinstance(structures, list):
+            self._structures = structures
+        else:
+            raise RuntimeError("Invalid structure type.")
 
     @property
     def unitcell(self) -> PolymlpStructure:
@@ -191,3 +282,13 @@ class PolymlpCalc:
     def elastic_constants(self) -> np.ndarray:
         """Return elastic constants."""
         return self._elastic.elastic_constants
+
+    @property
+    def eos_fit_data(self):
+        """Return EOS fit parameters.
+
+        Returns
+        -------
+        equilibrium energy, equilibrium volume, bulk modulus
+        """
+        return (self._eos._e0, self._eos._v0, self._eos._b0)
