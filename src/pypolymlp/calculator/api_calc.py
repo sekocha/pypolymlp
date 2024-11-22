@@ -7,6 +7,9 @@ import numpy as np
 from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.compute_elastic import PolymlpElastic
+from pypolymlp.calculator.compute_features import (
+    compute_from_polymlp_lammps
+)
 
 
 class PolymlpCalc:
