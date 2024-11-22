@@ -58,6 +58,36 @@ class PolymlpCalc:
             return self._prop.eval_multiple(structures)
         raise RuntimeError("Invalid structure type.")
 
+    def save_properties(self):
+        """Save properties.
+
+        Numpy files of polymlp_energies.npy, polymlp_forces.npy, 
+        and polymlp_stress_tensors.npy are generated.
+        They contain the energy values, forces, and stress tensors 
+        for structures used for the latest run of self.eval.
+        """
+        self._prop.save(verbose=self._verbose)
+        return self
+
+    def print_single_properties(self):
+        """Print properties for a single structure."""
+        self._prop.print_single()
+        return self
+
+    def run_features(
+        self, 
+        structures: list[PolymlpStructure], 
+        develop_infile: Optional[str] = None,
+    ):
+        """Compute features.
+
+        Parameters
+        ----------
+        structures: Structures for computing features.
+        develop_infile: A pypolymlp input file for developing MLP.
+        """
+        if develop_infile is None:
+
     def run_elastic_constants(
         self, structure: PolymlpStructure, poscar: str,
     ):
@@ -80,17 +110,8 @@ class PolymlpCalc:
         return self._elastic.elastic_constants
 
     def write_elastic_constants(self, filename="polymlp_elastic.yaml"):
+        """Save elastic constants to a file."""
         self._elastic.write_elastic_constants(filename = filename)
-
-    def save_properties(self):
-        """Save properties."""
-        self._prop.save(verbose=self._verbose)
-        return self
-
-    def print_single_properties(self):
-        """Print properties for a single structure."""
-        self._prop.print_single()
-        return self
 
     @property
     def properties(self) -> Properties:
@@ -141,6 +162,4 @@ class PolymlpCalc:
     def elastic_constants(self) -> np.ndarray:
         """Return elastic constants."""
         return self._elastic.elastic_constants
-
-
 
