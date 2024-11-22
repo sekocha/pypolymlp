@@ -5,7 +5,10 @@ from typing import Optional, Union
 import numpy as np
 
 from pypolymlp.calculator.compute_elastic import PolymlpElastic
-from pypolymlp.calculator.compute_features import compute_from_polymlp_lammps
+from pypolymlp.calculator.compute_features import (
+    compute_from_infile,
+    compute_from_polymlp_lammps,
+)
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
 
@@ -79,6 +82,8 @@ class PolymlpCalc:
         self,
         structures: list[PolymlpStructure],
         develop_infile: Optional[str] = None,
+        features_force: bool = False,
+        features_stress: bool = False,
     ):
         """Compute features.
 
@@ -86,9 +91,29 @@ class PolymlpCalc:
         ----------
         structures: Structures for computing features.
         develop_infile: A pypolymlp input file for developing MLP.
+
+        Return
+        ------
+        features: Structural features. shape=(n_str, n_features)
+            if features_force == False and features_stress == False.
         """
         if develop_infile is None:
-            pass
+            features = compute_from_polymlp_lammps(
+                structures,
+                params=self.params,
+                force=features_force,
+                stress=features_stress,
+                return_mlp_dict=False,
+            )
+        else:
+            features = compute_from_infile(
+                develop_infile,
+                structures,
+                force=features_force,
+                stress=features_stress,
+            )
+
+        return features
 
     def run_elastic_constants(
         self,
