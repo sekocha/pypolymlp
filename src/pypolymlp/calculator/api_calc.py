@@ -10,6 +10,7 @@ from pypolymlp.calculator.compute_features import (
     compute_from_infile,
     compute_from_polymlp_lammps,
 )
+from pypolymlp.calculator.compute_phonon import PolymlpPhonon, PolymlpPhononQHA
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
 from pypolymlp.core.interface_vasp import parse_structures_from_poscars
@@ -51,6 +52,8 @@ class PolymlpCalc:
 
         self._elastic = None
         self._eos = None
+        self._phonon = None
+        self._qha = None
 
     def parse_poscars(self, poscars: list[str]) -> list[PolymlpStructure]:
         """Parse POSCAR files.
@@ -152,9 +155,10 @@ class PolymlpCalc:
         -------
         elastic_constants: Elastic constants in GPa. shape=(6,6).
         """
-        self.unicell = structure
+        self.unitcell = structure
+
         self._elastic = PolymlpElastic(
-            unitcell=structure,
+            unitcell=self.unitcell,
             unitcell_poscar=poscar,
             properties=self._prop,
             verbose=self._verbose,
@@ -196,8 +200,8 @@ class PolymlpCalc:
         """
         if structure is not None:
             self.structures = structure
-
         self.unitcell = self.first_structure
+
         self._eos = PolymlpEOS(
             unitcell=self.unitcell,
             properties=self._prop,
@@ -216,9 +220,136 @@ class PolymlpCalc:
         """Save EOS to a file."""
         self._eos.write_eos_yaml(filename=filename)
 
+    def init_phonon(
+        self,
+        unitcell: [PolymlpStructure] = None,
+        supercell_matrix: np.ndarray = ((1, 0, 0), (0, 1, 0), (0, 0, 1)),
+    ):
+        """Initialize phonon calculations.
+
+        phonopy is required.
+
+        Parameters
+        ----------
+        unitcell: Unit cell of equilibrium structure.
+        supercell_matrix: Supercell matrix.
+
+        """
+        if unitcell is not None:
+            self.structures = unitcell
+        self.unitcell = self.first_structure
+
+        self._phonon = PolymlpPhonon(
+            unitcell=self.unitcell,
+            supercell_matrix=supercell_matrix,
+        )
+        return self
+
+    def run_phonon(
+        self,
+        distance: float = 0.001,
+        mesh: np.ndarray = (10, 10, 10),
+        t_min: float = 0,
+        t_max: float = 1000,
+        t_step: float = 10,
+        with_eigenvectors: bool = False,
+        is_mesh_symmetry: bool = True,
+        with_pdos: bool = False,
+    ):
+        """Run phonon calculations.
+
+        phonopy is required.
+
+        Parameters
+        ----------
+        distance: Magnitude of displacements in ang.
+        mesh: k-mesh grid.
+        t_min: Minimum temperature.
+        t_max: Maximum temperature.
+        t_step: Temperature interval.
+        with_eigenvectors: Compute eigenvectors.
+        is_mesh_symmetry: Consider symmetry.
+        with_pdos: Compute PDOS.
+
+        """
+        self._phonon.produce_force_constants(distance=distance)
+        self._phonon.compute_properties(
+            mesh=mesh,
+            t_min=t_min,
+            t_max=t_max,
+            t_step=t_step,
+            with_eigenvectors=with_eigenvectors,
+            is_mesh_symmetry=is_mesh_symmetry,
+            with_pdos=with_pdos,
+        )
+        return self
+
+    def write_phonon(self, path="./"):
+        """Save results from phonon calculations."""
+        self._phonon.write_properties(path_output=path)
+        return self
+
+    def run_qha(
+        self,
+        unitcell: [PolymlpStructure] = None,
+        supercell_matrix: np.ndarray = ((1, 0, 0), (0, 1, 0), (0, 0, 1)),
+        distance: float = 0.001,
+        mesh: np.ndarray = (10, 10, 10),
+        t_min: float = 0,
+        t_max: float = 1000,
+        t_step: float = 10,
+        eps_min: float = 0,
+        eps_max: float = 1000,
+        eps_step: float = 10,
+    ):
+        """Initialize and run QHA phonon calculations.
+
+        phonopy is required.
+
+        Parameters
+        ----------
+        unitcell: Unit cell of equilibrium structure.
+        supercell_matrix: Supercell matrix.
+        distance: Magnitude of displacements in ang.
+        mesh: k-mesh grid.
+        t_min: Minimum temperature.
+        t_max: Maximum temperature.
+        t_step: Temperature interval.
+        eps_min: Minimum volume change.
+        eps_max: Maximum volume change.
+        eps_step: Volume change interval.
+            volumes = np.arange(eps_min, eps_max + 0.001, eps_step) * vol_eq
+
+        """
+        if unitcell is not None:
+            self.structures = unitcell
+        self.unitcell = self.first_structure
+
+        self._qha = PolymlpPhononQHA(
+            unitcell=self.unitcell,
+            supercell_matrix=supercell_matrix,
+        )
+
+        self._qha.run(
+            distance=distance,
+            mesh=mesh,
+            t_min=t_min,
+            t_max=t_max,
+            t_step=t_step,
+            eps_min=eps_min,
+            eps_max=eps_max,
+            eps_step=eps_step,
+        )
+        return self
+
+    def write_qha(self, path="./"):
+        """Save results from QHA phonon calculations."""
+        self._qha.write_qha(path_output=path)
+        return self
+
     @property
-    def properties(self) -> Properties:
-        """Return Properties object."""
+    def instance_properties(self) -> Properties:
+        """Return Properties instance."""
         return self._prop
 
     @property
@@ -292,3 +423,7 @@ class PolymlpCalc:
         equilibrium energy, equilibrium volume, bulk modulus
         """
         return (self._eos._e0, self._eos._v0, self._eos._b0)
+
+    @property
+    def instance_phonopy(self):
+        return self._phonon.phonopy

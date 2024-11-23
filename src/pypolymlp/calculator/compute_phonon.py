@@ -48,31 +48,32 @@ class PolymlpPhonon:
 
         unitcell = structure_to_phonopy_cell(unitcell)
         self.ph = Phonopy(unitcell, supercell_matrix)
+        self._with_pdos = False
 
-    def produce_force_constants(self, displacements=0.01):
-
-        self.ph.generate_displacements(distance=displacements)
+    def produce_force_constants(self, distance: float = 0.001):
+        """Produce force constants by evaluating forces for random structures."""
+        self.ph.generate_displacements(distance=distance)
         supercells = self.ph.supercells_with_displacements
         structures = [phonopy_cell_to_structure(cell) for cell in supercells]
 
-        """ forces: (n_str, 3, n_atom) --> (n_str, n_atom, 3)"""
+        # forces: (n_str, 3, n_atom) --> (n_str, n_atom, 3)
         _, forces, _ = self.prop.eval_multiple(structures)
         forces = np.array(forces).transpose((0, 2, 1))
         self.ph.forces = forces
         self.ph.produce_force_constants()
+        return self
 
     def compute_properties(
         self,
-        mesh=(10, 10, 10),
-        t_min=0,
-        t_max=1000,
-        t_step=10,
-        with_eigenvectors=False,
-        is_mesh_symmetry=True,
-        pdos=False,
-        path_output="./",
+        mesh: np.ndarray = (10, 10, 10),
+        t_min: float = 0,
+        t_max: float = 1000,
+        t_step: float = 10,
+        with_eigenvectors: bool = False,
+        is_mesh_symmetry: bool = True,
+        with_pdos: bool = False,
     ):
-
+        """Compute phonon properties."""
         self.ph.run_mesh(
             mesh,
             with_eigenvectors=with_eigenvectors,
@@ -81,7 +82,14 @@ class PolymlpPhonon:
         self.ph.run_total_dos()
         self.ph.run_thermal_properties(t_step=t_step, t_max=t_max, t_min=t_min)
         self.mesh_dict = self.ph.get_mesh_dict()
+        if with_pdos:
+            self._with_pdos = True
+            self.ph.run_mesh(mesh, with_eigenvectors=True, is_mesh_symmetry=False)
+            self.ph.run_projected_dos()
+        return self
 
+    def write_properties(self, path_output: str = "./"):
+        """Save properties."""
         os.makedirs(path_output + "/polymlp_phonon", exist_ok=True)
         np.savetxt(
             path_output + "/polymlp_phonon/mesh-qpoints.txt",
@@ -93,18 +101,18 @@ class PolymlpPhonon:
             filename=path_output + "/polymlp_phonon/thermal_properties.yaml"
         )
 
-        if pdos:
-            self.ph.run_mesh(mesh, with_eigenvectors=True, is_mesh_symmetry=False)
-            self.ph.run_projected_dos()
+        if self._with_pdos:
             self.ph.write_projected_dos(
                 filename=path_output + "/polymlp_phonon/proj_dos.dat"
             )
 
     def is_imaginary(self, threshold: float = -0.01) -> bool:
+        """Check if imaginary phonon frequencies exist."""
         return np.min(self.mesh_dict["frequencies"]) < threshold
 
     @property
-    def phonopy(self):
+    def phonopy(self) -> Phonopy:
+        """Return phonopy instance."""
         return self.ph
 
 
@@ -143,17 +151,17 @@ class PolymlpPhononQHA:
 
     def run(
         self,
-        eps_min=0.8,
-        eps_max=1.2,
-        eps_int=0.02,
-        mesh=[10, 10, 10],
-        t_min=0,
-        t_max=1000,
-        t_step=10,
-        disp=0.01,
+        distance: float = 0.001,
+        mesh: np.ndarray = (10, 10, 10),
+        t_min: float = 0,
+        t_max: float = 1000,
+        t_step: float = 10,
+        eps_min: float = 0.8,
+        eps_max: float = 1.2,
+        eps_step: float = 0.02,
     ):
-
-        eps_all = np.arange(eps_min, eps_max + 0.001, eps_int)
+        """Run QHA."""
+        eps_all = np.arange(eps_min, eps_max + 0.001, eps_step)
         unitcells = [
             isotropic_volume_change(self._unitcell, eps=eps) for eps in eps_all
         ]
@@ -163,7 +171,7 @@ class PolymlpPhononQHA:
         free_energies, entropies, heat_capacities = [], [], []
         for unitcell in unitcells:
             ph = PolymlpPhonon(unitcell, self._supercell_matrix, properties=self.prop)
-            ph.produce_force_constants(displacements=disp)
+            ph.produce_force_constants(displacements=distance)
 
             phonopy = ph.phonopy
             phonopy.run_mesh(mesh)
@@ -187,8 +195,8 @@ class PolymlpPhononQHA:
             cv=heat_capacities,
         )
 
-    def write_qha(self, path_output="./"):
-
+    def write_qha(self, path_output: str = "./"):
+        """Save results."""
         os.makedirs(path_output + "/polymlp_phonon_qha/", exist_ok=True)
         filename = path_output + "/polymlp_phonon_qha/helmholtz-volume.dat"
         self._qha.write_helmholtz_volume(filename=filename)
