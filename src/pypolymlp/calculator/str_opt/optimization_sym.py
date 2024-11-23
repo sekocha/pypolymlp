@@ -239,6 +239,7 @@ class MinimizeSym:
 
     @property
     def structure(self):
+        self._structure = refine_positions(self._structure)
         return self._structure
 
     @structure.setter
@@ -268,12 +269,12 @@ class MinimizeSym:
         return -self._res.jac
 
     def print_structure(self):
-        self._structure = refine_positions(self._structure)
+        structure = self.structure
         print("Axis basis vectors:")
-        for a in self._structure.axis.T:
+        for a in structure.axis.T:
             print(" -", list(a))
         print("Fractional coordinates:")
-        for p, e in zip(self._structure.positions.T, self._structure.elements):
+        for p, e in zip(structure.positions.T, structure.elements):
             print(" -", e, list(p))
 
     def write_poscar(self, filename="POSCAR_eqm"):

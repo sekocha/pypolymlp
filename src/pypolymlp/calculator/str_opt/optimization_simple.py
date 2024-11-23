@@ -22,6 +22,7 @@ class Minimize:
         params: Optional[Union[PolymlpParams, list[PolymlpParams]]] = None,
         coeffs: Optional[np.ndarray] = None,
         properties: Optional[Properties] = None,
+        relax_cell: bool = True,
         verbose: bool = True,
     ):
         """Init method.
@@ -55,7 +56,7 @@ class Minimize:
         self._energy = None
         self._force = None
         self._stress = None
-        self._relax_cell = False
+        self._relax_cell = relax_cell
         self._res = None
         self._n_atom = len(self._structure.elements)
 
@@ -143,7 +144,6 @@ class Minimize:
 
     def run(
         self,
-        relax_cell: bool = False,
         gtol: float = 1e-4,
         method: Literal["BFGS", "CG", "L-BFGS-B"] = "BFGS",
     ):
@@ -155,10 +155,10 @@ class Minimize:
         """
         if self._verbose:
             print("Using", method, "method")
-        self._relax_cell = relax_cell
+
         options = {"gtol": gtol, "disp": True}
 
-        if relax_cell:
+        if self._relax_cell:
             fun = self.fun_relax_cell
             jac = self.jac_relax_cell
             xf = self._structure.positions.T.reshape(-1)
@@ -177,6 +177,7 @@ class Minimize:
 
     @property
     def structure(self):
+        self._structure = refine_positions(self._structure)
         return self._structure
 
     @structure.setter
@@ -206,16 +207,16 @@ class Minimize:
         return -self._res.jac.reshape((-1, 3)).T
 
     def print_structure(self):
-        self._structure = refine_positions(self._structure)
+        structure = self.structure
         print("Axis basis vectors:")
-        for a in self._structure.axis.T:
+        for a in structure.axis.T:
             print(" -", list(a))
         print("Fractional coordinates:")
-        for p, e in zip(self._structure.positions.T, self._structure.elements):
+        for p, e in zip(structure.positions.T, structure.elements):
             print(" -", e, list(p))
 
     def write_poscar(self, filename="POSCAR_eqm"):
-        write_poscar_file(self._structure, filename=filename)
+        write_poscar_file(self.structure, filename=filename)
 
 
 if __name__ == "__main__":
@@ -247,10 +248,10 @@ if __name__ == "__main__":
     else:
         print("- Relaxing cell parameters")
 
-    minobj = Minimize(unitcell, pot=args.pot)
+    minobj = Minimize(unitcell, pot=args.pot, relax_cell=args.cell_relax)
     print("Initial structure")
     minobj.print_structure()
-    minobj.run(relax_cell=args.cell_relax, gtol=1e-5)
+    minobj.run(gtol=1e-5)
 
     if not args.cell_relax:
         print("Residuals (force):")

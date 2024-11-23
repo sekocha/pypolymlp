@@ -1,6 +1,6 @@
 """API Class for calculating properties."""
 
-from typing import Optional, Union
+from typing import Literal, Optional, Union
 
 import numpy as np
 
@@ -12,8 +12,11 @@ from pypolymlp.calculator.compute_features import (
 )
 from pypolymlp.calculator.compute_phonon import PolymlpPhonon, PolymlpPhononQHA
 from pypolymlp.calculator.properties import Properties
+from pypolymlp.calculator.str_opt.optimization_simple import Minimize
+from pypolymlp.calculator.str_opt.optimization_sym import MinimizeSym
 from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
 from pypolymlp.core.interface_vasp import parse_structures_from_poscars
+from pypolymlp.utils.vasp_utils import write_poscar_file
 
 
 class PolymlpCalc:
@@ -55,7 +58,7 @@ class PolymlpCalc:
         self._phonon = None
         self._qha = None
 
-    def parse_poscars(self, poscars: list[str]) -> list[PolymlpStructure]:
+    def load_poscars(self, poscars: Union[str, list[str]]) -> list[PolymlpStructure]:
         """Parse POSCAR files.
 
         Retruns
@@ -66,6 +69,15 @@ class PolymlpCalc:
             poscars = [poscars]
         self.structures = parse_structures_from_poscars(poscars)
         return self.structures
+
+    def save_poscars(self, filename="POSCAR_pypolymlp", prefix="POSCAR"):
+        if len(self.structures) == 1:
+            write_poscar_file(self.first_structure, filename=filename)
+        else:
+            len_zfill = max(np.ceil(np.log10(len(self.structures))).astype(int) + 1, 3)
+            for i, st in enumerate(self.structures):
+                write_poscar_file(st, filename=prefix + str(i).zfill(len_zfill))
+        return self
 
     def eval(
         self,
@@ -97,7 +109,7 @@ class PolymlpCalc:
         self._prop.save(verbose=self._verbose)
         return self
 
-    def print_single_properties(self):
+    def print_properties(self):
         """Print properties for a single structure."""
         self._prop.print_single()
         return self
@@ -242,6 +254,7 @@ class PolymlpCalc:
         self._phonon = PolymlpPhonon(
             unitcell=self.unitcell,
             supercell_matrix=supercell_matrix,
+            properties=self._prop,
         )
         return self
 
@@ -328,6 +341,7 @@ class PolymlpCalc:
         self._qha = PolymlpPhononQHA(
             unitcell=self.unitcell,
             supercell_matrix=supercell_matrix,
+            properties=self._prop,
         )
 
         self._qha.run(
@@ -346,6 +360,83 @@ class PolymlpCalc:
         """Save results from QHA phonon calculations."""
         self._qha.write_qha(path_output=path)
         return self
+
+    def init_geometry_optimization(
+        self,
+        init_str: Optional[PolymlpStructure] = None,
+        with_sym: bool = True,
+        relax_cell: bool = False,
+        relax_positions: bool = True,
+    ):
+        """Initialize geometry optimization.
+
+        symfc is required if with_sym = True.
+
+        Parameters
+        ----------
+        init_str: Initial structure.
+        with_sym: Consider symmetry.
+        relax_cell: Relax cell.
+        relax_positions: Relax atomic positions.
+        """
+        if init_str is not None:
+            self.structures = init_str
+
+        if with_sym:
+            self._go = MinimizeSym(
+                init_str,
+                properties=self._prop,
+                relax_cell=relax_cell,
+                relax_positions=relax_positions,
+                verbose=self.verbose,
+            )
+        else:
+            self._go = Minimize(
+                init_str,
+                properties=self._prop,
+                relax_cell=relax_cell,
+                verbose=self.verbose,
+            )
+
+    def run_geometry_optimization(
+        self,
+        gtol: float = 1e-5,
+        method: Literal["BFGS", "CG", "L-BFGS-B"] = "BFGS",
+    ):
+        """Run geometry optimization.
+
+        Parameters
+        ----------
+        gtol: Tolerance for gradients.
+        method: Optimization method, CG, BFGS, or L-BFGS-B.
+
+        Returns
+        -------
+        energy: Energy at the final iteration.
+        n_iter: Number of iterations required for convergence.
+        success: Return True if optimization finished successfully.
+        """
+        if self._verbose:
+            print("Initial structure", flush=True)
+            self._go.print_structure()
+
+        self._go.run(gtol=gtol)
+        self.structures = self._go.structure
+
+        if self._verbose:
+            if not self._go.relax_cell:
+                print("Residuals (force):", flush=True)
+                print(self._go.residual_forces.T, flush=True)
+            else:
+                res_f, res_s = self._go.residual_forces
+                print("Residuals (force):", flush=True)
+                print(res_f.T, flush=True)
+                print("Residuals (stress):", flush=True)
+                print(res_s, flush=True)
+            print("Final structure", flush=True)
+            self._go.print_structure()
+
+        return (self._go.energy, self._go.n_iter, self._go.success)
 
     @property
     def instance_properties(self) -> Properties:
