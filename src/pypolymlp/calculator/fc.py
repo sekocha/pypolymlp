@@ -226,6 +226,7 @@ class PolymlpFC:
         orders: tuple = (2, 3),
         batch_size: int = 100,
         write_fc: bool = True,
+        use_mkl: bool = True,
         is_compact_fc: bool = True,
     ):
         """Calculate forces using polymlp and estimate FCs."""
@@ -245,7 +246,7 @@ class PolymlpFC:
             self.forces = forces
 
         t1 = time.time()
-        self.run_fc(orders=orders, is_compact_fc=is_compact_fc)
+        self.run_fc(orders=orders, is_compact_fc=is_compact_fc, use_mkl=use_mkl)
         t2 = time.time()
         if self._verbose:
             print("Time (Symfc basis and solver)", t2 - t1, flush=True)
@@ -270,16 +271,19 @@ class PolymlpFC:
                     )
 
         if write_fc:
-            if self._fc2 is not None:
-                if self._verbose:
-                    print("writing fc2.hdf5", flush=True)
-                write_fc2_to_hdf5(self._fc2)
-            if self._fc3 is not None:
-                if self._verbose:
-                    print("writing fc3.hdf5", flush=True)
-                write_fc3_to_hdf5(self._fc3)
+            self.save_fc()
 
         return self
+
+    def save_fc(self):
+        if self._fc2 is not None:
+            if self._verbose:
+                print("writing fc2.hdf5", flush=True)
+            write_fc2_to_hdf5(self._fc2)
+        if self._fc3 is not None:
+            if self._verbose:
+                print("writing fc3.hdf5", flush=True)
+            write_fc3_to_hdf5(self._fc3)
 
     @property
     def displacements(self) -> np.ndarray:
@@ -443,31 +447,3 @@ if __name__ == "__main__":
         ph3.mesh_numbers = args.ltc_mesh
         ph3.init_phph_interaction()
         ph3.run_thermal_conductivity(temperatures=range(0, 1001, 10), write_kappa=True)
-
-
-# def recover_fc3_variant(
-#     coefs,
-#     compress_mat,
-#     proj_pt,
-#     trans_perms,
-#     n_iter=10,
-# ):
-#     """if using full compression_matrix
-#     fc3 = compress_eigvecs @ coefs
-#     fc3 = (compress_mat @ fc3).reshape((N,N,N,3,3,3))
-#     """
-#     n_lp, N = trans_perms.shape
-#     n_a = compress_mat.shape[0] // (27 * (N**2))
-#
-#     fc3 = compress_mat @ coefs
-#     c_sum_cplmt = set_complement_sum_rules(trans_perms)
-#
-#     for i in range(n_iter):
-#         fc3 -= c_sum_cplmt.T @ (c_sum_cplmt @ fc3)
-#         fc3 = proj_pt @ fc3
-#
-#     fc3 = fc3.reshape((n_a, N, N, 3, 3, 3))
-#     fc3 /= np.sqrt(n_lp)
-#     return fc3
-#
-#

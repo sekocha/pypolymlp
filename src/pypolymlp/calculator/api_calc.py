@@ -10,7 +10,6 @@ from pypolymlp.calculator.compute_features import (
     compute_from_infile,
     compute_from_polymlp_lammps,
 )
-from pypolymlp.calculator.compute_phonon import PolymlpPhonon, PolymlpPhononQHA
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.str_opt.optimization_simple import Minimize
 from pypolymlp.calculator.str_opt.optimization_sym import MinimizeSym
@@ -57,6 +56,8 @@ class PolymlpCalc:
         self._eos = None
         self._phonon = None
         self._qha = None
+        self._go = None
+        self._fc = None
 
     def load_poscars(self, poscars: Union[str, list[str]]) -> list[PolymlpStructure]:
         """Parse POSCAR files.
@@ -247,6 +248,8 @@ class PolymlpCalc:
         supercell_matrix: Supercell matrix.
 
         """
+        from pypolymlp.calculator.compute_phonon import PolymlpPhonon
+
         if unitcell is not None:
             self.structures = unitcell
         self.unitcell = self.first_structure
@@ -334,6 +337,8 @@ class PolymlpCalc:
             volumes = np.arange(eps_min, eps_max + 0.001, eps_step) * vol_eq
 
         """
+        from pypolymlp.calculator.compute_phonon import PolymlpPhononQHA
+
         if unitcell is not None:
             self.structures = unitcell
         self.unitcell = self.first_structure
@@ -397,6 +402,7 @@ class PolymlpCalc:
                 relax_cell=relax_cell,
                 verbose=self.verbose,
             )
+        return self
 
     def run_geometry_optimization(
         self,
@@ -437,6 +443,90 @@ class PolymlpCalc:
             self._go.print_structure()
 
         return (self._go.energy, self._go.n_iter, self._go.success)
+
+    def init_fc(
+        self,
+        unitcell: [PolymlpStructure] = None,
+        supercell_matrix: np.ndarray = ((1, 0, 0), (0, 1, 0), (0, 0, 1)),
+        cutoff: float = None,
+    ):
+        """Initialize force constant calculations.
+
+        symfc and phonopy is required.
+
+        Parameters
+        ----------
+        unitcell: Unit cell of equilibrium structure.
+        supercell_matrix: Supercell matrix. (Only diagonal elements are valid.)
+        cutoff: Cutoff distance for force constant calculation.
+
+        """
+        from pypolymlp.calculator.fc import PolymlpFC
+        from pypolymlp.utils.phonopy_utils import phonopy_supercell
+
+        if unitcell is not None:
+            self.structures = unitcell
+        self.unitcell = self.first_structure
+
+        supercell_matrix_diag = np.diag(supercell_matrix)
+        supercell = phonopy_supercell(self.unitcell, supercell_matrix_diag)
+
+        self._fc = PolymlpFC(
+            supercell=supercell,
+            properties=self._prop,
+            cutoff=cutoff,
+            verbose=self._verbose,
+        )
+        return self
+
+    def run_fc(
+        self,
+        disps: Optional[np.ndarray] = None,
+        forces: Optional[np.ndarray] = None,
+        n_samples: int = 100,
+        distance: float = 0.001,
+        is_plusminus: bool = False,
+        orders: list = (2, 3),
+        batch_size: int = 100,
+        is_compact_fc: bool = True,
+        use_mkl: bool = True,
+    ):
+        """Run force constant calculations.
+
+        symfc and phonopy is required. If displacements and forces are not given,
+        n_samples supercells are sampled and forces are calculated using polymlp.
+
+        Parameters
+        ----------
+        disps: Displacements. shape=(n_str, 3, n_atom).
+        forces: Forces. shape=(n_str, 3, n_atom).
+        n_samples: Number of supercells sampled.
+        distance: Displacement magnitude in angstroms.
+        is_plusminus: Consider plus and minus displacements.
+        orders: Force constant orders.
+        batch_size: Batch size for force constant regression.
+        is_compact_fc: Generate compact forms of force constants.
+        use_mkl: Use MKL in symfc.
+
+        """
+        if disps is None or forces is None:
+            self._fc.sample(
+                n_samples=n_samples,
+                displacements=distance,
+                is_plusminus=is_plusminus,
+            )
+
+        self._fc.run(
+            orders=orders,
+            batch_size=batch_size,
+            write_fc=False,
+            is_compact_fc=is_compact_fc,
+            use_mkl=use_mkl,
+        )
+
+    def save_fc(self):
+        """Save force constants."""
+        self._fc.save_fc()
 
     @property
     def instance_properties(self) -> Properties:
@@ -514,6 +604,18 @@ class PolymlpCalc:
         equilibrium energy, equilibrium volume, bulk modulus
         """
         return (self._eos._e0, self._eos._v0, self._eos._b0)
+
+    @property
+    def go_data(self):
+        """Return results of geometry optimization.
+
+        Returns
+        -------
+        energy: Energy at the final iteration.
+        n_iter: Number of iterations required for convergence.
+        success: Return True if optimization finished successfully.
+        """
+        return (self._go.energy, self._go.n_iter, self._go.success)
 
     @property
     def instance_phonopy(self):
