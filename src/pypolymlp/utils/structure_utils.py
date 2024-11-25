@@ -60,8 +60,15 @@ def multiple_isotropic_volume_changes(
 
 
 def supercell_diagonal(
-    st: PolymlpStructure, size: tuple = (2, 2, 2)
+    st: PolymlpStructure,
+    size: tuple = (2, 2, 2),
+    use_phonopy: bool = False,
 ) -> PolymlpStructure:
+
+    if use_phonopy:
+        from pypolymlp.utils.phonopy_utils import phonopy_supercell
+
+        return phonopy_supercell(st, supercell_diag=size, return_phonopy=False)
 
     supercell_matrix = np.diag(size)
     n_expand = np.prod(size)

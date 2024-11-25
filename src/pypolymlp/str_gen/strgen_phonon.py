@@ -18,17 +18,9 @@ def run_strgen_phonon(
 ):
 
     unitcell = Poscar(filename).structure
-    if use_phonopy:
-        from pypolymlp.utils.phonopy_utils import phonopy_supercell
-
-        supercell = phonopy_supercell(
-            unitcell,
-            supercell_diag=supercell_size,
-            return_phonopy=False,
-        )
-    else:
-        supercell = supercell_diagonal(unitcell, size=supercell_size)
-
+    supercell = supercell_diagonal(
+        unitcell, size=supercell_size, use_phonopy=use_phonopy
+    )
     _, structures = generate_random_const_displacements(
         supercell,
         n_samples=n_samples,

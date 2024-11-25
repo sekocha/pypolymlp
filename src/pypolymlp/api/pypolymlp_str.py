@@ -2,13 +2,17 @@
 
 from typing import Literal, Optional, Union
 
+import numpy as np
+
 from pypolymlp.core.data_format import PolymlpStructure
+from pypolymlp.core.displacements import generate_random_const_displacements
 from pypolymlp.core.interface_vasp import parse_structures_from_poscars
 from pypolymlp.str_gen.strgen import (
     StructureGenerator,
     set_structure_id,
     write_structures,
 )
+from pypolymlp.utils.structure_utils import supercell_diagonal
 
 
 class PolymlpStructureGenerator:
@@ -27,6 +31,7 @@ class PolymlpStructureGenerator:
         """
         self._verbose = verbose
         self._structures = None
+        self._supercell = None
         self._random_structures = []
         self._strgen_instances = []
 
@@ -76,7 +81,46 @@ class PolymlpStructureGenerator:
 
         write_structures(self._random_structures, base_info, path=path)
 
-    def init_generator(self, max_natom: int = 150):
+    def build_supercell(
+        self,
+        structure: Optional[PolymlpStructure] = None,
+        supercell_size: np.ndarray = (2, 2, 2),
+        use_phonopy: bool = True,
+    ):
+        """Initialize by constructing a supercell of a single base structure."""
+        if structure is not None:
+            self.structures = structure
+        unitcell = self.first_structure
+        self._supercell = supercell_diagonal(
+            unitcell,
+            size=supercell_size,
+            use_phonopy=use_phonopy,
+        )
+        return self
+
+    def run_const_displacements(
+        self,
+        n_samples: int = 100,
+        distance: float = 0.03,
+    ):
+        """Generate random structures with constant magnitude of displacements.
+
+        Parameters
+        ----------
+        n_samples: Number of structures generated from a single POSCAR file.
+        distance: Magnitude of atocmi displacements.
+
+        """
+        _, structures = generate_random_const_displacements(
+            self._supercell,
+            n_samples=n_samples,
+            displacements=distance,
+        )
+        structures = set_structure_id(structures, "single", "const_displacements")
+        self._random_structures.extend(structures)
+        return self
+
+    def build_supercells_auto(self, max_natom: int = 150):
         """Initialize generator and construct supercells of base structures.
 
         Parameters
@@ -166,6 +210,11 @@ class PolymlpStructureGenerator:
     def structures(self) -> list[PolymlpStructure]:
         """Return base structures."""
         return self._structures
+
+    @property
+    def first_structure(self) -> PolymlpStructure:
+        """Return the first structure for the final calculation."""
+        return self._structures[0]
 
     @structures.setter
     def structures(
