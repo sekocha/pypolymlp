@@ -65,7 +65,7 @@ class PolymlpCalc:
     def load_poscars(self, poscars: Union[str, list[str]]) -> list[PolymlpStructure]:
         """Parse POSCAR files.
 
-        Retruns
+        Returns
         -------
         structures: list[PolymlpStructure], Structures.
         """
@@ -77,7 +77,7 @@ class PolymlpCalc:
     def load_vaspruns(self, vaspruns: Union[str, list[str]]) -> list[PolymlpStructure]:
         """Parse vasprun files.
 
-        Retruns
+        Returns
         -------
         structures: list[PolymlpStructure], Structures.
         """
@@ -95,7 +95,7 @@ class PolymlpCalc:
 
         Only POSCAR and vasprun.xml files are available.
 
-        Retruns
+        Returns
         -------
         structures: list[PolymlpStructure], Structures.
         """

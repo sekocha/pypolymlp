@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+"""Command lines for generating DFT structures."""
+
 import argparse
 import signal
 
@@ -12,6 +13,7 @@ from pypolymlp.str_gen.strgen import run_strgen
 
 
 def run():
+    """Command lines for generating DFT structures."""
 
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 

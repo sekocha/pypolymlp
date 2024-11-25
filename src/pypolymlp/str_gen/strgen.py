@@ -70,13 +70,14 @@ class StructureGenerator:
         self.natom_lb = natom_lb
         self.natom_ub = natom_ub
 
-        self.supercell = self._set_supercell()
+        self._supercell = self._set_supercell()
+        self._name = unitcell.name
 
     def _set_supercell(self) -> PolymlpStructure:
-        self.size = self._find_supercell_size_nearly_isotropic()
-        self.supercell = supercell_diagonal(self.unitcell, self.size)
-        self.supercell.axis_inv = np.linalg.inv(self.supercell.axis)
-        return self.supercell
+        self._size = self._find_supercell_size_nearly_isotropic()
+        self._supercell = supercell_diagonal(self.unitcell, self._size)
+        self._supercell.axis_inv = np.linalg.inv(self._supercell.axis)
+        return self._supercell
 
     def _find_supercell_size_nearly_isotropic(self) -> list[int]:
         axis = self.unitcell.axis
@@ -106,7 +107,7 @@ class StructureGenerator:
     ) -> PolymlpStructure:
         """Generate single random structure."""
 
-        cell = self.supercell
+        cell = self._supercell
         total_n_atoms = cell.positions.shape[1]
         axis_ratio = pow(vol_ratio, 1.0 / 3.0)
 
@@ -158,8 +159,29 @@ class StructureGenerator:
         return st_array
 
     def print_size(self):
-        print("  supercell size:      ", list(self.size))
-        print("  n_atoms (supercell): ", list(self.supercell.n_atoms))
+        """Print supercell size."""
+        print("  supercell size:      ", list(self._size), flush=True)
+        print("  n_atoms (supercell): ", list(self._supercell.n_atoms), flush=True)
+
+    @property
+    def supercell(self):
+        """Return supercell."""
+        return self._supercell
+
+    @property
+    def supercell_size(self):
+        """Return supercell size for base structure."""
+        return self._size
+
+    @property
+    def name(self):
+        """Return name of base structure."""
+        return self._name
+
+    @property
+    def n_atoms(self):
+        """Return number of atoms in supercell."""
+        return self._supercell.n_atoms
 
 
 def run_strgen(args, verbose: bool = True):

@@ -303,6 +303,7 @@ if __name__ == "__main__":
 
     unitcell = Poscar(args.poscar).structure
 
+    np.set_printoptions(legacy="1.25")
     print("Mode: Geometry optimization")
     print("- Considering symmetric constraints")
     if not args.cell_relax:
