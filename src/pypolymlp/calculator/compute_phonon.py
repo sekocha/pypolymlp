@@ -171,7 +171,7 @@ class PolymlpPhononQHA:
         free_energies, entropies, heat_capacities = [], [], []
         for unitcell in unitcells:
             ph = PolymlpPhonon(unitcell, self._supercell_matrix, properties=self.prop)
-            ph.produce_force_constants(displacements=distance)
+            ph.produce_force_constants(distance=distance)
 
             phonopy = ph.phonopy
             phonopy.run_mesh(mesh)

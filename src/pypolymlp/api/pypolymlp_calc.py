@@ -108,7 +108,14 @@ class PolymlpCalc:
             self.structures = self.load_vaspruns(vaspruns)
         return self.structures
 
+    def load_phonopy_structures(self, structures_ph):
+        """Load structures in phonopy format."""
+        from pypolymlp.utils.phonopy_utils import phonopy_cell_to_structure
+
+        self.structures = [phonopy_cell_to_structure(s) for s in structures_ph]
+
     def save_poscars(self, filename="POSCAR_pypolymlp", prefix="POSCAR"):
+        """Save structures to POSCAR files."""
         if len(self.structures) == 1:
             write_poscar_file(self.first_structure, filename=filename)
         else:
@@ -130,8 +137,6 @@ class PolymlpCalc:
         s: Stress tensors. shape=(n_str, 6),
             unit: eV/supercell in the order of xx, yy, zz, xy, yz, zx.
         """
-        # from pypolymlp.utils.phonopy_utils import phonopy_cell_to_structure
-        # st = phonopy_cell_to_structure(str_ph)
         if structures is not None:
             self.structures = structures
         return self._prop.eval_multiple(self.structures)
@@ -359,9 +364,9 @@ class PolymlpCalc:
         t_min: float = 0,
         t_max: float = 1000,
         t_step: float = 10,
-        eps_min: float = 0,
-        eps_max: float = 1000,
-        eps_step: float = 10,
+        eps_min: float = 0.8,
+        eps_max: float = 1.2,
+        eps_step: float = 0.02,
     ):
         """Initialize and run QHA phonon calculations.
 
@@ -678,3 +683,25 @@ class PolymlpCalc:
     @property
     def instance_phonopy(self):
         return self._phonon.phonopy
+
+
+# def set_structures(args):
+#
+#     if args.phono3py_yaml is not None:
+#         from pypolymlp.core.interface_phono3py import (
+#             parse_structures_from_phono3py_yaml,
+#         )
+#
+#         print("Loading", args.phono3py_yaml)
+#         if args.phono3py_yaml_structure_ids is not None:
+#             r1, r2 = args.phono3py_yaml_structure_ids
+#             select_ids = np.arange(r1, r2)
+#         else:
+#             select_ids = None
+#
+#         structures = parse_structures_from_phono3py_yaml(
+#             args.phono3py_yaml, select_ids=select_ids
+#         )
+#
+#     return structures
+#

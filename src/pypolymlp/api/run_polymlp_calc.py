@@ -131,27 +131,29 @@ def run():
         default=[10, 10, 10],
         help="k-mesh used for phonon calculation",
     )
-    parser.add_argument("--ph_tmin", type=float, default=100, help="Temperature (min)")
+    parser.add_argument("--ph_tmin", type=float, default=0, help="Temperature (min)")
     parser.add_argument("--ph_tmax", type=float, default=1000, help="Temperature (max)")
-    parser.add_argument(
-        "--ph_tstep", type=float, default=100, help="Temperature (step)"
-    )
+    parser.add_argument("--ph_tstep", type=float, default=10, help="Temperature (step)")
     parser.add_argument("--ph_pdos", action="store_true", help="Compute phonon PDOS")
 
     parser.add_argument(
         "-i",
         "--infile",
-        nargs="*",
         type=str,
-        default=["polymlp.in"],
+        default=None,
         help="Input file name",
     )
     args = parser.parse_args()
 
+    if args.pot is None and args.infile is None:
+        raise RuntimeError("Input parameters not found.")
+
+    require_mlp = True if args.pot is not None else False
+    polymlp = PolymlpCalc(pot=args.pot, verbose=True, require_mlp=require_mlp)
+
     np.set_printoptions(legacy="1.25")
     if args.properties:
         print("Mode: Property calculations", flush=True)
-        polymlp = PolymlpCalc(pot=args.pot, verbose=True)
         polymlp.load_structures_from_files(
             poscars=args.poscars,
             vaspruns=args.vaspruns,
@@ -166,7 +168,6 @@ def run():
 
     elif args.force_constants:
         print("Mode: Force constant calculations", flush=True)
-        polymlp = PolymlpCalc(pot=args.pot, verbose=True)
         supercell_matrix = np.diag(args.supercell)
         polymlp.load_poscars(args.poscar)
         if args.geometry_optimization:
@@ -205,48 +206,48 @@ def run():
                 write_kappa=True,
             )
 
-    #    elif args.phonon:
-    #        from pypolymlp.calculator.compute_phonon import PolymlpPhonon, PolymlpPhononQHA
-    #
-    #        print("Mode: Phonon calculations")
-    #        if args.str_yaml is not None:
-    #            unitcell, supercell = load_cells(filename=args.str_yaml)
-    #            supercell_matrix = supercell.supercell_matrix
-    #        elif args.poscar is not None:
-    #            unitcell = Poscar(args.poscar).structure
-    #            supercell_matrix = np.diag(args.supercell)
-    #
-    #        ph = PolymlpPhonon(unitcell, supercell_matrix, pot=args.pot)
-    #        ph.produce_force_constants(displacements=args.disp)
-    #        ph.compute_properties(
-    #            mesh=args.ph_mesh,
-    #            pdos=args.ph_pdos,
-    #            t_min=args.ph_tmin,
-    #            t_max=args.ph_tmax,
-    #            t_step=args.ph_tstep,
-    #        )
-    #
-    #        print("Mode: Phonon calculations (QHA)")
-    #        qha = PolymlpPhononQHA(unitcell, supercell_matrix, pot=args.pot)
-    #        qha.run()
-    #        qha.write_qha()
-    #
-    elif args.features or args.precision:
-        print("Mode: Feature matrix calculations")
-        if args.pot is not None:
-            args.infile = None
-            require_mlp = True
-        else:
-            args.infile = args.infile[0]
-            require_mlp = False
+    elif args.phonon:
+        print("Mode: Phonon calculations", flush=True)
+        supercell_matrix = np.diag(args.supercell)
+        polymlp.load_poscars(args.poscar)
 
-        polymlp = PolymlpCalc(pot=args.pot, verbose=True, require_mlp=require_mlp)
+        polymlp.init_phonon(supercell_matrix=supercell_matrix)
+        polymlp.run_phonon(
+            distance=args.disp,
+            mesh=args.ph_mesh,
+            t_min=args.ph_tmin,
+            t_max=args.ph_tmax,
+            t_step=args.ph_tstep,
+            with_eigenvectors=False,
+            is_mesh_symmetry=True,
+            with_pdos=args.ph_pdos,
+        )
+        polymlp.write_phonon()
+
+        print("Mode: Phonon calculations (QHA)", flush=True)
+        polymlp.run_qha(
+            supercell_matrix=supercell_matrix,
+            distance=args.disp,
+            mesh=args.ph_mesh,
+            t_min=args.ph_tmin,
+            t_max=args.ph_tmax,
+            t_step=args.ph_tstep,
+            eps_min=0.8,
+            eps_max=1.2,
+            eps_step=0.02,
+        )
+        polymlp.write_qha()
+
+    elif args.features or args.precision:
+        print("Mode: Feature matrix calculations", flush=True)
         polymlp.load_structures_from_files(
             poscars=args.poscars,
             vaspruns=args.vaspruns,
         )
         polymlp.run_features(
-            develop_infile=args.infile, features_force=False, features_stress=False
+            develop_infile=args.infile,
+            features_force=False,
+            features_stress=False,
         )
 
         if args.features:
@@ -254,28 +255,11 @@ def run():
             print("features.npy is generated.", flush=True)
 
         if args.precision:
-            print("Mode: Precision calculations")
+            print("Mode: Precision calculations", flush=True)
             prec = precision(polymlp.features)
-            print(" precision, size (features):", prec, polymlp.features.shape)
-
-
-# def set_structures(args):
-#
-#     if args.phono3py_yaml is not None:
-#         from pypolymlp.core.interface_phono3py import (
-#             parse_structures_from_phono3py_yaml,
-#         )
-#
-#         print("Loading", args.phono3py_yaml)
-#         if args.phono3py_yaml_structure_ids is not None:
-#             r1, r2 = args.phono3py_yaml_structure_ids
-#             select_ids = np.arange(r1, r2)
-#         else:
-#             select_ids = None
-#
-#         structures = parse_structures_from_phono3py_yaml(
-#             args.phono3py_yaml, select_ids=select_ids
-#         )
-#
-#     return structures
-#
+            print(
+                " precision, size (features):",
+                prec,
+                polymlp.features.shape,
+                flush=True,
+            )
