@@ -29,6 +29,7 @@ class PolymlpCalc:
         coeffs: Union[np.ndarray, list[np.ndarray]] = None,
         properties: Optional[Properties] = None,
         verbose: bool = True,
+        require_mlp: bool = True,
     ):
         """Init method.
 
@@ -41,13 +42,14 @@ class PolymlpCalc:
 
         Any one of pot, (params, coeffs), and properties is needed.
         """
-        if pot is None and params is None and properties is None:
-            raise RuntimeError("polymlp not defined.")
+        if require_mlp:
+            if pot is None and params is None and properties is None:
+                raise RuntimeError("polymlp not defined.")
 
-        if properties is None:
-            self._prop = Properties(pot=pot, params=params, coeffs=coeffs)
-        else:
-            self._prop = properties
+            if properties is None:
+                self._prop = Properties(pot=pot, params=params, coeffs=coeffs)
+            else:
+                self._prop = properties
 
         self._verbose = verbose
         self._unitcell = None
@@ -173,7 +175,7 @@ class PolymlpCalc:
             self.structures = structures
 
         if develop_infile is None:
-            features = compute_from_polymlp_lammps(
+            self._features = compute_from_polymlp_lammps(
                 self.structures,
                 params=self.params,
                 force=features_force,
@@ -181,14 +183,18 @@ class PolymlpCalc:
                 return_mlp_dict=False,
             )
         else:
-            features = compute_from_infile(
+            self._features = compute_from_infile(
                 develop_infile,
                 self.structures,
                 force=features_force,
                 stress=features_stress,
             )
 
-        return features
+        return self._features
+
+    def save_features(self):
+        """Save features."""
+        np.save("features.npy", self._features)
 
     def run_elastic_constants(
         self,
@@ -636,6 +642,11 @@ class PolymlpCalc:
     def unitcell(self, cell):
         """Set unit cell."""
         self._unitcell = cell
+
+    @property
+    def features(self) -> PolymlpStructure:
+        """Return features."""
+        return self._features
 
     @property
     def elastic_constants(self) -> np.ndarray:
