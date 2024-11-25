@@ -12,7 +12,10 @@ from pypolymlp.str_gen.strgen import (
     set_structure_id,
     write_structures,
 )
-from pypolymlp.utils.structure_utils import supercell_diagonal
+from pypolymlp.utils.structure_utils import (
+    multiple_isotropic_volume_changes,
+    supercell_diagonal,
+)
 
 
 class PolymlpStructureGenerator:
@@ -32,7 +35,7 @@ class PolymlpStructureGenerator:
         self._verbose = verbose
         self._structures = None
         self._supercell = None
-        self._random_structures = []
+        self._sample_structures = []
         self._strgen_instances = []
 
         if base_structures is not None:
@@ -79,7 +82,7 @@ class PolymlpStructureGenerator:
             }
             base_info.append(base_dict)
 
-        write_structures(self._random_structures, base_info, path=path)
+        write_structures(self._sample_structures, base_info, path=path)
 
     def build_supercell(
         self,
@@ -107,8 +110,8 @@ class PolymlpStructureGenerator:
 
         Parameters
         ----------
-        n_samples: Number of structures generated from a single POSCAR file.
-        distance: Magnitude of atocmi displacements.
+        n_samples: Number of structures generated from a single structure.
+        distance: Magnitude of atomic displacements.
 
         """
         _, structures = generate_random_const_displacements(
@@ -116,12 +119,60 @@ class PolymlpStructureGenerator:
             n_samples=n_samples,
             displacements=distance,
         )
-        structures = set_structure_id(structures, "single", "const_displacements")
-        self._random_structures.extend(structures)
+        structures = set_structure_id(structures, self._supercell.name, "disp")
+        self._sample_structures.extend(structures)
+        return self
+
+    def run_sequential_displacements(
+        self,
+        n_samples: int = 100,
+        distance_lb: float = 0.01,
+        distance_ub: float = 1.5,
+    ):
+        """Generate random structures with constant magnitude of displacements.
+
+        Parameters
+        ----------
+        n_samples: Number of structures generated from a single structure.
+        distance_lb: Minimum magnitude of atomic displacements.
+        distance_ub: Maximum magnitude of atomic displacements.
+
+        """
+        distances = np.linspace(distance_lb, distance_ub, num=n_samples)
+        for dis in distances:
+            self.run_const_displacements(n_samples=1, distance=dis)
+        return self
+
+    def run_isotropic_volume_changes(
+        self,
+        n_samples: int = 30,
+        eps_min: float = 0.8,
+        eps_max: float = 2.0,
+    ):
+        """Generate structures with isotropic volume changes.
+
+        Parameters
+        ----------
+        n_samples: Number of structures generated from a single structure.
+        eps_min: Minimum ratio of volume.
+        eps_max: Maximum ratio of volume.
+
+        """
+        if self._supercell is None:
+            self._supercell = self.first_structure
+
+        structures = multiple_isotropic_volume_changes(
+            self._supercell,
+            eps_min=eps_min,
+            eps_max=eps_max,
+            n_eps=n_samples,
+        )
+        structures = set_structure_id(structures, self._supercell.name, "volume")
+        self._sample_structures.extend(structures)
         return self
 
     def build_supercells_auto(self, max_natom: int = 150):
-        """Initialize generator and construct supercells of base structures.
+        """Initialize generators and construct supercells of base structures.
 
         Parameters
         ----------
@@ -167,7 +218,7 @@ class PolymlpStructureGenerator:
                 vol_ratio=1.0,
             )
             structures = set_structure_id(structures, gen.name, "standard")
-            self._random_structures.extend(structures)
+            self._sample_structures.extend(structures)
 
         return self
 
@@ -203,7 +254,7 @@ class PolymlpStructureGenerator:
                 vol_ub=vol_ub,
             )
             structures = set_structure_id(structures, gen.name, mode)
-            self._random_structures.extend(structures)
+            self._sample_structures.extend(structures)
         return self
 
     @property
@@ -229,6 +280,6 @@ class PolymlpStructureGenerator:
             raise RuntimeError("Invalid structure type.")
 
     @property
-    def random_structures(self) -> list[PolymlpStructure]:
-        """Return random structures."""
-        return self._random_structures
+    def sample_structures(self) -> list[PolymlpStructure]:
+        """Return sample structures."""
+        return self._sample_structures
