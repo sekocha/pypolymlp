@@ -7,8 +7,8 @@ import time
 import numpy as np
 
 from pypolymlp.api.pypolymlp_calc import PolymlpCalc
+from pypolymlp.core.utils import precision
 
-# from pypolymlp.core.utils import precision
 # from pypolymlp.utils.yaml_utils import load_cells
 
 
@@ -231,7 +231,7 @@ def run():
     #        qha.run()
     #        qha.write_qha()
     #
-    elif args.features:
+    elif args.features or args.precision:
         print("Mode: Feature matrix calculations")
         if args.pot is not None:
             args.infile = None
@@ -248,19 +248,17 @@ def run():
         polymlp.run_features(
             develop_infile=args.infile, features_force=False, features_stress=False
         )
-        polymlp.save_features()
-        print("features.npy is generated.", flush=True)
+
+        if args.features:
+            polymlp.save_features()
+            print("features.npy is generated.", flush=True)
+
+        if args.precision:
+            print("Mode: Precision calculations")
+            prec = precision(polymlp.features)
+            print(" precision, size (features):", prec, polymlp.features.shape)
 
 
-#    elif args.precision:
-#        print("Mode: Precision calculations")
-#        structures = set_structures(args)
-#        x = compute_features(structures, args, force=True)
-#        prec = precision(x)
-#        print(" precision, size (features):", prec, x.shape)
-
-
-#
 # def set_structures(args):
 #
 #     if args.phono3py_yaml is not None:
