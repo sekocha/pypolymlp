@@ -4,8 +4,6 @@ from typing import Literal, Optional, Union
 
 import numpy as np
 
-from pypolymlp.calculator.compute_elastic import PolymlpElastic
-from pypolymlp.calculator.compute_eos import PolymlpEOS
 from pypolymlp.calculator.compute_features import (
     compute_from_infile,
     compute_from_polymlp_lammps,
@@ -14,7 +12,10 @@ from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.str_opt.optimization_simple import Minimize
 from pypolymlp.calculator.str_opt.optimization_sym import MinimizeSym
 from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
-from pypolymlp.core.interface_vasp import parse_structures_from_poscars
+from pypolymlp.core.interface_vasp import (
+    parse_structures_from_poscars,
+    parse_structures_from_vaspruns,
+)
 from pypolymlp.utils.vasp_utils import write_poscar_file
 
 
@@ -27,7 +28,7 @@ class PolymlpCalc:
         params: Union[PolymlpParams, list[PolymlpParams]] = None,
         coeffs: Union[np.ndarray, list[np.ndarray]] = None,
         properties: Optional[Properties] = None,
-        verbose: bool = False,
+        verbose: bool = True,
     ):
         """Init method.
 
@@ -36,7 +37,7 @@ class PolymlpCalc:
         pot: polymlp file.
         params: Parameters for polymlp.
         coeffs: Polymlp coefficients.
-        properties: Properties object.
+        properties: Properties instance.
 
         Any one of pot, (params, coeffs), and properties is needed.
         """
@@ -69,6 +70,40 @@ class PolymlpCalc:
         if isinstance(poscars, str):
             poscars = [poscars]
         self.structures = parse_structures_from_poscars(poscars)
+        return self.structures
+
+    def load_vaspruns(self, vaspruns: Union[str, list[str]]) -> list[PolymlpStructure]:
+        """Parse vasprun files.
+
+        Retruns
+        -------
+        structures: list[PolymlpStructure], Structures.
+        """
+        if isinstance(vaspruns, str):
+            vaspruns = [vaspruns]
+        self.structures = parse_structures_from_vaspruns(vaspruns)
+        return self.structures
+
+    def load_structures_from_files(
+        self,
+        poscars: Optional[Union[str, list[str]]] = None,
+        vaspruns: Optional[Union[str, list[str]]] = None,
+    ):
+        """Parse structure files.
+
+        Only POSCAR and vasprun.xml files are available.
+
+        Retruns
+        -------
+        structures: list[PolymlpStructure], Structures.
+        """
+        if poscars is None and vaspruns is None:
+            raise RuntimeError("Structure files not found.")
+
+        if poscars is not None:
+            self.structures = self.load_poscars(poscars)
+        elif vaspruns is not None:
+            self.structures = self.load_vaspruns(vaspruns)
         return self.structures
 
     def save_poscars(self, filename="POSCAR_pypolymlp", prefix="POSCAR"):
@@ -117,7 +152,7 @@ class PolymlpCalc:
 
     def run_features(
         self,
-        structures: Optional[PolymlpStructure, list[PolymlpStructure]] = None,
+        structures: Optional[Union[PolymlpStructure, list[PolymlpStructure]]] = None,
         develop_infile: Optional[str] = None,
         features_force: bool = False,
         features_stress: bool = False,
@@ -168,6 +203,8 @@ class PolymlpCalc:
         -------
         elastic_constants: Elastic constants in GPa. shape=(6,6).
         """
+        from pypolymlp.calculator.compute_elastic import PolymlpElastic
+
         self.unitcell = structure
 
         self._elastic = PolymlpElastic(
@@ -211,6 +248,8 @@ class PolymlpCalc:
         -------
         self: PolymlpCalc
         """
+        from pypolymlp.calculator.compute_eos import PolymlpEOS
+
         if structure is not None:
             self.structures = structure
         self.unitcell = self.first_structure
@@ -386,21 +425,27 @@ class PolymlpCalc:
         """
         if init_str is not None:
             self.structures = init_str
+        init_str = self.first_structure
 
         if with_sym:
-            self._go = MinimizeSym(
-                init_str,
-                properties=self._prop,
-                relax_cell=relax_cell,
-                relax_positions=relax_positions,
-                verbose=self.verbose,
-            )
+            try:
+                self._go = MinimizeSym(
+                    init_str,
+                    properties=self._prop,
+                    relax_cell=relax_cell,
+                    relax_positions=relax_positions,
+                    verbose=self._verbose,
+                )
+            except ValueError:
+                self._go = None
+                if self._verbose:
+                    print("Warning: No degrees of freedom in structure.", flush=True)
         else:
             self._go = Minimize(
                 init_str,
                 properties=self._prop,
                 relax_cell=relax_cell,
-                verbose=self.verbose,
+                verbose=self._verbose,
             )
         return self
 
@@ -422,15 +467,17 @@ class PolymlpCalc:
         n_iter: Number of iterations required for convergence.
         success: Return True if optimization finished successfully.
         """
+        if self._go is None:
+            return (None, None, None)
+
         if self._verbose:
             print("Initial structure", flush=True)
             self._go.print_structure()
 
         self._go.run(gtol=gtol)
         self.structures = self._go.structure
-
         if self._verbose:
-            if not self._go.relax_cell:
+            if not self._go._relax_cell:
                 print("Residuals (force):", flush=True)
                 print(self._go.residual_forces.T, flush=True)
             else:

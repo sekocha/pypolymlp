@@ -207,7 +207,7 @@ class PolymlpFC:
             forces=self._forces.transpose((0, 2, 1)),
             cutoff=cutoff,
             use_mkl=use_mkl,
-            log_level=1,
+            log_level=self._verbose,
         )
         self._symfc.run(orders=orders, is_compact_fc=is_compact_fc)
         for order in orders:
