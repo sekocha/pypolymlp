@@ -1,0 +1,2 @@
+pypolymlp-structure --poscars POSCAR-unitcell --displacements 10 --const_distance 0.001
+pypolymlp-structure --poscars POSCAR-unitcell --displacements 10 --max_distance 1.5

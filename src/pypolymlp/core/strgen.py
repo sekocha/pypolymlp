@@ -5,7 +5,6 @@ import os
 import numpy as np
 
 from pypolymlp.core.data_format import PolymlpStructure
-from pypolymlp.core.interface_vasp import Poscar
 from pypolymlp.utils.structure_utils import supercell_diagonal
 from pypolymlp.utils.vasp_utils import write_poscar_file
 
@@ -184,60 +183,60 @@ class StructureGenerator:
         return self._supercell.n_atoms
 
 
-def run_strgen(args, verbose: bool = True):
-    """Run structure generation.
-
-    Parameters
-    ----------
-    args.poscars: POSCAR files. Structures are generated from these POSCAR files.
-    args.n_str: Number of structures generated from a single POSCAR file
-                using standard algorithm.
-    args.low_density: Number of structures with low densities.
-    args.high_density: Number of structures with high densities.
-    args.density_mode_disp: Maximum displacement for low- and high-density structures.
-    """
-
-    sampled_structures, base_info = [], []
-    for poscar in args.poscars:
-        unitcell = Poscar(poscar).structure
-        gen = StructureGenerator(unitcell, natom_ub=args.max_natom)
-        base_dict = {
-            "id": poscar,
-            "size": list(gen.size),
-            "n_atoms": list(gen.supercell.n_atoms),
-        }
-        base_info.append(base_dict)
-
-        if verbose:
-            print("-----------------------")
-            print("-", poscar)
-            gen.print_size()
-
-        if args.n_str is not None:
-            structures = gen.random_structure(
-                n_str=args.n_str,
-                max_disp=args.max_disp,
-                vol_ratio=1.0,
-            )
-            structures = set_structure_id(structures, poscar, "standard")
-            sampled_structures.extend(structures)
-        if args.low_density is not None:
-            structures = gen.sample_density(
-                n_str=args.low_density,
-                disp=args.density_mode_disp,
-                vol_lb=1.1,
-                vol_ub=4.0,
-            )
-            structures = set_structure_id(structures, poscar, "low density")
-            sampled_structures.extend(structures)
-        if args.high_density is not None:
-            structures = gen.sample_density(
-                n_str=args.low_density,
-                disp=args.density_mode_disp,
-                vol_lb=0.6,
-                vol_ub=0.9,
-            )
-            structures = set_structure_id(structures, poscar, "high density")
-            sampled_structures.extend(structures)
-
-    write_structures(sampled_structures, base_info)
+# def run_strgen(args, verbose: bool = True):
+#    """Run structure generation.
+#
+#    Parameters
+#    ----------
+#    args.poscars: POSCAR files. Structures are generated from these POSCAR files.
+#    args.n_str: Number of structures generated from a single POSCAR file
+#                using standard algorithm.
+#    args.low_density: Number of structures with low densities.
+#    args.high_density: Number of structures with high densities.
+#    args.density_mode_disp: Maximum displacement for low- and high-density structures.
+#    """
+#
+#    sampled_structures, base_info = [], []
+#    for poscar in args.poscars:
+#        unitcell = Poscar(poscar).structure
+#        gen = StructureGenerator(unitcell, natom_ub=args.max_natom)
+#        base_dict = {
+#            "id": poscar,
+#            "size": list(gen.size),
+#            "n_atoms": list(gen.supercell.n_atoms),
+#        }
+#        base_info.append(base_dict)
+#
+#        if verbose:
+#            print("-----------------------")
+#            print("-", poscar)
+#            gen.print_size()
+#
+#        if args.n_str is not None:
+#            structures = gen.random_structure(
+#                n_str=args.n_str,
+#                max_disp=args.max_disp,
+#                vol_ratio=1.0,
+#            )
+#            structures = set_structure_id(structures, poscar, "standard")
+#            sampled_structures.extend(structures)
+#        if args.low_density is not None:
+#            structures = gen.sample_density(
+#                n_str=args.low_density,
+#                disp=args.density_mode_disp,
+#                vol_lb=1.1,
+#                vol_ub=4.0,
+#            )
+#            structures = set_structure_id(structures, poscar, "low density")
+#            sampled_structures.extend(structures)
+#        if args.high_density is not None:
+#            structures = gen.sample_density(
+#                n_str=args.low_density,
+#                disp=args.density_mode_disp,
+#                vol_lb=0.6,
+#                vol_ub=0.9,
+#            )
+#            structures = set_structure_id(structures, poscar, "high density")
+#            sampled_structures.extend(structures)
+#
+#    write_structures(sampled_structures, base_info)

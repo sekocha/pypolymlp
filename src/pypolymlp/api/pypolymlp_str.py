@@ -7,11 +7,7 @@ import numpy as np
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.displacements import generate_random_const_displacements
 from pypolymlp.core.interface_vasp import parse_structures_from_poscars
-from pypolymlp.str_gen.strgen import (
-    StructureGenerator,
-    set_structure_id,
-    write_structures,
-)
+from pypolymlp.core.strgen import StructureGenerator, set_structure_id, write_structures
 from pypolymlp.utils.structure_utils import (
     multiple_isotropic_volume_changes,
     supercell_diagonal,
@@ -307,3 +303,7 @@ class PolymlpStructureGenerator:
     def sample_structures(self) -> list[PolymlpStructure]:
         """Return sample structures."""
         return self._sample_structures
+
+    @property
+    def n_samples(self):
+        return len(self._sample_structures)
