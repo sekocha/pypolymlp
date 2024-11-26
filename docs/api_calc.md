@@ -194,15 +194,6 @@ qha = PolymlpPhononQHA(unitcell, supercell_matrix, pot='polymlp.lammps')
 qha.run()
 qha.write_qha()
 ```
-
-To use phonopy API after producing force constants using polynomial MLPs, phonopy object can be obtained as follows.
-```python
-unitcell = Poscar('POSCAR').structure
-supercell_matrix = np.diag([3,3,3])
-ph = PolymlpPhonon(unitcell, supercell_matrix, pot='polymlp.lammps')
-ph.produce_force_constants(displacements=0.01)
-phonopy = ph.phonopy
-```
 or
 ```python
 import numpy as np
@@ -235,6 +226,15 @@ polymlp.run_qha(
     eps_step=0.02,
 )
 polymlp.write_qha()
+```
+
+To use phonopy API after producing force constants using polynomial MLPs, phonopy object can be obtained as follows.
+```python
+unitcell = Poscar('POSCAR').structure
+supercell_matrix = np.diag([3,3,3])
+ph = PolymlpPhonon(unitcell, supercell_matrix, pot='polymlp.lammps')
+ph.produce_force_constants(displacements=0.01)
+phonopy = ph.phonopy
 ```
 
 ## Elastic constant calculations
