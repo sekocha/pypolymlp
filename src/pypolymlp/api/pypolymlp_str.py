@@ -86,14 +86,15 @@ class PolymlpStructureGenerator:
 
     def build_supercell(
         self,
-        structure: Optional[PolymlpStructure] = None,
+        base_structure: Optional[PolymlpStructure] = None,
         supercell_size: np.ndarray = (2, 2, 2),
-        use_phonopy: bool = True,
+        use_phonopy: bool = False,
     ):
         """Initialize by constructing a supercell of a single base structure."""
-        if structure is not None:
-            self.structures = structure
+        if base_structure is not None:
+            self.structures = base_structure
         unitcell = self.first_structure
+
         self._supercell = supercell_diagonal(
             unitcell,
             size=supercell_size,
@@ -128,6 +129,9 @@ class PolymlpStructureGenerator:
         n_samples: int = 100,
         distance_lb: float = 0.01,
         distance_ub: float = 1.5,
+        n_volumes: int = 1,
+        eps_min: float = 0.8,
+        eps_max: float = 1.3,
     ):
         """Generate random structures with constant magnitude of displacements.
 
@@ -136,11 +140,31 @@ class PolymlpStructureGenerator:
         n_samples: Number of structures generated from a single structure.
         distance_lb: Minimum magnitude of atomic displacements.
         distance_ub: Maximum magnitude of atomic displacements.
+        n_volumes: Number of volumes.
+        eps_min: Minimum ratio of volume.
+        eps_max: Maximum ratio of volume.
 
+        If n_volumes > 1, n_samples structures are generated for each volume.
+        The total number of structures is n_volumes * n_samples.
         """
         distances = np.linspace(distance_lb, distance_ub, num=n_samples)
-        for dis in distances:
-            self.run_const_displacements(n_samples=1, distance=dis)
+        if n_volumes == 1:
+            for dis in distances:
+                self.run_const_displacements(n_samples=1, distance=dis)
+        else:
+            supercells = multiple_isotropic_volume_changes(
+                self._supercell,
+                eps_min=eps_min,
+                eps_max=eps_max,
+                n_eps=n_volumes,
+            )
+            supercell_init = self._supercell
+            for sup in supercells:
+                self._supercell = sup
+                for dis in distances:
+                    self.run_const_displacements(n_samples=1, distance=dis)
+            self._supercell = supercell_init
+
         return self
 
     def run_isotropic_volume_changes(

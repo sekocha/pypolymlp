@@ -13,10 +13,10 @@ from pypolymlp.utils.vasp_utils import write_poscar_file
 def write_structures(
     structures: list[PolymlpStructure],
     base_info: list[dict[str]],
-    output_dir: str = "poscars",
+    path: str = "poscars",
 ):
-
-    os.makedirs(output_dir, exist_ok=True)
+    """Save logs and structures to POSCAR files."""
+    os.makedirs(path, exist_ok=True)
     f = open("polymlp_str_samples.yaml", "w")
     print("prototypes:", file=f)
     for base_dict in base_info:
@@ -62,7 +62,6 @@ class StructureGenerator:
         natom_lb: Lower bound of number of atoms.
         natom_ub: Upper bound of number of atoms.
         """
-
         if natom_lb > natom_ub:
             raise ValueError("natom_lb > n_atom_ub.")
 
@@ -72,6 +71,7 @@ class StructureGenerator:
 
         self._supercell = self._set_supercell()
         self._name = unitcell.name
+        self._info = None
 
     def _set_supercell(self) -> PolymlpStructure:
         self._size = self._find_supercell_size_nearly_isotropic()
