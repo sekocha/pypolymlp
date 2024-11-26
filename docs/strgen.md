@@ -30,35 +30,10 @@ pypolymlp-structure --poscars POSCAR --standard 100 --max_distance 1.5 --low_den
 ```
 
 ## Random structures from multiple structures
-
-## Structure generation from multiple prototype structures
-
-1. Prototype structure selection
-
-Prepare prototype structures in POSCAR format.
-
-2. Random structure generation
-- Generation from prototype structures
 ```
-> pypolymlp-structure --random --poscars prototypes/* --n_str 10 --low_density 2 --high_density 2
+pypolymlp-structure --poscars prototypes/icsd-* --standard 30 --max_distance 1.5 --low_density 5 --distance_density_mode 0.1
 ```
-Structures for are listed in polymlp_str_samples.yaml.
-Structures are generated in "poscar" directory.
-
-- Generation from a given structure
-```
-> pypolymlp-structure --random --poscars POSCAR --n_str 10 --low_density 2 --high_density 2
-```
-
-- Random displacements for phonon calculations
-(phonopy is required.)
-```
-> pypolymlp-structure --random_phonon --supercell 3 3 2 --n_str 20 --disp 0.03 -p POSCAR
-```
-Structures are generated in "poscar_phonon" directory.
-
-3. DFT calculations for structures
-
+Generated structures will be listed in polymlp_str_samples.yaml, and POSCAR files will be generated in "poscars" directory.
 
 <!--
 ```
