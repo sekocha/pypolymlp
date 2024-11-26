@@ -117,6 +117,37 @@ if success:
     polymlp.save_poscars(filename="POSCAR_CONVERGE")
 ```
 
+## Structural feature calculations
+- Feature calculation using polymlp.in
+```python
+import numpy as np
+from pypolymlp.api.pypolymlp_calc import PolymlpCalc
+
+polymlp = PolymlpCalc(require_mlp=False)
+polymlp.load_structures_from_files(poscars=poscars)
+polymlp.run_features(
+    develop_infile="polymlp.in",
+    features_force=False,
+    features_stress=False,
+)
+polymlp.save_features()
+```
+
+- Feature calculation using polymlp.lammps
+```python
+import numpy as np
+from pypolymlp.api.pypolymlp_calc import PolymlpCalc
+
+polymlp = PolymlpCalc(pot="polymlp.lammps")
+polymlp.load_structures_from_files(poscars=poscars)
+polymlp.run_features(
+    features_force=False,
+    features_stress=False,
+)
+polymlp.save_features()
+```
+
+
 ## Force constant calculations
 - Force constant calculations using a POSCAR file
 ```python
