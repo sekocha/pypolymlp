@@ -27,6 +27,15 @@ stress: unit: eV/supercell: (6) in the order of xx, yy, zz, xy, yz, zx
 prop = Properties(pot='polymlp.lammps')
 energy, forces, stress = prop.eval(structure)
 ```
+or
+```python
+import numpy as np
+from pypolymlp.api.pypolymlp_calc import PolymlpCalc
+
+polymlp = PolymlpCalc(pot="polymlp.lammps")
+polymlp.load_structures_from_files(poscars='POSCAR')
+energies, forces, stresses = polymlp.eval()
+```
 
 - Multiple structures (Compatible with OPENMP support)
 ```python
@@ -44,14 +53,29 @@ energy_all, forces_all, stress_all = prop.eval_multiple(
                                         [structure1, structure2, structure3]
                                     )
 ```
+or
+```python
+import numpy as np
+from pypolymlp.api.pypolymlp_calc import PolymlpCalc
+
+polymlp = PolymlpCalc(pot="polymlp.lammps")
+polymlp.load_structures_from_files(poscars=["POSCAR1", "POSCAR2","POSCAR3"])
+energies, forces, stresses = polymlp.eval()
+```
 
 - When using a hybrid polynomial MLP, multiple MLP files should be given as a list.
 ```python
 polymlps = ['polymlp.lammps.1', 'polymlp.lammps.2']
 prop = Properties(pot=polymlps)
 ```
+or
+```python
+polymlps = ['polymlp.lammps.1', 'polymlp.lammps.2']
+polymlp_calc = PolymlpCalc(pot=polymlps)
+```
 
-- Property calculations from phonopy structure objects
+
+- Property calculations from phonopy structure instances
 ```python
 import numpy as np
 from pypolymlp.calculator.properties import Properties
