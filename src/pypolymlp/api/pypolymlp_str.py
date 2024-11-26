@@ -144,10 +144,18 @@ class PolymlpStructureGenerator:
         The total number of structures is n_volumes * n_samples.
         """
         distances = np.linspace(distance_lb, distance_ub, num=n_samples)
+        if self._verbose:
+            print("Distances:", flush=True)
+            print(distances, flush=True)
+
         if n_volumes == 1:
             for dis in distances:
                 self.run_const_displacements(n_samples=1, distance=dis)
         else:
+            if self._verbose:
+                print("Volume ratios:", flush=True)
+                print(np.linspace(eps_min, eps_max, num=n_volumes), flush=True)
+
             supercells = multiple_isotropic_volume_changes(
                 self._supercell,
                 eps_min=eps_min,

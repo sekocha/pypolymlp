@@ -80,6 +80,16 @@ def run():
         "for generating displacements and cell distortions",
     )
 
+    # The following options are activated
+    # only when --displacements and --max_distance options are used.
+    parser.add_argument("--n_volumes", type=int, default=1, help="Number of volumes.")
+    parser.add_argument(
+        "--min_volume", type=float, default=0.8, help="Minimum volume ratio."
+    )
+    parser.add_argument(
+        "--max_volume", type=float, default=1.3, help="Maximumm volume ratio."
+    )
+
     args = parser.parse_args()
 
     polymlp = PolymlpStructureGenerator(verbose=True)
@@ -101,9 +111,9 @@ def run():
                 n_samples=args.displacements,
                 distance_lb=0.01,
                 distance_ub=args.max_distance,
-                n_volumes=3,
-                eps_min=0.8,
-                eps_max=1.2,
+                n_volumes=args.n_volumes,
+                eps_min=args.min_volume,
+                eps_max=args.max_volume,
             )
     else:
         polymlp.build_supercells_auto(max_natom=150)
