@@ -281,6 +281,9 @@ eos.write_eos_yaml(filename='polymlp_eos.yaml')
 ```
 or
 ```python
+import numpy as np
+from pypolymlp.api.pypolymlp_calc import PolymlpCalc
+
 polymlp = PolymlpCalc(pot="polymlp.lammps")
 polymlp.load_structures_from_files(poscars='POSCAR')
 polymlp.run_eos(
