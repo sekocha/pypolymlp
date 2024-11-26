@@ -1,9 +1,0 @@
-pypolymlp-structure --poscars POSCAR-unitcell --displacements 10 --const_distance 0.001 --supercell 3 3 2
-pypolymlp-structure --poscars POSCAR-unitcell --displacements 10 --max_distance 1.5 --supercell 3 3 2
-pypolymlp-structure --poscars POSCAR-unitcell --displacements 100 --max_distance 1.5 --supercell 3 3 2 --n_volumes 2
-
-pypolymlp-structure --poscars POSCAR-unitcell --isotropic 30 --min_volume 0.7 --max_volume 2.0 --supercell 3 3 2
-
-pypolymlp-structure --poscars POSCAR-unitcell --standard 100 --max_distance 1.5
-pypolymlp-structure --poscars POSCAR-unitcell --standard 100 --max_distance 1.5 --low_density 10 --distance_density_mode 0.1
-pypolymlp-structure --poscars prototypes/icsd-* --standard 10 --max_distance 1.5 --low_density 10 --distance_density_mode 0.1
