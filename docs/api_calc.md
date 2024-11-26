@@ -220,7 +220,7 @@ polyfc.run(batch_size=100)
 ```
 
 ## Phonon calculations
-(Required: phonopy)
+(Requirement: phonopy)
 ```python
 from pypolymlp.calculator.compute_phonon import (
     PolymlpPhonon, PolymlpPhononQHA,
@@ -286,7 +286,7 @@ phonopy = ph.phonopy
 ```
 
 ## Elastic constant calculations
-(Required: pymatgen)
+(Requirement: pymatgen)
 ```python
 from pypolymlp.core.interface_vasp import Poscar
 from pypolymlp.calculator.compute_elastic import PolymlpElastic
@@ -299,7 +299,7 @@ elastic_constants = el.elastic_constants
 ```
 
 ## Equation of states calculation
-(Required: pymatgen)
+(Requirement: pymatgen)
 ```python
 from pypolymlp.calculator.compute_eos import PolymlpEOS
 
@@ -329,5 +329,5 @@ energy0, volume0, bulk_modulus = polymlp.eos_fit_data
 ```
 
 ## SSCHA calculations
-(Required: phonopy)
+(Requirement: phonopy)
 Coming soon.
