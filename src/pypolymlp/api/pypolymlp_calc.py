@@ -9,8 +9,6 @@ from pypolymlp.calculator.compute_features import (
     compute_from_polymlp_lammps,
 )
 from pypolymlp.calculator.properties import Properties
-from pypolymlp.calculator.str_opt.optimization_simple import Minimize
-from pypolymlp.calculator.str_opt.optimization_sym import MinimizeSym
 from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
 from pypolymlp.core.interface_vasp import (
     parse_structures_from_poscars,
@@ -434,6 +432,9 @@ class PolymlpCalc:
         relax_cell: Relax cell.
         relax_positions: Relax atomic positions.
         """
+        from pypolymlp.calculator.str_opt.optimization_simple import Minimize
+        from pypolymlp.calculator.str_opt.optimization_sym import MinimizeSym
+
         if init_str is not None:
             self.structures = init_str
         init_str = self.first_structure
