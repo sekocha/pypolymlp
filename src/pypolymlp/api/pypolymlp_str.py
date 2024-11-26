@@ -116,7 +116,7 @@ class PolymlpStructureGenerator:
             n_samples=n_samples,
             displacements=distance,
         )
-        structures = set_structure_id(structures, self._supercell.name, "disp")
+        structures = set_structure_id(structures, "single-str", "disp")
         self._sample_structures.extend(structures)
         return self
 
@@ -186,6 +186,10 @@ class PolymlpStructureGenerator:
         eps_max: Maximum ratio of volume.
 
         """
+        if self._verbose:
+            print("Volume ratios:", flush=True)
+            print(np.linspace(eps_min, eps_max, num=n_samples), flush=True)
+
         if self._supercell is None:
             self._supercell = self.first_structure
 
@@ -195,7 +199,7 @@ class PolymlpStructureGenerator:
             eps_max=eps_max,
             n_eps=n_samples,
         )
-        structures = set_structure_id(structures, self._supercell.name, "volume")
+        structures = set_structure_id(structures, "single-str", "volume")
         self._sample_structures.extend(structures)
         return self
 
@@ -314,4 +318,5 @@ class PolymlpStructureGenerator:
 
     @property
     def n_samples(self):
+        """Return number of sample structures."""
         return len(self._sample_structures)

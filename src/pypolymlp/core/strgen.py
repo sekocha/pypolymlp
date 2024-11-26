@@ -17,12 +17,13 @@ def write_structures(
     """Save logs and structures to POSCAR files."""
     os.makedirs(path, exist_ok=True)
     f = open("polymlp_str_samples.yaml", "w")
-    print("prototypes:", file=f)
-    for base_dict in base_info:
-        print("- id:             ", base_dict["id"], file=f)
-        print("  supercell_size: ", base_dict["size"], file=f)
-        print("  n_atoms:        ", base_dict["n_atoms"], file=f)
-    print("", file=f)
+    if len(base_info) > 0:
+        print("prototypes:", file=f)
+        for base_dict in base_info:
+            print("- id:             ", base_dict["id"], file=f)
+            print("  supercell_size: ", base_dict["size"], file=f)
+            print("  n_atoms:        ", base_dict["n_atoms"], file=f)
+        print("", file=f)
 
     print("structures:", file=f)
     for i, st in enumerate(structures):

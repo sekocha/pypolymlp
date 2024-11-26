@@ -3,6 +3,8 @@
 import argparse
 import signal
 
+import numpy as np
+
 from pypolymlp.api.pypolymlp_str import PolymlpStructureGenerator
 
 
@@ -26,19 +28,18 @@ def run():
         default=150,
         help="Maximum number of atoms in structures",
     )
-    parser.add_argument(
-        "--supercell",
-        nargs=3,
-        type=int,
-        default=[2, 2, 2],
-        help=("Supercell size for random displacement" " generation"),
-    )
 
     parser.add_argument(
         "--displacements",
         type=int,
         default=None,
         help="Number of structures sampled using displacements.",
+    )
+    parser.add_argument(
+        "--isotropic",
+        type=int,
+        default=None,
+        help="Number of structures sampled using isotropic volume changes.",
     )
     parser.add_argument(
         "--standard",
@@ -60,7 +61,7 @@ def run():
     )
 
     parser.add_argument(
-        "--density_mode_distance",
+        "--distance_density_mode",
         type=float,
         default=0.2,
         help="Maximum distance of distributions for generating atomic "
@@ -80,6 +81,14 @@ def run():
         "for generating displacements and cell distortions",
     )
 
+    # This option is activated only when --displacements option is used.
+    parser.add_argument(
+        "--supercell",
+        nargs=3,
+        type=int,
+        default=(1, 1, 1),
+        help=("Supercell size for random displacement" " generation"),
+    )
     # The following options are activated
     # only when --displacements and --max_distance options are used.
     parser.add_argument("--n_volumes", type=int, default=1, help="Number of volumes.")
@@ -92,6 +101,7 @@ def run():
 
     args = parser.parse_args()
 
+    np.set_printoptions(legacy="1.25")
     polymlp = PolymlpStructureGenerator(verbose=True)
     polymlp.load_structures_from_files(poscars=args.poscars)
 
@@ -115,10 +125,19 @@ def run():
                 eps_min=args.min_volume,
                 eps_max=args.max_volume,
             )
+    elif args.isotropic is not None:
+        print("Pypolymlp structure generator: Isotropic volume changes", flush=True)
+        polymlp.build_supercell(supercell_size=args.supercell)
+        polymlp.run_isotropic_volume_changes(
+            n_samples=args.isotropic,
+            eps_min=args.min_volume,
+            eps_max=args.max_volume,
+        )
     else:
-        polymlp.build_supercells_auto(max_natom=150)
+        print("Pypolymlp structure generator: Standard algorithms", flush=True)
+        polymlp.build_supercells_auto(max_natom=129)
         if args.standard is not None:
-            print("Pypolymlp structure generator: Standard mode", flush=True)
+            print("Run standard algorithms", flush=True)
             if args.const_distance is not None:
                 print(
                     "const_distance is activated only for --displacements option",
@@ -132,17 +151,17 @@ def run():
                 max_distance=args.max_distance,
             )
         if args.low_density is not None:
-            print("Pypolymlp structure generator: Low-density mode", flush=True)
+            print("Run low-density algorithm", flush=True)
             polymlp.run_density_algorithm(
                 n_samples=args.low_density,
-                distance=0.2,
+                distance=args.distance_density_mode,
                 vol_algorithm="low_auto",
             )
         if args.high_density is not None:
-            print("Pypolymlp structure generator: High-density mode", flush=True)
+            print("Run high-density algorithm", flush=True)
             polymlp.run_density_algorithm(
                 n_samples=args.high_density,
-                distance=0.2,
+                distance=args.distance_density_mode,
                 vol_algorithm="high_auto",
             )
     polymlp.save_random_structures(path="./poscars")
