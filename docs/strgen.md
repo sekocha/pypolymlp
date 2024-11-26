@@ -13,19 +13,23 @@ pypolymlp-structure -p POSCAR --displacements 10 --max_distance 1.5 --supercell 
 
 - Sequential magnitudes of atomic displacements, Volume changes
 ```
-pypolymlp-structure --poscars POSCAR-unitcell --displacements 10 --max_distance 1.5 --supercell 3 3 2 --n_volumes 5 --min_volume 0.8 --max_volume 1.2
+pypolymlp-structure --poscars POSCAR --displacements 10 --max_distance 1.5 --supercell 3 3 2 --n_volumes 5 --min_volume 0.8 --max_volume 1.2
 ```
+The number of structures is n_volumes * n_displacements.
 
-## Random atomic displacements, cell expansions, and distortions from a single structures
+## Random structures from a single structures
+- Random atomic displacements, cell expansions, and distortions are introduced by --standard option.
 ```
 pypolymlp-structure --poscars POSCAR --standard 100 --max_distance 1.5
 ```
 The supercell size is automatically determined using --max_natom option.
 
-Structures with low densities and those with high densities can also be generated as follows:
+- Structures with low densities and those with high densities can also be generated as follows:
 ```
 pypolymlp-structure --poscars POSCAR --standard 100 --max_distance 1.5 --low_density 10 --distance_density_mode 0.1 --high_density 10
 ```
+
+## Random structures from multiple structures
 
 ## Structure generation from multiple prototype structures
 
