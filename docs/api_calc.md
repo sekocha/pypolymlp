@@ -124,7 +124,7 @@ import numpy as np
 from pypolymlp.api.pypolymlp_calc import PolymlpCalc
 
 polymlp = PolymlpCalc(require_mlp=False)
-polymlp.load_structures_from_files(poscars=poscars)
+polymlp.load_structures_from_files(poscars=["POSCAR1", "POSCAR2", "POSCAR3"])
 polymlp.run_features(
     develop_infile="polymlp.in",
     features_force=False,
@@ -139,7 +139,7 @@ import numpy as np
 from pypolymlp.api.pypolymlp_calc import PolymlpCalc
 
 polymlp = PolymlpCalc(pot="polymlp.lammps")
-polymlp.load_structures_from_files(poscars=poscars)
+polymlp.load_structures_from_files(poscars=["POSCAR1", "POSCAR2", "POSCAR3"])
 polymlp.run_features(
     features_force=False,
     features_stress=False,
