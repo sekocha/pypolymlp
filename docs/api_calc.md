@@ -93,7 +93,7 @@ prop = Properties(pot='polymlp.lammps')
 energy_all, forces_all, stress_all = prop.eval_multiple_phonopy(supercells)
 ```
 
-- Conversion of a phonopy cell class object into a structure dictionary
+- Conversion of a phonopy cell instance into a structure dictionary
 ```python
 from pypolymlp.utils.phonopy_utils import phonopy_cell_to_structure
 structure = phonopy_cell_to_structure(cell_phonopy)
@@ -261,6 +261,20 @@ eos.run(
     eps_min=0.7, eps_max=2.0, eps_int=0.03, fine_grid=True, eos_fit=True
 )
 eos.write_eos_yaml(filename='polymlp_eos.yaml')
+```
+or
+```python
+polymlp = PolymlpCalc(pot="polymlp.lammps")
+polymlp.load_structures_from_files(poscars='POSCAR')
+polymlp.run_eos(
+    eps_min=0.7,
+    eps_max=2.0,
+    eps_step=0.03,
+    fine_grid=True,
+    eos_fit=True,
+)
+polymlp.write_eos()
+energy0, volume0, bulk_modulus = polymlp.eos_fit_data
 ```
 
 ## SSCHA calculations
