@@ -99,6 +99,23 @@ from pypolymlp.utils.phonopy_utils import phonopy_cell_to_structure
 structure = phonopy_cell_to_structure(cell_phonopy)
 ```
 
+## Local geometry optimizations
+```python
+import numpy as np
+from pypolymlp.api.pypolymlp_calc import PolymlpCalc
+
+polymlp = PolymlpCalc(pot="polymlp.lammps")
+polymlp.load_poscars("POSCAR")
+
+polymlp.init_geometry_optimization(
+    with_sym=True,
+    relax_cell=True,
+    relax_positions=True,
+)
+e0, n_iter, success = polymlp.run_geometry_optimization()
+if success:
+    polymlp.save_poscars(filename="POSCAR_CONVERGE")
+```
 
 ## Force constant calculations
 - Force constant calculations using a POSCAR file
