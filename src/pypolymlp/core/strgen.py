@@ -5,7 +5,6 @@ import os
 import numpy as np
 
 from pypolymlp.core.data_format import PolymlpStructure
-from pypolymlp.core.interface_vasp import Poscar
 from pypolymlp.utils.structure_utils import supercell_diagonal
 from pypolymlp.utils.vasp_utils import write_poscar_file
 
@@ -13,17 +12,18 @@ from pypolymlp.utils.vasp_utils import write_poscar_file
 def write_structures(
     structures: list[PolymlpStructure],
     base_info: list[dict[str]],
-    output_dir: str = "poscars",
+    path: str = "poscars",
 ):
-
-    os.makedirs(output_dir, exist_ok=True)
+    """Save logs and structures to POSCAR files."""
+    os.makedirs(path, exist_ok=True)
     f = open("polymlp_str_samples.yaml", "w")
-    print("prototypes:", file=f)
-    for base_dict in base_info:
-        print("- id:             ", base_dict["id"], file=f)
-        print("  supercell_size: ", base_dict["size"], file=f)
-        print("  n_atoms:        ", base_dict["n_atoms"], file=f)
-    print("", file=f)
+    if len(base_info) > 0:
+        print("prototypes:", file=f)
+        for base_dict in base_info:
+            print("- id:             ", base_dict["id"], file=f)
+            print("  supercell_size: ", base_dict["size"], file=f)
+            print("  n_atoms:        ", base_dict["n_atoms"], file=f)
+        print("", file=f)
 
     print("structures:", file=f)
     for i, st in enumerate(structures):
@@ -62,7 +62,6 @@ class StructureGenerator:
         natom_lb: Lower bound of number of atoms.
         natom_ub: Upper bound of number of atoms.
         """
-
         if natom_lb > natom_ub:
             raise ValueError("natom_lb > n_atom_ub.")
 
@@ -70,13 +69,15 @@ class StructureGenerator:
         self.natom_lb = natom_lb
         self.natom_ub = natom_ub
 
-        self.supercell = self._set_supercell()
+        self._supercell = self._set_supercell()
+        self._name = unitcell.name
+        self._info = None
 
     def _set_supercell(self) -> PolymlpStructure:
-        self.size = self._find_supercell_size_nearly_isotropic()
-        self.supercell = supercell_diagonal(self.unitcell, self.size)
-        self.supercell.axis_inv = np.linalg.inv(self.supercell.axis)
-        return self.supercell
+        self._size = self._find_supercell_size_nearly_isotropic()
+        self._supercell = supercell_diagonal(self.unitcell, self._size)
+        self._supercell.axis_inv = np.linalg.inv(self._supercell.axis)
+        return self._supercell
 
     def _find_supercell_size_nearly_isotropic(self) -> list[int]:
         axis = self.unitcell.axis
@@ -106,7 +107,7 @@ class StructureGenerator:
     ) -> PolymlpStructure:
         """Generate single random structure."""
 
-        cell = self.supercell
+        cell = self._supercell
         total_n_atoms = cell.positions.shape[1]
         axis_ratio = pow(vol_ratio, 1.0 / 3.0)
 
@@ -158,64 +159,85 @@ class StructureGenerator:
         return st_array
 
     def print_size(self):
-        print("  supercell size:      ", list(self.size))
-        print("  n_atoms (supercell): ", list(self.supercell.n_atoms))
+        """Print supercell size."""
+        print("  supercell size:      ", list(self._size), flush=True)
+        print("  n_atoms (supercell): ", list(self._supercell.n_atoms), flush=True)
+
+    @property
+    def supercell(self):
+        """Return supercell."""
+        return self._supercell
+
+    @property
+    def supercell_size(self):
+        """Return supercell size for base structure."""
+        return self._size
+
+    @property
+    def name(self):
+        """Return name of base structure."""
+        return self._name
+
+    @property
+    def n_atoms(self):
+        """Return number of atoms in supercell."""
+        return self._supercell.n_atoms
 
 
-def run_strgen(args, verbose: bool = True):
-    """Run structure generation.
-
-    Parameters
-    ----------
-    args.poscars: POSCAR files. Structures are generated from these POSCAR files.
-    args.n_str: Number of structures generated from a single POSCAR file
-                using standard algorithm.
-    args.low_density: Number of structures with low densities.
-    args.high_density: Number of structures with high densities.
-    args.density_mode_disp: Maximum displacement for low- and high-density structures.
-    """
-
-    sampled_structures, base_info = [], []
-    for poscar in args.poscars:
-        unitcell = Poscar(poscar).structure
-        gen = StructureGenerator(unitcell, natom_ub=args.max_natom)
-        base_dict = {
-            "id": poscar,
-            "size": list(gen.size),
-            "n_atoms": list(gen.supercell.n_atoms),
-        }
-        base_info.append(base_dict)
-
-        if verbose:
-            print("-----------------------")
-            print("-", poscar)
-            gen.print_size()
-
-        if args.n_str is not None:
-            structures = gen.random_structure(
-                n_str=args.n_str,
-                max_disp=args.max_disp,
-                vol_ratio=1.0,
-            )
-            structures = set_structure_id(structures, poscar, "standard")
-            sampled_structures.extend(structures)
-        if args.low_density is not None:
-            structures = gen.sample_density(
-                n_str=args.low_density,
-                disp=args.density_mode_disp,
-                vol_lb=1.1,
-                vol_ub=4.0,
-            )
-            structures = set_structure_id(structures, poscar, "low density")
-            sampled_structures.extend(structures)
-        if args.high_density is not None:
-            structures = gen.sample_density(
-                n_str=args.low_density,
-                disp=args.density_mode_disp,
-                vol_lb=0.6,
-                vol_ub=0.9,
-            )
-            structures = set_structure_id(structures, poscar, "high density")
-            sampled_structures.extend(structures)
-
-    write_structures(sampled_structures, base_info)
+# def run_strgen(args, verbose: bool = True):
+#    """Run structure generation.
+#
+#    Parameters
+#    ----------
+#    args.poscars: POSCAR files. Structures are generated from these POSCAR files.
+#    args.n_str: Number of structures generated from a single POSCAR file
+#                using standard algorithm.
+#    args.low_density: Number of structures with low densities.
+#    args.high_density: Number of structures with high densities.
+#    args.density_mode_disp: Maximum displacement for low- and high-density structures.
+#    """
+#
+#    sampled_structures, base_info = [], []
+#    for poscar in args.poscars:
+#        unitcell = Poscar(poscar).structure
+#        gen = StructureGenerator(unitcell, natom_ub=args.max_natom)
+#        base_dict = {
+#            "id": poscar,
+#            "size": list(gen.size),
+#            "n_atoms": list(gen.supercell.n_atoms),
+#        }
+#        base_info.append(base_dict)
+#
+#        if verbose:
+#            print("-----------------------")
+#            print("-", poscar)
+#            gen.print_size()
+#
+#        if args.n_str is not None:
+#            structures = gen.random_structure(
+#                n_str=args.n_str,
+#                max_disp=args.max_disp,
+#                vol_ratio=1.0,
+#            )
+#            structures = set_structure_id(structures, poscar, "standard")
+#            sampled_structures.extend(structures)
+#        if args.low_density is not None:
+#            structures = gen.sample_density(
+#                n_str=args.low_density,
+#                disp=args.density_mode_disp,
+#                vol_lb=1.1,
+#                vol_ub=4.0,
+#            )
+#            structures = set_structure_id(structures, poscar, "low density")
+#            sampled_structures.extend(structures)
+#        if args.high_density is not None:
+#            structures = gen.sample_density(
+#                n_str=args.low_density,
+#                disp=args.density_mode_disp,
+#                vol_lb=0.6,
+#                vol_ub=0.9,
+#            )
+#            structures = set_structure_id(structures, poscar, "high density")
+#            sampled_structures.extend(structures)
+#
+#    write_structures(sampled_structures, base_info)

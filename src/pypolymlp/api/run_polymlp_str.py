@@ -1,48 +1,25 @@
-#!/usr/bin/env python
+"""Command lines for generating DFT structures."""
+
 import argparse
 import signal
 
-from pypolymlp.str_gen.strgen import run_strgen
+import numpy as np
 
-# from pypolymlp.str_gen.prototypes_selection import (
-#    prototype_selection_element,
-#    prototype_selection_alloy,
-#    check_compositions,
-# )
+from pypolymlp.api.pypolymlp_str import PolymlpStructureGenerator
 
 
 def run():
+    """Command lines for generating DFT structures."""
 
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
     parser = argparse.ArgumentParser()
-
-    """
-    parser.add_argument('--prototypes',
-                        action='store_true',
-                        help='Prototype structure generation')
-    parser.add_argument('--n_types',
-                        type=int,
-                        default=None,
-                        help='Number of atom types (n_types = 1,2,3)')
-    parser.add_argument('--comp',
-                        type=float,
-                        nargs='*',
-                        default=None,
-                        help='Composition')
-    parser.add_argument('--noscreen',
-                        action='store_false',
-                        help='All nonequivalent prototypes are generated.')
-    """
-
-    parser.add_argument(
-        "--random", action="store_true", help="Random structure generation"
-    )
     parser.add_argument(
         "-p",
         "--poscars",
         type=str,
         nargs="*",
+        required=True,
         help="Initial structures in POSCAR format",
     )
     parser.add_argument(
@@ -51,74 +28,141 @@ def run():
         default=150,
         help="Maximum number of atoms in structures",
     )
+
     parser.add_argument(
-        "--n_str",
+        "--displacements",
         type=int,
         default=None,
-        help=("Number of sample structures. " "(for --random and --random_phonon)"),
+        help="Number of structures sampled using displacements.",
     )
     parser.add_argument(
-        "--max_disp",
-        type=float,
-        default=1.5,
-        help="Maximum random number for generating " "atomic displacements",
+        "--isotropic",
+        type=int,
+        default=None,
+        help="Number of structures sampled using isotropic volume changes.",
     )
-
+    parser.add_argument(
+        "--standard",
+        type=int,
+        default=None,
+        help=("Number of structures sampled using a standard algorithm."),
+    )
     parser.add_argument(
         "--low_density",
         type=int,
         default=None,
-        help="Number of structures for low density mode.",
+        help="Number of structures sampled using low density mode.",
     )
     parser.add_argument(
         "--high_density",
         type=int,
         default=None,
-        help="Number of structures for high density mode.",
-    )
-    parser.add_argument(
-        "--density_mode_disp",
-        type=float,
-        default=0.2,
-        help="Maximum random number for generating atomic "
-        "displacements in low and high density modes",
+        help="Number of structures sampled using high density mode.",
     )
 
     parser.add_argument(
-        "--random_phonon",
-        action="store_true",
-        help="Random displacement generation",
+        "--distance_density_mode",
+        type=float,
+        default=0.2,
+        help="Maximum distance of distributions for generating atomic "
+        "displacements in low and high density modes",
     )
+    parser.add_argument(
+        "--const_distance",
+        type=float,
+        default=None,
+        help="Constant magnitude of distributions for generating displacements",
+    )
+    parser.add_argument(
+        "--max_distance",
+        type=float,
+        default=None,
+        help="Maximum magnitude of distributions "
+        "for generating displacements and cell distortions",
+    )
+
+    # This option is activated only when --displacements option is used.
     parser.add_argument(
         "--supercell",
         nargs=3,
         type=int,
-        default=[2, 2, 2],
+        default=(1, 1, 1),
         help=("Supercell size for random displacement" " generation"),
     )
+    # The following options are activated
+    # only when --displacements and --max_distance options are used.
+    parser.add_argument("--n_volumes", type=int, default=1, help="Number of volumes.")
     parser.add_argument(
-        "--disp",
-        type=float,
-        default=0.03,
-        help="Random displacement in Angstrom",
+        "--min_volume", type=float, default=0.8, help="Minimum volume ratio."
     )
+    parser.add_argument(
+        "--max_volume", type=float, default=1.3, help="Maximumm volume ratio."
+    )
+
     args = parser.parse_args()
 
-    if args.random:
-        if args.poscars is None:
-            raise ValueError("error: -p/--poscars is required for --random.")
-        run_strgen(args)
+    np.set_printoptions(legacy="1.25")
+    polymlp = PolymlpStructureGenerator(verbose=True)
+    polymlp.load_structures_from_files(poscars=args.poscars)
 
-    if args.random_phonon:
-        from pypolymlp.str_gen.strgen_phonon import run_strgen_phonon
+    if args.displacements is not None:
+        print("Pypolymlp structure generator: Displacement mode", flush=True)
+        if args.const_distance is None and args.max_distance is None:
+            raise RuntimeError("const_distance or max_distance is required.")
 
-        if args.poscars is None:
-            raise ValueError(("error: -p/--poscars is required" "for --random_phonon."))
-
-        for poscar in args.poscars:
-            run_strgen_phonon(
-                poscar,
-                supercell_size=args.supercell,
-                n_samples=args.n_str,
-                displacements=args.disp,
+        polymlp.build_supercell(supercell_size=args.supercell)
+        if args.const_distance is not None:
+            polymlp.run_const_displacements(
+                n_samples=args.displacements,
+                distance=args.const_distance,
             )
+        elif args.max_distance is not None:
+            polymlp.run_sequential_displacements(
+                n_samples=args.displacements,
+                distance_lb=0.01,
+                distance_ub=args.max_distance,
+                n_volumes=args.n_volumes,
+                eps_min=args.min_volume,
+                eps_max=args.max_volume,
+            )
+    elif args.isotropic is not None:
+        print("Pypolymlp structure generator: Isotropic volume changes", flush=True)
+        polymlp.build_supercell(supercell_size=args.supercell)
+        polymlp.run_isotropic_volume_changes(
+            n_samples=args.isotropic,
+            eps_min=args.min_volume,
+            eps_max=args.max_volume,
+        )
+    else:
+        print("Pypolymlp structure generator: Standard algorithms", flush=True)
+        polymlp.build_supercells_auto(max_natom=129)
+        if args.standard is not None:
+            print("Run standard algorithms", flush=True)
+            if args.const_distance is not None:
+                print(
+                    "const_distance is activated only for --displacements option",
+                    flush=True,
+                )
+            if args.max_distance is None:
+                raise RuntimeError("max_distance is required.")
+
+            polymlp.run_standard_algorithm(
+                n_samples=args.standard,
+                max_distance=args.max_distance,
+            )
+        if args.low_density is not None:
+            print("Run low-density algorithm", flush=True)
+            polymlp.run_density_algorithm(
+                n_samples=args.low_density,
+                distance=args.distance_density_mode,
+                vol_algorithm="low_auto",
+            )
+        if args.high_density is not None:
+            print("Run high-density algorithm", flush=True)
+            polymlp.run_density_algorithm(
+                n_samples=args.high_density,
+                distance=args.distance_density_mode,
+                vol_algorithm="high_auto",
+            )
+    polymlp.save_random_structures(path="./poscars")
+    print(polymlp.n_samples, "structures are generated.", flush=True)

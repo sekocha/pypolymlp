@@ -79,18 +79,25 @@ Building C++ codes in pypolymlp may require a significant amount of time.
 - [Property calculators](docs/calc.md)
   - Energy, forces on atoms, and stress tensor
   - Force constants
+  - Structural features (Polynomial invariants)
+  - Phonon properties, Quasi-harmonic approximation
+- [DFT structure generator](docs/strgen.md)
+  - Random atomic displacements with constant magnitude
+  - Random atomic displacements with sequential magnitudes and volume changes
+  - Random atomic displacements, cell expansion, and distortion
+- [Utilities](docs/utilities.md)
+  - Compression of vasprun.xml files
+  - Automatic division of DFT dataset
+  - Atomic energies
+  - Enumeration of optimal MLPs
+  - Estimation of computational costs
+- [Python API (MLP development)](docs/api_mlpdev.md)
+- [Python API (Property calculations)](docs/api_calc.md)
+  - Energy, forces on atoms, and stress tensor
+  - Force constants
   - Elastic constants
   - Equation of states
   - Structural features (Polynomial invariants)
   - Local geometry optimization
   - Phonon properties, Quasi-harmonic approximation
   - Self-consistent phonon calculations
-- [Utilities](docs/utilities.md)
-  - Random structure generation
-  - Estimation of computational costs
-  - Enumeration of optimal MLPs
-  - Compression of vasprun.xml files
-  - Automatic division of DFT dataset
-  - Atomic energies
-- [Python API (MLP development)](docs/api_mlpdev.md)
-- [Python API (Property calculations)](docs/api_calc.md)
