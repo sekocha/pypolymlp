@@ -1,22 +1,30 @@
 # Structure generator for DFT calculations
 
 ## Random atomic displacements from a single structure
-- Constant magnitude of atomic displacements
-- Fixed cell
+- Constant magnitude of atomic displacements, Fixed cell
 ```
 pypolymlp-structure -p POSCAR --displacements 10 --const_distance 0.001 --supercell 3 3 2
 ```
 
-- Sequential magnitudes of atomic displacements
-- Fixed cell
+- Sequential magnitudes of atomic displacements, Fixed cell
 ```
 pypolymlp-structure -p POSCAR --displacements 10 --max_distance 1.5 --supercell 3 3 2
 ```
 
-- Sequential magnitudes of atomic displacements
-- Volume changes
+- Sequential magnitudes of atomic displacements, Volume changes
 ```
 pypolymlp-structure --poscars POSCAR-unitcell --displacements 10 --max_distance 1.5 --supercell 3 3 2 --n_volumes 5 --min_volume 0.8 --max_volume 1.2
+```
+
+## Random atomic displacements, cell expansions, and distortions from a single structures
+```
+pypolymlp-structure --poscars POSCAR --standard 100 --max_distance 1.5
+```
+The supercell size is automatically determined using --max_natom option.
+
+Structures with low densities and those with high densities can also be generated as follows:
+```
+pypolymlp-structure --poscars POSCAR --standard 100 --max_distance 1.5 --low_density 10 --distance_density_mode 0.1 --high_density 10
 ```
 
 ## Structure generation from multiple prototype structures
