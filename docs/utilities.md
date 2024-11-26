@@ -1,6 +1,6 @@
 # Pypolymlp utilities
 
-## Structure generation for DFT calculations
+## Structure generation from multiple prototype structures
 
 1. Prototype structure selection
 
