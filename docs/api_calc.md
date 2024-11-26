@@ -101,26 +101,6 @@ structure = phonopy_cell_to_structure(cell_phonopy)
 
 
 ## Force constant calculations
-- Force constant calculations using phono3py.yaml.xz
-```python
-from pypolymlp.calculator.fc import PolymlpFC
-
-polyfc = PolymlpFC(
-    phono3py_yaml='phono3py_params_wurtzite_AgI.yaml.xz',
-    use_phonon_dataset=False,
-    pot='polymlp.lammps',
-)
-
-"""optional"""
-polyfc.run_geometry_optimization()
-
-"""If not using sample(), displacements are read from phono3py.yaml.xz"""
-polyfc.sample(n_samples=100, displacements=0.001, is_plusminus=False)
-
-"""fc2.hdf5 and fc3.hdf5 will be generated."""
-polyfc.run(batch_size=100)
-```
-
 - Force constant calculations using a POSCAR file
 ```python
 import numpy as np
@@ -137,6 +117,54 @@ polyfc = PolymlpFC(supercell=supercell, pot='polymlp.lammps')
 """optional"""
 polyfc.run_geometry_optimization()
 
+polyfc.sample(n_samples=100, displacements=0.001, is_plusminus=False)
+
+"""fc2.hdf5 and fc3.hdf5 will be generated."""
+polyfc.run(batch_size=100)
+```
+or
+```python
+import numpy as np
+from pypolymlp.api.pypolymlp_calc import PolymlpCalc
+
+polymlp = PolymlpCalc(pot="polymlp.lammps")
+polymlp.load_poscars("POSCAR")
+
+"""optional"""
+polymlp.init_geometry_optimization(
+    with_sym=True,
+    relax_cell=False,
+    relax_positions=True,
+)
+polymlp.run_geometry_optimization()
+
+polymlp.init_fc(supercell_matrix=np.diag([3,3,2]), cutoff=None)
+polymlp.run_fc(
+    n_samples=100,
+    distance=0.001,
+    is_plusminus=False,
+    orders=(2, 3),
+    batch_size=100,
+    is_compact_fc=True,
+    use_mkl=True,
+)
+polymlp.save_fc()
+```
+
+- Force constant calculations using phono3py.yaml.xz
+```python
+from pypolymlp.calculator.fc import PolymlpFC
+
+polyfc = PolymlpFC(
+    phono3py_yaml='phono3py_params_wurtzite_AgI.yaml.xz',
+    use_phonon_dataset=False,
+    pot='polymlp.lammps',
+)
+
+"""optional"""
+polyfc.run_geometry_optimization()
+
+"""If not using sample(), displacements are read from phono3py.yaml.xz"""
 polyfc.sample(n_samples=100, displacements=0.001, is_plusminus=False)
 
 """fc2.hdf5 and fc3.hdf5 will be generated."""
