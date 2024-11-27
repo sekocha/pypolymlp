@@ -299,11 +299,10 @@ elastic_constants = el.elastic_constants
 ```
 or
 ```python
-import numpy as np
 from pypolymlp.api.pypolymlp_calc import PolymlpCalc
 
 polymlp = PolymlpCalc(pot="polymlp.lammps")
-polymlp.load_poscars(args.poscar)
+polymlp.load_poscars("POSCAR")
 polymlp.run_elastic_constants()
 polymlp.write_elastic_constants(filename="polymlp_elastic.yaml")
 elastic_constants = polymlp.elastic_constants
@@ -323,7 +322,6 @@ eos.write_eos_yaml(filename='polymlp_eos.yaml')
 ```
 or
 ```python
-import numpy as np
 from pypolymlp.api.pypolymlp_calc import PolymlpCalc
 
 polymlp = PolymlpCalc(pot="polymlp.lammps")
