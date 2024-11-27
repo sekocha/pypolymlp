@@ -242,7 +242,7 @@ def print_array2d(array, tag, fstream, indent_l=0):
 def save_cell(cell: PolymlpStructure, tag="unitcell", fstream=None, filename=None):
     """Write structure to a file."""
 
-    np.set_printoptions(legacy="1.25")
+    np.set_printoptions(legacy="1.21")
     if fstream is None:
         fstream = open(filename, "w")
 
@@ -274,7 +274,7 @@ def save_sscha_yaml(
 ):
     """Write SSCHA results to a file."""
 
-    np.set_printoptions(legacy="1.25")
+    np.set_printoptions(legacy="1.21")
     properties = sscha_log[-1]
 
     f = open(filename, "w")
