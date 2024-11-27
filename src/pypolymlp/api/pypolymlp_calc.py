@@ -50,8 +50,10 @@ class PolymlpCalc:
                 self._prop = properties
 
         self._verbose = verbose
-        self._unitcell = None
         self._structures = None
+
+        self._unitcell = None
+        self._poscar = None
 
         self._elastic = None
         self._eos = None
@@ -68,6 +70,7 @@ class PolymlpCalc:
         structures: list[PolymlpStructure], Structures.
         """
         if isinstance(poscars, str):
+            self._poscar = poscars
             poscars = [poscars]
         self.structures = parse_structures_from_poscars(poscars)
         return self.structures
@@ -199,11 +202,7 @@ class PolymlpCalc:
         """Save features."""
         np.save("features.npy", self._features)
 
-    def run_elastic_constants(
-        self,
-        structure: PolymlpStructure,
-        poscar: str,
-    ):
+    def run_elastic_constants(self, poscar: Optional[str] = None):
         """Run elastic constant calculations.
 
         pymatgen is required.
@@ -214,11 +213,15 @@ class PolymlpCalc:
         """
         from pypolymlp.calculator.compute_elastic import PolymlpElastic
 
-        self.unitcell = structure
+        if poscar is not None:
+            self.load_poscars(poscar)
+            self._poscar = poscar
+
+        self.unitcell = self.first_structure
 
         self._elastic = PolymlpElastic(
             unitcell=self.unitcell,
-            unitcell_poscar=poscar,
+            unitcell_poscar=self._poscar,
             properties=self._prop,
             verbose=self._verbose,
         )

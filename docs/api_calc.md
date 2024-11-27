@@ -297,6 +297,17 @@ el.run()
 el.write_elastic_constants()
 elastic_constants = el.elastic_constants
 ```
+or
+```python
+import numpy as np
+from pypolymlp.api.pypolymlp_calc import PolymlpCalc
+
+polymlp = PolymlpCalc(pot="polymlp.lammps")
+polymlp.load_poscars(args.poscar)
+polymlp.run_elastic_constants()
+polymlp.write_elastic_constants(filename="polymlp_elastic.yaml")
+elastic_constants = polymlp.elastic_constants
+```
 
 ## Equation of states calculation
 (Requirement: pymatgen)

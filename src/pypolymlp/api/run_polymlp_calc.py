@@ -9,8 +9,6 @@ import numpy as np
 from pypolymlp.api.pypolymlp_calc import PolymlpCalc
 from pypolymlp.core.utils import precision
 
-# from pypolymlp.utils.yaml_utils import load_cells
-
 
 def run():
 
@@ -37,6 +35,10 @@ def run():
         "--precision",
         action="store_true",
         help="Mode: MLP precision calculation. This uses only features",
+    )
+    parser.add_argument("--eos", action="store_true", help="Mode: EOS calculation")
+    parser.add_argument(
+        "--elastic", action="store_true", help="Mode: Elastic constant calculation"
     )
 
     parser.add_argument("--pot", nargs="*", type=str, default=None, help="polymlp file")
@@ -151,7 +153,7 @@ def run():
     require_mlp = True if args.pot is not None else False
     polymlp = PolymlpCalc(pot=args.pot, verbose=True, require_mlp=require_mlp)
 
-    np.set_printoptions(legacy="1.25")
+    np.set_printoptions(legacy="1.21")
     if args.properties:
         print("Mode: Property calculations", flush=True)
         polymlp.load_structures_from_files(
@@ -263,3 +265,21 @@ def run():
                 polymlp.features.shape,
                 flush=True,
             )
+
+    elif args.eos:
+        print("Mode: EOS calculation", flush=True)
+        polymlp.load_poscars(args.poscar)
+        polymlp.run_eos(
+            eps_min=0.7,
+            eps_max=2.0,
+            eps_step=0.03,
+            fine_grid=True,
+            eos_fit=True,
+        )
+        polymlp.write_eos(filename="polymlp_eos.yaml")
+
+    elif args.elastic:
+        print("Mode: Elastic constant calculation", flush=True)
+        polymlp.load_poscars(args.poscar)
+        polymlp.run_elastic_constants()
+        polymlp.write_elastic_constants(filename="polymlp_elastic.yaml")
