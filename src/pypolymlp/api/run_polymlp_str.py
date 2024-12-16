@@ -101,7 +101,7 @@ def run():
 
     args = parser.parse_args()
 
-    np.set_printoptions(legacy="1.25")
+    np.set_printoptions(legacy="1.21")
     polymlp = PolymlpStructureGenerator(verbose=True)
     polymlp.load_structures_from_files(poscars=args.poscars)
 

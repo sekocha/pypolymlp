@@ -241,3 +241,9 @@ polymlp.set_multiple_datasets_vasp(
 
 polymlp.run(verbose=True)
 ```
+
+## File IO
+- Save polynomial MLP to a file.
+```python
+polymlp.save_mlp(filename="polymlp.lammps")
+```

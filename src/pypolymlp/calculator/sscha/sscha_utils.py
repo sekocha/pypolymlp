@@ -189,72 +189,72 @@ def n_samples_setting(args, n_atom_supercell=None):
 def print_structure(cell: PolymlpStructure):
     """Print structure."""
 
-    print(" # structure ")
-    print("  - elements:     ", cell.elements)
-    print("  - axis:         ", cell.axis.T[0])
-    print("                  ", cell.axis.T[1])
-    print("                  ", cell.axis.T[2])
-    print("  - positions:    ", cell.positions.T[0])
+    print(" # structure ", flush=True)
+    print("  - elements:     ", cell.elements, flush=True)
+    print("  - axis:         ", cell.axis.T[0], flush=True)
+    print("                  ", cell.axis.T[1], flush=True)
+    print("                  ", cell.axis.T[2], flush=True)
+    print("  - positions:    ", cell.positions.T[0], flush=True)
     if cell.positions.shape[1] > 1:
         for pos in cell.positions.T[1:]:
-            print("                  ", pos)
+            print("                  ", pos, flush=True)
 
 
 def print_parameters(supercell_matrix: np.ndarray, args):
     """Print parameters in SSCHA."""
 
-    print(" # parameters")
-    print("  - supercell:    ", supercell_matrix[0])
-    print("                  ", supercell_matrix[1])
-    print("                  ", supercell_matrix[2])
-    print("  - temperatures: ", args.temperatures[0])
+    print(" # parameters", flush=True)
+    print("  - supercell:    ", supercell_matrix[0], flush=True)
+    print("                  ", supercell_matrix[1], flush=True)
+    print("                  ", supercell_matrix[2], flush=True)
+    print("  - temperatures: ", args.temperatures[0], flush=True)
     if len(args.temperatures) > 1:
         for t in args.temperatures[1:]:
-            print("                  ", t)
+            print("                  ", t, flush=True)
 
     if isinstance(args.pot, list):
         for p in args.pot:
-            print("  - Polynomial ML potential:  ", os.path.abspath(p))
+            print("  - Polynomial ML potential:  ", os.path.abspath(p), flush=True)
     else:
-        print("  - Polynomial ML potential:  ", os.path.abspath(args.pot))
+        print("  - Polynomial ML potential:  ", os.path.abspath(args.pot), flush=True)
 
-    print("  - FC tolerance:             ", args.tol)
-    print("  - max iter:                 ", args.max_iter)
-    print("  - num samples:              ", args.n_samples_init)
-    print("  - num samples (last iter.): ", args.n_samples_final)
-    print("  - q-mesh:                   ", args.mesh)
+    print("  - FC tolerance:             ", args.tol, flush=True)
+    print("  - max iter:                 ", args.max_iter, flush=True)
+    print("  - num samples:              ", args.n_samples_init, flush=True)
+    print("  - num samples (last iter.): ", args.n_samples_final, flush=True)
+    print("  - q-mesh:                   ", args.mesh, flush=True)
 
 
 def print_array1d(array, tag, fstream, indent_l=0):
     prefix = "".join([" " for n in range(indent_l)])
-    print(prefix + tag + ":", file=fstream)
+    print(prefix + tag + ":", file=fstream, flush=True)
     for i, d in enumerate(array):
-        print(prefix + " -", d, file=fstream)
+        print(prefix + " -", d, file=fstream, flush=True)
 
 
 def print_array2d(array, tag, fstream, indent_l=0):
     prefix = "".join([" " for n in range(indent_l)])
-    print(prefix + tag + ":", file=fstream)
+    print(prefix + tag + ":", file=fstream, flush=True)
     for i, d in enumerate(array):
-        print(prefix + " -", list(d), file=fstream)
+        print(prefix + " -", list(d), file=fstream, flush=True)
 
 
 def save_cell(cell: PolymlpStructure, tag="unitcell", fstream=None, filename=None):
     """Write structure to a file."""
 
-    np.set_printoptions(legacy="1.25")
+    np.set_printoptions(legacy="1.21")
     if fstream is None:
         fstream = open(filename, "w")
 
-    print(tag + ":", file=fstream)
+    print(tag + ":", file=fstream, flush=True)
     print_array2d(cell.axis.T, "axis", fstream, indent_l=2)
     print_array2d(cell.positions.T, "positions", fstream, indent_l=2)
-    print("  n_atoms:  ", list(cell.n_atoms), file=fstream)
-    print("  types:    ", list(cell.types), file=fstream)
-    print("  elements: ", list(cell.elements), file=fstream)
+    print("  n_atoms:  ", list(cell.n_atoms), file=fstream, flush=True)
+    print("  types:    ", list(cell.types), file=fstream, flush=True)
+    print("  elements: ", list(cell.elements), file=fstream, flush=True)
 
     if tag == "supercell":
-        print("  n_unitcells: ", cell.n_unitcells, file=fstream)
+        print("  n_unitcells: ", cell.n_unitcells, file=fstream, flush=True)
         print_array2d(
             cell.supercell_matrix,
             "supercell_matrix",
@@ -262,7 +262,7 @@ def save_cell(cell: PolymlpStructure, tag="unitcell", fstream=None, filename=Non
             indent_l=2,
         )
 
-    print("", file=fstream)
+    print("", file=fstream, flush=True)
 
 
 def save_sscha_yaml(
@@ -274,7 +274,7 @@ def save_sscha_yaml(
 ):
     """Write SSCHA results to a file."""
 
-    np.set_printoptions(legacy="1.25")
+    np.set_printoptions(legacy="1.21")
     properties = sscha_log[-1]
 
     f = open(filename, "w")

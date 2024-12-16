@@ -128,7 +128,7 @@ class PolymlpSSCHA:
         self._sscha_current = self._compute_sscha_properties(t=t, qmesh=qmesh)
 
         if self._verbose:
-            print("Running symfc solver.")
+            print("Running symfc solver.", flush=True)
         fc2_new = self._run_solver_fc2()
         fc2_new = fc2_new * mixing + self.fc2 * (1 - mixing)
         delta = self._convergence_score(self.fc2, fc2_new)
@@ -142,24 +142,39 @@ class PolymlpSSCHA:
 
         disp_norms = np.linalg.norm(self.ph_real.displacements, axis=1)
 
-        print("temperature:      ", "{:.1f}".format(self._sscha_current.temperature))
-        print("number of samples:", disp_norms.shape[0])
-        print("convergence score:      ", "{:.6f}".format(self._sscha_current.delta))
+        print(
+            "temperature:      ",
+            "{:.1f}".format(self._sscha_current.temperature),
+            flush=True,
+        )
+        print("number of samples:", disp_norms.shape[0], flush=True)
+        print(
+            "convergence score:      ",
+            "{:.6f}".format(self._sscha_current.delta),
+            flush=True,
+        )
         print("displacements:")
-        print("  average disp. (Ang.): ", "{:.6f}".format(np.mean(disp_norms)))
-        print("  max disp. (Ang.):     ", "{:.6f}".format(np.max(disp_norms)))
-        print("thermodynamic_properties:")
+        print(
+            "  average disp. (Ang.): ", "{:.6f}".format(np.mean(disp_norms)), flush=True
+        )
+        print(
+            "  max disp. (Ang.):     ", "{:.6f}".format(np.max(disp_norms)), flush=True
+        )
+        print("thermodynamic_properties:", flush=True)
         print(
             "  free energy (harmonic, kJ/mol)  :",
             "{:.6f}".format(self._sscha_current.harmonic_free_energy),
+            flush=True,
         )
         print(
             "  free energy (anharmonic, kJ/mol):",
             "{:.6f}".format(self._sscha_current.anharmonic_free_energy),
+            flush=True,
         )
         print(
             "  free energy (sscha, kJ/mol)     :",
             "{:.6f}".format(self._sscha_current.free_energy),
+            flush=True,
         )
 
     def set_initial_force_constants(self, algorithm="harmonic", filename=None):
@@ -167,24 +182,24 @@ class PolymlpSSCHA:
 
         if algorithm == "harmonic":
             if self._verbose:
-                print("Initial FCs: Harmonic")
+                print("Initial FCs: Harmonic", flush=True)
             self.fc2 = self.ph_recip.produce_harmonic_force_constants()
         elif algorithm == "const":
             if self._verbose:
-                print("Initial FCs: Constants")
+                print("Initial FCs: Constants", flush=True)
             n_coeffs = self._symfc.basis_set[2].basis_set.shape[1]
             coeffs_fc2 = np.ones(n_coeffs) * 10
             coeffs_fc2[1::2] *= -1
             self.fc2 = self._recover_fc2(coeffs_fc2)
         elif algorithm == "random":
             if self._verbose:
-                print("Initial FCs: Random")
+                print("Initial FCs: Random", flush=True)
             n_coeffs = self._symfc.basis_set[2].basis_set.shape[1]
             coeffs_fc2 = (np.random.rand(n_coeffs) - 0.5) * 20
             self.fc2 = self._recover_fc2(coeffs_fc2)
         elif algorithm == "file":
             if self._verbose:
-                print("Initial FCs: File", filename)
+                print("Initial FCs: File", filename, flush=True)
             self.fc2 = read_fc2_from_hdf5(filename)
 
     def run(
@@ -220,7 +235,7 @@ class PolymlpSSCHA:
         n_iter, delta = 1, 1e10
         while n_iter <= max_iter and delta > tol:
             if self._verbose:
-                print("------------- Iteration :", n_iter, "-------------")
+                print("------------- Iteration :", n_iter, "-------------", flush=True)
 
             self.fc2 = self._single_iter(
                 t=t,
@@ -264,12 +279,12 @@ class PolymlpSSCHA:
 
         if self._verbose:
             freq = self._run_frequencies(qmesh=args.mesh)
-            print("-------- sscha runs finished --------")
-            print("Temperature:      ", self.properties.temperature)
-            print("Free energy:      ", self.properties.free_energy)
-            print("Convergence:      ", self.properties.converge)
-            print("Frequency (min):  ", "{:.6f}".format(np.min(freq)))
-            print("Frequency (max):  ", "{:.6f}".format(np.max(freq)))
+            print("-------- sscha runs finished --------", flush=True)
+            print("Temperature:      ", self.properties.temperature, flush=True)
+            print("Free energy:      ", self.properties.free_energy, flush=True)
+            print("Convergence:      ", self.properties.converge, flush=True)
+            print("Frequency (min):  ", "{:.6f}".format(np.min(freq)), flush=True)
+            print("Frequency (max):  ", "{:.6f}".format(np.max(freq)), flush=True)
 
     @property
     def properties(self) -> PolymlpDataSSCHA:
@@ -346,13 +361,13 @@ def run_sscha(
     sscha.set_initial_force_constants(algorithm=args.init, filename=args.init_file)
     freq = sscha._run_frequencies(qmesh=args.mesh)
     if verbose:
-        print("Frequency (min):  ", "{:.6f}".format(np.min(freq)))
-        print("Frequency (max):  ", "{:.6f}".format(np.max(freq)))
-        print("Number of FC2 basis vectors:", sscha.n_fc_basis)
+        print("Frequency (min):  ", "{:.6f}".format(np.min(freq)), flush=True)
+        print("Frequency (max):  ", "{:.6f}".format(np.max(freq)), flush=True)
+        print("Number of FC2 basis vectors:", sscha.n_fc_basis, flush=True)
 
     for temp in args.temperatures:
         if verbose:
-            print("************** Temperature:", temp, "**************")
+            print("************** Temperature:", temp, "**************", flush=True)
         sscha.run(
             t=temp,
             n_samples=args.n_samples_init,
@@ -362,7 +377,7 @@ def run_sscha(
             mixing=args.mixing,
         )
         if verbose:
-            print("Increasing number of samples.")
+            print("Increasing number of samples.", flush=True)
         sscha.run(
             t=temp,
             n_samples=args.n_samples_final,
