@@ -39,6 +39,8 @@ class Pypolymlp:
         self._mlp_model = None
         self._multiple_datasets = False
 
+        self._include_force = None
+        self._include_stress = None
         """Hybrid models are not available at this time."""
         # self.__hybrid = None
 
@@ -410,6 +412,12 @@ class Pypolymlp:
         self._train = [self._train]
         self._test = [self._test]
         self._multiple_datasets = True
+
+        if train_forces is None or test_forces is None:
+            self._include_force = False
+        if train_stresses is None or test_stresses is None:
+            self._include_stress = False
+
         return self
 
     def _set_dft_data_from_displacements(
@@ -507,6 +515,7 @@ class Pypolymlp:
         return self
 
     def get_structures_from_poscars(self, poscars: list[str]) -> list[PolymlpStructure]:
+        """Load poscar files and convert them to structure instances."""
         return parse_structures_from_poscars(poscars)
 
     @property

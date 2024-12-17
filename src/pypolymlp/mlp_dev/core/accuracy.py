@@ -213,6 +213,7 @@ class PolymlpDevAccuracy:
         pred_f1 = forces.reshape((-1, 3))
         norm_t = np.linalg.norm(true_f1, axis=1)
         norm_p = np.linalg.norm(pred_f1, axis=1)
+
         direction_t = true_f1 / norm_t[:, None]
         direction_p = pred_f1 / norm_p[:, None]
         cosine = [dt @ dp for dt, dp in zip(direction_t, direction_p)]
@@ -220,11 +221,6 @@ class PolymlpDevAccuracy:
         rmse_percent_f_norm = np.average(np.abs((norm_p - norm_t) / norm_t))
         rmse_f_direction = np.average(np.abs(cosine))
         rmse_f_direction = math.degrees(math.acos(rmse_f_direction))
-
-        # for i, (t, p) in enumerate(zip(true_f1, pred_f1)):
-        #    ist = i // 96 + 1
-        #    iatom = i % 96 + 1
-        #    print(ist, iatom, np.linalg.norm(t-p), t, p)
 
         if stress_unit == "eV":
             normalize = np.repeat(n_total_atoms, 6)

@@ -20,6 +20,7 @@ def set_data_from_structures(
     """Return DFT dataset in PolymlpDataDFT."""
 
     assert len(structures) == len(energies)
+    include_force = True if forces is not None else False
     if forces is None:
         forces = [np.zeros((3, len(st.elements))) for st in structures]
     if stresses is None:
@@ -45,7 +46,7 @@ def set_data_from_structures(
 
     total_n_atoms = np.array([sum(st.n_atoms) for st in structures])
     files = [st.name for st in structures]
-    include_force = True if forces is not None else False
+    # include_force = True if forces is not None else False
 
     if element_order is None:
         """This part must be tested. In general, element_order is not None."""
