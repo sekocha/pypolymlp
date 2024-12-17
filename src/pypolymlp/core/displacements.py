@@ -66,6 +66,8 @@ def set_dft_data(
         elements=elements,
         include_force=True,
         weight=1.0,
+        exist_force=True,
+        exist_stress=False,
     )
     return dft
 

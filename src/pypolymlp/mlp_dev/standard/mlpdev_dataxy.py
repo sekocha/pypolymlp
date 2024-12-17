@@ -177,12 +177,13 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
         else:
             self._scales = scales
 
-        self._scales[np.abs(self._scales) < 1e-30] = 1.0
+        self._scales[np.abs(self._scales) < 1e-20] = 1.0
 
         data_xy.xtx /= self._scales[:, np.newaxis]
         data_xy.xtx /= self._scales[np.newaxis, :]
         data_xy.xty /= self._scales
         data_xy.scales = self._scales
+
         return data_xy
 
     def _sum_array(self, array1, array2):

@@ -235,6 +235,8 @@ class PolymlpDataDFT:
     include_force: bool = True
     weight: float = 1.0
     name: str = "dataset"
+    exist_force: bool = True
+    exist_stress: bool = True
 
     def __post_init__(self):
         self.check_errors()
