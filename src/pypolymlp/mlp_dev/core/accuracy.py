@@ -40,13 +40,20 @@ class PolymlpDevAccuracy:
             "(meV/atom)",
             flush=True,
         )
-        print("  rmse_force: ", "{0:13.5f}".format(error["force"]), "(eV/ang)")
-        print(
-            "  rmse_stress:",
-            "{0:13.5f}".format(error["stress"] * 1000),
-            "(meV/atom)",
-            flush=True,
-        )
+        if error["force"] is not None:
+            print(
+                "  rmse_force: ",
+                "{0:13.5f}".format(error["force"]),
+                "(eV/ang)",
+                flush=True,
+            )
+        if error["stress"] is not None:
+            print(
+                "  rmse_stress:",
+                "{0:13.5f}".format(error["stress"] * 1000),
+                "(meV/atom)",
+                flush=True,
+            )
         return self
 
     def write_error_yaml(self, filename="polymlp_error.yaml"):
@@ -202,25 +209,30 @@ class PolymlpDevAccuracy:
                 return_values=True,
             )
 
-        if log_force == False:
-            rmse_f = self._compute_rmse(dft.forces, forces)
+        if not dft.exist_force:
+            rmse_f = None
+            rmse_percent_f_norm = None
+            rmse_f_direction = None
         else:
-            rmse_f, true_f, pred_f = self._compute_rmse(
-                dft.forces, forces, return_values=True
-            )
+            if log_force == False:
+                rmse_f = self._compute_rmse(dft.forces, forces)
+            else:
+                rmse_f, true_f, pred_f = self._compute_rmse(
+                    dft.forces, forces, return_values=True
+                )
 
-        true_f1 = dft.forces.reshape((-1, 3))
-        pred_f1 = forces.reshape((-1, 3))
-        norm_t = np.linalg.norm(true_f1, axis=1)
-        norm_p = np.linalg.norm(pred_f1, axis=1)
+            true_f1 = dft.forces.reshape((-1, 3))
+            pred_f1 = forces.reshape((-1, 3))
+            norm_t = np.linalg.norm(true_f1, axis=1)
+            norm_p = np.linalg.norm(pred_f1, axis=1)
 
-        direction_t = true_f1 / norm_t[:, None]
-        direction_p = pred_f1 / norm_p[:, None]
-        cosine = [dt @ dp for dt, dp in zip(direction_t, direction_p)]
+            direction_t = true_f1 / norm_t[:, None]
+            direction_p = pred_f1 / norm_p[:, None]
+            cosine = [dt @ dp for dt, dp in zip(direction_t, direction_p)]
 
-        rmse_percent_f_norm = np.average(np.abs((norm_p - norm_t) / norm_t))
-        rmse_f_direction = np.average(np.abs(cosine))
-        rmse_f_direction = math.degrees(math.acos(rmse_f_direction))
+            rmse_percent_f_norm = np.average(np.abs((norm_p - norm_t) / norm_t))
+            rmse_f_direction = np.average(np.abs(cosine))
+            rmse_f_direction = math.degrees(math.acos(rmse_f_direction))
 
         if stress_unit == "eV":
             normalize = np.repeat(n_total_atoms, 6)
@@ -229,15 +241,18 @@ class PolymlpDevAccuracy:
             volumes = [st.volume for st in strs]
             normalize = np.repeat(volumes, 6) / eV_to_GPa
 
-        if log_stress == False:
-            rmse_s = self._compute_rmse(dft.stresses, stresses, normalize=normalize)
+        if not dft.exist_stress:
+            rmse_s = None
         else:
-            rmse_s, true_s, pred_s = self._compute_rmse(
-                dft.stresses,
-                stresses,
-                normalize=normalize,
-                return_values=True,
-            )
+            if log_stress == False:
+                rmse_s = self._compute_rmse(dft.stresses, stresses, normalize=normalize)
+            else:
+                rmse_s, true_s, pred_s = self._compute_rmse(
+                    dft.stresses,
+                    stresses,
+                    normalize=normalize,
+                    return_values=True,
+                )
 
         error_dict = {
             "energy": rmse_e,

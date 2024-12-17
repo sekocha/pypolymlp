@@ -21,6 +21,9 @@ def set_data_from_structures(
 
     assert len(structures) == len(energies)
     include_force = True if forces is not None else False
+    exist_force = True if forces is not None else False
+    exist_stress = True if stresses is not None else False
+
     if forces is None:
         forces = [np.zeros((3, len(st.elements))) for st in structures]
     if stresses is None:
@@ -66,6 +69,8 @@ def set_data_from_structures(
         files=files,
         elements=elements,
         include_force=include_force,
+        exist_force=exist_force,
+        exist_stress=exist_stress,
     )
     return dft
 
