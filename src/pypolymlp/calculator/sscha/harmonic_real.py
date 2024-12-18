@@ -139,7 +139,7 @@ class HarmonicReal:
         e_total = np.sum(e_mode * occ) / self.supercell.n_unitcells
         e_total_kJmol = e_total * const_avogadro / 1000
 
-        # free energy
+        # Calculate free energy
         f_total = np.sum(np.log(2 * np.sinh(beta_h_freq))) / beta
         f_total /= self.supercell.n_unitcells
         f_total_kJmol = f_total * const_avogadro / 1000
@@ -153,24 +153,27 @@ class HarmonicReal:
         freq = self._hide_imaginary_modes(self._mesh_dict["frequencies"])
         nonzero = np.isclose(freq, 0.0) == False
 
-        beta = 1.0 / (const_bortzmann * t)
+        beta = np.inf if np.isclose(t, 0.0) else 1.0 / (const_bortzmann * t)
         const_exp = 0.5 * beta * const_planck
         beta_h_freq = const_exp * freq[nonzero]
 
+        # Calculate occupancies.
         occ = np.zeros(freq.shape)
         occ[nonzero] = 0.5 * np.reciprocal(np.tanh(beta_h_freq))
 
-        eigvecs = self._mesh_dict["eigenvectors"]
-        # arbitrary setting for branches with low and imaginary frequencies.
+        # Calculate amplitudes.
+        # Arbitrary setting for branches with low and imaginary frequencies.
         amplitudes = np.ones(freq.shape) * 0.01
-
         rec_freq = np.array([1 / f for f in freq[nonzero]])
         amplitudes[nonzero] = const_amplitude * occ[nonzero] * rec_freq
 
+        # Generate atomic displacements in normal coordinates.
         cov = np.diag(amplitudes)
         mean = np.zeros(cov.shape[0])
         disp_normal_coords = np.random.multivariate_normal(mean, cov, n_samples)
 
+        # Generate atomic displacements.
+        eigvecs = self._mesh_dict["eigenvectors"]
         masses_sqrt = np.sqrt(np.repeat(self.supercell.masses, 3))
         dot1 = eigvecs @ disp_normal_coords.T
         disps = (np.diag(np.reciprocal(masses_sqrt)) @ dot1).T
