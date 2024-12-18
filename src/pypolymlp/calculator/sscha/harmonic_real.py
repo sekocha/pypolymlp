@@ -45,7 +45,6 @@ class HarmonicReal:
         n_unitcells: Number of unitcells in supercell
         fc2: Second-order force constants.
         """
-
         self.supercell = supercell
         self._n_atom = len(supercell.elements)
         self.fc2 = fc2
@@ -97,7 +96,7 @@ class HarmonicReal:
         return np.array(energies), np.array(forces)
 
     def _solve_eigen_equation(self) -> dict:
-
+        """Solve eigenvalue equation for dynamical matrix."""
         fc2 = self.fc2.transpose((0, 2, 1, 3))
         size = fc2.shape[0] * fc2.shape[1]
         fc2 = np.reshape(fc2, (size, size))
@@ -108,8 +107,8 @@ class HarmonicReal:
         square_w, eigvecs = np.linalg.eigh(dyn)
         square_w *= const_sq_angfreq_to_sq_freq_thz  # in THz
 
-        negative_square_w = square_w < -1e-8
-        positive_square_w = square_w > 1e-8
+        negative_square_w = square_w < 0.0
+        positive_square_w = square_w >= 0.0
         freq = np.zeros(square_w.shape)
         freq[positive_square_w] = np.sqrt(square_w[positive_square_w])
         freq[negative_square_w] = -np.sqrt(-square_w[negative_square_w])
@@ -118,13 +117,14 @@ class HarmonicReal:
         self._mesh_dict["eigenvectors"] = eigvecs
         return self._mesh_dict
 
-    def _hide_imaginary_modes(self, freq: np.ndarray):
+    def _hide_imaginary_modes(self, freq: np.ndarray, freq_threshold: float = 0.1):
+        """Mask branches with imaginary frequencies."""
         freq_rev = np.array(freq)
-        freq_rev[np.where(freq_rev < 0)] = 0.0
+        freq_rev[np.where(freq_rev < freq_threshold)] = 0.0
         return freq_rev
 
-    def _compute_properties(self, t=1000):
-
+    def _compute_properties(self, t: float = 1000):
+        """Compute properties."""
         freq = self._hide_imaginary_modes(self._mesh_dict["frequencies"])
         nonzero = np.isclose(freq, 0.0) == False
 
@@ -148,8 +148,8 @@ class HarmonicReal:
         self._tp_dict["free_energy"] = f_total_kJmol
         return self._tp_dict
 
-    def _get_distribution(self, t=1000, n_samples=100):
-
+    def _get_distribution(self, t: float = 1000, n_samples: int = 100):
+        """Calculate atomic real-space distribution from density matrix."""
         freq = self._hide_imaginary_modes(self._mesh_dict["frequencies"])
         nonzero = np.isclose(freq, 0.0) == False
 
@@ -161,7 +161,7 @@ class HarmonicReal:
         occ[nonzero] = 0.5 * np.reciprocal(np.tanh(beta_h_freq))
 
         eigvecs = self._mesh_dict["eigenvectors"]
-        """ arbitrary setting"""
+        # arbitrary setting for branches with low and imaginary frequencies.
         amplitudes = np.ones(freq.shape) * 0.01
 
         rec_freq = np.array([1 / f for f in freq[nonzero]])
@@ -179,7 +179,6 @@ class HarmonicReal:
 
     def _harmonic_potential(self, disp):
         """Calculate harmonic potentials of a supercell."""
-
         N3 = self.fc2.shape[0] * self.fc2.shape[2]
         fc2 = np.transpose(self.fc2, (0, 2, 1, 3))
         fc2 = np.reshape(fc2, (N3, N3))
@@ -202,7 +201,7 @@ class HarmonicReal:
         return pot_harmonic
 
     def _eliminate_outliers(self, tol_negative=-10):
-
+        """Eliminate outliers."""
         energies = np.array(self._energies_full)
         ids1 = np.where(energies > tol_negative)[0]
 
