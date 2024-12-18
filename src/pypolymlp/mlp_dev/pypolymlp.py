@@ -1,7 +1,7 @@
 """Pypolymlp API."""
 
 import itertools
-from typing import Literal, Optional
+from typing import Literal, Optional, Union
 
 import numpy as np
 
@@ -32,17 +32,23 @@ class Pypolymlp:
 
     def __init__(self):
         """Init method."""
+        self._polymlp_in = PolymlpDevData()
         self._params = None
         self._train = None
         self._test = None
         self._reg = None
         self._mlp_model = None
+        self._acc = None
         self._multiple_datasets = False
 
-        self._include_force = None
-        self._include_stress = None
         """Hybrid models are not available at this time."""
         # self.__hybrid = None
+
+    def load_parameter_file(self, file_params: str, verbose: bool = False):
+        """Load input parameter file and set parameters."""
+        self._polymlp_in.parse_infiles(file_params, verbose=True)
+        self._params = self._polymlp_in.params
+        return self
 
     def set_params(
         self,
@@ -98,69 +104,68 @@ class Pypolymlp:
         """
 
         if params is not None:
-            self._params = params
+            self._params = self._polymlp_in.params = params
+            return self
+
+        n_type = len(elements)
+        assert len(gaussian_params1) == len(gaussian_params2) == 3
+        params1 = self._sequence(gaussian_params1)
+        params2 = self._sequence(gaussian_params2)
+        pair_params = list(itertools.product(params1, params2))
+        pair_params.append([0.0, 0.0])
+
+        if atomic_energy is None:
+            atomic_energy = tuple([0.0 for i in range(n_type)])
         else:
-            n_type = len(elements)
+            assert len(atomic_energy) == n_type
 
-            assert len(gaussian_params1) == len(gaussian_params2) == 3
-            params1 = self._sequence(gaussian_params1)
-            params2 = self._sequence(gaussian_params2)
-            pair_params = list(itertools.product(params1, params2))
-            pair_params.append([0.0, 0.0])
+        element_order = elements if rearrange_by_elements else None
 
-            if atomic_energy is None:
-                atomic_energy = tuple([0.0 for i in range(n_type)])
-            else:
-                assert len(atomic_energy) == n_type
-
-            element_order = elements if rearrange_by_elements else None
-
-            if feature_type == "gtinv":
-                gtinv = PolymlpGtinvParams(
-                    order=gtinv_order,
-                    max_l=gtinv_maxl,
-                    n_type=n_type,
-                    version=gtinv_version,
-                )
-                max_l = max(gtinv_maxl)
-            else:
-                gtinv = PolymlpGtinvParams(
-                    order=0,
-                    max_l=[],
-                    n_type=n_type,
-                )
-                max_l = 0
-
-            pair_params_cond, pair_cond = self._set_pair_params_conditional(
-                pair_params, elements, distance
-            )
-
-            model = PolymlpModelParams(
-                cutoff=cutoff,
-                model_type=model_type,
-                max_p=max_p,
-                max_l=max_l,
-                feature_type=feature_type,
-                gtinv=gtinv,
-                pair_type="gaussian",
-                pair_conditional=pair_cond,
-                pair_params=pair_params,
-                pair_params_conditional=pair_params_cond,
-            )
-
-            self._params = PolymlpParams(
+        if feature_type == "gtinv":
+            gtinv = PolymlpGtinvParams(
+                order=gtinv_order,
+                max_l=gtinv_maxl,
                 n_type=n_type,
-                elements=elements,
-                model=model,
-                atomic_energy=atomic_energy,
-                regression_alpha=np.linspace(
-                    reg_alpha_params[0], reg_alpha_params[1], reg_alpha_params[2]
-                ),
-                include_force=include_force,
-                include_stress=include_stress,
-                element_order=element_order,
+                version=gtinv_version,
             )
+            max_l = max(gtinv_maxl)
+        else:
+            gtinv = PolymlpGtinvParams(
+                order=0,
+                max_l=[],
+                n_type=n_type,
+            )
+            max_l = 0
 
+        pair_params_cond, pair_cond = self._set_pair_params_conditional(
+            pair_params, elements, distance
+        )
+
+        model = PolymlpModelParams(
+            cutoff=cutoff,
+            model_type=model_type,
+            max_p=max_p,
+            max_l=max_l,
+            feature_type=feature_type,
+            gtinv=gtinv,
+            pair_type="gaussian",
+            pair_conditional=pair_cond,
+            pair_params=pair_params,
+            pair_params_conditional=pair_params_cond,
+        )
+        self._params = PolymlpParams(
+            n_type=n_type,
+            elements=elements,
+            model=model,
+            atomic_energy=atomic_energy,
+            regression_alpha=np.linspace(
+                reg_alpha_params[0], reg_alpha_params[1], reg_alpha_params[2]
+            ),
+            include_force=include_force,
+            include_stress=include_stress,
+            element_order=element_order,
+        )
+        self._polymlp_in.params = self._params
         return self
 
     def _set_pair_params_conditional(
@@ -197,6 +202,22 @@ class Pypolymlp:
                 pair_params_indices[key] = sorted(set(match))
         return pair_params_indices, cond
 
+    def _is_params_none(self):
+        """Check whether params instance exists."""
+        if self._params is None:
+            raise RuntimeError(
+                "Set parameters using set_params() or load_parameter_file()",
+                "before using set_datasets.",
+            )
+        return self
+
+    def parse_datasets(self):
+        """Load datasets provided in params instance."""
+        self._polymlp_in.parse_datasets()
+        self._train = self._polymlp_in.train
+        self._test = self._polymlp_in.test
+        return self
+
     def set_datasets_vasp(self, train_vaspruns: list[str], test_vaspruns: list[str]):
         """Set single DFT dataset in vasp format.
 
@@ -205,11 +226,7 @@ class Pypolymlp:
         train_vaspruns: vasprun files for training dataset (list)
         test_vaspruns: vasprun files for test dataset (list)
         """
-        if self._params is None:
-            raise KeyError(
-                "Set parameters using set_params() " "before using set_datasets."
-            )
-
+        self._is_params_none()
         self._params.dft_train = dict()
         self._params.dft_test = dict()
         self._params.dft_train["train_single"] = {
@@ -223,6 +240,7 @@ class Pypolymlp:
             "weight": 1.0,
         }
         self._multiple_datasets = True
+        self.parse_datasets()
         return self
 
     def set_multiple_datasets_vasp(
@@ -237,11 +255,7 @@ class Pypolymlp:
         train_vaspruns: list of list containing vasprun files (training)
         test_vaspruns: list of list containing vasprun files (test)
         """
-        if self._params is None:
-            raise KeyError(
-                "Set parameters using set_params() " "before using set_datasets."
-            )
-
+        self._is_params_none()
         self._params.dataset_type = "vasp"
         self._params.dft_train = dict()
         self._params.dft_test = dict()
@@ -258,6 +272,7 @@ class Pypolymlp:
                 "weight": 1.0,
             }
         self._multiple_datasets = True
+        self.parse_datasets()
         return self
 
     def set_datasets_phono3py(
@@ -270,11 +285,7 @@ class Pypolymlp:
         test_ids: tuple[int] = None,
     ):
         """Set single DFT dataset in phono3py format."""
-        if self._params is None:
-            raise KeyError(
-                "Set parameters using set_params() " "before using set_datasets."
-            )
-
+        self._is_params_none()
         self._params.dataset_type = "phono3py"
         self._params.dft_train = {
             "phono3py_yaml": train_yaml,
@@ -286,6 +297,7 @@ class Pypolymlp:
             "energy": test_energy_dat,
             "indices": test_ids,
         }
+        self.parse_datasets()
         return self
 
     def set_datasets_displacements(
@@ -310,11 +322,7 @@ class Pypolymlp:
         test_energies: Energies (test data), shape=(n_test).
         structure_without_disp: Structure without displacements, PolymlpStructure
         """
-        if self._params is None:
-            raise KeyError(
-                "Set parameters using set_params() "
-                "before using set_datasets_displacements."
-            )
+        self._is_params_none()
         assert train_disps.shape[1] == 3
         assert test_disps.shape[1] == 3
         assert train_disps.shape[0] == train_energies.shape[0]
@@ -336,11 +344,7 @@ class Pypolymlp:
             structure_without_disp,
             element_order=self._params.element_order,
         )
-        self._train.name = "train_single"
-        self._test.name = "test_single"
-        self._train = [self._train]
-        self._test = [self._test]
-        self._multiple_datasets = True
+        self._post_datasets_from_api()
         return self
 
     def set_datasets_structures(
@@ -367,11 +371,7 @@ class Pypolymlp:
         train_stresses: Stress tensors (training), shape=(n_train, 3, 3), in eV/cell.
         test_stresses: Stress tensors (test data), shape=(n_test, 3, 3) in eV/cell.
         """
-        if self._params is None:
-            raise KeyError(
-                "Set parameters using set_params() "
-                "before using set_datasets_displacements."
-            )
+        self._is_params_none()
         assert train_structures is not None
         assert test_structures is not None
         assert train_energies is not None
@@ -407,17 +407,18 @@ class Pypolymlp:
             test_stresses,
             element_order=self._params.element_order,
         )
+        self._post_datasets_from_api()
+        return self
+
+    def _post_datasets_from_api(self):
+        """Set datasets as a post process."""
         self._train.name = "train_single"
         self._test.name = "test_single"
         self._train = [self._train]
         self._test = [self._test]
+        self._polymlp_in.train = self._train
+        self._polymlp_in.test = self._test
         self._multiple_datasets = True
-
-        if train_forces is None or test_forces is None:
-            self._include_force = False
-        if train_stresses is None or test_stresses is None:
-            self._include_stress = False
-
         return self
 
     def _set_dft_data_from_displacements(
@@ -428,7 +429,6 @@ class Pypolymlp:
         structure_without_disp: PolymlpStructure,
         element_order=None,
     ):
-
         positions_all = convert_disps_to_positions(
             disps,
             structure_without_disp.axis,
@@ -446,51 +446,39 @@ class Pypolymlp:
     def _sequence(self, params):
         return np.linspace(float(params[0]), float(params[1]), int(params[2]))
 
-    def run(
+    def fit(
         self,
-        file_params=None,
-        sequential=None,
-        batch_size=None,
-        path_output="./",
-        verbose=False,
-        output_files=False,
-    ):
-        """Run linear ridge regression to estimate MLP coefficients."""
+        sequential: bool = True,
+        batch_size: Optional[int] = None,
+        verbose: bool = False,
+    ) -> Union[PolymlpDevDataXY, PolymlpDevDataXYSequential]:
+        """Estimate MLP coefficients, compute features, and compute X.T @ X.
 
-        polymlp_in = PolymlpDevData()
-        if file_params is not None:
-            polymlp_in.parse_infiles(file_params, verbose=True)
-            self._params = polymlp_in.params
-        else:
-            polymlp_in.params = self._params
+        Parameters
+        ----------
+        sequential: Use sequential regression to save memory allocation.
+                    Default is True.
+        batch_size: Batch size for sequential regression.
+        """
+        if self._train is None or self._test is None:
+            raise RuntimeError("Set input parameters and datasets.")
 
-        if self._train is None:
-            polymlp_in.parse_datasets()
-        else:
-            polymlp_in.train = self._train
-            polymlp_in.test = self._test
-
-        if output_files:
-            polymlp_in.write_polymlp_params_yaml(
-                filename=path_output + "/polymlp_params.yaml"
-            )
-        n_features = polymlp_in.n_features
-
-        if sequential is None:
-            sequential = True if polymlp_in.is_multiple_datasets else False
-
+        # if sequential is None:
+        #     sequential = True if polymlp_in.is_multiple_datasets else False
         if not sequential:
-            polymlp = PolymlpDevDataXY(polymlp_in, verbose=verbose).run()
+            polymlp = PolymlpDevDataXY(self._polymlp_in, verbose=verbose).run()
             if verbose:
                 polymlp.print_data_shape()
         else:
             if batch_size is None:
+                n_features = self._polymlp_in.n_features
                 batch_size = max((10000000 // n_features), 128)
             if verbose:
                 print("Batch size:", batch_size, flush=True)
-            polymlp = PolymlpDevDataXYSequential(polymlp_in, verbose=verbose).run_train(
-                batch_size=batch_size
-            )
+            polymlp = PolymlpDevDataXYSequential(
+                self._polymlp_in,
+                verbose=verbose,
+            ).run_train(batch_size=batch_size)
 
         self._reg = Regression(polymlp).fit(
             seq=sequential,
@@ -498,30 +486,75 @@ class Pypolymlp:
             batch_size=batch_size,
         )
         self._mlp_model = self._reg.best_model
-        if output_files:
-            self._reg.save_mlp_lammps(filename=path_output + "/polymlp.lammps")
+        return self
 
-        acc = PolymlpDevAccuracy(self._reg)
-        acc.compute_error(
-            path_output=path_output,
+    def estimate_error(
+        self,
+        log_energy: bool = False,
+        file_path: str = "./",
+        verbose: bool = False,
+    ):
+        """Estimate prediction errors."""
+        if self._reg is None:
+            raise RuntimeError("Regression must be performed before estimating errors.")
+
+        self._acc = PolymlpDevAccuracy(self._reg)
+        self._acc.compute_error(
+            log_energy=log_energy,
+            path_output=file_path,
             verbose=verbose,
-            log_energy=output_files,
         )
-        if output_files:
-            acc.write_error_yaml(filename=path_output + "/polymlp_error.yaml")
+        self._mlp_model.error_train = self._acc.error_train_dict
+        self._mlp_model.error_test = self._acc.error_test_dict
+        return self
 
-        self._mlp_model.error_train = acc.error_train_dict
-        self._mlp_model.error_test = acc.error_test_dict
+    def run(
+        self,
+        sequential: bool = True,
+        batch_size: Optional[int] = None,
+        verbose: bool = False,
+    ):
+        """Estimate MLP coefficients and prediction errors.
+
+        Parameters
+        ----------
+        sequential: Use sequential regression to save memory allocation.
+                    Default is True.
+        batch_size: Batch size for sequential regression.
+        """
+        self._polymlp = self.fit(
+            sequential=sequential,
+            batch_size=batch_size,
+            verbose=verbose,
+        )
+        self.estimate_error(verbose=verbose)
         return self
 
     def get_structures_from_poscars(self, poscars: list[str]) -> list[PolymlpStructure]:
         """Load poscar files and convert them to structure instances."""
         return parse_structures_from_poscars(poscars)
 
-    @property
-    def parameters(self) -> PolymlpParams:
-        """Return parameters of developed polymlp."""
-        return self._params
+    def save_mlp(self, filename="polymlp.lammps"):
+        """Save polynomial MLP as file."""
+        self._reg.save_mlp_lammps(filename=filename)
+
+    def load_mlp(self, filename="polymlp.lammps"):
+        """Load polynomial MLP from file."""
+        self._params, mlp_dict = load_mlp_lammps(filename)
+        self._mlp_model = PolymlpDataMLP(
+            coeffs=mlp_dict["coeffs"],
+            scales=mlp_dict["scales"],
+        )
+
+    def save_parameters(self, filename="polymlp_params.yaml"):
+        """Save MLP parameters as file."""
+        np.set_printoptions(legacy="1.21")
+        self._polymlp_in.write_polymlp_params_yaml(filename=filename)
+
+    def save_errors(self, filename="polymlp_error.yaml"):
+        """Save prediction errors as file."""
+        np.set_printoptions(legacy="1.21")
+        self._acc.write_error_yaml(filename=filename)
 
     @property
     def summary(self):
@@ -540,21 +573,14 @@ class Pypolymlp:
         return self._mlp_model
 
     @property
+    def parameters(self) -> PolymlpParams:
+        """Return parameters of developed polymlp."""
+        return self._params
+
+    @property
     def coeffs(self):
         """Return scaled coefficients.
 
         It is appropriate to use the scaled coefficient to calculate properties.
         """
         return self._mlp_model.coeffs / self._mlp_model.scales
-
-    def save_mlp(self, filename="polymlp.lammps"):
-        """Save polynomial MLP as file."""
-        self._reg.save_mlp_lammps(filename=filename)
-
-    def load_mlp(self, filename="polymlp.lammps"):
-        """Load polynomial MLP from file."""
-        self._params, mlp_dict = load_mlp_lammps(filename)
-        self._mlp_model = PolymlpDataMLP(
-            coeffs=mlp_dict["coeffs"],
-            scales=mlp_dict["scales"],
-        )

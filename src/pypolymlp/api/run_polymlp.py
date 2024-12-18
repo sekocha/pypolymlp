@@ -1,16 +1,12 @@
-#!/usr/bin/env python
+"""Command lines for developing polynomial MLP from file."""
+
 import argparse
 import signal
 import time
 
-from pypolymlp.mlp_dev.core.accuracy import PolymlpDevAccuracy
-from pypolymlp.mlp_dev.core.mlpdev_data import PolymlpDevData
-from pypolymlp.mlp_dev.standard.learning_curve import learning_curve
-from pypolymlp.mlp_dev.standard.mlpdev_dataxy import (
-    PolymlpDevDataXY,
-    PolymlpDevDataXYSequential,
-)
-from pypolymlp.mlp_dev.standard.regression import Regression
+from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
+
+# from pypolymlp.mlp_dev.standard.learning_curve import learning_curve
 
 
 def run():
@@ -44,65 +40,47 @@ def run():
     args = parser.parse_args()
 
     verbose = True
-    polymlp_in = PolymlpDevData()
-    polymlp_in.parse_infiles(args.infile, verbose=verbose)
-    polymlp_in.parse_datasets()
-    polymlp_in.write_polymlp_params_yaml(filename="polymlp_params.yaml")
-    n_features = polymlp_in.n_features
+    polymlp = Pypolymlp()
+    polymlp.load_parameter_file(args.infile)
+    polymlp.parse_datasets()
+    polymlp.save_parameters(filename="polymlp_params.yaml")
 
     if args.learning_curve:
-        t1 = time.time()
-        if len(polymlp_in.train_dict) == 1:
-            args.no_sequential = True
-            polymlp = PolymlpDevDataXY(polymlp_in).run()
-            learning_curve(polymlp)
-        else:
-            raise ValueError(
-                "A single dataset is required " "for learning curve option"
-            )
-        polymlp.print_data_shape()
-        t2 = time.time()
+        pass
     else:
-        batch_size = None
-        if not args.no_sequential:
-            if args.batch_size is None:
-                batch_size = max((10000000 // n_features), 128)
-            else:
-                batch_size = args.batch_size
-            if verbose:
-                print("Batch size:", batch_size, flush=True)
-
         t1 = time.time()
-        if args.no_sequential:
-            polymlp = PolymlpDevDataXY(polymlp_in, verbose=verbose).run()
-            if verbose:
-                polymlp.print_data_shape()
-        else:
-            polymlp = PolymlpDevDataXYSequential(polymlp_in, verbose=verbose).run_train(
-                batch_size=batch_size
-            )
+        polymlp.fit(
+            sequential=not args.no_sequential,
+            batch_size=args.batch_size,
+            verbose=verbose,
+        )
         t2 = time.time()
-
-    reg = Regression(polymlp).fit(
-        seq=not args.no_sequential,
-        clear_data=True,
-        batch_size=batch_size,
-    )
-    reg.save_mlp_lammps(filename="polymlp.lammps")
-    t3 = time.time()
 
     if verbose:
-        mlp = reg.best_model
+        mlp = polymlp.summary
         print("  Regression: best model", flush=True)
         print("    alpha: ", mlp.alpha, flush=True)
 
-    acc = PolymlpDevAccuracy(reg)
-    acc.compute_error()
-    acc.write_error_yaml(filename="polymlp_error.yaml")
-    t4 = time.time()
+    polymlp.save_mlp(filename="polymlp.lammps")
+    t2 = time.time()
+    polymlp.estimate_error(log_energy=True, verbose=verbose)
+    t3 = time.time()
+    polymlp.save_errors(filename="polymlp_error.yaml")
 
     if verbose:
-        print("  elapsed_time:", flush=True)
-        print("    features:          ", "{:.3f}".format(t2 - t1), "(s)", flush=True)
-        print("    regression:        ", "{:.3f}".format(t3 - t2), "(s)", flush=True)
-        print("    error:             ", "{:.3f}".format(t4 - t3), "(s)", flush=True)
+        print("elapsed_time:", flush=True)
+        print("  features, fit:      ", "{:.3f}".format(t2 - t1), "(s)", flush=True)
+        print("  error:              ", "{:.3f}".format(t3 - t2), "(s)", flush=True)
+
+    # if args.learning_curve:
+    #     t1 = time.time()
+    #     if len(polymlp_in.train_dict) == 1:
+    #         args.no_sequential = True
+    #         polymlp = PolymlpDevDataXY(polymlp_in).run()
+    #         learning_curve(polymlp)
+    #     else:
+    #         raise ValueError(
+    #             "A single dataset is required " "for learning curve option"
+    #         )
+    #     polymlp.print_data_shape()
+    #     t2 = time.time()
