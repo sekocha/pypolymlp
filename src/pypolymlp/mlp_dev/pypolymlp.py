@@ -12,11 +12,9 @@ from pypolymlp.core.data_format import (
     PolymlpParams,
     PolymlpStructure,
 )
-from pypolymlp.core.displacements import convert_disps_to_positions, set_dft_data
-from pypolymlp.core.interface_vasp import (
-    parse_structures_from_poscars,
-    set_data_from_structures,
-)
+from pypolymlp.core.displacements import get_structures_from_displacements
+from pypolymlp.core.interface_datasets import set_dataset_from_structures
+from pypolymlp.core.interface_vasp import parse_structures_from_poscars
 from pypolymlp.core.io_polymlp import load_mlp_lammps
 from pypolymlp.mlp_dev.core.accuracy import PolymlpDevAccuracy
 from pypolymlp.mlp_dev.core.mlpdev_data import PolymlpDevData
@@ -393,14 +391,14 @@ class Pypolymlp:
             assert test_stresses[0].shape[0] == 3
             assert test_stresses[0].shape[1] == 3
 
-        self._train = set_data_from_structures(
+        self._train = set_dataset_from_structures(
             train_structures,
             train_energies,
             train_forces,
             train_stresses,
             element_order=self._params.element_order,
         )
-        self._test = set_data_from_structures(
+        self._test = set_dataset_from_structures(
             test_structures,
             test_energies,
             test_forces,
@@ -429,16 +427,12 @@ class Pypolymlp:
         structure_without_disp: PolymlpStructure,
         element_order=None,
     ):
-        positions_all = convert_disps_to_positions(
-            disps,
-            structure_without_disp.axis,
-            structure_without_disp.positions,
-        )
-        dft = set_dft_data(
-            forces,
+        structures = get_structures_from_displacements(disps, structure_without_disp)
+        dft = set_dataset_from_structures(
+            structures,
             energies,
-            positions_all,
-            structure_without_disp,
+            forces=forces,
+            stresses=None,
             element_order=element_order,
         )
         return dft

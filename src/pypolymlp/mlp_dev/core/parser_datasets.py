@@ -1,7 +1,7 @@
 """Class of parsing DFT datasets."""
 
 from pypolymlp.core.data_format import PolymlpDataDFT, PolymlpParams
-from pypolymlp.core.interface_vasp import parse_vaspruns
+from pypolymlp.core.interface_vasp import set_dataset_from_vaspruns
 
 
 class ParserDatasets:
@@ -35,11 +35,11 @@ class ParserDatasets:
         self._test = [self._test]
 
     def _parse_vasp_single(self):
-        self._train = parse_vaspruns(
+        self._train = set_dataset_from_vaspruns(
             self._params.dft_train,
             element_order=self._params.element_order,
         )
-        self._test = parse_vaspruns(
+        self._test = set_dataset_from_vaspruns(
             self._params.dft_test,
             element_order=self._params.element_order,
         )
@@ -50,7 +50,10 @@ class ParserDatasets:
         element_order = self._params.element_order
         self._train = []
         for name, dict1 in self._params.dft_train.items():
-            dft = parse_vaspruns(dict1["vaspruns"], element_order=element_order)
+            dft = set_dataset_from_vaspruns(
+                dict1["vaspruns"],
+                element_order=element_order,
+            )
             dft.apply_atomic_energy(self._params.atomic_energy)
             dft.name = name
             dft.include_force = dict1["include_force"]
@@ -59,7 +62,10 @@ class ParserDatasets:
 
         self._test = []
         for name, dict1 in self._params.dft_test.items():
-            dft = parse_vaspruns(dict1["vaspruns"], element_order=element_order)
+            dft = set_dataset_from_vaspruns(
+                dict1["vaspruns"],
+                element_order=element_order,
+            )
             dft.apply_atomic_energy(self._params.atomic_energy)
             dft.name = name
             dft.include_force = dict1["include_force"]

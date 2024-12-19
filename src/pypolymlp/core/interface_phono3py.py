@@ -9,8 +9,8 @@ from pypolymlp.core.data_format import PolymlpDataDFT, PolymlpStructure
 from pypolymlp.core.displacements import (
     convert_disps_to_positions,
     get_structures_from_multiple_positions,
-    set_dft_data,
 )
+from pypolymlp.core.interface_datasets import set_dataset_from_structures
 from pypolymlp.utils.phonopy_utils import phonopy_cell_to_structure
 
 
@@ -54,11 +54,12 @@ def parse_phono3py_yaml(
         energies = energies[select_ids]
         disps = disps[select_ids]
 
-    dft = set_dft_data(
-        forces,
+    supercells = get_structures_from_multiple_positions(positions_all, supercell)
+    dft = set_dataset_from_structures(
+        supercells,
         energies,
-        positions_all,
-        supercell,
+        forces=forces,
+        stresses=None,
         element_order=element_order,
     )
     if return_displacements:
@@ -109,7 +110,7 @@ class Phono3pyYaml:
             self._displacements = self._displacements.transpose((0, 2, 1))
             self._forces = self._ph3.phonon_dataset["forces"]
             self._forces = self._forces.transpose((0, 2, 1))
-            """TODO: Must be revised"""
+            # TODO: Must be revised
             self._energies = None
 
         self._supercell_polymlp = phonopy_cell_to_structure(self._supercell)

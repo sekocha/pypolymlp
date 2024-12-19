@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+"""Interface for phonopy."""
+
 import numpy as np
 import yaml
 
