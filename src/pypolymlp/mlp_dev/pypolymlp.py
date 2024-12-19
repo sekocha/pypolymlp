@@ -18,7 +18,9 @@ from pypolymlp.core.interface_vasp import parse_structures_from_poscars
 from pypolymlp.core.io_polymlp import load_mlp_lammps
 from pypolymlp.mlp_dev.core.accuracy import PolymlpDevAccuracy
 from pypolymlp.mlp_dev.core.mlpdev_data import PolymlpDevData
-from pypolymlp.mlp_dev.standard.learning_curve import learning_curve
+
+# from pypolymlp.mlp_dev.standard.learning_curve import learning_curve
+from pypolymlp.mlp_dev.standard.learning_curve import LearningCurve
 from pypolymlp.mlp_dev.standard.mlpdev_dataxy import (
     PolymlpDevDataXY,
     PolymlpDevDataXYSequential,
@@ -455,9 +457,15 @@ class Pypolymlp:
 
         polymlp = PolymlpDevDataXY(self._polymlp_in, verbose=verbose).run()
         total_n_atoms = self._train[0].total_n_atoms
-        learning_curve(polymlp, total_n_atoms, verbose=verbose)
+
+        self._learning = LearningCurve(polymlp, total_n_atoms, verbose=verbose)
+        self._learning.run()
         polymlp.print_data_shape()
         return self
+
+    def save_learning_curve(self, filename="polymlp_learning_curve.dat"):
+        """Save learing curve."""
+        self._learning.save_log(filename=filename)
 
     def fit(
         self,
