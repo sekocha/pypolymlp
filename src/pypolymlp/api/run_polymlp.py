@@ -6,8 +6,6 @@ import time
 
 from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
 
-# from pypolymlp.mlp_dev.standard.learning_curve import learning_curve
-
 
 def run():
 
@@ -46,16 +44,15 @@ def run():
     polymlp.save_parameters(filename="polymlp_params.yaml")
 
     if args.learning_curve:
-        pass
-    else:
-        t1 = time.time()
-        polymlp.fit(
-            sequential=not args.no_sequential,
-            batch_size=args.batch_size,
-            verbose=verbose,
-        )
-        t2 = time.time()
+        polymlp.fit_learning_curve(verbose=verbose)
 
+    t1 = time.time()
+    polymlp.fit(
+        sequential=not args.no_sequential,
+        batch_size=args.batch_size,
+        verbose=verbose,
+    )
+    t2 = time.time()
     if verbose:
         print("  Regression: best model", flush=True)
         print("    alpha: ", polymlp.summary.alpha, flush=True)
@@ -70,16 +67,3 @@ def run():
         print("elapsed_time:", flush=True)
         print("  features, fit:      ", "{:.3f}".format(t2 - t1), "(s)", flush=True)
         print("  error:              ", "{:.3f}".format(t3 - t2), "(s)", flush=True)
-
-    # if args.learning_curve:
-    #     t1 = time.time()
-    #     if len(polymlp_in.train_dict) == 1:
-    #         args.no_sequential = True
-    #         polymlp = PolymlpDevDataXY(polymlp_in).run()
-    #         learning_curve(polymlp)
-    #     else:
-    #         raise ValueError(
-    #             "A single dataset is required " "for learning curve option"
-    #         )
-    #     polymlp.print_data_shape()
-    #     t2 = time.time()

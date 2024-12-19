@@ -18,6 +18,7 @@ from pypolymlp.core.interface_vasp import parse_structures_from_poscars
 from pypolymlp.core.io_polymlp import load_mlp_lammps
 from pypolymlp.mlp_dev.core.accuracy import PolymlpDevAccuracy
 from pypolymlp.mlp_dev.core.mlpdev_data import PolymlpDevData
+from pypolymlp.mlp_dev.standard.learning_curve import learning_curve
 from pypolymlp.mlp_dev.standard.mlpdev_dataxy import (
     PolymlpDevDataXY,
     PolymlpDevDataXYSequential,
@@ -444,12 +445,26 @@ class Pypolymlp:
     def _sequence(self, params):
         return np.linspace(float(params[0]), float(params[1]), int(params[2]))
 
+    def fit_learning_curve(self, verbose: bool = False):
+        """Compute learing curve."""
+        if self._train is None or self._test is None:
+            raise RuntimeError("Set input parameters and datasets.")
+
+        if len(self._train) > 1:
+            raise RuntimeError("Use single dataset for learning curve calculation")
+
+        polymlp = PolymlpDevDataXY(self._polymlp_in, verbose=verbose).run()
+        total_n_atoms = self._train[0].total_n_atoms
+        learning_curve(polymlp, total_n_atoms, verbose=verbose)
+        polymlp.print_data_shape()
+        return self
+
     def fit(
         self,
         sequential: bool = True,
         batch_size: Optional[int] = None,
         verbose: bool = False,
-    ) -> Union[PolymlpDevDataXY, PolymlpDevDataXYSequential]:
+    ):
         """Estimate MLP coefficients, compute features, and compute X.T @ X.
 
         Parameters
