@@ -57,9 +57,8 @@ def run():
         t2 = time.time()
 
     if verbose:
-        mlp = polymlp.summary
         print("  Regression: best model", flush=True)
-        print("    alpha: ", mlp.alpha, flush=True)
+        print("    alpha: ", polymlp.summary.alpha, flush=True)
 
     polymlp.save_mlp(filename="polymlp.lammps")
     t2 = time.time()

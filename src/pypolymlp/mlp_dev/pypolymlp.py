@@ -39,13 +39,18 @@ class Pypolymlp:
         self._acc = None
         self._multiple_datasets = False
 
-        """Hybrid models are not available at this time."""
-        # self.__hybrid = None
+        # TODO: set_params is not available for hybrid models at this time.
+        self._hybrid = False
 
-    def load_parameter_file(self, file_params: str, verbose: bool = False):
+    def load_parameter_file(
+        self,
+        file_params: Union[str, list[str]],
+        verbose: bool = False,
+    ):
         """Load input parameter file and set parameters."""
         self._polymlp_in.parse_infiles(file_params, verbose=True)
         self._params = self._polymlp_in.params
+        self._hybrid = self._polymlp_in._hybrid
         return self
 
     def set_params(
@@ -100,7 +105,6 @@ class Pypolymlp:
         atomic_energy: Atomic energies.
         rearrange_by_elements: Set True if not developing special MLPs.
         """
-
         if params is not None:
             self._params = self._polymlp_in.params = params
             return self
@@ -457,8 +461,6 @@ class Pypolymlp:
         if self._train is None or self._test is None:
             raise RuntimeError("Set input parameters and datasets.")
 
-        # if sequential is None:
-        #     sequential = True if polymlp_in.is_multiple_datasets else False
         if not sequential:
             polymlp = PolymlpDevDataXY(self._polymlp_in, verbose=verbose).run()
             if verbose:
@@ -529,11 +531,16 @@ class Pypolymlp:
         return parse_structures_from_poscars(poscars)
 
     def save_mlp(self, filename="polymlp.lammps"):
-        """Save polynomial MLP as file."""
+        """Save polynomial MLP as file.
+
+        When hybrid models are used, mlp files will be generated as
+        filename.1, filename.2, ...
+        """
         self._reg.save_mlp_lammps(filename=filename)
 
     def load_mlp(self, filename="polymlp.lammps"):
         """Load polynomial MLP from file."""
+        # TODO: hybrid is not available.
         self._params, mlp_dict = load_mlp_lammps(filename)
         self._mlp_model = PolymlpDataMLP(
             coeffs=mlp_dict["coeffs"],
@@ -575,6 +582,8 @@ class Pypolymlp:
     def coeffs(self):
         """Return scaled coefficients.
 
-        It is appropriate to use the scaled coefficient to calculate properties.
+        Use this scaled coefficients to calculate properties.
         """
+        if self._hybrid:
+            return [c / s for c, s in zip(self._reg.coeffs, self._reg.scales)]
         return self._mlp_model.coeffs / self._mlp_model.scales
