@@ -1,29 +1,30 @@
-"""Class of input file parser."""
+"""Class of input parameter parser."""
 
 import glob
-import itertools
-from typing import Literal
+from typing import Literal, Optional
 
 import numpy as np
 from setuptools._distutils.util import strtobool
 
-from pypolymlp.core.data_format import (
-    PolymlpGtinvParams,
-    PolymlpModelParams,
-    PolymlpParams,
-)
+from pypolymlp.core.data_format import PolymlpModelParams, PolymlpParams
 from pypolymlp.core.parser_infile import InputParser
+from pypolymlp.core.polymlp_params import (
+    set_active_gaussian_params,
+    set_gaussian_params,
+    set_gtinv_params,
+    set_regression_alphas,
+)
 
 
 class ParamsParser:
-    """Class of input file parser."""
+    """Class of input parameter parser."""
 
     def __init__(
         self,
         filename: str,
         multiple_datasets: bool = False,
         parse_vasprun_locations: bool = True,
-        prefix: str = None,
+        prefix: Optional[str] = None,
     ):
         """Init class.
 
@@ -31,40 +32,19 @@ class ParamsParser:
         ----------
         filename: File of input parameters for single polymlp (e.g., polymlp.in).
         """
-
         self.parser = InputParser(filename)
+        include_force, include_stress = self._set_force_tags()
+        self.include_force = include_force
 
-        n_type = self.parser.get_params("n_type", default=1, dtype=int)
-        elements = self.parser.get_params(
-            "elements",
-            size=n_type,
-            default=None,
-            required=True,
-            dtype=str,
-            return_array=True,
-        )
+        elements, n_type, atomic_energy = self._set_element_properties()
+        self._elements = elements
         rearrange = self.parser.get_params(
-            "rearrange_by_elements", default=True, dtype=bool
+            "rearrange_by_elements",
+            default=True,
+            dtype=bool,
         )
         element_order = elements if rearrange else None
-        self._elements = elements
-        if element_order is not None:
-            self._atomtypes = dict()
-            for i, ele in enumerate(element_order):
-                self._atomtypes[ele] = i
-
-        self.include_force = include_force = self.parser.get_params(
-            "include_force", default=True, dtype=bool
-        )
-        if self.include_force:
-            include_stress = self.parser.get_params(
-                "include_stress", default=True, dtype=bool
-            )
-        else:
-            include_stress = False
-
-        atomic_energy = self._get_atomic_energy(n_type)
-        reg_method, reg_alpha = self._get_regression_params()
+        alphas = self._get_regression_params()
         model = self._get_potential_model_params(n_type)
 
         if parse_vasprun_locations:
@@ -83,51 +63,96 @@ class ParamsParser:
             atomic_energy=atomic_energy,
             dft_train=dft_train,
             dft_test=dft_test,
-            regression_method=reg_method,
-            regression_alpha=reg_alpha,
+            regression_alpha=alphas,
             include_force=include_force,
             include_stress=include_stress,
             dataset_type=dataset_type,
             element_order=element_order,
         )
 
-    def _get_potential_model_params(self, n_type: int):
+    def _set_force_tags(self):
+        """Set include_force and include_stress."""
+        include_force = self.parser.get_params(
+            "include_force",
+            default=True,
+            dtype=bool,
+        )
+        if include_force:
+            include_stress = self.parser.get_params(
+                "include_stress", default=True, dtype=bool
+            )
+        else:
+            include_stress = False
+        return include_force, include_stress
 
+    def _set_element_properties(self):
+        """Set properties for identifying elements."""
+        n_type = self.parser.get_params("n_type", default=1, dtype=int)
+        elements = self.parser.get_params(
+            "elements",
+            size=n_type,
+            default=None,
+            required=True,
+            dtype=str,
+            return_array=True,
+        )
+        d_atom_e = [0.0 for i in range(n_type)]
+        atom_e = self.parser.get_params(
+            "atomic_energy",
+            size=n_type,
+            default=d_atom_e,
+            dtype=float,
+            return_array=True,
+        )
+        return elements, n_type, tuple(atom_e)
+
+    def _get_regression_params(self):
+        """Set regularization parameters in regression."""
+        alpha_params = self.parser.get_params(
+            "reg_alpha_params",
+            size=3,
+            default=(-3.0, 1.0, 5),
+            dtype=float,
+            return_array=True,
+        )
+        alphas = set_regression_alphas(alpha_params)
+        return alphas
+
+    def _get_gtinv_params(self, n_type: int, feature_type: Literal["gtinv", "pair"]):
+        """Set parameters for group-theoretical invariants."""
+        version = self.parser.get_params("gtinv_version", default=1, dtype=int)
+        order = self.parser.get_params("gtinv_order", default=3, dtype=int)
+        size = order - 1
+        gtinv_maxl = self.parser.get_params(
+            "gtinv_maxl",
+            size=size,
+            default=[2 for i in range(size)],
+            dtype=int,
+            return_array=True,
+        )
+        if len(gtinv_maxl) < size:
+            size_gap = size - len(gtinv_maxl)
+            gtinv_maxl.extend([2 for i in range(size_gap)])
+
+        gtinv_params, max_l = set_gtinv_params(
+            n_type,
+            feature_type=feature_type,
+            gtinv_order=order,
+            gtinv_maxl=gtinv_maxl,
+            gtinv_version=version,
+        )
+        return gtinv_params, max_l
+
+    def _get_potential_model_params(self, n_type: int):
+        """Set parameters for identifying potential model."""
         cutoff = self.parser.get_params("cutoff", default=6.0, dtype=float)
         model_type = self.parser.get_params("model_type", default=1, dtype=int)
         max_p = self.parser.get_params("max_p", default=1, dtype=int)
         feature_type = self.parser.get_params("feature_type", default="gtinv")
 
-        if feature_type == "gtinv":
-            order = self.parser.get_params("gtinv_order", default=3, dtype=int)
-            size = order - 1
-            d_maxl = [2 for i in range(size)]
-            gtinv_maxl = self.parser.get_params(
-                "gtinv_maxl",
-                size=size,
-                default=d_maxl,
-                dtype=int,
-                return_array=True,
-            )
-            if len(gtinv_maxl) < size:
-                size_gap = size - len(gtinv_maxl)
-                for i in range(size_gap):
-                    gtinv_maxl.append(2)
+        gtinv_params, max_l = self._get_gtinv_params(n_type, feature_type)
+        pair_params, pair_params_active, pair_cond = self._get_pair_params(cutoff)
 
-            version = self.parser.get_params("gtinv_version", default=1, dtype=int)
-
-            max_l = max(gtinv_maxl)
-            gtinv_params = PolymlpGtinvParams(
-                order=order,
-                max_l=gtinv_maxl,
-                n_type=n_type,
-                version=version,
-            )
-        else:
-            max_l = 0
-            gtinv_params = PolymlpGtinvParams(order=0, max_l=[], n_type=n_type)
-
-        pair_params, pair_params_cond, pair_cond = self._get_pair_params(cutoff)
         model = PolymlpModelParams(
             cutoff,
             model_type,
@@ -138,58 +163,34 @@ class ParamsParser:
             pair_type="gaussian",
             pair_conditional=pair_cond,
             pair_params=pair_params,
-            pair_params_conditional=pair_params_cond,
+            pair_params_conditional=pair_params_active,
         )
-
         return model
 
     def _get_pair_params(self, cutoff):
-
-        params1 = self.parser.get_sequence("gaussian_params1", default=(1.0, 1.0, 1))
-        params2 = self.parser.get_sequence(
-            "gaussian_params2",
-            default=(0.0, cutoff - 1.0, 7),
-        )
-        pair_params = list(itertools.product(params1, params2))
-        pair_params.append((0.0, 0.0))
-
-        distance = self.parser.distance
-        cond = False if len(distance) == 0 else True
-
-        element_pairs = itertools.combinations_with_replacement(self._elements, 2)
-        pair_params_indices = dict()
-        for ele_pair in element_pairs:
-            key = (self._atomtypes[ele_pair[0]], self._atomtypes[ele_pair[1]])
-            if ele_pair not in distance:
-                pair_params_indices[key] = list(range(len(pair_params)))
-            else:
-                match = [len(pair_params) - 1]
-                for dis in distance[ele_pair]:
-                    for i, p in enumerate(pair_params[:-1]):
-                        if dis < p[1] + 1 / p[0] and dis > p[1] - 1 / p[0]:
-                            match.append(i)
-                pair_params_indices[key] = sorted(set(match))
-
-        return pair_params, pair_params_indices, cond
-
-    def _get_atomic_energy(self, n_type: int):
-
-        d_atom_e = [0.0 for i in range(n_type)]
-        atom_e = self.parser.get_params(
-            "atomic_energy",
-            size=n_type,
-            default=d_atom_e,
+        """Set parameters for Gaussian radial functions."""
+        params1 = self.parser.get_params(
+            "gaussian_params1",
+            size=3,
+            default=(1.0, 1.0, 1),
             dtype=float,
             return_array=True,
         )
-        return tuple(atom_e)
-
-    def _get_regression_params(self):
-
-        method = "ridge"
-        d_alpha = [-3, 1, 5]
-        alpha = self.parser.get_sequence("reg_alpha_params", default=d_alpha)
-        return method, tuple(alpha)
+        params2 = self.parser.get_params(
+            "gaussian_params2",
+            size=3,
+            default=(0.0, cutoff - 1.0, 7),
+            dtype=float,
+            return_array=True,
+        )
+        distance = self.parser.distance
+        pair_params = set_gaussian_params(params1, params2)
+        pair_params_active, cond = set_active_gaussian_params(
+            pair_params,
+            self._elements,
+            distance,
+        )
+        return pair_params, pair_params_active, cond
 
     def _get_dataset(
         self,

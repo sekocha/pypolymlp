@@ -1,13 +1,11 @@
 """Pypolymlp API."""
 
-import itertools
 from typing import Literal, Optional, Union
 
 import numpy as np
 
 from pypolymlp.core.data_format import (
     PolymlpDataMLP,
-    PolymlpGtinvParams,
     PolymlpModelParams,
     PolymlpParams,
     PolymlpStructure,
@@ -16,10 +14,15 @@ from pypolymlp.core.displacements import get_structures_from_displacements
 from pypolymlp.core.interface_datasets import set_dataset_from_structures
 from pypolymlp.core.interface_vasp import parse_structures_from_poscars
 from pypolymlp.core.io_polymlp import load_mlp_lammps
+from pypolymlp.core.polymlp_params import (
+    set_active_gaussian_params,
+    set_element_properties,
+    set_gaussian_params,
+    set_gtinv_params,
+    set_regression_alphas,
+)
 from pypolymlp.mlp_dev.core.accuracy import PolymlpDevAccuracy
 from pypolymlp.mlp_dev.core.mlpdev_data import PolymlpDevData
-
-# from pypolymlp.mlp_dev.standard.learning_curve import learning_curve
 from pypolymlp.mlp_dev.standard.learning_curve import LearningCurve
 from pypolymlp.mlp_dev.standard.mlpdev_dataxy import (
     PolymlpDevDataXY,
@@ -112,38 +115,28 @@ class Pypolymlp:
             self._params = self._polymlp_in.params = params
             return self
 
-        n_type = len(elements)
-        assert len(gaussian_params1) == len(gaussian_params2) == 3
-        params1 = self._sequence(gaussian_params1)
-        params2 = self._sequence(gaussian_params2)
-        pair_params = list(itertools.product(params1, params2))
-        pair_params.append([0.0, 0.0])
-
-        if atomic_energy is None:
-            atomic_energy = tuple([0.0 for i in range(n_type)])
-        else:
-            assert len(atomic_energy) == n_type
-
+        elements, n_type, atomic_energy = set_element_properties(
+            elements,
+            n_type=len(elements),
+            atomic_energy=atomic_energy,
+        )
         element_order = elements if rearrange_by_elements else None
+        alphas = set_regression_alphas(reg_alpha_params)
 
-        if feature_type == "gtinv":
-            gtinv = PolymlpGtinvParams(
-                order=gtinv_order,
-                max_l=gtinv_maxl,
-                n_type=n_type,
-                version=gtinv_version,
-            )
-            max_l = max(gtinv_maxl)
-        else:
-            gtinv = PolymlpGtinvParams(
-                order=0,
-                max_l=[],
-                n_type=n_type,
-            )
-            max_l = 0
+        gtinv, max_l = set_gtinv_params(
+            n_type,
+            feature_type=feature_type,
+            gtinv_order=gtinv_order,
+            gtinv_maxl=gtinv_maxl,
+            gtinv_version=gtinv_version,
+        )
 
-        pair_params_cond, pair_cond = self._set_pair_params_conditional(
-            pair_params, elements, distance
+        pair_params = set_gaussian_params(gaussian_params1, gaussian_params2)
+
+        pair_params_active, pair_cond = set_active_gaussian_params(
+            pair_params,
+            elements,
+            distance,
         )
 
         model = PolymlpModelParams(
@@ -156,56 +149,20 @@ class Pypolymlp:
             pair_type="gaussian",
             pair_conditional=pair_cond,
             pair_params=pair_params,
-            pair_params_conditional=pair_params_cond,
+            pair_params_conditional=pair_params_active,
         )
         self._params = PolymlpParams(
             n_type=n_type,
             elements=elements,
             model=model,
             atomic_energy=atomic_energy,
-            regression_alpha=np.linspace(
-                reg_alpha_params[0], reg_alpha_params[1], reg_alpha_params[2]
-            ),
+            regression_alpha=alphas,
             include_force=include_force,
             include_stress=include_stress,
             element_order=element_order,
         )
         self._polymlp_in.params = self._params
         return self
-
-    def _set_pair_params_conditional(
-        self,
-        pair_params: np.ndarray,
-        elements: list,
-        distance: dict,
-    ):
-        """Set active parameter indices for element pairs."""
-        if distance is None:
-            cond = False
-            distance = dict()
-        else:
-            cond = True
-            for k in distance.keys():
-                k = sorted(k, key=lambda x: elements.index(x))
-
-        atomtypes = dict()
-        for i, ele in enumerate(elements):
-            atomtypes[ele] = i
-
-        element_pairs = itertools.combinations_with_replacement(elements, 2)
-        pair_params_indices = dict()
-        for ele_pair in element_pairs:
-            key = (atomtypes[ele_pair[0]], atomtypes[ele_pair[1]])
-            if ele_pair not in distance:
-                pair_params_indices[key] = list(range(len(pair_params)))
-            else:
-                match = [len(pair_params) - 1]
-                for dis in distance[ele_pair]:
-                    for i, p in enumerate(pair_params[:-1]):
-                        if dis < p[1] + 1 / p[0] and dis > p[1] - 1 / p[0]:
-                            match.append(i)
-                pair_params_indices[key] = sorted(set(match))
-        return pair_params_indices, cond
 
     def _is_params_none(self):
         """Check whether params instance exists."""
@@ -335,21 +292,22 @@ class Pypolymlp:
         assert train_disps.shape == train_forces.shape
         assert test_disps.shape == test_forces.shape
 
-        self._train = self._set_dft_data_from_displacements(
-            train_disps,
-            train_forces,
+        train_strs = get_structures_from_displacements(
+            train_disps, structure_without_disp
+        )
+        test_strs = get_structures_from_displacements(
+            test_disps, structure_without_disp
+        )
+        self.set_datasets_structures(
+            train_strs,
+            test_strs,
             train_energies,
-            structure_without_disp,
-            element_order=self._params.element_order,
-        )
-        self._test = self._set_dft_data_from_displacements(
-            test_disps,
-            test_forces,
             test_energies,
-            structure_without_disp,
-            element_order=self._params.element_order,
+            train_forces,
+            test_forces,
+            train_stresses=None,
+            test_stresses=None,
         )
-        self._post_datasets_from_api()
         return self
 
     def set_datasets_structures(
@@ -425,47 +383,6 @@ class Pypolymlp:
         self._polymlp_in.test = self._test
         self._multiple_datasets = True
         return self
-
-    def _set_dft_data_from_displacements(
-        self,
-        disps: np.ndarray,
-        forces: np.ndarray,
-        energies: np.ndarray,
-        structure_without_disp: PolymlpStructure,
-        element_order=None,
-    ):
-        structures = get_structures_from_displacements(disps, structure_without_disp)
-        dft = set_dataset_from_structures(
-            structures,
-            energies,
-            forces=forces,
-            stresses=None,
-            element_order=element_order,
-        )
-        return dft
-
-    def _sequence(self, params):
-        return np.linspace(float(params[0]), float(params[1]), int(params[2]))
-
-    def fit_learning_curve(self, verbose: bool = False):
-        """Compute learing curve."""
-        if self._train is None or self._test is None:
-            raise RuntimeError("Set input parameters and datasets.")
-
-        if len(self._train) > 1:
-            raise RuntimeError("Use single dataset for learning curve calculation")
-
-        polymlp = PolymlpDevDataXY(self._polymlp_in, verbose=verbose).run()
-        total_n_atoms = self._train[0].total_n_atoms
-
-        self._learning = LearningCurve(polymlp, total_n_atoms, verbose=verbose)
-        self._learning.run()
-        polymlp.print_data_shape()
-        return self
-
-    def save_learning_curve(self, filename="polymlp_learning_curve.dat"):
-        """Save learing curve."""
-        self._learning.save_log(filename=filename)
 
     def fit(
         self,
@@ -548,6 +465,26 @@ class Pypolymlp:
         )
         self.estimate_error(verbose=verbose)
         return self
+
+    def fit_learning_curve(self, verbose: bool = False):
+        """Compute learing curve."""
+        if self._train is None or self._test is None:
+            raise RuntimeError("Set input parameters and datasets.")
+
+        if len(self._train) > 1:
+            raise RuntimeError("Use single dataset for learning curve calculation")
+
+        polymlp = PolymlpDevDataXY(self._polymlp_in, verbose=verbose).run()
+        total_n_atoms = self._train[0].total_n_atoms
+
+        self._learning = LearningCurve(polymlp, total_n_atoms, verbose=verbose)
+        self._learning.run()
+        polymlp.print_data_shape()
+        return self
+
+    def save_learning_curve(self, filename="polymlp_learning_curve.dat"):
+        """Save learing curve."""
+        self._learning.save_log(filename=filename)
 
     def get_structures_from_poscars(self, poscars: list[str]) -> list[PolymlpStructure]:
         """Load poscar files and convert them to structure instances."""
