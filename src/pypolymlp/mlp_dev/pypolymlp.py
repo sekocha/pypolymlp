@@ -479,7 +479,6 @@ class Pypolymlp:
 
         self._learning = LearningCurve(polymlp, total_n_atoms, verbose=verbose)
         self._learning.run()
-        polymlp.print_data_shape()
         return self
 
     def save_learning_curve(self, filename="polymlp_learning_curve.dat"):
