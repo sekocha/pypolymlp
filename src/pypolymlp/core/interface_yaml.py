@@ -41,7 +41,8 @@ def parse_sscha_yamls(yamlfiles: list[str]):
 
 def parse_structure_from_yaml(yml_data: yaml, tag: str = "unitcell"):
     """Parse structure in yaml data."""
-    cell = PolymlpStructure(**yml_data[tag])
-    cell.axis = np.array(cell.axis).T
-    cell.positions = np.array(cell.positions).T
+    cell_dict = yml_data[tag]
+    cell_dict["axis"] = np.array(cell_dict["axis"]).T
+    cell_dict["positions"] = np.array(cell_dict["positions"]).T
+    cell = PolymlpStructure(**cell_dict)
     return cell

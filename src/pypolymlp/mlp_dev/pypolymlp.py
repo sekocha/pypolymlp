@@ -21,6 +21,7 @@ from pypolymlp.core.polymlp_params import (
     set_gtinv_params,
     set_regression_alphas,
 )
+from pypolymlp.core.utils import split_train_test
 from pypolymlp.mlp_dev.core.accuracy import PolymlpDevAccuracy
 from pypolymlp.mlp_dev.core.mlpdev_data import PolymlpDevData
 from pypolymlp.mlp_dev.standard.learning_curve import LearningCurve
@@ -130,9 +131,7 @@ class Pypolymlp:
             gtinv_maxl=gtinv_maxl,
             gtinv_version=gtinv_version,
         )
-
         pair_params = set_gaussian_params(gaussian_params1, gaussian_params2)
-
         pair_params_active, pair_cond = set_active_gaussian_params(
             pair_params,
             elements,
@@ -178,6 +177,32 @@ class Pypolymlp:
         self._polymlp_in.parse_datasets()
         self._train = self._polymlp_in.train
         self._test = self._polymlp_in.test
+        return self
+
+    def set_datasets_sscha(self, yamlfiles: list[str]):
+        """Set single sscha dataset.
+
+        Parameters
+        ----------
+        yamlfiles: sscha_results.yaml files (list)
+        """
+        self._is_params_none()
+        self._params.dft_train = dict()
+        self._params.dft_test = dict()
+
+        train_files, test_files = split_train_test(yamlfiles, train_ratio=0.9)
+        self._params.dft_train["train_single"] = {
+            "yamls": sorted(train_files),
+            "include_force": False,
+            "weight": 1.0,
+        }
+        self._params.dft_test["test_single"] = {
+            "yamls": sorted(test_files),
+            "include_force": False,
+            "weight": 1.0,
+        }
+        self._multiple_datasets = True
+        self.parse_datasets()
         return self
 
     def set_datasets_vasp(self, train_vaspruns: list[str], test_vaspruns: list[str]):

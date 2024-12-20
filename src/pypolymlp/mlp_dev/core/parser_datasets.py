@@ -2,25 +2,31 @@
 
 from pypolymlp.core.data_format import PolymlpDataDFT, PolymlpParams
 from pypolymlp.core.interface_vasp import set_dataset_from_vaspruns
+from pypolymlp.core.interface_yaml import set_dataset_from_sscha_yamls
 
 
 class ParserDatasets:
     """Class of parsing DFT datasets."""
 
     def __init__(self, params: PolymlpParams):
+        """Init method."""
         self._params = params
         self._dataset_type = self._params.dataset_type
 
         self._train = None
         self._test = None
-
         self._parse()
 
     def _parse(self):
+        """Parse datasets."""
         if self._dataset_type == "vasp":
             self._parse_vasp_multiple()
         elif self._dataset_type == "phono3py":
             self._parse_phono3py_single()
+        elif self._dataset_type == "sscha":
+            self._parse_sscha_single()
+        else:
+            raise KeyError("Given dataset_type is unavailable.")
 
     def _post_single_dataset(self):
         self._train.name = "train_single"
@@ -35,6 +41,7 @@ class ParserDatasets:
         self._test = [self._test]
 
     def _parse_vasp_single(self):
+        """Parse VASP single dataset."""
         self._train = set_dataset_from_vaspruns(
             self._params.dft_train,
             element_order=self._params.element_order,
@@ -46,7 +53,7 @@ class ParserDatasets:
         self._post_single_dataset()
 
     def _parse_vasp_multiple(self):
-
+        """Parse VASP multiple datasets."""
         element_order = self._params.element_order
         self._train = []
         for name, dict1 in self._params.dft_train.items():
@@ -73,6 +80,7 @@ class ParserDatasets:
             self._test.append(dft)
 
     def _parse_phono3py_single(self):
+        """Parse phono3py single dataset."""
         from pypolymlp.core.interface_phono3py import parse_phono3py_yaml
 
         self._train = parse_phono3py_yaml(
@@ -90,12 +98,25 @@ class ParserDatasets:
             use_phonon_dataset=False,
         )
         self._post_single_dataset()
-
         self._params.dft_train = {"train_phono3py": self._params.dft_train}
         self._params.dft_test = {"test_phono3py": self._params.dft_test}
 
     def _parse_phono3py_multiple(self):
         raise NotImplementedError("No function for parsing multiple phono3py.yamls.")
+
+    def _parse_sscha_single(self):
+        """Parse sscha results."""
+        self._train = set_dataset_from_sscha_yamls(
+            self._params.dft_train,
+            element_order=self._params.element_order,
+        )
+        self._test = set_dataset_from_sscha_yamls(
+            self._params.dft_test,
+            element_order=self._params.element_order,
+        )
+        self._post_single_dataset()
+        self._params.dft_train = {"train_single": self._params.dft_train}
+        self._params.dft_test = {"test_single": self._params.dft_test}
 
     @property
     def train(self) -> list[PolymlpDataDFT]:

@@ -14,6 +14,7 @@ from pypolymlp.core.polymlp_params import (
     set_gtinv_params,
     set_regression_alphas,
 )
+from pypolymlp.core.utils import split_train_test
 
 
 class ParamsParser:
@@ -167,7 +168,7 @@ class ParamsParser:
         )
         return model
 
-    def _get_pair_params(self, cutoff):
+    def _get_pair_params(self, cutoff: float):
         """Set parameters for Gaussian radial functions."""
         params1 = self.parser.get_params(
             "gaussian_params1",
@@ -194,20 +195,34 @@ class ParamsParser:
 
     def _get_dataset(
         self,
-        dataset_type: Literal["vasp", "phono3py"],
+        dataset_type: Literal["vasp", "phono3py", "sscha"],
         multiple_datasets: bool = False,
-        prefix: str = "/",
+        prefix: Optional[str] = None,
     ):
+        """Parse filenames in dataset."""
         if dataset_type == "vasp":
             if multiple_datasets:
                 return self._get_multiple_vasprun_sets(prefix=prefix)
-            else:
-                return self._get_single_vasprun_set(prefix=prefix)
+            return self._get_single_vasprun_set(prefix=prefix)
         elif dataset_type == "phono3py":
             return self._get_phono3py_set(prefix=prefix)
+        elif dataset_type == "sscha":
+            return self._get_sscha_set(prefix=prefix)
+        else:
+            raise KeyError("Given dataset_type is unavailable.")
 
-    def _get_single_vasprun_set(self, prefix=None):
+    def _get_sscha_set(self, prefix: Optional[str] = None):
+        """Parse sscha_results.yaml filenames in dataset."""
+        data = self.parser.get_params("data", default=None)
+        if prefix is not None:
+            data = prefix + "/" + data
 
+        data_all = sorted(glob.glob(data))
+        dft_train, dft_test = split_train_test(data_all, train_ratio=0.9)
+        return dft_train, dft_test
+
+    def _get_single_vasprun_set(self, prefix: Optional[str] = None):
+        """Parse vasprun filenames in dataset."""
         train = self.parser.get_params("train_data", default=None)
         test = self.parser.get_params("test_data", default=None)
 
@@ -219,8 +234,8 @@ class ParamsParser:
             dft_test = sorted(glob.glob(prefix + "/" + test))
         return dft_train, dft_test
 
-    def _get_multiple_vasprun_sets(self, prefix=None):
-
+    def _get_multiple_vasprun_sets(self, prefix: Optional[str] = None):
+        """Parse vasprun filenames in multiple datasets."""
         train = self.parser.get_train()
         test = self.parser.get_test()
 
