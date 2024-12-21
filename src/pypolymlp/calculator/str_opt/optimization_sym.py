@@ -9,12 +9,10 @@ from scipy.optimize import minimize
 
 from pypolymlp.calculator.compute_features import update_types
 from pypolymlp.calculator.properties import Properties
-from pypolymlp.calculator.str_opt.symmetry import (
-    basis_cell,
-    construct_basis_fractional_coordinates,
-)
 from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
+from pypolymlp.utils.spglib_utils import construct_basis_cell
 from pypolymlp.utils.structure_utils import refine_positions
+from pypolymlp.utils.symfc_utils import construct_basis_fractional_coordinates
 from pypolymlp.utils.vasp_utils import write_poscar_file
 
 
@@ -65,7 +63,7 @@ class MinimizeSym:
         self._relax_positions = relax_positions
 
         if relax_cell:
-            self._basis_axis, cell_update = basis_cell(cell)
+            self._basis_axis, cell_update = construct_basis_cell(cell, verbose=verbose)
             if not np.allclose(cell.axis, cell_update.axis):
                 if self._verbose:
                     print("- Input structure is standarized by spglib.")

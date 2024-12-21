@@ -1,16 +1,14 @@
 """Utilities to use spglib."""
 
-import argparse
-
 import numpy as np
 import spglib
 
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.interface_vasp import Poscar
-from pypolymlp.utils.vasp_utils import print_poscar, write_poscar_file
 
 
 class SymCell:
+    """Class for using spglib functions."""
 
     def __init__(
         self,
@@ -18,6 +16,7 @@ class SymCell:
         st: PolymlpStructure = None,
         symprec: float = 1e-4,
     ):
+        """Init method."""
         if poscar_name is not None:
             st = Poscar(poscar_name).structure
 
@@ -40,7 +39,7 @@ class SymCell:
         self.symprec = symprec
 
     def refine_cell(self, standardize_cell=False) -> PolymlpStructure:
-
+        """Refine cell."""
         if standardize_cell == False:
             try:
                 lattice1, position1, types1 = spglib.refine_cell(
@@ -81,39 +80,115 @@ class SymCell:
         return st
 
     def get_spacegroup(self):
+        """Return space group."""
         return spglib.get_spacegroup(self.cell, symprec=self.symprec)
 
     def get_spacegroup_multiple_prec(self, symprecs=[1e-2, 1e-3, 1e-4, 1e-5]):
+        """Return list of space groups using multiple precisions."""
         return [spglib.get_spacegroup(self.cell, symprec=p) for p in symprecs]
 
 
-if __name__ == "__main__":
+def standardize_cell(cell: PolymlpStructure) -> PolymlpStructure:
+    """Standardize cell for constructing cell basis."""
+    map_elements = dict()
+    for t, e in zip(cell.types, cell.elements):
+        map_elements[t] = e
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-p", "--poscar", type=str, help="poscar file name")
-    parser.add_argument(
-        "--symprec",
-        type=float,
-        default=1e-4,
-        help="numerical precision for finding symmetry",
+    lattice, scaled_positions, types = spglib.standardize_cell(
+        (cell.axis.T, cell.positions.T, cell.types),
+        to_primitive=False,
     )
-    parser.add_argument("--refine_cell", action="store_true", help="refine cell")
-    parser.add_argument(
-        "--standardize_cell", action="store_true", help="standardize cell"
+
+    n_atoms, scaled_positions_reorder, types_reorder = [], [], []
+    for i in sorted(set(types)):
+        ids = np.array(types) == i
+        n_atoms.append(np.count_nonzero(ids))
+        scaled_positions_reorder.extend(scaled_positions[ids])
+        types_reorder.extend(np.array(types)[ids])
+    scaled_positions_reorder = np.array(scaled_positions_reorder)
+    elements = [map_elements[t] for t in types]
+
+    cell_standardized = PolymlpStructure(
+        axis=lattice.T,
+        positions=scaled_positions_reorder.T,
+        n_atoms=n_atoms,
+        elements=elements,
+        types=types,
     )
-    parser.add_argument("--space_group", action="store_true", help="get space group")
+    return cell_standardized
 
-    args = parser.parse_args()
-    sc = SymCell(args.poscar, symprec=args.symprec)
 
-    if args.refine_cell:
-        st = sc.refine_cell()
-        print_poscar(st)
-        write_poscar_file(st)
-    elif args.standardize_cell:
-        st = sc.refine_cell(standardize_cell=True)
-        print_poscar(st)
-        write_poscar_file(st)
+def get_symmetry_dataset(cell: PolymlpStructure):
+    """Return symmetry dataset."""
+    spg_info = spglib.get_symmetry_dataset((cell.axis.T, cell.positions.T, cell.types))
+    return spg_info
 
-    if args.space_group:
-        print(" space_group = ", sc.get_spacegroup())
+
+def _normalize_vector(vec: np.ndarray) -> np.ndarray:
+    """Normalize a vector."""
+    return vec / np.linalg.norm(vec)
+
+
+def construct_basis_cell(
+    cell: PolymlpStructure,
+    verbose: bool = False,
+) -> tuple[np.ndarray, PolymlpStructure]:
+    """Generate a basis set for axis matrix.
+    basis (row): In the order of ax, bx, cx, ay, by, cy, az, bz, cz
+    """
+    cell_copy = standardize_cell(cell)
+    spg_info = get_symmetry_dataset(cell_copy)
+    spg_num = spg_info["number"]
+    if verbose:
+        print("Space group:", spg_info["international"], spg_num, flush=True)
+
+    if spg_num >= 195:
+        if verbose:
+            print("Crystal system: Cubic", flush=True)
+        basis = np.zeros((9, 1))
+        basis[:, 0] = _normalize_vector([1, 0, 0, 0, 1, 0, 0, 0, 1])
+    elif spg_num >= 168 and spg_num <= 194:
+        if verbose:
+            print("Crystal system: Hexagonal", flush=True)
+        basis = np.zeros((9, 2))
+        basis[:, 0] = _normalize_vector([1, -0.5, 0, 0, np.sqrt(3) / 2, 0, 0, 0, 0])
+        basis[8, 1] = 1.0
+    elif spg_num >= 143 and spg_num <= 167:
+        if "P" in spg_info["international"]:
+            if verbose:
+                print("Crystal system: Trigonal (Hexagonal)", flush=True)
+            basis = np.zeros((9, 2))
+            basis[:, 0] = _normalize_vector([1, -0.5, 0, 0, np.sqrt(3) / 2, 0, 0, 0, 0])
+            basis[8, 1] = 1.0
+        else:
+            if verbose:
+                print("Crystal system: Trigonal (Rhombohedral)", flush=True)
+            basis = np.zeros((9, 2))
+            basis[:, 0] = _normalize_vector([1, -0.5, 0, 0, np.sqrt(3) / 2, 0, 0, 0, 0])
+            basis[8, 1] = 1.0
+    elif spg_num >= 75 and spg_num <= 142:
+        if verbose:
+            print("Crystal system: Tetragonal", flush=True)
+        basis = np.zeros((9, 2))
+        basis[:, 0] = _normalize_vector([1, 0, 0, 0, 1, 0, 0, 0, 0])
+        basis[8, 1] = 1.0
+    elif spg_num >= 16 and spg_num <= 74:
+        if verbose:
+            print("Crystal system: Orthorhombic", flush=True)
+        basis = np.zeros((9, 3))
+        basis[0, 0] = 1.0
+        basis[4, 1] = 1.0
+        basis[8, 2] = 1.0
+    elif spg_num >= 3 and spg_num <= 15:
+        if verbose:
+            print("Crystal system: Monoclinic", flush=True)
+        basis = np.zeros((9, 4))
+        basis[0, 0] = 1.0
+        basis[4, 1] = 1.0
+        basis[8, 2] = 1.0
+        basis[2, 3] = 1.0
+    else:
+        if verbose:
+            print("Crystal system: Triclinic", flush=True)
+        basis = np.eye(9)
+    return basis, cell_copy
