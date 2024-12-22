@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+"""Utility functions for modifying structure."""
 
 import copy
 import itertools
