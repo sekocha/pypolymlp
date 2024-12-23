@@ -83,7 +83,8 @@ class StructureGeneratorSym:
                 max_distance=max_distance,
             )
         else:
-            disps_all = [np.zeros(self.positions.shape[0]) for i in range(n_samples)]
+            shape = self._cell.positions.shape
+            disps_all = [np.zeros(shape) for i in range(n_samples)]
 
         for axis, disps in zip(axis_all, disps_all):
             disps_f = np.linalg.inv(axis) @ disps
@@ -98,11 +99,11 @@ class StructureGeneratorSym:
             self._structures.append(refine_positions(st))
         return self
 
-    def write_structures(self, path="poscars"):
+    def save_structures(self, path="poscars"):
         """Save structures in POSCAR format."""
         os.makedirs(path, exist_ok=True)
         for i, st in enumerate(self._structures):
-            write_poscar_file(st, filename=path + "/POSCAR-" + str(i).zfill(4))
+            write_poscar_file(st, filename=path + "/POSCAR-" + str(i + 1).zfill(4))
         return self
 
     @property
