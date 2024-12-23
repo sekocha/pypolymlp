@@ -182,24 +182,20 @@ class PolymlpElastic:
         return self._elastic_constants
 
 
-if __name__ == "__main__":
-
-    import argparse
-
-    from pypolymlp.core.interface_vasp import Poscar
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-p", "--poscar", type=str, default=None, help="poscar file")
-    parser.add_argument(
-        "--pot",
-        nargs="*",
-        type=str,
-        default="polymlp.lammps",
-        help="polymlp file",
-    )
-    args = parser.parse_args()
-
-    unitcell = Poscar(args.poscar).structure
-    el = PolymlpElastic(unitcell, args.poscar, pot=args.pot)
-    el.run()
-    el.write_elastic_constants()
+# def get_structures_elastic(unitcell_poscar):
+#     """Return structures for calculating elastic constants."""
+#     fposcar = open(unitcell_poscar)
+#     st_pmg = pmg.core.Structure.from_str(fposcar.read(), fmt="POSCAR")
+#     fposcar.close()
+#
+#     deform = DeformedStructureSet(st_pmg)
+#     strains = [d.green_lagrange_strain for d in deform.deformations]
+#
+#     structure_deform = []
+#     for i in range(len(deform)):
+#         structure = copy.deepcopy(self._unitcell)
+#         lattice = np.array(deform[i].as_dict()["lattice"]["matrix"])
+#         structure.axis = lattice.T
+#         structure_deform.append(structure)
+#
+#     return structure_deform, strains

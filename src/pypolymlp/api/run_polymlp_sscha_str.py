@@ -22,6 +22,21 @@ def run():
         help="Initial structure in POSCAR format",
     )
     parser.add_argument(
+        "--sym",
+        action="store_true",
+        help="Generate structures with symmetric constraints.",
+    )
+    parser.add_argument(
+        "--volume",
+        action="store_true",
+        help="Generate structures with volumes changed.",
+    )
+    parser.add_argument(
+        "--cell",
+        action="store_true",
+        help="Generate structures with cell shapes changed.",
+    )
+    parser.add_argument(
         "--n_samples",
         type=int,
         default=100,
@@ -39,15 +54,45 @@ def run():
         default=0.1,
         help="Maximum magnitude of atomic displacements.",
     )
+    parser.add_argument(
+        "--min_volume",
+        type=float,
+        default=0.8,
+        help="Minimum volume ratio.",
+    )
+    parser.add_argument(
+        "--max_volume",
+        type=float,
+        default=1.3,
+        help="Maximumm volume ratio.",
+    )
     args = parser.parse_args()
 
     np.set_printoptions(legacy="1.21")
     strgen = PolymlpSSCHAStructureGenerator(verbose=True)
     strgen.load_poscar(args.poscar)
-    strgen.run(
-        n_samples=args.n_samples,
-        max_deform=args.max_deform,
-        max_distance=args.max_distance,
-    )
-    strgen.save_random_structures(path="./poscars")
+
+    if args.sym:
+        strgen.sample_sym(
+            n_samples=args.n_samples,
+            max_deform=args.max_deform,
+            max_distance=args.max_distance,
+        )
+    elif args.volume:
+        strgen.sample_volumes(
+            n_samples=args.n_samples,
+            eps_min=args.min_volume,
+            eps_max=args.max_volume,
+            fix_axis=True,
+        )
+    elif args.cell:
+        strgen.sample_volumes(
+            n_samples=args.n_samples,
+            eps_min=args.min_volume,
+            eps_max=args.max_volume,
+            fix_axis=False,
+            max_deform=args.max_deform,
+        )
+
+    strgen.save_structures(path="./poscars")
     print(args.n_samples, "structures are generated.", flush=True)

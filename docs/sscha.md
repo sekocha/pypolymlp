@@ -7,7 +7,17 @@
 
 ## Generation of random structures with symmetric constraints
 ```
-> pypolymlp-sscha-structure --poscar POSCAR --n_samples 100 --max_deform 0.3 --max_distance 0.3
+> pypolymlp-sscha-structure --sym --poscar POSCAR --n_samples 100 --max_deform 0.3 --max_distance 0.3
+```
+
+## Generation of structures with different volumes
+```
+> pypolymlp-sscha-structure --volume --poscar POSCAR --n_samples 20 --min_volume 0.8 --max_volume 1.3
+```
+
+## Generation of structures with different volumes and cell shapes
+```
+> pypolymlp-sscha-structure --cell --poscar POSCAR --n_samples 20 --min_volume 0.8 --max_volume 1.3 --max_deform 0.3
 ```
 
 ## MLP development for SSCHA free energy

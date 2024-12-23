@@ -204,6 +204,23 @@ def triangulation_axis(st: PolymlpStructure):
     return st
 
 
+def random_deformation(st: PolymlpStructure, max_deform: float = 0.1):
+    rand = (np.random.rand(3, 3) - 0.5) * 2 * max_deform
+    st.axis += rand
+    return st
+
+
+def multiple_random_deformation(
+    structures: list[PolymlpStructure],
+    max_deform: float = 0.1,
+):
+    n_st = len(structures)
+    random_deform = (np.random.rand(n_st, 3, 3) - 0.5) * 2 * max_deform
+    for st, rand in zip(structures, random_deform):
+        st.axis += rand
+    return structures
+
+
 if __name__ == "__main__":
 
     from pypolymlp.utils.vasp_utils import print_poscar, write_poscar_file
