@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+"""Functions for atomic energy."""
+
 import re
 
 import numpy as np

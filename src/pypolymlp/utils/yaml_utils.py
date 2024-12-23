@@ -1,4 +1,7 @@
-#!/usr/bin/env python
+"""Functions for saving and loading yaml files."""
+
+from typing import Optional
+
 import numpy as np
 import yaml
 
@@ -19,8 +22,13 @@ def print_array2d(array, tag, fstream, indent_l=0):
         print(prefix + " -", list(d), file=fstream)
 
 
-def save_cell(cell: PolymlpStructure, tag="unitcell", fstream=None, filename=None):
-
+def save_cell(
+    cell: PolymlpStructure,
+    tag: str = "unitcell",
+    fstream=None,
+    filename: Optional[str] = None,
+):
+    """Save a cell in yaml file."""
     if fstream is None:
         fstream = open(filename, "w")
 
@@ -46,9 +54,11 @@ def save_cell(cell: PolymlpStructure, tag="unitcell", fstream=None, filename=Non
 
 
 def save_cells(
-    unitcell: PolymlpStructure, supercell: PolymlpStructure, filename="cells.yaml"
+    unitcell: PolymlpStructure,
+    supercell: PolymlpStructure,
+    filename: str = "cells.yaml",
 ):
-
+    """Save unitcell and supercell in yaml file."""
     f = open(filename, "w")
     save_cell(unitcell, tag="unitcell", fstream=f)
     save_cell(supercell, tag="supercell", fstream=f)
@@ -56,15 +66,16 @@ def save_cells(
 
 
 def load_cells(filename="cells.yaml"):
-
+    """Parse unitcell and supercell in yaml data."""
     yml_data = yaml.safe_load(open(filename))
-    unitcell = PolymlpStructure(**yml_data["unitcell"])
-    unitcell.axis = np.array(unitcell.axis).T
-    unitcell.positions = np.array(unitcell.positions).T
+    cell_dict = yml_data["unitcell"]
+    cell_dict["axis"] = np.array(cell_dict["axis"]).T
+    cell_dict["positions"] = np.array(cell_dict["positions"]).T
+    unitcell = PolymlpStructure(**cell_dict)
 
-    supercell = PolymlpStructure(**yml_data["supercell"])
-    supercell.axis = np.array(supercell.axis).T
-    supercell.positions = np.array(supercell.positions).T
-    supercell.supercell_matrix = np.array(supercell.supercell_matrix)
-
+    cell_dict = yml_data["supercell"]
+    cell_dict["axis"] = np.array(cell_dict["axis"]).T
+    cell_dict["positions"] = np.array(cell_dict["positions"]).T
+    cell_dict["supercell_matrix"] = np.array(cell_dict["supercell_matrix"])
+    supercell = PolymlpStructure(**cell_dict)
     return unitcell, supercell

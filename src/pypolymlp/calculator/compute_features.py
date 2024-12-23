@@ -1,13 +1,10 @@
 """Functions for computing structural features."""
 
-import argparse
-import signal
 from typing import Optional
 
 import numpy as np
 
 from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
-from pypolymlp.core.interface_vasp import parse_structures_from_poscars
 from pypolymlp.core.io_polymlp import load_mlp_lammps
 from pypolymlp.core.parser_polymlp_params import ParamsParser
 from pypolymlp.mlp_dev.core.features import Features
@@ -112,41 +109,3 @@ def compute_from_infile(
     structures = update_types(structures, element_order)
     features = Features(params, structures=structures, print_memory=False)
     return features.x
-
-
-if __name__ == "__main__":
-
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "-p",
-        "--poscars",
-        nargs="*",
-        type=str,
-        default=["POSCAR"],
-        help="poscar files",
-    )
-    parser.add_argument(
-        "-i",
-        "--infile",
-        type=str,
-        default=None,
-        help="Input parameter settings",
-    )
-    parser.add_argument(
-        "--pot",
-        type=str,
-        default=None,
-        help="Input parameter settings (polymlp.lammps)",
-    )
-    args = parser.parse_args()
-
-    structures = parse_structures_from_poscars(args.poscars)
-    if args.infile is not None:
-        x = compute_from_infile(args.infile, structures)
-    elif args.pot is not None:
-        x = compute_from_polymlp_lammps(structures, pot=args.pot, return_mlp_dict=False)
-
-    print(" feature size =", x.shape)
-    np.save("features.npy", x)

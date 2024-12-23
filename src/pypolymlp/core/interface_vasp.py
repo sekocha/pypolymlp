@@ -164,10 +164,11 @@ class Poscar:
     """Class for parsing POSCAR."""
 
     def __init__(self, filename: str, selective_dynamics: bool = False):
+        """Init method."""
         self._parse(filename, selective_dynamics=selective_dynamics)
 
     def _parse(self, filename: str, selective_dynamics: bool = False):
-
+        """Parse POSCAR file."""
         f = open(filename, "r")
         lines = f.readlines()
         f.close()
@@ -251,6 +252,7 @@ class Outcar:
 
 
 def read_doscar(name):
+    """Parse DOSCAR file."""
     f = open(name)
     lines = f.readlines()
     f.close()
@@ -265,7 +267,7 @@ def read_doscar(name):
 
 
 def parse_energy_volume(vaspruns):
-
+    """Parse energy-volume data from vaspruns."""
     ev_data = []
     for vasprun_file in vaspruns:
         vasp = Vasprun(vasprun_file)
@@ -275,65 +277,63 @@ def parse_energy_volume(vaspruns):
     return np.array(ev_data)
 
 
-"""
-class Chg:
-
-    def __init__(self, fname="CHG"):
-        p = Poscar(fname)
-        self.axis, self.positions, n_atoms, elements, types = p.get_structure()
-        st = Structure(self.axis, self.positions, n_atoms, elements, types)
-        self.vol = st.calc_volume()
-
-        f = open(fname)
-        lines2 = f.readlines()
-        f.close()
-
-        start = sum(n_atoms) + 9
-        self.grid = [int(i) for i in lines2[start].split()]
-        self.ngrid = np.prod(self.grid)
-
-        chg = [float(s) for line in lines2[start + 1 :] for s in line.split()]
-        self.chg = np.array(chg) / self.ngrid
-        self.chgd = np.array(chg) / self.vol
-
-        grid_fracs = np.array(
-            [
-                np.array([x[2], x[1], x[0]])
-                for x in itertools.product(
-                    range(self.grid[2]), range(self.grid[1]), range(self.grid[0])
-                )
-            ]
-        ).T
-
-        self.grid_fracs = [
-            grid_fracs[0, :] / self.grid[0],
-            grid_fracs[1, :] / self.grid[1],
-            grid_fracs[2, :] / self.grid[2],
-        ]
-
-    def get_grid(self):
-        return self.grid
-
-    def get_grid_coordinates(self):
-        self.grid_coordinates = np.dot(self.axis, self.grid_fracs)
-        return self.grid_coordinates
-
-    def get_grid_coordinates_atomcenter(self, atom):
-        pos1 = self.positions[:, atom]
-        frac_new = self.grid_fracs - np.tile(pos1, (self.grid_fracs.shape[1], 1)).T
-        frac_new[np.where(frac_new > 0.5)] -= 1.0
-        frac_new[np.where(frac_new < -0.5)] += 1.0
-        return np.dot(self.axis, frac_new)
-
-    def get_ngrid(self):
-        return self.ngrid
-
-    def get_chg(self):
-        return self.chg
-
-    def get_chg_density(self):
-        return self.chgd
-
-    def get_volume(self):
-        return self.vol
-"""
+# class Chg:
+#
+#     def __init__(self, fname="CHG"):
+#         p = Poscar(fname)
+#         self.axis, self.positions, n_atoms, elements, types = p.get_structure()
+#         st = Structure(self.axis, self.positions, n_atoms, elements, types)
+#         self.vol = st.calc_volume()
+#
+#         f = open(fname)
+#         lines2 = f.readlines()
+#         f.close()
+#
+#         start = sum(n_atoms) + 9
+#         self.grid = [int(i) for i in lines2[start].split()]
+#         self.ngrid = np.prod(self.grid)
+#
+#         chg = [float(s) for line in lines2[start + 1 :] for s in line.split()]
+#         self.chg = np.array(chg) / self.ngrid
+#         self.chgd = np.array(chg) / self.vol
+#
+#         grid_fracs = np.array(
+#             [
+#                 np.array([x[2], x[1], x[0]])
+#                 for x in itertools.product(
+#                     range(self.grid[2]), range(self.grid[1]), range(self.grid[0])
+#                 )
+#             ]
+#         ).T
+#
+#         self.grid_fracs = [
+#             grid_fracs[0, :] / self.grid[0],
+#             grid_fracs[1, :] / self.grid[1],
+#             grid_fracs[2, :] / self.grid[2],
+#         ]
+#
+#     def get_grid(self):
+#         return self.grid
+#
+#     def get_grid_coordinates(self):
+#         self.grid_coordinates = np.dot(self.axis, self.grid_fracs)
+#         return self.grid_coordinates
+#
+#     def get_grid_coordinates_atomcenter(self, atom):
+#         pos1 = self.positions[:, atom]
+#         frac_new = self.grid_fracs - np.tile(pos1, (self.grid_fracs.shape[1], 1)).T
+#         frac_new[np.where(frac_new > 0.5)] -= 1.0
+#         frac_new[np.where(frac_new < -0.5)] += 1.0
+#         return np.dot(self.axis, frac_new)
+#
+#     def get_ngrid(self):
+#         return self.ngrid
+#
+#     def get_chg(self):
+#         return self.chg
+#
+#     def get_chg_density(self):
+#         return self.chgd
+#
+#     def get_volume(self):
+#         return self.vol
