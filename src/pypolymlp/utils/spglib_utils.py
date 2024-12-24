@@ -106,14 +106,14 @@ def standardize_cell(cell: PolymlpStructure) -> PolymlpStructure:
         scaled_positions_reorder.extend(scaled_positions[ids])
         types_reorder.extend(np.array(types)[ids])
     scaled_positions_reorder = np.array(scaled_positions_reorder)
-    elements = [map_elements[t] for t in types]
+    elements = [map_elements[t] for t in types_reorder]
 
     cell_standardized = PolymlpStructure(
         axis=lattice.T,
         positions=scaled_positions_reorder.T,
         n_atoms=n_atoms,
         elements=elements,
-        types=types,
+        types=types_reorder,
     )
     return cell_standardized
 

@@ -93,6 +93,8 @@ def run():
             fix_axis=False,
             max_deform=args.max_deform,
         )
+    else:
+        raise RuntimeError("Set either of options: --sym, --volume, or --cell.")
 
     strgen.save_structures(path="./poscars")
     print(args.n_samples, "structures are generated.", flush=True)
