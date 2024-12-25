@@ -42,6 +42,7 @@ pypolymlp-calc = "pypolymlp.api.run_polymlp_calc:run"
 pypolymlp-utils = "pypolymlp.api.run_polymlp_utils:run"
 pypolymlp-structure = "pypolymlp.api.run_polymlp_str:run"
 pypolymlp-sscha = "pypolymlp.api.run_polymlp_sscha:run"
+pypolymlp-sscha-structure = "pypolymlp.api.run_polymlp_sscha_str:run"
 
 [tool.scikit-build]
 cmake.verbose = true

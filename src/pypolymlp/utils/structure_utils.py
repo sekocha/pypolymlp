@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+"""Utility functions for modifying structure."""
 
 import copy
 import itertools
@@ -53,10 +53,27 @@ def isotropic_volume_change(st: PolymlpStructure, eps: float = 1.0):
 
 
 def multiple_isotropic_volume_changes(
-    st: PolymlpStructure, eps_min: float = 0.7, eps_max: float = 2.0, n_eps: float = 10
+    st: PolymlpStructure,
+    eps_min: float = 0.7,
+    eps_max: float = 2.0,
+    n_eps: float = 10,
 ):
     eps_array = np.linspace(eps_min, eps_max, n_eps)
     return [isotropic_volume_change(st, eps=eps) for eps in eps_array]
+
+
+def supercell(
+    st: PolymlpStructure,
+    supercell_matrix: np.ndarray,
+) -> PolymlpStructure:
+    """Construct supercell for a given supercell matrix."""
+    from pypolymlp.utils.phonopy_utils import phonopy_supercell
+
+    return phonopy_supercell(
+        st,
+        supercell_matrix=supercell_matrix,
+        return_phonopy=False,
+    )
 
 
 def supercell_diagonal(
@@ -64,7 +81,7 @@ def supercell_diagonal(
     size: tuple = (2, 2, 2),
     use_phonopy: bool = False,
 ) -> PolymlpStructure:
-
+    """Construct supercell for a diagonal supercell matrix."""
     if use_phonopy:
         from pypolymlp.utils.phonopy_utils import phonopy_supercell
 
@@ -202,6 +219,23 @@ def triangulation_axis(st: PolymlpStructure):
     tri_axis = np.array([[lx, xy, xz], [0, ly, yz], [0, 0, lz]])
     st.axis = tri_axis
     return st
+
+
+def random_deformation(st: PolymlpStructure, max_deform: float = 0.1):
+    rand = (np.random.rand(3, 3) - 0.5) * 2 * max_deform
+    st.axis += rand
+    return st
+
+
+def multiple_random_deformation(
+    structures: list[PolymlpStructure],
+    max_deform: float = 0.1,
+):
+    n_st = len(structures)
+    random_deform = (np.random.rand(n_st, 3, 3) - 0.5) * 2 * max_deform
+    for st, rand in zip(structures, random_deform):
+        st.axis += rand
+    return structures
 
 
 if __name__ == "__main__":

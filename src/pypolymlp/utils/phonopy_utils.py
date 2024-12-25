@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+"""Utility functions for phonopy."""
+
 from collections import Counter
 
 import numpy as np

@@ -63,7 +63,7 @@ class PolymlpSSCHA:
         self.supercell_polymlp.supercell_matrix = supercell_matrix
         self.supercell_polymlp.n_unitcells = self.n_unitcells
 
-        self._symfc = Symfc(self.phonopy.supercell, use_mkl=True, log_level=0)
+        self._symfc = Symfc(self.phonopy.supercell, use_mkl=True, log_level=verbose)
         self._symfc.compute_basis_set(2)
 
         self.ph_real = HarmonicReal(self.supercell_polymlp, self.prop)

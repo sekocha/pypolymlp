@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+"""Command lines for using utilities."""
+
 import argparse
 import signal
 

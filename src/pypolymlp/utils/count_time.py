@@ -1,6 +1,5 @@
 """Class for estimating computational cost of polymlp."""
 
-import argparse
 import glob
 import time
 from typing import Optional, Union
@@ -148,43 +147,3 @@ class PolymlpCost:
         print("  single_core:", cost1, file=f)
         print("  openmp:     ", cost2, file=f)
         f.close()
-
-
-if __name__ == "__main__":
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--poscar", type=str, default=None, help="poscar file")
-    parser.add_argument(
-        "--pot",
-        nargs="*",
-        type=str,
-        default="polymlp.lammps",
-        help="polymlp file",
-    )
-
-    parser.add_argument(
-        "-d",
-        "--dirs",
-        nargs="*",
-        type=str,
-        default=None,
-        help="directory path",
-    )
-
-    parser.add_argument(
-        "--supercell",
-        nargs=3,
-        type=int,
-        default=[4, 4, 4],
-        help="supercell size",
-    )
-    parser.add_argument("--n_calc", type=int, default=20, help="number of calculations")
-    args = parser.parse_args()
-
-    pycost = PolymlpCost(
-        pot_path=args.dirs,
-        pot=args.pot,
-        poscar=args.poscar,
-        supercell=args.supercell,
-    )
-    pycost.run(n_calc=args.n_calc)

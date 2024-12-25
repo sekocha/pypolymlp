@@ -5,6 +5,13 @@ import numpy as np
 from pypolymlp.core.data_format import PolymlpStructure
 
 
+def split_train_test(files: list, train_ratio: float = 0.9):
+    """Split dataset into training and test datasets."""
+    n_data = len(files)
+    n_train = round(n_data * train_ratio)
+    return files[:n_train], files[n_train:]
+
+
 def rmse(y_true: np.ndarray, y_pred: np.ndarray):
     """Compute root mean square errors."""
     return np.sqrt(np.mean(np.square(y_true - y_pred)))

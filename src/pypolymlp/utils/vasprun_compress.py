@@ -1,5 +1,5 @@
-#!/usr/bin/env python
-import argparse
+"""Functions for compressing vasprun.xml files."""
+
 from xml.dom import minidom
 from xml.etree import ElementTree as ET
 
@@ -41,21 +41,3 @@ def convert(vasprun):
     f.close()
 
     return True
-
-
-if __name__ == "__main__":
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--vaspruns", nargs="*", type=str, help="vasprun.xml files")
-    parser.add_argument("--n_jobs", type=int, default=1, help="number of parallel jobs")
-    args = parser.parse_args()
-
-    if args.n_jobs == 1:
-        for vasp in args.vaspruns:
-            convert(vasp)
-    else:
-        from joblib import Parallel, delayed
-
-        res = Parallel(n_jobs=args.n_jobs)(
-            delayed(convert)(vasp) for vasp in args.vaspruns
-        )

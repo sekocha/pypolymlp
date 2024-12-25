@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+"""Interface for lammps."""
+
 import sys
 
 import numpy as np

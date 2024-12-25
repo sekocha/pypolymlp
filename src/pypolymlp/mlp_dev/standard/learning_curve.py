@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+"""Class for calculating learning curves."""
+
 import copy
 
 import numpy as np
@@ -8,78 +9,156 @@ from pypolymlp.mlp_dev.standard.mlpdev_dataxy import PolymlpDevDataXY
 from pypolymlp.mlp_dev.standard.regression import Regression
 
 
-def find_slices(train_reg_dict, total_n_atoms, n_samples):
+class LearningCurve:
+    """Class for calculating learning curves."""
 
-    ids = list(range(n_samples))
+    def __init__(
+        self,
+        polymlp: PolymlpDevDataXY,
+        total_n_atoms: np.ndarray,
+        verbose: bool = False,
+    ):
+        """Init method."""
 
-    first_id = train_reg_dict["first_indices"][0][2]
-    ids_stress = range(first_id, first_id + n_samples * 6)
-    ids.extend(ids_stress)
+        if len(polymlp.train) > 1:
+            raise ValueError(
+                "A single dataset is required for calculating learning curve"
+            )
+        self._polymlp = polymlp
+        self._polymlp_copy = copy.deepcopy(polymlp)
+        self._train_xy = polymlp.train_xy
+        self._total_n_atoms = total_n_atoms
+        self._verbose = verbose
 
-    first_id = train_reg_dict["first_indices"][0][1]
-    n_forces = sum(total_n_atoms[:n_samples]) * 3
-    ids_force = range(first_id, first_id + n_forces)
-    ids.extend(ids_force)
+        self._error_log = None
 
-    return np.array(ids)
+    def _find_slices(self, n_samples: int):
+        """Return slices for selected data."""
+        ids = list(range(n_samples))
 
+        first_id = self._train_xy.first_indices[0][2]
+        ids_stress = range(first_id, first_id + n_samples * 6)
+        ids.extend(ids_stress)
 
-def write_learning_curve(error_all):
+        first_id = self._train_xy.first_indices[0][1]
+        n_forces = sum(self._total_n_atoms[:n_samples]) * 3
+        ids_force = range(first_id, first_id + n_forces)
+        ids.extend(ids_force)
+        return np.array(ids)
 
-    f = open("polymlp_learning_curve.dat", "w")
-    print(
-        "# n_str, RMSE(energy, meV/atom), " "RMSE(force, eV/ang), RMSE(stress)",
-        file=f,
-    )
-    for n_samp, error in error_all:
+    def run(self):
+        """Calculate learning curve."""
+        self._error_log = []
+        n_train = self._train_xy.first_indices[0][2]
+        if self._verbose:
+            print("Calculating learning curve...", flush=True)
+
+        for n_samples in range(n_train // 10, n_train + 1, n_train // 10):
+            if self._verbose:
+                print(
+                    "------------- n_samples:", n_samples, "-------------", flush=True
+                )
+            ids = self._find_slices(n_samples)
+
+            self._polymlp_copy.train_xy.x = self._train_xy.x[ids]
+            self._polymlp_copy.train_xy.y = self._train_xy.y[ids]
+            self._polymlp_copy.train_xy.weight = self._train_xy.weight[ids]
+            self._polymlp_copy.train_xy.scales = self._train_xy.scales
+
+            reg = Regression(self._polymlp_copy).fit()
+            acc = PolymlpDevAccuracy(reg)
+            acc.compute_error()
+            for error in acc.error_test_dict.values():
+                self._error_log.append((n_samples, error))
+
+        if self._verbose:
+            self.print_log()
+
+        return self
+
+    def save_log(self, filename: str = "polymlp_learning_curve.dat"):
+        """Save results from learning curve calculations."""
+        f = open(filename, "w")
         print(
-            n_samp,
-            error["energy"] * 1000,
-            error["force"],
-            error["stress"],
+            "# n_str, RMSE(energy, meV/atom),",
+            "RMSE(force, eV/ang), RMSE(stress)",
             file=f,
         )
-    f.close()
+        for n_samp, error in self._error_log:
+            print(
+                n_samp,
+                error["energy"] * 1000,
+                error["force"],
+                error["stress"],
+                file=f,
+            )
+        f.close()
 
-    print("Learning Curve:", flush=True)
-    for n_samples, error in error_all:
-        print("- n_samples:   ", n_samples, flush=True)
-        print("  rmse_energy: ", "{:.8f}".format(error["energy"] * 1000), flush=True)
-        print("  rmse_force:  ", "{:.8f}".format(error["force"]), flush=True)
-        print("  rmse_stress: ", error["stress"], flush=True)
+    def print_log(self):
+        """Generate output for results from learning curve calculations."""
+        print("Learning Curve:", flush=True)
+        for n_samples, error in self._error_log:
+            print("- n_samples:   ", n_samples, flush=True)
+            print(
+                "  rmse_energy: ",
+                "{:.8f}".format(error["energy"] * 1000),
+                flush=True,
+            )
+            print("  rmse_force:  ", "{:.8f}".format(error["force"]), flush=True)
+            print("  rmse_stress: ", error["stress"], flush=True)
+
+    @property
+    def error(self):
+        return self._error_log
 
 
-def learning_curve(polymlp: PolymlpDevDataXY):
-
-    if len(polymlp.train_dict) > 1:
-        raise ValueError("A single dataset is required " "for learning curve option")
-
-    train_reg_dict = polymlp.train_regression_dict
-
-    for values in polymlp.train_dict.values():
-        total_n_atoms = values["total_n_atoms"]
-
-    polymlp_copy = copy.deepcopy(polymlp)
-
-    error_all = []
-    n_train = train_reg_dict["first_indices"][0][2]
-    print("Calculating learning curve...", flush=True)
-    for n_samples in range(n_train // 10, n_train + 1, n_train // 10):
-        print("------------- n_samples:", n_samples, "-------------", flush=True)
-        ids = find_slices(train_reg_dict, total_n_atoms, n_samples)
-        train_reg_dict_sample = {
-            "x": train_reg_dict["x"][ids],
-            "y": train_reg_dict["y"][ids],
-            "weight": train_reg_dict["weight"][ids],
-            "scales": train_reg_dict["scales"],
-        }
-        polymlp_copy.train_regression_dict = train_reg_dict_sample
-        reg = Regression(polymlp_copy).fit()
-
-        acc = PolymlpDevAccuracy(reg)
-        acc.compute_error()
-        for error in acc.error_test_dict.values():
-            error_all.append((n_samples, error))
-
-    write_learning_curve(error_all)
-    return error_all
+# def find_slices(train_xy, total_n_atoms, n_samples):
+#     """"""
+#
+#     ids = list(range(n_samples))
+#
+#     first_id = train_xy.first_indices[0][2]
+#     ids_stress = range(first_id, first_id + n_samples * 6)
+#     ids.extend(ids_stress)
+#
+#     first_id = train_xy.first_indices[0][1]
+#     n_forces = sum(total_n_atoms[:n_samples]) * 3
+#     ids_force = range(first_id, first_id + n_forces)
+#     ids.extend(ids_force)
+#
+#     return np.array(ids)
+#
+#
+# def write_learning_curve(error_all):
+#     """Generate output for results from learning curve calculations."""
+#     print("Learning Curve:", flush=True)
+#     for n_samples, error in error_all:
+#         print("- n_samples:   ", n_samples, flush=True)
+#         print("  rmse_energy: ", "{:.8f}".format(error["energy"] * 1000), flush=True)
+#         print("  rmse_force:  ", "{:.8f}".format(error["force"]), flush=True)
+#         print("  rmse_stress: ", error["stress"], flush=True)
+#
+# def save_learning_curve(error_all, filename="polymlp_learning_curve.dat"):
+#     """Save results from learning curve calculations."""
+#     f = open(filename, "w")
+#     print(
+#         "# n_str, RMSE(energy, meV/atom), " "RMSE(force, eV/ang), RMSE(stress)",
+#         file=f,
+#     )
+#     for n_samp, error in error_all:
+#         print(
+#             n_samp,
+#             error["energy"] * 1000,
+#             error["force"],
+#             error["stress"],
+#             file=f,
+#         )
+#     f.close()
+#
+# def learning_curve(
+#     polymlp: PolymlpDevDataXY,
+#     total_n_atoms: np.ndarray,
+#     verbose: bool = False,
+# ):
+#
+#
