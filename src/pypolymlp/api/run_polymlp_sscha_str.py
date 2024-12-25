@@ -68,6 +68,9 @@ def run():
     )
     args = parser.parse_args()
 
+    if not args.sym and not args.volume and not args.cell:
+        args.sym = True
+
     np.set_printoptions(legacy="1.21")
     strgen = PolymlpSSCHAStructureGenerator(verbose=True)
     strgen.load_poscar(args.poscar)
@@ -93,8 +96,19 @@ def run():
             fix_axis=False,
             max_deform=args.max_deform,
         )
-    else:
-        raise RuntimeError("Set either of options: --sym, --volume, or --cell.")
 
     strgen.save_structures(path="./poscars")
+
     print(args.n_samples, "structures are generated.", flush=True)
+    if args.sym:
+        basis_axis, basis_cartesian = strgen.basis_sets
+        if basis_axis is not None:
+            print("axis:", basis_axis.shape[0], "DOFs", flush=True)
+            for i, b in enumerate(basis_axis):
+                print("Basis", i + 1, ":", flush=True)
+                print(b, flush=True)
+        if basis_cartesian is not None:
+            print("positions:", basis_cartesian.shape[0], "DOFs", flush=True)
+            for i, b in enumerate(basis_cartesian):
+                print("Basis", i + 1, ":", flush=True)
+                print(b.T, flush=True)

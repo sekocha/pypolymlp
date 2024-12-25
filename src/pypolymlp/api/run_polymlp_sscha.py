@@ -1,4 +1,4 @@
-"""Function for performing SSCHA calculations by command line."""
+"""Command lines for performing SSCHA calculations by command line."""
 
 import argparse
 import signal

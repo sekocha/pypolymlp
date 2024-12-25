@@ -121,3 +121,8 @@ class PolymlpSSCHAStructureGenerator:
     def structures(self) -> list[PolymlpStructure]:
         """Return random structures."""
         return self._structure_samples
+
+    @property
+    def basis_sets(self) -> list[PolymlpStructure]:
+        """Return basis sets for axis and positions."""
+        return self._strgen.basis_sets

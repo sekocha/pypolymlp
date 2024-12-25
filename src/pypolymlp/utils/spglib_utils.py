@@ -140,6 +140,8 @@ def construct_basis_cell(
     spg_info = get_symmetry_dataset(cell_copy)
     spg_num = spg_info["number"]
     if verbose:
+        if len(cell_copy.types) != len(cell.types):
+            print("Number of atoms changed by standardization.", flush=True)
         print("Space group:", spg_info["international"], spg_num, flush=True)
 
     if spg_num >= 195:

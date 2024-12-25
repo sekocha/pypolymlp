@@ -26,21 +26,23 @@ class StructureGeneratorSym:
             raise RuntimeError("Both axis and positions fixed.")
 
         self._cell = cell
-        self._natom = cell.positions.shape[1]
         self._fix_axis = fix_axis
         self._fix_positions = fix_positions
         self._verbose = verbose
 
         if not fix_axis:
-            self._basis_axis, self._cell = construct_basis_cell(self._cell)
+            self._basis_axis, self._cell = construct_basis_cell(
+                self._cell,
+                verbose=verbose,
+            )
             self._init_axis_coeffs = self._basis_axis.T @ self._cell.axis.reshape(-1)
 
         if not fix_positions:
             self._basis_cartesian = construct_basis_cartesian(self._cell)
-
             if fix_axis and self._basis_cartesian is None:
                 raise RuntimeError("No degree of freedom found.")
 
+        self._natom = self._cell.positions.shape[1]
         self._structures = []
 
     def _recover_axis(self, coeffs):
@@ -110,3 +112,11 @@ class StructureGeneratorSym:
     def structures(self):
         """Return generated structures."""
         return self._structures
+
+    @property
+    def basis_sets(self):
+        """Return basis sets for axis and positions."""
+        return (
+            self._basis_axis.reshape((3, 3, -1)).transpose((2, 0, 1)),
+            self._basis_cartesian.reshape((self._natom, 3, -1)).transpose((2, 1, 0)),
+        )
