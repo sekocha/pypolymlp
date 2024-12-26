@@ -146,6 +146,7 @@ def run():
         help="Input file name",
     )
     args = parser.parse_args()
+    np.set_printoptions(legacy="1.21")
 
     if args.pot is None and args.infile is None:
         raise RuntimeError("Input parameters not found.")
@@ -153,7 +154,6 @@ def run():
     require_mlp = True if args.pot is not None else False
     polymlp = PolymlpCalc(pot=args.pot, verbose=True, require_mlp=require_mlp)
 
-    np.set_printoptions(legacy="1.21")
     if args.properties:
         print("Mode: Property calculations", flush=True)
         polymlp.load_structures_from_files(

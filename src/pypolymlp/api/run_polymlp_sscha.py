@@ -116,6 +116,7 @@ def run():
     )
     parser.add_argument("--mixing", type=float, default=0.5, help="Mixing parameter")
     args = parser.parse_args()
+    np.set_printoptions(legacy="1.21")
 
     if args.poscar is not None:
         unitcell = Poscar(args.poscar).structure

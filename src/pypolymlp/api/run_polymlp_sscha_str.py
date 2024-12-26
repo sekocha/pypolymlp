@@ -67,11 +67,11 @@ def run():
         help="Maximumm volume ratio.",
     )
     args = parser.parse_args()
+    np.set_printoptions(legacy="1.21")
 
     if not args.sym and not args.volume and not args.cell:
         args.sym = True
 
-    np.set_printoptions(legacy="1.21")
     strgen = PolymlpSSCHAStructureGenerator(verbose=True)
     strgen.load_poscar(args.poscar)
 
