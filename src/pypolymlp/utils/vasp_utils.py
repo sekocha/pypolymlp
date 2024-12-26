@@ -87,3 +87,31 @@ def write_poscar_file(
         )
 
     f.close()
+
+
+def load_electronic_properties_from_vasprun(
+    filename: str = "vasprun.xml",
+    temp_max: float = 1000.0,
+    temp_step: float = 10.0,
+):
+    """Load electronic properties from vasprun.xml.
+
+    phonopy is required.
+    """
+    from phonopy.interface.vasp import parse_vasprunxml
+
+    from pypolymlp.utils.electron import ElectronProperties
+    from pypolymlp.utils.phonopy_utils import phonopy_cell_to_structure
+
+    vxml = parse_vasprunxml(filename)
+    st = phonopy_cell_to_structure(vxml.cell)
+
+    weights = vxml.k_weights
+    eigenvalues = vxml.eigenvalues[:, :, :, 0]
+    n_electrons = vxml.NELECT
+    el = ElectronProperties(eigenvalues, weights, n_electrons)
+    el.run(temp_max, temp_step)
+    print(el.energy)
+    print(el.entropy)
+    print(el.free_energy)
+    return st
