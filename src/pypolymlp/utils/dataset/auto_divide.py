@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import numpy as np
 
-from pypolymlp.core.interface_vasp import parse_vaspruns
+from pypolymlp.core.interface_vasp import set_dataset_from_vaspruns
 from pypolymlp.utils.dataset.dataset_utils import (  # split_two_datasets,
     copy_vaspruns,
     split_three_datasets,
@@ -20,7 +20,7 @@ from pypolymlp.utils.dataset.dataset_utils import (  # split_two_datasets,
 
 def auto_divide(vaspruns):
 
-    dft_dict = parse_vaspruns(vaspruns)
+    dft_dict = set_dataset_from_vaspruns(vaspruns)
 
     # train0, test0 = [], []
     # train1, train2, test1, test2 = split_two_datasets(dft_dict)
