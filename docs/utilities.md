@@ -5,7 +5,7 @@
 ```
 > pypolymlp-utils --vasprun_compress vaspruns/vasprun-*.xml
 ```
-A compressed vasprun.xml file will be generated as `vasprun.xml.polymlp`.
+The compressed vasprun.xml files will be generated as `vasprun.xml.polymlp`.
 
 
 ## Calculation of electronic properties at finite temperatures from vasprun.xml files

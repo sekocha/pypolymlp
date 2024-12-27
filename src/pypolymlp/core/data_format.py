@@ -174,6 +174,7 @@ class PolymlpParams:
                       alphas = np.linspace(p[0], p[1], p[2]).
     include_force: Consider force entries.
     include_stress: Consider stress entries.
+    temperature: Temperature (active if dataset = "electron")
     """
 
     n_type: int
@@ -192,6 +193,7 @@ class PolymlpParams:
     print_memory: bool = False
     type_indices: Optional[list] = None
     type_full: Optional[bool] = None
+    temperature: float = 300
 
     def __post_init__(self):
         self.check_errors()

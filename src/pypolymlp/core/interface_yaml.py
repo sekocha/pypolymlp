@@ -46,3 +46,38 @@ def parse_structure_from_yaml(yml_data: yaml, tag: str = "unitcell"):
     cell_dict["positions"] = np.array(cell_dict["positions"]).T
     cell = PolymlpStructure(**cell_dict)
     return cell
+
+
+def set_dataset_from_electron_yamls(
+    yamlfiles: list[str],
+    temperature: float = 300.0,
+    element_order: Optional[bool] = None,
+) -> PolymlpDataDFT:
+    """Return DFT dataset by loading electron.yaml files."""
+    structures, free_energies = parse_electron_yamls(
+        yamlfiles,
+        temperature=temperature,
+    )
+    dft = set_dataset_from_structures(
+        structures,
+        free_energies,
+        forces=None,
+        stresses=None,
+        element_order=element_order,
+    )
+    return dft
+
+
+def parse_electron_yamls(yamlfiles: list[str], temperature: float = 300.0):
+    """Parse electron.yaml files."""
+    free_energies, structures = [], []
+    for yfile in yamlfiles:
+        yml = yaml.safe_load(open(yfile))
+        for prop in yml["properties"]:
+            if np.isclose(float(prop["temperature"]), temperature):
+                free_energies.append(float(prop["free_energy"]))
+                unitcell = parse_structure_from_yaml(yml, tag="structure")
+                unitcell.name = yfile
+                structures.append(unitcell)
+                break
+    return structures, np.array(free_energies)
