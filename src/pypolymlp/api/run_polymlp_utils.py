@@ -3,13 +3,19 @@
 import argparse
 import signal
 
+import numpy as np
+
 from pypolymlp.mlp_opt.optimal import find_optimal_mlps
 from pypolymlp.utils.atomic_energies.atomic_energies import (
     get_atomic_energies_polymlp_in,
 )
 from pypolymlp.utils.count_time import PolymlpCost
 from pypolymlp.utils.dataset.auto_divide import auto_divide
-from pypolymlp.utils.vasp_utils import print_poscar, write_poscar_file
+from pypolymlp.utils.vasp_utils import (
+    load_electronic_properties_from_vasprun,
+    print_poscar,
+    write_poscar_file,
+)
 from pypolymlp.utils.vasprun_compress import convert
 
 
@@ -26,6 +32,26 @@ def run():
         help="Compression of vasprun.xml files",
     )
     parser.add_argument("--n_jobs", type=int, default=1, help="Number of parallel jobs")
+
+    parser.add_argument(
+        "--electron_vasprun",
+        nargs="*",
+        type=str,
+        default=None,
+        help="Parse vasprun.xml files to get electronic properties.",
+    )
+    parser.add_argument(
+        "--temp_max",
+        type=float,
+        default=1000,
+        help="Maximum temperature (K).",
+    )
+    parser.add_argument(
+        "--temp_step",
+        type=float,
+        default=10,
+        help="Temperature interval (K).",
+    )
 
     parser.add_argument(
         "--auto_dataset",
@@ -114,7 +140,23 @@ def run():
 
     args = parser.parse_args()
 
-    if args.vasprun_compress is not None:
+    np.set_printoptions(legacy="1.21")
+    if args.electron_vasprun is not None:
+        for vasp in args.electron_vasprun:
+            split = vasp.split("/")
+            output = (
+                "/".join(split[:-1])
+                + "/electron"
+                + split[-1].replace("vasprun", "").replace("xml", "yaml")
+            )
+            load_electronic_properties_from_vasprun(
+                vasp,
+                output_filename=output,
+                temp_max=args.temp_max,
+                temp_step=args.temp_step,
+            )
+
+    elif args.vasprun_compress is not None:
         if args.n_jobs == 1:
             for vasp in args.vasprun_compress:
                 convert(vasp)

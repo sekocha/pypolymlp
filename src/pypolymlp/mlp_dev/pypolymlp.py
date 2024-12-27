@@ -179,6 +179,25 @@ class Pypolymlp:
         self._test = self._polymlp_in.test
         return self
 
+    def set_datasets_electron(self, yamlfiles: list[str], temperature: float = 300):
+        """Set single electron dataset.
+
+        Parameters
+        ----------
+        yamlfiles: electron.yaml files (list)
+        """
+        self._is_params_none()
+        self._params.dataset_type = "electron"
+        self._params.include_force = False
+        self._params.temperature = temperature
+
+        train_files, test_files = split_train_test(yamlfiles, train_ratio=0.9)
+        self._params.dft_train = sorted(train_files)
+        self._params.dft_test = sorted(test_files)
+        self._multiple_datasets = False
+        self.parse_datasets()
+        return self
+
     def set_datasets_sscha(self, yamlfiles: list[str]):
         """Set single sscha dataset.
 

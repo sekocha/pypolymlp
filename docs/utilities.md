@@ -5,7 +5,16 @@
 ```
 > pypolymlp-utils --vasprun_compress vaspruns/vasprun-*.xml
 ```
-Compressed vasprun.xml is generated as vasprun.xml.polymlp.
+The compressed vasprun.xml files will be generated as `vasprun.xml.polymlp`.
+
+
+## Calculation of electronic properties at finite temperatures from vasprun.xml files
+(phonopy required.)
+```
+> pypolymlp-utils --electron_vasprun */vasprun.xml
+```
+The output files will be generated as `electron.yaml`.
+
 
 ## Automatic division of DFT dataset
 

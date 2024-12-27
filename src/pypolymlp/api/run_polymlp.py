@@ -4,6 +4,8 @@ import argparse
 import signal
 import time
 
+import numpy as np
+
 from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
 
 
@@ -36,6 +38,7 @@ def run():
         help="Batch size of feature calculations",
     )
     args = parser.parse_args()
+    np.set_printoptions(legacy="1.21")
 
     verbose = True
     polymlp = Pypolymlp()

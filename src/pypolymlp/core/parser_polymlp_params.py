@@ -71,6 +71,12 @@ class ParamsParser:
             element_order=element_order,
         )
 
+        if dataset_type == "electron":
+            self._params.temperature = self._get_temperature()
+
+    def _get_temperature(self):
+        return self.parser.get_params("temperature", default=300, dtype=float)
+
     def _set_force_tags(self):
         """Set include_force and include_stress."""
         include_force = self.parser.get_params(
@@ -195,7 +201,7 @@ class ParamsParser:
 
     def _get_dataset(
         self,
-        dataset_type: Literal["vasp", "phono3py", "sscha"],
+        dataset_type: Literal["vasp", "phono3py", "sscha", "electron"],
         multiple_datasets: bool = False,
         prefix: Optional[str] = None,
     ):
@@ -208,11 +214,23 @@ class ParamsParser:
             return self._get_phono3py_set(prefix=prefix)
         elif dataset_type == "sscha":
             return self._get_sscha_set(prefix=prefix)
+        elif dataset_type == "electron":
+            return self._get_electron_set(prefix=prefix)
         else:
             raise KeyError("Given dataset_type is unavailable.")
 
     def _get_sscha_set(self, prefix: Optional[str] = None):
-        """Parse sscha_results.yaml filenames in dataset."""
+        """Parse sscha_results.yaml files in dataset."""
+        data = self.parser.get_params("data", default=None)
+        if prefix is not None:
+            data = prefix + "/" + data
+
+        data_all = sorted(glob.glob(data))
+        dft_train, dft_test = split_train_test(data_all, train_ratio=0.9)
+        return dft_train, dft_test
+
+    def _get_electron_set(self, prefix: Optional[str] = None):
+        """Parse electron.yaml files in dataset."""
         data = self.parser.get_params("data", default=None)
         if prefix is not None:
             data = prefix + "/" + data
