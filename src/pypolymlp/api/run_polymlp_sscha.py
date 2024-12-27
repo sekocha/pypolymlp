@@ -114,6 +114,12 @@ def run():
         default=None,
         help="Location of fc2.hdf5 for initial FCs",
     )
+    parser.add_argument(
+        "--born_vasprun",
+        type=str,
+        default=None,
+        help="vasprun.xml file for parsing born effective charges",
+    )
     parser.add_argument("--mixing", type=float, default=0.5, help="Mixing parameter")
     args = parser.parse_args()
     np.set_printoptions(legacy="1.21")
@@ -135,4 +141,9 @@ def run():
     print_parameters(supercell_matrix, args)
     print_structure(unitcell)
 
-    run_sscha(unitcell, supercell_matrix, args, pot=args.pot)
+    run_sscha(
+        unitcell,
+        supercell_matrix,
+        args,
+        pot=args.pot,
+    )

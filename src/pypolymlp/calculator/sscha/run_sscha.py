@@ -11,7 +11,11 @@ from symfc import Symfc
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.sscha.harmonic_real import HarmonicReal
 from pypolymlp.calculator.sscha.harmonic_reciprocal import HarmonicReciprocal
-from pypolymlp.calculator.sscha.sscha_utils import PolymlpDataSSCHA, save_sscha_yaml
+from pypolymlp.calculator.sscha.sscha_utils import (
+    PolymlpDataSSCHA,
+    get_nac_params,
+    save_sscha_yaml,
+)
 from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
 from pypolymlp.core.utils import ev_to_kjmol
 from pypolymlp.utils.phonopy_utils import (
@@ -30,6 +34,7 @@ class PolymlpSSCHA:
         params: Optional[PolymlpParams] = None,
         coeffs: Optional[np.ndarray] = None,
         properties: Optional[Properties] = None,
+        nac_params: Optional[dict] = None,
         verbose: bool = True,
     ):
         """Init method.
@@ -54,7 +59,11 @@ class PolymlpSSCHA:
         else:
             self.prop = Properties(pot=pot, params=params, coeffs=coeffs)
 
-        self.phonopy = Phonopy(structure_to_phonopy_cell(unitcell), supercell_matrix)
+        self.phonopy = Phonopy(
+            structure_to_phonopy_cell(unitcell),
+            supercell_matrix,
+            nac_params=nac_params,
+        )
         self.n_unitcells = int(round(np.linalg.det(supercell_matrix)))
         self._n_atom = len(self.phonopy.supercell.masses)
 
@@ -63,8 +72,15 @@ class PolymlpSSCHA:
         self.supercell_polymlp.supercell_matrix = supercell_matrix
         self.supercell_polymlp.n_unitcells = self.n_unitcells
 
-        self._symfc = Symfc(self.phonopy.supercell, use_mkl=True, log_level=verbose)
+        self._symfc = Symfc(
+            self.phonopy.supercell,
+            use_mkl=True,
+            log_level=self._verbose,
+        )
         self._symfc.compute_basis_set(2)
+        n_coeffs = self._symfc.basis_set[2].basis_set.shape[1]
+        if self._verbose and n_coeffs < 1000:
+            self._symfc._log_level = 0
 
         self.ph_real = HarmonicReal(self.supercell_polymlp, self.prop)
         self.ph_recip = HarmonicReciprocal(self.phonopy, self.prop)
@@ -346,8 +362,9 @@ def run_sscha(
     max_iter: Maximum number of iterations.
     mixing: Mixing parameter.
             FCs are updated by FC2 = FC2(new) * mixing + FC2(old) * (1-mixing).
+    born_vasprun: vasprun.xml file for parsing Born effective charges.
     """
-
+    nac_params = get_nac_params(args.born_vasprun)
     sscha = PolymlpSSCHA(
         unitcell,
         supercell_matrix,
@@ -355,6 +372,7 @@ def run_sscha(
         params=params,
         coeffs=coeffs,
         properties=properties,
+        nac_params=nac_params,
         verbose=verbose,
     )
 

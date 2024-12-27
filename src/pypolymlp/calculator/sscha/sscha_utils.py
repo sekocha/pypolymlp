@@ -7,6 +7,8 @@ from typing import Optional
 import numpy as np
 import yaml
 from phono3py.file_IO import read_fc2_from_hdf5
+from phonopy.interface.vasp import get_born_vasprunxml
+from phonopy.units import Bohr, Hartree
 
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.utils import kjmol_to_ev
@@ -173,6 +175,20 @@ def temperature_setting(args):
             temp_array = temp_array[::-1]
     args.temperatures = temp_array
     return args
+
+
+def get_nac_params(vasprun: Optional[str] = None):
+    """Get NAC parameters."""
+    if vasprun is None:
+        return None
+
+    born, epsilon, indep_atoms = get_born_vasprunxml(vasprun)
+    nac_params = {
+        "born": born,
+        "factor": Hartree * Bohr,
+        "dielectric": epsilon,
+    }
+    return nac_params
 
 
 def n_samples_setting(args, n_atom_supercell=None):
