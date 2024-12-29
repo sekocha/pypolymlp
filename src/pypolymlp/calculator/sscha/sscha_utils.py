@@ -2,15 +2,14 @@
 
 import os
 from dataclasses import dataclass
-from typing import Optional
+from typing import Literal, Optional
 
 import numpy as np
 import yaml
 from phono3py.file_IO import read_fc2_from_hdf5
-from phonopy.interface.vasp import get_born_vasprunxml
-from phonopy.units import Bohr, Hartree
 
 from pypolymlp.core.data_format import PolymlpStructure
+from pypolymlp.core.interface_yaml import parse_structure_from_yaml
 from pypolymlp.core.utils import kjmol_to_ev
 from pypolymlp.utils.phonopy_utils import phonopy_supercell, structure_to_phonopy_cell
 
@@ -28,9 +27,12 @@ class PolymlpDataSSCHA:
     average_potential: Averaged full potential energy.
     anharmonic_free_energy: Anharmonic free energy,
                             average_potential - harmonic_potential.
+    entropy: Entropy for effective FC2.
+    harmonic_heat_capacity: Harmonic heat capacity for effective FC2.
     free_energy: Free energy (harmonic_free_energy + anharmonic_free_energy).
     delta: Difference between old FC2 and updated FC2.
     converge: SSCHA calculations are converged or not.
+    imaginary: Imaginary frequencies are found or not.
     """
 
     temperature: float
@@ -39,9 +41,12 @@ class PolymlpDataSSCHA:
     harmonic_free_energy: float
     average_potential: float
     anharmonic_free_energy: float
+    entropy: Optional[float] = None
+    harmonic_heat_capacity: Optional[float] = None
     free_energy: Optional[float] = None
     delta: Optional[float] = None
     converge: Optional[bool] = None
+    imaginary: Optional[bool] = None
 
     def __post_init__(self):
         self.free_energy = self.harmonic_free_energy + self.anharmonic_free_energy
@@ -50,87 +55,157 @@ class PolymlpDataSSCHA:
 class Restart:
     """Class for reading files to restart SSCHA."""
 
-    def __init__(self, res_yaml: str, fc2hdf5: str = None, unit="kJ/mol"):
+    def __init__(
+        self,
+        res_yaml: str,
+        fc2hdf5: Optional[str] = None,
+        unit: Literal["kJ/mol", "eV/cell", "eV/atom"] = "kJ/mol",
+    ):
         """Init method."""
-
-        self.yaml = res_yaml
+        self._yaml = res_yaml
         self._unit = unit
 
-        self.load_sscha_yaml()
+        self._load_sscha_yaml()
         if fc2hdf5 is not None:
             self._fc2 = read_fc2_from_hdf5(fc2hdf5)
 
-    def load_sscha_yaml(self):
-
-        yaml_data = yaml.safe_load(open(self.yaml))
+    def _load_sscha_yaml(self):
+        """Load sscha_results.yaml file."""
+        yaml_data = yaml.safe_load(open(self._yaml))
 
         self._pot = yaml_data["parameters"]["pot"]
         self._temp = yaml_data["parameters"]["temperature"]
+        self._sscha_params = yaml_data["parameters"]
 
-        self._free_energy = yaml_data["properties"]["free_energy"]
-        self._static_potential = yaml_data["properties"]["static_potential"]
+        properties = yaml_data["properties"]
+        self._free_energy = properties["free_energy"]
+        self._static_potential = properties["static_potential"]
+        self._entropy = properties["entropy"]
+        self._harmonic_heat_capacity = properties["harmonic_heat_capacity"]
 
         self._delta_fc = yaml_data["status"]["delta_fc"]
         self._converge = yaml_data["status"]["converge"]
+        self._imaginary = yaml_data["status"]["imaginary"]
         self._logs = yaml_data["logs"]
 
-        unitcell_yaml = yaml_data["unitcell"]
-        unitcell_yaml["axis"] = np.array(unitcell_yaml["axis"]).T
-        unitcell_yaml["positions"] = np.array(unitcell_yaml["positions"]).T
-        self._unitcell = PolymlpStructure(**unitcell_yaml)
+        self._unitcell = parse_structure_from_yaml(yaml_data, tag="unitcell")
         self._supercell_matrix = np.array(yaml_data["supercell_matrix"])
         self._n_atom_unitcell = len(self._unitcell.elements)
+        self._volume = np.linalg.det(self._unitcell.axis)
+
+    @property
+    def unit(self):
+        """Return unit for free energy."""
+        return self._unit
+
+    @unit.setter
+    def unit(self, unit_in: Literal["kJ/mol", "eV/cell", "eV/atom"]):
+        """Set unit."""
+        self._unit = unit_in
 
     @property
     def polymlp(self):
+        """Return MLP file name."""
         return self._pot
 
     @property
     def temperature(self):
+        """Return temperature."""
         return self._temp
+
+    def _unit_conversion(self, val):
+        """Convert unit for free energy and potentials."""
+        if self._unit == "kJ/mol":
+            return val
+        elif self._unit == "eV/cell":
+            return kjmol_to_ev(val)
+        elif self._unit == "eV/atom":
+            return kjmol_to_ev(val) / self._n_atom_unitcell
+        raise RuntimeError("Unit must be kJ/mol, eV/cell, or eV/atom")
+
+    def _unit_conversion_entropy(self, val):
+        """Convert unit for entropy and heat capacity."""
+        if self._unit == "kJ/mol":
+            return val
+        elif self._unit == "eV/cell":
+            return kjmol_to_ev(val) / 1000
+        elif self._unit == "eV/atom":
+            return kjmol_to_ev(val) / 1000 / self._n_atom_unitcell
+        raise RuntimeError("Unit must be kJ/mol, eV/cell, or eV/atom")
 
     @property
     def free_energy(self):
-        if self._unit == "kJ/mol":
-            return self._free_energy
-        elif self._unit == "eV/atom":
-            return kjmol_to_ev(self._free_energy) / self._n_atom_unitcell
-        raise ValueError("Energy unit: kJ/mol or eV/atom")
+        """Return free energy."""
+        return self._unit_conversion(self._free_energy)
 
     @property
     def static_potential(self):
-        if self._unit == "kJ/mol":
-            return self._static_potential
-        elif self._unit == "eV/atom":
-            return kjmol_to_ev(self._static_potential) / self._n_atom_unitcell
-        raise ValueError("Energy unit: kJ/mol or eV/atom")
+        """Return static potential energy."""
+        return self._unit_conversion(self._static_potential)
+
+    @property
+    def entropy(self):
+        """Return entropy."""
+        return self._unit_conversion_entropy(self._entropy)
+
+    @property
+    def harmonic_heat_capacity(self):
+        """Return harmonic heat capacity."""
+        return self._unit_conversion_entropy(self._harmonic_heat_capacity)
 
     @property
     def logs(self):
+        """Return logs."""
         return self._logs
 
     @property
+    def delta_fc(self):
+        """Return FC difference between the last two iterations."""
+        return self._delta_fc
+
+    @property
+    def converge(self):
+        """Return convergence tag."""
+        return self._converge
+
+    @property
+    def imaginary(self):
+        """Return imaginary tag."""
+        return self._imaginary
+
+    @property
+    def parameters(self):
+        """Return simulation parameters."""
+        return self._sscha_params
+
+    @property
     def force_constants(self):
+        """Return effective FC2."""
         return self._fc2
 
     @property
-    def unitcell(self):
+    def unitcell(self) -> PolymlpStructure:
+        """Return unitcell."""
         return self._unitcell
 
     @property
     def unitcell_phonopy(self):
+        """Return unitcell in PhonopyAtoms."""
         return structure_to_phonopy_cell(self._unitcell)
 
     @property
-    def supercell_matrix(self):
+    def supercell_matrix(self) -> np.ndarray:
+        """Return supercell matrix."""
         return self._supercell_matrix
 
     @property
-    def n_unitcells(self):
+    def n_unitcells(self) -> int:
+        """Return number of unit cells."""
         return int(round(np.linalg.det(self._supercell_matrix)))
 
     @property
-    def supercell(self):
+    def supercell(self) -> PolymlpStructure:
+        """Return supercell."""
         cell = phonopy_supercell(
             self._unitcell,
             supercell_matrix=self._supercell_matrix,
@@ -140,6 +215,7 @@ class Restart:
 
     @property
     def supercell_phonopy(self):
+        """Return supercell in PhonopyAtoms."""
         cell = phonopy_supercell(
             self._unitcell,
             supercell_matrix=self._supercell_matrix,
@@ -148,13 +224,8 @@ class Restart:
         return cell
 
     @property
-    def unitcell_volume(self):
-        volume = np.linalg.det(self._unitcell["axis"])
-        if self._unit == "kJ/mol":
-            return volume
-        elif self._unit == "eV/atom":
-            return volume / self._n_atom_unitcell
-        raise ValueError("Energy unit: kJ/mol or eV/atom")
+    def volume(self):
+        return self._volume
 
 
 def temperature_setting(args):
@@ -175,20 +246,6 @@ def temperature_setting(args):
             temp_array = temp_array[::-1]
     args.temperatures = temp_array
     return args
-
-
-def get_nac_params(vasprun: Optional[str] = None):
-    """Get NAC parameters."""
-    if vasprun is None:
-        return None
-
-    born, epsilon, indep_atoms = get_born_vasprunxml(vasprun)
-    nac_params = {
-        "born": born,
-        "factor": Hartree * Bohr,
-        "dielectric": epsilon,
-    }
-    return nac_params
 
 
 def n_samples_setting(args, n_atom_supercell=None):
@@ -308,13 +365,24 @@ def save_sscha_yaml(
     print("  mesh_phonon:   ", list(args.mesh), file=f)
     print("", file=f)
 
+    print("units:", file=f)
+    print("  free_energy:            kJ/mol", file=f)
+    print("  static_potential:       kJ/mol", file=f)
+    print("  entropy:                J/K/mol", file=f)
+    print("  harmonic_heat_capacity: J/K/mol", file=f)
+    print("", file=f)
+
     print("properties:", file=f)
-    print("  free_energy:     ", properties.free_energy, file=f)
-    print("  static_potential:", properties.static_potential, file=f)
+    print("  free_energy:           ", properties.free_energy, file=f)
+    print("  static_potential:      ", properties.static_potential, file=f)
+    print("  entropy:               ", properties.entropy, file=f)
+    print("  harmonic_heat_capacity:", properties.harmonic_heat_capacity, file=f)
+    print("", file=f)
 
     print("status:", file=f)
-    print("  delta_fc: ", properties.delta, file=f)
-    print("  converge: ", properties.converge, file=f)
+    print("  delta_fc:  ", properties.delta, file=f)
+    print("  converge:  ", properties.converge, file=f)
+    print("  imaginary: ", properties.imaginary, file=f)
     print("", file=f)
 
     save_cell(unitcell, tag="unitcell", fstream=f)
@@ -342,3 +410,10 @@ def save_sscha_yaml(
     print("", file=f)
 
     f.close()
+
+
+def is_imaginary(freq: np.ndarray, tol: float = -0.1):
+    """Check branches with imaginary frequencies."""
+    if np.min(freq) < tol:
+        return True
+    return False

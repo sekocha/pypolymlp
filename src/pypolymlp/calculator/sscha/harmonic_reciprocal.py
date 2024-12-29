@@ -97,6 +97,16 @@ class HarmonicReciprocal:
         return self._tp_dict["free_energy"][0]
 
     @property
+    def entropy(self):
+        """Return entropy."""
+        return self._tp_dict["entropy"][0]
+
+    @property
+    def heat_capacity(self):
+        """Return heat capacity."""
+        return self._tp_dict["heat_capacity"][0]
+
+    @property
     def frequencies(self):
         """Return phonon frequencies."""
         return self._mesh_dict["frequencies"]

@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+"""Utility functions for post-calculations from SSCHA results."""
+
 import numpy as np
 import yaml
 
