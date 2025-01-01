@@ -1,13 +1,14 @@
 """Class for calculating thermodynamic properties from SSCHA results."""
 
+import os
 from dataclasses import dataclass
-from typing import Optional
+from typing import Literal, Optional
 
 import numpy as np
 from phonopy.qha.core import BulkModulus
 from phonopy.units import EVAngstromToGPa
 
-# from pypolymlp.calculator.compute_phonon import PolymlpPhonon
+from pypolymlp.calculator.compute_phonon import PolymlpPhonon
 from pypolymlp.calculator.sscha.sscha_utils import Restart
 from pypolymlp.core.utils import rmse
 
@@ -21,11 +22,10 @@ class GridVolTemp:
     restart: Optional[Restart] = None
     free_energy: Optional[float] = None
     entropy: Optional[float] = None
-    harmonic_entropy: Optional[float] = None
-    anharmonic_entropy: Optional[float] = None
+    reference_entropy: Optional[float] = None
     heat_capacity: Optional[float] = None
     harmonic_heat_capacity: Optional[float] = None
-    anharmonic_heat_capacity: Optional[float] = None
+    reference_heat_capacity: Optional[float] = None
 
 
 @dataclass
@@ -37,11 +37,15 @@ class GridTemp:
     eqm_free_energy: Optional[float] = None
     eqm_entropy: Optional[float] = None
     eqm_entropy_vol_deriv: Optional[float] = None
+    eqm_heat_capacity: Optional[float] = None
+    eqm_cp: Optional[float] = None
     bulk_modulus: Optional[float] = None
     free_energies: Optional[np.ndarray] = None
     entropies: Optional[np.ndarray] = None
     eos_fit_data: Optional[np.ndarray] = None
     gibbs_free_energies: Optional[np.ndarray] = None
+    volume_entropy_fit: Optional[np.ndarray] = None
+    volume_cv_fit: Optional[np.ndarray] = None
 
 
 class SSCHAProperties:
@@ -85,7 +89,6 @@ class SSCHAProperties:
             self._grid_t[itemp].free_energies = np.stack([volumes, free_energies]).T
             self._grid_t[itemp].entropies = np.stack([volumes, entropies]).T
 
-        #        self.compute_harmonic_entropies()
         return self
 
     def _find_grid(self, filenames):
@@ -118,22 +121,22 @@ class SSCHAProperties:
     def _fit_eos(self):
         """Fit EOS curves."""
         for itemp, temp in enumerate(self._temperatures):
-            volumes = self._grid_t[itemp].free_energies[:, 0]
-            free_energies = self._grid_t[itemp].free_energies[:, 1]
+            grid = self._grid_t[itemp]
+            volumes = grid.free_energies[:, 0]
+            free_energies = grid.free_energies[:, 1]
             bm = BulkModulus(volumes=volumes, energies=free_energies, eos="vinet")
-            self._grid_t[itemp].eqm_volume = bm.equilibrium_volume
-            self._grid_t[itemp].eqm_free_energy = bm.energy
-            self._grid_t[itemp].bulk_modulus = bm.bulk_modulus * EVAngstromToGPa
+            grid.eqm_volume = bm.equilibrium_volume
+            grid.eqm_free_energy = bm.energy
+            grid.bulk_modulus = bm.bulk_modulus * EVAngstromToGPa
 
             grid_volumes = np.linspace(min(volumes) * 0.9, max(volumes) * 1.1, 200)
             fitted = self._eos_function(bm, grid_volumes)
-            self._grid_t[itemp].eos_fit_data = np.stack([grid_volumes, fitted]).T
-            gibbs_free_energies = self._transform_FVT_to_GPT(bm, grid_volumes, fitted)
-            self._grid_t[itemp].gibbs_free_energies = gibbs_free_energies
+            grid.eos_fit_data = np.stack([grid_volumes, fitted]).T
+            grid.gibbs_free_energies = self._transformFVTtoGPT(bm, grid_volumes, fitted)
 
         return self
 
-    def _transform_FVT_to_GPT(
+    def _transformFVTtoGPT(
         self,
         bm: BulkModulus,
         volumes: np.ndarray,
@@ -163,72 +166,151 @@ class SSCHAProperties:
         energies = bm._eos(volumes, *parameters)
         return energies
 
-    def _fit_entropy(self, order: int = 4):
+    def _fit_volume_entropy(self, order: int = 4):
         """Fit volume-entropy curves."""
-        self._entropy_polyfit = dict()
         for itemp, temp in enumerate(self._temperatures):
-            volumes = self._grid_t[itemp].entropies[:, 0]
-            entropies = self._grid_t[itemp].entropies[:, 1]
-            coeffs = np.polyfit(volumes, entropies, order)
+            volumes, entropies, _ = self._get_data(itemp=itemp, attr="entropy")
+            coeffs, _, error = self._polyfit(volumes, entropies, order)
+            deriv = self._get_poly_deriv(coeffs)
             if self._verbose:
-                entropies_pred = np.polyval(coeffs, volumes)
-                rmse_entropy = rmse(entropies, entropies_pred)
-                print("RMSE (EntropyFit, T = " + str(temp) + "):", rmse_entropy)
+                print("RMSE (V-S Fit, T = " + str(temp) + "):", error)
 
-            eqm_entropy = np.polyval(coeffs, self._grid_t[itemp].eqm_volume)
-            self._grid_t[itemp].eqm_entropy = eqm_entropy
-            self._entropy_polyfit[itemp] = coeffs
-
-        for itemp, deriv in self.entropy_polyfit_derivative.items():
-            eqm_entropy_vol_deriv = np.polyval(deriv, self._grid_t[itemp].eqm_volume)
-            self._grid_t[itemp].eqm_entropy_vol_deriv = eqm_entropy_vol_deriv
+            grid = self._grid_t[itemp]
+            grid.eqm_entropy = np.polyval(coeffs, grid.eqm_volume)
+            grid.volume_entropy_fit = coeffs
+            grid.eqm_entropy_vol_deriv = np.polyval(deriv, grid.eqm_volume)
 
         return self
 
-    def run(self, entropy_order: int = 4):
+    def _fit_heat_capacity(self):
+        """Fit properties for calculating heat capacity."""
+        self._fit_temperature_entropy(order=4)
+        self._fit_volume_heat_capacity(order=4)
+        self._compute_cp()
+        return self
+
+    def _fit_temperature_entropy(self, order: int = 4):
+        """Fit temperature-entropy at volumes."""
+        for ivol, vol in enumerate(self._volumes):
+            temperatures, entropies, itemps = self._get_data(ivol=ivol, attr="entropy")
+            _, ref_entropies, _ = self._get_data(ivol=ivol, attr="reference_entropy")
+            del_entropies = entropies - ref_entropies
+            # TODO: Use fit without intercept.
+            coeffs, _, error = self._polyfit(temperatures, del_entropies, order)
+            deriv = self._get_poly_deriv(coeffs)
+            if self._verbose:
+                print("RMSE (T-S Fit, V = " + str(vol) + "):", error)
+
+            heat_capacity_from_ref = temperatures * np.polyval(deriv, temperatures)
+            for itemp, val in zip(itemps, heat_capacity_from_ref):
+                g = self._grid_vt[ivol, itemp]
+                g.heat_capacity = g.reference_heat_capacity + val
+
+        return self
+
+    def _fit_volume_heat_capacity(self, order: int = 4):
+        """Fit volume-Cv at temperatures."""
+        for itemp, temp in enumerate(self._temperatures):
+            volumes, cvs, _ = self._get_data(itemp=itemp, attr="heat_capacity")
+            coeffs, _, error = self._polyfit(volumes, cvs, order)
+            if self._verbose:
+                print("RMSE (V-Cv Fit, T = " + str(temp) + "):", error)
+
+            grid = self._grid_t[itemp]
+            grid.eqm_heat_capacity = np.polyval(coeffs, grid.eqm_volume)
+            grid.volume_cv_fit = coeffs
+        return self
+
+    def _compute_cp(self):
+        """Calculate Cp - Cv."""
+        for itemp, temp in enumerate(self._temperatures):
+            g = self._grid_t[itemp]
+            bm = g.bulk_modulus / EVAngstromToGPa
+            # TODO: consider units or eqm_entropy_vol_deriv (too large)
+            add = temp * g.eqm_volume * (g.eqm_entropy_vol_deriv**2) / bm
+            g.eqm_cp = g.eqm_heat_capacity + add
+            print(g.eqm_volume, g.eqm_entropy_vol_deriv, bm)
+            print(temp, g.eqm_cp, add)
+        return self
+
+    def _get_data(
+        self,
+        ivol: Optional[int] = None,
+        itemp: Optional[int] = None,
+        attr: Optional[str] = None,
+    ):
+        """Slice grid data."""
+        if ivol is not None:
+            grid = self._grid_vt[ivol]
+            x = [g.temperature for g in grid if getattr(g, attr) is not None]
+        elif itemp is not None:
+            grid = self._grid_vt[:, itemp]
+            x = [g.volume for g in grid if getattr(g, attr) is not None]
+        else:
+            raise RuntimeError("Set ivol or itemp.")
+
+        y = [getattr(g, attr) for g in grid if getattr(g, attr) is not None]
+        ids = [i for i, g in enumerate(grid) if getattr(g, attr) is not None]
+        return np.array(x), np.array(y), np.array(ids)
+
+    def _polyfit(self, x: np.ndarray, y: np.ndarray, order: int = 4):
+        """Fit data to a polynomial using numpy."""
+        poly_coeffs = np.polyfit(x, y, order)
+        y_pred = np.polyval(poly_coeffs, x)
+        y_rmse = rmse(y, y_pred)
+        return (poly_coeffs, y_pred, y_rmse)
+
+    def run(
+        self,
+        entropy_order: int = 4,
+        reference: Literal["harmonic", "auto"] = "harmonic",
+    ):
         """Fit all properties."""
         self._fit_eos()
-        self._fit_entropy(order=entropy_order)
+        self._fit_volume_entropy(order=entropy_order)
+
+        if reference == "harmonic":
+            self.compute_harmonic_entropies()
+        else:
+            pass
+        self._fit_heat_capacity()
         return self
 
-        #    def compute_harmonic_entropies(
-        #        self,
-        #        distance: float = 0.001,
-        #        mesh: np.ndarray = (10, 10, 10),
-        #    ):
-        #        """Compute harmonic entropies."""
-        #        self._harmonic_entropies = defaultdict(list)
-        #        self._anharmonic_entropies = defaultdict(list)
-        #        self._harmonic_heat_capacities = defaultdict(list)
-        #
-        #        t_min, t_max, t_step = self._check_temperatures()
-        #        for ivol in range(len(self._volumes)):
-        #            res = self._grid[ivol][0]
-        #            if os.path.exists(res.parameters["pot"]):
-        #                pot = res.parameters["pot"]
-        #            else:
-        #                pot = "/".join(res.parameters["pot"].split("/")[-2:])
-        #
-        #            ph = PolymlpPhonon(
-        #                unitcell=res.unitcell,
-        #                supercell_matrix=res.supercell_matrix,
-        #                pot=pot,
-        #            )
-        #            ph.produce_force_constants(distance=distance)
-        #            ph.compute_properties(mesh=mesh, t_min=t_min, t_max=t_max, t_step=t_step)
-        #            tp_dict = ph.phonopy.get_thermal_properties_dict()
-        #            print(tp_dict)
-        #
-        #            for temp, val in zip(tp_dict["temperatures"], tp_dict["entropy"]):
-        #                self._harmonic_entropies[temp].append([res.volume, val])
-        #            for temp, val in zip(tp_dict["temperatures"], tp_dict["heat_capacity"]):
-        #                self._harmonic_heat_capacities[temp].append([res.volume, val])
-        #
-        #        for temp in self._temperatures:
-        #            anh = np.array(self._entropies[temp])[:, 1] - np.array(self._harmonic_entropies[temp])[:, 1]
-        #            self._anharmonic_entropies[temp] = np.stack([np.array(self._entropies[temp])[:, 0], anh]).T
-        #            print(self._anharmonic_entropies[temp].shape)
-        ##
+    def compute_harmonic_entropies(
+        self,
+        distance: float = 0.001,
+        mesh: np.ndarray = (10, 10, 10),
+    ):
+        """Compute harmonic entropies."""
+        t_min, t_max, t_step = self._check_temperatures()
+        for ivol, vol in enumerate(self._volumes):
+            if self._verbose:
+                print("Harmonic phonon: vol =", vol)
+            res = None
+            itemp = 0
+            while res is None:
+                res = self._grid_vt[ivol, itemp].restart
+                itemp += 1
+            if os.path.exists(res.parameters["pot"]):
+                pot = res.parameters["pot"]
+            else:
+                pot = "/".join(res.parameters["pot"].split("/")[-2:])
+
+            ph = PolymlpPhonon(
+                unitcell=res.unitcell,
+                supercell_matrix=res.supercell_matrix,
+                pot=pot,
+            )
+            ph.produce_force_constants(distance=distance)
+            ph.compute_properties(mesh=mesh, t_min=t_min, t_max=t_max, t_step=t_step)
+            tp_dict = ph.phonopy.get_thermal_properties_dict()
+
+            for itemp, val in enumerate(tp_dict["entropy"]):
+                grid = self._grid_vt[ivol, itemp]
+                if grid.entropy is not None:
+                    grid.reference_entropy = val
+            for itemp, val in enumerate(tp_dict["heat_capacity"]):
+                self._grid_vt[ivol, itemp].reference_heat_capacity = val
 
         return self
 
@@ -280,6 +362,11 @@ class SSCHAProperties:
             print("", file=f)
         return self
 
+    def _get_poly_deriv(self, coeffs: np.ndarray):
+        """Return derivatives of coefficients from polynomial fits."""
+        deriv = coeffs * np.arange(len(coeffs) - 1, -1, -1, dtype=int)
+        return deriv[:-1]
+
     @property
     def grid_data_temperature(self):
         """Return properties at temperatures."""
@@ -289,23 +376,6 @@ class SSCHAProperties:
     def grid_data_volume_temperature(self):
         """Return properties at grid points (V, T)."""
         return self._grid_vt
-
-    @property
-    def entropy_polyfit(self):
-        """Return coefficients from polynomial fits.
-
-        The coefficients are obtained using np.polyfit.
-        """
-        return self._entropy_polyfit
-
-    @property
-    def entropy_polyfit_derivative(self):
-        """Return volume derivatives of coefficients from polynomial fits."""
-        derivatives = dict()
-        for temp, coeffs in self._entropy_polyfit.items():
-            deriv = coeffs * np.arange(len(coeffs) - 1, -1, -1, dtype=int)
-            derivatives[temp] = deriv[:-1]
-        return derivatives
 
 
 if __name__ == "__main__":
@@ -326,11 +396,3 @@ if __name__ == "__main__":
     sscha = SSCHAProperties(args.yaml, verbose=True)
     sscha.run(entropy_order=4)
     sscha.save_properties(filename="sscha_properties.yaml")
-
-#    print(sscha.bulk_moduli)
-#    print(sscha.equilibrium_free_energies)
-#    print(sscha.equilibrium_volumes)
-#    print(sscha.equilibrium_entropies)
-#
-#    print(sscha.entropy_polyfit)
-#    print(sscha.eos_fit_data)
