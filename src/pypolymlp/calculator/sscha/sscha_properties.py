@@ -10,6 +10,7 @@ from phonopy.units import EVAngstromToGPa
 
 from pypolymlp.calculator.compute_phonon import PolymlpPhonon
 from pypolymlp.calculator.sscha.sscha_utils import Restart
+from pypolymlp.core.units import EVtoJ, avogadro
 from pypolymlp.core.utils import rmse
 
 
@@ -226,11 +227,9 @@ class SSCHAProperties:
         for itemp, temp in enumerate(self._temperatures):
             g = self._grid_t[itemp]
             bm = g.bulk_modulus / EVAngstromToGPa
-            # TODO: consider units or eqm_entropy_vol_deriv (too large)
             add = temp * g.eqm_volume * (g.eqm_entropy_vol_deriv**2) / bm
+            add /= EVtoJ * avogadro
             g.eqm_cp = g.eqm_heat_capacity + add
-            print(g.eqm_volume, g.eqm_entropy_vol_deriv, bm)
-            print(temp, g.eqm_cp, add)
         return self
 
     def _get_data(
@@ -334,15 +333,17 @@ class SSCHAProperties:
         print("  free_energy:   eV/unitcell", file=f)
         print("  entropy:       J/K/mol", file=f)
         print("  bulk_modulus:  GPa", file=f)
+        print("  heat_capacity: J/K/mol", file=f)
         print("", file=f)
 
         print("equilibrium_properties:", file=f)
         for grid in self._grid_t:
-            print("- temperature:  ", grid.temperature, file=f)
-            print("  volume:       ", grid.eqm_volume, file=f)
-            print("  free_energy:  ", grid.eqm_free_energy, file=f)
-            print("  entropy:      ", grid.eqm_entropy, file=f)
-            print("  bulk_modulus: ", grid.bulk_modulus, file=f)
+            print("- temperature:      ", grid.temperature, file=f)
+            print("  volume:           ", grid.eqm_volume, file=f)
+            print("  bulk_modulus:     ", grid.bulk_modulus, file=f)
+            print("  free_energy:      ", grid.eqm_free_energy, file=f)
+            print("  entropy:          ", grid.eqm_entropy, file=f)
+            print("  heat_capacity_cp: ", grid.eqm_cp, file=f)
             print("", file=f)
 
         self._save_dict_of_2d_array(f, tag="free_energies")
