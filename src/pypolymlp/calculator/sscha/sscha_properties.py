@@ -143,10 +143,12 @@ class SSCHAProperties:
             n_data = 0
             imag_vol = []
             for ivol, vol in enumerate(self._volumes):
-                if self._grid_vt[ivol, itemp].free_energy is not None:
-                    n_data += 1
-                if self._grid_vt[ivol, itemp].restart.imaginary:
-                    imag_vol.append(vol)
+                grid = self._grid_vt[ivol, itemp]
+                if grid.restart is not None:
+                    if grid.free_energy is not None:
+                        n_data += 1
+                    if grid.restart.imaginary:
+                        imag_vol.append(vol)
             imag_vol = np.round(volumes_nodata + imag_vol, 3)
             print("  - n_data:", n_data, flush=True)
             print("  - volumes (imag. freq.):", imag_vol, flush=True)
@@ -226,6 +228,7 @@ class SSCHAProperties:
 
     def _fit_heat_capacity(self):
         """Fit properties for calculating heat capacity."""
+        self._set_reference_entropies()
         self._fit_temperature_entropy()
         self._fit_volume_heat_capacity()
         self._compute_cp()
@@ -248,13 +251,8 @@ class SSCHAProperties:
                 intercept=False,
             )
             if self._verbose:
-                print(
-                    "- volume:",
-                    np.round(vol, 3),
-                    ", rmse:",
-                    np.round(error, 5),
-                    flush=True,
-                )
+                error = np.round(error, 5)
+                print("- volume:", np.round(vol, 3), ", rmse:", error, flush=True)
 
             if add_sqrt:
                 deriv_poly = self._get_poly_deriv(coeffs[1:])
@@ -315,13 +313,6 @@ class SSCHAProperties:
         ids = [i for i, g in enumerate(grid) if getattr(g, attr) is not None]
         return np.array(x), np.array(y), np.array(ids)
 
-    def _polyfit_numpy(self, x: np.ndarray, y: np.ndarray, order: int = 4):
-        """Fit data to a polynomial using numpy."""
-        poly_coeffs = np.polyfit(x, y, order)
-        y_pred = np.polyval(poly_coeffs, x)
-        y_rmse = rmse(y, y_pred)
-        return (poly_coeffs, y_pred, y_rmse)
-
     def _polyfit(
         self,
         x: np.ndarray,
@@ -330,6 +321,11 @@ class SSCHAProperties:
         intercept: bool = True,
         add_sqrt: bool = False,
     ):
+        """Fit data to a polynomial.
+
+        If order is None, the optimal value of order will be automatically
+        determined by minimizing the leave-one-out cross validation score.
+        """
         if order is not None:
             best_order = order
         else:
@@ -339,10 +335,9 @@ class SSCHAProperties:
                 (poly_coeffs, y_pred, y_rmse), X = self._polyfit_single(
                     x,
                     y,
-                    order=order,
+                    order,
                     intercept=intercept,
                 )
-                # LOOCV
                 residuals = y_pred - y
                 h = np.diag(X @ np.linalg.inv(X.T @ X) @ X.T)
                 squared_errors = (residuals / (1 - h)) ** 2
@@ -354,7 +349,7 @@ class SSCHAProperties:
         (poly_coeffs, y_pred, y_rmse), _ = self._polyfit_single(
             x,
             y,
-            order=best_order,
+            best_order,
             intercept=intercept,
             add_sqrt=add_sqrt,
         )
@@ -368,11 +363,11 @@ class SSCHAProperties:
         self,
         x: np.ndarray,
         y: np.ndarray,
-        order: int = 4,
+        order: int,
         intercept: bool = True,
         add_sqrt: bool = False,
     ):
-        """Fit data to a polynomial."""
+        """Fit data to a polynomial with a given order."""
         X = []
         if add_sqrt:
             X.append(np.sqrt(x))
@@ -387,30 +382,29 @@ class SSCHAProperties:
         y_rmse = rmse(y, y_pred)
         return (poly_coeffs, y_pred, y_rmse), X
 
-    def run(
-        self,
-        reference: Literal["auto", "harmonic"] = "auto",
-    ):
+    def run(self, reference: Literal["auto", "harmonic"] = "auto"):
         """Fit all properties."""
         self._fit_eos()
         self._fit_volume_entropy()
-
-        if reference == "harmonic":
-            self.compute_harmonic_entropies()
-        elif reference == "auto":
-            self.set_reference_entropies()
-        else:
-            pass
-
         self._fit_heat_capacity()
         return self
 
-    def set_reference_entropies(
-        self,
-        mesh: np.ndarray = (10, 10, 10),
-        ref_temp: float = None,
-    ):
-        """Set reference entropies automatically."""
+    def _set_reference_entropies(self, reference: Literal["auto", "harmonic"] = "auto"):
+        """Set reference entropies."""
+        if reference == "auto":
+            self._set_reference_entropies_mintemp()
+        elif reference == "harmonic":
+            self._set_reference_entropies_harmonic()
+        else:
+            raise RuntimeError("auto or harmonic is available as reference entropy.")
+        return self
+
+    def _set_reference_entropies_mintemp(self, mesh: np.ndarray = (10, 10, 10)):
+        """Use reference entropies automatically.
+
+        Harmonic phonon model with SSCHA frequencies is used to
+        calculate reference entropies.
+        """
         t_min, t_max, t_step = self._check_temperatures()
         print("Reference entropy:", flush=True)
         for ivol, vol in enumerate(self._volumes):
@@ -419,17 +413,12 @@ class SSCHAProperties:
             while res is None:
                 itemp += 1
                 grid = self._grid_vt[ivol, itemp]
-                if not grid.restart.imaginary:
+                if grid.restart is not None and not grid.restart.imaginary:
                     res = grid.restart
 
             if self._verbose:
-                print(
-                    "V =",
-                    np.round(vol, 3),
-                    "T =",
-                    self._temperatures[itemp],
-                    flush=True,
-                )
+                temp = self._temperatures[itemp]
+                print("V =", np.round(vol, 3), "T =", temp, flush=True)
 
             ph = Phonopy(structure_to_phonopy_cell(res.unitcell), res.supercell_matrix)
             ph.force_constants = read_fc2_from_hdf5(grid.path_fc2)
@@ -442,25 +431,28 @@ class SSCHAProperties:
                 if grid.entropy is not None:
                     grid.reference_entropy = val
             for itemp, val in enumerate(tp_dict["heat_capacity"]):
-                self._grid_vt[ivol, itemp].reference_heat_capacity = val
-
+                grid = self._grid_vt[ivol, itemp]
+                if grid.entropy is not None:
+                    grid.reference_heat_capacity = val
         return self
 
-    def compute_harmonic_entropies(
+    def _set_reference_entropies_harmonic(
         self,
         distance: float = 0.01,
         mesh: np.ndarray = (10, 10, 10),
     ):
-        """Compute harmonic entropies."""
+        """Use harmonic entropies as reference entropies."""
         t_min, t_max, t_step = self._check_temperatures()
+        print("Reference entropy (harmonic):", flush=True)
         for ivol, vol in enumerate(self._volumes):
             if self._verbose:
-                print("Harmonic phonon: vol =", vol, flush=True)
+                print("- vol:", vol, flush=True)
             res = None
-            itemp = 0
+            itemp = -1
             while res is None:
-                res = self._grid_vt[ivol, itemp].restart
                 itemp += 1
+                res = self._grid_vt[ivol, itemp].restart
+
             if os.path.exists(res.parameters["pot"]):
                 pot = res.parameters["pot"]
             else:
@@ -480,8 +472,9 @@ class SSCHAProperties:
                 if grid.entropy is not None:
                     grid.reference_entropy = val
             for itemp, val in enumerate(tp_dict["heat_capacity"]):
-                self._grid_vt[ivol, itemp].reference_heat_capacity = val
-
+                grid = self._grid_vt[ivol, itemp]
+                if grid.entropy is not None:
+                    grid.reference_heat_capacity = val
         return self
 
     def _check_temperatures(self):
@@ -557,23 +550,3 @@ class SSCHAProperties:
     def grid_data_volume_temperature(self):
         """Return properties at grid points (V, T)."""
         return self._grid_vt
-
-
-if __name__ == "__main__":
-
-    import argparse
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--yaml",
-        nargs="*",
-        type=str,
-        default=None,
-        help="sscha_results.yaml files",
-    )
-    args = parser.parse_args()
-
-    np.set_printoptions(legacy="1.21")
-    sscha = SSCHAProperties(args.yaml, verbose=True)
-    sscha.run()
-    sscha.save_properties(filename="sscha_properties.yaml")
