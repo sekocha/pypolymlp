@@ -89,3 +89,7 @@ polymlp.set_datasets_sscha(yamlfiles)
 polymlp.run(verbose=True)
 polymlp.save_mlp(filename="polymlp.lammps.300")
 ```
+### Property calculations using SSCHA calculations on a volume-temperature grid
+```
+> pypolymlp-sscha-post --properties --yaml ./*/sscha/*/sscha_results.yaml
+```

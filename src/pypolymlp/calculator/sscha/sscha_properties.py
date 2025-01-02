@@ -206,7 +206,7 @@ class SSCHAProperties:
             pressure_gibbs_free_energies.append([press_gpa, gibbs])
         return pressure_gibbs_free_energies
 
-    def _fit_volume_entropy(self, order: int = 4):
+    def _fit_volume_entropy(self):
         """Fit volume-entropy curves."""
         if self._verbose:
             print("RMSE (V-S fit):", flush=True)
@@ -215,8 +215,7 @@ class SSCHAProperties:
             coeffs, _, error = self._polyfit(volumes, entropies)
             deriv = self._get_poly_deriv(coeffs)
             if self._verbose:
-                print("- temperature:", temp, flush=True)
-                print("  rmse:       ", error, flush=True)
+                print("- temperature:", temp, ", rmse", np.round(error, 5), flush=True)
 
             grid = self._grid_t[itemp]
             grid.eqm_entropy = np.polyval(coeffs, grid.eqm_volume)
@@ -227,12 +226,12 @@ class SSCHAProperties:
 
     def _fit_heat_capacity(self):
         """Fit properties for calculating heat capacity."""
-        self._fit_temperature_entropy(order=4)
-        self._fit_volume_heat_capacity(order=4)
+        self._fit_temperature_entropy()
+        self._fit_volume_heat_capacity()
         self._compute_cp()
         return self
 
-    def _fit_temperature_entropy(self, order: int = 4):
+    def _fit_temperature_entropy(self):
         """Fit temperature-entropy at volumes."""
         if self._verbose:
             print("RMSE (T-S fit):", flush=True)
@@ -240,37 +239,38 @@ class SSCHAProperties:
             temperatures, entropies, itemps = self._get_data(ivol=ivol, attr="entropy")
             _, ref_entropies, _ = self._get_data(ivol=ivol, attr="reference_entropy")
             del_entropies = entropies - ref_entropies
-            # TODO: Use fit without intercept.
+
+            add_sqrt = True
             coeffs, pred, error = self._polyfit(
                 temperatures,
                 del_entropies,
-                add_sqrt=True,
+                add_sqrt=add_sqrt,
                 intercept=False,
             )
-            deriv = self._get_poly_deriv(coeffs)
             if self._verbose:
-                print("- volume:", vol, flush=True)
-                print("  rmse:  ", error, flush=True)
+                print(
+                    "- volume:",
+                    np.round(vol, 3),
+                    ", rmse:",
+                    np.round(error, 5),
+                    flush=True,
+                )
 
-            heat_capacity_from_ref = temperatures * np.polyval(deriv, temperatures)
+            if add_sqrt:
+                deriv_poly = self._get_poly_deriv(coeffs[1:])
+                cv_from_ref = temperatures * np.polyval(deriv_poly, temperatures)
+                cv_from_ref += 0.5 * coeffs[0] * np.power(temperatures, 0.5)
+            else:
+                deriv = self._get_poly_deriv(coeffs)
+                cv_from_ref = temperatures * np.polyval(deriv, temperatures)
 
-            #            heat_capacity_from_ref_numerical = [0.0]
-            #            for i, temp in enumerate(temperatures[1:-1]):
-            #                diff = del_entropies[i+1] - del_entropies[i-1]
-            #                interval = temperatures[i+1] - temperatures[i-1]
-            #                cv_from_ref = temp * diff / interval
-            #                heat_capacity_from_ref_numerical.append(cv_from_ref)
-
-            #            for cv1, cv2 in zip(heat_capacity_from_ref, heat_capacity_from_ref_numerical):
-            #                print(cv1, cv2)
-            #
-            for itemp, val in zip(itemps, heat_capacity_from_ref):
+            for itemp, val in zip(itemps, cv_from_ref):
                 g = self._grid_vt[ivol, itemp]
                 g.heat_capacity = g.reference_heat_capacity + val
 
         return self
 
-    def _fit_volume_heat_capacity(self, order: int = 4):
+    def _fit_volume_heat_capacity(self):
         """Fit volume-Cv at temperatures."""
         if self._verbose:
             print("RMSE (V-Cv fit):", flush=True)
@@ -278,8 +278,7 @@ class SSCHAProperties:
             volumes, cvs, _ = self._get_data(itemp=itemp, attr="heat_capacity")
             coeffs, _, error = self._polyfit(volumes, cvs)
             if self._verbose:
-                print("- temperature:", temp, flush=True)
-                print("  rmse:       ", error, flush=True)
+                print("- temperature:", temp, ", rmse", np.round(error, 5), flush=True)
 
             grid = self._grid_t[itemp]
             grid.eqm_heat_capacity = np.polyval(coeffs, grid.eqm_volume)
@@ -338,7 +337,10 @@ class SSCHAProperties:
             best_order = None
             for order in [2, 3, 4]:
                 (poly_coeffs, y_pred, y_rmse), X = self._polyfit_single(
-                    x, y, order=order, intercept=intercept
+                    x,
+                    y,
+                    order=order,
+                    intercept=intercept,
                 )
                 # LOOCV
                 residuals = y_pred - y
@@ -356,6 +358,10 @@ class SSCHAProperties:
             intercept=intercept,
             add_sqrt=add_sqrt,
         )
+        if not intercept:
+            poly_coeffs = list(poly_coeffs)
+            poly_coeffs.append(0.0)
+            poly_coeffs = np.array(poly_coeffs)
         return (poly_coeffs, y_pred, y_rmse)
 
     def _polyfit_single(
@@ -368,10 +374,10 @@ class SSCHAProperties:
     ):
         """Fit data to a polynomial."""
         X = []
-        for power in np.arange(order, 0, -1, dtype=int):
-            X.append(x**power)
         if add_sqrt:
             X.append(np.sqrt(x))
+        for power in np.arange(order, 0, -1, dtype=int):
+            X.append(x**power)
         if intercept:
             X.append(np.ones(x.shape))
         X = np.array(X).T
@@ -383,12 +389,11 @@ class SSCHAProperties:
 
     def run(
         self,
-        entropy_order: int = 4,
-        reference: Literal["harmonic", "auto"] = "auto",
+        reference: Literal["auto", "harmonic"] = "auto",
     ):
         """Fit all properties."""
         self._fit_eos()
-        self._fit_volume_entropy(order=entropy_order)
+        self._fit_volume_entropy()
 
         if reference == "harmonic":
             self.compute_harmonic_entropies()
@@ -443,14 +448,14 @@ class SSCHAProperties:
 
     def compute_harmonic_entropies(
         self,
-        distance: float = 0.1,
+        distance: float = 0.01,
         mesh: np.ndarray = (10, 10, 10),
     ):
         """Compute harmonic entropies."""
         t_min, t_max, t_step = self._check_temperatures()
         for ivol, vol in enumerate(self._volumes):
             if self._verbose:
-                print("Harmonic phonon: vol =", vol)
+                print("Harmonic phonon: vol =", vol, flush=True)
             res = None
             itemp = 0
             while res is None:
@@ -512,13 +517,22 @@ class SSCHAProperties:
             print("  heat_capacity_cp: ", grid.eqm_cp, file=f)
             print("", file=f)
 
-        self._save_dict_of_2d_array(f, tag="free_energies")
-        self._save_dict_of_2d_array(f, tag="eos_fit_data")
-        self._save_dict_of_2d_array(f, tag="entropies")
-        self._save_dict_of_2d_array(f, tag="gibbs_free_energies")
+        self._save_2d_array(f, tag="free_energies")
+        self._save_2d_array(f, tag="eos_fit_data")
+        self._save_2d_array(f, tag="entropies")
+        self._save_2d_array(f, tag="gibbs_free_energies")
+
+        print("cv:", file=f)
+        for ivol, vol in enumerate(self._volumes):
+            print("- volume:", vol, file=f)
+            for itemp, temp in enumerate(self._temperatures):
+                grid = self._grid_vt[ivol, itemp]
+                print("  -", [temp, grid.heat_capacity], file=f)
+            print("", file=f)
+
         f.close()
 
-    def _save_dict_of_2d_array(self, f, tag: str):
+    def _save_2d_array(self, f, tag: str):
         """Save dict of 2D array"""
         print(tag + ":", file=f)
         for itemp, temp in enumerate(self._temperatures):
@@ -561,5 +575,5 @@ if __name__ == "__main__":
 
     np.set_printoptions(legacy="1.21")
     sscha = SSCHAProperties(args.yaml, verbose=True)
-    sscha.run(entropy_order=4)
+    sscha.run()
     sscha.save_properties(filename="sscha_properties.yaml")
