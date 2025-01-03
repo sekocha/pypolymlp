@@ -19,11 +19,36 @@ def run():
         help="Calculate thermodynamic properties.",
     )
     parser.add_argument(
+        "--distribution",
+        action="store_true",
+        help="Calculate properties of structures sampled from FC2 density matrix.",
+    )
+    parser.add_argument(
         "--yaml",
         nargs="*",
         type=str,
         default=None,
         help="sscha_results.yaml files",
+    )
+    parser.add_argument(
+        "--fc2",
+        type=str,
+        default="fc2.hdf5",
+        help="fc2.hdf5 file to be parsed.",
+    )
+    parser.add_argument(
+        "--pot",
+        nargs="*",
+        type=str,
+        default=None,
+        help="polymlp.lammps file",
+    )
+    parser.add_argument(
+        "-n",
+        "--n_samples",
+        type=int,
+        default=100,
+        help="Number of sample supercells",
     )
     args = parser.parse_args()
     np.set_printoptions(legacy="1.21")
@@ -33,3 +58,12 @@ def run():
         sscha.compute_thermodynamic_properties(
             args.yaml, filename="sscha_properties.yaml"
         )
+
+    elif args.distribution:
+        sscha.init_structure_distribution(
+            yamlfile=args.yaml[0],
+            fc2file=args.fc2,
+            pot=args.pot,
+        )
+        sscha.run_structure_distribution(n_samples=args.n_samples)
+        sscha.save_structure_distribution(path=".")

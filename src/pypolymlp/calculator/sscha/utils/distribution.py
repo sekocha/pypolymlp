@@ -1,7 +1,7 @@
-#!/usr/bin/env python
-import argparse
+"""Class for generating structures from force constants and calculating their properties."""
+
 import os
-import signal
+from typing import Optional
 
 import numpy as np
 
@@ -10,80 +10,100 @@ from pypolymlp.calculator.sscha.harmonic_real import HarmonicReal
 from pypolymlp.calculator.sscha.sscha_utils import Restart
 from pypolymlp.utils.vasp_utils import write_poscar_file
 
-if __name__ == "__main__":
 
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
+class SSCHADistribution:
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--yaml",
-        type=str,
-        default="sscha_results.yaml",
-        help="sscha_results.yaml file to be parsed.",
-    )
-    parser.add_argument(
-        "--fc2",
-        type=str,
-        default="fc2.hdf5",
-        help="fc2.hdf5 file to be parsed.",
-    )
-    parser.add_argument(
-        "--pot",
-        nargs="*",
-        type=str,
-        default=None,
-        help="polymlp.lammps file",
-    )
-    parser.add_argument(
-        "-n",
-        "--n_samples",
-        type=int,
-        default=100,
-        help="Number of sample supercells",
-    )
-    args = parser.parse_args()
+    def __init__(
+        self,
+        yamlfile: str = "sscha_results.yaml",
+        fc2file: str = "fc2.hdf5",
+        pot: Optional[str] = None,
+        verbose: bool = False,
+    ):
+        """Init method.
 
-    res = Restart(args.yaml, fc2hdf5=args.fc2)
+        Load sscha_results.yaml and effective FC2.
+        """
+        self._verbose = verbose
+        self._res = Restart(yamlfile, fc2hdf5=fc2file)
+        pot = self._res.polymlp if pot is None else pot
+        prop = Properties(pot=pot)
+        self._ph_real = HarmonicReal(
+            self._res.supercell,
+            prop,
+            n_unitcells=self._res.n_unitcells,
+            fc2=self._res.force_constants,
+        )
 
-    pot = res.polymlp if args.pot is None else args.pot
-    prop = Properties(pot=pot)
+        if self._verbose:
+            print("Load SSCHA results:")
+            print("  yaml:        ", yamlfile)
+            print("  fc2 :        ", fc2file)
+            print("  mlp :        ", pot)
+            print("  temperature :", self._res.temperature)
 
-    print("Restart: SSCHA distribution calculation")
-    print("  yaml:        ", args.yaml)
-    print("  fc2 :        ", args.fc2)
-    print("  mlp :        ", pot)
-    print("  n_structures:", args.n_samples)
-    print("  temperature :", res.temperature)
+    def run_structure_distribution(self, n_samples: int = 2000):
+        """Calculate properties of structures generated from density matrix."""
+        self._ph_real.run(t=self._res.temperature, n_samples=n_samples)
+        return self
 
-    ph_real = HarmonicReal(
-        res.supercell,
-        prop,
-        n_unitcells=res.n_unitcells,
-        fc2=res.force_constants,
-    )
-    ph_real.run(t=res.temperature, n_samples=args.n_samples)
+    def save_structure_distribution(self, path="."):
+        """Save structures sampled from density matrix and their properties."""
+        disps = self.displacements.transpose((0, 2, 1))
+        forces = self.forces.transpose((0, 2, 1))
+        np.save(path + "/sscha_disps.npy", disps)
+        np.save(path + "/sscha_forces.npy", forces)
+        np.save(path + "/sscha_energies.npy", np.array(self.energies))
+        with open(path + "/sscha_static_energy.dat", "w") as f:
+            print(self.static_potential, file=f)
 
-    disps = ph_real.displacements.transpose((0, 2, 1))
-    forces = ph_real.forces.transpose((0, 2, 1))
+        os.makedirs(path + "/sscha_poscars", exist_ok=True)
+        for i, st in enumerate(self.supercells, 1):
+            filename = path + "/sscha_poscars/POSCAR-" + str(i).zfill(4)
+            write_poscar_file(st, filename=filename)
 
-    energies = ph_real.full_potentials
-    e0 = ph_real.static_potential
-    st_dicts = ph_real.supercells
+        if self._verbose:
+            print("sscha_disps.npy and sscha_forces.npy are generated.", flush=True)
+            print("- shape:", forces.shape, flush=True)
+            print("Potential energies of supercells are generated.")
+            print("- shape:", len(self.energies))
+            print("- static_potential:", self.static_potential, "(eV/supercell)")
+            print("sscha_poscars/POSCAR* are generated.")
+        return self
 
-    np.save("sscha_disps.npy", disps)
-    np.save("sscha_forces.npy", forces)
-    print("sscha_disps.npy and sscha_forces.npy are generated.")
-    print("- shape:", forces.shape)
+    @property
+    def displacements(self):
+        """Return displacements in structures sampled from density matrix.
 
-    np.save("sscha_energies.npy", np.array(energies))
-    f = open("sscha_static_energy.dat", "w")
-    print(e0, file=f)
-    f.close()
-    print("sscha_energies.npy and sscha_static_energy.dat are generated.")
-    print("- shape:", len(energies))
+        shape = (n_supercell, 3, n_atom).
+        """
+        return self._ph_real.displacements
 
-    os.makedirs("sscha_poscars", exist_ok=True)
-    for i, st in enumerate(st_dicts, 1):
-        filename = "sscha_poscars/POSCAR-" + str(i).zfill(4)
-        write_poscar_file(st, filename=filename)
-    print("sscha_poscars/POSCAR* are generated.")
+    @property
+    def forces(self):
+        """Return forces of structures sampled from density matrix.
+
+        shape = (n_supercell, 3, n_atom).
+        """
+        return self._ph_real.forces
+
+    @property
+    def energies(self):
+        """Return energies of structures sampled from density matrix.
+
+        shape = (n_supercell), unit: eV/supercell.
+        """
+        return self._ph_real.full_potentials
+
+    @property
+    def static_potential(self):
+        """Return static potential of equilibrium supercell structure.
+
+        Unit: eV/supercell.
+        """
+        return self._ph_real.static_potential
+
+    @property
+    def supercells(self):
+        """Return supercell structures sampled from density matrix."""
+        return self._ph_real.supercells
