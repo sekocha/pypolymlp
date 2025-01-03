@@ -5,18 +5,10 @@ import signal
 
 import numpy as np
 
-from pypolymlp.mlp_opt.optimal import find_optimal_mlps
+from pypolymlp.api.pypolymlp_utils import PolymlpUtils
 from pypolymlp.utils.atomic_energies.atomic_energies import (
     get_atomic_energies_polymlp_in,
 )
-from pypolymlp.utils.count_time import PolymlpCost
-from pypolymlp.utils.dataset.auto_divide import auto_divide
-from pypolymlp.utils.vasp_utils import (
-    load_electronic_properties_from_vasprun,
-    print_poscar,
-    write_poscar_file,
-)
-from pypolymlp.utils.vasprun_compress import convert
 
 
 def run():
@@ -141,35 +133,39 @@ def run():
     args = parser.parse_args()
 
     np.set_printoptions(legacy="1.21")
+    polymlp = PolymlpUtils(verbose=True)
+
     if args.electron_vasprun is not None:
-        for vasp in args.electron_vasprun:
-            split = vasp.split("/")
-            output = (
-                "/".join(split[:-1])
-                + "/electron"
-                + split[-1].replace("vasprun", "").replace("xml", "yaml")
-            )
-            load_electronic_properties_from_vasprun(
-                vasp,
-                output_filename=output,
-                temp_max=args.temp_max,
-                temp_step=args.temp_step,
-            )
-
+        polymlp.compute_electron_properties_from_vaspruns(
+            args.electron_vasprun,
+            temp_max=args.temp_max,
+            temp_step=args.temp_step,
+            n_jobs=args.n_jobs,
+        )
     elif args.vasprun_compress is not None:
-        if args.n_jobs == 1:
-            for vasp in args.vasprun_compress:
-                convert(vasp)
-        else:
-            from joblib import Parallel, delayed
-
-            _ = Parallel(n_jobs=args.n_jobs)(
-                delayed(convert)(vasp) for vasp in args.vasprun_compress
-            )
+        polymlp.compress_vaspruns(args.vasprun_compress, n_jobs=args.n_jobs)
+    elif args.calc_cost:
+        polymlp.estimate_polymlp_comp_cost(
+            pot=args.pot,
+            path_pot=args.dirs,
+            poscar=args.poscar,
+            supercell=args.supercell,
+            n_calc=args.n_calc,
+        )
+    elif args.find_optimal is not None:
+        polymlp.find_optimal_mlps(args.find_optimal, args.key)
 
     elif args.auto_dataset is not None:
-        auto_divide(args.auto_dataset)
+        polymlp.divide_dataset(args.auto_dataset)
 
+    elif args.refine_cell or args.space_group:
+        polymlp.init_symmetry(poscar=args.poscar, symprec=args.symprec)
+        if args.refine_cell:
+            structure = polymlp.refine_cell()
+            polymlp.print_poscar(structure)
+            polymlp.write_poscar_file(structure, filename="poscar_pypolymlp")
+        if args.space_group:
+            print(" space_group = ", polymlp.get_spacegroup(), flush=True)
     elif (
         args.atomic_energy_elements is not None
         or args.atomic_energy_formula is not None
@@ -179,25 +175,3 @@ def run():
             formula=args.atomic_energy_formula,
             functional=args.atomic_energy_functional,
         )
-
-    elif args.calc_cost:
-        pycost = PolymlpCost(
-            pot_path=args.dirs,
-            pot=args.pot,
-            poscar=args.poscar,
-            supercell=args.supercell,
-        )
-        pycost.run(n_calc=args.n_calc)
-    elif args.find_optimal is not None:
-        find_optimal_mlps(args.find_optimal, args.key)
-
-    elif args.refine_cell or args.space_group:
-        from pypolymlp.utils.spglib_utils import SymCell
-
-        sc = SymCell(args.poscar, symprec=args.symprec)
-        if args.refine_cell:
-            structure = sc.refine_cell()
-            print_poscar(structure)
-            write_poscar_file(structure)
-        if args.space_group:
-            print(" space_group = ", sc.get_spacegroup())

@@ -5,6 +5,9 @@
 ### Free energy calculation from vasprun.xml files
 ```
 > pypolymlp-utils --electron_vasprun */vasprun.xml --temp_max 2000 --temp_step 50
+
+(joblib required.)
+> pypolymlp-utils --electron_vasprun */vasprun.xml --temp_max 2000 --temp_step 50 --n_jobs -1
 ```
 
 ### MLP development for electronic free energy
