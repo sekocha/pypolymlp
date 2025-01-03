@@ -24,6 +24,18 @@ def run():
         help="Calculate properties of structures sampled from FC2 density matrix.",
     )
     parser.add_argument(
+        "--transition",
+        nargs=2,
+        type=str,
+        help="Find phase transition.",
+    )
+    parser.add_argument(
+        "--boundary",
+        nargs=2,
+        type=str,
+        help="Compute phase boundary.",
+    )
+    parser.add_argument(
         "--yaml",
         nargs="*",
         type=str,
@@ -67,3 +79,16 @@ def run():
         )
         sscha.run_structure_distribution(n_samples=args.n_samples)
         sscha.save_structure_distribution(path=".")
+    elif args.transition:
+        tc_linear, tc_quartic = sscha.find_phase_transition(
+            args.transition[0],
+            args.transition[1],
+        )
+        print("Tc (Linear fit)  :", np.round(tc_linear, 1))
+        print("Tc (Quartic fit) :", np.round(tc_quartic, 1))
+
+    elif args.boundary:
+        sscha.compute_phase_boundary(
+            args.boundary[0],
+            args.boundary[1],
+        )

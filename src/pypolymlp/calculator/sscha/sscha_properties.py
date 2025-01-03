@@ -518,6 +518,7 @@ class SSCHAProperties:
         print("cv:", file=f)
         for ivol, vol in enumerate(self._volumes):
             print("- volume:", vol, file=f)
+            print("  values:", file=f)
             for itemp, temp in enumerate(self._temperatures):
                 grid = self._grid_vt[ivol, itemp]
                 print("  -", [temp, grid.heat_capacity], file=f)
@@ -530,9 +531,10 @@ class SSCHAProperties:
         print(tag + ":", file=f)
         for itemp, temp in enumerate(self._temperatures):
             array1d = getattr(self._grid_t[itemp], tag)
-            print(" - temperature:", temp, file=f)
+            print("- temperature:", temp, file=f)
+            print("  values:", file=f)
             for vals in array1d:
-                print("   -", list(vals), file=f)
+                print("  -", list(vals), file=f)
             print("", file=f)
         return self
 

@@ -1,70 +1,61 @@
-#!/usr/bin/env python
-import argparse
+"""Utility functions for finding phase transition."""
 
 import numpy as np
-import sympy
-
-from pypolymlp.calculator.sscha.utils.utils import parse_summary_yaml
-
-
-def get_diff(data1, data2):
-    dict1, dict2 = dict(data1), dict(data2)
-    diff = []
-    for k, v in sorted(dict1.items()):
-        if k in dict2:
-            diff.append([k, v, dict2[k], dict2[k] - v])
-    return np.array(diff)
+import scipy
+import yaml
 
 
-def find_tc(d1, order=3):
+def parse_sscha_properties_yaml(yamlfile: str = "sscha_properties.yaml"):
+    """Parse sscha_properties.yaml."""
+    data = yaml.safe_load(open(yamlfile))
+    helmholtz = [
+        [d["temperature"], d["free_energy"]] for d in data["equilibrium_properties"]
+    ]
+    helmholtz = np.array(helmholtz)
 
-    z1 = np.polyfit(d1[:, 0], d1[:, 1], order)
-    x = sympy.Symbol("x")
-
-    if order == 4:
-        Sol2 = sympy.solve(
-            z1[0] * x**4 + z1[1] * x**3 + z1[2] * x**2 + z1[3] * x + z1[4]
-        )
-    elif order == 3:
-        Sol2 = sympy.solve(z1[0] * x**3 + z1[1] * x**2 + z1[2] * x**1 + z1[3])
-    elif order == 2:
-        Sol2 = sympy.solve(z1[0] * x**2 + z1[1] * x**1 + z1[2])
-    elif order == 1:
-        Sol2 = sympy.solve(z1[0] * x**1 + z1[1])
-    else:
-        raise KeyError(" order != 1 - 4")
-
-    sol = []
-    for s in Sol2:
-        real, imag = s.as_real_imag()
-        if abs(imag) < 1e-15 and real > 0 and real < 5000:
-            sol.append(real)
-    if len(sol) > 0:
-        return sorted(sol)
-    return []
+    gibbs = dict()
+    for d in data["gibbs_free_energies"]:
+        temp = np.round(d["temperature"], 3)
+        gibbs[temp] = np.array(d["values"])
+    return helmholtz, gibbs
 
 
-if __name__ == "__main__":
+def _func(x, *args):
+    return np.polyval(args[0], x)
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--yaml", nargs=2, type=str, default=None, help="two yaml files"
-    )
-    args = parser.parse_args()
 
-    ft1 = parse_summary_yaml(args.yaml[0])
-    ft2 = parse_summary_yaml(args.yaml[1])
-    diff = get_diff(ft1, ft2)
+def _fit_solve(f1: np.ndarray, f2: np.ndarray, f0: float = 0.0, order: int = 1):
+    """Fit and solve delta f = 0."""
+    z1 = np.polyfit(f1[:, 0], f1[:, 1], order)
+    z2 = np.polyfit(f2[:, 0], f2[:, 1], order)
+    coeffs = z1 - z2
+    res = scipy.optimize.fsolve(_func, f0, args=coeffs)
+    return res[0]
 
-    if diff.shape[0] > 1:
-        tc = find_tc(diff[:, [0, 3]], order=3)
-        # tc = find_tc(diff[:,[0,3]], order=1)
-    else:
-        tc = []
-    print(" tc =", tc)
 
-    f = open("free_energy.dat", "w")
-    print("# temp., F:", args.yaml[1], "-", args.yaml[0], file=f)
-    for d in diff:
-        print(int(d[0]), d[1], d[2], d[3], file=f)
-    f.close()
+def find_transition(yaml1: str, yaml2: str):
+    """Parse two sscha_properties.yaml files and find phase transition."""
+    f1, _ = parse_sscha_properties_yaml(yaml1)
+    f2, _ = parse_sscha_properties_yaml(yaml2)
+    tc_linear_fit = _fit_solve(f1, f2, f0=0.0, order=1)
+    tc_quartic_fit = _fit_solve(f1, f2, f0=tc_linear_fit, order=4)
+    return tc_linear_fit, tc_quartic_fit
+
+
+def compute_phase_boundary(yaml1: str, yaml2: str):
+    """Parse two sscha_properties.yaml files and compute phase boundary."""
+    _, g1 = parse_sscha_properties_yaml(yaml1)
+    _, g2 = parse_sscha_properties_yaml(yaml2)
+
+    for temp in g1.keys():
+        try:
+            g1_vals, g2_vals = g1[temp], g2[temp]
+        except:
+            continue
+
+        # 1. p-G at T smoothing
+        # 2. T-G at p smoothing
+        # 3. tc at p (use find_transition)
+        p_linear_fit = _fit_solve(g1_vals, g2_vals, f0=0.0, order=1)
+        p_quartic_fit = _fit_solve(g1_vals, g2_vals, f0=p_linear_fit, order=4)
+        print(temp, p_linear_fit, p_quartic_fit)

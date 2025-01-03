@@ -12,6 +12,7 @@ from pypolymlp.utils.vasp_utils import write_poscar_file
 
 
 class SSCHADistribution:
+    """Class for generating structures from FC2 and calculating their properties."""
 
     def __init__(
         self,

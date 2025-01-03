@@ -4,6 +4,10 @@ from typing import Optional
 
 from pypolymlp.calculator.sscha.sscha_properties import SSCHAProperties
 from pypolymlp.calculator.sscha.utils.distribution import SSCHADistribution
+from pypolymlp.calculator.sscha.utils.find_tc import (
+    compute_phase_boundary,
+    find_transition,
+)
 
 
 class PolymlpSSCHAPost:
@@ -24,6 +28,28 @@ class PolymlpSSCHAPost:
         sscha.run()
         sscha.save_properties(filename=filename)
         return self
+
+    def find_phase_transition(self, yaml1: str, yaml2: str):
+        """Find phase transition and its temperature.
+
+        Parameters
+        ----------
+        yaml1: sscha_properties.yaml for the first structure.
+        yaml2: sscha_properties.yaml for the second structure.
+        """
+        tc_linear, tc_quartic = find_transition(yaml1, yaml2)
+        return tc_linear, tc_quartic
+
+    def compute_phase_boundary(self, yaml1: str, yaml2: str):
+        """Compute phase boundary between two structures.
+
+        Parameters
+        ----------
+        yaml1: sscha_properties.yaml for the first structure.
+        yaml2: sscha_properties.yaml for the second structure.
+        """
+        compute_phase_boundary(yaml1, yaml2)
+        # return tc_linear, tc_quartic
 
     def init_structure_distribution(
         self,
