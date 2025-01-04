@@ -4,7 +4,7 @@ from typing import Optional
 
 from pypolymlp.calculator.sscha.sscha_properties import SSCHAProperties
 from pypolymlp.calculator.sscha.utils.distribution import SSCHADistribution
-from pypolymlp.calculator.sscha.utils.find_tc import (
+from pypolymlp.calculator.sscha.utils.transition import (
     compute_phase_boundary,
     find_transition,
 )
@@ -47,9 +47,13 @@ class PolymlpSSCHAPost:
         ----------
         yaml1: sscha_properties.yaml for the first structure.
         yaml2: sscha_properties.yaml for the second structure.
+
+        Return
+        ------
+        boundary: [pressures, temperatures].
         """
-        compute_phase_boundary(yaml1, yaml2)
-        # return tc_linear, tc_quartic
+        boundary = compute_phase_boundary(yaml1, yaml2)
+        return boundary
 
     def init_structure_distribution(
         self,

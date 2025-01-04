@@ -19,6 +19,7 @@ def polyfit(
     y: np.ndarray,
     order: Optional[int] = None,
     max_order: int = 4,
+    verbose: bool = False,
 ):
     """Fit data to a polynomial.
 
@@ -31,6 +32,8 @@ def polyfit(
     else:
         min_loocv = 1e10
         best_order = None
+        if verbose:
+            print("Find optimal polynomial.", flush=True)
         for order in orders:
             poly_coeffs = np.polyfit(x, y, order)
             y_pred = np.polyval(poly_coeffs, x)
@@ -40,6 +43,8 @@ def polyfit(
             if min_loocv > cv:
                 min_loocv = cv
                 best_order = order
+            if verbose:
+                print("order:", order, "loocv:", cv, flush=True)
 
     poly_coeffs = np.polyfit(x, y, best_order)
     return poly_coeffs

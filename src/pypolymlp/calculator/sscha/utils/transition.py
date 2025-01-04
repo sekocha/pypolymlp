@@ -1,5 +1,6 @@
 """Utility functions for finding phase transition."""
 
+from collections import defaultdict
 from typing import Optional
 
 import numpy as np
@@ -28,14 +29,19 @@ def _func_poly(x, *args):
     return np.polyval(args[0], x)
 
 
-def _fit_poly(f1: np.ndarray, f2: np.ndarray, order: Optional[int] = None):
+def _fit_poly(
+    f1: np.ndarray,
+    f2: np.ndarray,
+    order: Optional[int] = None,
+    max_order: int = 6,
+):
     """Fit data using a polynomial."""
     if order is not None:
         z1 = np.polyfit(f1[:, 0], f1[:, 1], order)
         z2 = np.polyfit(f2[:, 0], f2[:, 1], order)
     else:
-        z1 = polyfit(f1[:, 0], f1[:, 1], max_order=6)
-        z2 = polyfit(f2[:, 0], f2[:, 1], max_order=6)
+        z1 = polyfit(f1[:, 0], f1[:, 1], max_order=max_order, verbose=True)
+        z2 = polyfit(f2[:, 0], f2[:, 1], max_order=max_order, verbose=True)
         len_diff = len(z1) - len(z2)
         if len_diff > 0:
             z2 = np.hstack([np.zeros(len_diff), z2])
@@ -49,9 +55,10 @@ def _fit_solve_poly(
     f2: np.ndarray,
     f0: float = 0.0,
     order: Optional[int] = None,
+    max_order: int = 6,
 ):
     """Fit and solve delta f = 0."""
-    z1, z2 = _fit_poly(f1, f2, order=order)
+    z1, z2 = _fit_poly(f1, f2, order=order, max_order=max_order)
     coeffs = z1 - z2
     res = scipy.optimize.fsolve(_func_poly, f0, args=coeffs)
     return res[0]
@@ -85,16 +92,35 @@ def compute_phase_boundary(yaml1: str, yaml2: str):
     _, g1 = parse_sscha_properties_yaml(yaml1)
     _, g2 = parse_sscha_properties_yaml(yaml2)
 
+    p1_max = max([np.max(g[:, 0]) for g in g1.values()]) * 0.5
+    p2_max = max([np.max(g[:, 0]) for g in g2.values()]) * 0.5
+    p_max = min(p1_max, p2_max)
+
+    pressures = np.arange(0, p_max, 0.5)
+    g1_fit, g2_fit = defaultdict(list), defaultdict(list)
     for temp in g1.keys():
         try:
             g1_vals, g2_vals = g1[temp], g2[temp]
         except:
             continue
 
-        # 1. p-G at T smoothing
-        _fit_poly(g1_vals, g2_vals, order=4)
-        # 2. T-G at p smoothing
-        # 3. tc at p (use find_transition)
-        # p_linear_fit = _fit_solve(g1_vals, g2_vals, f0=0.0, order=1)
-        # p_quartic_fit = _fit_solve(g1_vals, g2_vals, f0=p_linear_fit, order=4)
-        # print(temp, p_linear_fit, p_quartic_fit)
+        # 1. fit p-G at T
+        z1, z2 = _fit_poly(g1_vals, g2_vals)
+        vals1 = np.polyval(z1, pressures)
+        vals2 = np.polyval(z2, pressures)
+
+        # 2. T-G data at p
+        for p, v in zip(pressures, vals1):
+            g1_fit[np.round(p, 5)].append([temp, v])
+        for p, v in zip(pressures, vals2):
+            g2_fit[np.round(p, 5)].append([temp, v])
+
+    # 3. fit T-G at p and estimate Tc
+    boundary = []
+    for press in pressures:
+        tg1 = np.array(g1_fit[np.round(press, 5)])
+        tg2 = np.array(g2_fit[np.round(press, 5)])
+        tc_linear_fit = _fit_solve_poly(tg1, tg2, f0=0.0, order=1)
+        tc_polyfit = _fit_solve_poly(tg1, tg2, f0=tc_linear_fit, max_order=3)
+        boundary.append([press, tc_polyfit])
+    return boundary

@@ -9,7 +9,23 @@ from pypolymlp.api.pypolymlp_sscha_post import PolymlpSSCHAPost
 
 
 def run():
-    """Command lines for post SSCHA calculations."""
+    """Command lines for post SSCHA calculations.
+
+    Examples
+    --------
+    # Calculation of thermodynamic properties using SSCHA results
+    pypolymlp-sscha-post --properties --yaml ./*/sscha/*/sscha_results.yaml
+
+    # Calculation of energies and forces for structures generated from a converged FC2
+    pypolymlp-sscha-post --distribution --yaml sscha/300/sscha_results.yaml
+                         --fc2 sscha/300/fc2.hdf5 --n_samples 20 --pot polymlp.lammps
+
+    # Calculation of phase transition temperature
+    pypolymlp-sscha-post --transition hcp/sscha_properties.yaml bcc/sscha_properties.yaml
+
+    # Calculation of phase transition temperature and pressure
+    pypolymlp-sscha-post --boundary hcp/sscha_properties.yaml bcc/sscha_properties.yaml
+    """
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
     parser = argparse.ArgumentParser()
@@ -84,11 +100,15 @@ def run():
             args.transition[0],
             args.transition[1],
         )
-        print("Tc (Linear fit)     :", np.round(tc_linear, 1))
-        print("Tc (Polynomial fit) :", np.round(tc_poly, 1))
+        print("Tc (Linear fit)     :", np.round(tc_linear, 1), flush=True)
+        print("Tc (Polynomial fit) :", np.round(tc_poly, 1), flush=True)
 
     elif args.boundary:
-        sscha.compute_phase_boundary(
+        boundary = sscha.compute_phase_boundary(
             args.boundary[0],
             args.boundary[1],
         )
+        print("phase_boundary:", flush=True)
+        for data in boundary:
+            print("- pressure:    ", np.round(data[0], 5), flush=True)
+            print("  temperature: ", np.round(data[1], 2), flush=True)
