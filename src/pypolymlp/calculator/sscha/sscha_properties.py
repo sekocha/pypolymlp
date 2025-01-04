@@ -1,10 +1,12 @@
 """Class for calculating thermodynamic properties from SSCHA results."""
 
+import itertools
 import os
 from dataclasses import dataclass
 from typing import Literal, Optional
 
 import numpy as np
+import scipy
 from phono3py.file_IO import read_fc2_from_hdf5
 from phonopy import Phonopy
 from phonopy.qha.core import BulkModulus
@@ -12,6 +14,7 @@ from phonopy.units import EVAngstromToGPa
 
 from pypolymlp.calculator.compute_phonon import PolymlpPhonon
 from pypolymlp.calculator.sscha.sscha_utils import Restart
+from pypolymlp.calculator.sscha.utils.lsq import loocv
 from pypolymlp.core.units import EVtoJ, avogadro
 from pypolymlp.core.utils import rmse
 from pypolymlp.utils.phonopy_utils import structure_to_phonopy_cell
@@ -52,9 +55,6 @@ class GridTemp:
     gibbs_free_energies: Optional[np.ndarray] = None
     volume_entropy_fit: Optional[np.ndarray] = None
     volume_cv_fit: Optional[np.ndarray] = None
-
-
-# read_fc2_from_hdf5(fc2hdf5)
 
 
 class SSCHAProperties:
@@ -214,7 +214,7 @@ class SSCHAProperties:
             print("RMSE (V-S fit):", flush=True)
         for itemp, temp in enumerate(self._temperatures):
             volumes, entropies, _ = self._get_data(itemp=itemp, attr="entropy")
-            coeffs, _, error = self._polyfit(volumes, entropies)
+            (coeffs, _, error), _ = self._polyfit(volumes, entropies, max_order=6)
             deriv = self._get_poly_deriv(coeffs)
             if self._verbose:
                 print("- temperature:", temp, ", rmse", np.round(error, 5), flush=True)
@@ -234,6 +234,29 @@ class SSCHAProperties:
         self._compute_cp()
         return self
 
+    def _fit_temperature_entropy_spline(self):
+        """Fit temperature-entropy at volumes."""
+        if self._verbose:
+            print("RMSE (T-S fit):", flush=True)
+        for ivol, vol in enumerate(self._volumes):
+            temperatures, entropies, itemps = self._get_data(ivol=ivol, attr="entropy")
+            _, ref_entropies, _ = self._get_data(ivol=ivol, attr="reference_entropy")
+            del_entropies = entropies - ref_entropies
+
+            sp1 = scipy.interpolate.make_interp_spline(temperatures, del_entropies, k=2)
+            pred = sp1(temperatures)
+            error = rmse(del_entropies, pred)
+            if self._verbose:
+                error = np.round(error, 5)
+                print("- volume:", np.round(vol, 3), ", rmse:", error, flush=True)
+
+            cv_from_ref = temperatures * sp1.derivative()(temperatures)
+            for itemp, val in zip(itemps, cv_from_ref):
+                g = self._grid_vt[ivol, itemp]
+                g.heat_capacity = g.reference_heat_capacity + val
+
+        return self
+
     def _fit_temperature_entropy(self):
         """Fit temperature-entropy at volumes."""
         if self._verbose:
@@ -243,12 +266,12 @@ class SSCHAProperties:
             _, ref_entropies, _ = self._get_data(ivol=ivol, attr="reference_entropy")
             del_entropies = entropies - ref_entropies
 
-            add_sqrt = True
-            coeffs, pred, error = self._polyfit(
+            (coeffs, pred, error), (order, add_sqrt) = self._polyfit(
                 temperatures,
                 del_entropies,
-                add_sqrt=add_sqrt,
+                add_sqrt=None,
                 intercept=False,
+                max_order=4,
             )
             if self._verbose:
                 error = np.round(error, 5)
@@ -274,7 +297,7 @@ class SSCHAProperties:
             print("RMSE (V-Cv fit):", flush=True)
         for itemp, temp in enumerate(self._temperatures):
             volumes, cvs, _ = self._get_data(itemp=itemp, attr="heat_capacity")
-            coeffs, _, error = self._polyfit(volumes, cvs)
+            (coeffs, _, error), _ = self._polyfit(volumes, cvs, max_order=6)
             if self._verbose:
                 print("- temperature:", temp, ", rmse", np.round(error, 5), flush=True)
 
@@ -318,6 +341,7 @@ class SSCHAProperties:
         x: np.ndarray,
         y: np.ndarray,
         order: Optional[int] = None,
+        max_order: int = 4,
         intercept: bool = True,
         add_sqrt: bool = False,
     ):
@@ -326,38 +350,42 @@ class SSCHAProperties:
         If order is None, the optimal value of order will be automatically
         determined by minimizing the leave-one-out cross validation score.
         """
-        if order is not None:
-            best_order = order
+        orders = list(range(2, max_order + 1)) if order is None else [order]
+        sqrts = [True, False] if add_sqrt is None else [add_sqrt]
+        if len(orders) == 1 and len(sqrts) == 1:
+            best_order = orders[0]
+            best_add_sqrt = sqrts[0]
         else:
             min_loocv = 1e10
-            best_order = None
-            for order in [2, 3, 4]:
+            best_order, best_add_sqrt = None, None
+            params = list(itertools.product(sqrts, orders))
+            for add_sqrt, order in params:
                 (poly_coeffs, y_pred, y_rmse), X = self._polyfit_single(
                     x,
                     y,
                     order,
                     intercept=intercept,
+                    add_sqrt=add_sqrt,
                 )
-                residuals = y_pred - y
-                h = np.diag(X @ np.linalg.inv(X.T @ X) @ X.T)
-                squared_errors = (residuals / (1 - h)) ** 2
-                loocv = np.sqrt(np.mean(squared_errors))
-                if min_loocv > loocv:
-                    min_loocv = loocv
+                cv = loocv(X, y, y_pred)
+                if min_loocv > cv:
+                    min_loocv = cv
                     best_order = order
+                    best_add_sqrt = add_sqrt
 
         (poly_coeffs, y_pred, y_rmse), _ = self._polyfit_single(
             x,
             y,
             best_order,
             intercept=intercept,
-            add_sqrt=add_sqrt,
+            add_sqrt=best_add_sqrt,
         )
         if not intercept:
             poly_coeffs = list(poly_coeffs)
             poly_coeffs.append(0.0)
             poly_coeffs = np.array(poly_coeffs)
-        return (poly_coeffs, y_pred, y_rmse)
+
+        return (poly_coeffs, y_pred, y_rmse), (best_order, best_add_sqrt)
 
     def _polyfit_single(
         self,

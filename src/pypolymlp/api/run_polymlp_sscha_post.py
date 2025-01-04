@@ -80,12 +80,12 @@ def run():
         sscha.run_structure_distribution(n_samples=args.n_samples)
         sscha.save_structure_distribution(path=".")
     elif args.transition:
-        tc_linear, tc_quartic = sscha.find_phase_transition(
+        tc_linear, tc_poly = sscha.find_phase_transition(
             args.transition[0],
             args.transition[1],
         )
-        print("Tc (Linear fit)  :", np.round(tc_linear, 1))
-        print("Tc (Quartic fit) :", np.round(tc_quartic, 1))
+        print("Tc (Linear fit)     :", np.round(tc_linear, 1))
+        print("Tc (Polynomial fit) :", np.round(tc_poly, 1))
 
     elif args.boundary:
         sscha.compute_phase_boundary(

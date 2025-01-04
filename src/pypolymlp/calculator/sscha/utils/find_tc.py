@@ -1,8 +1,12 @@
 """Utility functions for finding phase transition."""
 
+from typing import Optional
+
 import numpy as np
 import scipy
 import yaml
+
+from pypolymlp.calculator.sscha.utils.lsq import polyfit
 
 
 def parse_sscha_properties_yaml(yamlfile: str = "sscha_properties.yaml"):
@@ -20,16 +24,50 @@ def parse_sscha_properties_yaml(yamlfile: str = "sscha_properties.yaml"):
     return helmholtz, gibbs
 
 
-def _func(x, *args):
+def _func_poly(x, *args):
     return np.polyval(args[0], x)
 
 
-def _fit_solve(f1: np.ndarray, f2: np.ndarray, f0: float = 0.0, order: int = 1):
+def _fit_poly(f1: np.ndarray, f2: np.ndarray, order: Optional[int] = None):
+    """Fit data using a polynomial."""
+    if order is not None:
+        z1 = np.polyfit(f1[:, 0], f1[:, 1], order)
+        z2 = np.polyfit(f2[:, 0], f2[:, 1], order)
+    else:
+        z1 = polyfit(f1[:, 0], f1[:, 1], max_order=6)
+        z2 = polyfit(f2[:, 0], f2[:, 1], max_order=6)
+        len_diff = len(z1) - len(z2)
+        if len_diff > 0:
+            z2 = np.hstack([np.zeros(len_diff), z2])
+        elif len_diff < 0:
+            z1 = np.hstack([np.zeros(-len_diff), z1])
+    return z1, z2
+
+
+def _fit_solve_poly(
+    f1: np.ndarray,
+    f2: np.ndarray,
+    f0: float = 0.0,
+    order: Optional[int] = None,
+):
     """Fit and solve delta f = 0."""
-    z1 = np.polyfit(f1[:, 0], f1[:, 1], order)
-    z2 = np.polyfit(f2[:, 0], f2[:, 1], order)
+    z1, z2 = _fit_poly(f1, f2, order=order)
     coeffs = z1 - z2
-    res = scipy.optimize.fsolve(_func, f0, args=coeffs)
+    res = scipy.optimize.fsolve(_func_poly, f0, args=coeffs)
+    return res[0]
+
+
+def _func_spline(x, *args):
+    sp1, sp2 = args
+    return sp1(x) - sp2(x)
+
+
+def _fit_solve_spline(f1: np.ndarray, f2: np.ndarray, f0: float = 0.0, k: int = 3):
+    """Fit and solve delta f = 0."""
+    sp1 = scipy.interpolate.make_interp_spline(f1[:, 0], f1[:, 1], k=k)
+    sp2 = scipy.interpolate.make_interp_spline(f2[:, 0], f2[:, 1], k=k)
+    args = sp1, sp2
+    res = scipy.optimize.fsolve(_func_spline, f0, args=args)
     return res[0]
 
 
@@ -37,9 +75,9 @@ def find_transition(yaml1: str, yaml2: str):
     """Parse two sscha_properties.yaml files and find phase transition."""
     f1, _ = parse_sscha_properties_yaml(yaml1)
     f2, _ = parse_sscha_properties_yaml(yaml2)
-    tc_linear_fit = _fit_solve(f1, f2, f0=0.0, order=1)
-    tc_quartic_fit = _fit_solve(f1, f2, f0=tc_linear_fit, order=4)
-    return tc_linear_fit, tc_quartic_fit
+    tc_linear_fit = _fit_solve_poly(f1, f2, f0=0.0, order=1)
+    tc_polyfit = _fit_solve_poly(f1, f2, f0=tc_linear_fit)
+    return tc_linear_fit, tc_polyfit
 
 
 def compute_phase_boundary(yaml1: str, yaml2: str):
@@ -54,8 +92,9 @@ def compute_phase_boundary(yaml1: str, yaml2: str):
             continue
 
         # 1. p-G at T smoothing
+        _fit_poly(g1_vals, g2_vals, order=4)
         # 2. T-G at p smoothing
         # 3. tc at p (use find_transition)
-        p_linear_fit = _fit_solve(g1_vals, g2_vals, f0=0.0, order=1)
-        p_quartic_fit = _fit_solve(g1_vals, g2_vals, f0=p_linear_fit, order=4)
-        print(temp, p_linear_fit, p_quartic_fit)
+        # p_linear_fit = _fit_solve(g1_vals, g2_vals, f0=0.0, order=1)
+        # p_quartic_fit = _fit_solve(g1_vals, g2_vals, f0=p_linear_fit, order=4)
+        # print(temp, p_linear_fit, p_quartic_fit)
