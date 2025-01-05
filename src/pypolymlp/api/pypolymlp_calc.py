@@ -489,7 +489,7 @@ class PolymlpCalc:
             print("Initial structure", flush=True)
             self._go.print_structure()
 
-        self._go.run(gtol=gtol)
+        self._go.run(gtol=gtol, method=method)
         self.structures = self._go.structure
         if self._verbose:
             if not self._go._relax_cell:

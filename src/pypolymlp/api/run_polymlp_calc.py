@@ -95,8 +95,32 @@ def run():
     parser.add_argument(
         "--geometry_optimization",
         action="store_true",
-        help="Geometry optimization is performed " "for initial structure.",
+        help="Geometry optimization is performed for initial structure.",
     )
+
+    parser.add_argument(
+        "--no_symmetry",
+        action="store_true",
+        help="Ignore symmetric properties in geometry optimization",
+    )
+    parser.add_argument(
+        "--fix_cell",
+        action="store_true",
+        help="Fix cell size and shape in geometry optimization",
+    )
+    parser.add_argument(
+        "--fix_atom",
+        action="store_true",
+        help="Fix atomic positions in geometry optimization",
+    )
+    parser.add_argument(
+        "--method",
+        type=str,
+        choices=["BFGS", "CG", "L-BFGS-B"],
+        default="BFGS",
+        help="Algorithm for geometry optimization",
+    )
+
     parser.add_argument(
         "--batch_size",
         type=int,
@@ -207,6 +231,17 @@ def run():
                 temperatures=range(0, 1001, 10),
                 write_kappa=True,
             )
+
+    elif args.geometry_optimization:
+        print("Mode: Geometry optimization", flush=True)
+        polymlp.load_poscars(args.poscar)
+        polymlp.init_geometry_optimization(
+            with_sym=not args.no_symmetry,
+            relax_cell=not args.fix_cell,
+            relax_positions=not args.fix_atom,
+        )
+        polymlp.run_geometry_optimization(method=args.method)
+        polymlp.save_poscars(filename="POSCAR_eqm")
 
     elif args.phonon:
         print("Mode: Phonon calculations", flush=True)
