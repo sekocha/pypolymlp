@@ -11,7 +11,7 @@ from pypolymlp.core.utils import mass_table
 
 const_avogadro = 6.02214076e23
 const_planck = 6.62607015e-22
-const_bortzmann = 1.380649e-23
+const_boltzmann = 1.380649e-23
 const_sq_angfreq_to_sq_freq_thz = 2.4440020137144617e2
 const_amplitude = 1.010758017933576
 
@@ -128,7 +128,7 @@ class HarmonicReal:
         freq = self._hide_imaginary_modes(self._mesh_dict["frequencies"])
         nonzero = np.isclose(freq, 0.0) == False
 
-        beta = 1.0 / (const_bortzmann * t)
+        beta = 1.0 / (const_boltzmann * t)
         const_exp = 0.5 * beta * const_planck
         beta_h_freq = const_exp * freq[nonzero]
 
@@ -153,7 +153,7 @@ class HarmonicReal:
         freq = self._hide_imaginary_modes(self._mesh_dict["frequencies"])
         nonzero = np.isclose(freq, 0.0) == False
 
-        beta = np.inf if np.isclose(t, 0.0) else 1.0 / (const_bortzmann * t)
+        beta = np.inf if np.isclose(t, 0.0) else 1.0 / (const_boltzmann * t)
         const_exp = 0.5 * beta * const_planck
         beta_h_freq = const_exp * freq[nonzero]
 

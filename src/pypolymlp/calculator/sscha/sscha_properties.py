@@ -15,7 +15,7 @@ from phonopy.units import EVAngstromToGPa
 from pypolymlp.calculator.compute_phonon import PolymlpPhonon
 from pypolymlp.calculator.sscha.sscha_utils import Restart
 from pypolymlp.calculator.sscha.utils.lsq import loocv
-from pypolymlp.core.units import EVtoJ, avogadro
+from pypolymlp.core.units import Avogadro, EVtoJ
 from pypolymlp.core.utils import rmse
 from pypolymlp.utils.phonopy_utils import structure_to_phonopy_cell
 
@@ -312,7 +312,7 @@ class SSCHAProperties:
             g = self._grid_t[itemp]
             bm = g.bulk_modulus / EVAngstromToGPa
             add = temp * g.eqm_volume * (g.eqm_entropy_vol_deriv**2) / bm
-            add /= EVtoJ * avogadro
+            add /= EVtoJ * Avogadro
             g.eqm_cp = g.eqm_heat_capacity + add
         return self
 
