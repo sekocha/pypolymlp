@@ -189,27 +189,3 @@ class PolymlpEOS:
             print("", file=f)
 
         f.close()
-
-
-if __name__ == "__main__":
-
-    import argparse
-
-    from pypolymlp.core.interface_vasp import Poscar
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-p", "--poscar", type=str, default=None, help="poscar file")
-    parser.add_argument(
-        "--pot",
-        nargs="*",
-        type=str,
-        default="polymlp.lammps",
-        help="polymlp file",
-    )
-    args = parser.parse_args()
-
-    np.set_printoptions(legacy="1.21")
-    unitcell = Poscar(args.poscar).structure
-    eos = PolymlpEOS(unitcell, pot=args.pot)
-    eos.run(eos_fit=True)
-    eos.write_eos_yaml()
