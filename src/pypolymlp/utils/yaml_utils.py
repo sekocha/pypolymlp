@@ -32,6 +32,7 @@ def save_cell(
     if fstream is None:
         fstream = open(filename, "w")
 
+    np.set_printoptions(legacy="1.21")
     print(tag + ":", file=fstream)
     print_array2d(cell.axis.T, "axis", fstream, indent_l=2)
     print_array2d(cell.positions.T, "positions", fstream, indent_l=2)

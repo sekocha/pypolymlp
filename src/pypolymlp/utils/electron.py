@@ -59,6 +59,7 @@ class ElectronProperties:
         eigvals = self._efe._eigenvalues.reshape(len(self._efe._weights), -1)
         df_dT = self._calc_df_dT(eigvals, self._efe._mu, T)
 
+        # TODO: Results must be tested.
         cv = self._efe._g * np.sum(
             self._efe._weights * np.sum((eigvals - self._efe._mu) * df_dT, axis=1)
         )

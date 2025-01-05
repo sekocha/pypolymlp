@@ -9,71 +9,70 @@ import numpy as np
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.interface_vasp import Poscar
-from pypolymlp.core.io_polymlp import load_mlp_lammps
+from pypolymlp.core.io_polymlp import load_mlp_lammps_flexible
+from pypolymlp.utils.structure_utils import supercell_diagonal
 
 
 class PolymlpCost:
+    """Class for estimating computational cost of polymlp."""
 
     def __init__(
         self,
-        pot_path: Optional[str] = None,
         pot: Optional[Union[str, list[str]]] = None,
+        path_pot: Optional[str] = None,
         poscar: Optional[str] = None,
         supercell: np.ndarray = np.array([4, 4, 4]),
+        verbose: bool = False,
     ):
+        """Init method."""
+        self._pot = pot
+        self._path_pot = path_pot
+        self._poscar = poscar
+        self._supercell_size = supercell
+        self._verbose = verbose
 
-        self.pot_path = pot_path
-        self.pot = pot
-        if pot_path is None:
-            pot_elements = pot
+        self._elements = self._parse_elements_from_pot()
+        self._supercell = self._set_structure()
+
+    def _parse_elements_from_pot(self):
+        """Get elements from MLP file."""
+        if self._path_pot is None:
+            pot_elements = self._pot
         else:
-            pot_elements = sorted(glob.glob(pot_path[0] + "/polymlp.lammps*"))[0]
-        params, _ = load_mlp_lammps(filename=pot_elements)
-        self.elements = params.elements
+            pot_elements = sorted(glob.glob(self._path_pot[0] + "/polymlp.lammps*"))[0]
+        params, _ = load_mlp_lammps_flexible(pot_elements)
+        self._elements = params.elements
+        return self._elements
 
-        self.__set_structure(poscar=poscar)
-
-    def __set_structure(self, poscar=None, supercell=(4, 4, 4)):
-        from phonopy import Phonopy
-
-        from pypolymlp.utils.phonopy_utils import (
-            phonopy_cell_to_structure,
-            structure_to_phonopy_cell,
-        )
-
-        if poscar is not None:
-            unitcell_polymlp = Poscar(poscar).get_structure()
+    def _set_structure(self):
+        """Set a structure to calculate properties."""
+        if self._poscar is not None:
+            unitcell = Poscar(self._poscar).structure
         else:
-            if len(self.elements) == 1:
-                axis = np.array([[4, 0, 0], [0, 4, 0], [0, 0, 4]])
-                positions = np.array(
-                    [
-                        [0.0, 0.0, 0.0],
-                        [0.0, 0.5, 0.5],
-                        [0.5, 0.0, 0.5],
-                        [0.5, 0.5, 0.0],
-                    ]
-                ).T
+            axis = np.array([[4, 0, 0], [0, 4, 0], [0, 0, 4]])
+            positions = np.array(
+                [
+                    [0.0, 0.0, 0.0],
+                    [0.0, 0.5, 0.5],
+                    [0.5, 0.0, 0.5],
+                    [0.5, 0.5, 0.0],
+                ]
+            ).T
+            if len(self._elements) == 1:
                 n_atoms = np.array([4])
                 types = np.array([0, 0, 0, 0])
-            elif len(self.elements) == 2:
-                axis = np.array([[4, 0, 0], [0, 4, 0], [0, 0, 4]])
-                positions = np.array(
-                    [
-                        [0.0, 0.0, 0.0],
-                        [0.0, 0.5, 0.5],
-                        [0.5, 0.0, 0.5],
-                        [0.5, 0.5, 0.0],
-                    ]
-                ).T
+            elif len(self._elements) == 2:
                 n_atoms = np.array([2, 2])
                 types = np.array([0, 0, 1, 1])
+            elif len(self._elements) == 3:
+                n_atoms = np.array([1, 1, 2])
+                types = np.array([0, 1, 2, 2])
             else:
-                raise ValueError("No structure setting for " "more than binary system")
+                raise RuntimeError("No structure setting for more than ternary system.")
 
-            elements = [self.elements[t] for t in types]
+            elements = [self._elements[t] for t in types]
             volume = np.linalg.det(axis)
-            unitcell_polymlp = PolymlpStructure(
+            unitcell = PolymlpStructure(
                 axis,
                 positions,
                 n_atoms,
@@ -82,63 +81,66 @@ class PolymlpCost:
                 volume,
             )
 
-        supercell_matrix = np.diag(supercell)
-        unitcell = structure_to_phonopy_cell(unitcell_polymlp)
-        phonopy = Phonopy(unitcell, supercell_matrix)
-        self.supercell = phonopy_cell_to_structure(phonopy.supercell)
+        self._supercell = supercell_diagonal(unitcell, size=self._supercell_size)
+        return self._supercell
 
-    def run_single(self, pot, n_calc=20):
-
+    def _run_single(self, pot: Union[str, list[str]], n_calc: int = 20):
+        """Estimate computational cost for a single polymlp."""
+        if self._verbose:
+            print("Calculations have been started.")
+        n_atoms_sum = sum(self._supercell.n_atoms)
         prop = Properties(pot=pot)
-        print("Calculations have been started.")
         t1 = time.time()
-        for i in range(n_calc):
-            e, _, _ = prop.eval(self.supercell)
+        _ = [prop.eval(self._supercell) for i in range(n_calc)]
         t2 = time.time()
+        cost1 = (t2 - t1) * 1000 / n_atoms_sum / n_calc
 
-        n_atoms_sum = sum(self.supercell.n_atoms)
-        cost1 = (t2 - t1) / n_atoms_sum / n_calc
-        cost1 *= 1000
-        print("Total time (sec):", t2 - t1)
-        print("Number of atoms:", n_atoms_sum)
-        print("Number of steps:", n_calc)
-        print("Computational cost (msec/atom/step):", cost1)
+        if self._verbose:
+            print("Total time (sec):", t2 - t1)
+            print("Number of atoms:", n_atoms_sum)
+            print("Number of steps:", n_calc)
+            print("Computational cost (msec/atom/step):", cost1)
 
-        print("Calculations have been started (openmp).")
+            print("Calculations have been started (openmp).")
+
         n_calc2 = n_calc * 10
-        structures = [self.supercell for i in range(n_calc2)]
-
+        structures = [self._supercell for i in range(n_calc2)]
         t3 = time.time()
         _, _, _ = prop.eval_multiple(structures)
         t4 = time.time()
+        cost2 = (t4 - t3) * 1000 / n_atoms_sum / n_calc2
 
-        cost2 = (t4 - t3) / n_atoms_sum / n_calc2
-        cost2 *= 1000
-        print("Total time (sec):", t4 - t3)
-        print("Number of atoms:", n_atoms_sum)
-        print("Number of steps:", n_calc2)
-        print("Computational cost (msec/atom/step):", cost2)
+        if self._verbose:
+            print("Total time (sec):", t4 - t3)
+            print("Number of atoms:", n_atoms_sum)
+            print("Number of steps:", n_calc2)
+            print("Computational cost (msec/atom/step):", cost2)
 
         return cost1, cost2
 
-    def run(self, n_calc=20):
-
-        if self.pot_path is None:
-            cost1, cost2 = self.run_single(self.pot, n_calc=n_calc)
-            self.write_single_yaml(cost1, cost2, filename="polymlp_cost.yaml")
+    def run(self, n_calc: int = 20):
+        """Estimate computational costs for polymlps."""
+        if self._path_pot is None:
+            cost1, cost2 = self._run_single(self._pot, n_calc=n_calc)
+            self._write_single_yaml(cost1, cost2, filename="polymlp_cost.yaml")
         else:
-            pot_dirs = sorted(self.pot_path)
+            pot_dirs = sorted(self._path_pot)
             for dir1 in pot_dirs:
-                print("------- Target MLP:", dir1, "-------")
                 pot = sorted(glob.glob(dir1 + "/polymlp.lammps*"))
-                print(pot)
-                cost1, cost2 = self.run_single(pot, n_calc=n_calc)
-                self.write_single_yaml(
-                    cost1, cost2, filename=dir1 + "/polymlp_cost.yaml"
+                if self._verbose:
+                    print("------- Target MLP:", dir1, "-------")
+                    print(pot)
+                cost1, cost2 = self._run_single(pot, n_calc=n_calc)
+                self._write_single_yaml(
+                    cost1,
+                    cost2,
+                    filename=dir1 + "/polymlp_cost.yaml",
                 )
 
-    def write_single_yaml(self, cost1, cost2, filename="polymlp_cost.yaml"):
-
+    def _write_single_yaml(
+        self, cost1: float, cost2: float, filename: str = "polymlp_cost.yaml"
+    ):
+        """Save computational costs to a file."""
         f = open(filename, "w")
         print("units:", file=f)
         print("  time: msec/atom/step", file=f)

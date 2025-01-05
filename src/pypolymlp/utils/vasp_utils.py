@@ -43,8 +43,8 @@ def print_poscar(st: PolymlpStructure):
 
 def write_poscar_file(
     st: PolymlpStructure,
-    filename="poscar_pypolymlp",
-    header=None,
+    filename: str = "poscar_pypolymlp",
+    header: Optional[str] = None,
 ):
     """Write structure in POSCAR file."""
     f = open(filename, "w")

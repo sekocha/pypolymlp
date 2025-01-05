@@ -1,10 +1,15 @@
 """Utility functions for phonopy."""
 
+import io
 from collections import Counter
+from typing import Optional
 
 import numpy as np
 from phonopy import Phonopy
+from phonopy.interface.vasp import VasprunxmlExpat
 from phonopy.structure.atoms import PhonopyAtoms
+from phonopy.structure.symmetry import symmetrize_borns_and_epsilon
+from phonopy.units import Bohr, Hartree
 
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.core.data_format import PolymlpStructure
@@ -79,3 +84,33 @@ def compute_forces_phonopy_displacements(
     _, forces, _ = prop.eval_multiple(structures)
     forces = np.array(forces).transpose((0, 2, 1))
     return forces
+
+
+def get_nac_params(
+    vasprun: Optional[str] = None,
+    supercell_matrix: Optional[np.ndarray] = None,
+):
+    """Get NAC parameters."""
+    if vasprun is None:
+        return None
+
+    with io.open(vasprun, "rb") as f:
+        vasprun = VasprunxmlExpat(f)
+        vasprun.parse()
+        epsilon = vasprun.epsilon
+        borns = vasprun.born
+        unitcell = vasprun.cell
+
+    borns_, epsilon_ = symmetrize_borns_and_epsilon(
+        borns,
+        epsilon,
+        unitcell,
+        supercell_matrix=supercell_matrix,
+        symprec=1e-5,
+    )
+    nac_params = {
+        "born": borns_,
+        "factor": Hartree * Bohr,
+        "dielectric": epsilon_,
+    }
+    return nac_params

@@ -1,5 +1,5 @@
-#!/usr/bin/env python
-import argparse
+"""Functions for finding optimal MLPs."""
+
 import glob
 import os
 
@@ -11,6 +11,7 @@ from pypolymlp.core.io_polymlp import load_mlp_lammps
 
 
 def write_yaml(data, system, filename="polymlp_summary_all.yaml"):
+    """Save optimal polymlps to a yaml file."""
 
     f = open(filename, "w")
     print("system:", system, file=f)
@@ -35,7 +36,7 @@ def write_yaml(data, system, filename="polymlp_summary_all.yaml"):
 
 
 def find_optimal_mlps(dirs, key, use_force=False, use_logscale_time=False):
-
+    """Find optimal polymlps on convex hull."""
     d_array = []
     system = None
     for dir_pot in dirs:
@@ -109,31 +110,3 @@ def find_optimal_mlps(dirs, key, use_force=False, use_logscale_time=False):
     d_convex = d_convex[d_convex[:, 2].astype(float) < 30]
 
     write_yaml(d_convex, system, filename="polymlp_summary_convex.yaml")
-
-
-if __name__ == "__main__":
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "-d",
-        "--dirs",
-        type=str,
-        default=".",
-        nargs="*",
-        help="Parent directory.",
-    )
-    parser.add_argument(
-        "--force",
-        action="store_true",
-        help="Use rmse (force) to get pareto frontier.",
-    )
-    parser.add_argument(
-        "--key",
-        type=str,
-        default=None,
-        required=True,
-        help="Test dataset name or partial string" + " used for finding optimal MLPs.",
-    )
-    args = parser.parse_args()
-
-    find_optimal_mlps(args.dirs, args.key, use_force=args.force)

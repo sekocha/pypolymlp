@@ -4,6 +4,9 @@ import numpy as np
 
 from pypolymlp.core.data_format import PolymlpStructure
 
+avogadro = 6.02214076e23
+EVtoJ = 1.602176634e-19
+
 
 def split_train_test(files: list, train_ratio: float = 0.9):
     """Split dataset into training and test datasets."""

@@ -317,7 +317,7 @@ if __name__ == "__main__":
 
     print("Initial structure")
     minobj.print_structure()
-    minobj.run(gtol=1e-5)
+    minobj.run(gtol=1e-5, method="BFGS")
 
     if not args.cell_relax:
         print("Residuals (force):")
