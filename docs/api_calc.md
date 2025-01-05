@@ -309,7 +309,7 @@ elastic_constants = polymlp.elastic_constants
 ```
 
 ## Equation of states calculation
-(Requirement: pymatgen)
+(Requirement: phonopy)
 ```python
 from pypolymlp.calculator.compute_eos import PolymlpEOS
 

@@ -83,6 +83,7 @@ Building C++ codes in pypolymlp may require a significant amount of time.
   - Equation of states
   - Structural features (Polynomial invariants)
   - Phonon properties, Quasi-harmonic approximation
+  - Local geometry optimization
 - [DFT structure generator](docs/strgen.md)
   - Random atomic displacements with constant magnitude
   - Random atomic displacements with sequential magnitudes and volume changes

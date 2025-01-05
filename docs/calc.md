@@ -41,6 +41,21 @@ pypolymlp-calc --force_constants --pot polymlp.lammps --poscar POSCAR --geometry
 > pypolymlp-calc --geometry_optimization --poscar POSCAR --pot polymlp.lammps --method CG
 ```
 
+## Equation of states
+
+(phonopy is required.)
+```
+> pypolymlp-calc --eos --poscar POSCAR --pot polymlp.lammps
+```
+
+## Elastic constants
+
+(pymatgen is required.)
+```
+> pypolymlp-calc --elastic --poscar POSCAR --pot polymlp.lammps
+```
+
+
 <!--
 > pypolymlp-calc --force_constants --pot polymlp.lammps --phono3py_yaml phono3py_params_wurtzite_AlN.yaml.xz
 -->

@@ -69,7 +69,36 @@ class PolymlpEOS:
 
         return eps_seq
 
-    def run_eos_fit(self, volumes, energies):
+    def run_eos_fit(self, volumes: np.ndarray, energies: np.ndarray):
+        """Fit EOS curve."""
+        return self.run_eos_fit_phonopy(volumes, energies)
+
+    def run_eos_fit_phonopy(self, volumes: np.ndarray, energies: np.ndarray):
+        """Fit EOS curve using phonopy."""
+
+        from phonopy.qha.core import BulkModulus
+        from phonopy.units import EVAngstromToGPa
+
+        if self._verbose:
+            print("EOS fitting using Vinet EOS equation")
+
+        bm = BulkModulus(volumes=volumes, energies=energies, eos="vinet")
+        self._b0 = bm.bulk_modulus * EVAngstromToGPa
+        self._e0 = bm.energy
+        self._v0 = bm.equilibrium_volume
+
+        v_min, v_max = min(volumes), max(volumes)
+        extrapolation = (v_max - v_min) * 0.1
+        v_lb = v_min - extrapolation
+        v_ub = v_max + extrapolation
+
+        volumes_eval = np.arange(v_lb, v_ub, 0.01)
+        fitted = bm._eos(volumes_eval, *bm.get_parameters())
+        eos_fit_data = np.stack([volumes_eval, fitted]).T
+        return eos_fit_data
+
+    def run_eos_fit_pymatgen(self, volumes: np.ndarray, energies: np.ndarray):
+        """Fit EOS curve using pymatgen."""
 
         from pymatgen.analysis.eos import EOS
 
@@ -179,6 +208,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
+    np.set_printoptions(legacy="1.21")
     unitcell = Poscar(args.poscar).structure
     eos = PolymlpEOS(unitcell, pot=args.pot)
     eos.run(eos_fit=True)
