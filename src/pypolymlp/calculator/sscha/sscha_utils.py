@@ -229,6 +229,7 @@ class Restart:
 
 
 def temperature_setting(args):
+    """Set simulation temperatures."""
 
     if args.temp is not None:
         if np.isclose(args.temp, round(args.temp)):
@@ -249,6 +250,7 @@ def temperature_setting(args):
 
 
 def n_samples_setting(args, n_atom_supercell=None):
+    """Set number of supercells."""
 
     if args.n_samples is None:
         n_samples_unit = round(6400 / n_atom_supercell)
@@ -353,10 +355,11 @@ def save_sscha_yaml(
     f = open(filename, "w")
     print("parameters:", file=f)
     if isinstance(args.pot, list):
-        for p in args.pot:
-            print("  pot:     ", os.path.abspath(p), file=f)
+        pots = [os.path.abspath(p) for p in args.pot]
+        print("  pot:     ", pots, file=f)
     else:
         print("  pot:     ", os.path.abspath(args.pot), file=f)
+
     print("  temperature:   ", properties.temperature, file=f)
     print("  n_steps:       ", args.n_samples_init, file=f)
     print("  n_steps_final: ", args.n_samples_final, file=f)

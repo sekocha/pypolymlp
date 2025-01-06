@@ -32,6 +32,30 @@ If a cutoff radius is introduced to evaluate FC3s, use "--cutoff" option as foll
 pypolymlp-calc --force_constants --pot polymlp.lammps --poscar POSCAR --geometry_optimization --fc_n_samples 300 --fc_orders 2 3 --disp 0.001 --batch_size 100 --supercell 3 3 2 --cutoff 6
 ```
 
+## Local geometry optimization
+```
+> pypolymlp-calc --geometry_optimization --poscar POSCAR --pot polymlp.lammps
+> pypolymlp-calc --geometry_optimization --poscar POSCAR --pot polymlp.lammps --no_symmetry
+> pypolymlp-calc --geometry_optimization --poscar POSCAR --pot polymlp.lammps --fix_cell
+> pypolymlp-calc --geometry_optimization --poscar POSCAR --pot polymlp.lammps --fix_atom
+> pypolymlp-calc --geometry_optimization --poscar POSCAR --pot polymlp.lammps --method CG
+```
+
+## Equation of states
+
+(phonopy is required.)
+```
+> pypolymlp-calc --eos --poscar POSCAR --pot polymlp.lammps
+```
+
+## Elastic constants
+
+(pymatgen is required.)
+```
+> pypolymlp-calc --elastic --poscar POSCAR --pot polymlp.lammps
+```
+
+
 <!--
 > pypolymlp-calc --force_constants --pot polymlp.lammps --phono3py_yaml phono3py_params_wurtzite_AlN.yaml.xz
 -->

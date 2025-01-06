@@ -7,7 +7,7 @@ import numpy as np
 
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.sscha.harmonic_real import HarmonicReal
-from pypolymlp.calculator.sscha.sscha_utils import Restart
+from pypolymlp.calculator.sscha.sscha_utils import Restart, save_cell
 from pypolymlp.utils.vasp_utils import write_poscar_file
 
 
@@ -55,8 +55,15 @@ class SSCHADistribution:
         np.save(path + "/sscha_disps.npy", disps)
         np.save(path + "/sscha_forces.npy", forces)
         np.save(path + "/sscha_energies.npy", np.array(self.energies))
-        with open(path + "/sscha_static_energy.dat", "w") as f:
-            print(self.static_potential, file=f)
+        with open(path + "/sscha_potentials.yaml", "w") as f:
+            save_cell(self._res.unitcell, tag="unitcell", fstream=f)
+            print("supercell_matrix:", file=f)
+            print(" -", list(self._res.supercell_matrix[0].astype(int)), file=f)
+            print(" -", list(self._res.supercell_matrix[1].astype(int)), file=f)
+            print(" -", list(self._res.supercell_matrix[2].astype(int)), file=f)
+            print("", file=f)
+            print("static_potential: ", self.static_potential, file=f)
+            print("average_potential:", np.mean(self.energies), file=f)
 
         os.makedirs(path + "/sscha_poscars", exist_ok=True)
         for i, st in enumerate(self.supercells, 1):
@@ -68,7 +75,8 @@ class SSCHADistribution:
             print("- shape:", forces.shape, flush=True)
             print("Potential energies of supercells are generated.")
             print("- shape:", len(self.energies))
-            print("- static_potential:", self.static_potential, "(eV/supercell)")
+            print("- static_potential: ", self.static_potential, "(eV/supercell)")
+            print("- average_potential:", np.mean(self.energies), "(eV/supercell)")
             print("sscha_poscars/POSCAR* are generated.")
         return self
 
