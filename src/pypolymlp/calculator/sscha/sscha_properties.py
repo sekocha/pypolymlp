@@ -1,5 +1,6 @@
 """Class for calculating thermodynamic properties from SSCHA results."""
 
+import copy
 import itertools
 import os
 from dataclasses import dataclass
@@ -18,6 +19,7 @@ from pypolymlp.calculator.sscha.utils.lsq import loocv
 from pypolymlp.core.units import Avogadro, EVtoJ
 from pypolymlp.core.utils import rmse
 from pypolymlp.utils.phonopy_utils import structure_to_phonopy_cell
+from pypolymlp.utils.vasp_utils import write_poscar_file
 
 
 @dataclass
@@ -553,6 +555,20 @@ class SSCHAProperties:
             print("", file=f)
 
         f.close()
+        return self
+
+    def save_equilibrium_structures(self, path: str = "sscha_eqm_poscars"):
+        """Save structures with equilibrium volumes to files."""
+        os.makedirs(path, exist_ok=True)
+        unitcell = self._grid_vt[int(len(self._volumes) / 2), 0].restart.unitcell
+        for itemp, grid in enumerate(self._grid_t):
+            expand = grid.eqm_volume / np.linalg.det(unitcell.axis)
+            expand = np.power(expand, 1.0 / 3.0)
+            unitcell_expand = copy.deepcopy(unitcell)
+            unitcell_expand.axis *= expand
+            filename = path + "/POSCAR-" + str(self._temperatures[itemp])
+            write_poscar_file(unitcell_expand, filename=filename)
+        return self
 
     def _save_2d_array(self, f, tag: str):
         """Save dict of 2D array"""
