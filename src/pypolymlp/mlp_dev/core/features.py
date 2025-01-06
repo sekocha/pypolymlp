@@ -40,11 +40,6 @@ def multiple_dft_to_mlpcpp_obj(multiple_dft: list[PolymlpDataDFT]):
 
 def structures_to_mlpcpp_obj(structures: PolymlpStructure):
 
-    #    for st in structures:
-    #        print(st.name)
-    #        print(st.axis.shape, st.positions.shape)
-    #        print(st.axis @ st.positions.astype(float))
-    #
     axis_array = [st.axis for st in structures]
     positions_c_array = [st.axis @ st.positions for st in structures]
     types_array = [st.types for st in structures]
