@@ -128,11 +128,13 @@ class ParserDatasets:
         self._train = set_dataset_from_electron_yamls(
             self._params.dft_train,
             temperature=self._params.temperature,
+            target=self._params.electron_property,
             element_order=self._params.element_order,
         )
         self._test = set_dataset_from_electron_yamls(
             self._params.dft_test,
             temperature=self._params.temperature,
+            target=self._params.electron_property,
             element_order=self._params.element_order,
         )
         self._post_single_dataset()

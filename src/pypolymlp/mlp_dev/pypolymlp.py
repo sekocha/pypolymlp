@@ -179,7 +179,17 @@ class Pypolymlp:
         self._test = self._polymlp_in.test
         return self
 
-    def set_datasets_electron(self, yamlfiles: list[str], temperature: float = 300):
+    def set_datasets_electron(
+        self,
+        yamlfiles: list[str],
+        temperature: float = 300,
+        target: Literal[
+            "free_energy",
+            "energy",
+            "entropy",
+            "specific_heat",
+        ] = "free_energy",
+    ):
         """Set single electron dataset.
 
         Parameters
@@ -190,6 +200,7 @@ class Pypolymlp:
         self._params.dataset_type = "electron"
         self._params.include_force = False
         self._params.temperature = temperature
+        self._params.electron_property = target
 
         train_files, test_files = split_train_test(yamlfiles, train_ratio=0.9)
         self._params.dft_train = sorted(train_files)

@@ -72,10 +72,12 @@ class ParamsParser:
         )
 
         if dataset_type == "electron":
-            self._params.temperature = self._get_temperature()
-
-    def _get_temperature(self):
-        return self.parser.get_params("temperature", default=300, dtype=float)
+            self._params.temperature = self.parser.get_params(
+                "temperature", default=300, dtype=float
+            )
+            self._params.electron_property = self.parser.get_params(
+                "electron_property", default="free_energy", dtype=str
+            )
 
     def _set_force_tags(self):
         """Set include_force and include_stress."""
