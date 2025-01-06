@@ -1,6 +1,6 @@
 """Interfaces for pypolymlp yaml files."""
 
-from typing import Optional
+from typing import Literal, Optional
 
 import numpy as np
 import yaml
@@ -51,12 +51,19 @@ def parse_structure_from_yaml(yml_data: yaml, tag: str = "unitcell"):
 def set_dataset_from_electron_yamls(
     yamlfiles: list[str],
     temperature: float = 300.0,
+    target: Literal[
+        "free_energy",
+        "energy",
+        "entropy",
+        "specific_heat",
+    ] = "free_energy",
     element_order: Optional[bool] = None,
 ) -> PolymlpDataDFT:
     """Return DFT dataset by loading electron.yaml files."""
     structures, free_energies = parse_electron_yamls(
         yamlfiles,
         temperature=temperature,
+        target=target,
     )
     dft = set_dataset_from_structures(
         structures,
@@ -68,16 +75,25 @@ def set_dataset_from_electron_yamls(
     return dft
 
 
-def parse_electron_yamls(yamlfiles: list[str], temperature: float = 300.0):
+def parse_electron_yamls(
+    yamlfiles: list[str],
+    temperature: float = 300.0,
+    target: Literal[
+        "free_energy",
+        "energy",
+        "entropy",
+        "specific_heat",
+    ] = "free_energy",
+):
     """Parse electron.yaml files."""
-    free_energies, structures = [], []
+    properties, structures = [], []
     for yfile in yamlfiles:
         yml = yaml.safe_load(open(yfile))
+        unitcell = parse_structure_from_yaml(yml, tag="structure")
+        unitcell.name = yfile
+        structures.append(unitcell)
         for prop in yml["properties"]:
             if np.isclose(float(prop["temperature"]), temperature):
-                free_energies.append(float(prop["free_energy"]))
-                unitcell = parse_structure_from_yaml(yml, tag="structure")
-                unitcell.name = yfile
-                structures.append(unitcell)
+                properties.append(float(prop[target]))
                 break
-    return structures, np.array(free_energies)
+    return structures, np.array(properties)
