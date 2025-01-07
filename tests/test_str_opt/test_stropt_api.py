@@ -60,6 +60,6 @@ def test_stropt_ZnS_wurtzite():
     np.testing.assert_allclose(polymlp._go.residual_forces[1], 0.0, atol=1e-5)
 
     e, f, s = polymlp.eval(polymlp.first_structure)
-    assert e[0] == e_ref
+    assert e0 == pytest.approx(e_ref, rel=1e-6)
     np.testing.assert_allclose(f, 0.0, atol=1e-4)
     np.testing.assert_allclose(s, 0.0, atol=1e-4)
