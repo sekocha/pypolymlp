@@ -4,7 +4,7 @@ import copy
 from typing import Literal, Optional, Union
 
 import numpy as np
-from scipy.optimize import minimize
+from scipy.optimize import NonlinearConstraint, minimize
 
 from pypolymlp.calculator.compute_features import update_types
 from pypolymlp.calculator.properties import Properties
@@ -14,22 +14,8 @@ from pypolymlp.utils.structure_utils import refine_positions
 from pypolymlp.utils.symfc_utils import construct_basis_fractional_coordinates
 from pypolymlp.utils.vasp_utils import write_poscar_file
 
-# from dataclasses import dataclass
-# @dataclass
-# class Coeffs:
-#     """Dataclass of coefficients representing structure."""
-#
-#     x: np.ndarray
-#     size_positions: int = 0
-#     size_axis: int = 0
-#
-#     def split(self):
-#         x_pos = self.x[:size_positions]
-#         x_axis = self.x[size_positions:size_axis]
-#         return x_pos, x_axis
 
-
-class Geometry_optimization:
+class GeometryOptimization:
     """Class for geometry optimization."""
 
     def __init__(
@@ -38,7 +24,7 @@ class Geometry_optimization:
         relax_cell: bool = False,
         relax_volume: bool = False,
         relax_positions: bool = True,
-        symmetry: bool = True,
+        with_sym: bool = True,
         pot: str = None,
         params: Optional[Union[PolymlpParams, list[PolymlpParams]]] = None,
         coeffs: Optional[np.ndarray] = None,
@@ -53,7 +39,7 @@ class Geometry_optimization:
         relax_cell: Optimize cell shape.
         relax_volume: Optimize volume.
         relax_positions: Optimize atomic positions.
-        symmetry: Consider symmetric properties.
+        with_sym: Consider symmetric properties.
         pot: polymlp file.
         params: Parameters for polymlp.
         coeffs: Polymlp coefficients.
@@ -82,7 +68,7 @@ class Geometry_optimization:
         self._relax_cell = relax_cell
         self._relax_volume = relax_volume
         self._relax_positions = relax_positions
-        self._symmetry = symmetry
+        self._with_sym = with_sym
         self._verbose = verbose
 
         self._basis_axis, cell_update = self._set_basis_axis(cell)
@@ -95,6 +81,8 @@ class Geometry_optimization:
 
         self._positions_f0 = copy.deepcopy(self._structure.positions)
         self._x0 = self._set_initial_coefficients()
+        if not relax_volume:
+            self._v0 = self._structure.volume
 
         self._energy = None
         self._force = None
@@ -104,12 +92,12 @@ class Geometry_optimization:
 
         if verbose:
             e0, f0, _ = self._prop.eval(self._structure)
-            print("Energy (Initial structure):", e0)
+            print("Energy (Initial structure):", e0, flush=True)
 
     def _set_basis_axis(self, cell: PolymlpStructure):
         """Set basis vectors for axis components."""
         if self._relax_cell:
-            if self._symmetry:
+            if self._with_sym:
                 self._basis_axis, cell_update = construct_basis_cell(
                     cell,
                     verbose=self._verbose,
@@ -125,7 +113,7 @@ class Geometry_optimization:
     def _set_basis_positions(self, cell: PolymlpStructure):
         """Set basis vectors for atomic positions."""
         if self._relax_positions:
-            if self._symmetry:
+            if self._with_sym:
                 self._basis_f = construct_basis_fractional_coordinates(cell)
                 if self._basis_f is None:
                     self._relax_positions = False
@@ -138,25 +126,22 @@ class Geometry_optimization:
 
     def _set_initial_coefficients(self):
         """Set initial coefficients representing structure."""
-        xf, xs, xv = [], [], []
+        xf, xs = [], []
         if self._relax_positions:
             xf = np.zeros(self._basis_f.shape[1])
         if self._relax_cell:
             xs = self._basis_axis.T @ self._structure.axis.reshape(-1)
-            if not self._relax_volume:
-                xv = [0.0]
 
-        self._x0 = np.concatenate([xf, xs, xv], 0)
+        self._x0 = np.concatenate([xf, xs], 0)
         self._size_pos = 0 if self._basis_f is None else self._basis_f.shape[1]
-        self._size_axis = 0 if self._basis_axis is None else self._basis_axis.shape[1]
         return self._x0
 
     def split(self, x: np.ndarray):
         """Split coefficients."""
-        x_pos = x[: self._size_pos]
-        x_axis = x[self._size_pos : self._size_pos + self._size_axis]
-        x_lambda = x[self._size_pos + self._size_axis :]
-        return x_pos, x_axis, x_lambda
+        partition1 = self._size_pos
+        x_pos = x[:partition1]
+        x_axis = x[partition1:]
+        return x_pos, x_axis
 
     def fun_fix_cell(self, x, args=None):
         """Target function when performing no cell optimization."""
@@ -164,11 +149,11 @@ class Geometry_optimization:
         self._energy, self._force, _ = self._prop.eval(self._structure)
 
         if self._energy < -1e3 * self._n_atom:
-            print("Energy =", self._energy)
-            print("Axis :")
-            print(self._structure.axis.T)
-            print("Fractional coordinates:")
-            print(self._structure.positions.T)
+            print("Energy =", self._energy, flush=True)
+            print("Axis :", flush=True)
+            print(self._structure.axis.T, flush=True)
+            print("Fractional coordinates:", flush=True)
+            print(self._structure.positions.T, flush=True)
             raise ValueError(
                 "Geometry optimization failed: " "Huge negative energy value."
             )
@@ -190,11 +175,11 @@ class Geometry_optimization:
         (self._energy, self._force, self._stress) = self._prop.eval(self._structure)
 
         if self._energy < -1e3 * self._n_atom:
-            print("Energy =", self._energy)
-            print("Axis :")
-            print(self._structure.axis.T)
-            print("Fractional coordinates:")
-            print(self._structure.positions.T)
+            print("Energy =", self._energy, flush=True)
+            print("Axis :", flush=True)
+            print(self._structure.axis.T, flush=True)
+            print("Fractional coordinates:", flush=True)
+            print(self._structure.positions.T, flush=True)
             raise ValueError(
                 "Geometry optimization failed: " "Huge negative energy value."
             )
@@ -202,11 +187,11 @@ class Geometry_optimization:
 
     def jac_relax_cell(self, x, args=None):
         """Target Jacobian function when performing cell optimization."""
-
+        partition1 = self._size_pos
         derivatives = np.zeros(len(x))
         if self._relax_positions:
-            derivatives[: self._size_pos] = self.jac_fix_cell(x)
-        derivatives[self._size_pos :] = self.derivatives_by_axis()
+            derivatives[:partition1] = self.jac_fix_cell(x[:partition1])
+        derivatives[partition1:] = self.derivatives_by_axis()
         return derivatives
 
     def _to_structure_fix_cell(self, x):
@@ -218,7 +203,7 @@ class Geometry_optimization:
 
     def _to_structure_relax_cell(self, x):
         """Convert x to structure."""
-        x_positions, x_cells, x_lambda = self.split(x)
+        x_positions, x_cells = self.split(x)
         axis = self._basis_axis @ x_cells
         axis = axis.reshape((3, 3))
         self._change_axis(axis)
@@ -227,6 +212,13 @@ class Geometry_optimization:
             self._structure = self._to_structure_fix_cell(x_positions)
 
         return self._structure
+
+    def _to_volume(self, x):
+        _, x_cells = self.split(x)
+        axis = self._basis_axis @ x_cells
+        axis = axis.reshape((3, 3))
+        volume = np.linalg.det(axis)
+        return volume
 
     def derivatives_by_axis(self):
         """Compute derivatives with respect to axis elements."""
@@ -243,17 +235,29 @@ class Geometry_optimization:
     def run(
         self,
         gtol: float = 1e-4,
-        method: Literal["BFGS", "CG", "L-BFGS-B"] = "BFGS",
+        method: Literal["BFGS", "CG", "L-BFGS-B", "SLSQP"] = "BFGS",
     ):
         """Run geometry optimization.
 
         Parameters
         ----------
-        method: Optimization method, CG, BFGS, or L-BFGS-B.
+        method: Optimization method, CG, BFGS, L-BFGS-B or SLSQP.
+                If relax_volume = False, SLSQP is automatically used.
         """
+        if self._relax_cell and not self._relax_volume:
+            method = "SLSQP"
+
         if self._verbose:
-            print("Using", method, "method")
-        options = {"gtol": gtol, "disp": True}
+            print("Using", method, "method", flush=True)
+            print("Relax cell shape:       ", self._relax_cell, flush=True)
+            print("Relax volume:           ", self._relax_volume, flush=True)
+            print("Relax atomic positionss:", self._relax_positions, flush=True)
+
+        if method == "SLSQP":
+            options = {"ftol": gtol, "disp": True}
+        else:
+            options = {"gtol": gtol, "disp": True}
+
         if self._relax_cell:
             fun = self.fun_relax_cell
             jac = self.jac_relax_cell
@@ -262,8 +266,25 @@ class Geometry_optimization:
             jac = self.jac_fix_cell
 
         if self._verbose:
-            print("Number of degrees of freedom:", len(self._x0))
-        self._res = minimize(fun, self._x0, method=method, jac=jac, options=options)
+            print("Number of degrees of freedom:", len(self._x0), flush=True)
+
+        if self._relax_cell and not self._relax_volume:
+            nlc = NonlinearConstraint(
+                self._to_volume,
+                self._v0 - 1e-15,
+                self._v0 + 1e-15,
+                jac="2-point",
+            )
+            self._res = minimize(
+                fun,
+                self._x0,
+                method=method,
+                jac=jac,
+                options=options,
+                constraints=[nlc],
+            )
+        else:
+            self._res = minimize(fun, self._x0, method=method, jac=jac, options=options)
         self._x0 = self._res.x
         return self
 
@@ -317,6 +338,7 @@ class Geometry_optimization:
 
     @property
     def residual_forces(self):
+        """Return residual forces and stresses represented in basis sets."""
         if self._relax_cell:
             residual_f = -self._res.jac[: self._size_pos]
             residual_s = -self._res.jac[self._size_pos :]
@@ -326,12 +348,12 @@ class Geometry_optimization:
     def print_structure(self):
         """Print structure."""
         structure = self.structure
-        print("Axis basis vectors:")
+        print("Axis basis vectors:", flush=True)
         for a in structure.axis.T:
-            print(" -", list(a))
-        print("Fractional coordinates:")
+            print(" -", list(a), flush=True)
+        print("Fractional coordinates:", flush=True)
         for p, e in zip(structure.positions.T, structure.elements):
-            print(" -", e, list(p))
+            print(" -", e, list(p), flush=True)
 
     def write_poscar(self, filename: str = "POSCAR_eqm"):
         """Save structure to a POSCAR file."""
@@ -367,12 +389,12 @@ if __name__ == "__main__":
 
     np.set_printoptions(legacy="1.21")
 
-    minobj = Geometry_optimization(
+    minobj = GeometryOptimization(
         unitcell,
         relax_cell=args.relax_cell,
         relax_volume=args.relax_volume,
         relax_positions=not args.fix_positions,
-        symmetry=args.symmetry,
+        with_sym=args.symmetry,
         pot=args.pot,
         verbose=True,
     )

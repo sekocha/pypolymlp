@@ -422,6 +422,7 @@ class PolymlpCalc:
         init_str: Optional[PolymlpStructure] = None,
         with_sym: bool = True,
         relax_cell: bool = False,
+        relax_volume: bool = False,
         relax_positions: bool = True,
     ):
         """Initialize geometry optimization.
@@ -433,48 +434,43 @@ class PolymlpCalc:
         init_str: Initial structure.
         with_sym: Consider symmetry.
         relax_cell: Relax cell.
+        relax_volume: Relax volume.
         relax_positions: Relax atomic positions.
         """
-        from pypolymlp.calculator.str_opt.optimization_simple import Minimize
-        from pypolymlp.calculator.str_opt.optimization_sym import MinimizeSym
+        from pypolymlp.calculator.str_opt.optimization import GeometryOptimization
 
         if init_str is not None:
             self.structures = init_str
         init_str = self.first_structure
 
-        if with_sym:
-            try:
-                self._go = MinimizeSym(
-                    init_str,
-                    properties=self._prop,
-                    relax_cell=relax_cell,
-                    relax_positions=relax_positions,
-                    verbose=self._verbose,
-                )
-            except ValueError:
-                self._go = None
-                if self._verbose:
-                    print("Warning: No degrees of freedom in structure.", flush=True)
-        else:
-            self._go = Minimize(
+        try:
+            self._go = GeometryOptimization(
                 init_str,
                 properties=self._prop,
                 relax_cell=relax_cell,
+                relax_volume=relax_volume,
+                relax_positions=relax_positions,
+                with_sym=with_sym,
                 verbose=self._verbose,
             )
+        except ValueError:
+            self._go = None
+            if self._verbose:
+                print("Warning: No degrees of freedom in structure.", flush=True)
         return self
 
     def run_geometry_optimization(
         self,
-        gtol: float = 1e-5,
-        method: Literal["BFGS", "CG", "L-BFGS-B"] = "BFGS",
+        gtol: float = 1e-4,
+        method: Literal["BFGS", "CG", "L-BFGS-B", "SLSQP"] = "BFGS",
     ):
         """Run geometry optimization.
 
         Parameters
         ----------
         gtol: Tolerance for gradients.
-        method: Optimization method, CG, BFGS, or L-BFGS-B.
+        method: Optimization method, CG, BFGS, L-BFGS-B, or SLSQP.
+                If relax_volume = False, SLSQP is automatically used.
 
         Returns
         -------

@@ -106,7 +106,12 @@ def run():
     parser.add_argument(
         "--fix_cell",
         action="store_true",
-        help="Fix cell size and shape in geometry optimization",
+        help="Fix cell shape and volume in geometry optimization",
+    )
+    parser.add_argument(
+        "--fix_volume",
+        action="store_true",
+        help="Fix cell volume in geometry optimization",
     )
     parser.add_argument(
         "--fix_atom",
@@ -200,6 +205,7 @@ def run():
             polymlp.init_geometry_optimization(
                 with_sym=True,
                 relax_cell=False,
+                relax_volume=False,
                 relax_positions=True,
             )
             polymlp.run_geometry_optimization()
@@ -235,9 +241,16 @@ def run():
     elif args.geometry_optimization:
         print("Mode: Geometry optimization", flush=True)
         polymlp.load_poscars(args.poscar)
+        relax_cell, relax_volume = True, True
+        if args.fix_cell:
+            relax_cell = False
+            relax_volume = False
+        if args.fix_volume:
+            relax_volume = False
         polymlp.init_geometry_optimization(
             with_sym=not args.no_symmetry,
-            relax_cell=not args.fix_cell,
+            relax_cell=relax_cell,
+            relax_volume=relax_volume,
             relax_positions=not args.fix_atom,
         )
         polymlp.run_geometry_optimization(method=args.method)
