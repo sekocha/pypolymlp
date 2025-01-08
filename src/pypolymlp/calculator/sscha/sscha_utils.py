@@ -9,9 +9,9 @@ import yaml
 from phono3py.file_IO import read_fc2_from_hdf5
 
 from pypolymlp.core.data_format import PolymlpStructure
-from pypolymlp.core.interface_yaml import parse_structure_from_yaml
 from pypolymlp.core.utils import kjmol_to_ev
 from pypolymlp.utils.phonopy_utils import phonopy_supercell, structure_to_phonopy_cell
+from pypolymlp.utils.yaml_utils import load_cell, print_array1d, save_cell
 
 
 @dataclass
@@ -88,7 +88,7 @@ class Restart:
         self._imaginary = yaml_data["status"]["imaginary"]
         self._logs = yaml_data["logs"]
 
-        self._unitcell = parse_structure_from_yaml(yaml_data, tag="unitcell")
+        self._unitcell = load_cell(yaml_data=yaml_data, tag="unitcell")
         self._supercell_matrix = np.array(yaml_data["supercell_matrix"])
         self._n_atom_unitcell = len(self._unitcell.elements)
         self._volume = np.linalg.det(self._unitcell.axis)
@@ -300,46 +300,6 @@ def print_parameters(supercell_matrix: np.ndarray, args):
     print("  - q-mesh:                   ", args.mesh, flush=True)
 
 
-def print_array1d(array, tag, fstream, indent_l=0):
-    prefix = "".join([" " for n in range(indent_l)])
-    print(prefix + tag + ":", file=fstream, flush=True)
-    for i, d in enumerate(array):
-        print(prefix + " -", d, file=fstream, flush=True)
-
-
-def print_array2d(array, tag, fstream, indent_l=0):
-    prefix = "".join([" " for n in range(indent_l)])
-    print(prefix + tag + ":", file=fstream, flush=True)
-    for i, d in enumerate(array):
-        print(prefix + " -", list(d), file=fstream, flush=True)
-
-
-def save_cell(cell: PolymlpStructure, tag="unitcell", fstream=None, filename=None):
-    """Write structure to a file."""
-
-    np.set_printoptions(legacy="1.21")
-    if fstream is None:
-        fstream = open(filename, "w")
-
-    print(tag + ":", file=fstream, flush=True)
-    print_array2d(cell.axis.T, "axis", fstream, indent_l=2)
-    print_array2d(cell.positions.T, "positions", fstream, indent_l=2)
-    print("  n_atoms:  ", list(cell.n_atoms), file=fstream, flush=True)
-    print("  types:    ", list(cell.types), file=fstream, flush=True)
-    print("  elements: ", list(cell.elements), file=fstream, flush=True)
-
-    if tag == "supercell":
-        print("  n_unitcells: ", cell.n_unitcells, file=fstream, flush=True)
-        print_array2d(
-            cell.supercell_matrix,
-            "supercell_matrix",
-            fstream,
-            indent_l=2,
-        )
-
-    print("", file=fstream, flush=True)
-
-
 def save_sscha_yaml(
     unitcell: PolymlpStructure,
     supercell_matrix: np.ndarray,
@@ -388,7 +348,7 @@ def save_sscha_yaml(
     print("  imaginary: ", properties.imaginary, file=f)
     print("", file=f)
 
-    save_cell(unitcell, tag="unitcell", fstream=f)
+    save_cell(unitcell, tag="unitcell", file=f)
     print("supercell_matrix:", file=f)
     print(" -", list(supercell_matrix[0].astype(int)), file=f)
     print(" -", list(supercell_matrix[1].astype(int)), file=f)

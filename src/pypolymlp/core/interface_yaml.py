@@ -5,8 +5,10 @@ from typing import Literal, Optional
 import numpy as np
 import yaml
 
-from pypolymlp.core.data_format import PolymlpDataDFT, PolymlpStructure
+from pypolymlp.core.data_format import PolymlpDataDFT
 from pypolymlp.core.interface_datasets import set_dataset_from_structures
+from pypolymlp.core.units import EVtoKJmol
+from pypolymlp.utils.yaml_utils import load_cell
 
 
 def set_dataset_from_sscha_yamls(
@@ -31,21 +33,12 @@ def parse_sscha_yamls(yamlfiles: list[str]):
     for yfile in yamlfiles:
         yml = yaml.safe_load(open(yfile))
         fvib = float(yml["properties"]["free_energy"])
-        free_energies.append(fvib * 0.01036426965)  # kJ/mol -> eV/unitcell
-        unitcell = parse_structure_from_yaml(yml, tag="unitcell")
+        free_energies.append(fvib / EVtoKJmol)  # kJ/mol -> eV/unitcell
+        unitcell = load_cell(yaml_data=yml, tag="unitcell")
         unitcell.name = yfile
         structures.append(unitcell)
 
     return structures, np.array(free_energies)
-
-
-def parse_structure_from_yaml(yml_data: yaml, tag: str = "unitcell"):
-    """Parse structure in yaml data."""
-    cell_dict = yml_data[tag]
-    cell_dict["axis"] = np.array(cell_dict["axis"], dtype=float).T
-    cell_dict["positions"] = np.array(cell_dict["positions"], dtype=float).T
-    cell = PolymlpStructure(**cell_dict)
-    return cell
 
 
 def set_dataset_from_electron_yamls(
@@ -89,7 +82,7 @@ def parse_electron_yamls(
     properties, structures = [], []
     for yfile in yamlfiles:
         yml = yaml.safe_load(open(yfile))
-        unitcell = parse_structure_from_yaml(yml, tag="structure")
+        unitcell = load_cell(yaml_data=yml, tag="structure")
         unitcell.name = yfile
         structures.append(unitcell)
         for prop in yml["properties"]:

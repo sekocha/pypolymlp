@@ -7,8 +7,9 @@ import numpy as np
 
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.sscha.harmonic_real import HarmonicReal
-from pypolymlp.calculator.sscha.sscha_utils import Restart, save_cell
+from pypolymlp.calculator.sscha.sscha_utils import Restart
 from pypolymlp.utils.vasp_utils import write_poscar_file
+from pypolymlp.utils.yaml_utils import save_cell
 
 
 class SSCHADistribution:
@@ -56,7 +57,7 @@ class SSCHADistribution:
         np.save(path + "/sscha_forces.npy", forces)
         np.save(path + "/sscha_energies.npy", np.array(self.energies))
         with open(path + "/sscha_potentials.yaml", "w") as f:
-            save_cell(self._res.unitcell, tag="unitcell", fstream=f)
+            save_cell(self._res.unitcell, tag="unitcell", file=f)
             print("supercell_matrix:", file=f)
             print(" -", list(self._res.supercell_matrix[0].astype(int)), file=f)
             print(" -", list(self._res.supercell_matrix[1].astype(int)), file=f)

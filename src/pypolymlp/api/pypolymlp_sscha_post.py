@@ -27,6 +27,7 @@ class PolymlpSSCHAPost:
         sscha = SSCHAProperties(yamlfiles, verbose=self._verbose)
         sscha.run()
         sscha.save_properties(filename=filename)
+        sscha.save_equilibrium_structures(path="sscha_eqm_poscars")
         return self
 
     def find_phase_transition(self, yaml1: str, yaml2: str):
