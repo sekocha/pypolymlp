@@ -52,6 +52,121 @@ class PolymlpDataSSCHA:
         self.free_energy = self.harmonic_free_energy + self.anharmonic_free_energy
 
 
+@dataclass
+class SSCHAParameters:
+    """Dataclass of sscha parameters.
+
+    Parameters
+    ----------
+    mesh: q-point mesh for computing harmonic properties using effective FC2.
+    n_samples_init: Number of samples in first SSCHA loop.
+    n_samples_final: Number of samples in second SSCHA loop.
+    temperatures: Temperatures.
+    tol: Convergence tolerance for FCs.
+    max_iter: Maximum number of iterations.
+    mixing: Mixing parameter.
+            FCs are updated by FC2 = FC2(new) * mixing + FC2(old) * (1-mixing).
+    """
+
+    # TODO: Document
+    unitcell: PolymlpStructure
+    supercell_matrix: np.ndarray
+    pot: Optional[str] = None
+    temperatures: Optional[np.ndarray] = None
+    temp: Optional[float] = None
+    temp_min: float = 0
+    temp_max: float = 2000
+    temp_step: float = 50
+    ascending_temp: bool = (False,)
+    n_samples_init: Optional[int] = None
+    n_samples_final: Optional[int] = None
+    tol: float = 0.01
+    max_iter: int = 30
+    mixing: float = 0.5
+    mesh: tuple = (10, 10, 10)
+    init_fc_algorithm: Literal["harmonic", "file"] = "harmonic"
+    init_fc_file: Optional[str] = None
+    nac_params: Optional[dict] = None
+
+    def __post_init__(self):
+        """Post init method."""
+        self._n_atom = len(self.unitcell.elements) * np.linalg.det(
+            self.supercell_matrix
+        )
+        if self.temperatures is None:
+            self.set_temperatures()
+        self.set_n_samples()
+
+    def _round_temperature(self, temp: float):
+        """Round a single temperature if possible."""
+        if np.isclose(temp, round(temp)):
+            return round(temp)
+        return temp
+
+    def set_temperatures(self):
+        """Set simulation temperatures."""
+        if self.temp is not None:
+            return [self._round_temperature(self.temp)]
+
+        self.temp_min = self._round_temperature(self.temp_min)
+        self.temp_max = self._round_temperature(self.temp_max)
+        self.temp_step = self._round_temperature(self.temp_step)
+        self.temperatures = np.arange(self.temp_min, self.temp_max + 1, self.temp_step)
+        if not self.ascending_temp:
+            self.temperatures = self.temperatures[::-1]
+        return self.temperatures
+
+    def set_n_samples(self):
+        """Set number of supercells."""
+        if self.n_samples_init is None:
+            self.n_samples_unit = round(6400 / self._n_atom)
+            self.n_samples_init = 20 * self.n_samples_unit
+        if self.n_samples_final is None:
+            self.n_samples_unit = round(6400 / self._n_atom)
+            self.n_samples_final = 100 * self.n_samples_unit
+        return self.n_samples_init, self.n_samples_final
+
+    def print_params(self):
+        """Print parameters in SSCHA."""
+        print(" # parameters", flush=True)
+        print("  - supercell:    ", self.supercell_matrix[0], flush=True)
+        print("                  ", self.supercell_matrix[1], flush=True)
+        print("                  ", self.supercell_matrix[2], flush=True)
+        print("  - temperatures: ", self.temperatures[0], flush=True)
+        if len(self.temperatures) > 1:
+            for t in self.temperatures[1:]:
+                print("                  ", t, flush=True)
+
+        if isinstance(self.pot, list):
+            for p in self.pot:
+                print("  - Polynomial ML potential:  ", os.path.abspath(p), flush=True)
+        else:
+            print(
+                "  - Polynomial ML potential:  ",
+                os.path.abspath(self.pot),
+                flush=True,
+            )
+
+        print("  - FC tolerance:             ", self.tol, flush=True)
+        print("  - max iter:                 ", self.max_iter, flush=True)
+        print("  - mixing:                   ", self.mixing, flush=True)
+        print("  - num samples:              ", self.n_samples_init, flush=True)
+        print("  - num samples (last iter.): ", self.n_samples_final, flush=True)
+        print("  - q-mesh:                   ", self.mesh, flush=True)
+
+    def print_unitcell(self):
+        """Print unitcell."""
+        print(" # structure ", flush=True)
+        print("  - elements:     ", self.unitcell.elements, flush=True)
+        print("  - axis:         ", self.unitcell.axis.T[0], flush=True)
+        print("                  ", self.unitcell.axis.T[1], flush=True)
+        print("                  ", self.unitcell.axis.T[2], flush=True)
+        print("  - positions:    ", self.unitcell.positions.T[0], flush=True)
+        if self.unitcell.positions.shape[1] > 1:
+            for pos in self.unitcell.positions.T[1:]:
+                print("                  ", pos, flush=True)
+
+
 class Restart:
     """Class for reading files to restart SSCHA."""
 
@@ -226,78 +341,6 @@ class Restart:
     @property
     def volume(self):
         return self._volume
-
-
-def temperature_setting(args):
-    """Set simulation temperatures."""
-
-    if args.temp is not None:
-        if np.isclose(args.temp, round(args.temp)):
-            args.temp = int(args.temp)
-        temp_array = [args.temp]
-    else:
-        if np.isclose(args.temp_min, round(args.temp_min)):
-            args.temp_min = int(args.temp_min)
-        if np.isclose(args.temp_max, round(args.temp_max)):
-            args.temp_max = int(args.temp_max)
-        if np.isclose(args.temp_step, round(args.temp_step)):
-            args.temp_step = int(args.temp_step)
-        temp_array = np.arange(args.temp_min, args.temp_max + 1, args.temp_step)
-        if args.ascending_temp == False:
-            temp_array = temp_array[::-1]
-    args.temperatures = temp_array
-    return args
-
-
-def n_samples_setting(args, n_atom_supercell=None):
-    """Set number of supercells."""
-
-    if args.n_samples is None:
-        n_samples_unit = round(6400 / n_atom_supercell)
-        args.n_samples_init = 20 * n_samples_unit
-        args.n_samples_final = 100 * n_samples_unit
-    else:
-        args.n_samples_init, args.n_samples_final = args.n_samples
-    return args
-
-
-def print_structure(cell: PolymlpStructure):
-    """Print structure."""
-
-    print(" # structure ", flush=True)
-    print("  - elements:     ", cell.elements, flush=True)
-    print("  - axis:         ", cell.axis.T[0], flush=True)
-    print("                  ", cell.axis.T[1], flush=True)
-    print("                  ", cell.axis.T[2], flush=True)
-    print("  - positions:    ", cell.positions.T[0], flush=True)
-    if cell.positions.shape[1] > 1:
-        for pos in cell.positions.T[1:]:
-            print("                  ", pos, flush=True)
-
-
-def print_parameters(supercell_matrix: np.ndarray, args):
-    """Print parameters in SSCHA."""
-
-    print(" # parameters", flush=True)
-    print("  - supercell:    ", supercell_matrix[0], flush=True)
-    print("                  ", supercell_matrix[1], flush=True)
-    print("                  ", supercell_matrix[2], flush=True)
-    print("  - temperatures: ", args.temperatures[0], flush=True)
-    if len(args.temperatures) > 1:
-        for t in args.temperatures[1:]:
-            print("                  ", t, flush=True)
-
-    if isinstance(args.pot, list):
-        for p in args.pot:
-            print("  - Polynomial ML potential:  ", os.path.abspath(p), flush=True)
-    else:
-        print("  - Polynomial ML potential:  ", os.path.abspath(args.pot), flush=True)
-
-    print("  - FC tolerance:             ", args.tol, flush=True)
-    print("  - max iter:                 ", args.max_iter, flush=True)
-    print("  - num samples:              ", args.n_samples_init, flush=True)
-    print("  - num samples (last iter.): ", args.n_samples_final, flush=True)
-    print("  - q-mesh:                   ", args.mesh, flush=True)
 
 
 def save_sscha_yaml(

@@ -5,15 +5,7 @@ import signal
 
 import numpy as np
 
-from pypolymlp.calculator.sscha.run_sscha import run_sscha
-from pypolymlp.calculator.sscha.sscha_utils import (
-    Restart,
-    n_samples_setting,
-    print_parameters,
-    print_structure,
-    temperature_setting,
-)
-from pypolymlp.core.interface_vasp import Poscar
+from pypolymlp.api.pypolymlp_sscha import PolymlpSSCHAAPI
 
 
 def run():
@@ -122,28 +114,37 @@ def run():
     )
     parser.add_argument("--mixing", type=float, default=0.5, help="Mixing parameter")
     args = parser.parse_args()
+
     np.set_printoptions(legacy="1.21")
-
+    sscha = PolymlpSSCHAAPI(verbose=True)
     if args.poscar is not None:
-        unitcell = Poscar(args.poscar).structure
-        supercell_matrix = np.diag(args.supercell)
+        sscha.load_poscar(args.poscar, np.diag(args.supercell))
     elif args.yaml is not None:
-        res = Restart(args.yaml)
-        unitcell = res.unitcell
-        supercell_matrix = res.supercell_matrix
-        if args.pot is None:
-            args.pot = res.mlp
+        sscha.restart(yaml=args.yaml)
 
-    n_atom = len(unitcell.elements) * np.linalg.det(supercell_matrix)
-    args = temperature_setting(args)
-    args = n_samples_setting(args, n_atom)
+    if args.pot is not None:
+        sscha.set_polymlp(args.pot)
+    if args.born_vasprun is not None:
+        sscha.set_nac_params(args.born_vasprun)
 
-    print_parameters(supercell_matrix, args)
-    print_structure(unitcell)
+    if args.n_samples is None:
+        n_samples_init = None
+        n_samples_final = None
+    else:
+        n_samples_init, n_samples_final = args.n_samples
 
-    run_sscha(
-        unitcell,
-        supercell_matrix,
-        args,
-        pot=args.pot,
+    sscha.run(
+        temp=args.temp,
+        temp_min=args.temp_min,
+        temp_max=args.temp_max,
+        temp_step=args.temp_step,
+        ascending_temp=args.ascending_temp,
+        n_samples_init=n_samples_init,
+        n_samples_final=n_samples_final,
+        tol=args.tol,
+        max_iter=args.max_iter,
+        mixing=args.mixing,
+        mesh=args.mesh,
+        init_fc_algorithm=args.init,
+        init_fc_file=args.init_file,
     )

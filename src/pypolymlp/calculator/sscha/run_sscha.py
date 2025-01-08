@@ -13,13 +13,13 @@ from pypolymlp.calculator.sscha.harmonic_real import HarmonicReal
 from pypolymlp.calculator.sscha.harmonic_reciprocal import HarmonicReciprocal
 from pypolymlp.calculator.sscha.sscha_utils import (
     PolymlpDataSSCHA,
+    SSCHAParameters,
     is_imaginary,
     save_sscha_yaml,
 )
 from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
 from pypolymlp.core.utils import ev_to_kjmol
 from pypolymlp.utils.phonopy_utils import (
-    get_nac_params,
     phonopy_cell_to_structure,
     structure_to_phonopy_cell,
 )
@@ -331,81 +331,63 @@ class PolymlpSSCHA:
 
 
 def run_sscha(
-    unitcell: PolymlpStructure,
-    supercell_matrix: np.ndarray,
-    args,
+    sscha_params: SSCHAParameters,
     pot: Optional[str] = None,
     params: Optional[PolymlpParams] = None,
     coeffs: Optional[np.ndarray] = None,
     properties: Optional[Properties] = None,
-    verbose: bool = True,
+    verbose: bool = False,
 ):
     """Run sscha iterations.
 
     Parameters
     ----------
-    unitcell: Unitcell in PolymlpStructure format
-    supercell_matrix: Supercell matrix.
+    sscha_params: Parameters for SSCHA in SSCHAParameters.
     pot: polymlp file.
     params: Parameters for polymlp.
     coeffs: Polymlp coefficients.
-    properties: Properties object.
-    args: Parameters for SSCHA.
-
-    Attributes of args
-    ------------------
-    mesh: q-point mesh for computing harmonic properties using effective FC2.
-    n_samples_init: Number of samples in first SSCHA loop.
-    n_samples_final: Number of samples in second SSCHA loop.
-    temperatures: Temperatures.
-    tol: Convergence tolerance for FCs.
-    max_iter: Maximum number of iterations.
-    mixing: Mixing parameter.
-            FCs are updated by FC2 = FC2(new) * mixing + FC2(old) * (1-mixing).
-    born_vasprun: vasprun.xml file for parsing Born effective charges.
+    properties: Properties instance.
     """
-    nac_params = get_nac_params(
-        vasprun=args.born_vasprun,
-        supercell_matrix=supercell_matrix,
-    )
     sscha = PolymlpSSCHA(
-        unitcell,
-        supercell_matrix,
+        sscha_params.unitcell,
+        sscha_params.supercell_matrix,
         pot=pot,
         params=params,
         coeffs=coeffs,
         properties=properties,
-        nac_params=nac_params,
+        nac_params=sscha_params.nac_params,
         verbose=verbose,
     )
-
-    sscha.set_initial_force_constants(algorithm=args.init, filename=args.init_file)
-    freq = sscha._run_frequencies(qmesh=args.mesh)
+    sscha.set_initial_force_constants(
+        algorithm=sscha_params.init_fc_algorithm,
+        filename=sscha_params.init_fc_file,
+    )
+    freq = sscha._run_frequencies(qmesh=sscha_params.mesh)
     if verbose:
         print("Frequency (min):  ", "{:.6f}".format(np.min(freq)), flush=True)
         print("Frequency (max):  ", "{:.6f}".format(np.max(freq)), flush=True)
         print("Number of FC2 basis vectors:", sscha.n_fc_basis, flush=True)
 
-    for temp in args.temperatures:
+    for temp in sscha_params.temperatures:
         if verbose:
             print("************** Temperature:", temp, "**************", flush=True)
         sscha.run(
             t=temp,
-            n_samples=args.n_samples_init,
-            qmesh=args.mesh,
-            max_iter=args.max_iter,
-            tol=args.tol,
-            mixing=args.mixing,
+            n_samples=sscha_params.n_samples_init,
+            qmesh=sscha_params.mesh,
+            max_iter=sscha_params.max_iter,
+            tol=sscha_params.tol,
+            mixing=sscha_params.mixing,
         )
         if verbose:
             print("Increasing number of samples.", flush=True)
         sscha.run(
             t=temp,
-            n_samples=args.n_samples_final,
-            qmesh=args.mesh,
-            max_iter=args.max_iter,
-            tol=args.tol,
-            mixing=args.mixing,
+            n_samples=sscha_params.n_samples_final,
+            qmesh=sscha_params.mesh,
+            max_iter=sscha_params.max_iter,
+            tol=sscha_params.tol,
+            mixing=sscha_params.mixing,
             initialize_history=False,
         )
-        sscha.save_results(args)
+        # sscha.save_results(args)
