@@ -11,9 +11,9 @@ from symfc import Symfc
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.sscha.harmonic_real import HarmonicReal
 from pypolymlp.calculator.sscha.harmonic_reciprocal import HarmonicReciprocal
+from pypolymlp.calculator.sscha.sscha_params import SSCHAParameters
 from pypolymlp.calculator.sscha.sscha_utils import (
     PolymlpDataSSCHA,
-    SSCHAParameters,
     is_imaginary,
     save_sscha_yaml,
 )
@@ -278,17 +278,39 @@ class PolymlpSSCHA:
         self.phonopy.run_total_dos()
         self.phonopy.write_total_dos(filename=filename)
 
-    def save_results(self, args):
+    #    def save_results(self, args):
+    #        """Save SSCHA results."""
+    #        path_log = "./sscha/" + str(self.properties.temperature) + "/"
+    #        os.makedirs(path_log, exist_ok=True)
+    #        freq = self._run_frequencies(qmesh=args.mesh)
+    #        self.properties.imaginary = is_imaginary(freq)
+    #        save_sscha_yaml(
+    #            self._unitcell,
+    #            self._supercell_matrix,
+    #            self.logs,
+    #            args,
+    #            filename=path_log + "sscha_results.yaml",
+    #        )
+    #        write_fc2_to_hdf5(self.force_constants, filename=path_log + "fc2.hdf5")
+    #        self._write_dos(filename=path_log + "total_dos.dat")
+    #
+    #        if self._verbose:
+    #            print("-------- sscha runs finished --------", flush=True)
+    #            print("Temperature:      ", self.properties.temperature, flush=True)
+    #            print("Free energy:      ", self.properties.free_energy, flush=True)
+    #            print("Convergence:      ", self.properties.converge, flush=True)
+    #            print("Frequency (min):  ", "{:.6f}".format(np.min(freq)), flush=True)
+    #            print("Frequency (max):  ", "{:.6f}".format(np.max(freq)), flush=True)
+
+    def save_results(self, sscha_params: SSCHAParameters):
         """Save SSCHA results."""
         path_log = "./sscha/" + str(self.properties.temperature) + "/"
         os.makedirs(path_log, exist_ok=True)
-        freq = self._run_frequencies(qmesh=args.mesh)
+        freq = self._run_frequencies(qmesh=sscha_params.mesh)
         self.properties.imaginary = is_imaginary(freq)
         save_sscha_yaml(
-            self._unitcell,
-            self._supercell_matrix,
+            sscha_params,
             self.logs,
-            args,
             filename=path_log + "sscha_results.yaml",
         )
         write_fc2_to_hdf5(self.force_constants, filename=path_log + "fc2.hdf5")
@@ -390,4 +412,5 @@ def run_sscha(
             mixing=sscha_params.mixing,
             initialize_history=False,
         )
-        # sscha.save_results(args)
+        sscha.save_results(sscha_params)
+    return sscha

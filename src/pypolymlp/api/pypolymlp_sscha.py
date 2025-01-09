@@ -7,7 +7,8 @@ import numpy as np
 
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.sscha.run_sscha import run_sscha
-from pypolymlp.calculator.sscha.sscha_utils import Restart, SSCHAParameters
+from pypolymlp.calculator.sscha.sscha_params import SSCHAParameters
+from pypolymlp.calculator.sscha.sscha_utils import Restart
 from pypolymlp.core.data_format import PolymlpParams
 from pypolymlp.core.interface_vasp import Poscar
 from pypolymlp.utils.phonopy_utils import get_nac_params
@@ -68,14 +69,16 @@ class PolymlpSSCHAAPI:
         res = Restart(yaml)
         self._unitcell = res.unitcell
         self._supercell_matrix = res.supercell_matrix
-
-        self._pot = res.polymlp
         if parse_mlp and os.path.exists(res.polymlp):
-            self._prop = Properties(pot=res.polymlp)
+            self._pot = res.polymlp
+            self._prop = Properties(pot=self._pot)
         return self
 
     def set_nac_params(self, born_vasprun: str):
-        """
+        """Set parameters for non-analytic corrections.
+
+        Parameters
+        ----------
         born_vasprun: vasprun.xml file for parsing Born effective charges.
         """
         self._nac_params = get_nac_params(
@@ -104,7 +107,20 @@ class PolymlpSSCHAAPI:
 
         Parameters
         ----------
-        Copy from SSCHAParameters.
+        temp: Single simulation temperature.
+        temp_min: Minimum temperature.
+        temp_max: Maximum temperature.
+        temp_step: Temperature interval.
+        ascending_temp: Set simulation temperatures in ascending order.
+        n_samples_init: Number of samples in first loop of SSCHA iterations.
+        n_samples_final: Number of samples in second loop of SSCHA iterations.
+        tol: Convergence tolerance for FCs.
+        max_iter: Maximum number of iterations.
+        mixing: Mixing parameter.
+                FCs are updated by FC2 = FC2(new) * mixing + FC2(old) * (1-mixing).
+        mesh: q-point mesh for computing harmonic properties using effective FC2.
+        init_fc_algorithm: Algorithm for generating initial FCs.
+        init_fc_file: If algorithm = "file", coefficients are read from init_fc_file.
         """
         if self._prop is None:
             raise RuntimeError("Set polymlp.")
@@ -135,7 +151,7 @@ class PolymlpSSCHAAPI:
             self._sscha_params.print_params()
             self._sscha_params.print_unitcell()
 
-        run_sscha(
+        self._sscha = run_sscha(
             self._sscha_params,
             properties=self._prop,
             verbose=self._verbose,
