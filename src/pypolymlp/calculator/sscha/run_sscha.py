@@ -90,8 +90,14 @@ class SSCHA:
         self._sscha_current = None
         self._sscha_log = []
 
-    def set_initial_force_constants(self):
+    def set_initial_force_constants(self, fc2: Optional[np.ndarray] = None):
         """Set initial FC2."""
+        if fc2 is not None:
+            if self._verbose:
+                print("Initial FCs: Numpy array", flush=True)
+            self._fc2 = fc2
+            return self
+
         if self._sscha_params.init_fc_algorithm == "harmonic":
             if self._verbose:
                 print("Initial FCs: Harmonic", flush=True)
@@ -114,6 +120,7 @@ class SSCHA:
             if self._verbose:
                 print("Initial FCs: File", filename, flush=True)
             self._fc2 = read_fc2_from_hdf5(filename)
+        return self
 
     def run_frequencies(self, qmesh: Optional[tuple] = None):
         """Calculate effective phonon frequencies from FC2."""
@@ -326,6 +333,7 @@ def run_sscha(
     params: Optional[PolymlpParams] = None,
     coeffs: Optional[np.ndarray] = None,
     properties: Optional[Properties] = None,
+    fc2: Optional[np.ndarray] = None,
     verbose: bool = False,
 ):
     """Run sscha iterations for multiple temperatures.
@@ -346,7 +354,7 @@ def run_sscha(
         properties=properties,
         verbose=verbose,
     )
-    sscha.set_initial_force_constants()
+    sscha.set_initial_force_constants(fc2=fc2)
     freq = sscha.run_frequencies()
     if verbose:
         print("Frequency (min):      ", np.round(np.min(freq), 5), flush=True)

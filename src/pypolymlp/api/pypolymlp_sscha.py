@@ -1,6 +1,5 @@
 """API class for SSCHA calculations."""
 
-import os
 from typing import Literal, Optional, Union
 
 import numpy as np
@@ -8,7 +7,7 @@ import numpy as np
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.sscha.run_sscha import run_sscha
 from pypolymlp.calculator.sscha.sscha_params import SSCHAParameters
-from pypolymlp.calculator.sscha.sscha_utils import Restart
+from pypolymlp.calculator.sscha.sscha_utils import PolymlpDataSSCHA, Restart
 from pypolymlp.core.data_format import PolymlpParams
 from pypolymlp.core.interface_vasp import Poscar
 from pypolymlp.utils.phonopy_utils import get_nac_params
@@ -26,6 +25,7 @@ class PolymlpSSCHA:
         self._pot = None
         self._prop = None
         self._nac_params = None
+        self._fc2 = None
 
         self._sscha_params = None
         self._sscha = None
@@ -64,14 +64,28 @@ class PolymlpSSCHA:
             self._prop = properties
         return self
 
-    def restart(self, yaml: str = "sscha_results.yaml", parse_mlp: bool = True):
-        """Parse sscha_results.yaml file."""
-        res = Restart(yaml)
+    def load_restart(
+        self,
+        yaml: str = "sscha_results.yaml",
+        parse_fc2: bool = True,
+        parse_mlp: bool = True,
+    ):
+        """Parse sscha_results.yaml file.
+
+        If parse_fc2 = True, fc2.hdf5 in the same directory
+        as yaml file will be loaded.
+        """
+        if parse_fc2:
+            fc2hdf5 = "/".join(yaml.split("/")[:-1]) + "/fc2.hdf5"
+        else:
+            fc2hdf5 = None
+        res = Restart(yaml, fc2hdf5=fc2hdf5)
         self._unitcell = res.unitcell
         self._supercell_matrix = res.supercell_matrix
-        if parse_mlp and os.path.exists(res.polymlp):
+        if parse_mlp:
             self._pot = res.polymlp
             self._prop = Properties(pot=self._pot)
+        self._fc2 = res.force_constants
         return self
 
     def set_nac_params(self, born_vasprun: str):
@@ -113,7 +127,9 @@ class PolymlpSSCHA:
         temp_step: Temperature interval.
         ascending_temp: Set simulation temperatures in ascending order.
         n_samples_init: Number of samples in first loop of SSCHA iterations.
+                        If None, the number of samples is automatically determined.
         n_samples_final: Number of samples in second loop of SSCHA iterations.
+                        If None, the number of samples is automatically determined.
         tol: Convergence tolerance for FCs.
         max_iter: Maximum number of iterations.
         mixing: Mixing parameter.
@@ -154,6 +170,30 @@ class PolymlpSSCHA:
         self._sscha = run_sscha(
             self._sscha_params,
             properties=self._prop,
+            fc2=self._fc2,
             verbose=self._verbose,
         )
         return self
+
+    @property
+    def sscha_params(self) -> SSCHAParameters:
+        """Return SSCHA parameters."""
+        return self._sscha_params
+
+    @property
+    def sscha_properties(self) -> PolymlpDataSSCHA:
+        """Return SSCHA properties at the final temperature."""
+        return self._sscha.properties
+
+    @property
+    def sscha_logs(self) -> list[PolymlpDataSSCHA]:
+        """Return logs of SSCHA properties at the final temperature."""
+        return self._sscha.logs
+
+    @property
+    def force_constants(self) -> np.ndarray:
+        """Return FC2 at the final temperature.
+
+        shape=(n_atom, n_atom, 3, 3).
+        """
+        return self._sscha.force_constants

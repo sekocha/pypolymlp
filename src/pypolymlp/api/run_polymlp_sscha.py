@@ -120,7 +120,7 @@ def run():
     if args.poscar is not None:
         sscha.load_poscar(args.poscar, np.diag(args.supercell))
     elif args.yaml is not None:
-        sscha.restart(yaml=args.yaml)
+        sscha.load_restart(yaml=args.yaml, parse_fc2=True)
 
     if args.pot is not None:
         sscha.set_polymlp(args.pot)
