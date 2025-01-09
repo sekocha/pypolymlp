@@ -32,7 +32,7 @@ class SSCHAParameters:
             FCs are updated by FC2 = FC2(new) * mixing + FC2(old) * (1-mixing).
     mesh: q-point mesh for computing harmonic properties using effective FC2.
     init_fc_algorithm: Algorithm for generating initial FCs.
-    init_fc_file: If algorithm = "file", coefficients are read from init_fc_file.
+    init_fc_file: If algorithm = "file", coefficients are read from given fc2.hdf5.
     nac_params: Parameters for non-analytic correction in phonon calculations.
     """
 

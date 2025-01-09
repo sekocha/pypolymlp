@@ -14,7 +14,7 @@ from pypolymlp.core.interface_vasp import Poscar
 from pypolymlp.utils.phonopy_utils import get_nac_params
 
 
-class PolymlpSSCHAAPI:
+class PolymlpSSCHA:
     """API class for SSCHA calculations."""
 
     def __init__(self, verbose: bool = False):

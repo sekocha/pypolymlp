@@ -5,7 +5,7 @@ import signal
 
 import numpy as np
 
-from pypolymlp.api.pypolymlp_sscha import PolymlpSSCHAAPI
+from pypolymlp.api.pypolymlp_sscha import PolymlpSSCHA
 
 
 def run():
@@ -116,7 +116,7 @@ def run():
     args = parser.parse_args()
 
     np.set_printoptions(legacy="1.21")
-    sscha = PolymlpSSCHAAPI(verbose=True)
+    sscha = PolymlpSSCHA(verbose=True)
     if args.poscar is not None:
         sscha.load_poscar(args.poscar, np.diag(args.supercell))
     elif args.yaml is not None:
