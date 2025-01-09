@@ -8,6 +8,7 @@ import numpy as np
 import yaml
 from phono3py.file_IO import read_fc2_from_hdf5
 
+from pypolymlp.calculator.sscha.sscha_params import SSCHAParameters
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.utils import kjmol_to_ev
 from pypolymlp.utils.phonopy_utils import phonopy_supercell, structure_to_phonopy_cell
@@ -228,83 +229,9 @@ class Restart:
         return self._volume
 
 
-def temperature_setting(args):
-    """Set simulation temperatures."""
-
-    if args.temp is not None:
-        if np.isclose(args.temp, round(args.temp)):
-            args.temp = int(args.temp)
-        temp_array = [args.temp]
-    else:
-        if np.isclose(args.temp_min, round(args.temp_min)):
-            args.temp_min = int(args.temp_min)
-        if np.isclose(args.temp_max, round(args.temp_max)):
-            args.temp_max = int(args.temp_max)
-        if np.isclose(args.temp_step, round(args.temp_step)):
-            args.temp_step = int(args.temp_step)
-        temp_array = np.arange(args.temp_min, args.temp_max + 1, args.temp_step)
-        if args.ascending_temp == False:
-            temp_array = temp_array[::-1]
-    args.temperatures = temp_array
-    return args
-
-
-def n_samples_setting(args, n_atom_supercell=None):
-    """Set number of supercells."""
-
-    if args.n_samples is None:
-        n_samples_unit = round(6400 / n_atom_supercell)
-        args.n_samples_init = 20 * n_samples_unit
-        args.n_samples_final = 100 * n_samples_unit
-    else:
-        args.n_samples_init, args.n_samples_final = args.n_samples
-    return args
-
-
-def print_structure(cell: PolymlpStructure):
-    """Print structure."""
-
-    print(" # structure ", flush=True)
-    print("  - elements:     ", cell.elements, flush=True)
-    print("  - axis:         ", cell.axis.T[0], flush=True)
-    print("                  ", cell.axis.T[1], flush=True)
-    print("                  ", cell.axis.T[2], flush=True)
-    print("  - positions:    ", cell.positions.T[0], flush=True)
-    if cell.positions.shape[1] > 1:
-        for pos in cell.positions.T[1:]:
-            print("                  ", pos, flush=True)
-
-
-def print_parameters(supercell_matrix: np.ndarray, args):
-    """Print parameters in SSCHA."""
-
-    print(" # parameters", flush=True)
-    print("  - supercell:    ", supercell_matrix[0], flush=True)
-    print("                  ", supercell_matrix[1], flush=True)
-    print("                  ", supercell_matrix[2], flush=True)
-    print("  - temperatures: ", args.temperatures[0], flush=True)
-    if len(args.temperatures) > 1:
-        for t in args.temperatures[1:]:
-            print("                  ", t, flush=True)
-
-    if isinstance(args.pot, list):
-        for p in args.pot:
-            print("  - Polynomial ML potential:  ", os.path.abspath(p), flush=True)
-    else:
-        print("  - Polynomial ML potential:  ", os.path.abspath(args.pot), flush=True)
-
-    print("  - FC tolerance:             ", args.tol, flush=True)
-    print("  - max iter:                 ", args.max_iter, flush=True)
-    print("  - num samples:              ", args.n_samples_init, flush=True)
-    print("  - num samples (last iter.): ", args.n_samples_final, flush=True)
-    print("  - q-mesh:                   ", args.mesh, flush=True)
-
-
 def save_sscha_yaml(
-    unitcell: PolymlpStructure,
-    supercell_matrix: np.ndarray,
+    sscha_params: SSCHAParameters,
     sscha_log: list[PolymlpDataSSCHA],
-    args,
     filename="sscha_results.yaml",
 ):
     """Write SSCHA results to a file."""
@@ -314,18 +241,18 @@ def save_sscha_yaml(
 
     f = open(filename, "w")
     print("parameters:", file=f)
-    if isinstance(args.pot, list):
-        pots = [os.path.abspath(p) for p in args.pot]
+    if isinstance(sscha_params.pot, list):
+        pots = [os.path.abspath(p) for p in sscha_params.pot]
         print("  pot:     ", pots, file=f)
     else:
-        print("  pot:     ", os.path.abspath(args.pot), file=f)
+        print("  pot:     ", os.path.abspath(sscha_params.pot), file=f)
 
     print("  temperature:   ", properties.temperature, file=f)
-    print("  n_steps:       ", args.n_samples_init, file=f)
-    print("  n_steps_final: ", args.n_samples_final, file=f)
-    print("  tolerance:     ", args.tol, file=f)
-    print("  mixing:        ", args.mixing, file=f)
-    print("  mesh_phonon:   ", list(args.mesh), file=f)
+    print("  n_steps:       ", sscha_params.n_samples_init, file=f)
+    print("  n_steps_final: ", sscha_params.n_samples_final, file=f)
+    print("  tolerance:     ", sscha_params.tol, file=f)
+    print("  mixing:        ", sscha_params.mixing, file=f)
+    print("  mesh_phonon:   ", list(sscha_params.mesh), file=f)
     print("", file=f)
 
     print("units:", file=f)
@@ -348,11 +275,11 @@ def save_sscha_yaml(
     print("  imaginary: ", properties.imaginary, file=f)
     print("", file=f)
 
-    save_cell(unitcell, tag="unitcell", file=f)
+    save_cell(sscha_params.unitcell, tag="unitcell", file=f)
     print("supercell_matrix:", file=f)
-    print(" -", list(supercell_matrix[0].astype(int)), file=f)
-    print(" -", list(supercell_matrix[1].astype(int)), file=f)
-    print(" -", list(supercell_matrix[2].astype(int)), file=f)
+    print(" -", list(sscha_params.supercell_matrix[0].astype(int)), file=f)
+    print(" -", list(sscha_params.supercell_matrix[1].astype(int)), file=f)
+    print(" -", list(sscha_params.supercell_matrix[2].astype(int)), file=f)
     print("", file=f)
 
     print("logs:", file=f)
