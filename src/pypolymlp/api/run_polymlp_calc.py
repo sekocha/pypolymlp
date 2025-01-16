@@ -121,7 +121,7 @@ def run():
     parser.add_argument(
         "--method",
         type=str,
-        choices=["BFGS", "CG", "L-BFGS-B"],
+        choices=["BFGS", "CG", "L-BFGS-B", "SLSQP"],
         default="BFGS",
         help="Algorithm for geometry optimization",
     )
