@@ -12,7 +12,12 @@ from pypolymlp.calculator.sscha.sscha_params import SSCHAParameters
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.utils import kjmol_to_ev
 from pypolymlp.utils.phonopy_utils import phonopy_supercell, structure_to_phonopy_cell
-from pypolymlp.utils.yaml_utils import load_cell, print_array1d, save_cell
+from pypolymlp.utils.yaml_utils import (
+    load_cell,
+    print_array1d,
+    print_array2d,
+    save_cell,
+)
 
 
 @dataclass
@@ -45,6 +50,7 @@ class PolymlpDataSSCHA:
     entropy: Optional[float] = None
     harmonic_heat_capacity: Optional[float] = None
     free_energy: Optional[float] = None
+    average_forces: Optional[bool] = None
     delta: Optional[float] = None
     converge: Optional[bool] = None
     imaginary: Optional[bool] = None
@@ -282,8 +288,10 @@ def save_sscha_yaml(
     print(" -", list(sscha_params.supercell_matrix[2].astype(int)), file=f)
     print("", file=f)
 
-    print("logs:", file=f)
+    print_array2d(properties.average_forces.T, "forces", f, indent_l=0)
+    print("", file=f)
 
+    print("logs:", file=f)
     print_array1d([log.free_energy for log in sscha_log], "free_energy", f, indent_l=2)
     print("", file=f)
 

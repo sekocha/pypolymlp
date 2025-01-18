@@ -9,7 +9,7 @@ from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.sscha.harmonic_real import HarmonicReal
 from pypolymlp.calculator.sscha.sscha_utils import Restart
 from pypolymlp.utils.vasp_utils import write_poscar_file
-from pypolymlp.utils.yaml_utils import save_cell
+from pypolymlp.utils.yaml_utils import print_array2d, save_cell
 
 
 class SSCHADistribution:
@@ -49,14 +49,14 @@ class SSCHADistribution:
         self._ph_real.run(t=self._res.temperature, n_samples=n_samples)
         return self
 
-    def save_structure_distribution(self, path="."):
+    def save_structure_distribution(self, path: str = ".", save_poscars: bool = False):
         """Save structures sampled from density matrix and their properties."""
         disps = self.displacements.transpose((0, 2, 1))
         forces = self.forces.transpose((0, 2, 1))
         np.save(path + "/sscha_disps.npy", disps)
         np.save(path + "/sscha_forces.npy", forces)
         np.save(path + "/sscha_energies.npy", np.array(self.energies))
-        with open(path + "/sscha_potentials.yaml", "w") as f:
+        with open(path + "/sscha_averages.yaml", "w") as f:
             save_cell(self._res.unitcell, tag="unitcell", file=f)
             print("supercell_matrix:", file=f)
             print(" -", list(self._res.supercell_matrix[0].astype(int)), file=f)
@@ -64,21 +64,39 @@ class SSCHADistribution:
             print(" -", list(self._res.supercell_matrix[2].astype(int)), file=f)
             print("", file=f)
             print("static_potential: ", self.static_potential, file=f)
+            print("", file=f)
             print("average_potential:", np.mean(self.energies), file=f)
+            print("", file=f)
+            average_forces = np.mean(forces, axis=0)
+            print_array2d(average_forces, "average_forces", f, indent_l=0)
+            print("", file=f)
 
-        os.makedirs(path + "/sscha_poscars", exist_ok=True)
-        for i, st in enumerate(self.supercells, 1):
-            filename = path + "/sscha_poscars/POSCAR-" + str(i).zfill(4)
-            write_poscar_file(st, filename=filename)
+        if save_poscars:
+            if self._verbose:
+                print("Save POSCAR files.", flush=True)
+            os.makedirs(path + "/sscha_poscars", exist_ok=True)
+            for i, st in enumerate(self.supercells, 1):
+                filename = path + "/sscha_poscars/POSCAR-" + str(i).zfill(4)
+                write_poscar_file(st, filename=filename)
+            print("sscha_poscars/POSCAR* are generated.", flush=True)
 
         if self._verbose:
             print("sscha_disps.npy and sscha_forces.npy are generated.", flush=True)
             print("- shape:", forces.shape, flush=True)
-            print("Potential energies of supercells are generated.")
-            print("- shape:", len(self.energies))
-            print("- static_potential: ", self.static_potential, "(eV/supercell)")
-            print("- average_potential:", np.mean(self.energies), "(eV/supercell)")
-            print("sscha_poscars/POSCAR* are generated.")
+            print("Potential energies of supercells are generated.", flush=True)
+            print("- shape:", len(self.energies), flush=True)
+            print(
+                "- static_potential: ",
+                self.static_potential,
+                "(eV/supercell)",
+                flush=True,
+            )
+            print(
+                "- average_potential:",
+                np.mean(self.energies),
+                "(eV/supercell)",
+                flush=True,
+            )
         return self
 
     @property

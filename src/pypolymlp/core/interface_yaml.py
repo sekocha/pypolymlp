@@ -32,8 +32,8 @@ def parse_sscha_yamls(yamlfiles: list[str]):
     free_energies, structures = [], []
     for yfile in yamlfiles:
         yml = yaml.safe_load(open(yfile))
-        # if yml["status"]["converge"] and not yml["status"]["imaginary"]:
-        if yml["status"]["converge"]:
+        if yml["status"]["converge"] and not yml["status"]["imaginary"]:
+            # if yml["status"]["converge"]:
             fvib = float(yml["properties"]["free_energy"])
             free_energies.append(fvib / EVtoKJmol)  # kJ/mol -> eV/unitcell
             unitcell = load_cell(yaml_data=yml, tag="unitcell")
