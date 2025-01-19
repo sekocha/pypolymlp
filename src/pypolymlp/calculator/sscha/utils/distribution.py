@@ -67,9 +67,8 @@ class SSCHADistribution:
             print("", file=f)
             print("average_potential:", np.mean(self.energies), file=f)
             print("", file=f)
-            average_forces = np.mean(forces, axis=0)
-            print_array2d(average_forces, "average_forces", f, indent_l=0)
-            print("", file=f)
+            # np.set_printoptions(suppress=True)
+            print_array2d(self.average_forces.T, "average_forces", f, indent_l=0)
 
         if save_poscars:
             if self._verbose:
@@ -130,6 +129,22 @@ class SSCHADistribution:
         Unit: eV/supercell.
         """
         return self._ph_real.static_potential
+
+    @property
+    def static_forces(self):
+        """Return static forces of equilibrium supercell structure.
+
+        Unit: eV/angstrom.
+        """
+        return self._ph_real.static_forces
+
+    @property
+    def average_forces(self):
+        """Return average forces.
+
+        Unit: eV/angstrom.
+        """
+        return self._ph_real.average_forces
 
     @property
     def supercells(self):

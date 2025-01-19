@@ -218,7 +218,8 @@ class Pypolymlp:
         """
         self._is_params_none()
         self._params.dataset_type = "sscha"
-        self._params.include_force = False
+        # self._params.include_force = False
+        self._params.include_force = True
 
         train_files, test_files = split_train_test(yamlfiles, train_ratio=0.9)
         self._params.dft_train = sorted(train_files)

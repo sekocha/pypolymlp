@@ -16,11 +16,11 @@ def set_dataset_from_sscha_yamls(
     element_order: Optional[bool] = None,
 ) -> PolymlpDataDFT:
     """Return DFT dataset by loading sscha_results.yaml files."""
-    structures, free_energies = parse_sscha_yamls(yamlfiles)
+    structures, free_energies, forces = parse_sscha_yamls(yamlfiles)
     dft = set_dataset_from_structures(
         structures,
         free_energies,
-        forces=None,
+        forces=forces,
         stresses=None,
         element_order=element_order,
     )
@@ -30,17 +30,20 @@ def set_dataset_from_sscha_yamls(
 def parse_sscha_yamls(yamlfiles: list[str]):
     """Parse sscha_results.yaml files."""
     free_energies, structures = [], []
+    forces = []
     for yfile in yamlfiles:
         yml = yaml.safe_load(open(yfile))
         if yml["status"]["converge"] and not yml["status"]["imaginary"]:
             # if yml["status"]["converge"]:
-            fvib = float(yml["properties"]["free_energy"])
-            free_energies.append(fvib / EVtoKJmol)  # kJ/mol -> eV/unitcell
-            unitcell = load_cell(yaml_data=yml, tag="unitcell")
-            unitcell.name = yfile
-            structures.append(unitcell)
+            if "average_forces" in yml:
+                fvib = float(yml["properties"]["free_energy"])
+                free_energies.append(fvib / EVtoKJmol)  # kJ/mol -> eV/unitcell
+                forces.append(np.array(yml["average_forces"]).T)
+                unitcell = load_cell(yaml_data=yml, tag="unitcell")
+                unitcell.name = yfile
+                structures.append(unitcell)
 
-    return structures, np.array(free_energies)
+    return structures, np.array(free_energies), forces
 
 
 def set_dataset_from_electron_yamls(

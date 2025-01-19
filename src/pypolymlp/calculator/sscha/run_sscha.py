@@ -154,7 +154,8 @@ class SSCHA:
             ),
             entropy=self.ph_recip.entropy,  # J/K/mol
             harmonic_heat_capacity=self.ph_recip.heat_capacity,  # J/K/mol
-            average_forces=np.mean(self.ph_real.forces, axis=0),  # eV/ang
+            static_forces=self.ph_real.static_forces,  # eV/ang
+            average_forces=self.ph_real.average_forces,  # eV/ang
         )
         return res
 

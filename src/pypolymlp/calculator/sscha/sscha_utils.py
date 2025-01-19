@@ -36,6 +36,7 @@ class PolymlpDataSSCHA:
     entropy: Entropy for effective FC2.
     harmonic_heat_capacity: Harmonic heat capacity for effective FC2.
     free_energy: Free energy (harmonic_free_energy + anharmonic_free_energy).
+                 Static potential of initial structure is not included.
     delta: Difference between old FC2 and updated FC2.
     converge: SSCHA calculations are converged or not.
     imaginary: Imaginary frequencies are found or not.
@@ -50,12 +51,14 @@ class PolymlpDataSSCHA:
     entropy: Optional[float] = None
     harmonic_heat_capacity: Optional[float] = None
     free_energy: Optional[float] = None
+    static_forces: Optional[bool] = None
     average_forces: Optional[bool] = None
     delta: Optional[float] = None
     converge: Optional[bool] = None
     imaginary: Optional[bool] = None
 
     def __post_init__(self):
+        """Post init method."""
         self.free_energy = self.harmonic_free_energy + self.anharmonic_free_energy
 
 
@@ -288,7 +291,7 @@ def save_sscha_yaml(
     print(" -", list(sscha_params.supercell_matrix[2].astype(int)), file=f)
     print("", file=f)
 
-    print_array2d(properties.average_forces.T, "forces", f, indent_l=0)
+    print_array2d(properties.average_forces.T, "average_forces", f, indent_l=0)
     print("", file=f)
 
     print("logs:", file=f)
