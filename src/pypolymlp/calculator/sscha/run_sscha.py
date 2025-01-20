@@ -72,6 +72,7 @@ class SSCHA:
         self.supercell_polymlp.masses = self.phonopy.supercell.masses
         self.supercell_polymlp.supercell_matrix = self._supercell_matrix
         self.supercell_polymlp.n_unitcells = self.n_unitcells
+        self._sscha_params.supercell = self.supercell_polymlp
 
         self._symfc = Symfc(
             self.phonopy.supercell,
@@ -229,6 +230,33 @@ class SSCHA:
             flush=True,
         )
 
+    def precondition(
+        self,
+        t: float = 1000,
+        n_samples: int = 100,
+        max_iter: int = 10,
+        tol: float = 0.01,
+    ):
+        """Precondition sscha iterations.
+
+        Parameters
+        ----------
+        t: Temperature (K).
+        """
+        if self._fc2 is None:
+            self._fc2 = self.set_initial_force_constants()
+
+        n_iter, delta = 1, 1e10
+        while n_iter <= max_iter and delta > tol:
+            if self._verbose:
+                print("----------- Iteration :", n_iter, "-----------", flush=True)
+            self._fc2 = self._single_iter(t=t, n_samples=n_samples)
+            if self._verbose:
+                self._print_progress()
+
+            delta = self._sscha_current.delta
+            n_iter += 1
+
     def run(
         self,
         t: float = 1000,
@@ -363,9 +391,28 @@ def run_sscha(
         print("Frequency (max):      ", np.round(np.max(freq), 5), flush=True)
         print("Size of FC2 basis-set:", sscha.n_fc_basis, flush=True)
 
+    if verbose:
+        print("Preconditioning.", flush=True)
+    n_samples = min(sscha_params.n_samples_init // 50, 100)
+    sscha.precondition(
+        t=sscha_params.temperatures[0],
+        n_samples=n_samples,
+        tol=0.01,
+        max_iter=10,
+    )
+    if sscha_params.tol < 0.003:
+        n_samples = min(sscha_params.n_samples_init // 10, 500)
+        sscha.precondition(
+            t=sscha_params.temperatures[0],
+            n_samples=n_samples,
+            tol=0.005,
+            max_iter=5,
+        )
     for temp in sscha_params.temperatures:
         if verbose:
             print("************** Temperature:", temp, "**************", flush=True)
+        if verbose:
+            print("Increasing number of samples.", flush=True)
         sscha.run(t=temp, accurate=False)
         if verbose:
             print("Increasing number of samples.", flush=True)

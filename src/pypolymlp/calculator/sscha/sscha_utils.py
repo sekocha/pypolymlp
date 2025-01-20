@@ -290,6 +290,7 @@ def save_sscha_yaml(
     print(" -", list(sscha_params.supercell_matrix[1].astype(int)), file=f)
     print(" -", list(sscha_params.supercell_matrix[2].astype(int)), file=f)
     print("", file=f)
+    save_cell(sscha_params.supercell, tag="supercell", file=f)
 
     print_array2d(properties.average_forces.T, "average_forces", f, indent_l=0)
     print("", file=f)

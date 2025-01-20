@@ -34,14 +34,14 @@ def parse_sscha_yamls(yamlfiles: list[str]):
     for yfile in yamlfiles:
         yml = yaml.safe_load(open(yfile))
         if yml["status"]["converge"] and not yml["status"]["imaginary"]:
-            # if yml["status"]["converge"]:
-            if "average_forces" in yml:
+            if "average_forces" in yml and "supercell" in yml:
+                supercell = load_cell(yaml_data=yml, tag="supercell")
+                supercell.name = yfile
+                n_cells = int(yml["supercell"]["n_unitcells"])
                 fvib = float(yml["properties"]["free_energy"])
-                free_energies.append(fvib / EVtoKJmol)  # kJ/mol -> eV/unitcell
+                free_energies.append(fvib * n_cells / EVtoKJmol)  # kJ/mol->eV/supercell
                 forces.append(np.array(yml["average_forces"]).T)
-                unitcell = load_cell(yaml_data=yml, tag="unitcell")
-                unitcell.name = yfile
-                structures.append(unitcell)
+                structures.append(supercell)
 
     return structures, np.array(free_energies), forces
 
