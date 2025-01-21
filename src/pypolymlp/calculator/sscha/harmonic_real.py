@@ -61,7 +61,7 @@ class HarmonicReal:
         self._set_inverse_axis()
         self._check_n_unitcells()
 
-        self._e0 = self.prop.eval(self.supercell)[0]
+        self._e0, self._f0, _ = self.prop.eval(self.supercell)
 
     def _set_mass(self):
         if self.supercell.masses is None:
@@ -187,6 +187,28 @@ class HarmonicReal:
         fc2 = np.reshape(fc2, (N3, N3))
         return 0.5 * disp @ (fc2 @ disp)
 
+    def _harmonic_residual_forces(self, disps: np.ndarray):
+        """Calculate harmonic forces of a supercell.
+
+        Ideally, these forces must be zero.
+
+        Parameters
+        ----------
+        disps: Displacements. shape=(N3) or (N3, n_samples)
+
+        Return
+        ------
+        forces: Harmonic forces. shape=(n_samples, 3, n_atoms)
+        """
+        N3 = self.fc2.shape[0] * self.fc2.shape[2]
+        fc2 = np.transpose(self.fc2, (0, 2, 1, 3))
+        fc2 = np.reshape(fc2, (N3, N3))
+        forces = -(fc2 @ disps).reshape((self.fc2.shape[0], 3, -1))
+        forces = forces.transpose((1, 0, 2))
+        if forces.shape[2] == 1:
+            return forces[:, :, 0]
+        return forces.transpose((2, 0, 1))
+
     def _calc_harmonic_potentials(self, t=1000, disps=None):
         """Calculate harmonic potentials of supercells in an iteration.
 
@@ -232,6 +254,17 @@ class HarmonicReal:
         self._energies_full = self._energies_full[ids]
         return self
 
+    def _calc_average_forces(self):
+        """Compute average forces."""
+        residual_f = (
+            self._harmonic_residual_forces(
+                self._disps.transpose((2, 1, 0)).reshape((-1, self._disps.shape[0]))
+            )
+            + self._f0
+        )
+        self._average_forces = np.mean(self._forces - residual_f, axis=0)
+        return self._average_forces
+
     def run(self, t: int = 1000, n_samples: int = 100, eliminate_outliers: bool = True):
         """Run harmonic real-space part of SSCHA.
 
@@ -259,6 +292,7 @@ class HarmonicReal:
         self._eliminate_outliers()
 
         self._energies_harm = self._calc_harmonic_potentials(t=t, disps=self._disps)
+        self._average_forces = self._calc_average_forces()
         return self
 
     @property
@@ -322,6 +356,16 @@ class HarmonicReal:
     def static_potential(self) -> float:
         """Return static potential of given supercell."""
         return self._e0
+
+    @property
+    def static_forces(self) -> float:
+        """Return static forces of given supercell."""
+        return self._f0
+
+    @property
+    def average_forces(self) -> np.ndarray:
+        """Return static forces of given supercell."""
+        return self._average_forces
 
     @property
     def frequencies(self):

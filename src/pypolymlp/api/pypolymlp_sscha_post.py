@@ -76,9 +76,9 @@ class PolymlpSSCHAPost:
         self._distrib.run_structure_distribution(n_samples=n_samples)
         return self
 
-    def save_structure_distribution(self, path="."):
+    def save_structure_distribution(self, path: str = ".", save_poscars: bool = False):
         """Save structures sampled from density matrix and their properties."""
-        self._distrib.save_structure_distribution(path=path)
+        self._distrib.save_structure_distribution(path=path, save_poscars=save_poscars)
         return self
 
     @property

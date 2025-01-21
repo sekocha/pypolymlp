@@ -38,6 +38,7 @@ class SSCHAParameters:
 
     unitcell: PolymlpStructure
     supercell_matrix: np.ndarray
+    supercell: Optional[np.ndarray] = None
     pot: Optional[str] = None
     temperatures: Optional[np.ndarray] = None
     temp: Optional[float] = None

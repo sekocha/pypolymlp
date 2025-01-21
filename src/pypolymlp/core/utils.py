@@ -9,7 +9,13 @@ def split_train_test(files: list, train_ratio: float = 0.9):
     """Split dataset into training and test datasets."""
     n_data = len(files)
     n_train = round(n_data * train_ratio)
-    return files[:n_train], files[n_train:]
+    n_test = n_data - n_train
+    test_ids = np.round(np.linspace(0, n_data - 1, num=n_test)).astype(int)
+
+    train_bools = np.ones(n_data, dtype=bool)
+    train_bools[test_ids] = False
+    train_ids = np.where(train_bools)[0]
+    return [files[i] for i in train_ids], [files[i] for i in test_ids]
 
 
 def rmse(y_true: np.ndarray, y_pred: np.ndarray):

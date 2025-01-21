@@ -78,6 +78,11 @@ def run():
         default=100,
         help="Number of sample supercells",
     )
+    parser.add_argument(
+        "--save_poscars",
+        action="store_true",
+        help="Save POSCAR files of distribution",
+    )
     args = parser.parse_args()
     np.set_printoptions(legacy="1.21")
 
@@ -94,7 +99,7 @@ def run():
             pot=args.pot,
         )
         sscha.run_structure_distribution(n_samples=args.n_samples)
-        sscha.save_structure_distribution(path=".")
+        sscha.save_structure_distribution(path=".", save_poscars=args.save_poscars)
     elif args.transition:
         tc_linear, tc_poly = sscha.find_phase_transition(
             args.transition[0],
