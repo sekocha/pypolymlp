@@ -123,7 +123,13 @@ class StructureGeneratorSym:
         basis_cartesian: Basis set for atomic displacements in Cartesian,
                          shape=(n_basis, 3, n_atom).
         """
+        if self._basis_cartesian is None:
+            basis_reshape = None
+        else:
+            basis_reshape = self._basis_cartesian.reshape(
+                (self._natom, 3, -1)
+            ).transpose((2, 1, 0))
         return (
             self._basis_axis.reshape((3, 3, -1)).transpose((2, 0, 1)),
-            self._basis_cartesian.reshape((self._natom, 3, -1)).transpose((2, 1, 0)),
+            basis_reshape,
         )
