@@ -4,7 +4,6 @@ import glob
 from typing import Literal, Optional
 
 import numpy as np
-from setuptools._distutils.util import strtobool
 
 from pypolymlp.core.data_format import PolymlpModelParams, PolymlpParams
 from pypolymlp.core.parser_infile import InputParser
@@ -14,7 +13,7 @@ from pypolymlp.core.polymlp_params import (
     set_gtinv_params,
     set_regression_alphas,
 )
-from pypolymlp.core.utils import split_train_test
+from pypolymlp.core.utils import split_train_test, strtobool
 
 
 class ParamsParser:

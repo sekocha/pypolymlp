@@ -4,7 +4,8 @@ import warnings
 from typing import Any, Optional
 
 import numpy as np
-from setuptools._distutils.util import strtobool
+
+from pypolymlp.core.utils import strtobool
 
 
 class InputParser:
