@@ -4,14 +4,13 @@ import io
 import itertools
 
 import numpy as np
-from setuptools._distutils.util import strtobool
 
 from pypolymlp.core.data_format import (
     PolymlpGtinvParams,
     PolymlpModelParams,
     PolymlpParams,
 )
-from pypolymlp.core.utils import mass_table
+from pypolymlp.core.utils import mass_table, strtobool
 
 
 def _print_param(dict1, key, fstream, prefix=""):

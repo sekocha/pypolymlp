@@ -188,3 +188,13 @@ def precision(x, alpha=0.0001):
     # dx = x - ave
     prec = np.mean([x1.T @ var @ x1 for x1 in x])
     return prec
+
+
+def strtobool(val):
+    """Convert a string to bool, True or False."""
+    val = val.lower()
+    if val in ("t", "true", "1"):
+        return True
+    elif val in ("f", "false", "0"):
+        return False
+    raise RuntimeError("Invalid string.")
