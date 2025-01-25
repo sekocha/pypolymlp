@@ -21,7 +21,6 @@ dependencies = [
     "numpy !=2.0.*",
     "scipy",
     "PyYAML >= 5.3",
-    "setuptools >= 61.0",
 ]
 license = { file = "LICENSE" }
 
