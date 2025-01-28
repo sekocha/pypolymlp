@@ -198,7 +198,11 @@ class PolymlpFC:
         return self
 
     def run_fc(
-        self, orders: tuple = (2, 3), use_mkl: bool = True, is_compact_fc: bool = True
+        self,
+        orders: tuple = (2, 3),
+        batch_size: int = 100,
+        use_mkl: bool = True,
+        is_compact_fc: bool = True,
     ):
         """Construct fc basis and solve FCs."""
 
@@ -217,7 +221,9 @@ class PolymlpFC:
             use_mkl=use_mkl,
             log_level=self._verbose,
         )
-        self._symfc.run(orders=orders, is_compact_fc=is_compact_fc)
+        self._symfc.run(
+            orders=orders, batch_size=batch_size, is_compact_fc=is_compact_fc
+        )
         for order in orders:
             if order == 2:
                 self._fc2 = self._symfc.force_constants[2]
@@ -254,7 +260,12 @@ class PolymlpFC:
             self.forces = forces
 
         t1 = time.time()
-        self.run_fc(orders=orders, is_compact_fc=is_compact_fc, use_mkl=use_mkl)
+        self.run_fc(
+            orders=orders,
+            batch_size=batch_size,
+            is_compact_fc=is_compact_fc,
+            use_mkl=use_mkl,
+        )
         t2 = time.time()
         if self._verbose:
             print("Time (Symfc basis and solver)", t2 - t1, flush=True)
