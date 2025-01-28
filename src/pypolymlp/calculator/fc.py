@@ -174,7 +174,6 @@ class PolymlpFC:
                 properties=self.prop,
                 verbose=self._verbose,
             )
-            # minobj = MinimizeSym(self._supercell, properties=self.prop)
         except ValueError:
             print("Warning: No geomerty optimization is performed.")
             return self
