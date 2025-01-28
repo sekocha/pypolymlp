@@ -27,7 +27,6 @@
 - numpy != 2.0.*
 - scipy
 - pyyaml
-- setuptools
 - eigen3
 - pybind11
 - openmp (recommended)

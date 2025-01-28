@@ -11,7 +11,7 @@ from symfc import Symfc
 from symfc.utils.cutoff_tools import FCCutoff
 
 from pypolymlp.calculator.properties import Properties
-from pypolymlp.calculator.str_opt.optimization_sym import MinimizeSym
+from pypolymlp.calculator.str_opt.optimization import GeometryOptimization
 from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
 from pypolymlp.core.displacements import (
     generate_random_const_displacements,
@@ -165,7 +165,16 @@ class PolymlpFC:
             print("Running geometry optimization", flush=True)
 
         try:
-            minobj = MinimizeSym(self._supercell, properties=self.prop)
+            minobj = GeometryOptimization(
+                self._supercell,
+                relax_cell=False,
+                relax_volume=False,
+                relax_positions=True,
+                with_sym=True,
+                properties=self.prop,
+                verbose=self._verbose,
+            )
+            # minobj = MinimizeSym(self._supercell, properties=self.prop)
         except ValueError:
             print("Warning: No geomerty optimization is performed.")
             return self
