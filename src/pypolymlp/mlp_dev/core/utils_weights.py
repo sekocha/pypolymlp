@@ -7,8 +7,8 @@ import numpy as np
 from pypolymlp.core.data_format import PolymlpDataDFT, PolymlpParams
 
 
-def _set_weight_energy_data(energy, total_n_atoms, min_e=None):
-
+def _set_weight_energy_data(energy, total_n_atoms, min_e: Optional[float] = None):
+    """Define weights to energy data."""
     # todo: more appropriate procedure for finding weight values
     e_per_atom = energy / total_n_atoms
     if min_e is None:
@@ -22,19 +22,28 @@ def _set_weight_energy_data(energy, total_n_atoms, min_e=None):
     return weight_e
 
 
-def _set_weight_force_data(force):
-
-    log1 = np.log10(np.abs(force))
-    w1 = np.array([pow(10, -v) for v in log1])
-    weight_f = np.minimum(w1, np.ones(len(w1)))
+def _set_weight_force_data(forces: np.ndarray, tol: float = 1e-12):
+    """Define weights to force data."""
+    weight_f = np.abs(forces)
+    weight_f[weight_f < tol] = tol
+    weight_f = np.reciprocal(weight_f)
+    weight_f[weight_f > 1.0] = 1.0
     return weight_f
 
 
-def _set_weight_stress_data(stress, weight_stress):
+def _set_weight_stress_data(
+    stress: np.ndarray,
+    weight_stress: float,
+    tol: float = 1e-12,
+):
+    """Define weights to stress data."""
+    nonzero = np.abs(stress) > tol
+    log1 = np.ones(len(stress)) * np.log10(tol)
+    log1[nonzero] = np.log10(np.abs(stress)[nonzero])
 
-    log1 = np.log10(np.abs(stress))
-    w1 = np.array([pow(5, -v) for v in log1])
-    weight_s = np.minimum(w1, np.ones(len(w1))) * weight_stress
+    weight_s = np.power(5, -log1)
+    weight_s[weight_s > 1.0] = 1.0
+    weight_s *= weight_stress
     return weight_s
 
 
@@ -48,7 +57,7 @@ def apply_weight_percentage(
     weight_stress: float = 0.1,
     min_e: Optional[float] = None,
 ):
-
+    """Apply weights to data."""
     include_force = dft.include_force
     if include_force == False:
         include_stress = False
