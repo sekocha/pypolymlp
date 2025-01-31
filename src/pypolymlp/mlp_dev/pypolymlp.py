@@ -1,5 +1,6 @@
 """Pypolymlp API."""
 
+import os
 from typing import Literal, Optional, Union
 
 import numpy as np
@@ -433,6 +434,14 @@ class Pypolymlp:
         self._multiple_datasets = True
         return self
 
+    def _check_memory_size(self, verbose: bool = False):
+        """Check memory size."""
+        mem_req = np.round(self._polymlp_in.n_features**2 * 8e-9 * 2, 1)
+        mem_bytes = os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES") * 1e-9
+        if mem_req > mem_bytes * 1.5:
+            raise RuntimeError("Larger size of memory required.")
+        return mem_req
+
     def fit(
         self,
         sequential: bool = True,
@@ -450,8 +459,8 @@ class Pypolymlp:
         if self._train is None or self._test is None:
             raise RuntimeError("Set input parameters and datasets.")
 
+        mem_req = self._check_memory_size(verbose=verbose)
         if verbose:
-            mem_req = np.round(self._polymlp_in.n_features**2 * 8e-9, 1)
             print("Minimum memory required for solver in GB:", mem_req, flush=True)
             print("Memory required for allocating X additionally.", flush=True)
 
@@ -466,7 +475,7 @@ class Pypolymlp:
                     verbose=verbose,
                 )
             if verbose:
-                print("Batch size:", batch_size, flush=True)
+                print("Batch size for computing X:", batch_size, flush=True)
             polymlp = PolymlpDevDataXYSequential(
                 self._polymlp_in,
                 verbose=verbose,
