@@ -94,10 +94,12 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
         ne, _, _ = features.n_data
 
         if self.verbose:
-            peak_mem = (x.shape[0] * x.shape[1] + x.shape[1] * x.shape[1]) * 8e-9
+            peak_mem1 = (x.shape[0] * x.shape[1] + x.shape[1] * x.shape[1]) * 8e-9
+            peak_mem2 = (x.shape[1] * x.shape[1] * 2) * 8e-9
+            peak_mem = max(peak_mem1, peak_mem2)
             print(
-                " Estimated peak memory allocation (X and X.T @ X):",
-                "{:.2f}".format(peak_mem),
+                " Peak memory allocation (X, X.T @ X):",
+                np.round(peak_mem, 2),
                 "(GB)",
                 flush=True,
             )

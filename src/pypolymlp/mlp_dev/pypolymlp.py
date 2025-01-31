@@ -24,6 +24,7 @@ from pypolymlp.core.polymlp_params import (
 from pypolymlp.core.utils import split_train_test
 from pypolymlp.mlp_dev.core.accuracy import PolymlpDevAccuracy
 from pypolymlp.mlp_dev.core.mlpdev_data import PolymlpDevData
+from pypolymlp.mlp_dev.core.utils_sequential import get_auto_batch_size
 from pypolymlp.mlp_dev.standard.learning_curve import LearningCurve
 from pypolymlp.mlp_dev.standard.mlpdev_dataxy import (
     PolymlpDevDataXY,
@@ -449,14 +450,21 @@ class Pypolymlp:
         if self._train is None or self._test is None:
             raise RuntimeError("Set input parameters and datasets.")
 
+        if verbose:
+            mem_req = np.round(self._polymlp_in.n_features**2 * 8e-9, 1)
+            print("Minimum memory required for solver in GB:", mem_req, flush=True)
+            print("Memory required for allocating X additionally.", flush=True)
+
         if not sequential:
             polymlp = PolymlpDevDataXY(self._polymlp_in, verbose=verbose).run()
             if verbose:
                 polymlp.print_data_shape()
         else:
             if batch_size is None:
-                n_features = self._polymlp_in.n_features
-                batch_size = max((10000000 // n_features), 128)
+                batch_size = get_auto_batch_size(
+                    self._polymlp_in.n_features,
+                    verbose=verbose,
+                )
             if verbose:
                 print("Batch size:", batch_size, flush=True)
             polymlp = PolymlpDevDataXYSequential(
