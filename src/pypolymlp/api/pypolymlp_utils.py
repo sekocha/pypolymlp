@@ -5,9 +5,9 @@ from typing import Optional, Union
 import numpy as np
 
 from pypolymlp.core.data_format import PolymlpStructure
-from pypolymlp.mlp_opt.optimal import find_optimal_mlps
 from pypolymlp.utils.count_time import PolymlpCost
 from pypolymlp.utils.dataset.auto_divide import auto_divide
+from pypolymlp.utils.grid_search.optimal import find_optimal_mlps
 from pypolymlp.utils.vasp_utils import (
     load_electronic_properties_from_vasprun,
     print_poscar,
