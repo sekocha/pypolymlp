@@ -140,6 +140,8 @@ class PolymlpModelParams:
     pair_conditional: bool = False
     pair_params: Optional[list[list[float]]] = None
     pair_params_conditional: Optional[dict] = None
+    pair_params_in1: Optional[tuple] = None
+    pair_params_in2: Optional[tuple] = None
 
     def __post_init__(self):
         self.check_errors()
@@ -152,10 +154,11 @@ class PolymlpModelParams:
         return model_dict
 
     def check_errors(self):
-        if self.pair_params is None and self.pair_params_conditional is None:
-            raise KeyError(
-                "Either of pair_params or pair_params_conditional is required."
-            )
+        if self.pair_params_in1 is None:
+            if self.pair_params is None and self.pair_params_conditional is None:
+                raise KeyError(
+                    "Either of pair_params or pair_params_conditional is required."
+                )
 
 
 @dataclass
@@ -201,6 +204,7 @@ class PolymlpParams:
         "entropy",
         "specific_heat",
     ] = "free_energy"
+    name: Optional[str] = None
 
     def __post_init__(self):
         self.check_errors()

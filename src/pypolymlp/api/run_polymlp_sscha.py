@@ -90,6 +90,7 @@ def run():
         default=30,
         help="Maximum number of iterations",
     )
+    parser.add_argument("--mixing", type=float, default=0.5, help="Mixing parameter")
     parser.add_argument(
         "--ascending_temp",
         action="store_true",
@@ -112,7 +113,12 @@ def run():
         default=None,
         help="vasprun.xml file for parsing born effective charges",
     )
-    parser.add_argument("--mixing", type=float, default=0.5, help="Mixing parameter")
+    parser.add_argument(
+        "--cutoff_fc2",
+        type=float,
+        default=None,
+        help="Cutoff radius for effective force constants.",
+    )
     args = parser.parse_args()
 
     np.set_printoptions(legacy="1.21")
@@ -147,4 +153,5 @@ def run():
         mesh=args.mesh,
         init_fc_algorithm=args.init,
         init_fc_file=args.init_file,
+        cutoff_radius=args.cutoff_fc2,
     )
