@@ -74,8 +74,10 @@ class SSCHA:
         self.supercell_polymlp.n_unitcells = self.n_unitcells
         self._sscha_params.supercell = self.supercell_polymlp
 
+        cutoff = {2: sscha_params.cutoff_radius}
         self._symfc = Symfc(
             self.phonopy.supercell,
+            cutoff=cutoff,
             use_mkl=True,
             log_level=self._verbose,
         )

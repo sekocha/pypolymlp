@@ -116,6 +116,7 @@ class PolymlpSSCHA:
         mesh: tuple = (10, 10, 10),
         init_fc_algorithm: Literal["harmonic", "const", "random", "file"] = "harmonic",
         init_fc_file: Optional[str] = None,
+        cutoff_radius: Optional[float] = None,
     ):
         """Run SSCHA iterations.
 
@@ -161,6 +162,7 @@ class PolymlpSSCHA:
             init_fc_algorithm=init_fc_algorithm,
             init_fc_file=init_fc_file,
             nac_params=self._nac_params,
+            cutoff_radius=cutoff_radius,
         )
 
         if self._verbose:

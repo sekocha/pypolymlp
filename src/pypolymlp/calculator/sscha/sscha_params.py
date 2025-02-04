@@ -55,6 +55,7 @@ class SSCHAParameters:
     init_fc_algorithm: Literal["harmonic", "file"] = "harmonic"
     init_fc_file: Optional[str] = None
     nac_params: Optional[dict] = None
+    cutoff_radius: Optional[float] = None
 
     def __post_init__(self):
         """Post init method."""
