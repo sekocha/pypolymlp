@@ -45,7 +45,7 @@ class SSCHA:
         pot: polymlp file.
         params: Parameters for polymlp.
         coeffs: Polymlp coefficients.
-        properties: Properties object.
+        properties: Properties instance.
 
         Any one of pot, (params, coeffs), and properties is needed.
         """
@@ -82,9 +82,17 @@ class SSCHA:
             log_level=self._verbose,
         )
         self._symfc.compute_basis_set(2)
+
         n_coeffs = self._symfc.basis_set[2].basis_set.shape[1]
         if self._verbose and n_coeffs < 1000:
             self._symfc._log_level = 0
+
+        if self._sscha_params.n_samples_init is None:
+            self._sscha_params.set_n_samples_from_basis(n_coeffs)
+            if self._verbose:
+                print("Number of supercells is automatically determined.")
+                print("- first loop:", self._sscha_params.n_samples_init)
+                print("- second loop:", self._sscha_params.n_samples_final)
 
         self.ph_real = HarmonicReal(self.supercell_polymlp, self._prop)
         self.ph_recip = HarmonicReciprocal(self.phonopy, self._prop)
@@ -395,7 +403,7 @@ def run_sscha(
 
     if verbose:
         print("Preconditioning.", flush=True)
-    n_samples = min(sscha_params.n_samples_init // 50, 100)
+    n_samples = max(min(sscha_params.n_samples_init // 50, 100), 5)
     sscha.precondition(
         t=sscha_params.temperatures[0],
         n_samples=n_samples,
@@ -403,7 +411,7 @@ def run_sscha(
         max_iter=10,
     )
     if sscha_params.tol < 0.003:
-        n_samples = min(sscha_params.n_samples_init // 10, 500)
+        n_samples = max(min(sscha_params.n_samples_init // 10, 500), 10)
         sscha.precondition(
             t=sscha_params.temperatures[0],
             n_samples=n_samples,
