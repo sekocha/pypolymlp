@@ -64,7 +64,7 @@ class SSCHAParameters:
         )
         if self.temperatures is None:
             self.set_temperatures()
-        self.set_n_samples()
+        # self.set_n_samples()
 
     def _round_temperature(self, temp: float):
         """Round a single temperature if possible."""
@@ -100,6 +100,13 @@ class SSCHAParameters:
             self.n_samples_final = 100 * self.n_samples_unit
         return self.n_samples_init, self.n_samples_final
 
+    def set_n_samples_from_basis(self, n_basis: int):
+        """Set number of supercells using basis size."""
+        coeff = 300 * (0.01 / self.tol) ** 2
+        self.n_samples_init = round(coeff * n_basis / self._n_atom)
+        self.n_samples_final = 5 * self.n_samples_init
+        return self.n_samples_init, self.n_samples_final
+
     def print_params(self):
         """Print parameters in SSCHA."""
         print(" # SSCHA parameters", flush=True)
@@ -120,8 +127,8 @@ class SSCHAParameters:
         print("  - FC tolerance:             ", self.tol, flush=True)
         print("  - max iter:                 ", self.max_iter, flush=True)
         print("  - mixing:                   ", self.mixing, flush=True)
-        print("  - num samples:              ", self.n_samples_init, flush=True)
-        print("  - num samples (last iter.): ", self.n_samples_final, flush=True)
+        print("  - num samples (first loop): ", self.n_samples_init, flush=True)
+        print("  - num samples (second loop):", self.n_samples_final, flush=True)
         print("  - q-mesh:                   ", self.mesh, flush=True)
         if self.nac_params is not None:
             print("  - NAC params:                True", flush=True)
