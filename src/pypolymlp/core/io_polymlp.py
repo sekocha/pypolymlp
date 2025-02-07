@@ -58,13 +58,11 @@ def load_mlp(filename: Union[str, io.IOBase] = "polymlp.yaml"):
     params, coeffs = load_mlp(filename='polymlp.yaml')
     """
 
-    print(filename)
     if not isinstance(filename, io.IOBase):
         filename = open(filename)
 
     line = filename.readline()
     legacy = True if "# ele" in line else False
-    print(legacy)
 
     filename.seek(0)
     if legacy:

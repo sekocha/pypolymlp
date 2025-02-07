@@ -191,6 +191,7 @@ class Pypolymlp:
             "entropy",
             "specific_heat",
         ] = "free_energy",
+        train_ratio: float = 0.9,
     ):
         """Set single electron dataset.
 
@@ -204,14 +205,14 @@ class Pypolymlp:
         self._params.temperature = temperature
         self._params.electron_property = target
 
-        train_files, test_files = split_train_test(yamlfiles, train_ratio=0.9)
+        train_files, test_files = split_train_test(yamlfiles, train_ratio=train_ratio)
         self._params.dft_train = sorted(train_files)
         self._params.dft_test = sorted(test_files)
         self._multiple_datasets = False
         self.parse_datasets()
         return self
 
-    def set_datasets_sscha(self, yamlfiles: list[str]):
+    def set_datasets_sscha(self, yamlfiles: list[str], train_ratio: float = 0.9):
         """Set single sscha dataset.
 
         Parameters
@@ -220,10 +221,9 @@ class Pypolymlp:
         """
         self._is_params_none()
         self._params.dataset_type = "sscha"
-        # self._params.include_force = False
         self._params.include_force = True
 
-        train_files, test_files = split_train_test(yamlfiles, train_ratio=0.9)
+        train_files, test_files = split_train_test(yamlfiles, train_ratio=train_ratio)
         self._params.dft_train = sorted(train_files)
         self._params.dft_test = sorted(test_files)
         self._multiple_datasets = False

@@ -118,7 +118,7 @@ def load_electronic_properties_from_vasprun(
 
     if output_filename is not None:
         with open(output_filename, mode="w") as f:
-            save_cell(st, tag="structure", fstream=f)
+            save_cell(st, tag="structure", file=f)
             print("unit:", file=f)
             print("  free_energy   : eV/cell", file=f)
             print("  energy        : eV/cell", file=f)
