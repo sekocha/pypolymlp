@@ -1,16 +1,29 @@
 """Class for saving and loading polymlp.lammps files"""
 
-import io
 import itertools
 
 import numpy as np
+from setuptools._distutils.util import strtobool
 
 from pypolymlp.core.data_format import (
     PolymlpGtinvParams,
     PolymlpModelParams,
     PolymlpParams,
 )
-from pypolymlp.core.utils import mass_table, strtobool
+from pypolymlp.core.utils import mass_table
+
+
+def _print_param(dict1, key, fstream, prefix=""):
+    print(str(dict1[key]), "#", prefix + key, file=fstream)
+
+
+def _print_array1d(array, fstream, comment="", fmt=None):
+    for obj in array:
+        if fmt is not None:
+            print(fmt.format(obj), end=" ", file=fstream)
+        else:
+            print(obj, end=" ", file=fstream)
+    print("#", comment, file=fstream)
 
 
 def save_multiple_mlp_lammps(
@@ -35,7 +48,7 @@ def save_multiple_mlp_lammps(
             params,
             coeffs[begin:end],
             scales[begin:end],
-            filename="polymlp.yaml." + str(i + 1),
+            filename="polymlp.lammps." + str(i + 1),
         )
         multiple_coeffs.append(coeffs[begin:end])
         multiple_scales.append(scales[begin:end])
@@ -47,57 +60,54 @@ def save_mlp_lammps(
     params: PolymlpParams,
     coeffs: np.ndarray,
     scales: np.ndarray,
-    filename: bool = "polymlp.yaml",
+    filename: bool = "polymlp.lammps",
 ):
-    """Generate polymlp.yaml file for single polymlp model"""
-    model = params.model
-
+    """Generate polymlp.lammps file for single polymlp model"""
     f = open(filename, "w")
-    elements_str = "[" + ", ".join(["{0}".format(x) for x in params.elements]) + "]"
-    print("elements:     ", elements_str, file=f)
-    print("cutoff:       ", model.cutoff, file=f)
-    print("pair_type:    ", model.pair_type, file=f)
-    print("feature_type: ", model.feature_type, file=f)
-    print("max_p:        ", model.max_p, file=f)
-    print("max_l:        ", model.max_l, file=f)
-    print("", file=f)
+    _print_array1d(params.elements, f, comment="elements")
+    model_dict = params.model.as_dict()
+    _print_param(model_dict, "cutoff", f)
+    _print_param(model_dict, "pair_type", f)
+    _print_param(model_dict, "feature_type", f)
+    _print_param(model_dict, "model_type", f)
+    _print_param(model_dict, "max_p", f)
+    _print_param(model_dict, "max_l", f)
 
-    if model.feature_type == "gtinv":
-        gtinv = model.gtinv
-        print("gtinv_order:  ", gtinv.order, file=f)
-        print("gtinv_maxl:   ", gtinv.max_l, file=f)
-        print("gtinv_sym:    ", [0 for _ in gtinv.max_l], file=f)
-        print("gtinv_version:", gtinv.version, file=f)
-        print("", file=f)
+    if model_dict["feature_type"] == "gtinv":
+        gtinv_dict = model_dict["gtinv"]
+        _print_param(gtinv_dict, "order", f, prefix="gtinv_")
+        _print_array1d(gtinv_dict["max_l"], f, comment="gtinv_max_l")
+        gtinv_sym = [0 for _ in gtinv_dict["max_l"]]
+        _print_array1d(gtinv_sym, f, comment="gtinv_sym")
 
-    print("electrostatic:", 0, file=f)
+    print(len(coeffs), "# n_coeffs", file=f)
+    _print_array1d(coeffs, f, comment="reg. coeffs", fmt="{0:15.15e}")
+    _print_array1d(scales, f, comment="scales", fmt="{0:15.15e}")
+
+    print(len(model_dict["pair_params"]), "# n_params", file=f)
+    for obj in model_dict["pair_params"]:
+        print(
+            "{0:15.15f}".format(obj[0]),
+            "{0:15.15f}".format(obj[1]),
+            "# pair func. params",
+            file=f,
+        )
+
     mass = [mass_table()[ele] for ele in params.elements]
-    print("mass:         ", mass, file=f)
-    print("", file=f)
+    _print_array1d(mass, f, comment="atomic mass", fmt="{0:15.15e}")
+    print("False # electrostatic", file=f)
 
-    print("n_pair_params:", len(model.pair_params), file=f)
-    print("pair_params:", file=f)
-    for obj in model.pair_params:
-        print("-", list(obj), file=f)
-    print("", file=f)
+    if model_dict["feature_type"] == "gtinv":
+        _print_param(gtinv_dict, "version", f, prefix="gtinv_")
 
-    print("n_type_pairs:", len(model.pair_params), file=f)
-    print("type_pairs:", file=f)
-    for atomtypes, n_ids in model.pair_params_conditional.items():
-        print("- atom_type_pair:     ", list(atomtypes), file=f)
-        print("  pair_params_indices:", list(n_ids), file=f)
-    print("", file=f)
-
-    if params.type_full is not None:
-        print("type_full:   ", int(params.type_full), file=f)
-        print("type_indices:", list(params.type_indices), file=f)
-    else:
-        print("type_full:   ", 1, file=f)
-        print("type_indices:", list(np.arange(params.n_type)), file=f)
-    print("", file=f)
-
-    coeffs_ = coeffs / scales
-    print("coeffs:", list(coeffs_), file=f)
+    print(len(model_dict["pair_params_conditional"]), "# n_type_pairs", file=f)
+    for atomtypes, n_ids in model_dict["pair_params_conditional"].items():
+        for v in atomtypes:
+            print(v, end=" ", file=f)
+        print("# atom type pair", file=f)
+        for v in n_ids:
+            print(v, end=" ", file=f)
+        print("# pair params indices ", file=f)
 
     f.close()
 
@@ -122,11 +132,9 @@ def load_mlp_lammps(filename="polymlp.lammps"):
     params, mlp_dict = load_mlp_lammps(filename='polymlp.lammps')
     """
 
-    if isinstance(filename, io.IOBase):
-        lines = filename.readlines()
-    else:
-        with open(filename) as f:
-            lines = f.readlines()
+    f = open(filename)
+    lines = f.readlines()
+    f.close()
 
     idx = 0
     elements = _read_var(lines[idx], str, return_list=True)
@@ -200,7 +208,7 @@ def load_mlp_lammps(filename="polymlp.lammps"):
             n_type_pairs = _read_var(lines[idx], int)
             idx += 1
             for _ in range(n_type_pairs):
-                atomtypes = _read_var(lines[idx], int, return_list=True)[0:2]
+                atomtypes = _read_var(lines[idx], int, return_list=True)
                 idx += 1
                 params = _read_var(lines[idx], int, return_list=True)
                 idx += 1
@@ -209,16 +217,6 @@ def load_mlp_lammps(filename="polymlp.lammps"):
         pair_cond = False
         for atomtypes in itertools.combinations_with_replacement(range(n_type), 2):
             pair_params_cond[atomtypes] = list(range(n_pair_params))
-
-    try:
-        if "type_full" in lines[idx]:
-            type_full = _read_var(lines[idx], strtobool)
-            idx += 1
-            type_indices = _read_var(lines[idx], int, return_list=True)
-            idx += 1
-    except:
-        type_full = True
-        type_indices = list(range(n_type))
 
     gtinv = PolymlpGtinvParams(
         order=gtinv_order,
@@ -244,8 +242,6 @@ def load_mlp_lammps(filename="polymlp.lammps"):
         elements=elements,
         model=model,
         element_order=element_order,
-        type_full=type_full,
-        type_indices=type_indices,
     )
     mlp_dict = {"coeffs": coeffs, "scales": scales}
     return params, mlp_dict
