@@ -5,7 +5,7 @@ from typing import Optional
 import numpy as np
 
 from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
-from pypolymlp.core.io_polymlp import load_mlp_lammps
+from pypolymlp.core.io_polymlp import load_mlp
 from pypolymlp.core.parser_polymlp_params import ParamsParser
 from pypolymlp.mlp_dev.core.features import Features
 
@@ -50,7 +50,7 @@ def compute_from_polymlp_lammps(
     if pot is not None:
         if len(pot) > 1:
             raise NotImplementedError("Only single polymlp.lammps file is available.")
-        params, mlp_dict = load_mlp_lammps(filename=pot[0])
+        params, coeffs = load_mlp(filename=pot[0])
 
     params.include_force = force
     params.include_stress = stress
@@ -60,11 +60,11 @@ def compute_from_polymlp_lammps(
     features = Features(params, structures=structures, print_memory=False)
 
     if return_features_obj and return_mlp_dict:
-        return features, mlp_dict
+        return features, coeffs
     elif return_features_obj and not return_mlp_dict:
         return features
     elif not return_features_obj and return_mlp_dict:
-        return features.x, mlp_dict
+        return features.x, coeffs
     return features.x
 
 

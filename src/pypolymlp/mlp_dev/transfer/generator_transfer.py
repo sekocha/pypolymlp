@@ -1,9 +1,12 @@
-#!/usr/bin/env python
+"""Command lines for transfer learning."""
+
 import argparse
 import signal
 import time
 
-from pypolymlp.core.io_polymlp import load_mlp_lammps_flexible
+import numpy as np
+
+from pypolymlp.core.io_polymlp import load_mlps
 from pypolymlp.mlp_dev.core.accuracy import PolymlpDevAccuracy
 from pypolymlp.mlp_dev.core.mlpdev_data import PolymlpDevData
 from pypolymlp.mlp_dev.standard.mlpdev_dataxy import (
@@ -49,7 +52,7 @@ if __name__ == "__main__":
     """TODO: params and polymlp_in.params must be the same.
     If they are different, exception must be returned.
     """
-    params, mlp_dict = load_mlp_lammps_flexible(args.pot)
+    params, coeffs = load_mlps(args.pot)
 
     polymlp_in = PolymlpDevData()
     polymlp_in.parse_infiles(args.infile, verbose=verbose)
@@ -78,13 +81,13 @@ if __name__ == "__main__":
 
     reg = RegressionTransfer(polymlp)
     reg.fit(
-        mlp_dict["coeffs"],
-        mlp_dict["scales"],
+        coeffs,
+        np.ones(len(coeffs)),
         seq=not args.no_sequential,
         clear_data=True,
         batch_size=batch_size,
     )
-    reg.save_mlp_lammps(filename="polymlp.lammps")
+    reg.save_mlp(filename="polymlp.yaml")
     t3 = time.time()
 
     if verbose:

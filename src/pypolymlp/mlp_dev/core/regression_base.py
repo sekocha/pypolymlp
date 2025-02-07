@@ -14,7 +14,7 @@ from pypolymlp.core.data_format import (
     PolymlpDataXY,
     PolymlpParams,
 )
-from pypolymlp.core.io_polymlp import save_mlp_lammps, save_multiple_mlp_lammps
+from pypolymlp.core.io_polymlp import save_mlp, save_mlps
 from pypolymlp.core.utils import rmse
 from pypolymlp.mlp_dev.core.mlpdev_dataxy_base import PolymlpDevDataXYBase
 
@@ -142,21 +142,22 @@ class RegressionBase(ABC):
         v2 = -2 * coefs @ xty
         return (v1 + v2 + y_sq_norm) / size
 
-    def save_mlp_lammps(self, filename="polymlp.lammps"):
+    def save_mlp(self, filename="polymlp.yaml"):
         """Save polymlp.lammps files"""
         if self._hybrid == False:
-            save_mlp_lammps(
+            save_mlp(
                 self._params,
                 self._coeffs,
                 self._scales,
                 filename=filename,
             )
         else:
-            save_multiple_mlp_lammps(
+            save_mlps(
                 self._params,
                 self._cumulative_n_features,
                 self._coeffs,
                 self._scales,
+                prefix=filename,
             )
         return self
 

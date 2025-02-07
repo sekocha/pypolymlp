@@ -58,7 +58,7 @@ def run():
         batch_size=args.batch_size,
         verbose=verbose,
     )
-    polymlp.save_mlp(filename="polymlp.lammps")
+    polymlp.save_mlp(filename="polymlp.yaml")
     t2 = time.time()
     polymlp.estimate_error(log_energy=True, verbose=verbose)
     t3 = time.time()
