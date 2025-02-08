@@ -9,7 +9,7 @@ import numpy as np
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.interface_vasp import Poscar
-from pypolymlp.core.io_polymlp import load_mlp_lammps_flexible
+from pypolymlp.core.io_polymlp import load_mlps
 from pypolymlp.utils.structure_utils import supercell_diagonal
 
 
@@ -40,7 +40,7 @@ class PolymlpCost:
             pot_elements = self._pot
         else:
             pot_elements = sorted(glob.glob(self._path_pot[0] + "/polymlp.lammps*"))[0]
-        params, _ = load_mlp_lammps_flexible(pot_elements)
+        params, _ = load_mlps(pot_elements)
         self._elements = params.elements
         return self._elements
 

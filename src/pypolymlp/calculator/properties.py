@@ -6,7 +6,7 @@ import numpy as np
 
 from pypolymlp.calculator.compute_features import update_types
 from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
-from pypolymlp.core.io_polymlp import load_mlp_lammps
+from pypolymlp.core.io_polymlp import load_mlp
 from pypolymlp.cxx.lib import libmlpcpp
 
 
@@ -67,8 +67,7 @@ class PropertiesSingle:
         """
 
         if pot is not None:
-            self._params, mlp_dict = load_mlp_lammps(filename=pot)
-            self._coeffs = mlp_dict["coeffs"] / mlp_dict["scales"]
+            self._params, self._coeffs = load_mlp(filename=pot)
         else:
             self._params = params
             self._coeffs = coeffs

@@ -14,7 +14,7 @@ from pypolymlp.core.data_format import (
 from pypolymlp.core.displacements import get_structures_from_displacements
 from pypolymlp.core.interface_datasets import set_dataset_from_structures
 from pypolymlp.core.interface_vasp import parse_structures_from_poscars
-from pypolymlp.core.io_polymlp import load_mlp_lammps
+from pypolymlp.core.io_polymlp import load_mlp
 from pypolymlp.core.polymlp_params import (
     set_active_gaussian_params,
     set_element_properties,
@@ -191,6 +191,7 @@ class Pypolymlp:
             "entropy",
             "specific_heat",
         ] = "free_energy",
+        train_ratio: float = 0.9,
     ):
         """Set single electron dataset.
 
@@ -204,14 +205,14 @@ class Pypolymlp:
         self._params.temperature = temperature
         self._params.electron_property = target
 
-        train_files, test_files = split_train_test(yamlfiles, train_ratio=0.9)
+        train_files, test_files = split_train_test(yamlfiles, train_ratio=train_ratio)
         self._params.dft_train = sorted(train_files)
         self._params.dft_test = sorted(test_files)
         self._multiple_datasets = False
         self.parse_datasets()
         return self
 
-    def set_datasets_sscha(self, yamlfiles: list[str]):
+    def set_datasets_sscha(self, yamlfiles: list[str], train_ratio: float = 0.9):
         """Set single sscha dataset.
 
         Parameters
@@ -220,10 +221,9 @@ class Pypolymlp:
         """
         self._is_params_none()
         self._params.dataset_type = "sscha"
-        # self._params.include_force = False
         self._params.include_force = True
 
-        train_files, test_files = split_train_test(yamlfiles, train_ratio=0.9)
+        train_files, test_files = split_train_test(yamlfiles, train_ratio=train_ratio)
         self._params.dft_train = sorted(train_files)
         self._params.dft_test = sorted(test_files)
         self._multiple_datasets = False
@@ -554,21 +554,24 @@ class Pypolymlp:
         """Load poscar files and convert them to structure instances."""
         return parse_structures_from_poscars(poscars)
 
-    def save_mlp(self, filename="polymlp.lammps"):
+    def save_mlp(self, filename="polymlp.lammps", yaml: bool = False):
         """Save polynomial MLP as file.
 
         When hybrid models are used, mlp files will be generated as
         filename.1, filename.2, ...
         """
-        self._reg.save_mlp_lammps(filename=filename)
+        if yaml:
+            self._reg.save_mlp(filename=filename)
+        else:
+            self._reg.save_mlp_lammps(filename=filename)
 
     def load_mlp(self, filename="polymlp.lammps"):
         """Load polynomial MLP from file."""
         # TODO: hybrid is not available.
-        self._params, mlp_dict = load_mlp_lammps(filename)
+        self._params, coeffs = load_mlp(filename)
         self._mlp_model = PolymlpDataMLP(
-            coeffs=mlp_dict["coeffs"],
-            scales=mlp_dict["scales"],
+            coeffs=coeffs,
+            scales=np.ones(len(coeffs)),
         )
 
     def save_parameters(self, filename="polymlp_params.yaml"):

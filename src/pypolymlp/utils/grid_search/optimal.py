@@ -7,7 +7,7 @@ import numpy as np
 import yaml
 from scipy.spatial import ConvexHull
 
-from pypolymlp.core.io_polymlp import load_mlp_lammps
+from pypolymlp.core.io_polymlp import load_mlp
 
 
 def write_yaml(data, system, filename="polymlp_summary_all.yaml"):
@@ -56,7 +56,7 @@ def find_optimal_mlps(dirs, key, use_force=False, use_logscale_time=False):
                     match_d = d
                     break
             if system is None:
-                params, _ = load_mlp_lammps(glob.glob(dir_pot + "/polymlp.lammps*")[0])
+                params, _ = load_mlp(glob.glob(dir_pot + "/polymlp.lammps*")[0])
                 system = "-".join(params.elements)
 
         if match_d is not None:
