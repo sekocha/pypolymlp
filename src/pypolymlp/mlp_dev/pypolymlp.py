@@ -554,7 +554,7 @@ class Pypolymlp:
         """Load poscar files and convert them to structure instances."""
         return parse_structures_from_poscars(poscars)
 
-    def save_mlp(self, filename="polymlp.yaml", yaml: bool = False):
+    def save_mlp(self, filename="polymlp.lammps", yaml: bool = False):
         """Save polynomial MLP as file.
 
         When hybrid models are used, mlp files will be generated as
