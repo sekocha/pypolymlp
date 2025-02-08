@@ -11,7 +11,7 @@ cwd = Path(__file__).parent
 
 
 def test_fc1():
-    poscar = "POSCAR"
+    poscar = str(cwd) + "/POSCAR"
     pot = cwd / "polymlp.lammps"
     polymlp = PolymlpCalc(pot=pot, verbose=True)
     polymlp.load_poscars(poscar)
