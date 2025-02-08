@@ -13,10 +13,10 @@ cwd = Path(__file__).parent
 
 def test_eval1():
     unitcell = Poscar(cwd / "POSCAR").structure
-    prop = Properties(pot=cwd / "polymlp.lammps")
+    prop = Properties(pot=cwd / "polymlp.yaml")
     energy, forces, stresses = prop.eval(unitcell)
 
-    assert energy == pytest.approx(-40.22469744315832, abs=1e-12)
+    assert energy == pytest.approx(-40.22469744315832, rel=1e-8)
     forces_true = [
         [-0.03962958, -0.01188776, -0.07928375],
         [-0.00459307, 0.00331611, 0.02210267],

@@ -69,7 +69,9 @@ def save_mlp_yaml(
     print("", file=f)
 
     coeffs_ = coeffs / scales
-    print("coeffs:", list(coeffs_), file=f)
+    coeffs_str = "[" + ", ".join([f"{c:.15e}" for c in coeffs_]) + "]"
+    print("n_coeffs:", len(coeffs), file=f)
+    print("coeffs:", coeffs_str, file=f)
 
     f.close()
 
