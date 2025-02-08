@@ -236,3 +236,34 @@ def save_mlp_lammps(
         _print_array1d(np.arange(params.n_type), f, comment="type_indices")
 
     f.close()
+
+
+def save_multiple_mlp_lammps(
+    multiple_params: list[PolymlpParams],
+    cumulative_n_features: int,
+    coeffs: np.ndarray,
+    scales: np.ndarray,
+    prefix: str = "polymlp.lammps",
+) -> tuple[list[np.ndarray], list[np.ndarray]]:
+    """Generate polymlp.lammps files for hybrid polymlp model"""
+    multiple_coeffs = []
+    multiple_scales = []
+    for i, params in enumerate(multiple_params):
+        if i == 0:
+            begin, end = 0, cumulative_n_features[0]
+        else:
+            begin, end = (
+                cumulative_n_features[i - 1],
+                cumulative_n_features[i],
+            )
+
+        save_mlp_lammps(
+            params,
+            coeffs[begin:end],
+            scales[begin:end],
+            filename=prefix + "." + str(i + 1),
+        )
+        multiple_coeffs.append(coeffs[begin:end])
+        multiple_scales.append(scales[begin:end])
+
+    return multiple_coeffs, multiple_scales
