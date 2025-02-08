@@ -38,6 +38,10 @@ def test_load_mlp():
         mlp.load_mlp(fp)
     assert mlp.coeffs[0] == pytest.approx(coeff_true, rel=1e-8)
 
+    mlp = Pypolymlp()
+    mlp.load_mlp(filename)
+    assert mlp.coeffs[0] == pytest.approx(coeff_true, rel=1e-8)
+
     mlp_calc = PolymlpCalc(pot=filename)
     coeffs = mlp_calc._prop.prop._coeffs
     assert coeffs[0] == pytest.approx(coeff_true, rel=1e-8)
