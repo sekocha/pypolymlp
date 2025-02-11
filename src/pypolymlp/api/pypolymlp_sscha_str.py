@@ -15,7 +15,7 @@ from pypolymlp.utils.structure_utils import (
 from pypolymlp.utils.vasp_utils import write_poscar_file
 
 
-class PolymlpSSCHAStructureGenerator:
+class PypolymlpSSCHAStructureGenerator:
     """API class for generating structures for systematic SSCHA calculations."""
 
     def __init__(

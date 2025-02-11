@@ -5,7 +5,7 @@ import signal
 
 import numpy as np
 
-from pypolymlp.api.pypolymlp_utils import PolymlpUtils
+from pypolymlp.api.pypolymlp_utils import PypolymlpUtils
 from pypolymlp.utils.atomic_energies.atomic_energies import (
     get_atomic_energies_polymlp_in,
 )
@@ -133,7 +133,7 @@ def run():
     args = parser.parse_args()
 
     np.set_printoptions(legacy="1.21")
-    polymlp = PolymlpUtils(verbose=True)
+    polymlp = PypolymlpUtils(verbose=True)
 
     if args.electron_vasprun is not None:
         polymlp.compute_electron_properties_from_vaspruns(

@@ -5,7 +5,7 @@ import signal
 
 import numpy as np
 
-from pypolymlp.api.pypolymlp_sscha_post import PolymlpSSCHAPost
+from pypolymlp.api.pypolymlp_sscha_post import PypolymlpSSCHAPost
 
 
 def run():
@@ -86,7 +86,7 @@ def run():
     args = parser.parse_args()
     np.set_printoptions(legacy="1.21")
 
-    sscha = PolymlpSSCHAPost(verbose=True)
+    sscha = PypolymlpSSCHAPost(verbose=True)
     if args.properties:
         sscha.compute_thermodynamic_properties(
             args.yaml, filename="sscha_properties.yaml"

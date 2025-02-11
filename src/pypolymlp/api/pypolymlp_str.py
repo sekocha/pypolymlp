@@ -14,7 +14,7 @@ from pypolymlp.utils.structure_utils import (
 )
 
 
-class PolymlpStructureGenerator:
+class PypolymlpStructureGenerator:
     """API class for generating structures for DFT calculations."""
 
     def __init__(

@@ -30,9 +30,9 @@ energy, forces, stress = prop.eval(structure)
 or
 ```python
 import numpy as np
-from pypolymlp.api.pypolymlp_calc import PolymlpCalc
+from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
 
-polymlp = PolymlpCalc(pot="polymlp.lammps")
+polymlp = PypolymlpCalc(pot="polymlp.lammps")
 polymlp.load_structures_from_files(poscars='POSCAR')
 energies, forces, stresses = polymlp.eval()
 ```
@@ -56,9 +56,9 @@ energy_all, forces_all, stress_all = prop.eval_multiple(
 or
 ```python
 import numpy as np
-from pypolymlp.api.pypolymlp_calc import PolymlpCalc
+from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
 
-polymlp = PolymlpCalc(pot="polymlp.lammps")
+polymlp = PypolymlpCalc(pot="polymlp.lammps")
 polymlp.load_structures_from_files(poscars=["POSCAR1", "POSCAR2", "POSCAR3"])
 energies, forces, stresses = polymlp.eval()
 ```
@@ -71,7 +71,7 @@ prop = Properties(pot=polymlps)
 or
 ```python
 polymlps = ['polymlp.lammps.1', 'polymlp.lammps.2']
-polymlp_calc = PolymlpCalc(pot=polymlps)
+polymlp_calc = PypolymlpCalc(pot=polymlps)
 ```
 
 
@@ -102,9 +102,9 @@ structure = phonopy_cell_to_structure(cell_phonopy)
 ## Local geometry optimizations
 ```python
 import numpy as np
-from pypolymlp.api.pypolymlp_calc import PolymlpCalc
+from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
 
-polymlp = PolymlpCalc(pot="polymlp.lammps")
+polymlp = PypolymlpCalc(pot="polymlp.lammps")
 polymlp.load_poscars("POSCAR")
 
 polymlp.init_geometry_optimization(
@@ -121,9 +121,9 @@ if success:
 - Feature calculation using polymlp.in
 ```python
 import numpy as np
-from pypolymlp.api.pypolymlp_calc import PolymlpCalc
+from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
 
-polymlp = PolymlpCalc(require_mlp=False)
+polymlp = PypolymlpCalc(require_mlp=False)
 polymlp.load_structures_from_files(poscars=["POSCAR1", "POSCAR2", "POSCAR3"])
 polymlp.run_features(
     develop_infile="polymlp.in",
@@ -136,9 +136,9 @@ polymlp.save_features()
 - Feature calculation using polymlp.lammps
 ```python
 import numpy as np
-from pypolymlp.api.pypolymlp_calc import PolymlpCalc
+from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
 
-polymlp = PolymlpCalc(pot="polymlp.lammps")
+polymlp = PypolymlpCalc(pot="polymlp.lammps")
 polymlp.load_structures_from_files(poscars=["POSCAR1", "POSCAR2", "POSCAR3"])
 polymlp.run_features(
     features_force=False,
@@ -173,9 +173,9 @@ polyfc.run(batch_size=100)
 or
 ```python
 import numpy as np
-from pypolymlp.api.pypolymlp_calc import PolymlpCalc
+from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
 
-polymlp = PolymlpCalc(pot="polymlp.lammps")
+polymlp = PypolymlpCalc(pot="polymlp.lammps")
 polymlp.load_poscars("POSCAR")
 
 """optional"""
@@ -245,9 +245,9 @@ qha.write_qha()
 or
 ```python
 import numpy as np
-from pypolymlp.api.pypolymlp_calc import PolymlpCalc
+from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
 
-polymlp = PolymlpCalc(pot="polymlp.lammps")
+polymlp = PypolymlpCalc(pot="polymlp.lammps")
 polymlp.load_poscars("POSCAR")
 polymlp.init_phonon(supercell_matrix=np.diag([3, 3, 2]))
 polymlp.run_phonon(
@@ -299,9 +299,9 @@ elastic_constants = el.elastic_constants
 ```
 or
 ```python
-from pypolymlp.api.pypolymlp_calc import PolymlpCalc
+from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
 
-polymlp = PolymlpCalc(pot="polymlp.lammps")
+polymlp = PypolymlpCalc(pot="polymlp.lammps")
 polymlp.load_poscars("POSCAR")
 polymlp.run_elastic_constants()
 polymlp.write_elastic_constants(filename="polymlp_elastic.yaml")
@@ -322,9 +322,9 @@ eos.write_eos_yaml(filename='polymlp_eos.yaml')
 ```
 or
 ```python
-from pypolymlp.api.pypolymlp_calc import PolymlpCalc
+from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
 
-polymlp = PolymlpCalc(pot="polymlp.lammps")
+polymlp = PypolymlpCalc(pot="polymlp.lammps")
 polymlp.load_structures_from_files(poscars='POSCAR')
 polymlp.run_eos(
     eps_min=0.7,

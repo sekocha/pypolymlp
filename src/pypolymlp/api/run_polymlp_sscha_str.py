@@ -5,7 +5,7 @@ import signal
 
 import numpy as np
 
-from pypolymlp.api.pypolymlp_sscha_str import PolymlpSSCHAStructureGenerator
+from pypolymlp.api.pypolymlp_sscha_str import PypolymlpSSCHAStructureGenerator
 
 
 def run():
@@ -72,7 +72,7 @@ def run():
     if not args.sym and not args.volume and not args.cell:
         args.sym = True
 
-    strgen = PolymlpSSCHAStructureGenerator(verbose=True)
+    strgen = PypolymlpSSCHAStructureGenerator(verbose=True)
     strgen.load_poscar(args.poscar)
 
     if args.sym:

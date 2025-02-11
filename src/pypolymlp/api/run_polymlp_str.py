@@ -5,7 +5,7 @@ import signal
 
 import numpy as np
 
-from pypolymlp.api.pypolymlp_str import PolymlpStructureGenerator
+from pypolymlp.api.pypolymlp_str import PypolymlpStructureGenerator
 
 
 def run():
@@ -102,7 +102,7 @@ def run():
     args = parser.parse_args()
 
     np.set_printoptions(legacy="1.21")
-    polymlp = PolymlpStructureGenerator(verbose=True)
+    polymlp = PypolymlpStructureGenerator(verbose=True)
     polymlp.load_structures_from_files(poscars=args.poscars)
 
     if args.displacements is not None:

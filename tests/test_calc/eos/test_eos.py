@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from pypolymlp.api.pypolymlp_calc import PolymlpCalc
+from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
 
 cwd = Path(__file__).parent
 
@@ -12,7 +12,7 @@ cwd = Path(__file__).parent
 def test_eos1():
     poscar = str(cwd) + "/POSCAR"
     pot = cwd / "polymlp.lammps"
-    polymlp = PolymlpCalc(pot=pot, verbose=True)
+    polymlp = PypolymlpCalc(pot=pot, verbose=True)
     polymlp.load_poscars(poscar)
     polymlp.run_eos(
         eps_min=0.7,
