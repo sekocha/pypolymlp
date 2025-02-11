@@ -4,13 +4,13 @@ from pathlib import Path
 
 import pytest
 
-from pypolymlp.api.pypolymlp_calc import PolymlpCalc
+from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
 
 cwd = Path(__file__).parent
 
 
 def test_eval1():
-    polymlp = PolymlpCalc(pot=cwd / "mlp.lammps")
+    polymlp = PypolymlpCalc(pot=cwd / "mlp.lammps")
     polymlp.load_poscars(str(cwd) + "/POSCAR-Al")
     energies, _, _ = polymlp.eval()
     assert energies[0] == pytest.approx(-6.650991070412208, rel=1e-12)

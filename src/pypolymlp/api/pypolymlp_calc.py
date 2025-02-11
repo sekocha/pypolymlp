@@ -17,7 +17,7 @@ from pypolymlp.core.interface_vasp import (
 from pypolymlp.utils.vasp_utils import write_poscar_file
 
 
-class PolymlpCalc:
+class PypolymlpCalc:
     """API Class for calculating properties."""
 
     def __init__(

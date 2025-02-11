@@ -16,7 +16,7 @@ from pypolymlp.utils.vasp_utils import (
 from pypolymlp.utils.vasprun_compress import convert
 
 
-class PolymlpUtils:
+class PypolymlpUtils:
     """API Class for using utility functions."""
 
     def __init__(self, verbose: bool = False):

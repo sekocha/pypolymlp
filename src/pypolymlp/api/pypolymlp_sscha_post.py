@@ -10,7 +10,7 @@ from pypolymlp.calculator.sscha.utils.transition import (
 )
 
 
-class PolymlpSSCHAPost:
+class PypolymlpSSCHAPost:
     """API class for post-calculations using systematic SSCHA results."""
 
     def __init__(self, verbose: bool = False):

@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from pypolymlp.api.pypolymlp_calc import PolymlpCalc
+from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
 
 cwd = Path(__file__).parent
 
@@ -13,7 +13,7 @@ cwd = Path(__file__).parent
 def test_stropt_SrTiO3_tetra():
     poscar = str(cwd) + "/data-SrTiO3-tetra/POSCAR"
     pot = str(cwd) + "/data-SrTiO3-tetra/polymlp.lammps"
-    polymlp = PolymlpCalc(pot=pot)
+    polymlp = PypolymlpCalc(pot=pot)
     polymlp.load_poscars(poscar)
 
     polymlp.init_geometry_optimization(
@@ -41,7 +41,7 @@ def test_stropt_SrTiO3_tetra():
 def test_stropt_ZnS_wurtzite():
     poscar = str(cwd) + "/data-ZnS-wurtzite/POSCAR"
     pot = str(cwd) + "/data-ZnS-wurtzite/polymlp.lammps"
-    polymlp = PolymlpCalc(pot=pot)
+    polymlp = PypolymlpCalc(pot=pot)
     polymlp.load_poscars(poscar)
 
     polymlp.init_geometry_optimization(

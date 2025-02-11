@@ -6,7 +6,7 @@ import time
 
 import numpy as np
 
-from pypolymlp.api.pypolymlp_calc import PolymlpCalc
+from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
 from pypolymlp.core.utils import precision
 
 
@@ -181,7 +181,7 @@ def run():
         raise RuntimeError("Input parameters not found.")
 
     require_mlp = True if args.pot is not None else False
-    polymlp = PolymlpCalc(pot=args.pot, verbose=True, require_mlp=require_mlp)
+    polymlp = PypolymlpCalc(pot=args.pot, verbose=True, require_mlp=require_mlp)
 
     if args.properties:
         print("Mode: Property calculations", flush=True)
