@@ -52,26 +52,51 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
 
         self._n_features = None
 
-    def run(self, batch_size=128, element_swap=False):
+    def run(
+        self,
+        batch_size=128,
+        n_features_threshold: int = 50000,
+        element_swap=False,
+    ):
 
-        self.run_train(batch_size=batch_size, element_swap=element_swap)
-        self.run_test(batch_size=batch_size, element_swap=element_swap)
-        return self
-
-    def run_train(self, batch_size=128, element_swap=False):
-        self.train_xy = self.compute_products(
-            self.train,
-            scales=None,
+        self.run_train(
             batch_size=batch_size,
+            n_features_threshold=n_features_threshold,
+            element_swap=element_swap,
+        )
+        self.run_test(
+            batch_size=batch_size,
+            n_features_threshold=n_features_threshold,
             element_swap=element_swap,
         )
         return self
 
-    def run_test(self, batch_size=128, element_swap=False):
+    def run_train(
+        self,
+        batch_size=128,
+        n_features_threshold: int = 50000,
+        element_swap=False,
+    ):
+        self.train_xy = self.compute_products(
+            self.train,
+            scales=None,
+            batch_size=batch_size,
+            n_features_threshold=n_features_threshold,
+            element_swap=element_swap,
+        )
+        return self
+
+    def run_test(
+        self,
+        batch_size=128,
+        n_features_threshold: int = 50000,
+        element_swap=False,
+    ):
         self.test_xy = self.compute_products(
             self.test,
             scales=self._scales,
             batch_size=batch_size,
+            n_features_threshold=n_features_threshold,
             element_swap=element_swap,
         )
 
@@ -93,12 +118,18 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
         x = features.x
         first_indices = features.first_indices[0]
         ne, _, _ = features.n_data
+        n_data, self._n_features = x.shape
 
         if self.verbose:
-            peak_mem = (x.shape[1] * x.shape[1] * 2 + x.shape[0] * x.shape[1]) * 8e-9
+            if self._n_features > n_features_threshold:
+                peak_mem1 = x.shape[1] * x.shape[1] * 2
+                peak_mem2 = x.shape[1] * x.shape[1] + x.shape[0] * x.shape[1]
+                peak_mem = max(peak_mem1, peak_mem2)
+            else:
+                peak_mem = x.shape[1] * x.shape[1] * 2 + x.shape[0] * x.shape[1]
             print(
-                " Peak memory allocation (X.T @ X and X):",
-                np.round(peak_mem, 2),
+                " Estimated peak memory allocation (X.T @ X, X):",
+                np.round(peak_mem * 8e-9, 2),
                 "(GB)",
                 flush=True,
             )
@@ -110,7 +141,6 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
                 data_xy.xe_sq_sum, np.sum(np.square(xe), axis=0)
             )
 
-        n_data, self._n_features = x.shape
         y = np.zeros(n_data)
         w = np.ones(n_data)
         data_xy.total_n_data += n_data

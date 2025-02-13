@@ -74,6 +74,8 @@ class RegressionBase(ABC):
         (Alternative 3)
         L = np.linalg.cholesky(A)
         x = np.linalg.solve(L.T, np.linalg.solve(L, b))
+        (Alternative 4)
+        x, exit_code = scipy.sparse.linalg.cg(A, b, rtol=1e-8)
         """
         (posv,) = get_lapack_funcs(("posv",), (A, b))
         _, x, _ = posv(A, b, lower=False, overwrite_a=False, overwrite_b=False)
