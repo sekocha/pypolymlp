@@ -74,13 +74,8 @@ PyAdditiveModel::PyAdditiveModel(const std::vector<py::dict>& params_dict_array,
     }
 
     if (print_memory == true){
-        std::cout << " matrix shape (X) = ("
+        std::cout << " matrix shape (X): ("
             << total_n_data << "," << n_features << ")" << std::endl;
-        std::cout << std::fixed << std::setprecision(2);
-        std::cout << " Estimated memory allocation = "
-            << double(total_n_data) * double(n_features) * 8e-9
-            << " (GB)" << std::endl;
-        std::cout << std::fixed << std::setprecision(10);
     }
 
     x_all = Eigen::MatrixXd::Zero(total_n_data, n_features);

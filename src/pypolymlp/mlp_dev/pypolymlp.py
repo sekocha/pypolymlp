@@ -438,7 +438,8 @@ class Pypolymlp:
         """Check memory size."""
         mem_req = np.round(self._polymlp_in.n_features**2 * 8e-9 * 2, 1)
         mem_bytes = os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES") * 1e-9
-        if mem_req > mem_bytes * 1.5:
+        if mem_req > mem_bytes:
+            print("Minimum memory required for solver in GB:", mem_req, flush=True)
             raise RuntimeError("Larger size of memory required.")
         return mem_req
 

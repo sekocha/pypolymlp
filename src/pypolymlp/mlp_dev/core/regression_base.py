@@ -66,16 +66,17 @@ class RegressionBase(ABC):
     def solve_linear_equation(self, A, b):
         """Solve Ax = b.
 
-        numpy and scipy implementations
-        x = np.linalg.solve(A, b)
+        Alternative implementations using numpy and scipy are as follows.
+        (Alternative 1)
         x = scipy.linalg.solve(A, b, check_finite=False, assume_a='pos')
+        (Alternative 2)
+        x = np.linalg.solve(A, b)
+        (Alternative 3)
+        L = np.linalg.cholesky(A)
+        x = np.linalg.solve(L.T, np.linalg.solve(L, b))
         """
-        # x = scipy.linalg.solve(A, b, check_finite=False, assume_a='pos')
         (posv,) = get_lapack_funcs(("posv",), (A, b))
         _, x, _ = posv(A, b, lower=False, overwrite_a=False, overwrite_b=False)
-        # x = np.linalg.solve(A, b)
-        # L = np.linalg.cholesky(A)
-        # x = np.linalg.solve(L.T, np.linalg.solve(L, b))
         return x
 
     def compute_inner_products(self, X=None, y=None, A=None, Xy=None):
@@ -88,9 +89,11 @@ class RegressionBase(ABC):
         return A, Xy
 
     def rmse(self, true, pred):
+        """Return RMSE."""
         return rmse(true, pred)
 
     def rmse_list(self, true, pred_list):
+        """Return RMSE list."""
         return [rmse(true, p) for p in pred_list]
 
     def predict(self, coefs_array):

@@ -61,7 +61,11 @@ class Regression(RegressionBase):
             if self.verbose:
                 print("- alpha:", alpha, flush=True)
             add = alpha - alpha_prev
+            if self.verbose:
+                print("  Compute X.T @ X + alpha @ I", flush=True)
             A.flat[:: n_features + 1] += add
+            if self.verbose:
+                print("  Solve linear equation", flush=True)
             coefs_array[:, i] = self.solve_linear_equation(A, Xy)
             alpha_prev = alpha
         A.flat[:: n_features + 1] -= alpha
