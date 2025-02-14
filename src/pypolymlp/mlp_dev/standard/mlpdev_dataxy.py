@@ -250,11 +250,7 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
             if self.verbose:
                 print("Batch:", end_row, "/", n_features, flush=True)
             for j, (begin_col, end_col) in enumerate(zip(begin_ids, end_ids)):
-                if i <= j and xtx is None:
-                    xtx[begin_row:end_row, begin_col:end_col] = (
-                        x[:, begin_row:end_row].T @ x[:, begin_col:end_col]
-                    )
-                elif i <= j and xtx is not None:
+                if i <= j:
                     xtx[begin_row:end_row, begin_col:end_col] += (
                         x[:, begin_row:end_row].T @ x[:, begin_col:end_col]
                     )
