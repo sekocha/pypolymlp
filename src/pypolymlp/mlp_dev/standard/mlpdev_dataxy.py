@@ -249,11 +249,11 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
         for i, (begin_row, end_row) in enumerate(zip(begin_ids, end_ids)):
             if self.verbose:
                 print("Batch:", end_row, "/", n_features, flush=True)
+            x1 = x[:, begin_row:end_row].T
             for j, (begin_col, end_col) in enumerate(zip(begin_ids, end_ids)):
                 if i <= j:
-                    xtx[begin_row:end_row, begin_col:end_col] += (
-                        x[:, begin_row:end_row].T @ x[:, begin_col:end_col]
-                    )
+                    prod = x1 @ x[:, begin_col:end_col]
+                    xtx[begin_row:end_row, begin_col:end_col] += prod
         return xtx
 
     def _large_transpose_xtx(self, xtx: np.ndarray, n_batch: int = 10):
