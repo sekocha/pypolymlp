@@ -100,6 +100,18 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
             element_swap=element_swap,
         )
 
+    def _estimate_peak_memory(
+        self, n_data: int, n_features: int, n_features_threshold: int
+    ):
+        """Estimate peak memory required for allocating X and X.T @ X."""
+        if n_features > n_features_threshold:
+            peak_mem1 = (n_features**2) * 2
+            peak_mem2 = n_features**2 + n_data * n_features
+            peak_mem = max(peak_mem1, peak_mem2)
+        else:
+            peak_mem = (n_features**2) * 2 + n_data * n_features
+        return peak_mem
+
     def _compute_products_single_batch(
         self,
         dft_sliced: PolymlpDataDFT,
@@ -121,15 +133,12 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
         n_data, self._n_features = x.shape
 
         if self.verbose:
-            if self._n_features > n_features_threshold:
-                peak_mem1 = x.shape[1] * x.shape[1] * 2
-                peak_mem2 = x.shape[1] * x.shape[1] + x.shape[0] * x.shape[1]
-                peak_mem = max(peak_mem1, peak_mem2)
-            else:
-                peak_mem = x.shape[1] * x.shape[1] * 2 + x.shape[0] * x.shape[1]
+            peak = self._estimate_peak_memory(
+                n_data, self._n_features, n_features_threshold
+            )
             print(
                 " Estimated peak memory allocation (X.T @ X, X):",
-                np.round(peak_mem * 8e-9, 2),
+                np.round(peak * 8e-9, 2),
                 "(GB)",
                 flush=True,
             )
@@ -236,19 +245,19 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
             xtx += x.T @ x
             return xtx
 
-        bool_sum = False if xtx is None else True
         begin_ids, end_ids = get_batch_slice(n_features, n_features // n_batch)
         for i, (begin_row, end_row) in enumerate(zip(begin_ids, end_ids)):
             if self.verbose:
                 print("Batch:", end_row, "/", n_features, flush=True)
-            x_slice1 = x[:, begin_row:end_row]
             for j, (begin_col, end_col) in enumerate(zip(begin_ids, end_ids)):
-                if i <= j:
-                    xtx_block = x_slice1.T @ x[:, begin_col:end_col]
-                    if bool_sum:
-                        xtx[begin_row:end_row, begin_col:end_col] += xtx_block
-                    else:
-                        xtx[begin_row:end_row, begin_col:end_col] = xtx_block
+                if i <= j and xtx is None:
+                    xtx[begin_row:end_row, begin_col:end_col] = (
+                        x[:, begin_row:end_row].T @ x[:, begin_col:end_col]
+                    )
+                elif i <= j and xtx is not None:
+                    xtx[begin_row:end_row, begin_col:end_col] += (
+                        x[:, begin_row:end_row].T @ x[:, begin_col:end_col]
+                    )
         return xtx
 
     def _large_transpose_xtx(self, xtx: np.ndarray, n_batch: int = 10):
