@@ -62,6 +62,7 @@ class ModelParams{
     void combination1_gtinv();
     void combination2_gtinv(const vector1i& iarray);
     void combination3_gtinv(const vector1i& iarray);
+    void combination2_gtinv_distance(const feature_params& fp, const vector1i& iarray);
     vector1i intersection_types_in_polynomial(const vector2i &type1_array);
 
     int seq2typecomb(const int& seq);

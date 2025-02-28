@@ -34,28 +34,30 @@ void ModelParams::initial_setting(const feature_params& fp, const Mapping& mappi
 void ModelParams::polynomial_setting(const feature_params& fp, const Mapping& mapping){
 
     vector1i polynomial_indices;
-    if (fp.model_type == 2){
+    if (fp.model_type == 2 or fp.model_type == 12){
         for (int n = 0; n < n_linear_features; ++n){
             polynomial_indices.emplace_back(n);
         }
     }
-    else if (fp.model_type == 3 and fp.feature_type == "gtinv"){
-        for (int n = 0; n < n_linear_features; ++n){
-            if (linear_terms[n].order == 1) polynomial_indices.emplace_back(n);
-        }
-    }
-    else if (fp.model_type == 4 and fp.feature_type == "gtinv"){
-        for (int n = 0; n < n_linear_features; ++n){
-            if (linear_terms[n].order < 3) polynomial_indices.emplace_back(n);
-        }
-    }
-    else if (fp.model_type > 2 and fp.feature_type == "pair"){
+    else if (fp.feature_type == "pair" and fp.model_type > 2){
         std::cerr << "Polymlp: Model type error." << std::endl;
         exit(8);
     }
-    else if (fp.model_type > 4 and fp.feature_type == "gtinv"){
-        std::cerr << "Polymlp: Model type error." << std::endl;
-        exit(8);
+    else if (fp.feature_type == "gtinv"){
+        if (fp.model_type == 3 or fp.model_type == 13){
+            for (int n = 0; n < n_linear_features; ++n){
+                if (linear_terms[n].order == 1) polynomial_indices.emplace_back(n);
+            }
+        }
+        else if (fp.model_type == 4 or fp.model_type == 14){
+            for (int n = 0; n < n_linear_features; ++n){
+                if (linear_terms[n].order < 3) polynomial_indices.emplace_back(n);
+            }
+        }
+        else if (fp.model_type > 4){
+            std::cerr << "Polymlp: Model type error." << std::endl;
+            exit(8);
+        }
     }
 
     comb1_indices.resize(n_type);
@@ -71,9 +73,12 @@ void ModelParams::polynomial_setting(const feature_params& fp, const Mapping& ma
     }
     else if (fp.feature_type == "gtinv"){
         combination1_gtinv();
-        if (fp.model_type > 1){
+        if (fp.model_type > 1 and fp.model_type < 10){
             if (fp.maxp > 1) combination2_gtinv(polynomial_indices);
             if (fp.maxp > 2) combination3_gtinv(polynomial_indices);
+        }
+        else if (fp.model_type > 10){
+            if (fp.maxp > 1) combination2_gtinv_distance(fp, polynomial_indices);
         }
     }
 
@@ -233,6 +238,36 @@ void ModelParams::combination2_gtinv(const vector1i& iarray){
         }
     }
 }
+void ModelParams::combination2_gtinv_distance(
+    const feature_params& fp, const vector1i& iarray
+){
+
+    const auto& params = fp.params;
+    const double cutoff = 2.1;
+    vector2i type_array;
+    vector1i intersection;
+    int i_comb(0);
+    for (size_t i1 = 0; i1 < iarray.size(); ++i1){
+        const auto& type1_1 = linear_terms[iarray[i1]].type1;
+        const auto& n1 = linear_terms[iarray[i1]].n;
+        for (size_t i2 = 0; i2 <= i1; ++i2){
+            const auto& type1_2 = linear_terms[iarray[i2]].type1;
+            const auto& n2 = linear_terms[iarray[i2]].n;
+            if (fabs(params[n1][1] - params[n2][1]) < cutoff){
+                type_array = {type1_1, type1_2};
+                intersection = intersection_types_in_polynomial(type_array);
+                if (intersection.size() > 0){
+                    comb2.push_back(vector1i({iarray[i2], iarray[i1]}));
+                    for (const auto& type: intersection){
+                        comb2_indices[type].emplace_back(i_comb);
+                    }
+                    ++i_comb;
+                }
+            }
+        }
+    }
+}
+
 
 void ModelParams::combination3_gtinv(const vector1i& iarray){
 
