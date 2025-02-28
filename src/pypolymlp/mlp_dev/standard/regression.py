@@ -54,26 +54,19 @@ class Regression(RegressionBase):
         n_features = A.shape[0]
 
         if self.verbose:
-            print("Regression: Solve normal equations.", flush=True)
+            print("Regression: cholesky decomposition ...", flush=True)
         coefs_array = np.zeros((n_features, len(self._alphas)))
         alpha_prev = 0.0
         for i, alpha in enumerate(self._alphas):
             if self.verbose:
                 print("- alpha:", alpha, flush=True)
             add = alpha - alpha_prev
+            if self.verbose:
+                print("  Compute X.T @ X + alpha @ I", flush=True)
             A.flat[:: n_features + 1] += add
+            if self.verbose:
+                print("  Solve linear equation", flush=True)
             coefs_array[:, i] = self.solve_linear_equation(A, Xy)
-            # revise temporarily
-            # if i == 0:
-            #     if self.verbose:
-            #         print("  Solver: Cholesky")
-            #     coefs_array[:, i] = self.solve_linear_equation(A, Xy)
-            # else:
-            #     if self.verbose:
-            #         print("  Solver: CG")
-            #     x0 = coefs_array[:, i - 1]
-            #     coefs_array[:, i] = self.solve_linear_equation_cg(A, Xy, x0=x0)
-
             alpha_prev = alpha
         A.flat[:: n_features + 1] -= alpha
         return coefs_array
@@ -139,7 +132,7 @@ class Regression(RegressionBase):
         self.test_xy = self.polymlp_dev.test_xy
 
     def _print_log(self, rmse_train, rmse_test):
-        print("Regression: Select optimal model.", flush=True)
+        print("Regression: model selection ...", flush=True)
         for a, rmse1, rmse2 in zip(self._alphas, rmse_train, rmse_test):
             if rmse1 > 1e6:
                 print(

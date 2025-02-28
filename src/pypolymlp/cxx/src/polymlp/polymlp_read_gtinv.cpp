@@ -16,8 +16,8 @@ Readgtinv::Readgtinv(const int& gtinv_order,
 
     if (version == 1)
         screening(gtinv_order, gtinv_maxl, gtinv_sym, n_type);
-    //else if (version == 2)
-    //    screening_ver2(gtinv_order, gtinv_maxl, n_type);
+    else if (version == 2)
+        screening_ver2(gtinv_order, gtinv_maxl, n_type);
 
 }
 
@@ -62,7 +62,6 @@ void Readgtinv::screening(const int& gtinv_order,
     }
 
 }
-/*
 void Readgtinv::screening_ver2(const int& gtinv_order,
                                const vector1i& gtinv_maxl,
                                const int& n_type){
@@ -98,7 +97,6 @@ void Readgtinv::screening_ver2(const int& gtinv_order,
         }
     }
 }
-*/
 
 const vector3i& Readgtinv::get_lm_seq() const{ return lm_array; }
 const vector2i& Readgtinv::get_l_comb() const{ return l_array; }

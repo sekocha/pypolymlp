@@ -1,221 +1,107 @@
 /****************************************************************************
 
-        Copyright (C) 2025 Atsuto Seko
+        Copyright (C) 2024 Atsuto Seko
                 seko@cms.mtl.kyoto-u.ac.jp
 
 *****************************************************************************/
 
 #include "polymlp_parse_potential.h"
 
-std::string replace(std::string target, std::string str1, std::string str2){
+void parse_elements(std::ifstream& input, std::vector<std::string>& ele){
 
-    std::string::size_type  pos(target.find(str1));
-    while(pos != std::string::npos){
-        target.replace(pos, str1.length(), str2);
-        pos = target.find(str1, pos + str2.length());
-    }
-    return target;
-}
-
-vector1str split(const std::string& s, char delim){
-
-    vector1str elems;
-    std::stringstream ss(s);
-    std::string item;
-    while (std::getline(ss, item, delim)) {
-        if (!item.empty()) {
-            elems.push_back(item);
-        }
-    }
-    return elems;
-}
-
-vector1str split_list(const std::string& s){
-
-    vector1str elems;
     std::stringstream ss;
-    std::string tmp;
+    std::string line, tmp;
 
-    std::string::size_type pos = s.find("[");
-    if (pos != std::string::npos){
-        std::string str = split(s, '[')[1];
-        str = split(str, ']')[0];
-        str = replace(str, ",", " ");
-        ss << str;
-        while (!ss.eof()){
-            ss >> tmp;
-            elems.push_back(tmp);
+    ele.clear();
+    std::getline( input, line );
+    ss << line;
+    while (!ss.eof()){
+        ss >> tmp;
+        ele.push_back(tmp);
+    }
+    ele.erase(ele.end()-1);
+    ele.erase(ele.end()-1);
+    ss.str("");
+    ss.clear(std::stringstream::goodbit);
+}
+
+void parse_basic_params(std::ifstream& input, feature_params& fp){
+
+    fp.cutoff = get_value<double>(input);
+    fp.pair_type = get_value<std::string>(input);
+    fp.feature_type = get_value<std::string>(input);
+    fp.model_type = get_value<int>(input);
+    fp.maxp = get_value<int>(input);
+    fp.maxl = get_value<int>(input);
+}
+
+int parse_gtinv_params(
+    std::ifstream& input,
+    vector1i& gtinv_maxl,
+    std::vector<bool>& gtinv_sym
+){
+    int gtinv_order = get_value<int>(input);
+    int size = gtinv_order - 1;
+    gtinv_maxl = get_value_array<int>(input, size);
+    gtinv_sym = get_value_array<bool>(input, size);
+    return gtinv_order;
+}
+
+void parse_reg_coeffs(std::ifstream& input, vector1d& reg_coeffs){
+
+    int n_reg_coeffs = get_value<int>(input);
+    reg_coeffs = get_value_array<double>(input, n_reg_coeffs);
+    vector1d scale = get_value_array<double>(input, n_reg_coeffs);
+    for (int i = 0; i < n_reg_coeffs; ++i) reg_coeffs[i] *= 2.0/scale[i];
+}
+
+int parse_gaussians(std::ifstream& input, feature_params& fp){
+
+    int n_params = get_value<int>(input);
+    fp.params = vector2d(n_params);
+    for (int i = 0; i < n_params; ++i)
+        fp.params[i] = get_value_array<double>(input, 2);
+    return n_params;
+}
+
+void parse_params_conditional(std::ifstream& input, feature_params& fp){
+
+    fp.params_conditional = vector3i(fp.n_type, vector2i(fp.n_type));
+    int n_type_pairs = get_value<int>(input);
+    if (!input.eof() and n_type_pairs > 0){
+        for (int i = 0; i < n_type_pairs; ++i){
+            vector1i atomtypes = get_value_array<int>(input, 3);
+            const int n_active = atomtypes[2];
+            vector1i param_indices = get_value_array<int>(input, n_active);
+            fp.params_conditional[atomtypes[0]][atomtypes[1]] = param_indices;
         }
     }
     else {
-        ss << s;
-        ss >> tmp;
-        elems.push_back(tmp);
-    }
-    return elems;
-}
-
-ParsePolymlpYaml::ParsePolymlpYaml(){}
-
-ParsePolymlpYaml::ParsePolymlpYaml(const char *file){
-
-    std::ifstream ifs(file);
-    if (ifs.fail()){
-        std::cerr << "Error: Could not open mlp file: " << file << "\n";
-        exit(8);
-    }
-
-    std::string line, key;
-    while (getline(ifs, line)){
-        const auto sp = split(line, ':');
-        if (sp.size() > 0){
-            std::stringstream ss;
-            ss << sp[0];
-            ss >> key;
-            if (sp.size() > 1) {
-                params[key] = split_list(sp[1]);
-                assign_exceptional_parameters(ifs, key);
+        const int n_params = fp.params.size();
+        vector1i param_indices;
+        for (int i = 0; i < n_params; ++i) param_indices.emplace_back(i);
+        for (int i = 0; i < fp.n_type; ++i){
+            for (int j = 0; j <= i; ++j){
+                fp.params_conditional[j][i] = param_indices;
             }
         }
     }
 }
 
-ParsePolymlpYaml::~ParsePolymlpYaml(){}
-
-void ParsePolymlpYaml::assign_exceptional_parameters(
-    std::ifstream& ifs, const std::string& key
+bool parse_type_indices(
+    std::ifstream& input, feature_params& fp, vector1i& type_indices
 ){
 
-    int n_lines;
-    std::string line;
-    if (key == "n_pair_params"){
-        n_lines = std::stoi(params[key][0]);
-        pair_params = parse_2d(ifs, n_lines);
+    bool n_type_full = get_value<bool>(input);
+    if (!input.eof()){
+        type_indices = get_value_array<int>(input, fp.n_type);
     }
-    else if (key == "n_type_pairs"){
-        int n_types = params["elements"].size();
-        pair_params_conditional.resize(n_types);
-        for (int i = 0; i < n_types; ++i){
-            pair_params_conditional[i].resize(n_types);
-        }
-
-        n_lines = std::stoi(params[key][0]);
-        getline(ifs, line);
-        vector1str strs1, strs2;
-        for (int i = 0; i < n_lines; ++i){
-            getline(ifs, line);
-            strs1 = split_list(line);
-            getline(ifs, line);
-            strs2 = split_list(line);
-            int i1 = std::stoi(strs1[0]);
-            int i2 = std::stoi(strs1[1]);
-            pair_params_conditional[i1][i2] = strs2;
-        }
+    else {
+        n_type_full = true;
+        for (int i = 0; i < fp.n_type; ++i) type_indices.emplace_back(i);
     }
+    return n_type_full;
 }
-
-vector2str ParsePolymlpYaml::parse_2d(std::ifstream& ifs, const int n_lines){
-
-    vector2str array2d;
-    std::string line;
-    getline(ifs, line);
-    for (int i = 0; i < n_lines; ++i){
-        getline(ifs, line);
-        array2d.emplace_back(split_list(line));
-    }
-    return array2d;
-}
-
-vector1i ParsePolymlpYaml::transform_vector1i(vector1str& strings){
-    vector1i ints;
-    std::transform(strings.begin(), strings.end(), std::back_inserter(ints),
-        [&](std::string s) {
-            return std::stoi(s);
-        });
-    return ints;
-}
-
-vector1d ParsePolymlpYaml::transform_vector1d(vector1str& strings){
-    vector1d doubles;
-    std::transform(strings.begin(), strings.end(), std::back_inserter(doubles),
-        [&](std::string s) {
-            return std::stod(s);
-        });
-    return doubles;
-}
-
-const vector1str& ParsePolymlpYaml::get_elements(){
-    return params["elements"];
-}
-const double ParsePolymlpYaml::get_cutoff(){
-    return std::stod(params["cutoff"][0]);
-}
-const std::string& ParsePolymlpYaml::get_pair_type(){
-    return params["pair_type"][0];
-}
-const std::string& ParsePolymlpYaml::get_feature_type(){
-    return params["feature_type"][0];
-}
-const int ParsePolymlpYaml::get_max_p(){
-    return std::stoi(params["max_p"][0]);
-}
-const int ParsePolymlpYaml::get_max_l(){
-    return std::stoi(params["max_l"][0]);
-}
-const int ParsePolymlpYaml::get_model_type(){
-    return std::stoi(params["model_type"][0]);
-}
-
-const int ParsePolymlpYaml::get_gtinv_order(){
-    return std::stoi(params["gtinv_order"][0]);
-}
-const int ParsePolymlpYaml::get_gtinv_version(){
-    return std::stoi(params["gtinv_version"][0]);
-}
-const vector1i ParsePolymlpYaml::get_gtinv_maxl(){
-    return transform_vector1i(params["gtinv_maxl"]);
-}
-const vector1b ParsePolymlpYaml::get_gtinv_sym(){
-    auto sym = transform_vector1i(params["gtinv_sym"]);
-    vector1b sym_b;
-    for (auto& s: sym) sym_b.emplace_back(static_cast<bool>(s));
-    return sym_b;
-}
-const vector1d ParsePolymlpYaml::get_mass(){
-    return transform_vector1d(params["mass"]);
-}
-const vector1d ParsePolymlpYaml::get_coeffs(){
-    return transform_vector1d(params["coeffs"]);
-}
-
-const vector2d ParsePolymlpYaml::get_pair_params(){
-
-    vector2d pair_params_double;
-    for (auto& str1: pair_params){
-        pair_params_double.emplace_back(transform_vector1d(str1));
-    }
-    return pair_params_double;
-}
-const vector3i ParsePolymlpYaml::get_pair_params_conditional(){
-
-    vector3i pair_params_conditional_int(pair_params_conditional.size());
-    int i = 0;
-    for (auto& str1: pair_params_conditional){
-        for (auto& str2: str1){
-            pair_params_conditional_int[i].emplace_back(transform_vector1i(str2));
-        }
-        ++i;
-    }
-    return pair_params_conditional_int;
-}
-
-const int ParsePolymlpYaml::get_type_full(){
-    return std::stoi(params["type_full"][0]);
-}
-const vector1i ParsePolymlpYaml::get_type_indices(){
-    return transform_vector1i(params["type_indices"]);
-}
-
 
 void parse_polymlp(
     const char *file,
@@ -225,23 +111,44 @@ void parse_polymlp(
     vector1d& mass
 ){
 
+    std::ifstream input(file);
+    if (input.fail()){
+        std::cerr << "Error: Could not open mlp file: " << file << "\n";
+        exit(8);
+    }
+
     fp.force = true;
-    auto yaml = ParsePolymlpYaml("polymlp.yaml");
 
-    ele = yaml.get_elements();
+    // line 1: elements
+    parse_elements(input, ele);
     fp.n_type = int(ele.size());
-    fp.cutoff = yaml.get_cutoff();
-    fp.pair_type = yaml.get_pair_type();
-    fp.feature_type = yaml.get_feature_type();
-    fp.model_type = yaml.get_model_type();
-    fp.maxp = yaml.get_max_p();
-    fp.maxl = yaml.get_max_l();
 
+    // line 2-7: cutoff radius, pair type, descriptor type, model_type, max power, max l
+    parse_basic_params(input, fp);
+
+    // line 8-10: gtinv_order, gtinv_maxl and gtinv_sym (optional)
+    int gtinv_order;
+    vector1i gtinv_maxl;
+    std::vector<bool> gtinv_sym;
     if (fp.feature_type == "gtinv"){
-        int gtinv_order = yaml.get_gtinv_order();
-        auto gtinv_maxl = yaml.get_gtinv_maxl();
-        std::vector<bool> gtinv_sym = yaml.get_gtinv_sym();
-        int version = yaml.get_gtinv_version();
+        gtinv_order = parse_gtinv_params(input, gtinv_maxl, gtinv_sym);
+    }
+
+    // line 11: number of regression coefficients
+    // line 12,13: regression coefficients, scale coefficients
+    parse_reg_coeffs(input, reg_coeffs);
+
+    // line 14: number of gaussian parameters
+    // line 15-: gaussian parameters
+    const int n_params = parse_gaussians(input, fp);
+
+    // atomic mass, electrostatic
+    mass = get_value_array<double>(input, ele.size());
+    const bool icharge = get_value<bool>(input);
+
+    // gtinv version and set gtinv attributes (optional)
+    if (fp.feature_type == "gtinv"){
+        int version = get_value<int>(input);
         if (version != 2) version = 1;
 
         // version must be implemented.
@@ -251,15 +158,11 @@ void parse_polymlp(
         fp.lm_coeffs = rgt.get_lm_coeffs();
     }
 
-    reg_coeffs = yaml.get_coeffs();
-    for (auto& c: reg_coeffs) c *= 2.0;
+    // params_conditional (optional)
+    parse_params_conditional(input, fp);
 
-    fp.params = yaml.get_pair_params();
-    fp.params_conditional = yaml.get_pair_params_conditional();
-
-    mass = yaml.get_mass();
-    const bool icharge = false;
     // type_indices (optional)
-    vector1i type_indices = yaml.get_type_indices();
+    vector1i type_indices;
+    bool n_type_full = parse_type_indices(input, fp, type_indices);
 
 }

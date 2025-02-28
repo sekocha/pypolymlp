@@ -10,7 +10,6 @@
 
 #include <iostream>
 #include <fstream>
-#include <sstream>
 #include <vector>
 #include <set>
 #include <unordered_map>
@@ -36,12 +35,6 @@ using vector1dc = std::vector<dc>;
 using vector2dc = std::vector<vector1dc>;
 using vector3dc = std::vector<vector2dc>;
 using vector4dc = std::vector<vector3dc>;
-using vector1str = std::vector<std::string>;
-using vector2str = std::vector<vector1str>;
-using vector3str = std::vector<vector2str>;
-using vector4str = std::vector<vector3str>;
-using vector1b = std::vector<bool>;
-
 
 template<typename T>
 void print_time(clock_t& start, clock_t& end, const T& memo){
