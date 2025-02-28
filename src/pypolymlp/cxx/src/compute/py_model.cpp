@@ -41,13 +41,8 @@ PyModel::PyModel(const py::dict& params_dict,
     const int total_n_data = n_data[0] + n_data[1] + n_data[2];
 
     if (print_memory == true){
-        std::cout << " matrix shape (X) = ("
+        std::cout << " matrix shape (X): ("
             << total_n_data << "," << n_features << ")" << std::endl;
-        std::cout << std::fixed << std::setprecision(2);
-        std::cout << " Estimated memory allocation = "
-            << double(total_n_data) * double(n_features) * 8e-9
-            << " (GB)" << std::endl;
-        std::cout << std::fixed << std::setprecision(10);
     }
 
     x_all = Eigen::MatrixXd(total_n_data, n_features);

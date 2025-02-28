@@ -34,29 +34,32 @@ void ModelParams::initial_setting(const feature_params& fp, const Mapping& mappi
 void ModelParams::polynomial_setting(const feature_params& fp, const Mapping& mapping){
 
     vector1i polynomial_indices;
-    if (fp.model_type == 2){
+    if (fp.model_type == 2 or fp.model_type == 12){
         for (int n = 0; n < n_linear_features; ++n){
             polynomial_indices.emplace_back(n);
         }
     }
-    else if (fp.model_type == 3 and fp.feature_type == "gtinv"){
-        for (int n = 0; n < n_linear_features; ++n){
-            if (linear_terms[n].order == 1) polynomial_indices.emplace_back(n);
-        }
-    }
-    else if (fp.model_type == 4 and fp.feature_type == "gtinv"){
-        for (int n = 0; n < n_linear_features; ++n){
-            if (linear_terms[n].order < 3) polynomial_indices.emplace_back(n);
-        }
-    }
-    else if (fp.model_type > 2 and fp.feature_type == "pair"){
+    else if (fp.feature_type == "pair" and fp.model_type > 2){
         std::cerr << "Polymlp: Model type error." << std::endl;
         exit(8);
     }
-    else if (fp.model_type > 4 and fp.feature_type == "gtinv"){
-        std::cerr << "Polymlp: Model type error." << std::endl;
-        exit(8);
+    else if (fp.feature_type == "gtinv"){
+        if (fp.model_type == 3 or fp.model_type == 13){
+            for (int n = 0; n < n_linear_features; ++n){
+                if (linear_terms[n].order == 1) polynomial_indices.emplace_back(n);
+            }
+        }
+        else if (fp.model_type == 4 or fp.model_type == 14){
+            for (int n = 0; n < n_linear_features; ++n){
+                if (linear_terms[n].order < 3) polynomial_indices.emplace_back(n);
+            }
+        }
+        else if (fp.model_type > 4){
+            std::cerr << "Polymlp: Model type error." << std::endl;
+            exit(8);
+        }
     }
+    if (fp.model_type > 11) find_active_clusters(fp);
 
     comb1_indices.resize(n_type);
     comb2_indices.resize(n_type);
@@ -64,16 +67,24 @@ void ModelParams::polynomial_setting(const feature_params& fp, const Mapping& ma
 
     if (fp.feature_type == "pair"){
         combination1(mapping);
-        if (fp.model_type > 1){
+        if (fp.model_type > 1 and fp.model_type < 5){
             if (fp.maxp > 1) combination2(polynomial_indices, mapping);
             if (fp.maxp > 2) combination3(polynomial_indices, mapping);
+        }
+        else if (fp.model_type > 11){
+            if (fp.maxp > 1) combination2_cutoff(polynomial_indices, mapping);
+            if (fp.maxp > 2) combination3_cutoff(polynomial_indices, mapping);
         }
     }
     else if (fp.feature_type == "gtinv"){
         combination1_gtinv();
-        if (fp.model_type > 1){
+        if (fp.model_type > 1 and fp.model_type < 5){
             if (fp.maxp > 1) combination2_gtinv(polynomial_indices);
             if (fp.maxp > 2) combination3_gtinv(polynomial_indices);
+        }
+        else if (fp.model_type > 11){
+            if (fp.maxp > 1) combination2_gtinv_cutoff(polynomial_indices);
+            if (fp.maxp > 2) combination3_gtinv_cutoff(polynomial_indices);
         }
     }
 
@@ -203,6 +214,41 @@ int ModelParams::find_tp_comb_id(const vector2i& tp_comb_ref, const vector1i& tp
     return index;
 }
 
+
+void ModelParams::find_active_clusters(const feature_params& fp){
+
+    if (fp.maxp > 1){
+        double cutoff = 0.0;
+        for (const auto& p: fp.params) cutoff += p[0];
+        cutoff *= 2.5 / fp.params.size();
+
+        vector1i narray;
+        for (int n1 = 0; n1 < fp.params.size(); ++n1){
+            for (int n2 = 0; n2 < fp.params.size(); ++n2){
+                narray = {n1, n2};
+                if (fabs(fp.params[n1][1] - fp.params[n2][1]) < cutoff){
+                    active_clusters[narray] = true;
+                }
+                else {
+                    active_clusters[narray] = false;
+                }
+                if (fp.maxp > 2){
+                    for (int n3 = 0; n3 < fp.params.size(); ++n3){
+                        narray = {n1, n2, n3};
+                        if (fabs(fp.params[n1][1] - fp.params[n3][1]) < cutoff
+                                and fabs(fp.params[n2][1] - fp.params[n3][1]) < cutoff){
+                            active_clusters[narray] = true;
+                        }
+                        else {
+                            active_clusters[narray] = false;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 void ModelParams::combination1_gtinv(){
 
     for (size_t i_comb = 0; i_comb < linear_terms.size(); ++i_comb){
@@ -234,6 +280,7 @@ void ModelParams::combination2_gtinv(const vector1i& iarray){
     }
 }
 
+
 void ModelParams::combination3_gtinv(const vector1i& iarray){
 
     vector2i type_array;
@@ -258,6 +305,64 @@ void ModelParams::combination3_gtinv(const vector1i& iarray){
         }
     }
 }
+
+void ModelParams::combination2_gtinv_cutoff(const vector1i& iarray){
+
+    vector2i type_array;
+    vector1i intersection;
+    int i_comb(0);
+    for (size_t i1 = 0; i1 < iarray.size(); ++i1){
+        const auto& type1_1 = linear_terms[iarray[i1]].type1;
+        const auto& n1 = linear_terms[iarray[i1]].n;
+        for (size_t i2 = 0; i2 <= i1; ++i2){
+            const auto& type1_2 = linear_terms[iarray[i2]].type1;
+            const auto& n2 = linear_terms[iarray[i2]].n;
+            if (active_clusters[vector1i({n1, n2})] == true){
+                type_array = {type1_1, type1_2};
+                intersection = intersection_types_in_polynomial(type_array);
+                if (intersection.size() > 0){
+                    comb2.push_back(vector1i({iarray[i2], iarray[i1]}));
+                    for (const auto& type: intersection){
+                        comb2_indices[type].emplace_back(i_comb);
+                    }
+                    ++i_comb;
+                }
+            }
+        }
+    }
+}
+
+
+void ModelParams::combination3_gtinv_cutoff(const vector1i& iarray){
+
+    vector2i type_array;
+    vector1i intersection;
+    int i_comb(0);
+    for (size_t i1 = 0; i1 < iarray.size(); ++i1){
+        const auto& type1_1 = linear_terms[iarray[i1]].type1;
+        const auto& n1 = linear_terms[iarray[i1]].n;
+        for (size_t i2 = 0; i2 <= i1; ++i2){
+            const auto& type1_2 = linear_terms[iarray[i2]].type1;
+            const auto& n2 = linear_terms[iarray[i2]].n;
+            for (size_t i3 = 0; i3 <= i2; ++i3){
+                const auto& type1_3 = linear_terms[iarray[i3]].type1;
+                const auto& n3 = linear_terms[iarray[i3]].n;
+                if (active_clusters[vector1i({n1, n2, n3})] == true){
+                    type_array = {type1_1, type1_2, type1_3};
+                    intersection = intersection_types_in_polynomial(type_array);
+                    if (intersection.size() > 0){
+                        comb3.push_back(vector1i({iarray[i3], iarray[i2], iarray[i1]}));
+                        for (const auto& type: intersection){
+                            comb3_indices[type].emplace_back(i_comb);
+                        }
+                        ++i_comb;
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 vector1i ModelParams::intersection_types_in_polynomial(
     const vector2i &type1_array
@@ -338,6 +443,67 @@ void ModelParams::combination3(const vector1i& iarray, const Mapping& mapping){
                     if (check_type_in_type_pairs(vector1i({tp1, tp2, tp3}), type1) == true){
                         comb3_indices[type1].emplace_back(i_comb);
                         match = true;
+                    }
+                }
+                if (match == true) {
+                    comb3.push_back(vector1i({iarray[i3], iarray[i2], iarray[i1]}));
+                    ++i_comb;
+                }
+            }
+        }
+    }
+}
+
+void ModelParams::combination2_cutoff(const vector1i& iarray, const Mapping& mapping){
+
+    const auto& ntp_attrs = mapping.get_ntp_attrs();
+    int i_comb(0), tp1, tp2;
+    bool match;
+    for (size_t i1 = 0; i1 < iarray.size(); ++i1){
+        tp1 = ntp_attrs[iarray[i1]].tp;
+        const auto& n1 = ntp_attrs[iarray[i1]].n;
+        for (size_t i2 = 0; i2 <= i1; ++i2){
+            tp2 = ntp_attrs[iarray[i2]].tp;
+            const auto& n2 = ntp_attrs[iarray[i2]].n;
+            match = false;
+            if (active_clusters[vector1i({n1, n2})] == true){
+                for (int type1 = 0; type1 < n_type; ++type1){
+                    if (check_type_in_type_pairs(vector1i({tp1, tp2}), type1) == true){
+                        comb2_indices[type1].emplace_back(i_comb);
+                        match = true;
+                    }
+                }
+            }
+            if (match == true) {
+                comb2.push_back(vector1i({iarray[i2], iarray[i1]}));
+                ++i_comb;
+            }
+        }
+    }
+
+}
+
+void ModelParams::combination3_cutoff(const vector1i& iarray, const Mapping& mapping){
+
+    const auto& ntp_attrs = mapping.get_ntp_attrs();
+    int i_comb(0), tp1, tp2, tp3;
+    bool match;
+    for (size_t i1 = 0; i1 < iarray.size(); ++i1){
+        tp1 = ntp_attrs[iarray[i1]].tp;
+        const auto& n1 = ntp_attrs[iarray[i1]].n;
+        for (size_t i2 = 0; i2 <= i1; ++i2){
+            tp2 = ntp_attrs[iarray[i2]].tp;
+            const auto& n2 = ntp_attrs[iarray[i2]].n;
+            for (size_t i3 = 0; i3 <= i2; ++i3){
+                tp3 = ntp_attrs[iarray[i3]].tp;
+                const auto& n3 = ntp_attrs[iarray[i3]].n;
+                match = false;
+                if (active_clusters[vector1i({n1, n2, n3})] == true){
+                    for (int type1 = 0; type1 < n_type; ++type1){
+                        if (check_type_in_type_pairs(vector1i({tp1, tp2, tp3}), type1) == true){
+                            comb3_indices[type1].emplace_back(i_comb);
+                            match = true;
+                        }
                     }
                 }
                 if (match == true) {

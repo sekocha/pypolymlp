@@ -1,6 +1,6 @@
 /****************************************************************************
 
-        Copyright (C) 2024 Atsuto Seko
+        Copyright (C) 2025 Atsuto Seko
                 seko@cms.mtl.kyoto-u.ac.jp
 
 *****************************************************************************/
@@ -11,20 +11,9 @@
 #include "polymlp_mlpcpp.h"
 #include "polymlp_read_gtinv.h"
 
-
-void parse_elements(
-    std::ifstream& input, std::vector<std::string>& ele
-);
-void parse_basic_params(std::ifstream& input, feature_params& fp);
-int parse_gtinv_params(
-    std::ifstream& input,
-    vector1i& gtinv_maxl,
-    std::vector<bool>& gtinv_sym
-);
-void parse_reg_coeffs(std::ifstream& input, vector1d& reg_coeffs);
-int parse_gaussians(std::ifstream& input, feature_params& fp);
-void parse_params_conditional(std::ifstream& input);
-bool parse_type_indices(std::ifstream& input, vector1i& type_indices);
+std::string replace(std::string target, std::string str1, std::string str2);
+vector1str split(const std::string& s, char delim);
+vector1str split_list(const std::string& s);
 
 void parse_polymlp(
     const char *file,
@@ -34,53 +23,45 @@ void parse_polymlp(
     vector1d& mass
 );
 
-template<typename T>
-T get_value(std::ifstream& input){
+class ParsePolymlpYaml {
 
-    std::string line;
-    std::stringstream ss;
+    std::unordered_map<std::string, vector1str> params;
+    vector2str pair_params;
+    vector3str pair_params_conditional;
 
-    T val;
-    std::getline( input, line );
-    ss << line;
-    ss >> val;
+    void assign_exceptional_parameters(std::ifstream& ifs, const std::string& key);
+    vector2str parse_2d(std::ifstream& ifs, const int n_lines);
 
-    return val;
-}
+    vector1i transform_vector1i(vector1str& strings);
+    vector1d transform_vector1d(vector1str& strings);
 
-template<typename T>
-T get_value(std::ifstream& input, std::string& tag){
+    public:
 
-    std::string line;
-    std::stringstream ss;
+    ParsePolymlpYaml();
+    ParsePolymlpYaml(const char *file);
+    ~ParsePolymlpYaml();
 
-    T val;
-    std::getline( input, line );
-    ss << line;
-    ss >> val;
-    ss >> tag;
-    ss >> tag;
+    const vector1str& get_elements();
+    const double get_cutoff();
+    const std::string& get_pair_type();
+    const std::string& get_feature_type();
+    const int get_max_p();
+    const int get_max_l();
+    const int get_model_type();
 
-    return val;
-}
+    const int get_gtinv_order();
+    const int get_gtinv_version();
+    const vector1i get_gtinv_maxl();
+    const vector1b get_gtinv_sym();
 
-template<typename T>
-std::vector<T> get_value_array(std::ifstream& input, const int& size){
+    const vector1d get_mass();
+    const vector1d get_coeffs();
+    const vector2d get_pair_params();
+    const vector3i get_pair_params_conditional();
 
-    std::string line;
-    std::stringstream ss;
+    const int get_type_full();
+    const vector1i get_type_indices();
+};
 
-    std::vector<T> array(size);
-
-    std::getline( input, line );
-    ss << line;
-    T val;
-    for (int i = 0; i < array.size(); ++i){
-        ss >> val;
-        array[i] = val;
-    }
-
-    return array;
-}
 
 #endif

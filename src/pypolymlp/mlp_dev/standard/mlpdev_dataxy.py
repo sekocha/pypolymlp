@@ -52,28 +52,65 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
 
         self._n_features = None
 
-    def run(self, batch_size=128, element_swap=False):
+    def run(
+        self,
+        batch_size=128,
+        n_features_threshold: int = 50000,
+        element_swap=False,
+    ):
 
-        self.run_train(batch_size=batch_size, element_swap=element_swap)
-        self.run_test(batch_size=batch_size, element_swap=element_swap)
+        self.run_train(
+            batch_size=batch_size,
+            n_features_threshold=n_features_threshold,
+            element_swap=element_swap,
+        )
+        self.run_test(
+            batch_size=batch_size,
+            n_features_threshold=n_features_threshold,
+            element_swap=element_swap,
+        )
         return self
 
-    def run_train(self, batch_size=128, element_swap=False):
+    def run_train(
+        self,
+        batch_size=128,
+        n_features_threshold: int = 50000,
+        element_swap=False,
+    ):
         self.train_xy = self.compute_products(
             self.train,
             scales=None,
             batch_size=batch_size,
+            n_features_threshold=n_features_threshold,
             element_swap=element_swap,
         )
         return self
 
-    def run_test(self, batch_size=128, element_swap=False):
+    def run_test(
+        self,
+        batch_size=128,
+        n_features_threshold: int = 50000,
+        element_swap=False,
+    ):
         self.test_xy = self.compute_products(
             self.test,
             scales=self._scales,
             batch_size=batch_size,
+            n_features_threshold=n_features_threshold,
             element_swap=element_swap,
         )
+
+    def _estimate_peak_memory(
+        self, n_data: int, n_features: int, n_features_threshold: int
+    ):
+        """Estimate peak memory required for allocating X and X.T @ X."""
+        if n_features > n_features_threshold:
+            peak_mem1 = (n_features**2) * 2
+            peak_mem2 = n_features**2 + n_data * n_features
+            peak_mem = max(peak_mem1, peak_mem2)
+        else:
+            peak_mem = (n_features**2) * 2 + n_data * n_features
+        return peak_mem
 
     def _compute_products_single_batch(
         self,
@@ -81,7 +118,8 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
         data_xy: PolymlpDataXY,
         scales: Optional[np.ndarray] = None,
         element_swap: bool = False,
-        n_features_threshold: int = 30000,
+        n_features_threshold: int = 50000,
+        n_batch: int = 10,
     ):
         features = self.features_class(
             self.params,
@@ -92,14 +130,15 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
         x = features.x
         first_indices = features.first_indices[0]
         ne, _, _ = features.n_data
+        n_data, self._n_features = x.shape
 
         if self.verbose:
-            peak_mem1 = (x.shape[0] * x.shape[1] + x.shape[1] * x.shape[1]) * 8e-9
-            peak_mem2 = (x.shape[1] * x.shape[1] * 2) * 8e-9
-            peak_mem = max(peak_mem1, peak_mem2)
+            peak = self._estimate_peak_memory(
+                n_data, self._n_features, n_features_threshold
+            )
             print(
-                " Peak memory allocation (X, X.T @ X):",
-                np.round(peak_mem, 2),
+                " Estimated peak memory allocation (X.T @ X, X):",
+                np.round(peak * 8e-9, 2),
                 "(GB)",
                 flush=True,
             )
@@ -111,7 +150,6 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
                 data_xy.xe_sq_sum, np.sum(np.square(xe), axis=0)
             )
 
-        n_data, self._n_features = x.shape
         y = np.zeros(n_data)
         w = np.ones(n_data)
         data_xy.total_n_data += n_data
@@ -128,7 +166,7 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
         if self.verbose:
             print("Compute X.T @ X", flush=True)
         if self._n_features > n_features_threshold:
-            data_xy.xtx = self._sum_large_xtx(data_xy.xtx, x)
+            data_xy.xtx = self._sum_large_xtx(data_xy.xtx, x, n_batch=n_batch)
         else:
             data_xy.xtx = self._sum_array(data_xy.xtx, x.T @ x)
 
@@ -146,8 +184,9 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
         dft_list: list[PolymlpDataDFT],
         scales: Optional[np.ndarray] = None,
         batch_size: int = 128,
-        n_features_threshold: int = 30000,
+        n_features_threshold: int = 50000,
         element_swap: bool = False,
+        n_batch: int = 10,
     ):
 
         data_xy = PolymlpDataXY()
@@ -167,10 +206,11 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
                     scales=scales,
                     element_swap=element_swap,
                     n_features_threshold=n_features_threshold,
+                    n_batch=n_batch,
                 )
 
         if self._n_features > n_features_threshold:
-            data_xy.xtx = self._large_transpose_xtx(data_xy.xtx)
+            data_xy.xtx = self._large_transpose_xtx(data_xy.xtx, n_batch=n_batch)
 
         if scales is None:
             n_data = sum([len(d.energies) for d in dft_list])
@@ -188,41 +228,35 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
 
         return data_xy
 
-    def _sum_array(self, array1, array2):
-
+    def _sum_array(self, array1: np.ndarray, array2: np.ndarray):
+        """Add x.T @ x to xtx."""
         if array1 is None:
             return array2
         array1 += array2
         return array1
 
-    def _sum_large_xtx(self, xtx, x, n_batch=4):
-
+    def _sum_large_xtx(self, xtx: np.ndarray, x: np.ndarray, n_batch: int = 10):
+        """Add x.T @ x to large xtx using batch calculations."""
         n_features = x.shape[1]
         if xtx is None:
             xtx = np.zeros((n_features, n_features))
-            bool_sum = False
-        else:
-            bool_sum = True
 
         if n_features < n_batch:
             xtx += x.T @ x
-        else:
-            begin_ids, end_ids = get_batch_slice(n_features, n_features // n_batch)
-            for i, (begin_row, end_row) in enumerate(zip(begin_ids, end_ids)):
-                if self.verbose:
-                    print("Batch:", end_row, "/", n_features, flush=True)
-                for j, (begin_col, end_col) in enumerate(zip(begin_ids, end_ids)):
-                    if i <= j and bool_sum:
-                        xtx[begin_row:end_row, begin_col:end_col] += (
-                            x[:, begin_row:end_row].T @ x[:, begin_col:end_col]
-                        )
-                    elif i <= j and not bool_sum:
-                        xtx[begin_row:end_row, begin_col:end_col] = (
-                            x[:, begin_row:end_row].T @ x[:, begin_col:end_col]
-                        )
+            return xtx
+
+        begin_ids, end_ids = get_batch_slice(n_features, n_features // n_batch)
+        for i, (begin_row, end_row) in enumerate(zip(begin_ids, end_ids)):
+            if self.verbose:
+                print("Batch:", end_row, "/", n_features, flush=True)
+            x1 = x[:, begin_row:end_row].T
+            for j, (begin_col, end_col) in enumerate(zip(begin_ids, end_ids)):
+                if i <= j:
+                    prod = x1 @ x[:, begin_col:end_col]
+                    xtx[begin_row:end_row, begin_col:end_col] += prod
         return xtx
 
-    def _large_transpose_xtx(self, xtx, n_batch=4):
+    def _large_transpose_xtx(self, xtx: np.ndarray, n_batch: int = 10):
         n_features = xtx.shape[0]
         begin_ids, end_ids = get_batch_slice(n_features, n_features // n_batch)
         for i, (begin_row, end_row) in enumerate(zip(begin_ids, end_ids)):
