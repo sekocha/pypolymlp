@@ -6,6 +6,7 @@ from math import sqrt
 from typing import Optional
 
 import numpy as np
+import scipy
 from scipy.linalg.lapack import get_lapack_funcs
 
 from pypolymlp.core.data_format import (
@@ -79,6 +80,17 @@ class RegressionBase(ABC):
         """
         (posv,) = get_lapack_funcs(("posv",), (A, b))
         _, x, _ = posv(A, b, lower=False, overwrite_a=False, overwrite_b=False)
+        return x
+
+    def solve_linear_equation_cg(
+        self,
+        A: np.ndarray,
+        b: np.ndarray,
+        x0: Optional[np.ndarray] = None,
+        rtol: float = 1e-10,
+    ):
+        """Solve Ax = b using CG."""
+        x, exit_code = scipy.sparse.linalg.cg(A, b, x0=x0, rtol=rtol)
         return x
 
     def compute_inner_products(self, X=None, y=None, A=None, Xy=None):
