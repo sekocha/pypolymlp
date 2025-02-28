@@ -44,6 +44,7 @@ class ModelParams{
     vector3i tp_combs, nonzero_n_list;
 
     std::vector<struct LinearTerm> linear_terms;
+    std::unordered_map<vector1i,bool,HashVI> active_clusters;
 
     void initial_setting(const feature_params& fp, const Mapping& mapping);
     void polynomial_setting(const feature_params& fp, const Mapping& mapping);
@@ -62,9 +63,14 @@ class ModelParams{
     void combination1_gtinv();
     void combination2_gtinv(const vector1i& iarray);
     void combination3_gtinv(const vector1i& iarray);
-    void combination2_gtinv_distance(const feature_params& fp, const vector1i& iarray);
-    vector1i intersection_types_in_polynomial(const vector2i &type1_array);
 
+    void find_active_clusters(const feature_params& fp);
+    void combination2_cutoff(const vector1i& iarray, const Mapping& mapping);
+    void combination3_cutoff(const vector1i& iarray, const Mapping& mapping);
+    void combination2_gtinv_cutoff(const vector1i& iarray);
+    void combination3_gtinv_cutoff(const vector1i& iarray);
+
+    vector1i intersection_types_in_polynomial(const vector2i &type1_array);
     int seq2typecomb(const int& seq);
 
     public:
