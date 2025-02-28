@@ -1,5 +1,8 @@
 # MLP development
 
+If version <= 0.8.0 is used, polymlp files are generated in a text format as `polymlp.lammps`.
+If a newer version (>= 0.9.0) is used, polymlp files are generated in a yaml format as `polymlp.yaml`.
+
 ```
 > pypolymlp -i polymlp.in
 > cat polymlp.in
