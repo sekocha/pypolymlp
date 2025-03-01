@@ -32,8 +32,8 @@ def get_features_attr(params: PolymlpParams, element_swap: bool = False):
 
 def write_polymlp_params_yaml(params, filename="polymlp_params.yaml"):
 
+    np.set_printoptions(legacy="1.21")
     f = open(filename, "w")
-
     features_attr, polynomial_attr, atomtype_pair_dict = get_features_attr(params)
 
     elements = np.array(params.elements)

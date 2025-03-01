@@ -74,6 +74,7 @@ class PolymlpDevAccuracy:
         initialize=True,
     ):
 
+        np.set_printoptions(legacy="1.21")
         if initialize:
             f = open(filename, "w")
             print("units:", file=f)
