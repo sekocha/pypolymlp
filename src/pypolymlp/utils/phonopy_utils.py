@@ -66,7 +66,7 @@ def phonopy_supercell(
 
 def compute_forces_phonopy_displacements(
     ph: Phonopy,
-    pot: str = "polymlp.lammps",
+    pot: str = "polymlp.yaml",
     distance: float = 0.01,
 ) -> np.ndarray:
     """Compute forces using phonopy object and polymlp.

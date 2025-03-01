@@ -372,7 +372,7 @@ if __name__ == "__main__":
         "--pot",
         nargs="*",
         type=str,
-        default="polymlp.lammps",
+        default="polymlp.yaml",
         help="polymlp file",
     )
     parser.add_argument(

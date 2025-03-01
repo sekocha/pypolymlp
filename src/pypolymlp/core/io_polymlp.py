@@ -94,3 +94,12 @@ def load_mlps(file_list_or_file):
         return params_array, coeffs_array
 
     return load_mlp(file_list_or_file)
+
+
+def convert_to_yaml(
+    txt: Union[str, io.IOBase] = "polymlp.lammps",
+    yaml: str = "polymlp.yaml",
+):
+    """Convert text format to yaml format."""
+    params, coeffs = load_mlp(txt)
+    save_mlp(params, coeffs, np.ones(len(coeffs)), filename=yaml)

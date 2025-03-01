@@ -91,7 +91,7 @@ def run():
         "--pot",
         nargs="*",
         type=str,
-        default="polymlp.lammps",
+        default="polymlp.yaml",
         help="polymlp file",
     )
     parser.add_argument(

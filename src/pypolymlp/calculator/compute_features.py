@@ -37,7 +37,7 @@ def compute_from_polymlp_lammps(
     return_mlp_dict: bool = True,
     return_features_obj: bool = False,
 ):
-    """Compute features from polymlp.lammps file or PolymlpParams object.
+    """Compute features from polymlp file or PolymlpParams object.
 
     Parameters
     ----------
@@ -49,7 +49,7 @@ def compute_from_polymlp_lammps(
     """
     if pot is not None:
         if len(pot) > 1:
-            raise NotImplementedError("Only single polymlp.lammps file is available.")
+            raise NotImplementedError("Only single polymlp file is available.")
         params, coeffs = load_mlp(filename=pot[0])
 
     params.include_force = force
