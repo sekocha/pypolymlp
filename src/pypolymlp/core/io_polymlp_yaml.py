@@ -23,6 +23,7 @@ def save_mlp_yaml(
     """Generate polymlp.yaml file for single polymlp model"""
     model = params.model
 
+    np.set_printoptions(legacy="1.21")
     f = open(filename, "w")
     elements_str = "[" + ", ".join(["{0}".format(x) for x in params.elements]) + "]"
     print("elements:     ", elements_str, file=f)
@@ -37,7 +38,7 @@ def save_mlp_yaml(
     if model.feature_type == "gtinv":
         gtinv = model.gtinv
         print("gtinv_order:  ", gtinv.order, file=f)
-        print("gtinv_maxl:   ", gtinv.max_l, file=f)
+        print("gtinv_maxl:   ", list(gtinv.max_l), file=f)
         print("gtinv_sym:    ", [0 for _ in gtinv.max_l], file=f)
         print("gtinv_version:", gtinv.version, file=f)
         print("", file=f)
