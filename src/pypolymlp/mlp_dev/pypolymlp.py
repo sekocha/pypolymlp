@@ -14,7 +14,7 @@ from pypolymlp.core.data_format import (
 from pypolymlp.core.displacements import get_structures_from_displacements
 from pypolymlp.core.interface_datasets import set_dataset_from_structures
 from pypolymlp.core.interface_vasp import parse_structures_from_poscars
-from pypolymlp.core.io_polymlp import load_mlp
+from pypolymlp.core.io_polymlp import convert_to_yaml, load_mlp
 from pypolymlp.core.polymlp_params import (
     set_active_gaussian_params,
     set_element_properties,
@@ -555,7 +555,7 @@ class Pypolymlp:
         """Load poscar files and convert them to structure instances."""
         return parse_structures_from_poscars(poscars)
 
-    def save_mlp(self, filename="polymlp.yaml", yaml: bool = True):
+    def save_mlp(self, filename: str = "polymlp.yaml", yaml: bool = True):
         """Save polynomial MLP as file.
 
         When hybrid models are used, mlp files will be generated as
@@ -566,7 +566,7 @@ class Pypolymlp:
         else:
             self._reg.save_mlp_lammps(filename=filename)
 
-    def load_mlp(self, filename="polymlp.yaml"):
+    def load_mlp(self, filename: str = "polymlp.yaml"):
         """Load polynomial MLP from file."""
         # TODO: hybrid is not available.
         self._params, coeffs = load_mlp(filename)
@@ -574,6 +574,14 @@ class Pypolymlp:
             coeffs=coeffs,
             scales=np.ones(len(coeffs)),
         )
+
+    def convert_to_yaml(
+        self,
+        filename_txt: str = "polymlp.lammps",
+        filename_yaml: str = "polymlp.yaml",
+    ):
+        """Convert polymlp.lammps to polymlp.yaml."""
+        convert_to_yaml(filename_txt, filename_yaml)
 
     def save_parameters(self, filename="polymlp_params.yaml"):
         """Save MLP parameters as file."""

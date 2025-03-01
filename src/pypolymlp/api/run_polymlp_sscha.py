@@ -31,7 +31,7 @@ def run():
         nargs="*",
         type=str,
         default=None,
-        help="polymlp.lammps file",
+        help="polymlp files",
     )
     parser.add_argument(
         "--supercell",
