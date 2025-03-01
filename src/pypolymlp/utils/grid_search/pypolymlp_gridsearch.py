@@ -50,6 +50,7 @@ class ParamsGrid:
     nums_gaussians: tuple = (7, 10, 13)
     model_types: tuple = (2, 3, 4)
     maxps: tuple = (2, 3)
+    gaussian_width: float = 1.0
 
     gtinv: bool = True
     gtinv_order_ub: int = 3
@@ -63,10 +64,29 @@ class ParamsGrid:
 
     def __post_init__(self):
         """Post init method."""
+        self._check_type()
         if self.gtinv:
             self._set_gtinv_params()
         else:
             self._set_pair_params()
+
+    def _check_type(self):
+        """Check types of variables."""
+        if isinstance(self.cutoffs, float):
+            self.cutoffs = [self.cutoffs]
+        if isinstance(self.nums_gaussians, int):
+            self.nums_gaussians = [self.nums_gaussians]
+        if isinstance(self.model_types, int):
+            self.model_types = [self.model_types]
+        if isinstance(self.maxps, int):
+            self.maxps = [self.maxps]
+        if isinstance(self.gtinv_maxl_ub, int):
+            self.gtinv_maxl_ub = [self.gtinv_maxl_ub]
+        if isinstance(self.gtinv_maxl_int, int):
+            self.gtinv_maxl_int = [self.gtinv_maxl_int]
+
+        if len(self.reg_alpha_params) != 3:
+            raise RuntimeError("len(reg_alpha_params) must be three.")
 
     def get_model_types_pair(self):
         """Set parameters for enumerating pair models"""
@@ -112,7 +132,45 @@ class ParamsGrid:
 
 
 class PolymlpGridSearch:
-    """API Class for performing grid search for finding optimal MLPs."""
+    """API Class for performing grid search for finding optimal MLPs.
+
+    Examples
+    --------
+    (Single models)
+    grid1 = PolymlpGridSearch(elements=["Al"], verbose=True)
+    grid1.set_params(
+        cutoffs = (6.0, 8.0),
+        nums_gaussians = (7, 10),
+        model_types = (3, 4),
+        gtinv = True,
+        gtinv_order_ub = 3,
+        gtinv_maxl_ub = (12, 8, 2, 1, 1),
+        gtinv_maxl_int = (4, 4, 2, 1, 1),
+        include_force = True,
+        include_stress = True,
+        reg_alpha_params = (-4, 3, 8),
+    )
+    grid1.enum_gtinv_models()
+    grid1.save_models(path="./polymlps")
+
+    (Hybrid models)
+    grid2 = PolymlpGridSearch(elements=["Al"], verbose=True)
+    grid2.set_params(
+        cutoffs = (4.0),
+        nums_gaussians = (4),
+        model_types = (4),
+        gaussian_width = 0.5,
+        gtinv = True,
+        gtinv_order_ub = 3,
+        gtinv_maxl_ub = (12, 12, 2, 1, 1),
+        gtinv_maxl_int = (6, 6, 2, 1, 1),
+        include_force = True,
+        include_stress = True,
+        reg_alpha_params = (-4, 3, 8),
+    )
+    grid2.enum_gtinv_models()
+    save_hybrid_models(grid1.grid, grid2.grid)
+    """
 
     def __init__(self, elements: tuple, verbose: bool = False):
         """Init method."""
@@ -127,6 +185,7 @@ class PolymlpGridSearch:
         nums_gaussians: tuple = (7, 10, 13),
         model_types: tuple = (2, 3, 4),
         maxps: tuple = (2, 3),
+        gaussian_width: float = 1.0,
         gtinv: bool = True,
         gtinv_order_ub: int = 3,
         gtinv_maxl_ub: tuple = (12, 8, 2, 1, 1),
@@ -157,6 +216,7 @@ class PolymlpGridSearch:
             nums_gaussians=nums_gaussians,
             model_types=model_types,
             maxps=maxps,
+            gaussian_width=gaussian_width,
             gtinv=gtinv,
             gtinv_order_ub=gtinv_order_ub,
             gtinv_maxl_ub=gtinv_maxl_ub,
@@ -221,7 +281,11 @@ class PolymlpGridSearch:
                 max_l=max(gtinv_attr.max_l),
                 feature_type="gtinv",
                 gtinv=gtinv_attr,
-                pair_params_in1=(1.0, 1.0, 1),
+                pair_params_in1=(
+                    self._grid.gaussian_width,
+                    self._grid.gaussian_width,
+                    1,
+                ),
                 pair_params_in2=(0, cut - 1.0, n_gauss),
             )
             params = PolymlpParams(
@@ -247,7 +311,11 @@ class PolymlpGridSearch:
                 max_l=12,
                 feature_type="gtinv",
                 gtinv=gtinv_attr,
-                pair_params_in1=(1.0, 1.0, 1),
+                pair_params_in1=(
+                    self._grid.gaussian_width,
+                    self._grid.gaussian_width,
+                    1,
+                ),
                 pair_params_in2=(0, cut - 1.0, 15),
             )
             params = PolymlpParams(
@@ -274,3 +342,21 @@ class PolymlpGridSearch:
     def grid(self):
         """Return parameters on grid."""
         return self._grid_params
+
+
+def save_hybrid_models(
+    grid1: list[PolymlpParams],
+    grid2: list[PolymlpParams],
+    path: str = "./polymlps_hybrid",
+    first_id: int = 1,
+):
+    """Save input files of hybrid models."""
+    os.makedirs(path, exist_ok=True)
+    i = 0
+    for params1 in grid1:
+        for params2 in grid2:
+            path_mlp = path + "/polymlp-" + str(i + first_id).zfill(4)
+            os.makedirs(path_mlp, exist_ok=True)
+            save_params(params1, path_mlp + "/polymlp1.in")
+            save_params(params2, path_mlp + "/polymlp2.in")
+            i += 1
