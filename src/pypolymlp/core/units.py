@@ -15,6 +15,9 @@ EVtoJ = 1.602176634e-19
 # Convert eV to kJ/mol
 EVtoKJmol = 96.48533212331002
 
+# Convert eV to kbar
+EVtoKbar = 1602.1766208
+
 
 def kjmol_to_ev(e):
     return e / 96.48533212331002

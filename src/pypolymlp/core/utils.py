@@ -164,14 +164,6 @@ def mass_table():
     return mass_table
 
 
-def kjmol_to_ev(e):
-    return e / 96.48533212331002
-
-
-def ev_to_kjmol(e):
-    return e * 96.48533212331002
-
-
 def precision(x, alpha=0.0001):
 
     # std = np.std(x[:50], axis=0)

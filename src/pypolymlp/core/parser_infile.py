@@ -12,7 +12,7 @@ class InputParser:
     """Class of input parser."""
 
     def __init__(self, fname: str):
-
+        """Init method."""
         self._parse_infile(fname)
 
     def _parse_infile(self, fname: str):
@@ -97,45 +97,3 @@ class InputParser:
 
     def get_test(self):
         return self._test
-
-    # # deprecated
-    # def _get_gaussian_params(self, tag, gauss, default):
-
-    #     if tag in self._data:
-    #         params = self._data[tag]
-    #     else:
-    #         params = default
-    #     if len(params) != 3:
-    #         sentence = "Length " + tag + " is not compatible with its required size."
-    #         warnings.warn(sentence)
-    #     params = np.linspace(float(params[0]), float(params[1]), int(params[2]))
-
-    #     bool_conditional = False if len(gauss) == 0 else True
-    #     elements = self._data["elements"]
-    #     conditional_params = dict()
-    #     for g in gauss:
-    #         pair = tuple(sorted([g[3], g[4]], key=lambda x: elements.index(x)))
-    #         conditional_params[pair] = np.linspace(float(g[0]), float(g[1]), int(g[2]))
-    #         if len(g) != 5:
-    #             sentence = (
-    #                 "Length gaussian_params (conditional) is not compatible "
-    #                 "with its required size."
-    #             )
-    #             warnings.warn(sentence)
-
-    #     element_pairs = itertools.combinations_with_replacement(elements, 2)
-    #     for pair in element_pairs:
-    #         pair = tuple(sorted(pair, key=lambda x: elements.index(x)))
-    #         if pair not in conditional_params:
-    #             conditional_params[pair] = params
-
-    #     return params, conditional_params, bool_conditional
-
-    # # deprecated
-    # def get_gaussian_params(self, tag: str, default: Optional[Any] = None):
-    #     """Get Gaussian parameters specified by tag."""
-    #     if tag == "gaussian_params1":
-    #         gauss = self._gauss1
-    #     elif tag == "gaussian_params2":
-    #         gauss = self._gauss2
-    #     return self._get_gaussian_params(tag, gauss, default)

@@ -8,8 +8,7 @@ import numpy as np
 
 from pypolymlp.core.data_format import PolymlpDataDFT, PolymlpStructure
 from pypolymlp.core.interface_datasets import set_dataset_from_structures
-
-kbar_to_eV = 1 / 1602.1766208
+from pypolymlp.core.units import EVtoKbar
 
 
 def set_dataset_from_vaspruns(
@@ -39,7 +38,7 @@ def parse_properties_from_vaspruns(vaspruns: list[str]) -> tuple:
 
         energies.append(property_dict["energy"])
         forces.append(property_dict["force"])
-        sigma = property_dict["stress"] * st.volume * kbar_to_eV
+        sigma = property_dict["stress"] * st.volume / EVtoKbar
         stresses.append(sigma)
     return structures, (np.array(energies), forces, np.array(stresses))
 

@@ -50,6 +50,7 @@ class Pypolymlp:
 
         # TODO: set_params is not available for hybrid models at this time.
         self._hybrid = False
+        np.set_printoptions(legacy="1.21")
 
     def load_parameter_file(
         self,

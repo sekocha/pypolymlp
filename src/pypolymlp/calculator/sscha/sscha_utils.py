@@ -10,7 +10,7 @@ from phono3py.file_IO import read_fc2_from_hdf5
 
 from pypolymlp.calculator.sscha.sscha_params import SSCHAParameters
 from pypolymlp.core.data_format import PolymlpStructure
-from pypolymlp.core.utils import kjmol_to_ev
+from pypolymlp.core.units import kjmol_to_ev
 from pypolymlp.utils.phonopy_utils import phonopy_supercell, structure_to_phonopy_cell
 from pypolymlp.utils.yaml_utils import (
     load_cell,
