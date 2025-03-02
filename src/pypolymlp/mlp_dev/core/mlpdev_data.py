@@ -1,119 +1,44 @@
 """Class of preparing data structures for developing polymlp."""
 
-import copy
 from typing import Union
 
 import numpy as np
 
 from pypolymlp.core.data_format import PolymlpDataDFT, PolymlpParams
-from pypolymlp.core.parser_polymlp_params import ParamsParser
+from pypolymlp.core.parser_datasets import ParserDatasets
+from pypolymlp.core.parser_polymlp_params import (
+    parse_parameter_files,
+    set_common_params,
+)
 from pypolymlp.mlp_dev.core.features_attr import (
     get_num_features,
     write_polymlp_params_yaml,
 )
-from pypolymlp.mlp_dev.core.parser_datasets import ParserDatasets
-
-
-def get_variable_with_max_length(
-    multiple_params: list[PolymlpParams], key: str
-) -> list:
-
-    array = []
-    for single in multiple_params:
-        single_dict = single.as_dict()
-        if len(single_dict[key]) > len(array):
-            array = single_dict[key]
-    return array
-
-
-def set_common_params(multiple_params: list[PolymlpParams]) -> PolymlpParams:
-    """Set common parameters of multiple PolymlpParams."""
-    keys = set()
-    for single in multiple_params:
-        for k in single.as_dict().keys():
-            keys.add(k)
-
-    common_params = copy.copy(multiple_params[0])
-    n_type = max([single.n_type for single in multiple_params])
-    elements = get_variable_with_max_length(multiple_params, "elements")
-    atom_e = get_variable_with_max_length(multiple_params, "atomic_energy")
-
-    bool_element_order = [
-        single.element_order for single in multiple_params
-    ] is not None
-    element_order = elements if bool_element_order else None
-
-    common_params.n_type = n_type
-    common_params.elements = elements
-    common_params.element_order = element_order
-    common_params.atomic_energy = atom_e
-    return common_params
-
-
-def set_unique_types(
-    multiple_params: list[PolymlpParams],
-    common_params: PolymlpParams,
-):
-    """Set type indices for hybrid models."""
-    n_type = common_params.n_type
-    elements = common_params.elements
-    for single in multiple_params:
-        single.elements = sorted(single.elements, key=lambda x: elements.index(x))
-
-    for single in multiple_params:
-        if single.n_type == n_type:
-            single.type_full = True
-            single.type_indices = list(range(n_type))
-        else:
-            single.type_full = False
-            single.type_indices = [elements.index(ele) for ele in single.elements]
-    return multiple_params
 
 
 class PolymlpDevData:
     """Class of preparing data structures for developing polymlp."""
 
     def __init__(self):
-
+        """Init method.."""
         self._params = None
         self._hybrid_params = None
-
-        self._multiple_datasets = True
+        self._priority_infile = None
         self._hybrid = False
 
         self._train = None
         self._test = None
+        self._multiple_datasets = True
         self._n_features = None
 
-    def parse_infiles(
-        self,
-        infiles: Union[str, list[str]],
-        prefix: str = None,
-        verbose: bool = True,
-    ):
+    def parse_infiles(self, infiles: Union[str, list[str]], prefix: str = None):
         """Parse input files for developing polymlp."""
-        if isinstance(infiles, list) == False:
-            p = ParamsParser(infiles, multiple_datasets=True, prefix=prefix)
-            self._params = p.params
-            priority_infile = infiles
-        else:
-            priority_infile = infiles[0]
-            if len(infiles) == 1:
-                p = ParamsParser(priority_infile, multiple_datasets=True, prefix=prefix)
-                self._params = p.params
-            else:
-                self._hybrid_params = [
-                    ParamsParser(infile, multiple_datasets=True, prefix=prefix).params
-                    for infile in infiles
-                ]
-                self._params = set_common_params(self._hybrid_params)
-                self._hybrid_params = set_unique_types(
-                    self._hybrid_params, self._params
-                )
-                self._hybrid = True
-
-        if verbose:
-            self.print_params(infile=priority_infile)
+        (
+            self._params,
+            self._hybrid_params,
+            self._hybrid,
+            self._priority_infile,
+        ) = parse_parameter_files(infiles, prefix=prefix)
         return self
 
     def parse_datasets(self):
@@ -122,13 +47,23 @@ class PolymlpDevData:
             raise ValueError("PolymlpParams object is required.")
 
         parser = ParserDatasets(self._params)
-        self._train = parser.train
-        self._test = parser.test
+        self.set_datasets(parser.train, parser.test)
+        return self
 
-    def print_params(self, infile=None):
+    def set_datasets(
+        self,
+        train: Union[PolymlpDataDFT, list[PolymlpDataDFT]],
+        test: Union[PolymlpDataDFT, list[PolymlpDataDFT]],
+    ):
+        """Set DFT datasets."""
+        self._train = train
+        self._test = test
+        return self
+
+    def print_params(self):
         """Print parameters."""
-        if infile is not None:
-            print("priority_input:", infile, flush=True)
+        if self._hybrid:
+            print("priority_input:", self._priority_infile, flush=True)
 
         params = self.common_params
         print("parameters:", flush=True)
@@ -157,6 +92,7 @@ class PolymlpDevData:
 
     def write_polymlp_params_yaml(self, filename="polymlp_params.yaml"):
         """Write polymlp_params.yaml"""
+        np.set_printoptions(legacy="1.21")
         if not self.is_hybrid:
             self._n_features = write_polymlp_params_yaml(self.params, filename=filename)
         else:
@@ -198,11 +134,11 @@ class PolymlpDevData:
         self._hybrid = True
 
     @property
-    def train(self) -> Union[PolymlpDataDFT, dict[PolymlpDataDFT]]:
+    def train(self) -> Union[PolymlpDataDFT, list[PolymlpDataDFT]]:
         return self._train
 
     @property
-    def test(self) -> Union[PolymlpDataDFT, dict[PolymlpDataDFT]]:
+    def test(self) -> Union[PolymlpDataDFT, list[PolymlpDataDFT]]:
         return self._test
 
     @property

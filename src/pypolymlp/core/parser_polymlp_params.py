@@ -1,7 +1,8 @@
 """Class of input parameter parser."""
 
+import copy
 import glob
-from typing import Literal, Optional
+from typing import Literal, Optional, Union
 
 import numpy as np
 
@@ -358,3 +359,86 @@ class ParamsParser:
     def params(self) -> PolymlpModelParams:
         """Return parameters for developing polymlp."""
         return self._params
+
+
+def _get_variable_with_max_length(
+    multiple_params: list[PolymlpParams], key: str
+) -> list:
+    """Select variable with max length."""
+    array = []
+    for single in multiple_params:
+        single_dict = single.as_dict()
+        if len(single_dict[key]) > len(array):
+            array = single_dict[key]
+    return array
+
+
+def set_common_params(multiple_params: list[PolymlpParams]) -> PolymlpParams:
+    """Set common parameters of multiple PolymlpParams."""
+    keys = set()
+    for single in multiple_params:
+        for k in single.as_dict().keys():
+            keys.add(k)
+
+    common_params = copy.copy(multiple_params[0])
+    n_type = max([single.n_type for single in multiple_params])
+    elements = _get_variable_with_max_length(multiple_params, "elements")
+    atom_e = _get_variable_with_max_length(multiple_params, "atomic_energy")
+
+    bool_element_order = [
+        single.element_order for single in multiple_params
+    ] is not None
+    element_order = elements if bool_element_order else None
+
+    common_params.n_type = n_type
+    common_params.elements = elements
+    common_params.element_order = element_order
+    common_params.atomic_energy = atom_e
+    return common_params
+
+
+def _set_unique_types(
+    multiple_params: list[PolymlpParams],
+    common_params: PolymlpParams,
+):
+    """Set type indices for hybrid models."""
+    n_type = common_params.n_type
+    elements = common_params.elements
+    for single in multiple_params:
+        single.elements = sorted(single.elements, key=lambda x: elements.index(x))
+
+    for single in multiple_params:
+        if single.n_type == n_type:
+            single.type_full = True
+            single.type_indices = list(range(n_type))
+        else:
+            single.type_full = False
+            single.type_indices = [elements.index(ele) for ele in single.elements]
+    return multiple_params
+
+
+def parse_parameter_files(infiles: Union[str, list[str]], prefix: str = None):
+    """Parse input files for developing polymlp."""
+    common_params = None
+    hybrid_params = None
+    priority_infile = None
+    is_hybrid = False
+    if not isinstance(infiles, list):
+        p = ParamsParser(infiles, multiple_datasets=True, prefix=prefix).params
+        common_params = p.params
+        priority_infile = infiles
+    else:
+        priority_infile = infiles[0]
+        if len(infiles) == 1:
+            p = ParamsParser(priority_infile, multiple_datasets=True, prefix=prefix)
+            common_params = p.params
+        else:
+            hybrid_params = [
+                ParamsParser(infile, multiple_datasets=True, prefix=prefix).params
+                for infile in infiles
+            ]
+            common_params = set_common_params(hybrid_params)
+            hybrid_params = _set_unique_types(hybrid_params, common_params)
+            is_hybrid = True
+
+    return (common_params, hybrid_params, is_hybrid, priority_infile)

@@ -1,28 +1,16 @@
 """Pypolymlp API."""
 
-import os
 from typing import Literal, Optional, Union
 
 import numpy as np
 
-from pypolymlp.core.data_format import (
-    PolymlpDataMLP,
-    PolymlpModelParams,
-    PolymlpParams,
-    PolymlpStructure,
-)
+from pypolymlp.core.data_format import PolymlpDataMLP, PolymlpParams, PolymlpStructure
 from pypolymlp.core.displacements import get_structures_from_displacements
 from pypolymlp.core.interface_datasets import set_dataset_from_structures
 from pypolymlp.core.interface_vasp import parse_structures_from_poscars
 from pypolymlp.core.io_polymlp import convert_to_yaml, load_mlp
-from pypolymlp.core.polymlp_params import (
-    set_active_gaussian_params,
-    set_element_properties,
-    set_gaussian_params,
-    set_gtinv_params,
-    set_regression_alphas,
-)
-from pypolymlp.core.utils import split_train_test
+from pypolymlp.core.polymlp_params import set_all_params
+from pypolymlp.core.utils import check_memory_size_in_regression, split_train_test
 from pypolymlp.mlp_dev.core.accuracy import PolymlpDevAccuracy
 from pypolymlp.mlp_dev.core.mlpdev_data import PolymlpDevData
 from pypolymlp.mlp_dev.core.utils_sequential import get_auto_batch_size
@@ -41,26 +29,24 @@ class Pypolymlp:
         """Init method."""
         self._polymlp_in = PolymlpDevData()
         self._params = None
+
         self._train = None
         self._test = None
+        self._multiple_datasets = False
+        # TODO: set_params is not available for hybrid models at this time.
+        self._hybrid = False
+
         self._reg = None
         self._mlp_model = None
         self._acc = None
-        self._multiple_datasets = False
 
-        # TODO: set_params is not available for hybrid models at this time.
-        self._hybrid = False
         np.set_printoptions(legacy="1.21")
 
-    def load_parameter_file(
-        self,
-        file_params: Union[str, list[str]],
-        verbose: bool = False,
-    ):
+    def load_parameter_file(self, file_params: Union[str, list[str]]):
         """Load input parameter file and set parameters."""
-        self._polymlp_in.parse_infiles(file_params, verbose=True)
+        self._polymlp_in.parse_infiles(file_params)
         self._params = self._polymlp_in.params
-        self._hybrid = self._polymlp_in._hybrid
+        self._hybrid = self._polymlp_in.is_hybrid
         return self
 
     def set_params(
@@ -119,51 +105,30 @@ class Pypolymlp:
             self._params = self._polymlp_in.params = params
             return self
 
-        elements, n_type, atomic_energy = set_element_properties(
-            elements,
-            n_type=len(elements),
-            atomic_energy=atomic_energy,
-        )
-        element_order = elements if rearrange_by_elements else None
-        alphas = set_regression_alphas(reg_alpha_params)
-
-        gtinv, max_l = set_gtinv_params(
-            n_type,
-            feature_type=feature_type,
-            gtinv_order=gtinv_order,
-            gtinv_maxl=gtinv_maxl,
-            gtinv_version=gtinv_version,
-        )
-        pair_params = set_gaussian_params(gaussian_params1, gaussian_params2)
-        pair_params_active, pair_cond = set_active_gaussian_params(
-            pair_params,
-            elements,
-            distance,
-        )
-
-        model = PolymlpModelParams(
+        self._params = set_all_params(
+            elements=elements,
+            include_force=include_force,
+            include_stress=include_stress,
             cutoff=cutoff,
             model_type=model_type,
             max_p=max_p,
-            max_l=max_l,
             feature_type=feature_type,
-            gtinv=gtinv,
-            pair_type="gaussian",
-            pair_conditional=pair_cond,
-            pair_params=pair_params,
-            pair_params_conditional=pair_params_active,
-        )
-        self._params = PolymlpParams(
-            n_type=n_type,
-            elements=elements,
-            model=model,
+            gaussian_params1=gaussian_params1,
+            gaussian_params2=gaussian_params2,
+            distance=distance,
+            reg_alpha_params=reg_alpha_params,
+            gtinv_order=gtinv_order,
+            gtinv_maxl=gtinv_maxl,
+            gtinv_version=gtinv_version,
             atomic_energy=atomic_energy,
-            regression_alpha=alphas,
-            include_force=include_force,
-            include_stress=include_stress,
-            element_order=element_order,
+            rearrange_by_elements=rearrange_by_elements,
         )
         self._polymlp_in.params = self._params
+        return self
+
+    def print_params(self):
+        """Print input parameters."""
+        self._polymlp_in.print_params()
         return self
 
     def _is_params_none(self):
@@ -175,11 +140,19 @@ class Pypolymlp:
             )
         return self
 
-    def parse_datasets(self):
+    def load_datasets(self):
         """Load datasets provided in params instance."""
         self._polymlp_in.parse_datasets()
         self._train = self._polymlp_in.train
         self._test = self._polymlp_in.test
+        return self
+
+    def _split_dataset_auto(self, files: list[str], train_ratio: float = 0.9):
+        """Split dataset into training and test datasets automatically."""
+        train_files, test_files = split_train_test(files, train_ratio=train_ratio)
+        self._params.dft_train = sorted(train_files)
+        self._params.dft_test = sorted(test_files)
+        self._multiple_datasets = False
         return self
 
     def set_datasets_electron(
@@ -206,10 +179,7 @@ class Pypolymlp:
         self._params.temperature = temperature
         self._params.electron_property = target
 
-        train_files, test_files = split_train_test(yamlfiles, train_ratio=train_ratio)
-        self._params.dft_train = sorted(train_files)
-        self._params.dft_test = sorted(test_files)
-        self._multiple_datasets = False
+        self._split_train_test(yamlfiles, train_ratio=train_ratio)
         self.parse_datasets()
         return self
 
@@ -224,10 +194,7 @@ class Pypolymlp:
         self._params.dataset_type = "sscha"
         self._params.include_force = True
 
-        train_files, test_files = split_train_test(yamlfiles, train_ratio=train_ratio)
-        self._params.dft_train = sorted(train_files)
-        self._params.dft_test = sorted(test_files)
-        self._multiple_datasets = False
+        self._split_train_test(yamlfiles, train_ratio=train_ratio)
         self.parse_datasets()
         return self
 
@@ -435,15 +402,6 @@ class Pypolymlp:
         self._multiple_datasets = True
         return self
 
-    def _check_memory_size(self, verbose: bool = False):
-        """Check memory size."""
-        mem_req = np.round(self._polymlp_in.n_features**2 * 8e-9 * 2, 1)
-        mem_bytes = os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES") * 1e-9
-        if mem_req > mem_bytes:
-            print("Minimum memory required for solver in GB:", mem_req, flush=True)
-            raise RuntimeError("Larger size of memory required.")
-        return mem_req
-
     def fit(
         self,
         sequential: bool = True,
@@ -461,7 +419,7 @@ class Pypolymlp:
         if self._train is None or self._test is None:
             raise RuntimeError("Set input parameters and datasets.")
 
-        mem_req = self._check_memory_size(verbose=verbose)
+        mem_req = check_memory_size_in_regression(self._polymlp_in.n_features)
         if verbose:
             print("Minimum memory required for solver in GB:", mem_req, flush=True)
             print("Memory required for allocating X additionally.", flush=True)
@@ -551,6 +509,7 @@ class Pypolymlp:
     def save_learning_curve(self, filename="polymlp_learning_curve.dat"):
         """Save learing curve."""
         self._learning.save_log(filename=filename)
+        return self
 
     def get_structures_from_poscars(self, poscars: list[str]) -> list[PolymlpStructure]:
         """Load poscar files and convert them to structure instances."""
@@ -566,15 +525,15 @@ class Pypolymlp:
             self._reg.save_mlp(filename=filename)
         else:
             self._reg.save_mlp_lammps(filename=filename)
+        return self
 
     def load_mlp(self, filename: str = "polymlp.yaml"):
         """Load polynomial MLP from file."""
         # TODO: hybrid is not available.
         self._params, coeffs = load_mlp(filename)
-        self._mlp_model = PolymlpDataMLP(
-            coeffs=coeffs,
-            scales=np.ones(len(coeffs)),
-        )
+        scales = np.ones(len(coeffs))
+        self._mlp_model = PolymlpDataMLP(coeffs=coeffs, scales=scales)
+        return self
 
     def convert_to_yaml(
         self,
@@ -583,16 +542,17 @@ class Pypolymlp:
     ):
         """Convert polymlp.lammps to polymlp.yaml."""
         convert_to_yaml(filename_txt, filename_yaml)
+        return self
 
-    def save_parameters(self, filename="polymlp_params.yaml"):
+    def save_params(self, filename="polymlp_params.yaml"):
         """Save MLP parameters as file."""
-        np.set_printoptions(legacy="1.21")
         self._polymlp_in.write_polymlp_params_yaml(filename=filename)
+        return self
 
     def save_errors(self, filename="polymlp_error.yaml"):
         """Save prediction errors as file."""
-        np.set_printoptions(legacy="1.21")
         self._acc.write_error_yaml(filename=filename)
+        return self
 
     @property
     def summary(self):
