@@ -42,6 +42,10 @@ class Pypolymlp:
 
         np.set_printoptions(legacy="1.21")
 
+    #    def __version__(self):
+    #        """Version."""
+    #        return __version__
+
     def load_parameter_file(self, file_params: Union[str, list[str]]):
         """Load input parameter file and set parameters."""
         self._polymlp_in.parse_infiles(file_params)
@@ -330,10 +334,10 @@ class Pypolymlp:
 
     def set_datasets_structures(
         self,
-        train_structures: Optional[list[PolymlpStructure]] = None,
-        test_structures: Optional[list[PolymlpStructure]] = None,
-        train_energies: Optional[np.ndarray] = None,
-        test_energies: Optional[np.ndarray] = None,
+        train_structures: list[PolymlpStructure],
+        test_structures: list[PolymlpStructure],
+        train_energies: np.ndarray,
+        test_energies: np.ndarray,
         train_forces: Optional[list[np.ndarray]] = None,
         test_forces: Optional[list[np.ndarray]] = None,
         train_stresses: Optional[np.ndarray] = None,
@@ -353,10 +357,6 @@ class Pypolymlp:
         test_stresses: Stress tensors (test data), shape=(n_test, 3, 3) in eV/cell.
         """
         self._is_params_none()
-        assert train_structures is not None
-        assert test_structures is not None
-        assert train_energies is not None
-        assert test_energies is not None
         assert len(train_structures) == len(train_energies)
         assert len(test_structures) == len(test_energies)
         if train_forces is not None:

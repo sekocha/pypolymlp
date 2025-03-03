@@ -18,7 +18,7 @@ repos:
     args:
     - "--max-line-length=88"
     - "--ignore=E203,W503,E501,W605,E712,E741,E722"
-    - "--exclude=src/pypolymlp/misc/*,src/pypolymlp/*/deprecated/*,src/pypolymlp/*/obsolete/*,src/pypolymlp/mlp_gen/*,src/pypolymlp/mlp_opt/candidates/*,src/pypolymlp/polyinv/lists*,*/meta.yaml"
+    - "--exclude=src/pypolymlp/misc/*,src/pypolymlp/*/deprecated/*,src/pypolymlp/*/obsolete/*,src/pypolymlp/mlp_gen/*,src/pypolymlp/mlp_opt/candidates/*,src/pypolymlp/polyinv/lists*,*/meta.yaml,src/pypolymlp/__init__.py"
     #- "--ignore=E203,W503,E501"
 
 - repo: https://github.com/psf/black

@@ -1,1 +1,1 @@
-#!/usr/bin/env python
+from pypolymlp._version import __version__

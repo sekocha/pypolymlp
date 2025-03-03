@@ -6,6 +6,7 @@ import time
 
 import numpy as np
 
+from pypolymlp.core.utils import print_credit
 from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
 
 
@@ -39,6 +40,7 @@ def run():
     )
     args = parser.parse_args()
     np.set_printoptions(legacy="1.21")
+    print_credit()
 
     verbose = True
     polymlp = Pypolymlp()

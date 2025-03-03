@@ -4,6 +4,7 @@ import os
 
 import numpy as np
 
+from pypolymlp._version import __version__
 from pypolymlp.core.data_format import PolymlpStructure
 
 
@@ -202,3 +203,10 @@ def precision(x, alpha=0.0001):
     # dx = x - ave
     prec = np.mean([x1.T @ var @ x1 for x1 in x])
     return prec
+
+
+def print_credit():
+    """Print credit of pypolymlp."""
+    print("Pypolymlp", "version", __version__, flush=True)
+    print("  polynomial machine learning potential:", flush=True)
+    print("  A. Seko, J. Appl. Phys. 133, 011101 (2023)", flush=True)

@@ -90,6 +90,22 @@ class PolymlpDevData:
             else:
                 pass
 
+        if isinstance(self.params, PolymlpParams):
+            params = [self.params]
+        else:
+            params = self.params
+        for i, p in enumerate(params):
+            print("model_" + str(i + 1) + ":", flush=True)
+            print("  cutoff:      ", p.model.cutoff, flush=True)
+            print("  model_type:  ", p.model.model_type, flush=True)
+            print("  max_p:       ", p.model.max_p, flush=True)
+            print("  n_gaussians: ", len(p.model.pair_params), flush=True)
+            print("  feature_type:", p.model.feature_type, flush=True)
+            if p.model.feature_type == "gtinv":
+                orders = [i for i in range(2, p.model.gtinv.order + 1)]
+                print("  max_l:       ", p.model.gtinv.max_l, end=" ", flush=True)
+                print("for order =", orders, flush=True)
+
     def write_polymlp_params_yaml(self, filename="polymlp_params.yaml"):
         """Write polymlp_params.yaml"""
         np.set_printoptions(legacy="1.21")
@@ -177,6 +193,7 @@ class PolymlpDevData:
 
     @property
     def min_energy(self) -> float:
+        """Calculate minimum of DFT energies."""
         if self._multiple_datasets:
             min_e = 1e10
             for dft in self._train:
