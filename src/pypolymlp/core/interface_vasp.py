@@ -54,9 +54,10 @@ def parse_structures_from_poscars(poscars: list[str]):
 
 
 class Vasprun:
-    """Class for parsing vasprun.xml"""
+    """Class for parsing vasprun.xml from single-point calculation."""
 
     def __init__(self, name):
+        """Init method."""
         self._root = ET.parse(name).getroot()
         self._structure = None
         self._name = name
@@ -113,13 +114,13 @@ class Vasprun:
         elements = ["Zr" if e == "r" else e for e in elements]
         types = [int(x) - 1 for x in list(np.array(tmp2)[:, 1])]
 
-        if valence:
-            valence_dict = dict()
-            for d in tmp1:
-                valence_dict[d[1]] = float(d[3])
-            valence = [valence_dict[e] for e in self.elements]
-        else:
-            valence = None
+        # if valence:
+        #     valence_dict = dict()
+        #     for d in tmp1:
+        #         valence_dict[d[1]] = float(d[3])
+        #     valence = [valence_dict[e] for e in self.elements]
+        # else:
+        #     valence = None
 
         self._structure = PolymlpStructure(
             axis,
@@ -128,12 +129,12 @@ class Vasprun:
             elements,
             types,
             volume,
-            valence=valence,
             name=self._name,
         )
         return self._structure
 
     def get_scstep(self) -> np.ndarray:
+        """Return SC step."""
         scsteps = self._root.find("calculation").findall("scstep")
         e_history = []
         for sc in scsteps:
@@ -142,21 +143,146 @@ class Vasprun:
         return np.array(e_history)
 
     def _varray_to_nparray(self, varray):
+        """Convert varray to numpy array."""
         nparray = [[float(x) for x in v1.text.split()] for v1 in varray]
-        nparray = np.array(nparray)
-        return nparray
+        return np.array(nparray)
 
     def _read_rc_set(self, obj):
-        rc_set = []
-        for rc in obj:
-            c_set = [c.text.replace(" ", "") for c in rc.findall("c")]
-            rc_set.append(c_set)
-        return rc_set
+        """Read rc_set."""
+        return [[c.text.replace(" ", "") for c in rc.findall("c")] for rc in obj]
 
     @property
     def structure(self) -> PolymlpStructure:
         """Return structure"""
         return self._structure
+
+
+class VasprunMD:
+    """Class for parsing vasprun.xml from MD."""
+
+    def __init__(self, name: str):
+        """Init method."""
+        self._root = ET.parse(name).getroot()
+        self._calcs = self._root.findall("calculation")
+
+        self._energies = None
+        self._forces = None
+        self._stresses = None
+        self._structures = None
+        self._name = name
+
+    @property
+    def energies(self):
+        """Return energies.
+
+        Return
+        ------
+        energies: shape = (n_str)
+        """
+        if self._energies is not None:
+            return self._energies
+
+        tag = "energy"
+        self._energies = [float(cal.find(tag)[1].text) for cal in self._calcs]
+        self._energies = np.array(self._energies)
+        return self._energies
+
+    @property
+    def forces(self):
+        """Return forces.
+
+        Return
+        ------
+        forces: shape = (n_str, 3, n_atom).
+        """
+        if self._forces is not None:
+            return self._forces
+
+        self._forces = []
+        tag = ".//*[@name='forces']"
+        for cal in self._calcs:
+            f = self._varray_to_nparray(cal.find(tag)).T
+            self._forces.append(f)
+        return self._forces
+
+    @property
+    def stresses(self):
+        """Return stress tensors.
+
+        Return
+        ------
+        stresses: shape = (n_str, 3, 3)
+        """
+        if self._stresses is not None:
+            return self._stresses
+
+        self._stresses = []
+        tag = ".//*[@name='stress']"
+        for cal in self._calcs:
+            s = self._varray_to_nparray(cal.find(tag))
+            self._stresses.append(s)
+        self._stresses = np.array(self._stresses)
+        return self._stresses
+
+    @property
+    def structures(self):
+        """Return structures.
+
+        Return
+        ------
+        structures: list[PolymlpStrucuture]
+        """
+        if self._structures is not None:
+            return self._structures
+
+        rc = self._root.findall(".//*[@name='atomtypes']/set/rc")
+        rc_set = self._read_rc_set(rc)
+        n_atoms = [int(x) for x in list(np.array(rc_set)[:, 0])]
+
+        # if valence:
+        #     valence_dict = dict()
+        #     for d in rc_set:
+        #         valence_dict[d[1]] = float(d[3])
+        #     valence = [valence_dict[e] for e in self.elements]
+        # else:
+        #     valence = None
+
+        rc = self._root.findall(".//*[@name='atoms']/set/rc")
+        rc_set = self._read_rc_set(rc)
+        elements = list(np.array(rc_set)[:, 0])
+        elements = ["Zr" if e == "r" else e for e in elements]
+        types = [int(x) - 1 for x in list(np.array(rc_set)[:, 1])]
+
+        self._structures = []
+        for cal in self._calcs:
+            st1 = cal.find(".//*[@name='basis']")
+            st2 = cal.find(".//*[@name='positions']")
+            st3 = cal.find(".//*[@name='volume']")
+            axis = self._varray_to_nparray(st1).T
+            positions = self._varray_to_nparray(st2).T
+            volume = float(st3.text)
+
+            st = PolymlpStructure(
+                axis,
+                positions,
+                n_atoms,
+                elements,
+                types,
+                volume,
+                name=self._name,
+            )
+            self._structures.append(st)
+
+        return self._structures
+
+    def _varray_to_nparray(self, varray):
+        """Convert varray to numpy array."""
+        nparray = [[float(x) for x in v1.text.split()] for v1 in varray]
+        return np.array(nparray)
+
+    def _read_rc_set(self, obj):
+        """Read rc_set."""
+        return [[c.text.replace(" ", "") for c in rc.findall("c")] for rc in obj]
 
 
 class Poscar:
