@@ -143,16 +143,20 @@ class ParserDatasets:
 
     @property
     def train(self) -> list[PolymlpDataDFT]:
+        """Return DFT datasets for training."""
         return self._train
 
     @property
     def test(self) -> list[PolymlpDataDFT]:
+        """Return DFT datasets for test."""
         return self._test
 
     @property
     def is_multiple_datasets(self) -> bool:
+        """Return whether multiple datasets are considered."""
         return True
 
     @property
     def dataset_type(self) -> str:
+        """Return dataset type."""
         return self._dataset_type

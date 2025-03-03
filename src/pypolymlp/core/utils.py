@@ -1,8 +1,21 @@
 """Utility functions"""
 
+import os
+
 import numpy as np
 
+from pypolymlp._version import __version__
 from pypolymlp.core.data_format import PolymlpStructure
+
+
+def strtobool(val):
+    """Convert a string to bool, True or False."""
+    val = val.lower()
+    if val in ("t", "true", "1"):
+        return True
+    elif val in ("f", "false", "0"):
+        return False
+    raise RuntimeError("Invalid string.")
 
 
 def split_train_test(files: list, train_ratio: float = 0.9):
@@ -16,6 +29,16 @@ def split_train_test(files: list, train_ratio: float = 0.9):
     train_bools[test_ids] = False
     train_ids = np.where(train_bools)[0]
     return [files[i] for i in train_ids], [files[i] for i in test_ids]
+
+
+def check_memory_size_in_regression(n_features: int):
+    """Estimate memory size in regression."""
+    mem_req = np.round(n_features**2 * 8e-9 * 2, 1)
+    mem_bytes = os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES") * 1e-9
+    if mem_req > mem_bytes:
+        print("Minimum memory required for solver in GB:", mem_req, flush=True)
+        raise RuntimeError("Larger size of memory required.")
+    return mem_req
 
 
 def rmse(y_true: np.ndarray, y_pred: np.ndarray):
@@ -164,14 +187,6 @@ def mass_table():
     return mass_table
 
 
-def kjmol_to_ev(e):
-    return e / 96.48533212331002
-
-
-def ev_to_kjmol(e):
-    return e * 96.48533212331002
-
-
 def precision(x, alpha=0.0001):
 
     # std = np.std(x[:50], axis=0)
@@ -190,11 +205,8 @@ def precision(x, alpha=0.0001):
     return prec
 
 
-def strtobool(val):
-    """Convert a string to bool, True or False."""
-    val = val.lower()
-    if val in ("t", "true", "1"):
-        return True
-    elif val in ("f", "false", "0"):
-        return False
-    raise RuntimeError("Invalid string.")
+def print_credit():
+    """Print credit of pypolymlp."""
+    print("Pypolymlp", "version", __version__, flush=True)
+    print("  polynomial machine learning potential:", flush=True)
+    print("  A. Seko, J. Appl. Phys. 133, 011101 (2023)", flush=True)

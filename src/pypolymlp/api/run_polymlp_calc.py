@@ -7,7 +7,7 @@ import time
 import numpy as np
 
 from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
-from pypolymlp.core.utils import precision
+from pypolymlp.core.utils import precision, print_credit
 
 
 def run():
@@ -176,6 +176,7 @@ def run():
     )
     args = parser.parse_args()
     np.set_printoptions(legacy="1.21")
+    print_credit()
 
     if args.pot is None and args.infile is None:
         raise RuntimeError("Input parameters not found.")

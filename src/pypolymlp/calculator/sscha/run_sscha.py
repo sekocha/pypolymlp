@@ -18,7 +18,7 @@ from pypolymlp.calculator.sscha.sscha_utils import (
     save_sscha_yaml,
 )
 from pypolymlp.core.data_format import PolymlpParams
-from pypolymlp.core.utils import ev_to_kjmol
+from pypolymlp.core.units import ev_to_kjmol
 from pypolymlp.utils.phonopy_utils import (
     phonopy_cell_to_structure,
     structure_to_phonopy_cell,

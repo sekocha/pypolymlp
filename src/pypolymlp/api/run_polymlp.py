@@ -6,6 +6,7 @@ import time
 
 import numpy as np
 
+from pypolymlp.core.utils import print_credit
 from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
 
 
@@ -39,12 +40,15 @@ def run():
     )
     args = parser.parse_args()
     np.set_printoptions(legacy="1.21")
+    print_credit()
 
     verbose = True
     polymlp = Pypolymlp()
     polymlp.load_parameter_file(args.infile)
-    polymlp.parse_datasets()
-    polymlp.save_parameters(filename="polymlp_params.yaml")
+    polymlp.load_datasets()
+    if verbose:
+        polymlp.print_params()
+    polymlp.save_params(filename="polymlp_params.yaml")
 
     if args.learning_curve:
         tlearn1 = time.time()

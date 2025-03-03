@@ -18,7 +18,7 @@ cwd = Path(__file__).parent
 
 def _parse_data(filename):
     polymlp_in = PolymlpDevData()
-    polymlp_in.parse_infiles(filename, verbose=True, prefix=str(cwd))
+    polymlp_in.parse_infiles(filename, prefix=str(cwd))
     polymlp_in.parse_datasets()
     return polymlp_in
 
