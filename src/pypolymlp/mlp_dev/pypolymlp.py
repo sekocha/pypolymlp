@@ -183,8 +183,8 @@ class Pypolymlp:
         self._params.temperature = temperature
         self._params.electron_property = target
 
-        self._split_train_test(yamlfiles, train_ratio=train_ratio)
-        self.parse_datasets()
+        self._split_dataset_auto(yamlfiles, train_ratio=train_ratio)
+        self.load_datasets()
         return self
 
     def set_datasets_sscha(self, yamlfiles: list[str], train_ratio: float = 0.9):
@@ -198,8 +198,8 @@ class Pypolymlp:
         self._params.dataset_type = "sscha"
         self._params.include_force = True
 
-        self._split_train_test(yamlfiles, train_ratio=train_ratio)
-        self.parse_datasets()
+        self._split_dataset_auto(yamlfiles, train_ratio=train_ratio)
+        self.load_datasets()
         return self
 
     def set_datasets_vasp(self, train_vaspruns: list[str], test_vaspruns: list[str]):
@@ -224,7 +224,7 @@ class Pypolymlp:
             "weight": 1.0,
         }
         self._multiple_datasets = True
-        self.parse_datasets()
+        self.load_datasets()
         return self
 
     def set_multiple_datasets_vasp(
@@ -256,7 +256,7 @@ class Pypolymlp:
                 "weight": 1.0,
             }
         self._multiple_datasets = True
-        self.parse_datasets()
+        self.load_datasets()
         return self
 
     def set_datasets_phono3py(
@@ -281,7 +281,7 @@ class Pypolymlp:
             "energy": test_energy_dat,
             "indices": test_ids,
         }
-        self.parse_datasets()
+        self.load_datasets()
         return self
 
     def set_datasets_displacements(

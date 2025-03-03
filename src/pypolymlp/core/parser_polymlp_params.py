@@ -424,7 +424,7 @@ def parse_parameter_files(infiles: Union[str, list[str]], prefix: str = None):
     priority_infile = None
     is_hybrid = False
     if not isinstance(infiles, list):
-        p = ParamsParser(infiles, multiple_datasets=True, prefix=prefix).params
+        p = ParamsParser(infiles, multiple_datasets=True, prefix=prefix)
         common_params = p.params
         priority_infile = infiles
     else:
