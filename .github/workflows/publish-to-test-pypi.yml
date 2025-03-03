@@ -21,7 +21,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Make sdist
       run: |
-        git tag v`grep "__version__ = version" _version.py | awk -F '"' '{print $2}'`
+        git tag v`grep "__version__ = version" src/pypolymlp/_version.py | awk -F '"' '{print $2}'`
         pip install build
         python -m build --sdist
     - name: Publish package to TestPyPI
