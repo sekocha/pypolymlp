@@ -63,7 +63,7 @@ class ParserDatasets:
         self._train = []
         for name, dict1 in self._params.dft_train.items():
             dft = set_dataset_from_vaspruns(
-                dict1["vaspruns"],
+                dict1["files"],
                 element_order=element_order,
             )
             dft.apply_atomic_energy(self._params.atomic_energy)
@@ -75,7 +75,7 @@ class ParserDatasets:
         self._test = []
         for name, dict1 in self._params.dft_test.items():
             dft = set_dataset_from_vaspruns(
-                dict1["vaspruns"],
+                dict1["files"],
                 element_order=element_order,
             )
             dft.apply_atomic_energy(self._params.atomic_energy)

@@ -42,10 +42,6 @@ class Pypolymlp:
 
         np.set_printoptions(legacy="1.21")
 
-    #    def __version__(self):
-    #        """Version."""
-    #        return __version__
-
     def load_parameter_file(self, file_params: Union[str, list[str]]):
         """Load input parameter file and set parameters."""
         self._polymlp_in.parse_infiles(file_params)
@@ -154,9 +150,20 @@ class Pypolymlp:
     def _split_dataset_auto(self, files: list[str], train_ratio: float = 0.9):
         """Split dataset into training and test datasets automatically."""
         train_files, test_files = split_train_test(files, train_ratio=train_ratio)
-        self._params.dft_train = sorted(train_files)
-        self._params.dft_test = sorted(test_files)
-        self._multiple_datasets = False
+
+        self._params.dft_train = dict()
+        self._params.dft_test = dict()
+        self._params.dft_train["train_single"] = {
+            "files": sorted(train_files),
+            "include_force": self._params.include_force,
+            "weight": 1.0,
+        }
+        self._params.dft_test["test_single"] = {
+            "files": sorted(test_files),
+            "include_force": self._params.include_force,
+            "weight": 1.0,
+        }
+        self._multiple_datasets = True
         return self
 
     def set_datasets_electron(
@@ -214,12 +221,12 @@ class Pypolymlp:
         self._params.dft_train = dict()
         self._params.dft_test = dict()
         self._params.dft_train["train_single"] = {
-            "vaspruns": sorted(train_vaspruns),
+            "files": sorted(train_vaspruns),
             "include_force": self._params.include_force,
             "weight": 1.0,
         }
         self._params.dft_test["test_single"] = {
-            "vaspruns": sorted(test_vaspruns),
+            "files": sorted(test_vaspruns),
             "include_force": self._params.include_force,
             "weight": 1.0,
         }
@@ -245,13 +252,13 @@ class Pypolymlp:
         self._params.dft_test = dict()
         for i, vaspruns in enumerate(train_vaspruns):
             self._params.dft_train["dataset" + str(i + 1)] = {
-                "vaspruns": sorted(vaspruns),
+                "files": sorted(vaspruns),
                 "include_force": self._params.include_force,
                 "weight": 1.0,
             }
         for i, vaspruns in enumerate(test_vaspruns):
             self._params.dft_test["dataset" + str(i + 1)] = {
-                "vaspruns": sorted(vaspruns),
+                "files": sorted(vaspruns),
                 "include_force": self._params.include_force,
                 "weight": 1.0,
             }

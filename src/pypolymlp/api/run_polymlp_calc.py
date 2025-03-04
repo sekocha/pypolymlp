@@ -10,6 +10,15 @@ from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
 from pypolymlp.core.utils import precision, print_credit
 
 
+def check_variables(args):
+    """Check variables."""
+    if args.poscar is None and args.poscars is not None:
+        args.poscar = args.poscars
+    if args.poscars is None and args.poscar is not None:
+        args.poscars = args.poscar
+    return args
+
+
 def run():
 
     signal.signal(signal.SIGINT, signal.SIG_DFL)
@@ -177,6 +186,7 @@ def run():
     args = parser.parse_args()
     np.set_printoptions(legacy="1.21")
     print_credit()
+    args = check_variables(args)
 
     if args.pot is None and args.infile is None:
         raise RuntimeError("Input parameters not found.")
@@ -316,6 +326,8 @@ def run():
             )
 
     elif args.eos:
+        if args.poscar is None and args.poscars is not None:
+            args.poscar = args.poscars
         print("Mode: EOS calculation", flush=True)
         polymlp.load_poscars(args.poscar)
         polymlp.run_eos(

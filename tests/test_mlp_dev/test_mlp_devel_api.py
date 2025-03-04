@@ -155,15 +155,15 @@ def test_mlp_devel_api_structure():
 
     train_energies, train_forces = [], []
     for v in train_vaspruns1:
-        prop = Vasprun(v).get_properties()
-        train_energies.append(prop["energy"])
-        train_forces.append(prop["force"])
+        e, f, s = Vasprun(v).properties
+        train_energies.append(e)
+        train_forces.append(f)
 
     test_energies, test_forces = [], []
     for v in test_vaspruns1:
-        prop = Vasprun(v).get_properties()
-        test_energies.append(prop["energy"])
-        test_forces.append(prop["force"])
+        e, f, s = Vasprun(v).properties
+        test_energies.append(e)
+        test_forces.append(f)
 
     polymlp.set_datasets_structures(
         train_structures=train_structures,

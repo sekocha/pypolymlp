@@ -13,15 +13,17 @@ class InputParser:
 
     def __init__(self, fname: str):
         """Init method."""
+        self._multiple_datasets = None
         self._parse_infile(fname)
 
     def _parse_infile(self, fname: str):
-
+        """Parse parameters from input file."""
         f = open(fname)
         lines = f.readlines()
         f.close()
 
         self._train, self._test = [], []
+        self._train_test_data = []
         self._distance = []
         self._data = dict()
         for line in lines:
@@ -34,6 +36,9 @@ class InputParser:
                     self._train.append(d[1:])
                 elif "test_data" == d[0]:
                     self._test.append(d[1:])
+                elif "data" == d[0]:
+                    self._train_test_data.append(d[1:])
+        return self
 
     def get_params(
         self,
@@ -71,12 +76,14 @@ class InputParser:
             return params[0]
         return params
 
-    def get_sequence(self, tag, default=None):
+    def get_sequence(self, tag: str, default: Optional[tuple] = None):
+        """Return linspace sequence for tag."""
         params = self.get_params(tag, size=3, default=default, dtype=str)
         return np.linspace(float(params[0]), float(params[1]), int(params[2]))
 
     @property
     def distance(self):
+        """Return distances activating atomic pairs."""
         elements = self._data["elements"]
         distance_dict = dict()
         for data in self._distance:
@@ -86,14 +93,20 @@ class InputParser:
 
     @property
     def train(self):
+        """Return training data locations."""
         return self._train
 
     @property
     def test(self):
+        """Return test data locations."""
         return self._test
 
-    def get_train(self):
-        return self._train
+    @property
+    def train_test(self):
+        """Return locations of data including training and test data."""
+        return self._train_test_data
 
-    def get_test(self):
-        return self._test
+    @property
+    def is_multiple_datasets(self):
+        """Return whether multiple datasets are included or not."""
+        return self._multiple_datasets

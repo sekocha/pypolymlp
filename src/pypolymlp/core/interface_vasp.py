@@ -52,7 +52,7 @@ def parse_properties_from_vaspruns(vaspruns: list[str]) -> tuple:
 
 def parse_structures_from_vaspruns(vaspruns: list[str]) -> list[PolymlpStructure]:
     """Parse vasprun.xml files and return structures."""
-    return [Vasprun(f).get_structure() for f in vaspruns]
+    return [Vasprun(f).structure for f in vaspruns]
 
 
 def parse_structures_from_poscars(poscars: list[str]):
@@ -449,8 +449,8 @@ def parse_energy_volume(vaspruns):
     ev_data = []
     for vasprun_file in vaspruns:
         vasp = Vasprun(vasprun_file)
-        energy = vasp.get_energy()
-        vol = vasp.get_structure()["volume"]
+        energy = vasp.energy
+        vol = vasp.structure.volume
         ev_data.append([vol, energy])
     return np.array(ev_data)
 
