@@ -459,12 +459,8 @@ class Pypolymlp:
         if self._reg is None:
             raise RuntimeError("Regression must be performed before estimating errors.")
 
-        self._acc = PolymlpDevAccuracy(self._reg)
-        self._acc.compute_error(
-            log_energy=log_energy,
-            path_output=file_path,
-            verbose=verbose,
-        )
+        self._acc = PolymlpDevAccuracy(self._reg, verbose=verbose)
+        self._acc.compute_error(log_energy=log_energy, path_output=file_path)
         self._mlp_model.error_train = self._acc.error_train_dict
         self._mlp_model.error_test = self._acc.error_test_dict
         return self
