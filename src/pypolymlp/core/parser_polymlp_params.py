@@ -63,17 +63,9 @@ def _set_data_locations_multiple_datasets(
     train_ratio: float = 0.9,
 ):
     """Set locations of data for multiple datasets."""
-    for params in parser.train:
-        params = _complete_dataset_params(params, include_force)
-
-    for params in parser.test:
-        params = _complete_dataset_params(params, include_force)
-
-    for params in parser.train_test:
-        params = _complete_dataset_params(params, include_force)
-
     dft_train, dft_test = dict(), dict()
     for params in parser.train:
+        params = _complete_dataset_params(params, include_force)
         set_id = params[0]
         if prefix is None:
             files = sorted(glob.glob(set_id))
@@ -83,9 +75,11 @@ def _set_data_locations_multiple_datasets(
             "files": files,
             "include_force": strtobool(params[1]),
             "weight": float(params[2]),
+            "split": True,
         }
 
     for params in parser.test:
+        params = _complete_dataset_params(params, include_force)
         set_id = params[0]
         if prefix is None:
             files = sorted(glob.glob(set_id))
@@ -95,9 +89,11 @@ def _set_data_locations_multiple_datasets(
             "files": files,
             "include_force": strtobool(params[1]),
             "weight": float(params[2]),
+            "split": True,
         }
 
     for params in parser.train_test:
+        params = _complete_dataset_params(params, include_force)
         set_id = params[0]
         if prefix is None:
             data_all = sorted(glob.glob(set_id))
@@ -109,12 +105,30 @@ def _set_data_locations_multiple_datasets(
             "files": data_train,
             "include_force": strtobool(params[1]),
             "weight": float(params[2]),
+            "split": True,
         }
         dft_test[set_id] = {
             "files": data_test,
             "include_force": strtobool(params[1]),
             "weight": float(params[2]),
+            "split": True,
         }
+
+    for params in parser.md:
+        params = _complete_dataset_params(params, include_force)
+        set_id = params[0]
+        if prefix is None:
+            data_all = sorted(glob.glob(set_id))
+        else:
+            data_all = sorted(glob.glob(prefix + "/" + set_id))
+
+        dft_train[set_id] = {
+            "files": data_all,
+            "include_force": strtobool(params[1]),
+            "weight": float(params[2]),
+            "split": False,
+        }
+
     return dft_train, dft_test
 
 
@@ -327,30 +341,18 @@ class ParamsParser:
         )
         return pair_params, pair_params_active, cond
 
-    def _check_datasets(
-        self,
-        dataset_type: Literal["vasp", "phono3py", "sscha", "electron"],
-    ):
-        """Check errors and dataset type in datasets."""
-        if dataset_type in ["vasp", "sscha", "electron"]:
-            if len(self.parser.train) == 0 and len(self.parser.train_test) == 0:
-                raise RuntimeError("Training data not found.")
-            if len(self.parser.test) == 0 and len(self.parser.train_test) == 0:
-                raise RuntimeError("Test data not found.")
-            self._multiple_datasets = True
-        elif dataset_type == "phono3py":
-            self._multiple_datasets = False
-        else:
-            raise KeyError("Given dataset_type is unavailable.")
-        return self._multiple_datasets
-
     def _get_dataset(
         self,
         dataset_type: Literal["vasp", "phono3py", "sscha", "electron"],
     ):
         """Set files in datasets."""
-        self._check_datasets(dataset_type)
         if dataset_type in ["vasp", "sscha", "electron"]:
+            if len(self.parser.train) == 0 and len(self.parser.train_test) == 0:
+                raise RuntimeError("Training data not found.")
+            if len(self.parser.test) == 0 and len(self.parser.train_test) == 0:
+                raise RuntimeError("Test data not found.")
+
+            self._multiple_datasets = True
             dft_train, dft_test = set_data_locations(
                 self.parser,
                 multiple_datasets=self._multiple_datasets,
@@ -360,6 +362,7 @@ class ParamsParser:
             )
             return dft_train, dft_test
         elif dataset_type == "phono3py":
+            self._multiple_datasets = False
             return self._get_phono3py_set()
         else:
             raise KeyError("Given dataset_type is unavailable.")

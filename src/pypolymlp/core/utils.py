@@ -5,7 +5,6 @@ import os
 import numpy as np
 
 from pypolymlp._version import __version__
-from pypolymlp.core.data_format import PolymlpStructure
 
 
 def strtobool(val):
@@ -18,9 +17,8 @@ def strtobool(val):
     raise RuntimeError("Invalid string.")
 
 
-def split_train_test(files: list, train_ratio: float = 0.9):
+def split_ids_train_test(n_data: int, train_ratio: float = 0.9):
     """Split dataset into training and test datasets."""
-    n_data = len(files)
     n_train = round(n_data * train_ratio)
     n_test = n_data - n_train
     test_ids = np.round(np.linspace(0, n_data - 1, num=n_test)).astype(int)
@@ -28,6 +26,13 @@ def split_train_test(files: list, train_ratio: float = 0.9):
     train_bools = np.ones(n_data, dtype=bool)
     train_bools[test_ids] = False
     train_ids = np.where(train_bools)[0]
+    return train_ids, test_ids
+
+
+def split_train_test(files: list, train_ratio: float = 0.9):
+    """Split dataset into training and test datasets."""
+    n_data = len(files)
+    train_ids, test_ids = split_train_test(n_data)
     return [files[i] for i in train_ids], [files[i] for i in test_ids]
 
 
@@ -44,35 +49,6 @@ def check_memory_size_in_regression(n_features: int):
 def rmse(y_true: np.ndarray, y_pred: np.ndarray):
     """Compute root mean square errors."""
     return np.sqrt(np.mean(np.square(y_true - y_pred)))
-
-
-def permute_atoms(
-    st: PolymlpStructure,
-    force: np.ndarray,
-    element_order: list[str],
-) -> tuple[PolymlpStructure, np.ndarray]:
-    """Permute atoms in structure and forces.
-
-    The orders of atoms and forces are compatible with the element order.
-    """
-    positions, n_atoms, elements, types = [], [], [], []
-    force_permute = []
-    for atomtype, ele in enumerate(element_order):
-        ids = np.where(np.array(st.elements) == ele)[0]
-        n_match = len(ids)
-        positions.extend(st.positions[:, ids].T)
-        n_atoms.append(n_match)
-        elements.extend([ele for _ in range(n_match)])
-        types.extend([atomtype for _ in range(n_match)])
-        force_permute.extend(force[:, ids].T)
-    positions = np.array(positions).T
-    force_permute = np.array(force_permute).T
-
-    st.positions = positions
-    st.n_atoms = n_atoms
-    st.elements = elements
-    st.types = types
-    return st, force_permute
 
 
 def mass_table():

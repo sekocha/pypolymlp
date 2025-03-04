@@ -13,7 +13,6 @@ class InputParser:
 
     def __init__(self, fname: str):
         """Init method."""
-        self._multiple_datasets = None
         self._parse_infile(fname)
 
     def _parse_infile(self, fname: str):
@@ -24,6 +23,7 @@ class InputParser:
 
         self._train, self._test = [], []
         self._train_test_data = []
+        self._md = []
         self._distance = []
         self._data = dict()
         for line in lines:
@@ -38,6 +38,8 @@ class InputParser:
                     self._test.append(d[1:])
                 elif "data" == d[0]:
                     self._train_test_data.append(d[1:])
+                elif "data_md" == d[0]:
+                    self._md.append(d[1:])
         return self
 
     def get_params(
@@ -107,6 +109,6 @@ class InputParser:
         return self._train_test_data
 
     @property
-    def is_multiple_datasets(self):
-        """Return whether multiple datasets are included or not."""
-        return self._multiple_datasets
+    def md(self):
+        """Return locations of MD data."""
+        return self._md

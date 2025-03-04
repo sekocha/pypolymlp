@@ -45,22 +45,22 @@ class ParserDatasets:
         self._train = [self._train]
         self._test = [self._test]
 
-    def _parse_vasp_single(self):
-        """Parse VASP single dataset."""
-        self._train = set_dataset_from_vaspruns(
-            self._params.dft_train,
-            element_order=self._params.element_order,
-        )
-        self._test = set_dataset_from_vaspruns(
-            self._params.dft_test,
-            element_order=self._params.element_order,
-        )
-        self._post_single_dataset()
-
+    #    def _parse_vasp_single(self):
+    #        """Parse VASP single dataset."""
+    #        self._train = set_dataset_from_vaspruns(
+    #            self._params.dft_train,
+    #            element_order=self._params.element_order,
+    #        )
+    #        self._test = set_dataset_from_vaspruns(
+    #            self._params.dft_test,
+    #            element_order=self._params.element_order,
+    #        )
+    #        self._post_single_dataset()
+    #
     def _parse_vasp_multiple(self):
         """Parse VASP multiple datasets."""
         element_order = self._params.element_order
-        self._train = []
+        self._train, self._test = [], []
         for name, dict1 in self._params.dft_train.items():
             dft = set_dataset_from_vaspruns(
                 dict1["files"],
@@ -70,9 +70,13 @@ class ParserDatasets:
             dft.name = name
             dft.include_force = dict1["include_force"]
             dft.weight = dict1["weight"]
-            self._train.append(dft)
+            if dict1["split"]:
+                self._train.append(dft)
+            else:
+                train, test = dft.split(train_ratio=0.9)
+                self._train.append(train)
+                self._test.append(test)
 
-        self._test = []
         for name, dict1 in self._params.dft_test.items():
             dft = set_dataset_from_vaspruns(
                 dict1["files"],
@@ -82,7 +86,8 @@ class ParserDatasets:
             dft.name = name
             dft.include_force = dict1["include_force"]
             dft.weight = dict1["weight"]
-            self._test.append(dft)
+            if dict1["split"]:
+                self._test.append(dft)
 
     def _parse_phono3py_single(self):
         """Parse phono3py single dataset."""

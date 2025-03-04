@@ -150,18 +150,19 @@ class Pypolymlp:
     def _split_dataset_auto(self, files: list[str], train_ratio: float = 0.9):
         """Split dataset into training and test datasets automatically."""
         train_files, test_files = split_train_test(files, train_ratio=train_ratio)
-
-        self._params.dft_train = dict()
-        self._params.dft_test = dict()
-        self._params.dft_train["train_single"] = {
-            "files": sorted(train_files),
-            "include_force": self._params.include_force,
-            "weight": 1.0,
+        self._params.dft_train = {
+            "train_single": {
+                "files": sorted(train_files),
+                "include_force": self._params.include_force,
+                "weight": 1.0,
+            }
         }
-        self._params.dft_test["test_single"] = {
-            "files": sorted(test_files),
-            "include_force": self._params.include_force,
-            "weight": 1.0,
+        self._params.dft_test = {
+            "test_single": {
+                "files": sorted(test_files),
+                "include_force": self._params.include_force,
+                "weight": 1.0,
+            }
         }
         self._multiple_datasets = True
         return self
@@ -218,17 +219,20 @@ class Pypolymlp:
         test_vaspruns: vasprun files for test dataset (list)
         """
         self._is_params_none()
-        self._params.dft_train = dict()
-        self._params.dft_test = dict()
-        self._params.dft_train["train_single"] = {
-            "files": sorted(train_vaspruns),
-            "include_force": self._params.include_force,
-            "weight": 1.0,
+        self._params.dataset_type = "vasp"
+        self._params.dft_train = {
+            "train_single": {
+                "files": sorted(train_vaspruns),
+                "include_force": self._params.include_force,
+                "weight": 1.0,
+            }
         }
-        self._params.dft_test["test_single"] = {
-            "files": sorted(test_vaspruns),
-            "include_force": self._params.include_force,
-            "weight": 1.0,
+        self._params.dft_test = {
+            "test_single": {
+                "files": sorted(test_vaspruns),
+                "include_force": self._params.include_force,
+                "weight": 1.0,
+            }
         }
         self._multiple_datasets = True
         self.load_datasets()
