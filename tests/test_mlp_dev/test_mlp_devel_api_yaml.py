@@ -27,10 +27,10 @@ def test_mlp_devel_api_sscha():
     polymlp.set_datasets_sscha(yamlfiles)
     polymlp.run(verbose=True)
 
+    print(polymlp.summary.error_train)
+    print(polymlp.summary.error_test)
     error_train1 = polymlp.summary.error_train["train_single"]
     error_test1 = polymlp.summary.error_test["test_single"]
-    print(error_train1)
-    print(error_test1)
 
     assert error_train1["energy"] == pytest.approx(0.00015330757104834285, rel=1e-4)
     assert error_train1["force"] == pytest.approx(0.0010830176298444144, rel=1e-4)

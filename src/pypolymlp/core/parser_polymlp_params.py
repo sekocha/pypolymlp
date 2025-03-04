@@ -47,8 +47,6 @@ def _set_data_locations_single_dataset(
         else:
             dft_train = sorted(glob.glob(prefix + "/" + train[0][0]))
             dft_test = sorted(glob.glob(prefix + "/" + test[0][0]))
-        print(dft_train)
-        print(dft_test)
     else:
         if prefix is None:
             data_all = sorted(glob.glob(train_test[0][0]))
@@ -335,7 +333,6 @@ class ParamsParser:
     ):
         """Check errors and dataset type in datasets."""
         if dataset_type in ["vasp", "sscha", "electron"]:
-            print(self.parser.train)
             if len(self.parser.train) == 0 and len(self.parser.train_test) == 0:
                 raise RuntimeError("Training data not found.")
             if len(self.parser.test) == 0 and len(self.parser.train_test) == 0:

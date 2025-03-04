@@ -27,9 +27,9 @@ class ParserDatasets:
         elif self._dataset_type == "phono3py":
             self._parse_phono3py_single()
         elif self._dataset_type == "sscha":
-            self._parse_sscha_single()
+            self._parse_sscha_multiple()
         elif self._dataset_type == "electron":
-            self._parse_electron_single()
+            self._parse_electron_multiple()
         else:
             raise KeyError("Given dataset_type is unavailable.")
 
@@ -123,6 +123,30 @@ class ParserDatasets:
         self._params.dft_train = {"train_single": self._params.dft_train}
         self._params.dft_test = {"test_single": self._params.dft_test}
 
+    def _parse_sscha_multiple(self):
+        """Parse sscha results."""
+        self._train = []
+        for name, dict1 in self._params.dft_train.items():
+            dft = set_dataset_from_sscha_yamls(
+                dict1["files"],
+                element_order=self._params.element_order,
+            )
+            dft.name = name
+            dft.include_force = dict1["include_force"]
+            dft.weight = dict1["weight"]
+            self._train.append(dft)
+
+        self._test = []
+        for name, dict1 in self._params.dft_test.items():
+            dft = set_dataset_from_sscha_yamls(
+                dict1["files"],
+                element_order=self._params.element_order,
+            )
+            dft.name = name
+            dft.include_force = dict1["include_force"]
+            dft.weight = dict1["weight"]
+            self._test.append(dft)
+
     def _parse_electron_single(self):
         """Parse electron results."""
         self._train = set_dataset_from_electron_yamls(
@@ -140,6 +164,34 @@ class ParserDatasets:
         self._post_single_dataset()
         self._params.dft_train = {"train_single": self._params.dft_train}
         self._params.dft_test = {"test_single": self._params.dft_test}
+
+    def _parse_electron_multiple(self):
+        """Parse electron results."""
+        self._train = []
+        for name, dict1 in self._params.dft_train.items():
+            dft = set_dataset_from_electron_yamls(
+                dict1["files"],
+                temperature=self._params.temperature,
+                target=self._params.electron_property,
+                element_order=self._params.element_order,
+            )
+            dft.name = name
+            dft.include_force = dict1["include_force"]
+            dft.weight = dict1["weight"]
+            self._train.append(dft)
+
+        self._test = []
+        for name, dict1 in self._params.dft_test.items():
+            dft = set_dataset_from_electron_yamls(
+                dict1["files"],
+                temperature=self._params.temperature,
+                target=self._params.electron_property,
+                element_order=self._params.element_order,
+            )
+            dft.name = name
+            dft.include_force = dict1["include_force"]
+            dft.weight = dict1["weight"]
+            self._test.append(dft)
 
     @property
     def train(self) -> list[PolymlpDataDFT]:
