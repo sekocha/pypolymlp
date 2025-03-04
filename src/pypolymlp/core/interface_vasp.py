@@ -31,15 +31,22 @@ def parse_properties_from_vaspruns(vaspruns: list[str]) -> tuple:
     """Parse vasprun.xml files and return structures and properties."""
     energies, forces, stresses, structures = [], [], [], []
     for vasp in vaspruns:
-        v = Vasprun(vasp)
-        property_dict = v.get_properties()
-        st = v.get_structure()
-        structures.append(st)
-
-        energies.append(property_dict["energy"])
-        forces.append(property_dict["force"])
-        sigma = property_dict["stress"] * st.volume / EVtoKbar
-        stresses.append(sigma)
+        md, root = check_vasprun_type(vasp)
+        if md:
+            v = VasprunMD(vasp)
+            structures.extend(v.structures)
+            energies.extend(v.energies)
+            forces.extend(v.forces)
+            for stress, st in zip(v.stresses, v.structures):
+                sigma = stress * st.volume / EVtoKbar
+                stresses.append(sigma)
+        else:
+            v = Vasprun(vasp)
+            structures.append(v.structure)
+            energies.append(v.energy)
+            forces.append(v.forces)
+            sigma = v.stress * v.structure.volume / EVtoKbar
+            stresses.append(sigma)
     return structures, (np.array(energies), forces, np.array(stresses))
 
 
@@ -53,44 +60,92 @@ def parse_structures_from_poscars(poscars: list[str]):
     return [Poscar(f).structure for f in poscars]
 
 
+def check_vasprun_type(name: str = None, root=None):
+    """Check whether md type calculation is done in vasprun.xml."""
+    if name is not None:
+        root = ET.parse(name).getroot()
+
+    tag = root.find(".//*[@name='IBRION']")
+    try:
+        tagint = int(tag.text)
+        if tagint == 0:
+            return True, root
+        return False, root
+    except:
+        return False, root
+
+
 class Vasprun:
     """Class for parsing vasprun.xml from single-point calculation."""
 
-    def __init__(self, name):
+    def __init__(self, name: str, root=None):
         """Init method."""
-        self._root = ET.parse(name).getroot()
+        if root is None:
+            self._root = ET.parse(name).getroot()
+        else:
+            self._root = root
+        self._calc = self._root.find("calculation")
+
+        self._energy = None
+        self._forces = None
+        self._stress = None
         self._structure = None
         self._name = name
 
-    def get_energy(self) -> float:
-        """Parse vasprun and return energy."""
-        e = self._root.find("calculation").find("energy")
-        return float(e[1].text)
-
     def get_energy_smearing_delta(self) -> float:
         """Parse vasprun and return smearing delta F."""
-        e = self._root.find("calculation").find("energy")
+        e = self._calc.find("energy")
         return float(e[2].text)
 
-    def get_forces(self) -> np.ndarray:
-        """Parse vasprun and return forces."""
+    @property
+    def energy(self) -> float:
+        """Parse vasprun and return energy.
+
+        Return
+        ------
+        energy: float.
+        """
+        if self._energy is not None:
+            return self._energy
+        e = self._calc.find("energy")
+        self._energy = float(e[1].text)
+        return self._energy
+
+    @property
+    def forces(self) -> np.ndarray:
+        """Parse vasprun and return forces.
+
+        Return
+        ------
+        forces: shape=(3, n_atom)
+        """
+        if self._forces is not None:
+            return self._forces
         f = self._root.find(".//*[@name='forces']")
-        return self._varray_to_nparray(f).T
+        self._forces = self._varray_to_nparray(f).T
+        return self._forces
 
-    def get_stress(self) -> np.ndarray:
-        """Parse vasprun and return stress tensor in kbar."""
+    @property
+    def stress(self) -> np.ndarray:
+        """Parse vasprun and return stress tensor in kbar.
+
+        Return
+        ------
+        stress: shape=(3, 3) in kbar.
+        """
+        if self._stress is not None:
+            return self._stress
         f = self._root.find(".//*[@name='stress']")
-        return self._varray_to_nparray(f)
+        self._stress = self._varray_to_nparray(f)
+        return self._stress
 
-    def get_properties(self) -> dict:
-        property_dict = {
-            "energy": self.get_energy(),
-            "force": self.get_forces(),
-            "stress": self.get_stress(),
-        }
-        return property_dict
+    @property
+    def properties(self) -> tuple:
+        """Return properties."""
+        return (self.energy, self.forces, self.stress)
 
-    def get_structure(self, valence: bool = False) -> PolymlpStructure:
+    @property
+    def structure(self) -> PolymlpStructure:
         """Parse vasprun and return structure."""
         if self._structure is not None:
             return self._structure
@@ -151,18 +206,16 @@ class Vasprun:
         """Read rc_set."""
         return [[c.text.replace(" ", "") for c in rc.findall("c")] for rc in obj]
 
-    @property
-    def structure(self) -> PolymlpStructure:
-        """Return structure"""
-        return self._structure
-
 
 class VasprunMD:
     """Class for parsing vasprun.xml from MD."""
 
-    def __init__(self, name: str):
+    def __init__(self, name: str, root=None):
         """Init method."""
-        self._root = ET.parse(name).getroot()
+        if root is None:
+            self._root = ET.parse(name).getroot()
+        else:
+            self._root = root
         self._calcs = self._root.findall("calculation")
 
         self._energies = None

@@ -3,6 +3,8 @@
 from xml.dom import minidom
 from xml.etree import ElementTree as ET
 
+from pypolymlp.core.interface_vasp import check_vasprun_type
+
 
 def prettify(elem):
     """
@@ -20,6 +22,10 @@ def compress_vaspruns(vasprun):
     except ET.ParseError:
         print("ET.ParseError:", vasprun)
         return False
+
+    md, _ = check_vasprun_type(root=root)
+    if md:
+        raise RuntimeError("Do not compress vasprun.xml from MD calculation.")
 
     e = root.find("calculation").find("energy")
     f = root.find("calculation").find(".//*[@name='forces']")
@@ -47,9 +53,10 @@ def compress_vaspruns_md(vasprun):
         return False
 
     m1 = ET.Element("modeling")
+    tag = root.find(".//*[@name='IBRION']")
     st2 = root.find(".//*[@name='atomtypes']")
     st3 = root.find(".//*[@name='atoms']")
-    m1.extend([st2, st3])
+    m1.extend([tag, st2, st3])
 
     cals = root.findall("calculation")
     for cal in cals:
