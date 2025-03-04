@@ -155,6 +155,7 @@ class Pypolymlp:
                 "files": sorted(train_files),
                 "include_force": self._params.include_force,
                 "weight": 1.0,
+                "split": True,
             }
         }
         self._params.dft_test = {
@@ -162,6 +163,7 @@ class Pypolymlp:
                 "files": sorted(test_files),
                 "include_force": self._params.include_force,
                 "weight": 1.0,
+                "split": True,
             }
         }
         self._multiple_datasets = True
@@ -225,6 +227,7 @@ class Pypolymlp:
                 "files": sorted(train_vaspruns),
                 "include_force": self._params.include_force,
                 "weight": 1.0,
+                "split": True,
             }
         }
         self._params.dft_test = {
@@ -232,6 +235,7 @@ class Pypolymlp:
                 "files": sorted(test_vaspruns),
                 "include_force": self._params.include_force,
                 "weight": 1.0,
+                "split": True,
             }
         }
         self._multiple_datasets = True
@@ -259,12 +263,14 @@ class Pypolymlp:
                 "files": sorted(vaspruns),
                 "include_force": self._params.include_force,
                 "weight": 1.0,
+                "split": True,
             }
         for i, vaspruns in enumerate(test_vaspruns):
             self._params.dft_test["dataset" + str(i + 1)] = {
                 "files": sorted(vaspruns),
                 "include_force": self._params.include_force,
                 "weight": 1.0,
+                "split": True,
             }
         self._multiple_datasets = True
         self.load_datasets()

@@ -32,7 +32,7 @@ def split_ids_train_test(n_data: int, train_ratio: float = 0.9):
 def split_train_test(files: list, train_ratio: float = 0.9):
     """Split dataset into training and test datasets."""
     n_data = len(files)
-    train_ids, test_ids = split_train_test(n_data)
+    train_ids, test_ids = split_ids_train_test(n_data, train_ratio=train_ratio)
     return [files[i] for i in train_ids], [files[i] for i in test_ids]
 
 
