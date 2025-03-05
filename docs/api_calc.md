@@ -1,4 +1,8 @@
 # Python API (Property calculations)
+
+If version 0.8.0 or earlier is used, polymlp files are generated in a text format as `polymlp.lammps`.
+If a newer version (0.9.0 or later) is used, polymlp files are generated in YAML format  as `polymlp.yaml`, which can be utilized by replacing `polymlp.lammps` with `polymlp.yaml` in the following documentation.
+
 ## Calculations of energy, forces, and stress tensor
 
 - Single structure
