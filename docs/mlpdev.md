@@ -86,3 +86,31 @@ If a newer version (>= 0.9.0) is used, polymlp files are generated in a yaml for
     gaussian_params1 1.0 1.0 1
     gaussian_params2 0.0 3.0 4
 ```
+
+## Dataset settings
+
+When both the training and test datasets are explicitly provided, they can be included in the input file as follows:
+
+```
+train_data vaspruns/train1/vasprun-*.xml.polymlp
+train_data vaspruns/train2/vasprun-*.xml.polymlp
+test_data vaspruns/test1/vasprun-*.xml.polymlp
+test_data vaspruns/test2/vasprun-*.xml.polymlp
+```
+
+In cases where the datasets are automatically divided into training and test sets, they can be included in the input file as follows:
+
+```
+data vaspruns1/vasprun-*.xml.polymlp
+data vaspruns2/vasprun-*.xml.polymlp
+```
+
+When the datasets contain property entries for multiple structures, such as those derived from molecular dynamics (MD) simulations, they can be specified in the input file as follows:
+
+```
+data_md vasprun-md1.xml
+data_md vasprun-md2.xml
+data_md vasprun-md-*.xml
+```
+
+These datasets will be automatically divided into training and test sets.
