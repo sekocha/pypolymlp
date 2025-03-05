@@ -282,7 +282,12 @@ class Pypolymlp:
         self.load_datasets(train_ratio=train_ratio)
         return self
 
-    def set_datasets_phono3py(self, yaml: str, train_ratio: float = 0.9):
+    def set_datasets_phono3py(
+        self,
+        yaml: str,
+        energy_dat: Optional[str] = None,
+        train_ratio: float = 0.9,
+    ):
         """Set single DFT dataset in phono3py format.
 
         Parameters
@@ -291,7 +296,11 @@ class Pypolymlp:
         """
         self._is_params_none()
         self._params.dataset_type = "phono3py"
-        dft = parse_phono3py_yaml(yaml, element_order=self._params.element_order)
+        dft = parse_phono3py_yaml(
+            yaml,
+            energies_filename=energy_dat,
+            element_order=self._params.element_order,
+        )
         self._train, self._test = dft.split(train_ratio=train_ratio)
         self._post_datasets_from_api()
         return self

@@ -34,7 +34,7 @@ def set_data_locations(
     for dataset in parser.train_test:
         if not include_force:
             dataset.include_force = False
-        train, test = dataset.split(train_ratio=train_ratio)
+        train, test = dataset.split_train_test(train_ratio=train_ratio)
         dft_train.append(train)
         dft_test.append(test)
 
@@ -63,11 +63,9 @@ class ParamsParser:
         ----------
         filename: File of input parameters for single polymlp (e.g., polymlp.in).
         """
-        self.parser = InputParser(filename)
+        self.parser = InputParser(filename, prefix=prefix)
         include_force, include_stress = self._set_force_tags()
         self.include_force = include_force
-
-        self._prefix = prefix
         self._train_ratio = train_ratio
 
         elements, n_type, atomic_energy = self._set_element_properties()
@@ -258,13 +256,17 @@ class ParamsParser:
 
     def _get_phono3py_set(self):
         """Set dataset for input in phono3py format."""
-        yml = self.parser.get_params("data_phono3py", default=None)
+        yml = self.parser.get_params("data_phono3py", size=2, default=None)
+        location = yml[0]
+        energy_dat = yml[1] if len(yml) > 1 else None
+
         dft_train = Dataset(
             dataset_type="phono3py",
-            name=yml,
-            location=yml,
+            name=location,
+            location=location,
             include_force=self.include_force,
             split=False,
+            energy_dat=energy_dat,
         )
         dft_train, dft_test = [dft_train], []
         return dft_train, dft_test

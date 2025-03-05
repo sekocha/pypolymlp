@@ -12,8 +12,9 @@ from pypolymlp.core.utils import strtobool
 class InputParser:
     """Class of input parser."""
 
-    def __init__(self, fname: str):
+    def __init__(self, fname: str, prefix: Optional[str] = None):
         """Init method."""
+        self._prefix = prefix
         self._parse_infile(fname)
 
     def _parse_infile(self, fname: str):
@@ -34,7 +35,7 @@ class InputParser:
                 if "distance" == d[0]:
                     self._distance.append(d[1:])
                 elif d[0] in ["train_data", "test_data", "data", "data_md"]:
-                    dataset = Dataset(string_list=d[1:])
+                    dataset = Dataset(string_list=d[1:], prefix=self._prefix)
                     if d[0] == "train_data":
                         self._train.append(dataset)
                     elif d[0] == "test_data":

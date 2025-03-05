@@ -226,30 +226,19 @@ def test_mlp_devel_api_phono3py():
         gaussian_params2=[0.0, 7.0, 10],
         atomic_energy=[-0.19820116, -0.21203241],
     )
-    train_yaml = cwd / "data-AgI/phono3py_params_wurtzite_AgI.yaml.xz"
-    test_yaml = cwd / "data-AgI/phono3py_params_wurtzite_AgI.yaml.xz"
-    train_energy_dat = cwd / "data-AgI/energies_ltc_wurtzite_AgI_fc3-forces.dat"
-    test_energy_dat = cwd / "data-AgI/energies_ltc_wurtzite_AgI_fc3-forces.dat"
-    train_ids = np.arange(5)
-    test_ids = np.arange(95, 100)
+    yaml = cwd / "data-AgI/phono3py_params_wurtzite_AgI.yaml.xz"
+    energy_dat = cwd / "data-AgI/energies_ltc_wurtzite_AgI_fc3-forces.dat"
 
-    polymlp.set_datasets_phono3py(
-        train_yaml,
-        test_yaml,
-        train_energy_dat=train_energy_dat,
-        test_energy_dat=test_energy_dat,
-        train_ids=train_ids,
-        test_ids=test_ids,
-    )
+    polymlp.set_datasets_phono3py(yaml, energy_dat=energy_dat)
     polymlp.run(verbose=True)
 
     error_train = polymlp.summary.error_train["train_single"]
     error_test = polymlp.summary.error_test["test_single"]
 
-    assert error_train["energy"] == pytest.approx(5.112066212453187e-07, abs=1e-8)
-    assert error_train["force"] == pytest.approx(0.00011784280434943888, rel=1e-3)
-    assert error_test["energy"] == pytest.approx(4.6196227569007164e-07, abs=1e-8)
-    assert error_test["force"] == pytest.approx(0.0002852080019626956, rel=1e-3)
+    assert error_train["energy"] == pytest.approx(6.918367430434279e-07, rel=1e-5)
+    assert error_train["force"] == pytest.approx(0.00014990313076671476, rel=1e-3)
+    assert error_test["energy"] == pytest.approx(7.094824886399383e-07, rel=1e-5)
+    assert error_test["force"] == pytest.approx(0.0001507663846345712, rel=1e-3)
 
 
 def test_mlp_devel_api_displacements():

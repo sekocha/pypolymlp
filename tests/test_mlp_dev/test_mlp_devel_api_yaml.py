@@ -27,8 +27,6 @@ def test_mlp_devel_api_sscha():
     polymlp.set_datasets_sscha(yamlfiles)
     polymlp.run(verbose=True)
 
-    print(polymlp.summary.error_train)
-    print(polymlp.summary.error_test)
     error_train1 = polymlp.summary.error_train["train_single"]
     error_test1 = polymlp.summary.error_test["test_single"]
 

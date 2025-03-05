@@ -75,6 +75,7 @@ class ParserDatasets:
         for dataset in self._params.dft_train:
             dft = parse_phono3py_yaml(
                 dataset.location,
+                energies_filename=dataset.energy_dat,
                 element_order=self._params.element_order,
             )
             dft = self._inherit_dataset_params(dataset, dft)
