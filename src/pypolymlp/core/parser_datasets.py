@@ -1,6 +1,7 @@
 """Class of parsing DFT datasets."""
 
 from pypolymlp.core.data_format import PolymlpDataDFT, PolymlpParams
+from pypolymlp.core.dataset import Dataset
 from pypolymlp.core.interface_vasp import set_dataset_from_vaspruns
 from pypolymlp.core.interface_yaml import (
     set_dataset_from_electron_yamls,
@@ -11,10 +12,11 @@ from pypolymlp.core.interface_yaml import (
 class ParserDatasets:
     """Class of parsing DFT datasets."""
 
-    def __init__(self, params: PolymlpParams):
+    def __init__(self, params: PolymlpParams, train_ratio: float = 0.9):
         """Init method."""
         self._params = params
         self._dataset_type = self._params.dataset_type
+        self._train_ratio = train_ratio
 
         self._train = None
         self._test = None
@@ -22,180 +24,103 @@ class ParserDatasets:
 
     def _parse(self):
         """Parse datasets."""
+        self._train, self._test = [], []
         if self._dataset_type == "vasp":
-            self._parse_vasp_multiple()
+            self._parse_vasp()
         elif self._dataset_type == "phono3py":
-            self._parse_phono3py_single()
+            self._parse_phono3py()
         elif self._dataset_type == "sscha":
-            self._parse_sscha_multiple()
+            self._parse_sscha()
         elif self._dataset_type == "electron":
-            self._parse_electron_multiple()
+            self._parse_electron()
         else:
             raise KeyError("Given dataset_type is unavailable.")
 
-    def _post_single_dataset(self):
-        self._train.name = "train_single"
-        self._train.include_force = self._params.include_force
-        self._train.apply_atomic_energy(self._params.atomic_energy)
+    def _inherit_dataset_params(self, dataset: Dataset, dft: PolymlpDataDFT):
+        """Inherit parameters of dataset."""
+        dft.apply_atomic_energy(self._params.atomic_energy)
+        dft.name = dataset.name
+        dft.include_force = dataset.include_force
+        dft.weight = dataset.weight
+        return dft
 
-        self._test.name = "test_single"
-        self._test.include_force = self._params.include_force
-        self._test.apply_atomic_energy(self._params.atomic_energy)
-
-        self._train = [self._train]
-        self._test = [self._test]
-
-    #    def _parse_vasp_single(self):
-    #        """Parse VASP single dataset."""
-    #        self._train = set_dataset_from_vaspruns(
-    #            self._params.dft_train,
-    #            element_order=self._params.element_order,
-    #        )
-    #        self._test = set_dataset_from_vaspruns(
-    #            self._params.dft_test,
-    #            element_order=self._params.element_order,
-    #        )
-    #        self._post_single_dataset()
-    #
-    def _parse_vasp_multiple(self):
+    def _parse_vasp(self):
         """Parse VASP multiple datasets."""
-        element_order = self._params.element_order
-        self._train, self._test = [], []
-        for name, dict1 in self._params.dft_train.items():
+        for dataset in self._params.dft_train:
             dft = set_dataset_from_vaspruns(
-                dict1["files"],
-                element_order=element_order,
+                dataset.files,
+                element_order=self._params.element_order,
             )
-            dft.apply_atomic_energy(self._params.atomic_energy)
-            dft.name = name
-            dft.include_force = dict1["include_force"]
-            dft.weight = dict1["weight"]
-            if dict1["split"]:
+            dft = self._inherit_dataset_params(dataset, dft)
+            if dataset.split:
                 self._train.append(dft)
             else:
-                train, test = dft.split(train_ratio=0.9)
+                train, test = dft.split(train_ratio=self._train_ratio)
                 self._train.append(train)
                 self._test.append(test)
 
-        for name, dict1 in self._params.dft_test.items():
+        for dataset in self._params.dft_test:
             dft = set_dataset_from_vaspruns(
-                dict1["files"],
-                element_order=element_order,
+                dataset.files,
+                element_order=self._params.element_order,
             )
-            dft.apply_atomic_energy(self._params.atomic_energy)
-            dft.name = name
-            dft.include_force = dict1["include_force"]
-            dft.weight = dict1["weight"]
-            if dict1["split"]:
+            dft = self._inherit_dataset_params(dataset, dft)
+            if dataset.split:
                 self._test.append(dft)
 
-    def _parse_phono3py_single(self):
-        """Parse phono3py single dataset."""
+    def _parse_phono3py(self):
+        """Parse phono3py dataset."""
         from pypolymlp.core.interface_phono3py import parse_phono3py_yaml
 
-        self._train = parse_phono3py_yaml(
-            self._params.dft_train["phono3py_yaml"],
-            self._params.dft_train["energy"],
-            element_order=self._params.element_order,
-            select_ids=self._params.dft_train["indices"],
-            use_phonon_dataset=False,
-        )
-        self._test = parse_phono3py_yaml(
-            self._params.dft_test["phono3py_yaml"],
-            self._params.dft_test["energy"],
-            element_order=self._params.element_order,
-            select_ids=self._params.dft_test["indices"],
-            use_phonon_dataset=False,
-        )
-        self._post_single_dataset()
-        self._params.dft_train = {"train_phono3py": self._params.dft_train}
-        self._params.dft_test = {"test_phono3py": self._params.dft_test}
-
-    def _parse_phono3py_multiple(self):
-        raise NotImplementedError("No function for parsing multiple phono3py.yamls.")
-
-    def _parse_sscha_single(self):
-        """Parse sscha results."""
-        self._train = set_dataset_from_sscha_yamls(
-            self._params.dft_train,
-            element_order=self._params.element_order,
-        )
-        self._test = set_dataset_from_sscha_yamls(
-            self._params.dft_test,
-            element_order=self._params.element_order,
-        )
-        self._post_single_dataset()
-        self._params.dft_train = {"train_single": self._params.dft_train}
-        self._params.dft_test = {"test_single": self._params.dft_test}
-
-    def _parse_sscha_multiple(self):
-        """Parse sscha results."""
-        self._train = []
-        for name, dict1 in self._params.dft_train.items():
-            dft = set_dataset_from_sscha_yamls(
-                dict1["files"],
+        for dataset in self._params.dft_train:
+            dft = parse_phono3py_yaml(
+                dataset.location,
                 element_order=self._params.element_order,
             )
-            dft.name = name
-            dft.include_force = dict1["include_force"]
-            dft.weight = dict1["weight"]
+            dft = self._inherit_dataset_params(dataset, dft)
+
+            train, test = dft.split(train_ratio=self._train_ratio)
+            self._train.append(train)
+            self._test.append(test)
+
+    def _parse_sscha(self):
+        """Parse sscha results."""
+        for dataset in self._params.dft_train:
+            dft = set_dataset_from_sscha_yamls(
+                dataset.files,
+                element_order=self._params.element_order,
+            )
+            dft = self._inherit_dataset_params(dataset, dft)
             self._train.append(dft)
 
-        self._test = []
-        for name, dict1 in self._params.dft_test.items():
+        for dataset in self._params.dft_test:
             dft = set_dataset_from_sscha_yamls(
-                dict1["files"],
+                dataset.files,
                 element_order=self._params.element_order,
             )
-            dft.name = name
-            dft.include_force = dict1["include_force"]
-            dft.weight = dict1["weight"]
+            dft = self._inherit_dataset_params(dataset, dft)
             self._test.append(dft)
 
-    def _parse_electron_single(self):
+    def _parse_electron(self):
         """Parse electron results."""
-        self._train = set_dataset_from_electron_yamls(
-            self._params.dft_train,
-            temperature=self._params.temperature,
-            target=self._params.electron_property,
-            element_order=self._params.element_order,
-        )
-        self._test = set_dataset_from_electron_yamls(
-            self._params.dft_test,
-            temperature=self._params.temperature,
-            target=self._params.electron_property,
-            element_order=self._params.element_order,
-        )
-        self._post_single_dataset()
-        self._params.dft_train = {"train_single": self._params.dft_train}
-        self._params.dft_test = {"test_single": self._params.dft_test}
-
-    def _parse_electron_multiple(self):
-        """Parse electron results."""
-        self._train = []
-        for name, dict1 in self._params.dft_train.items():
+        for dataset in self._params.dft_train:
             dft = set_dataset_from_electron_yamls(
-                dict1["files"],
+                dataset.files,
                 temperature=self._params.temperature,
                 target=self._params.electron_property,
                 element_order=self._params.element_order,
             )
-            dft.name = name
-            dft.include_force = dict1["include_force"]
-            dft.weight = dict1["weight"]
+            dft = self._inherit_dataset_params(dataset, dft)
             self._train.append(dft)
 
-        self._test = []
-        for name, dict1 in self._params.dft_test.items():
+        for dataset in self._params.dft_test:
             dft = set_dataset_from_electron_yamls(
-                dict1["files"],
+                dataset.files,
                 temperature=self._params.temperature,
                 target=self._params.electron_property,
                 element_order=self._params.element_order,
             )
-            dft.name = name
-            dft.include_force = dict1["include_force"]
-            dft.weight = dict1["weight"]
+            dft = self._inherit_dataset_params(dataset, dft)
             self._test.append(dft)
 
     @property

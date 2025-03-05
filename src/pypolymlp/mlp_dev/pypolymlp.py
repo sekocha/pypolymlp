@@ -5,8 +5,10 @@ from typing import Literal, Optional, Union
 import numpy as np
 
 from pypolymlp.core.data_format import PolymlpDataMLP, PolymlpParams, PolymlpStructure
+from pypolymlp.core.dataset import Dataset
 from pypolymlp.core.displacements import get_structures_from_displacements
 from pypolymlp.core.interface_datasets import set_dataset_from_structures
+from pypolymlp.core.interface_phono3py import parse_phono3py_yaml
 from pypolymlp.core.interface_vasp import parse_structures_from_poscars
 from pypolymlp.core.io_polymlp import convert_to_yaml, load_mlp
 from pypolymlp.core.polymlp_params import set_all_params
@@ -140,9 +142,9 @@ class Pypolymlp:
             )
         return self
 
-    def load_datasets(self):
+    def load_datasets(self, train_ratio: float = 0.9):
         """Load datasets provided in params instance."""
-        self._polymlp_in.parse_datasets()
+        self._polymlp_in.parse_datasets(train_ratio=train_ratio)
         self._train = self._polymlp_in.train
         self._test = self._polymlp_in.test
         return self
@@ -150,22 +152,20 @@ class Pypolymlp:
     def _split_dataset_auto(self, files: list[str], train_ratio: float = 0.9):
         """Split dataset into training and test datasets automatically."""
         train_files, test_files = split_train_test(files, train_ratio=train_ratio)
-        self._params.dft_train = {
-            "train_single": {
-                "files": sorted(train_files),
-                "include_force": self._params.include_force,
-                "weight": 1.0,
-                "split": True,
-            }
-        }
-        self._params.dft_test = {
-            "test_single": {
-                "files": sorted(test_files),
-                "include_force": self._params.include_force,
-                "weight": 1.0,
-                "split": True,
-            }
-        }
+        train = Dataset(
+            name="train_single",
+            files=train_files,
+            include_force=self._params.include_force,
+            weight=1.0,
+        )
+        test = Dataset(
+            name="test_single",
+            files=test_files,
+            include_force=self._params.include_force,
+            weight=1.0,
+        )
+        self._params.dft_train = [train]
+        self._params.dft_test = [test]
         self._multiple_datasets = True
         return self
 
@@ -212,7 +212,12 @@ class Pypolymlp:
         self.load_datasets()
         return self
 
-    def set_datasets_vasp(self, train_vaspruns: list[str], test_vaspruns: list[str]):
+    def set_datasets_vasp(
+        self,
+        train_vaspruns: list[str],
+        test_vaspruns: list[str],
+        train_ratio: float = 0.9,
+    ):
         """Set single DFT dataset in vasp format.
 
         Parameters
@@ -222,30 +227,29 @@ class Pypolymlp:
         """
         self._is_params_none()
         self._params.dataset_type = "vasp"
-        self._params.dft_train = {
-            "train_single": {
-                "files": sorted(train_vaspruns),
-                "include_force": self._params.include_force,
-                "weight": 1.0,
-                "split": True,
-            }
-        }
-        self._params.dft_test = {
-            "test_single": {
-                "files": sorted(test_vaspruns),
-                "include_force": self._params.include_force,
-                "weight": 1.0,
-                "split": True,
-            }
-        }
+        train = Dataset(
+            name="train_single",
+            files=sorted(train_vaspruns),
+            include_force=self._params.include_force,
+            weight=1.0,
+        )
+        test = Dataset(
+            name="test_single",
+            files=sorted(test_vaspruns),
+            include_force=self._params.include_force,
+            weight=1.0,
+        )
+        self._params.dft_train = [train]
+        self._params.dft_test = [test]
         self._multiple_datasets = True
-        self.load_datasets()
+        self.load_datasets(train_ratio=train_ratio)
         return self
 
     def set_multiple_datasets_vasp(
         self,
         train_vaspruns: list[list[str]],
         test_vaspruns: list[list[str]],
+        train_ratio: float = 0.9,
     ):
         """Set multiple DFT datasets in vasp format.
 
@@ -256,49 +260,40 @@ class Pypolymlp:
         """
         self._is_params_none()
         self._params.dataset_type = "vasp"
-        self._params.dft_train = dict()
-        self._params.dft_test = dict()
+        self._params.dft_train = []
+        self._params.dft_test = []
         for i, vaspruns in enumerate(train_vaspruns):
-            self._params.dft_train["dataset" + str(i + 1)] = {
-                "files": sorted(vaspruns),
-                "include_force": self._params.include_force,
-                "weight": 1.0,
-                "split": True,
-            }
+            train = Dataset(
+                name="dataset" + str(i + 1),
+                files=sorted(vaspruns),
+                include_force=self._params.include_force,
+                weight=1.0,
+            )
+            self._params.dft_train.append(train)
         for i, vaspruns in enumerate(test_vaspruns):
-            self._params.dft_test["dataset" + str(i + 1)] = {
-                "files": sorted(vaspruns),
-                "include_force": self._params.include_force,
-                "weight": 1.0,
-                "split": True,
-            }
+            test = Dataset(
+                name="dataset" + str(i + 1),
+                files=sorted(vaspruns),
+                include_force=self._params.include_force,
+                weight=1.0,
+            )
+            self._params.dft_test.append(test)
         self._multiple_datasets = True
-        self.load_datasets()
+        self.load_datasets(train_ratio=train_ratio)
         return self
 
-    def set_datasets_phono3py(
-        self,
-        train_yaml: str,
-        test_yaml: str,
-        train_energy_dat: str = None,
-        test_energy_dat: str = None,
-        train_ids: tuple[int] = None,
-        test_ids: tuple[int] = None,
-    ):
-        """Set single DFT dataset in phono3py format."""
+    def set_datasets_phono3py(self, yaml: str, train_ratio: float = 0.9):
+        """Set single DFT dataset in phono3py format.
+
+        Parameters
+        ----------
+        yaml: Phono3py yaml file.
+        """
         self._is_params_none()
         self._params.dataset_type = "phono3py"
-        self._params.dft_train = {
-            "phono3py_yaml": train_yaml,
-            "energy": train_energy_dat,
-            "indices": train_ids,
-        }
-        self._params.dft_test = {
-            "phono3py_yaml": test_yaml,
-            "energy": test_energy_dat,
-            "indices": test_ids,
-        }
-        self.load_datasets()
+        dft = parse_phono3py_yaml(yaml, element_order=self._params.element_order)
+        self._train, self._test = dft.split(train_ratio=train_ratio)
+        self._post_datasets_from_api()
         return self
 
     def set_datasets_displacements(

@@ -41,12 +41,12 @@ class PolymlpDevData:
         ) = parse_parameter_files(infiles, prefix=prefix)
         return self
 
-    def parse_datasets(self):
+    def parse_datasets(self, train_ratio: float = 0.9):
         """Parse DFT datasets."""
         if self._params is None:
             raise ValueError("PolymlpParams object is required.")
 
-        parser = ParserDatasets(self._params)
+        parser = ParserDatasets(self._params, train_ratio=train_ratio)
         self.set_datasets(parser.train, parser.test)
         return self
 
@@ -77,10 +77,10 @@ class PolymlpDevData:
         if self.is_multiple_datasets:
             print("  train_data:", flush=True)
             for v in params.dft_train:
-                print("  -", v, flush=True)
+                print("  -", v.location, flush=True)
             print("  test_data:", flush=True)
             for v in params.dft_test:
-                print("  -", v, flush=True)
+                print("  -", v.location, flush=True)
         else:
             if params.dataset_type == "phono3py":
                 print("  train_data:", flush=True)

@@ -1,12 +1,10 @@
 """Class of input parameter parser."""
 
 import copy
-import glob
 from typing import Literal, Optional, Union
 
-import numpy as np
-
 from pypolymlp.core.data_format import PolymlpModelParams, PolymlpParams
+from pypolymlp.core.dataset import Dataset
 from pypolymlp.core.parser_infile import InputParser
 from pypolymlp.core.polymlp_params import (
     set_active_gaussian_params,
@@ -14,145 +12,38 @@ from pypolymlp.core.polymlp_params import (
     set_gtinv_params,
     set_regression_alphas,
 )
-from pypolymlp.core.utils import split_train_test, strtobool
-
-
-def _complete_dataset_params(params: list, include_force: bool = True):
-    """Complete parameters needed for dataset."""
-    shortage = []
-    if len(params) < 2:
-        shortage.append("True")
-    if len(params) < 3:
-        shortage.append(1.0)
-    params.extend(shortage)
-
-    if not include_force:
-        params[1] = "False"
-    return params
-
-
-def _set_data_locations_single_dataset(
-    parser: InputParser,
-    prefix: Optional[str] = None,
-    train_ratio: float = 0.9,
-):
-    """Set locations of data for single dataset."""
-    train = parser.train
-    test = parser.test
-    train_test = parser.train_test
-    if len(train) == 1:
-        if prefix is None:
-            dft_train = sorted(glob.glob(train[0][0]))
-            dft_test = sorted(glob.glob(test[0][0]))
-        else:
-            dft_train = sorted(glob.glob(prefix + "/" + train[0][0]))
-            dft_test = sorted(glob.glob(prefix + "/" + test[0][0]))
-    else:
-        if prefix is None:
-            data_all = sorted(glob.glob(train_test[0][0]))
-        else:
-            data_all = sorted(glob.glob(prefix + "/" + train_test[0][0]))
-        dft_train, dft_test = split_train_test(data_all, train_ratio=train_ratio)
-    return dft_train, dft_test
-
-
-def _set_data_locations_multiple_datasets(
-    parser: InputParser,
-    include_force: bool = True,
-    prefix: Optional[str] = None,
-    train_ratio: float = 0.9,
-):
-    """Set locations of data for multiple datasets."""
-    dft_train, dft_test = dict(), dict()
-    for params in parser.train:
-        params = _complete_dataset_params(params, include_force)
-        set_id = params[0]
-        if prefix is None:
-            files = sorted(glob.glob(set_id))
-        else:
-            files = sorted(glob.glob(prefix + "/" + set_id))
-        dft_train[set_id] = {
-            "files": files,
-            "include_force": strtobool(params[1]),
-            "weight": float(params[2]),
-            "split": True,
-        }
-
-    for params in parser.test:
-        params = _complete_dataset_params(params, include_force)
-        set_id = params[0]
-        if prefix is None:
-            files = sorted(glob.glob(set_id))
-        else:
-            files = sorted(glob.glob(prefix + "/" + set_id))
-        dft_test[set_id] = {
-            "files": files,
-            "include_force": strtobool(params[1]),
-            "weight": float(params[2]),
-            "split": True,
-        }
-
-    for params in parser.train_test:
-        params = _complete_dataset_params(params, include_force)
-        set_id = params[0]
-        if prefix is None:
-            data_all = sorted(glob.glob(set_id))
-        else:
-            data_all = sorted(glob.glob(prefix + "/" + set_id))
-        data_train, data_test = split_train_test(data_all, train_ratio=train_ratio)
-
-        dft_train[set_id] = {
-            "files": data_train,
-            "include_force": strtobool(params[1]),
-            "weight": float(params[2]),
-            "split": True,
-        }
-        dft_test[set_id] = {
-            "files": data_test,
-            "include_force": strtobool(params[1]),
-            "weight": float(params[2]),
-            "split": True,
-        }
-
-    for params in parser.md:
-        params = _complete_dataset_params(params, include_force)
-        set_id = params[0]
-        if prefix is None:
-            data_all = sorted(glob.glob(set_id))
-        else:
-            data_all = sorted(glob.glob(prefix + "/" + set_id))
-
-        dft_train[set_id] = {
-            "files": data_all,
-            "include_force": strtobool(params[1]),
-            "weight": float(params[2]),
-            "split": False,
-        }
-
-    return dft_train, dft_test
 
 
 def set_data_locations(
     parser: InputParser,
-    multiple_datasets: bool = True,
     include_force: bool = True,
-    prefix: Optional[str] = None,
     train_ratio: float = 0.9,
 ):
-    """Set locations of data."""
-    if multiple_datasets:
-        dft_train, dft_test = _set_data_locations_multiple_datasets(
-            parser,
-            include_force=include_force,
-            prefix=prefix,
-            train_ratio=train_ratio,
-        )
-    else:
-        dft_train, dft_test = _set_data_locations_single_dataset(
-            parser,
-            prefix=prefix,
-            train_ratio=train_ratio,
-        )
+    """Set locations of data for multiple datasets."""
+    dft_train, dft_test = [], []
+    for dataset in parser.train:
+        if not include_force:
+            dataset.include_force = False
+        dft_train.append(dataset)
+
+    for dataset in parser.test:
+        if not include_force:
+            dataset.include_force = False
+        dft_test.append(dataset)
+
+    for dataset in parser.train_test:
+        if not include_force:
+            dataset.include_force = False
+        train, test = dataset.split(train_ratio=train_ratio)
+        dft_train.append(train)
+        dft_test.append(test)
+
+    for dataset in parser.md:
+        if not include_force:
+            dataset.include_force = False
+        dataset.split = False
+        dft_train.append(dataset)
+
     return dft_train, dft_test
 
 
@@ -355,9 +246,7 @@ class ParamsParser:
             self._multiple_datasets = True
             dft_train, dft_test = set_data_locations(
                 self.parser,
-                multiple_datasets=self._multiple_datasets,
                 include_force=self.include_force,
-                prefix=self._prefix,
                 train_ratio=self._train_ratio,
             )
             return dft_train, dft_test
@@ -368,56 +257,16 @@ class ParamsParser:
             raise KeyError("Given dataset_type is unavailable.")
 
     def _get_phono3py_set(self):
-        """
-        Format
-        ------
-        1.
-        phono3py_train_data phono3py_params.yaml.xz energies.dat
-        phono3py_test_data phono3py_params.yaml.xz energies.dat
-        2.
-        phono3py_train_data phono3py_params.yaml.xz energies.dat 0 200
-        phono3py_test_data phono3py_params.yaml.xz energies.dat 950 1000
-        3.
-        phono3py_train_data phono3py_params.yaml.xz
-        phono3py_test_data phono3py_params.yaml.xz
-        4.
-        phono3py_train_data phono3py_params.yaml.xz 0 200
-        phono3py_test_data phono3py_params.yaml.xz 950 1000
-        """
-        train = self.parser.get_params("phono3py_train_data", size=4, default=None)
-        test = self.parser.get_params("phono3py_test_data", size=4, default=None)
-        phono3py_sample = self.parser.get_params("phono3py_sample", default="sequence")
-
-        dft_train, dft_test = dict(), dict()
-        if self._prefix is None:
-            dft_train["phono3py_yaml"] = train[0]
-            dft_test["phono3py_yaml"] = test[0]
-        else:
-            dft_train["phono3py_yaml"] = self._prefix + "/" + train[0]
-            dft_test["phono3py_yaml"] = self._prefix + "/" + test[0]
-
-        if len(train) == 2 or len(train) == 4:
-            if self._prefix is None:
-                dft_train["energy"] = train[1]
-                dft_test["energy"] = test[1]
-            else:
-                dft_train["energy"] = self._prefix + "/" + train[1]
-                dft_test["energy"] = self._prefix + "/" + test[1]
-
-        if len(train) > 2:
-            if phono3py_sample == "sequence":
-                dft_train["indices"] = np.arange(int(train[-2]), int(train[-1]))
-            elif phono3py_sample == "random":
-                dft_train["indices"] = np.random.choice(
-                    int(train[-2]), size=int(train[-1])
-                )
-        else:
-            dft_train["indices"] = None
-
-        if len(test) > 2:
-            dft_test["indices"] = np.arange(int(test[-2]), int(test[-1]))
-        else:
-            dft_test["indices"] = None
+        """Set dataset for input in phono3py format."""
+        yml = self.parser.get_params("data_phono3py", default=None)
+        dft_train = Dataset(
+            dataset_type="phono3py",
+            name=yml,
+            location=yml,
+            include_force=self.include_force,
+            split=False,
+        )
+        dft_train, dft_test = [dft_train], []
         return dft_train, dft_test
 
     @property

@@ -5,6 +5,7 @@ from typing import Any, Optional
 
 import numpy as np
 
+from pypolymlp.core.dataset import Dataset
 from pypolymlp.core.utils import strtobool
 
 
@@ -21,25 +22,27 @@ class InputParser:
         lines = f.readlines()
         f.close()
 
+        self._data = dict()
+        self._distance = []
         self._train, self._test = [], []
         self._train_test_data = []
         self._md = []
-        self._distance = []
-        self._data = dict()
         for line in lines:
             d = line.split()
             if len(d) > 1:
                 self._data[d[0]] = d[1:]
                 if "distance" == d[0]:
                     self._distance.append(d[1:])
-                elif "train_data" == d[0]:
-                    self._train.append(d[1:])
-                elif "test_data" == d[0]:
-                    self._test.append(d[1:])
-                elif "data" == d[0]:
-                    self._train_test_data.append(d[1:])
-                elif "data_md" == d[0]:
-                    self._md.append(d[1:])
+                elif d[0] in ["train_data", "test_data", "data", "data_md"]:
+                    dataset = Dataset(string_list=d[1:])
+                    if d[0] == "train_data":
+                        self._train.append(dataset)
+                    elif d[0] == "test_data":
+                        self._test.append(dataset)
+                    elif d[0] == "data":
+                        self._train_test_data.append(dataset)
+                    elif d[0] == "data_md":
+                        self._md.append(dataset)
         return self
 
     def get_params(
@@ -95,20 +98,20 @@ class InputParser:
 
     @property
     def train(self):
-        """Return training data locations."""
+        """Return training datasets."""
         return self._train
 
     @property
     def test(self):
-        """Return test data locations."""
+        """Return test datasets."""
         return self._test
 
     @property
     def train_test(self):
-        """Return locations of data including training and test data."""
+        """Return datasets including training and test data."""
         return self._train_test_data
 
     @property
     def md(self):
-        """Return locations of MD data."""
+        """Return MD datasets."""
         return self._md
