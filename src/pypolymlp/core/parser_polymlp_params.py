@@ -1,12 +1,10 @@
 """Class of input parameter parser."""
 
 import copy
-import glob
 from typing import Literal, Optional, Union
 
-import numpy as np
-
 from pypolymlp.core.data_format import PolymlpModelParams, PolymlpParams
+from pypolymlp.core.dataset import Dataset
 from pypolymlp.core.parser_infile import InputParser
 from pypolymlp.core.polymlp_params import (
     set_active_gaussian_params,
@@ -14,7 +12,39 @@ from pypolymlp.core.polymlp_params import (
     set_gtinv_params,
     set_regression_alphas,
 )
-from pypolymlp.core.utils import split_train_test, strtobool
+
+
+def set_data_locations(
+    parser: InputParser,
+    include_force: bool = True,
+    train_ratio: float = 0.9,
+):
+    """Set locations of data for multiple datasets."""
+    dft_train, dft_test = [], []
+    for dataset in parser.train:
+        if not include_force:
+            dataset.include_force = False
+        dft_train.append(dataset)
+
+    for dataset in parser.test:
+        if not include_force:
+            dataset.include_force = False
+        dft_test.append(dataset)
+
+    for dataset in parser.train_test:
+        if not include_force:
+            dataset.include_force = False
+        train, test = dataset.split_train_test(train_ratio=train_ratio)
+        dft_train.append(train)
+        dft_test.append(test)
+
+    for dataset in parser.md:
+        if not include_force:
+            dataset.include_force = False
+        dataset.split = False
+        dft_train.append(dataset)
+
+    return dft_train, dft_test
 
 
 class ParamsParser:
@@ -23,9 +53,9 @@ class ParamsParser:
     def __init__(
         self,
         filename: str,
-        multiple_datasets: bool = False,
         parse_vasprun_locations: bool = True,
         prefix: Optional[str] = None,
+        train_ratio: float = 0.9,
     ):
         """Init class.
 
@@ -33,9 +63,10 @@ class ParamsParser:
         ----------
         filename: File of input parameters for single polymlp (e.g., polymlp.in).
         """
-        self.parser = InputParser(filename)
+        self.parser = InputParser(filename, prefix=prefix)
         include_force, include_stress = self._set_force_tags()
         self.include_force = include_force
+        self._train_ratio = train_ratio
 
         elements, n_type, atomic_energy = self._set_element_properties()
         self._elements = elements
@@ -50,9 +81,7 @@ class ParamsParser:
 
         if parse_vasprun_locations:
             dataset_type = self.parser.get_params("dataset_type", default="vasp")
-            dft_train, dft_test = self._get_dataset(
-                dataset_type, multiple_datasets, prefix=prefix
-            )
+            dft_train, dft_test = self._get_dataset(dataset_type)
         else:
             dataset_type = "vasp"
             dft_train, dft_test = None, None
@@ -204,155 +233,42 @@ class ParamsParser:
     def _get_dataset(
         self,
         dataset_type: Literal["vasp", "phono3py", "sscha", "electron"],
-        multiple_datasets: bool = False,
-        prefix: Optional[str] = None,
     ):
-        """Parse filenames in dataset."""
-        if dataset_type == "vasp":
-            if multiple_datasets:
-                return self._get_multiple_vasprun_sets(prefix=prefix)
-            return self._get_single_vasprun_set(prefix=prefix)
+        """Set files in datasets."""
+        if dataset_type in ["vasp", "sscha", "electron"]:
+            if len(self.parser.train) == 0 and len(self.parser.train_test) == 0:
+                raise RuntimeError("Training data not found.")
+            if len(self.parser.test) == 0 and len(self.parser.train_test) == 0:
+                raise RuntimeError("Test data not found.")
+
+            self._multiple_datasets = True
+            dft_train, dft_test = set_data_locations(
+                self.parser,
+                include_force=self.include_force,
+                train_ratio=self._train_ratio,
+            )
+            return dft_train, dft_test
         elif dataset_type == "phono3py":
-            return self._get_phono3py_set(prefix=prefix)
-        elif dataset_type == "sscha":
-            return self._get_sscha_set(prefix=prefix)
-        elif dataset_type == "electron":
-            return self._get_electron_set(prefix=prefix)
+            self._multiple_datasets = False
+            return self._get_phono3py_set()
         else:
             raise KeyError("Given dataset_type is unavailable.")
 
-    def _get_sscha_set(self, prefix: Optional[str] = None):
-        """Parse sscha_results.yaml files in dataset."""
-        data = self.parser.get_params("data", default=None)
-        if prefix is not None:
-            data = prefix + "/" + data
+    def _get_phono3py_set(self):
+        """Set dataset for input in phono3py format."""
+        yml = self.parser.get_params("data_phono3py", size=2, default=None)
+        location = yml[0]
+        energy_dat = yml[1] if len(yml) > 1 else None
 
-        data_all = sorted(glob.glob(data))
-        dft_train, dft_test = split_train_test(data_all, train_ratio=0.9)
-        return dft_train, dft_test
-
-    def _get_electron_set(self, prefix: Optional[str] = None):
-        """Parse electron.yaml files in dataset."""
-        data = self.parser.get_params("data", default=None)
-        if prefix is not None:
-            data = prefix + "/" + data
-
-        data_all = sorted(glob.glob(data))
-        dft_train, dft_test = split_train_test(data_all, train_ratio=0.9)
-        return dft_train, dft_test
-
-    def _get_single_vasprun_set(self, prefix: Optional[str] = None):
-        """Parse vasprun filenames in dataset."""
-        train = self.parser.get_params("train_data", default=None)
-        test = self.parser.get_params("test_data", default=None)
-
-        if prefix is None:
-            dft_train = sorted(glob.glob(train))
-            dft_test = sorted(glob.glob(test))
-        else:
-            dft_train = sorted(glob.glob(prefix + "/" + train))
-            dft_test = sorted(glob.glob(prefix + "/" + test))
-        return dft_train, dft_test
-
-    def _get_multiple_vasprun_sets(self, prefix: Optional[str] = None):
-        """Parse vasprun filenames in multiple datasets."""
-        train = self.parser.get_train()
-        test = self.parser.get_test()
-
-        for params in train:
-            shortage = []
-            if len(params) < 2:
-                shortage.append("True")
-            if len(params) < 3:
-                shortage.append(1.0)
-            params.extend(shortage)
-
-        for params in test:
-            shortage = []
-            if len(params) < 2:
-                shortage.append("True")
-            if len(params) < 3:
-                shortage.append(1.0)
-            params.extend(shortage)
-
-        if self.include_force == False:
-            for params in train:
-                params[1] = "False"
-            for params in test:
-                params[1] = "False"
-
-        dft_train, dft_test = dict(), dict()
-        for params in train:
-            set_id = params[0]
-            dft_train[set_id] = dict()
-            if prefix is None:
-                dft_train[set_id]["vaspruns"] = sorted(glob.glob(set_id))
-            else:
-                dft_train[set_id]["vaspruns"] = sorted(glob.glob(prefix + "/" + set_id))
-            dft_train[set_id]["include_force"] = strtobool(params[1])
-            dft_train[set_id]["weight"] = float(params[2])
-        for params in test:
-            set_id = params[0]
-            dft_test[set_id] = dict()
-            if prefix is None:
-                dft_test[set_id]["vaspruns"] = sorted(glob.glob(set_id))
-            else:
-                dft_test[set_id]["vaspruns"] = sorted(glob.glob(prefix + "/" + set_id))
-            dft_test[set_id]["include_force"] = strtobool(params[1])
-            dft_test[set_id]["weight"] = float(params[2])
-        return dft_train, dft_test
-
-    def _get_phono3py_set(self, prefix=None):
-        """
-        Format
-        ------
-        1.
-        phono3py_train_data phono3py_params.yaml.xz energies.dat
-        phono3py_test_data phono3py_params.yaml.xz energies.dat
-        2.
-        phono3py_train_data phono3py_params.yaml.xz energies.dat 0 200
-        phono3py_test_data phono3py_params.yaml.xz energies.dat 950 1000
-        3.
-        phono3py_train_data phono3py_params.yaml.xz
-        phono3py_test_data phono3py_params.yaml.xz
-        4.
-        phono3py_train_data phono3py_params.yaml.xz 0 200
-        phono3py_test_data phono3py_params.yaml.xz 950 1000
-        """
-        train = self.parser.get_params("phono3py_train_data", size=4, default=None)
-        test = self.parser.get_params("phono3py_test_data", size=4, default=None)
-        phono3py_sample = self.parser.get_params("phono3py_sample", default="sequence")
-
-        dft_train, dft_test = dict(), dict()
-        if prefix is None:
-            dft_train["phono3py_yaml"] = train[0]
-            dft_test["phono3py_yaml"] = test[0]
-        else:
-            dft_train["phono3py_yaml"] = prefix + "/" + train[0]
-            dft_test["phono3py_yaml"] = prefix + "/" + test[0]
-
-        if len(train) == 2 or len(train) == 4:
-            if prefix is None:
-                dft_train["energy"] = train[1]
-                dft_test["energy"] = test[1]
-            else:
-                dft_train["energy"] = prefix + "/" + train[1]
-                dft_test["energy"] = prefix + "/" + test[1]
-
-        if len(train) > 2:
-            if phono3py_sample == "sequence":
-                dft_train["indices"] = np.arange(int(train[-2]), int(train[-1]))
-            elif phono3py_sample == "random":
-                dft_train["indices"] = np.random.choice(
-                    int(train[-2]), size=int(train[-1])
-                )
-        else:
-            dft_train["indices"] = None
-
-        if len(test) > 2:
-            dft_test["indices"] = np.arange(int(test[-2]), int(test[-1]))
-        else:
-            dft_test["indices"] = None
+        dft_train = Dataset(
+            dataset_type="phono3py",
+            name=location,
+            location=location,
+            include_force=self.include_force,
+            split=False,
+            energy_dat=energy_dat,
+        )
+        dft_train, dft_test = [dft_train], []
         return dft_train, dft_test
 
     @property
@@ -424,19 +340,24 @@ def parse_parameter_files(infiles: Union[str, list[str]], prefix: str = None):
     priority_infile = None
     is_hybrid = False
     if not isinstance(infiles, list):
-        p = ParamsParser(infiles, multiple_datasets=True, prefix=prefix)
+        p = ParamsParser(infiles, prefix=prefix)
         common_params = p.params
         priority_infile = infiles
     else:
         priority_infile = infiles[0]
         if len(infiles) == 1:
-            p = ParamsParser(priority_infile, multiple_datasets=True, prefix=prefix)
+            p = ParamsParser(priority_infile, prefix=prefix)
             common_params = p.params
         else:
-            hybrid_params = [
-                ParamsParser(infile, multiple_datasets=True, prefix=prefix).params
-                for infile in infiles
-            ]
+            hybrid_params = []
+            for i, infile in enumerate(infiles):
+                if i == 0:
+                    params = ParamsParser(infile, prefix=prefix).params
+                else:
+                    params = ParamsParser(
+                        infile, parse_vasprun_locations=False, prefix=prefix
+                    ).params
+                hybrid_params.append(params)
             common_params = set_common_params(hybrid_params)
             hybrid_params = _set_unique_types(hybrid_params, common_params)
             is_hybrid = True

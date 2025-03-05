@@ -93,14 +93,14 @@ if __name__ == "__main__":
     forces, positions = [], []
     for f in args.vaspruns:
         vasp = Vasprun(f)
-        forces.append(vasp.get_forces())
-        st = vasp.get_structure()
-        positions.append(st["positions"])
+        forces.append(vasp.forces)
+        st = vasp.structure
+        positions.append(st.positions)
     forces = np.array(forces)
 
     if args.vasprun_residual is not None:
         vasp = Vasprun(args.vasprun_residual)
-        residual_forces = vasp.get_forces()
+        residual_forces = vasp.forces
         for f in forces:
             f -= residual_forces
 

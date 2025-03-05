@@ -5,6 +5,7 @@ from typing import Literal, Optional, Union
 
 import numpy as np
 
+from pypolymlp.core.utils import split_ids_train_test
 from pypolymlp.cxx.lib import libmlpcpp
 
 
@@ -252,6 +253,7 @@ class PolymlpDataDFT:
     exist_stress: bool = True
 
     def __post_init__(self):
+        """Post init method."""
         self.check_errors()
 
     def check_errors(self):
@@ -290,15 +292,20 @@ class PolymlpDataDFT:
         )
         return dft_dict_sliced
 
-    def sort(self):
-        """Sort DFT data in terms of the number of atoms."""
-        ids = np.argsort(self.total_n_atoms)
-        ids_stress = ((ids * 6)[:, None] + np.arange(6)[None, :]).reshape(-1)
+    def _force_stress_ids(self, ids: np.ndarray):
+        """Return IDs for force and stress corresponding to IDs for energy."""
         force_end = np.cumsum(self.total_n_atoms * 3)
         force_begin = np.insert(force_end[:-1], 0, 0)
         ids_force = np.array(
             [i for b, e in zip(force_begin[ids], force_end[ids]) for i in range(b, e)]
         )
+        ids_stress = ((ids * 6)[:, None] + np.arange(6)[None, :]).reshape(-1)
+        return ids_force, ids_stress
+
+    def sort(self):
+        """Sort DFT data in terms of the number of atoms."""
+        ids = np.argsort(self.total_n_atoms)
+        ids_force, ids_stress = self._force_stress_ids(ids)
 
         self.energies = self.energies[ids]
         self.forces = self.forces[ids_force]
@@ -308,6 +315,39 @@ class PolymlpDataDFT:
         self.structures = [self.structures[i] for i in ids]
         self.files = [self.files[i] for i in ids]
         return self
+
+    def split(self, train_ratio: float = 0.9):
+        """Split dataset into training and test datasets."""
+        train_ids, test_ids = split_ids_train_test(len(self.energies))
+        ids_force, ids_stress = self._force_stress_ids(train_ids)
+        train = PolymlpDataDFT(
+            energies=self.energies[train_ids],
+            forces=self.forces[ids_force],
+            stresses=self.stresses[ids_stress],
+            volumes=self.volumes[train_ids],
+            structures=[self.structures[i] for i in train_ids],
+            total_n_atoms=self.total_n_atoms[train_ids],
+            files=[self.files[i] for i in train_ids],
+            elements=self.elements,
+            include_force=self.include_force,
+            weight=self.weight,
+            name=self.name,
+        )
+        ids_force, ids_stress = self._force_stress_ids(test_ids)
+        test = PolymlpDataDFT(
+            energies=self.energies[test_ids],
+            forces=self.forces[ids_force],
+            stresses=self.stresses[ids_stress],
+            volumes=self.volumes[test_ids],
+            structures=[self.structures[i] for i in test_ids],
+            total_n_atoms=self.total_n_atoms[test_ids],
+            files=[self.files[i] for i in test_ids],
+            elements=self.elements,
+            include_force=self.include_force,
+            weight=self.weight,
+            name=self.name,
+        )
+        return train, test
 
 
 @dataclass

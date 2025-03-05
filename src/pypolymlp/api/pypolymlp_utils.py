@@ -13,7 +13,7 @@ from pypolymlp.utils.vasp_utils import (
     print_poscar,
     write_poscar_file,
 )
-from pypolymlp.utils.vasprun_compress import convert
+from pypolymlp.utils.vasprun_compress import compress_vaspruns
 
 
 class PypolymlpUtils:
@@ -35,11 +35,13 @@ class PypolymlpUtils:
         """
         if n_jobs == 1:
             for vasp in vaspruns:
-                convert(vasp)
+                compress_vaspruns(vasp)
         else:
             from joblib import Parallel, delayed
 
-            _ = Parallel(n_jobs=n_jobs)(delayed(convert)(vasp) for vasp in vaspruns)
+            _ = Parallel(n_jobs=n_jobs)(
+                delayed(compress_vaspruns)(vasp) for vasp in vaspruns
+            )
         return self
 
     def compute_electron_properties_from_vaspruns(

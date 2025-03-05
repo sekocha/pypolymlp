@@ -71,7 +71,7 @@ polymlp.save_mlp(filename="polymlp.lammps.500")
 # polymlp.in
 dataset_type sscha
 data ./*/sscha/300/sscha_results.yaml
-include_force False
+include_force True
 ```
 or
 ```python

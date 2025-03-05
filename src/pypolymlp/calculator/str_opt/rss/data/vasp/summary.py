@@ -32,8 +32,8 @@ def get_summary_single(st_id, dir_res, elements=None):
     f_poscar = dir_st + "POSCAR"
 
     vasp = Vasprun(f_summary)
-    e = vasp.get_energy()
-    st_dict = vasp.get_structure()
+    e = vasp.energy
+    st_dict = vasp.structure
 
     n_atoms_sum = np.sum(st_dict["n_atoms"])
 
