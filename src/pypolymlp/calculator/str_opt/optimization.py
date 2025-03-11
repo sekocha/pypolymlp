@@ -152,10 +152,7 @@ class GeometryOptimization:
         self._to_structure_fix_cell(x)
         self._energy, self._force, _ = self._prop.eval(self._structure)
 
-        if (
-            self._energy < -1e3 * self._n_atom
-            or abs(self._structure.volume) / self._n_atom > 100
-        ):
+        if self._energy < -1e3 * self._n_atom:
             print("Energy =", self._energy, flush=True)
             print("Axis :", flush=True)
             print(self._structure.axis.T, flush=True)
