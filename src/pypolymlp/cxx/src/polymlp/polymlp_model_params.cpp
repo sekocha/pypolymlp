@@ -214,7 +214,7 @@ int ModelParams::find_tp_comb_id(const vector2i& tp_comb_ref, const vector1i& tp
     return index;
 }
 
-
+/*
 void ModelParams::find_active_clusters(const feature_params& fp){
 
     if (fp.maxp > 1){
@@ -241,6 +241,46 @@ void ModelParams::find_active_clusters(const feature_params& fp){
                         }
                         else {
                             active_clusters[narray] = false;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+*/
+
+void ModelParams::find_active_clusters(const feature_params& fp){
+
+    if (fp.maxp > 1){
+        //double cutoff = 0.0;
+        //for (const auto& p: fp.params) cutoff += p[0];
+        //cutoff *= 2.5 / fp.params.size();
+
+        double cutoff = fp.cutoff / 3.0 - 0.1;
+
+        vector1i narray;
+        for (int n1 = 0; n1 < fp.params.size(); ++n1){
+            for (int n2 = 0; n2 < fp.params.size(); ++n2){
+                narray = {n1, n2};
+                if ((fp.params[n1][1] > cutoff) and (fp.params[n2][1] > cutoff)){
+                    active_clusters[narray] = false;
+                }
+                else {
+                    active_clusters[narray] = true;
+                }
+                if (fp.maxp > 2){
+                    for (int n3 = 0; n3 < fp.params.size(); ++n3){
+                        narray = {n1, n2, n3};
+                        if (
+                            (fp.params[n1][1] > cutoff)
+                            and (fp.params[n2][1] > cutoff)
+                            and (fp.params[n3][1] > cutoff)
+                        ){
+                            active_clusters[narray] = false;
+                        }
+                        else {
+                            active_clusters[narray] = true;
                         }
                     }
                 }

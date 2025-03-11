@@ -9,6 +9,7 @@ from scipy.optimize import NonlinearConstraint, minimize
 from pypolymlp.calculator.compute_features import update_types
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
+from pypolymlp.core.units import EVtoGPa
 from pypolymlp.utils.spglib_utils import construct_basis_cell
 from pypolymlp.utils.structure_utils import refine_positions
 from pypolymlp.utils.symfc_utils import construct_basis_fractional_coordinates
@@ -25,6 +26,7 @@ class GeometryOptimization:
         relax_volume: bool = False,
         relax_positions: bool = True,
         with_sym: bool = True,
+        pressure: float = 0.0,
         pot: str = None,
         params: Optional[Union[PolymlpParams, list[PolymlpParams]]] = None,
         coeffs: Optional[np.ndarray] = None,
@@ -40,6 +42,7 @@ class GeometryOptimization:
         relax_volume: Optimize volume.
         relax_positions: Optimize atomic positions.
         with_sym: Consider symmetric properties.
+        pressure: Pressure in GPa.
         pot: polymlp file.
         params: Parameters for polymlp.
         coeffs: Polymlp coefficients.
@@ -69,6 +72,7 @@ class GeometryOptimization:
         self._relax_volume = relax_volume
         self._relax_positions = relax_positions
         self._with_sym = with_sym
+        self._pressure = pressure
         self._verbose = verbose
 
         self._basis_axis, cell_update = self._set_basis_axis(cell)
@@ -158,6 +162,7 @@ class GeometryOptimization:
                 "Geometry optimization failed: " "Huge negative energy value."
             )
 
+        self._energy += self._pressure * self._structure.volume / EVtoGPa
         return self._energy
 
     def jac_fix_cell(self, x, args=None):
@@ -174,15 +179,21 @@ class GeometryOptimization:
         self._to_structure_relax_cell(x)
         (self._energy, self._force, self._stress) = self._prop.eval(self._structure)
 
-        if self._energy < -1e3 * self._n_atom:
+        if (
+            self._energy < -1e3 * self._n_atom
+            or abs(self._structure.volume) / self._n_atom > 1000
+        ):
             print("Energy =", self._energy, flush=True)
             print("Axis :", flush=True)
             print(self._structure.axis.T, flush=True)
             print("Fractional coordinates:", flush=True)
             print(self._structure.positions.T, flush=True)
             raise ValueError(
-                "Geometry optimization failed: " "Huge negative energy value."
+                "Geometry optimization failed: Huge negative energy value"
+                "or huge volume value."
             )
+
+        self._energy += self._pressure * self._structure.volume / EVtoGPa
         return self._energy
 
     def jac_relax_cell(self, x, args=None):
@@ -221,11 +232,16 @@ class GeometryOptimization:
         return volume
 
     def derivatives_by_axis(self):
-        """Compute derivatives with respect to axis elements."""
+        """Compute derivatives with respect to axis elements.
+
+        PV @ axis_inv.T is exactly the same as the derivatives of PV term
+        with respect to axis components.
+        """
+        pv = self._pressure * self._structure.volume / EVtoGPa
         sigma = [
-            [self._stress[0], self._stress[3], self._stress[5]],
-            [self._stress[3], self._stress[1], self._stress[4]],
-            [self._stress[5], self._stress[4], self._stress[2]],
+            [self._stress[0] - pv, self._stress[3], self._stress[5]],
+            [self._stress[3], self._stress[1] - pv, self._stress[4]],
+            [self._stress[5], self._stress[4], self._stress[2] - pv],
         ]
         derivatives_s = -np.array(sigma) @ self._structure.axis_inv.T
 
@@ -234,8 +250,11 @@ class GeometryOptimization:
 
     def run(
         self,
-        gtol: float = 1e-4,
         method: Literal["BFGS", "CG", "L-BFGS-B", "SLSQP"] = "BFGS",
+        gtol: float = 1e-4,
+        maxiter: int = 1000,
+        c1: Optional[float] = None,
+        c2: Optional[float] = None,
     ):
         """Run geometry optimization.
 
@@ -243,6 +262,10 @@ class GeometryOptimization:
         ----------
         method: Optimization method, CG, BFGS, L-BFGS-B or SLSQP.
                 If relax_volume = False, SLSQP is automatically used.
+        gtol: Tolerance for gradients.
+        maxiter: Maximum iteration in scipy optimization.
+        c1: c1 parameter in scipy optimization.
+        c2: c2 parameter in scipy optimization.
         """
         if self._relax_cell and not self._relax_volume:
             method = "SLSQP"
@@ -257,6 +280,12 @@ class GeometryOptimization:
             options = {"ftol": gtol, "disp": True}
         else:
             options = {"gtol": gtol, "disp": True}
+            if maxiter is not None:
+                options["maxiter"] = maxiter
+            if c1 is not None:
+                options["c1"] = c1
+            if c2 is not None:
+                options["c2"] = c2
 
         if self._relax_cell:
             fun = self.fun_relax_cell
@@ -324,14 +353,17 @@ class GeometryOptimization:
 
     @property
     def energy(self):
+        """Return energy at final iteration."""
         return self._res.fun
 
     @property
     def n_iter(self):
+        """Return number of iterations."""
         return self._res.nit
 
     @property
     def success(self):
+        """Return whether optimization is successful or not."""
         if self._res is None:
             return False
         return self._res.success
@@ -376,6 +408,9 @@ if __name__ == "__main__":
         help="polymlp file",
     )
     parser.add_argument(
+        "--pressure", type=float, default=0.0, help="Pressure term (in GPa)"
+    )
+    parser.add_argument(
         "--relax_cell", action="store_true", help="Relax cell parameters"
     )
     parser.add_argument("--relax_volume", action="store_true", help="Relax volume")
@@ -395,6 +430,7 @@ if __name__ == "__main__":
         relax_volume=args.relax_volume,
         relax_positions=not args.fix_positions,
         with_sym=args.symmetry,
+        pressure=args.pressure,
         pot=args.pot,
         verbose=True,
     )
@@ -412,7 +448,3 @@ if __name__ == "__main__":
         print(res_f.T)
         print("Residuals (stress):")
         print(res_s)
-
-    print("Final structure")
-    minobj.print_structure()
-    minobj.write_poscar()

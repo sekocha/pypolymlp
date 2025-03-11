@@ -106,6 +106,12 @@ def run():
         action="store_true",
         help="Geometry optimization is performed for initial structure.",
     )
+    parser.add_argument(
+        "--pressure",
+        type=float,
+        default=0.0,
+        help="Pressure (in GPa)",
+    )
 
     parser.add_argument(
         "--no_symmetry",
@@ -263,6 +269,7 @@ def run():
             relax_cell=relax_cell,
             relax_volume=relax_volume,
             relax_positions=not args.fix_atom,
+            pressure=args.pressure,
         )
         polymlp.run_geometry_optimization(method=args.method)
         polymlp.save_poscars(filename="POSCAR_eqm")
