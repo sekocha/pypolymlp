@@ -424,6 +424,7 @@ class PypolymlpCalc:
         relax_cell: bool = False,
         relax_volume: bool = False,
         relax_positions: bool = True,
+        pressure: float = 0.0,
     ):
         """Initialize geometry optimization.
 
@@ -436,6 +437,7 @@ class PypolymlpCalc:
         relax_cell: Relax cell.
         relax_volume: Relax volume.
         relax_positions: Relax atomic positions.
+        pressure: Pressure in GPa.
         """
         from pypolymlp.calculator.str_opt.optimization import GeometryOptimization
 
@@ -451,6 +453,7 @@ class PypolymlpCalc:
                 relax_volume=relax_volume,
                 relax_positions=relax_positions,
                 with_sym=with_sym,
+                pressure=pressure,
                 verbose=self._verbose,
             )
         except ValueError:
@@ -461,16 +464,22 @@ class PypolymlpCalc:
 
     def run_geometry_optimization(
         self,
-        gtol: float = 1e-4,
         method: Literal["BFGS", "CG", "L-BFGS-B", "SLSQP"] = "BFGS",
+        gtol: float = 1e-4,
+        maxiter: Optional[int] = None,
+        c1: Optional[float] = None,
+        c2: Optional[float] = None,
     ):
         """Run geometry optimization.
 
         Parameters
         ----------
-        gtol: Tolerance for gradients.
         method: Optimization method, CG, BFGS, L-BFGS-B, or SLSQP.
                 If relax_volume = False, SLSQP is automatically used.
+        gtol: Tolerance for gradients.
+        maxiter: Maximum iteration in scipy optimization.
+        c1: c1 parameter in scipy optimization.
+        c2: c2 parameter in scipy optimization.
 
         Returns
         -------
@@ -485,7 +494,7 @@ class PypolymlpCalc:
             print("Initial structure", flush=True)
             self._go.print_structure()
 
-        self._go.run(gtol=gtol, method=method)
+        self._go.run(method=method, gtol=gtol, maxiter=maxiter, c1=c1, c2=c2)
         self.structures = self._go.structure
         if self._verbose:
             if not self._go._relax_cell:
