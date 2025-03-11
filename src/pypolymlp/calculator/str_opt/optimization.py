@@ -26,7 +26,7 @@ class GeometryOptimization:
         relax_volume: bool = False,
         relax_positions: bool = True,
         with_sym: bool = True,
-        pressure: float = 0,
+        pressure: float = 0.0,
         pot: str = None,
         params: Optional[Union[PolymlpParams, list[PolymlpParams]]] = None,
         coeffs: Optional[np.ndarray] = None,
@@ -162,6 +162,7 @@ class GeometryOptimization:
                 "Geometry optimization failed: " "Huge negative energy value."
             )
 
+        self._energy += self._pressure * self._structure.volume / EVtoGPa
         return self._energy
 
     def jac_fix_cell(self, x, args=None):
