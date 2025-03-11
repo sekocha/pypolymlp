@@ -466,7 +466,7 @@ class PypolymlpCalc:
         self,
         method: Literal["BFGS", "CG", "L-BFGS-B", "SLSQP"] = "BFGS",
         gtol: float = 1e-4,
-        maxiter: Optional[int] = None,
+        maxiter: int = 1000,
         c1: Optional[float] = None,
         c2: Optional[float] = None,
     ):

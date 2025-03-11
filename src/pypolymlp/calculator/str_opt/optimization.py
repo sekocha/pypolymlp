@@ -180,7 +180,7 @@ class GeometryOptimization:
 
         if (
             self._energy < -1e3 * self._n_atom
-            or abs(self._structure.volume) / self._n_atom > 100
+            or abs(self._structure.volume) / self._n_atom > 1000
         ):
             print("Energy =", self._energy, flush=True)
             print("Axis :", flush=True)
@@ -231,16 +231,17 @@ class GeometryOptimization:
         return volume
 
     def derivatives_by_axis(self):
-        """Compute derivatives with respect to axis elements."""
-        pressure_correction = self._pressure * self._structure.volume / EVtoGPa
+        """Compute derivatives with respect to axis elements.
+
+        PV @ axis_inv.T is exactly the same as the derivatives of PV term
+        with respect to axis components.
+        """
+        pv = self._pressure * self._structure.volume / EVtoGPa
         sigma = [
-            [self._stress[0], self._stress[3], self._stress[5]],
-            [self._stress[3], self._stress[1], self._stress[4]],
-            [self._stress[5], self._stress[4], self._stress[2]],
+            [self._stress[0] - pv, self._stress[3], self._stress[5]],
+            [self._stress[3], self._stress[1] - pv, self._stress[4]],
+            [self._stress[5], self._stress[4], self._stress[2] - pv],
         ]
-        sigma[0][0] -= pressure_correction
-        sigma[1][1] -= pressure_correction
-        sigma[2][2] -= pressure_correction
         derivatives_s = -np.array(sigma) @ self._structure.axis_inv.T
 
         """derivatives_s: In the order of ax, bx, cx, ay, by, cy, az, bz, cz"""
@@ -250,7 +251,7 @@ class GeometryOptimization:
         self,
         method: Literal["BFGS", "CG", "L-BFGS-B", "SLSQP"] = "BFGS",
         gtol: float = 1e-4,
-        maxiter: Optional[int] = None,
+        maxiter: int = 1000,
         c1: Optional[float] = None,
         c2: Optional[float] = None,
     ):
@@ -260,6 +261,10 @@ class GeometryOptimization:
         ----------
         method: Optimization method, CG, BFGS, L-BFGS-B or SLSQP.
                 If relax_volume = False, SLSQP is automatically used.
+        gtol: Tolerance for gradients.
+        maxiter: Maximum iteration in scipy optimization.
+        c1: c1 parameter in scipy optimization.
+        c2: c2 parameter in scipy optimization.
         """
         if self._relax_cell and not self._relax_volume:
             method = "SLSQP"
@@ -347,14 +352,17 @@ class GeometryOptimization:
 
     @property
     def energy(self):
+        """Return energy at final iteration."""
         return self._res.fun
 
     @property
     def n_iter(self):
+        """Return number of iterations."""
         return self._res.nit
 
     @property
     def success(self):
+        """Return whether optimization is successful or not."""
         if self._res is None:
             return False
         return self._res.success
