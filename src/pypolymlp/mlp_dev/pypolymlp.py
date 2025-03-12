@@ -8,7 +8,6 @@ from pypolymlp.core.data_format import PolymlpDataMLP, PolymlpParams, PolymlpStr
 from pypolymlp.core.dataset import Dataset
 from pypolymlp.core.displacements import get_structures_from_displacements
 from pypolymlp.core.interface_datasets import set_dataset_from_structures
-from pypolymlp.core.interface_phono3py import parse_phono3py_yaml
 from pypolymlp.core.interface_vasp import parse_structures_from_poscars
 from pypolymlp.core.io_polymlp import convert_to_yaml, load_mlp
 from pypolymlp.core.polymlp_params import set_all_params
@@ -294,6 +293,8 @@ class Pypolymlp:
         ----------
         yaml: Phono3py yaml file.
         """
+        from pypolymlp.core.interface_phono3py import parse_phono3py_yaml
+
         self._is_params_none()
         self._params.dataset_type = "phono3py"
         dft = parse_phono3py_yaml(
