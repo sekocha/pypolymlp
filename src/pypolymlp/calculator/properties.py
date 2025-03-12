@@ -145,14 +145,12 @@ class PropertiesSingle:
             types_array = [st.types for st in structures_calc]
             positions_c_array = [st.axis @ st.positions for st in structures_calc]
 
-            """
-            PotentialProperties.eval_multiple: Return
-            ------------------------------------------
-            energies = obj.get_e(), (n_str)
-            forces = obj.get_f(), (n_str, n_atom, 3)
-            stresses = obj.get_s(), (n_str, 6)
-                        in the order of xx, yy, zz, xy, yz, zx
-            """
+            # PotentialProperties.eval_multiple: Return
+            # ------------------------------------------
+            # energies = obj.get_e(), (n_str)
+            # forces = obj.get_f(), (n_str, n_atom, 3)
+            # stresses = obj.get_s(), (n_str, 6)
+            #             in the order of xx, yy, zz, xy, yz, zx
             self.obj.eval_multiple(axis_array, positions_c_array, types_array)
 
             energies = np.array(self.obj.get_e_array())
