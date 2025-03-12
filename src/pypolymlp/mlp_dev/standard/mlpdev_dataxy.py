@@ -168,6 +168,12 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
         if self._n_features > n_features_threshold:
             data_xy.xtx = self._sum_large_xtx(data_xy.xtx, x, n_batch=n_batch)
         else:
+            # xtx = np.zeros((self._n_features, self._n_features))
+            # xtx = dsyrk(1.0, x.T, trans=False)
+            # xtx = xtx + xtx.T
+            # for i in range(self._n_features):
+            #     xtx[i,i] *= 0.5
+            # data_xy.xtx = self._sum_array(data_xy.xtx, xtx)
             data_xy.xtx = self._sum_array(data_xy.xtx, x.T @ x)
 
         if self.verbose:

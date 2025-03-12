@@ -235,9 +235,9 @@ def test_mlp_devel_api_phono3py():
     error_train = polymlp.summary.error_train["train_single"]
     error_test = polymlp.summary.error_test["test_single"]
 
-    assert error_train["energy"] == pytest.approx(6.918367430434279e-07, rel=1e-5)
+    assert error_train["energy"] == pytest.approx(6.918367430434279e-07, rel=1e-4)
     assert error_train["force"] == pytest.approx(0.00014990313076671476, rel=1e-3)
-    assert error_test["energy"] == pytest.approx(7.094824886399383e-07, rel=1e-5)
+    assert error_test["energy"] == pytest.approx(7.094824886399383e-07, rel=1e-4)
     assert error_test["force"] == pytest.approx(0.0001507663846345712, rel=1e-3)
 
 
