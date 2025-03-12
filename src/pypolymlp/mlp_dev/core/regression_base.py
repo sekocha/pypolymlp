@@ -78,8 +78,11 @@ class RegressionBase(ABC):
         x, exit_code = scipy.sparse.linalg.cg(A, b, rtol=1e-8)
         """
         (posv,) = get_lapack_funcs(("posv",), (A, b))
-        # _, x, _ = posv(A.T, b, lower=False, overwrite_a=False, overwrite_b=False)
-        _, x, _ = posv(A, b, lower=False, overwrite_a=False, overwrite_b=False)
+        if A.flags["C_CONTIGUOUS"]:
+            _, x, _ = posv(A.T, b, lower=False, overwrite_a=False, overwrite_b=False)
+        else:
+            _, x, _ = posv(A, b, lower=False, overwrite_a=False, overwrite_b=False)
+
         return x
 
     def compute_inner_products(self, X=None, y=None, A=None, Xy=None):

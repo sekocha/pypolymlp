@@ -32,6 +32,7 @@ class Hamiltonian(HamiltonianBase):
         Any one of pot, (params, coeffs), and properties is needed.
         """
 
+        # super().__init__(polymlp_dev_data, verbose=verbose)
         if properties is not None:
             self.prop = properties
         else:
