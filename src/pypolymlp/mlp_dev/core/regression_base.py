@@ -63,7 +63,7 @@ class RegressionBase(ABC):
     def fit(self):
         pass
 
-    def solve_linear_equation(self, A, b):
+    def solve_linear_equation(self, A: np.ndarray, b: np.ndarray):
         """Solve Ax = b.
 
         Alternative implementations using numpy and scipy are as follows.
@@ -78,6 +78,7 @@ class RegressionBase(ABC):
         x, exit_code = scipy.sparse.linalg.cg(A, b, rtol=1e-8)
         """
         (posv,) = get_lapack_funcs(("posv",), (A, b))
+        # _, x, _ = posv(A.T, b, lower=False, overwrite_a=False, overwrite_b=False)
         _, x, _ = posv(A, b, lower=False, overwrite_a=False, overwrite_b=False)
         return x
 
