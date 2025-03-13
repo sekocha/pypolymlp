@@ -11,16 +11,10 @@ from pypolymlp.core.interface_datasets import set_dataset_from_structures
 from pypolymlp.core.interface_vasp import parse_structures_from_poscars
 from pypolymlp.core.io_polymlp import convert_to_yaml, load_mlp
 from pypolymlp.core.polymlp_params import set_all_params
-from pypolymlp.core.utils import check_memory_size_in_regression, split_train_test
+from pypolymlp.core.utils import split_train_test
 from pypolymlp.mlp_dev.core.accuracy import PolymlpDevAccuracy
 from pypolymlp.mlp_dev.core.mlpdev_data import PolymlpDevData
-from pypolymlp.mlp_dev.core.utils_sequential import get_auto_batch_size
-from pypolymlp.mlp_dev.standard.learning_curve import LearningCurve
-from pypolymlp.mlp_dev.standard.mlpdev_dataxy import (
-    PolymlpDevDataXY,
-    PolymlpDevDataXYSequential,
-)
-from pypolymlp.mlp_dev.standard.regression import Regression
+from pypolymlp.mlp_dev.standard.fit import fit, fit_learning_curve, fit_standard
 
 
 class Pypolymlp:
@@ -424,50 +418,22 @@ class Pypolymlp:
         self._multiple_datasets = True
         return self
 
-    def fit(
-        self,
-        sequential: bool = True,
-        batch_size: Optional[int] = None,
-        verbose: bool = False,
-    ):
-        """Estimate MLP coefficients, compute features, and compute X.T @ X.
+    def fit(self, batch_size: Optional[int] = None, verbose: bool = False):
+        """Estimate MLP coefficients without computing entire X.
 
         Parameters
         ----------
-        sequential: Use sequential regression to save memory allocation.
-                    Default is True.
         batch_size: Batch size for sequential regression.
+                    If None, the batch size is automatically determined
+                    depending on the memory size and number of features.
         """
-        if self._train is None or self._test is None:
-            raise RuntimeError("Set input parameters and datasets.")
+        self._reg = fit(self._polymlp_in, batch_size=batch_size, verbose=verbose)
+        self._mlp_model = self._reg.best_model
+        return self
 
-        mem_req = check_memory_size_in_regression(self._polymlp_in.n_features)
-        if verbose:
-            print("Minimum memory required for solver in GB:", mem_req, flush=True)
-            print("Memory required for allocating X additionally.", flush=True)
-
-        if not sequential:
-            polymlp = PolymlpDevDataXY(self._polymlp_in, verbose=verbose).run()
-            if verbose:
-                polymlp.print_data_shape()
-        else:
-            if batch_size is None:
-                batch_size = get_auto_batch_size(
-                    self._polymlp_in.n_features,
-                    verbose=verbose,
-                )
-            if verbose:
-                print("Batch size for computing X:", batch_size, flush=True)
-            polymlp = PolymlpDevDataXYSequential(
-                self._polymlp_in,
-                verbose=verbose,
-            ).run_train(batch_size=batch_size)
-
-        self._reg = Regression(polymlp).fit(
-            seq=sequential,
-            clear_data=True,
-            batch_size=batch_size,
-        )
+    def fit_standard(self, verbose: bool = False):
+        """Estimate MLP coefficients with direct evaluation of X."""
+        self._reg = fit_standard(self._polymlp_in, verbose=verbose)
         self._mlp_model = self._reg.best_model
         return self
 
@@ -487,41 +453,20 @@ class Pypolymlp:
         self._mlp_model.error_test = self._acc.error_test_dict
         return self
 
-    def run(
-        self,
-        sequential: bool = True,
-        batch_size: Optional[int] = None,
-        verbose: bool = False,
-    ):
+    def run(self, batch_size: Optional[int] = None, verbose: bool = False):
         """Estimate MLP coefficients and prediction errors.
 
         Parameters
         ----------
-        sequential: Use sequential regression to save memory allocation.
-                    Default is True.
         batch_size: Batch size for sequential regression.
         """
-        self._polymlp = self.fit(
-            sequential=sequential,
-            batch_size=batch_size,
-            verbose=verbose,
-        )
+        self._polymlp = self.fit(batch_size=batch_size, verbose=verbose)
         self.estimate_error(verbose=verbose)
         return self
 
     def fit_learning_curve(self, verbose: bool = False):
         """Compute learing curve."""
-        if self._train is None or self._test is None:
-            raise RuntimeError("Set input parameters and datasets.")
-
-        if len(self._train) > 1:
-            raise RuntimeError("Use single dataset for learning curve calculation")
-
-        polymlp = PolymlpDevDataXY(self._polymlp_in, verbose=verbose).run()
-        total_n_atoms = self._train[0].total_n_atoms
-
-        self._learning = LearningCurve(polymlp, total_n_atoms, verbose=verbose)
-        self._learning.run()
+        self._learning = fit_learning_curve(self._polymlp_in, verbose=verbose)
         return self
 
     def save_learning_curve(self, filename="polymlp_learning_curve.dat"):
