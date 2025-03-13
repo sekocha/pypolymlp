@@ -23,11 +23,6 @@ def run():
         help="Input file name",
     )
     parser.add_argument(
-        "--no_sequential",
-        action="store_true",
-        help="Use normal feature calculations",
-    )
-    parser.add_argument(
         "--learning_curve",
         action="store_true",
         help="Learning curve calculations",
@@ -57,12 +52,7 @@ def run():
         tlearn2 = time.time()
 
     t1 = time.time()
-    polymlp.fit(
-        sequential=not args.no_sequential,
-        batch_size=args.batch_size,
-        verbose=verbose,
-    )
-    # polymlp.save_mlp(filename="polymlp.lammps", yaml=False)
+    polymlp.fit(batch_size=args.batch_size, verbose=verbose)
     polymlp.save_mlp(filename="polymlp.yaml", yaml=True)
     t2 = time.time()
     polymlp.estimate_error(log_energy=True, verbose=verbose)

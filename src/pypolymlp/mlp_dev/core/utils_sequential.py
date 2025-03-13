@@ -20,12 +20,6 @@ def get_auto_batch_size(
 ):
     """Return optimal batch size determined automatically."""
     mem_bytes = os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES")
-    # if n_features > n_features_threshold:
-    #     # Allocate of X.T @ X
-    #     mem_bytes = mem_bytes * 0.8 - (n_features**2 * 8)
-    # else:
-    #     # Allocate of two X.T @ X
-    #     mem_bytes = mem_bytes * 0.8 - (n_features**2 * 8) * 2
     mem_bytes = mem_bytes * 0.8 - (n_features**2 * 8) * 2
 
     # Allocate X of size (n_str * N3, n_features)
