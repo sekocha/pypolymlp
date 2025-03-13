@@ -28,7 +28,7 @@ class RegressionBase(ABC):
         polymlp_dev: PolymlpDevDataXYBase,
         train_xy: Optional[PolymlpDataXY] = None,
         test_xy: Optional[PolymlpDataXY] = None,
-        verbose: bool = True,
+        verbose: bool = False,
     ):
         """Init method."""
         self._verbose = verbose
@@ -61,6 +61,7 @@ class RegressionBase(ABC):
 
     @abstractmethod
     def fit(self):
+        """Estimate regression coefficients."""
         pass
 
     def solve_linear_equation(self, A: np.ndarray, b: np.ndarray):

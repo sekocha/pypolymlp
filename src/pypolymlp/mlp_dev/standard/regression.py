@@ -17,7 +17,7 @@ class Regression(RegressionBase):
         polymlp_dev: PolymlpDevDataXY,
         train_xy: Optional[PolymlpDataXY] = None,
         test_xy: Optional[PolymlpDataXY] = None,
-        verbose: bool = True,
+        verbose: bool = False,
     ):
         """Init method."""
         super().__init__(

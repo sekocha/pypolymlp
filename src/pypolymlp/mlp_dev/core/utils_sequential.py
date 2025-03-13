@@ -18,11 +18,14 @@ def get_auto_batch_size(
     n_features_threshold: int = 50000,
     verbose: bool = False,
 ):
-    """Return optimal batch size determined automatically."""
+    """Return optimal batch size determined automatically.
+
+    Allocate roughly double amount of memory for X.T @ X
+    and memory for X of size (n_str * N3, n_features).
+    """
     mem_bytes = os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES")
     mem_bytes = mem_bytes * 0.8 - (n_features**2 * 8) * 2
 
-    # Allocate X of size (n_str * N3, n_features)
-    N3, max_mem = 450, 3e11
+    N3, max_mem = 450, 4e11
     batch_size = round(min(mem_bytes, max_mem) / (N3 * n_features * 8))
     return batch_size
