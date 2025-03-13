@@ -96,3 +96,27 @@ def apply_weight_percentage(
             y[sbegin:send] = 0.0
             w[sbegin:send] = 0.0
     return x, y, w
+
+
+def apply_weights(
+    x: np.ndarray,
+    y: np.ndarray,
+    w: np.ndarray,
+    dft: PolymlpDataDFT,
+    params: PolymlpParams,
+    first_indices: list,
+    weight_stress: float = 0.1,
+    min_e: Optional[float] = None,
+):
+    """Apply weights to data."""
+    x, y, w = apply_weight_percentage(
+        x,
+        y,
+        w,
+        dft,
+        params,
+        first_indices,
+        weight_stress=weight_stress,
+        min_e=min_e,
+    )
+    return x, y, w
