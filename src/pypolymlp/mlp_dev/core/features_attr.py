@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+"""Functions for obtaining feature attributes."""
+
 from collections import defaultdict
 
 import numpy as np
@@ -7,8 +8,15 @@ from pypolymlp.core.data_format import PolymlpParams
 from pypolymlp.cxx.lib import libmlpcpp
 
 
-def get_features_attr(params: PolymlpParams, element_swap: bool = False):
+def get_num_features(params: PolymlpParams):
+    """Return number of features."""
+    features_attr, polynomial_attr, atomtype_pair_dict = get_features_attr(params)
+    n_fearures = len(features_attr) + len(polynomial_attr)
+    return n_fearures
 
+
+def get_features_attr(params: PolymlpParams, element_swap: bool = False):
+    """Get feature attributes."""
     params.element_swap = element_swap
     obj = libmlpcpp.FeaturesAttr(params.as_dict())
 
@@ -30,8 +38,11 @@ def get_features_attr(params: PolymlpParams, element_swap: bool = False):
     return features_attr, polynomial_attr, atomtype_pair_dict
 
 
-def write_polymlp_params_yaml(params, filename="polymlp_params.yaml"):
-
+def write_polymlp_params_yaml(
+    params: PolymlpParams,
+    filename: str = "polymlp_params.yaml",
+):
+    """Save feature attributes to yaml file."""
     np.set_printoptions(legacy="1.21")
     f = open(filename, "w")
     features_attr, polynomial_attr, atomtype_pair_dict = get_features_attr(params)
@@ -92,29 +103,3 @@ def write_polymlp_params_yaml(params, filename="polymlp_params.yaml"):
 
     f.close()
     return seq_id
-
-
-def get_num_features(params):
-    features_attr, polynomial_attr, atomtype_pair_dict = get_features_attr(params)
-    n_fearures = len(features_attr) + len(polynomial_attr)
-    return n_fearures
-
-
-if __name__ == "__main__":
-
-    import argparse
-
-    from pypolymlp.core.parser_polymlp_params import ParamsParser
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "-i",
-        "--infile",
-        type=str,
-        default="polymlp.in",
-        help="Input file name",
-    )
-    args = parser.parse_args()
-
-    params_dict = ParamsParser(args.infile).get_params()
-    write_polymlp_params_yaml(params_dict)

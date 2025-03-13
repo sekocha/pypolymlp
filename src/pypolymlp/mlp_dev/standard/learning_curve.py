@@ -19,7 +19,6 @@ class LearningCurve:
         verbose: bool = False,
     ):
         """Init method."""
-
         if len(polymlp.train) > 1:
             raise ValueError(
                 "A single dataset is required for calculating learning curve"
@@ -109,4 +108,5 @@ class LearningCurve:
 
     @property
     def error(self):
+        """Return error for learning curve."""
         return self._error_log

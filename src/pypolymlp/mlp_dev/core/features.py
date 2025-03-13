@@ -1,4 +1,4 @@
-"""Class of computing features"""
+"""Class of computing features."""
 
 from typing import Optional, Union
 
@@ -48,6 +48,7 @@ def structures_to_mlpcpp_obj(structures: PolymlpStructure):
 
 
 class Features:
+    """Class of computing features."""
 
     def __init__(
         self,
@@ -57,7 +58,7 @@ class Features:
         print_memory: bool = True,
         element_swap: bool = False,
     ):
-
+        """Init method."""
         if dft is not None:
             if isinstance(dft, PolymlpDataDFT):
                 n_st_dataset = [len(dft.structures)]
@@ -132,6 +133,7 @@ class Features:
 
 
 class FeaturesHybrid:
+    """Class of computing features for hybrid model."""
 
     def __init__(
         self,
@@ -141,6 +143,7 @@ class FeaturesHybrid:
         print_memory: bool = True,
         element_swap: bool = False,
     ):
+        """Init method."""
         if dft is not None:
             if isinstance(dft, PolymlpDataDFT):
                 n_st_dataset = [len(dft.structures)]

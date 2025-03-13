@@ -34,6 +34,7 @@ class Pypolymlp:
         self._reg = None
         self._mlp_model = None
         self._acc = None
+        self._learning = None
 
         np.set_printoptions(legacy="1.21")
 
@@ -459,6 +460,8 @@ class Pypolymlp:
         Parameters
         ----------
         batch_size: Batch size for sequential regression.
+                    If None, the batch size is automatically determined
+                    depending on the memory size and number of features.
         """
         self._polymlp = self.fit(batch_size=batch_size, verbose=verbose)
         self.estimate_error(verbose=verbose)
@@ -547,3 +550,8 @@ class Pypolymlp:
         if self._hybrid:
             return [c / s for c, s in zip(self._reg.coeffs, self._reg.scales)]
         return self._mlp_model.coeffs / self._mlp_model.scales
+
+    @property
+    def learning_curve(self):
+        """Return instance of LearningCurve."""
+        return self._learning

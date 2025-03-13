@@ -63,7 +63,7 @@ def fit_learning_curve(polymlp_in: PolymlpDevData, verbose: bool = False):
     if polymlp_in.train is None or polymlp_in.test is None:
         raise RuntimeError("Datasets not found.")
 
-    if len(polymlp_in._train) > 1:
+    if len(polymlp_in.train) > 1:
         raise RuntimeError("Use single dataset for learning curve calculation")
 
     polymlp = PolymlpDevDataXY(polymlp_in, verbose=verbose).run()
