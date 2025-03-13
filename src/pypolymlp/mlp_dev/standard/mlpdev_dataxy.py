@@ -73,9 +73,9 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
 
     def run_train(
         self,
-        batch_size=128,
+        batch_size: int = 128,
         n_features_threshold: int = 50000,
-        element_swap=False,
+        element_swap: bool = False,
     ):
         self.train_xy = self.compute_products(
             self.train,
@@ -88,9 +88,9 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
 
     def run_test(
         self,
-        batch_size=128,
+        batch_size: int = 128,
         n_features_threshold: int = 50000,
-        element_swap=False,
+        element_swap: bool = False,
     ):
         self.test_xy = self.compute_products(
             self.test,

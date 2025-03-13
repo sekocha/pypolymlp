@@ -30,7 +30,7 @@ class RegressionBase(ABC):
         test_xy: Optional[PolymlpDataXY] = None,
         verbose: bool = True,
     ):
-
+        """Init method."""
         self._verbose = verbose
         self._params = polymlp_dev.params
         self._common_params = polymlp_dev.common_params
