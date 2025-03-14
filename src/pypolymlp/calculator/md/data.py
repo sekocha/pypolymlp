@@ -22,6 +22,7 @@ class MDParams:
     ensemble: Literal["nve", "nvt"] = "nvt"
     energy: Optional[float] = None
     temperature: Optional[float] = None
+    save_history: bool = True
 
     def __post_init__(self):
         """Post-init method."""

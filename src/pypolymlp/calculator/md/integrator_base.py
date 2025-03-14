@@ -1,10 +1,12 @@
 """Base class for integrators."""
 
 from abc import ABC, abstractmethod
+from typing import Optional
 
 import numpy as np
 
 from pypolymlp.calculator.md.data import MDParams
+from pypolymlp.calculator.md.hamiltonian_base import HamiltonianBase
 from pypolymlp.core.data_format import PolymlpStructure
 
 
@@ -15,6 +17,8 @@ class IntegratorBase(ABC):
         self,
         structure: PolymlpStructure,
         md_params: MDParams,
+        hamiltonian: HamiltonianBase,
+        hamiltonian_args: Optional[dict] = None,
         verbose: bool = False,
     ):
         """Init method.
@@ -27,11 +31,16 @@ class IntegratorBase(ABC):
         self._structure = structure
         self._initialize_structure()
         self._md_params = md_params
+        self._hamiltonian = hamiltonian
+        self._hamiltonian_args = hamiltonian_args
         self._verbose = verbose
 
-        self._x = None
-        self._p = None
-        self._force = None
+        self._e = None
+        self._f = None
+        self._s = None
+        if self._md_params.save_history:
+            self._energies = []
+            self._forces = []
 
     def _initialize_structure(self):
         """Initialize structure."""
@@ -44,15 +53,31 @@ class IntegratorBase(ABC):
         """Run integrator."""
         pass
 
+    def eval(self):
+        """Evaluate energy, forces, and stress tensor."""
+        e, f, s = self._hamiltonian.eval(self._structure, self._hamiltonian_args)
+        self._e = e
+        self._f = f
+        self._s = s
+        if self._md_params.save_history:
+            self._energies.append(e)
+            self._forces.append(f)
+        return e, f, s
+
     @property
-    def md_params(self):
-        """Return parameters in MD."""
-        return self._md_params
+    def hamltonian(self):
+        """Return Hamiltonian."""
+        return self._hamiltonian
 
     @property
     def structure(self):
         """Return current structure."""
         return self._structure
+
+    @property
+    def md_params(self):
+        """Return parameters in MD."""
+        return self._md_params
 
     @property
     def x(self):
@@ -63,6 +88,8 @@ class IntegratorBase(ABC):
     def x(self, x: np.ndarray):
         """Set positions in cartesian."""
         self._structure.positions_cartesian = x
+        inv = np.linalg.inv(self._structure.axis)
+        self._structure.positions = inv @ x
 
     @property
     def p(self):
@@ -85,6 +112,16 @@ class IntegratorBase(ABC):
         self._structure.velocities = v
 
     @property
+    def e(self):
+        """Return current energy."""
+        return self._e
+
+    @property
+    def f(self):
+        """Return current force."""
+        return self._f
+
+    @property
     def masses(self):
         """Return masses."""
         return self._structure.masses
@@ -93,3 +130,13 @@ class IntegratorBase(ABC):
     def masses(self, m: np.ndarray):
         """Set masses."""
         self._structure.masses = m
+
+    @property
+    def energies(self):
+        """Return energies in simulation."""
+        return np.array(self._energies)
+
+    @property
+    def forces(self):
+        """Return forces in simulation."""
+        return np.array(self._forces)
