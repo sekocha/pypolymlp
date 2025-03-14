@@ -36,7 +36,10 @@ class PolymlpStructure:
     axis_inv: Optional[np.ndarray] = None
     comment: Optional[str] = None
     name: Optional[str] = None
-    masses: Optional[int] = None
+
+    masses: Optional[float] = None
+    velocities: Optional[np.ndarray] = None
+    momenta: Optional[np.ndarray] = None
 
     def __post_init__(self):
         if self.volume is None:
@@ -53,6 +56,10 @@ class PolymlpStructure:
         assert self.positions.shape[1] == len(self.elements)
         assert len(self.elements) == len(self.types)
         assert len(self.elements) == sum(self.n_atoms)
+
+    def set_positions_cartesian(self):
+        """Calculate positions_cartesian."""
+        self.positions_cartesian = self.axis @ self.positions
 
 
 @dataclass
@@ -206,6 +213,7 @@ class PolymlpParams:
         "specific_heat",
     ] = "free_energy"
     name: Optional[str] = None
+    mass: Optional[float] = None
 
     def __post_init__(self):
         self.check_errors()
