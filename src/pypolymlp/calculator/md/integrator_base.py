@@ -46,6 +46,7 @@ class IntegratorBase(ABC):
         """Initialize structure."""
         if self.masses is None:
             raise RuntimeError("Masses not found.")
+        self._structure.masses = np.array(self._structure.masses)
         self._structure.set_positions_cartesian()
 
     @abstractmethod

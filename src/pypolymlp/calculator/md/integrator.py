@@ -2,24 +2,18 @@
 
 from typing import Optional
 
+import numpy as np
+
 from pypolymlp.calculator.md.data import MDParams
 from pypolymlp.calculator.md.hamiltonian_base import HamiltonianBase
 from pypolymlp.calculator.md.integrator_base import IntegratorBase
 from pypolymlp.calculator.md.utils import initialize_velocity
 from pypolymlp.core.data_format import PolymlpStructure
-
-#
-# import numpy as np
+from pypolymlp.core.units import Avogadro, EVtoJ
 
 
 class VelocityVerlet(IntegratorBase):
-    """Class for velocity Verlet integrator.
-
-    p(dt/2) = p(0) + (dt/2) * F(0)
-    x(dt) = x(0) + (dt/m) * p(dt/2)
-    Force calculation for x(dt)
-    p(dt) = p(dt/2) + (dt/2) * F(dt)
-    """
+    """Class for velocity Verlet integrator."""
 
     def __init__(
         self,
@@ -43,13 +37,14 @@ class VelocityVerlet(IntegratorBase):
             hamiltonian_args=hamiltonian_args,
             verbose=verbose,
         )
+        self._const_ftop = (Avogadro * 1e3) * EVtoJ * 1e-10
 
     def initialize(self):
         """Initialize simulation."""
-        initialize_velocity(self.structure, self.md_params)
-        # self.v = ***
-        # self.p = ***
+        velocities = initialize_velocity(self.structure, self.md_params)
+        self.p = velocities * self.masses
         self.eval()
+        return self
 
     def run(self, delta_t: float = 2.0, n_steps: int = 10000):
         """Run velocity Verlet integrator.
@@ -61,20 +56,19 @@ class VelocityVerlet(IntegratorBase):
         3. Force calculation for x(dt)
         4. p(dt) = p(dt/2) + (dt/2) * F(dt)
         """
-        # if self.p is None:
-        #     raise RuntimeError("Momentum not found.")
+        if self.p is None:
+            raise RuntimeError("Momentum not found.")
 
-        # TODO: Consider unit.
-        self._dtm = delta_t / self.masses
-        print(self._dtm)
-
+        self._dtm = delta_t * np.reciprocal(self.masses)
         for i in range(n_steps):
             self._run_single_iteration(delta_t=delta_t)
 
     def _run_single_iteration(self, delta_t: float = 2.0):
         """Run single iteration of integrator."""
-        self.p = self.p + (0.5 * delta_t) * self.f
-        self.x = self.x + self._dtm * self.p
+        force = self._const_ftop * self.f
+        self.p = self.p + (0.5 * delta_t) * force
+        self.x = self.x + self.p * self._dtm
         self.eval()
-        self.p = self.p + (0.5 * delta_t) * self.f
+        force = self._const_ftop * self.f
+        self.p = self.p + (0.5 * delta_t) * force
         return self
