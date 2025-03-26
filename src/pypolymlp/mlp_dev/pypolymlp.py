@@ -147,13 +147,13 @@ class Pypolymlp:
         """Split dataset into training and test datasets automatically."""
         train_files, test_files = split_train_test(files, train_ratio=train_ratio)
         train = Dataset(
-            name="train_single",
+            name="data1",
             files=train_files,
             include_force=self._params.include_force,
             weight=1.0,
         )
         test = Dataset(
-            name="test_single",
+            name="data2",
             files=test_files,
             include_force=self._params.include_force,
             weight=1.0,
@@ -222,13 +222,13 @@ class Pypolymlp:
         self._is_params_none()
         self._params.dataset_type = "vasp"
         train = Dataset(
-            name="train_single",
+            name="data1",
             files=sorted(train_vaspruns),
             include_force=self._params.include_force,
             weight=1.0,
         )
         test = Dataset(
-            name="test_single",
+            name="data2",
             files=sorted(test_vaspruns),
             include_force=self._params.include_force,
             weight=1.0,
@@ -410,8 +410,8 @@ class Pypolymlp:
 
     def _post_datasets_from_api(self):
         """Set datasets as a post process."""
-        self._train.name = "train_single"
-        self._test.name = "test_single"
+        self._train.name = "data1"
+        self._test.name = "data2"
         self._train = [self._train]
         self._test = [self._test]
         self._polymlp_in.train = self._train

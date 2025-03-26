@@ -42,7 +42,11 @@ def fit(
     polymlp = PolymlpDevDataXYSequential(polymlp_in, verbose=verbose)
     polymlp.run_train(batch_size=batch_size)
 
-    reg = Regression(polymlp).fit(seq=True, clear_data=True, batch_size=batch_size)
+    reg = Regression(polymlp, verbose=verbose).fit(
+        seq=True,
+        clear_data=True,
+        batch_size=batch_size,
+    )
     return reg
 
 
@@ -54,7 +58,7 @@ def fit_standard(polymlp_in: PolymlpDevData, verbose: bool = False):
     polymlp = PolymlpDevDataXY(polymlp_in, verbose=verbose).run()
     if verbose:
         polymlp.print_data_shape()
-    reg = Regression(polymlp).fit(seq=False)
+    reg = Regression(polymlp, verbose=verbose).fit(seq=False)
     return reg
 
 

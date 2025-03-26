@@ -98,6 +98,7 @@ def load_mlp_yaml(filename: Union[str, io.IOBase] = "polymlp.yaml"):
     elements = yml["elements"]
     element_order = elements
     n_type = len(elements)
+    mass = yml["mass"]
 
     if yml["feature_type"] == "gtinv":
         gtinv = PolymlpGtinvParams(
@@ -133,5 +134,6 @@ def load_mlp_yaml(filename: Union[str, io.IOBase] = "polymlp.yaml"):
         element_order=element_order,
         type_full=yml["type_full"],
         type_indices=yml["type_indices"],
+        mass=mass,
     )
     return params, yml["coeffs"]

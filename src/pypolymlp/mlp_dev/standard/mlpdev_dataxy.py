@@ -245,6 +245,7 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
         """Compute scales from xe_sum and xe_sq_sum."""
         if scales is None:
             variance = xe_sq_sum / n_data - np.square(xe_sum / n_data)
+            variance[variance < 0.0] = 1.0
             self._scales = np.sqrt(variance)
         else:
             self._scales = scales

@@ -28,7 +28,7 @@ class RegressionBase(ABC):
         polymlp_dev: PolymlpDevDataXYBase,
         train_xy: Optional[PolymlpDataXY] = None,
         test_xy: Optional[PolymlpDataXY] = None,
-        verbose: bool = True,
+        verbose: bool = False,
     ):
         """Init method."""
         self._verbose = verbose
@@ -61,6 +61,7 @@ class RegressionBase(ABC):
 
     @abstractmethod
     def fit(self):
+        """Estimate regression coefficients."""
         pass
 
     def solve_linear_equation(self, A: np.ndarray, b: np.ndarray):
@@ -144,7 +145,10 @@ class RegressionBase(ABC):
                 self._test_xy.total_n_data,
                 coefs,
             )
-            rmse_test_array.append(sqrt(mse_test))
+            try:
+                rmse_test_array.append(sqrt(mse_test))
+            except:
+                rmse_test_array.append(1e10)
         return rmse_test_array
 
     def _compute_mse(self, xtx, xty, y_sq_norm, size, coefs):
