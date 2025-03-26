@@ -145,7 +145,10 @@ class RegressionBase(ABC):
                 self._test_xy.total_n_data,
                 coefs,
             )
-            rmse_test_array.append(sqrt(mse_test))
+            try:
+                rmse_test_array.append(sqrt(mse_test))
+            except:
+                rmse_test_array.append(1e10)
         return rmse_test_array
 
     def _compute_mse(self, xtx, xty, y_sq_norm, size, coefs):
