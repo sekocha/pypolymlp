@@ -91,6 +91,7 @@ class Regression(RegressionBase):
         )
         if self.verbose:
             self._print_log(rmse_train, rmse_test)
+        self._check_singular(rmse_train)
 
         return self
 
@@ -119,6 +120,18 @@ class Regression(RegressionBase):
         )
         if self.verbose:
             self._print_log(rmse_train, rmse_test)
+        self._check_singular(rmse_train)
+
+        return self
+
+    def _check_singular(self, rmse_train, error_threshold: float = 1e6):
+        """Check whether X.T @ X + penalty is ill-defined."""
+        if np.all(np.array(rmse_train) > error_threshold):
+            raise RuntimeError(
+                "Matrix (X.T @ X + alpha * I) may be singular. "
+                "This singularity issue might be reduced by increasing "
+                "the value of alpha (the magnitude of the penalty term)."
+            )
 
         return self
 
@@ -138,11 +151,11 @@ class Regression(RegressionBase):
         self.polymlp_dev.run_test(element_swap=False, batch_size=batch_size)
         self.test_xy = self.polymlp_dev.test_xy
 
-    def _print_log(self, rmse_train, rmse_test):
+    def _print_log(self, rmse_train, rmse_test, error_threshold: float = 1e6):
         """Output log for ridge regression."""
         print("Regression: model selection ...", flush=True)
         for a, rmse1, rmse2 in zip(self._alphas, rmse_train, rmse_test):
-            if rmse1 > 1e6:
+            if rmse1 > error_threshold:
                 text = ": rmse (train, test) = Failed, Failed"
                 print("- alpha =", "{:.3e}".format(a), text, flush=True)
             else:
@@ -154,4 +167,5 @@ class Regression(RegressionBase):
                     "{:.5f}".format(rmse2),
                     flush=True,
                 )
+
         return self
