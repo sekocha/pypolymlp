@@ -6,10 +6,14 @@ import numpy as np
 from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
 
 polymlp = Pypolymlp()
-polymlp.run(file_params='polymlp.in', verbose=True)
+polymlp.load_parameter_file("polymlp.in")
+polymlp.load_datasets()
+polymlp.run(verbose=True)
+
+polymlp.save_mlp(filename="polymlp.yaml")
 
 params = polymlp.parameters
-mlp_dict = polymlp.summary
+mlp_info = polymlp.summary
 ```
 
 ## MLP development from vasprun.xml files without using polymlp.in
