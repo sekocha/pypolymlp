@@ -1,4 +1,4 @@
-"""Class for integrators."""
+"""Class for Verlet integrators."""
 
 from typing import Optional
 
@@ -6,10 +6,13 @@ import numpy as np
 
 from pypolymlp.calculator.md.data import MDParams
 from pypolymlp.calculator.md.hamiltonian_base import HamiltonianBase
-from pypolymlp.calculator.md.integrator_base import IntegratorBase
+from pypolymlp.calculator.md.integrators.integrator_base import IntegratorBase
+from pypolymlp.calculator.md.integrators.operator import (
+    translate_momenta,
+    translate_positions,
+)
 from pypolymlp.calculator.md.utils import initialize_velocity
 from pypolymlp.core.data_format import PolymlpStructure
-from pypolymlp.core.units import Avogadro, EVtoJ
 
 
 class VelocityVerlet(IntegratorBase):
@@ -37,7 +40,6 @@ class VelocityVerlet(IntegratorBase):
             hamiltonian_args=hamiltonian_args,
             verbose=verbose,
         )
-        self._const_ftop = (Avogadro * 1e3) * EVtoJ * 1e-10
 
     def initialize(self):
         """Initialize simulation."""
@@ -62,13 +64,12 @@ class VelocityVerlet(IntegratorBase):
         self._dtm = delta_t * np.reciprocal(self.masses)
         for i in range(n_steps):
             self._run_single_iteration(delta_t=delta_t)
+            print(self.e, self.ke, self.e + self.ke)
 
     def _run_single_iteration(self, delta_t: float = 2.0):
         """Run single iteration of integrator."""
-        force = self._const_ftop * self.f
-        self.p = self.p + (0.5 * delta_t) * force
-        self.x = self.x + self.p * self._dtm
+        self.p = translate_momenta(self.p, self.f, 0.5 * delta_t)
+        self.x = translate_positions(self.x, self.p, self._dtm)
         self.eval()
-        force = self._const_ftop * self.f
-        self.p = self.p + (0.5 * delta_t) * force
+        self.p = translate_momenta(self.p, self.f, 0.5 * delta_t)
         return self

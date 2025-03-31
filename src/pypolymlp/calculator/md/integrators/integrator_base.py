@@ -8,6 +8,7 @@ import numpy as np
 from pypolymlp.calculator.md.data import MDParams
 from pypolymlp.calculator.md.hamiltonian_base import HamiltonianBase
 from pypolymlp.core.data_format import PolymlpStructure
+from pypolymlp.core.units import EVtoJ, M_StoAng_Fs, MasstoKG
 
 
 class IntegratorBase(ABC):
@@ -38,6 +39,9 @@ class IntegratorBase(ABC):
         self._e = None
         self._f = None
         self._s = None
+        self._v = None
+        self._p = None
+        self._ke = None
         if self._md_params.save_history:
             self._energies = []
             self._forces = []
@@ -94,7 +98,7 @@ class IntegratorBase(ABC):
 
     @property
     def p(self):
-        """Return current momenta."""
+        """Return current momenta in (g/mol)*(angstrom/fs)."""
         return self._structure.momenta
 
     @p.setter
@@ -114,13 +118,26 @@ class IntegratorBase(ABC):
 
     @property
     def e(self):
-        """Return current energy."""
+        """Return current potential energy in eV/cell."""
         return self._e
 
     @property
     def f(self):
-        """Return current force."""
+        """Return current force in eV/angstrom."""
         return self._f
+
+    @property
+    def ke(self):
+        """Return current kinetic energy in eV/cell."""
+        if self.p is not None:
+            norm = np.linalg.norm(self.p, axis=0) ** 2
+            norm /= self.masses
+            const = 0.5 * MasstoKG / M_StoAng_Fs**2 / EVtoJ
+            self._ke = const * np.sum(norm)
+        else:
+            raise RuntimeError("No kinetic energy function.")
+
+        return self._ke
 
     @property
     def masses(self):
