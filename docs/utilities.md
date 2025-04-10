@@ -131,7 +131,7 @@ polymlp.lammps  polymlp_cost.yaml  polymlp_error.yaml
 Ag-Au/polymlp-00009:
 polymlp.lammps  polymlp_cost.yaml  polymlp_error.yaml
 ```
-Files 'polymlp_error.yaml' and 'polymlp_cost.yaml' are needed for each MLP.
+Files `polymlp_error.yaml` and `polymlp_cost.yaml` are needed for each MLP.
 
 In this case, optimal MLPs on the convex hull can be found as follows.
 ```shell
