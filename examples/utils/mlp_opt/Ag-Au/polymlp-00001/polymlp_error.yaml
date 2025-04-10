@@ -1,0 +1,176 @@
+units:
+  energy: meV/atom
+  force:  eV/angstrom
+  stress: meV/atom
+
+prediction_errors_train:
+- dataset: /home/seko/mlip/2-binary-alloy/Ag-Au//dataset-2024/3-dft/train-disp-large-Ag1/*.polymlp
+  rmse_energy:  24.48234413580984
+  rmse_force:   0.08998264275026852
+  rmse_stress:  153.0284035739964
+
+- dataset: /home/seko/mlip/2-binary-alloy/Ag-Au//dataset-2024/3-dft/train-disp-large-Ag2/*.polymlp
+  rmse_energy:  492.65358568114584
+  rmse_force:   20.436903752789917
+  rmse_stress:  1527.481211153376
+
+- dataset: /home/seko/mlip/2-binary-alloy/Ag-Au//dataset-2024/3-dft/train-disp-large-Au1/*.polymlp
+  rmse_energy:  48.56693419765343
+  rmse_force:   0.29707236843270296
+  rmse_stress:  359.9484804639296
+
+- dataset: /home/seko/mlip/2-binary-alloy/Ag-Au//dataset-2024/3-dft/train-disp-large-Au2/*.polymlp
+  rmse_energy:  277.4870347930134
+  rmse_force:   8.092542527695041
+  rmse_stress:  1078.908558551045
+
+- dataset: /home/seko/mlip/2-binary-alloy/Ag-Au//dataset-2024/3-dft/train-disp1/*.polymlp
+  rmse_energy:  15.29772439880958
+  rmse_force:   0.07187289010420621
+  rmse_stress:  169.46764012175808
+
+- dataset: /home/seko/mlip/2-binary-alloy/Ag-Au//dataset-2024/3-dft/train-disp2/*.polymlp
+  rmse_energy:  201.3836664793069
+  rmse_force:   7.527076346053007
+  rmse_stress:  758.8971705178244
+
+- dataset: /home/seko/mlip/2-binary-alloy/Ag-Au//dataset-2024/3-dft/train-eqm-Ag1/*.polymlp
+  rmse_energy:  12.740288010147665
+  rmse_force:   0.05123881635161385
+  rmse_stress:  92.43730910196787
+
+- dataset: /home/seko/mlip/2-binary-alloy/Ag-Au//dataset-2024/3-dft/train-eqm-Au1/*.polymlp
+  rmse_energy:  25.046260716087932
+  rmse_force:   0.14670191301239982
+  rmse_stress:  264.7041374975025
+
+- dataset: /home/seko/mlip/2-binary-alloy/Ag-Au//dataset-2024/3-dft/train-eqm1/*.polymlp
+  rmse_energy:  17.21878120767044
+  rmse_force:   0.046173486331785474
+  rmse_stress:  120.97544185797345
+
+- dataset: /home/seko/mlip/2-binary-alloy/Ag-Au//dataset-2024/3-dft/train-ld-Ag1/*.polymlp
+  rmse_energy:  49.284982004151416
+  rmse_force:   0.10788228656885283
+  rmse_stress:  119.06591579920283
+
+- dataset: /home/seko/mlip/2-binary-alloy/Ag-Au//dataset-2024/3-dft/train-ld-Ag2/*.polymlp
+  rmse_energy:  113.40930650540443
+  rmse_force:   0.2192151350584051
+  rmse_stress:  162.45296494867122
+
+- dataset: /home/seko/mlip/2-binary-alloy/Ag-Au//dataset-2024/3-dft/train-ld-Au1/*.polymlp
+  rmse_energy:  170.44569408857942
+  rmse_force:   0.28489842333029514
+  rmse_stress:  318.66044191672904
+
+- dataset: /home/seko/mlip/2-binary-alloy/Ag-Au//dataset-2024/3-dft/train-ld-Au2/*.polymlp
+  rmse_energy:  266.17574955549753
+  rmse_force:   0.27377210292206533
+  rmse_stress:  304.5380047674661
+
+- dataset: /home/seko/mlip/2-binary-alloy/Ag-Au//dataset-2024/3-dft/train-standard-Ag1/*.polymlp
+  rmse_energy:  15.774264717370139
+  rmse_force:   0.06416994547375449
+  rmse_stress:  177.17078257498886
+
+- dataset: /home/seko/mlip/2-binary-alloy/Ag-Au//dataset-2024/3-dft/train-standard-Ag2/*.polymlp
+  rmse_energy:  30.368202838325324
+  rmse_force:   0.14640154547761994
+  rmse_stress:  341.5015282200763
+
+- dataset: /home/seko/mlip/2-binary-alloy/Ag-Au//dataset-2024/3-dft/train-standard-Au1/*.polymlp
+  rmse_energy:  29.113192336003948
+  rmse_force:   0.15024015276320174
+  rmse_stress:  365.7020278129319
+
+- dataset: /home/seko/mlip/2-binary-alloy/Ag-Au//dataset-2024/3-dft/train-standard-Au2/*.polymlp
+  rmse_energy:  59.16636075964391
+  rmse_force:   0.25180490785741183
+  rmse_stress:  740.2142785229547
+
+prediction_errors_test:
+- dataset: /home/seko/mlip/2-binary-alloy/Ag-Au//dataset-2024/3-dft/test-disp-large-Ag1/*.polymlp
+  rmse_energy:  26.097851551036754
+  rmse_force:   0.09308337968297234
+  rmse_stress:  173.35996291275902
+
+- dataset: /home/seko/mlip/2-binary-alloy/Ag-Au//dataset-2024/3-dft/test-disp-large-Ag2/*.polymlp
+  rmse_energy:  512.9642756233445
+  rmse_force:   22.912400678744675
+  rmse_stress:  1591.6482953374618
+
+- dataset: /home/seko/mlip/2-binary-alloy/Ag-Au//dataset-2024/3-dft/test-disp-large-Au1/*.polymlp
+  rmse_energy:  42.165276803870704
+  rmse_force:   0.2979698989876434
+  rmse_stress:  340.9581747613228
+
+- dataset: /home/seko/mlip/2-binary-alloy/Ag-Au//dataset-2024/3-dft/test-disp-large-Au2/*.polymlp
+  rmse_energy:  275.7568206769422
+  rmse_force:   8.299133183831339
+  rmse_stress:  1051.2932564201164
+
+- dataset: /home/seko/mlip/2-binary-alloy/Ag-Au//dataset-2024/3-dft/test-disp1/*.polymlp
+  rmse_energy:  14.594893751371147
+  rmse_force:   0.07156263927683604
+  rmse_stress:  167.5598289831053
+
+- dataset: /home/seko/mlip/2-binary-alloy/Ag-Au//dataset-2024/3-dft/test-disp2/*.polymlp
+  rmse_energy:  275.27084305110264
+  rmse_force:   9.315962495079592
+  rmse_stress:  871.9994309337065
+
+- dataset: /home/seko/mlip/2-binary-alloy/Ag-Au//dataset-2024/3-dft/test-eqm-Ag1/*.polymlp
+  rmse_energy:  12.641998346699198
+  rmse_force:   0.04379330672412273
+  rmse_stress:  56.481287248915386
+
+- dataset: /home/seko/mlip/2-binary-alloy/Ag-Au//dataset-2024/3-dft/test-eqm-Au1/*.polymlp
+  rmse_energy:  20.108635697054957
+  rmse_force:   0.012855431128673371
+  rmse_stress:  284.65539282832674
+
+- dataset: /home/seko/mlip/2-binary-alloy/Ag-Au//dataset-2024/3-dft/test-eqm1/*.polymlp
+  rmse_energy:  20.51440523989282
+  rmse_force:   0.04660998352974139
+  rmse_stress:  112.95934487035404
+
+- dataset: /home/seko/mlip/2-binary-alloy/Ag-Au//dataset-2024/3-dft/test-ld-Ag1/*.polymlp
+  rmse_energy:  53.59774463344502
+  rmse_force:   0.11791909577334822
+  rmse_stress:  159.04617825552492
+
+- dataset: /home/seko/mlip/2-binary-alloy/Ag-Au//dataset-2024/3-dft/test-ld-Ag2/*.polymlp
+  rmse_energy:  128.66339914578185
+  rmse_force:   0.21425006244635109
+  rmse_stress:  170.09977975748453
+
+- dataset: /home/seko/mlip/2-binary-alloy/Ag-Au//dataset-2024/3-dft/test-ld-Au1/*.polymlp
+  rmse_energy:  157.93680064115173
+  rmse_force:   0.2432942921424213
+  rmse_stress:  248.72817823293224
+
+- dataset: /home/seko/mlip/2-binary-alloy/Ag-Au//dataset-2024/3-dft/test-ld-Au2/*.polymlp
+  rmse_energy:  267.2134900949232
+  rmse_force:   0.2633699958744916
+  rmse_stress:  275.3998332830793
+
+- dataset: /home/seko/mlip/2-binary-alloy/Ag-Au//dataset-2024/3-dft/test-standard-Ag1/*.polymlp
+  rmse_energy:  15.901520762399521
+  rmse_force:   0.06381664682928063
+  rmse_stress:  175.30968879048018
+
+- dataset: /home/seko/mlip/2-binary-alloy/Ag-Au//dataset-2024/3-dft/test-standard-Ag2/*.polymlp
+  rmse_energy:  29.037976334161733
+  rmse_force:   0.1508564102624324
+  rmse_stress:  347.5582332174625
+
+- dataset: /home/seko/mlip/2-binary-alloy/Ag-Au//dataset-2024/3-dft/test-standard-Au1/*.polymlp
+  rmse_energy:  30.605508989941764
+  rmse_force:   0.15571736254756371
+  rmse_stress:  361.8625036598198
+
+- dataset: /home/seko/mlip/2-binary-alloy/Ag-Au//dataset-2024/3-dft/test-standard-Au2/*.polymlp
+  rmse_energy:  68.45557378556687
+  rmse_force:   0.26168133657949405
+  rmse_stress:  779.9888915243182

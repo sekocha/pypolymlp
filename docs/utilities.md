@@ -55,12 +55,14 @@ calc_cost option generates a file 'polymlp_cost.yaml', which is required for fin
 
 2. Multiple polynomial MLPs
 
-Consider the following file and directory structures.
+Consider the following file and directory structures, which can be found in `examples/utils/mlp_opt`.
+
 ```shell
-> ls $(path_mlps)
+> ls Ag-Au
 polymlp-00001/  polymlp-00003/  polymlp-00005/  polymlp-00007/  polymlp-00009/
 polymlp-00002/  polymlp-00004/  polymlp-00006/  polymlp-00008/
-> ls $(path_mlps)/polymlp-00*
+
+> ls Ag-Au/polymlp-00*
 test/polymlp-00001:
 polymlp.lammps
 
@@ -88,15 +90,50 @@ polymlp.lammps
 test/polymlp-00009:
 polymlp.lammps
 ```
+
 In this case, computational costs for multiple polynomial MLPs can be estimated as follows.
 ```shell
-> pypolymlp-utils --calc_cost -d $(path_mlps)/polymlp-00*
+> pypolymlp-utils --calc_cost -d Ag-Au/polymlp-00*
 ```
 
 ## Enumeration of optimal MLPs on convex hull
+Consider the following file and directory structures, which can be found in `examples/utils/mlp_opt`.
 
-```
-> pypolymlp-utils --find_optimal Ti-Pb/* --key test-disp1
-```
+```shell
+> ls Ag-Au
+polymlp-00001/  polymlp-00003/  polymlp-00005/  polymlp-00007/  polymlp-00009/
+polymlp-00002/  polymlp-00004/  polymlp-00006/  polymlp-00008/
 
+Ag-Au/polymlp-00001:
+polymlp.lammps  polymlp_cost.yaml  polymlp_error.yaml
+
+Ag-Au/polymlp-00002:
+polymlp.lammps  polymlp_cost.yaml  polymlp_error.yaml
+
+Ag-Au/polymlp-00003:
+polymlp.lammps  polymlp_cost.yaml  polymlp_error.yaml
+
+Ag-Au/polymlp-00004:
+polymlp.lammps  polymlp_cost.yaml  polymlp_error.yaml
+
+Ag-Au/polymlp-00005:
+polymlp.lammps  polymlp_cost.yaml  polymlp_error.yaml
+
+Ag-Au/polymlp-00006:
+polymlp.lammps  polymlp_cost.yaml  polymlp_error.yaml
+
+Ag-Au/polymlp-00007:
+polymlp.lammps  polymlp_cost.yaml  polymlp_error.yaml
+
+Ag-Au/polymlp-00008:
+polymlp.lammps  polymlp_cost.yaml  polymlp_error.yaml
+
+Ag-Au/polymlp-00009:
+polymlp.lammps  polymlp_cost.yaml  polymlp_error.yaml
+```
 Files 'polymlp_error.yaml' and 'polymlp_cost.yaml' are needed for each MLP.
+
+In this case, optimal MLPs on the convex hull can be found as follows.
+```shell
+> pypolymlp-utils --find_optimal Ag-Au/* --key test-disp1
+```
