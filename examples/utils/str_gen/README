@@ -1,3 +1,0 @@
-- pypolymlp-structure --prototype -n 1 (--noscreen)
-
-- pypolymlp-structure --random --poscars prototypes/* --n_structures 50 --low_density 5 --high_density 5
