@@ -11,9 +11,15 @@ from pypolymlp.mlp_dev.core.utils_sequential import get_batch_slice
 from pypolymlp.mlp_dev.core.utils_weights import apply_weights
 
 
-def _round_scales(scales: np.ndarray, threshold: float = 1e-20):
+def _round_scales(scales: np.ndarray, threshold: float = 1e-14):
     """Set scales so that they are not used for zero features."""
-    scales[np.abs(scales) < threshold] = 1.0
+    print(np.max(scales))
+    print(np.mean(scales))
+    zero_ids = np.abs(scales) < threshold
+    scales[zero_ids] = 1.0
+    zero_ids = np.abs(scales) < 1e-7
+    # scales = np.maximum(scales, np.reciprocal(scales) * threshold)
+    scales[zero_ids] = 1e-7
     return scales
 
 
@@ -228,6 +234,7 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
         self._scales = self._compute_scales(
             scales, data_xy.xe_sum, data_xy.xe_sq_sum, n_data
         )
+
         data_xy.xtx /= self._scales[:, np.newaxis]
         data_xy.xtx /= self._scales[np.newaxis, :]
         data_xy.xty /= self._scales

@@ -39,8 +39,8 @@ def test_mlp_devel_api_include_force_false():
     error_train1 = polymlp.summary.error_train["data1"]
     error_test1 = polymlp.summary.error_test["data2"]
 
-    assert error_train1["energy"] == pytest.approx(4.205974853729061e-06, rel=1e-4)
     assert error_test1["energy"] == pytest.approx(0.0010080932601856329, rel=1e-4)
+    assert error_train1["energy"] == pytest.approx(4.205974853729061e-06, rel=1e-4)
 
 
 def test_mlp_devel_api_single_dataset():
@@ -68,13 +68,13 @@ def test_mlp_devel_api_single_dataset():
     error_train1 = polymlp.summary.error_train["data1"]
     error_test1 = polymlp.summary.error_test["data2"]
 
-    assert error_train1["energy"] == pytest.approx(3.1791594630511444e-05, abs=1e-8)
-    assert error_train1["force"] == pytest.approx(0.003822251017162934, abs=1e-6)
-    assert error_train1["stress"] == pytest.approx(0.015284354036260491, abs=1e-5)
-
     assert error_test1["energy"] == pytest.approx(6.0128773079683234e-05, abs=1e-8)
     assert error_test1["force"] == pytest.approx(0.004820856779955612, abs=1e-6)
     assert error_test1["stress"] == pytest.approx(0.015064657699737062, abs=1e-5)
+
+    assert error_train1["energy"] == pytest.approx(3.1791594630511444e-05, abs=1e-8)
+    assert error_train1["force"] == pytest.approx(0.003822251017162934, abs=1e-6)
+    assert error_train1["stress"] == pytest.approx(0.015284354036260491, abs=1e-5)
 
 
 def test_mlp_devel_api_multidatasets():
@@ -112,14 +112,6 @@ def test_mlp_devel_api_multidatasets():
     error_test1 = polymlp.summary.error_test["dataset1"]
     error_test2 = polymlp.summary.error_test["dataset2"]
 
-    assert error_train1["energy"] == pytest.approx(2.7039999690544686e-4, abs=1e-8)
-    assert error_train1["force"] == pytest.approx(0.015516294909701862, abs=1e-6)
-    assert error_train1["stress"] == pytest.approx(0.01024817, abs=1e-5)
-
-    assert error_train2["energy"] == pytest.approx(6.587197553779358e-3, abs=1e-8)
-    assert error_train2["force"] == pytest.approx(0.3157543533276883, abs=1e-6)
-    assert error_train2["stress"] == pytest.approx(0.03763428, abs=1e-5)
-
     assert error_test1["energy"] == pytest.approx(2.2913988829580454e-4, abs=1e-8)
     assert error_test1["force"] == pytest.approx(0.01565802222609203, abs=1e-6)
     assert error_test1["stress"] == pytest.approx(0.01109818, abs=1e-5)
@@ -127,6 +119,14 @@ def test_mlp_devel_api_multidatasets():
     assert error_test2["energy"] == pytest.approx(6.022423646649027e-3, abs=1e-8)
     assert error_test2["force"] == pytest.approx(0.40361027823620954, abs=1e-6)
     assert error_test2["stress"] == pytest.approx(0.03756416, abs=1e-5)
+
+    assert error_train1["energy"] == pytest.approx(2.7039999690544686e-4, abs=1e-8)
+    assert error_train1["force"] == pytest.approx(0.015516294909701862, abs=1e-6)
+    assert error_train1["stress"] == pytest.approx(0.01024817, abs=1e-5)
+
+    assert error_train2["energy"] == pytest.approx(6.587197553779358e-3, abs=1e-8)
+    assert error_train2["force"] == pytest.approx(0.3157543533276883, abs=1e-6)
+    assert error_train2["stress"] == pytest.approx(0.03763428, abs=1e-5)
 
 
 def test_mlp_devel_api_structure():
@@ -179,10 +179,10 @@ def test_mlp_devel_api_structure():
     error_train = polymlp.summary.error_train["data1"]
     error_test = polymlp.summary.error_test["data2"]
 
-    assert error_train["energy"] == pytest.approx(3.163e-5, abs=1e-8)
-    assert error_train["force"] == pytest.approx(0.00382465, abs=1e-6)
     assert error_test["energy"] == pytest.approx(6.176e-5, abs=1e-8)
     assert error_test["force"] == pytest.approx(0.0048288317, abs=1e-6)
+    assert error_train["energy"] == pytest.approx(3.163e-5, abs=1e-8)
+    assert error_train["force"] == pytest.approx(0.00382465, abs=1e-6)
 
     polymlp.set_params(
         elements=["O", "Mg"],
@@ -207,10 +207,10 @@ def test_mlp_devel_api_structure():
     error_train = polymlp.summary.error_train["data1"]
     error_test = polymlp.summary.error_test["data2"]
 
-    assert error_train["energy"] == pytest.approx(3.163e-5, abs=1e-8)
-    assert error_train["force"] == pytest.approx(0.00382465, abs=1e-6)
     assert error_test["energy"] == pytest.approx(6.176e-5, abs=1e-8)
     assert error_test["force"] == pytest.approx(0.0048288317, abs=1e-6)
+    assert error_train["energy"] == pytest.approx(3.163e-5, abs=1e-8)
+    assert error_train["force"] == pytest.approx(0.00382465, abs=1e-6)
 
 
 def test_mlp_devel_api_phono3py():
@@ -235,10 +235,10 @@ def test_mlp_devel_api_phono3py():
     error_train = polymlp.summary.error_train["data1"]
     error_test = polymlp.summary.error_test["data2"]
 
-    assert error_train["energy"] == pytest.approx(6.918367430434279e-07, rel=1e-4)
-    assert error_train["force"] == pytest.approx(0.00014990313076671476, rel=1e-3)
     assert error_test["energy"] == pytest.approx(7.094824886399383e-07, rel=1e-4)
     assert error_test["force"] == pytest.approx(0.0001507663846345712, rel=1e-3)
+    assert error_train["energy"] == pytest.approx(6.918367430434279e-07, rel=1e-4)
+    assert error_train["force"] == pytest.approx(0.00014990313076671476, rel=1e-3)
 
 
 def test_mlp_devel_api_displacements():
@@ -286,10 +286,10 @@ def test_mlp_devel_api_displacements():
     error_train = polymlp.summary.error_train["data1"]
     error_test = polymlp.summary.error_test["data2"]
 
-    assert error_train["energy"] == pytest.approx(5.087304121578193e-07, abs=1e-8)
-    assert error_train["force"] == pytest.approx(0.00011784280434943888, rel=1e-3)
     assert error_test["energy"] == pytest.approx(4.6149602711239003e-07, abs=1e-8)
     assert error_test["force"] == pytest.approx(0.000285297898960278, rel=1e-3)
+    assert error_train["energy"] == pytest.approx(5.087304121578193e-07, abs=1e-8)
+    assert error_train["force"] == pytest.approx(0.00011784280434943888, rel=1e-3)
 
 
 def test_mlp_devel_api_learning_curve():
@@ -386,8 +386,7 @@ def test_mlp_devel_api_distance():
     error_train1 = polymlp.summary.error_train["data1"]
     error_test1 = polymlp.summary.error_test["data2"]
 
-    assert error_train1["energy"] == pytest.approx(0.0015997025381622896, abs=1e-8)
-    assert error_train1["force"] == pytest.approx(0.01742941204519919, abs=1e-6)
-
     assert error_test1["energy"] == pytest.approx(0.0011914132092445697, abs=1e-8)
     assert error_test1["force"] == pytest.approx(0.02750490198874777, abs=1e-6)
+    assert error_train1["energy"] == pytest.approx(0.0015997025381622896, abs=1e-8)
+    assert error_train1["force"] == pytest.approx(0.01742941204519919, abs=1e-6)
