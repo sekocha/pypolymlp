@@ -11,16 +11,17 @@ from pypolymlp.mlp_dev.core.utils_sequential import get_batch_slice
 from pypolymlp.mlp_dev.core.utils_weights import apply_weights
 
 
-def _round_scales(scales: np.ndarray, threshold: float = 1e-14):
+def _round_scales(
+    scales: np.ndarray, include_force: bool = True, threshold: float = 1e-10
+):
     """Set scales so that they are not used for zero features."""
-    print(np.max(scales))
-    print(np.mean(scales))
-    zero_ids = np.abs(scales) < threshold
+    if include_force:
+        zero_ids = np.abs(scales) < threshold
+    else:
+        # Threshold value can be improved.
+        zero_ids = np.abs(scales) < threshold * threshold
     scales[zero_ids] = 1.0
-    zero_ids = np.abs(scales) < 1e-7
-    # scales = np.maximum(scales, np.reciprocal(scales) * threshold)
-    scales[zero_ids] = 1e-7
-    return scales
+    return scales, zero_ids
 
 
 class PolymlpDevDataXY(PolymlpDevDataXYBase):
@@ -81,7 +82,13 @@ class PolymlpDevDataXY(PolymlpDevDataXYBase):
         x = self._train_xy.x
         ne, nf, ns = self._train_xy.n_data
         self._scales = np.std(x[:ne], axis=0)
-        self._scales = _round_scales(self._scales)
+
+        self._scales, zero_ids = _round_scales(
+            self._scales,
+            include_force=self._common_params.include_force,
+        )
+        self._train_xy.x[:, zero_ids] = 0.0
+        self._test_xy.x[:, zero_ids] = 0.0
 
         self._train_xy.x /= self._scales
         self._test_xy.x /= self._scales
@@ -231,9 +238,12 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
             data_xy.xtx = self._symmetrize_xtx(data_xy.xtx, n_batch=n_batch)
 
         n_data = sum([len(d.energies) for d in dft_list])
-        self._scales = self._compute_scales(
+        self._scales, zero_ids = self._compute_scales(
             scales, data_xy.xe_sum, data_xy.xe_sq_sum, n_data
         )
+        data_xy.xtx[zero_ids] = 0.0
+        data_xy.xtx[:, zero_ids] = 0.0
+        data_xy.xty[zero_ids] = 0.0
 
         data_xy.xtx /= self._scales[:, np.newaxis]
         data_xy.xtx /= self._scales[np.newaxis, :]
@@ -257,8 +267,11 @@ class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
         else:
             self._scales = scales
 
-        self._scales = _round_scales(self._scales)
-        return self._scales
+        self._scales, zero_ids = _round_scales(
+            self._scales,
+            include_force=self._common_params.include_force,
+        )
+        return self._scales, zero_ids
 
     def _compute_products_single_batch(
         self,

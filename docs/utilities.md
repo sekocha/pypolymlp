@@ -55,7 +55,41 @@ calc_cost option generates a file 'polymlp_cost.yaml', which is required for fin
 
 2. Multiple polynomial MLPs
 
+Consider the following file and directory structures.
+```shell
+> ls $(path_mlps)
+polymlp-00001/  polymlp-00003/  polymlp-00005/  polymlp-00007/  polymlp-00009/
+polymlp-00002/  polymlp-00004/  polymlp-00006/  polymlp-00008/
+> ls $(path_mlps)/polymlp-00*
+test/polymlp-00001:
+polymlp.lammps
+
+test/polymlp-00002:
+polymlp.lammps
+
+test/polymlp-00003:
+polymlp.lammps
+
+test/polymlp-00004:
+polymlp.lammps
+
+test/polymlp-00005:
+polymlp.lammps
+
+test/polymlp-00006:
+polymlp.lammps
+
+test/polymlp-00007:
+polymlp.lammps
+
+test/polymlp-00008:
+polymlp.lammps
+
+test/polymlp-00009:
+polymlp.lammps
 ```
+In this case, computational costs for multiple polynomial MLPs can be estimated as follows.
+```shell
 > pypolymlp-utils --calc_cost -d $(path_mlps)/polymlp-00*
 ```
 

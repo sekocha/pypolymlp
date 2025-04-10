@@ -58,3 +58,4 @@ def test_mlp_devel_api_electron():
 
     assert error_test1["energy"] == pytest.approx(1.4650056622179602e-05, rel=1e-2)
     assert error_train1["energy"] == pytest.approx(4.567949042495626e-06, rel=1e-2)
+    assert 1 == 0
