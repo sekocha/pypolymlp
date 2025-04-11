@@ -2,7 +2,7 @@
 
 ## Compression of vasprun.xml files
 
-```
+```shell
 > pypolymlp-utils --vasprun_compress vaspruns/vasprun-*.xml
 ```
 The compressed vasprun.xml files will be generated as `vasprun.xml.polymlp`.
@@ -10,7 +10,7 @@ The compressed vasprun.xml files will be generated as `vasprun.xml.polymlp`.
 
 ## Calculation of electronic properties at finite temperatures from vasprun.xml files
 (phonopy required.)
-```
+```shell
 > pypolymlp-utils --electron_vasprun */vasprun.xml
 ```
 The output files will be generated as `electron.yaml`.
@@ -18,7 +18,7 @@ The output files will be generated as `electron.yaml`.
 
 ## Automatic division of DFT dataset
 
-```
+```shell
 > pypolymlp-utils --auto_dataset dataset1/*/vasprun.xml dataset2/*/vasprun.xml
 > cat polymlp.in.append >> polymlp.in
 ```
@@ -30,7 +30,7 @@ The predictive power for them is more important than the other structures for th
 ## Atomic energies
 (Experimental: Only for VASP calculations using PBE and PBEsol functionals)
 
-```
+```shell
 > pypolymlp-utils --atomic_energy_elements Mg O --atomic_energy_functional PBE
 > pypolymlp-utils --atomic_energy_formula MgO --atomic_energy_functional PBE
 > pypolymlp-utils --atomic_energy_formula Al2O3 --atomic_energy_functional PBEsol
@@ -46,11 +46,11 @@ calc_cost option generates a file 'polymlp_cost.yaml', which is required for fin
 
 1. Single polynomial MLP
 
-```
-> pypolymlp-utils --calc_cost --pot polymlp.lammps
+```shell
+> pypolymlp-utils --calc_cost --pot polymlp.yaml
 
 # hybrid polynomial MLP
-> pypolymlp-utils --calc_cost --pot polymlp.lammps*
+> pypolymlp-utils --calc_cost --pot polymlp.yaml*
 ```
 
 2. Multiple polynomial MLPs
@@ -64,31 +64,31 @@ polymlp-00002/  polymlp-00004/  polymlp-00006/  polymlp-00008/
 
 > ls Ag-Au/polymlp-00*
 test/polymlp-00001:
-polymlp.lammps
+polymlp.yaml
 
 test/polymlp-00002:
-polymlp.lammps
+polymlp.yaml
 
 test/polymlp-00003:
-polymlp.lammps
+polymlp.yaml
 
 test/polymlp-00004:
-polymlp.lammps
+polymlp.yaml
 
 test/polymlp-00005:
-polymlp.lammps
+polymlp.yaml
 
 test/polymlp-00006:
-polymlp.lammps
+polymlp.yaml
 
 test/polymlp-00007:
-polymlp.lammps
+polymlp.yaml
 
 test/polymlp-00008:
-polymlp.lammps
+polymlp.yaml
 
 test/polymlp-00009:
-polymlp.lammps
+polymlp.yaml
 ```
 
 In this case, computational costs for multiple polynomial MLPs can be estimated as follows.
@@ -105,31 +105,31 @@ polymlp-00001/  polymlp-00003/  polymlp-00005/  polymlp-00007/  polymlp-00009/
 polymlp-00002/  polymlp-00004/  polymlp-00006/  polymlp-00008/
 
 Ag-Au/polymlp-00001:
-polymlp.lammps  polymlp_cost.yaml  polymlp_error.yaml
+polymlp.yaml  polymlp_cost.yaml  polymlp_error.yaml
 
 Ag-Au/polymlp-00002:
-polymlp.lammps  polymlp_cost.yaml  polymlp_error.yaml
+polymlp.yaml  polymlp_cost.yaml  polymlp_error.yaml
 
 Ag-Au/polymlp-00003:
-polymlp.lammps  polymlp_cost.yaml  polymlp_error.yaml
+polymlp.yaml  polymlp_cost.yaml  polymlp_error.yaml
 
 Ag-Au/polymlp-00004:
-polymlp.lammps  polymlp_cost.yaml  polymlp_error.yaml
+polymlp.yaml  polymlp_cost.yaml  polymlp_error.yaml
 
 Ag-Au/polymlp-00005:
-polymlp.lammps  polymlp_cost.yaml  polymlp_error.yaml
+polymlp.yaml  polymlp_cost.yaml  polymlp_error.yaml
 
 Ag-Au/polymlp-00006:
-polymlp.lammps  polymlp_cost.yaml  polymlp_error.yaml
+polymlp.yaml  polymlp_cost.yaml  polymlp_error.yaml
 
 Ag-Au/polymlp-00007:
-polymlp.lammps  polymlp_cost.yaml  polymlp_error.yaml
+polymlp.yaml  polymlp_cost.yaml  polymlp_error.yaml
 
 Ag-Au/polymlp-00008:
-polymlp.lammps  polymlp_cost.yaml  polymlp_error.yaml
+polymlp.yaml  polymlp_cost.yaml  polymlp_error.yaml
 
 Ag-Au/polymlp-00009:
-polymlp.lammps  polymlp_cost.yaml  polymlp_error.yaml
+polymlp.yaml  polymlp_cost.yaml  polymlp_error.yaml
 ```
 Files `polymlp_error.yaml` and `polymlp_cost.yaml` are needed for each MLP.
 

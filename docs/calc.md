@@ -5,7 +5,7 @@ If a newer version (0.9.0 or later) is used, polymlp files are generated in YAML
 
 ## Properties (energies, forces, and stress tensors)
 
-```
+```shell
 > pypolymlp-calc --properties --pot polymlp.lammps --poscars */POSCAR
 > pypolymlp-calc --properties --pot polymlp.lammps --vaspruns vaspruns/vasprun.xml.polymlp.*
 ```
@@ -19,7 +19,7 @@ or
 
 ## Polynomial structural features
 
-```
+```shell
 > pypolymlp-calc --features --pot polymlp.lammps --poscars */POSCAR
 > pypolymlp-calc --features -i polymlp.in --poscars */POSCAR
 ```
@@ -27,16 +27,16 @@ or
 ## Force constants
 
 (phonopy, phono3py, and symfc are required.)
-```
+```shell
 > pypolymlp-calc --force_constants --pot polymlp.lammps --poscar POSCAR --supercell 3 3 2 --fc_n_samples 100 --disp 0.001 --fc_orders 2 3
 ```
 If a cutoff radius is introduced to evaluate FC3s, use "--cutoff" option as follows.
-```
+```shell
 pypolymlp-calc --force_constants --pot polymlp.lammps --poscar POSCAR --geometry_optimization --fc_n_samples 300 --fc_orders 2 3 --disp 0.001 --batch_size 100 --supercell 3 3 2 --cutoff 6
 ```
 
 ## Local geometry optimization
-```
+```shell
 > pypolymlp-calc --geometry_optimization --poscar POSCAR --pot polymlp.lammps
 > pypolymlp-calc --geometry_optimization --poscar POSCAR --pot polymlp.lammps --no_symmetry
 > pypolymlp-calc --geometry_optimization --poscar POSCAR --pot polymlp.lammps --fix_cell
@@ -47,14 +47,14 @@ pypolymlp-calc --force_constants --pot polymlp.lammps --poscar POSCAR --geometry
 ## Equation of states
 
 (phonopy is required.)
-```
+```shell
 > pypolymlp-calc --eos --poscar POSCAR --pot polymlp.lammps
 ```
 
 ## Elastic constants
 
 (pymatgen is required.)
-```
+```shell
 > pypolymlp-calc --elastic --poscar POSCAR --pot polymlp.lammps
 ```
 
@@ -66,6 +66,6 @@ pypolymlp-calc --force_constants --pot polymlp.lammps --poscar POSCAR --geometry
 ## Phonon calculations
 
 (phonopy is required.)
-```
+```shell
 > pypolymlp-calc --phonon --pot polymlp.lammps --poscar POSCAR --supercell 3 3 2 --ph_mesh 20 20 20
 ```

@@ -3,7 +3,7 @@
 If version <= 0.8.0 is used, polymlp files are generated in a text format as `polymlp.lammps`.
 If a newer version (>= 0.9.0) is used, polymlp files are generated in a yaml format as `polymlp.yaml`.
 
-```
+```shell
 > pypolymlp -i polymlp.in
 > cat polymlp.in
 
@@ -41,7 +41,7 @@ If a newer version (>= 0.9.0) is used, polymlp files are generated in a yaml for
 
 ## MLP development using hybrid models
 
-```
+```shell
 > pypolymlp -i polymlp1.in polymlp2.in
 > cat polymlp1.in
 
