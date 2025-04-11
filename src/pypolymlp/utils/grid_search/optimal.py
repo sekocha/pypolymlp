@@ -1,13 +1,10 @@
 """Functions for finding optimal MLPs."""
 
-import glob
 import os
 
 import numpy as np
 import yaml
 from scipy.spatial import ConvexHull
-
-from pypolymlp.core.io_polymlp import load_mlp
 
 
 def write_yaml(data, system, filename="polymlp_summary_all.yaml"):
@@ -55,9 +52,6 @@ def find_optimal_mlps(dirs, key, use_force=False, use_logscale_time=False):
                 if key in d["dataset"]:
                     match_d = d
                     break
-            if system is None:
-                params, _ = load_mlp(glob.glob(dir_pot + "/polymlp.lammps*")[0])
-                system = "-".join(params.elements)
 
         if match_d is not None:
             abspath = os.path.abspath(dir_pot)
@@ -67,6 +61,8 @@ def find_optimal_mlps(dirs, key, use_force=False, use_logscale_time=False):
             time1 = yml_data["costs"]["single_core"]
             time36 = yml_data["costs"]["openmp"]
             name = dir_pot.split("/")[-1]
+            if system is None:
+                system = yml_data["system"]
             d_array.append([time1, time36, rmse_e, rmse_f, name, abspath])
 
     d_array = sorted(d_array, key=lambda x: x[0])

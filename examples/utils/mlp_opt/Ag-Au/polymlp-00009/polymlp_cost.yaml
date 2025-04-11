@@ -1,0 +1,7 @@
+system: Ag-Au
+units:
+  time: msec/atom/step
+
+costs:
+  single_core: 0.0493150670081377
+  openmp:      0.0037788692861795425

@@ -80,10 +80,26 @@ class RegressionBase(ABC):
         """
         (posv,) = get_lapack_funcs(("posv",), (A, b))
         if A.flags["C_CONTIGUOUS"]:
-            _, x, _ = posv(A.T, b, lower=False, overwrite_a=False, overwrite_b=False)
+            _, x, info = posv(
+                A.T,
+                b,
+                lower=False,
+                overwrite_a=False,
+                overwrite_b=False,
+            )
         else:
-            _, x, _ = posv(A, b, lower=False, overwrite_a=False, overwrite_b=False)
-
+            _, x, info = posv(
+                A,
+                b,
+                lower=False,
+                overwrite_a=False,
+                overwrite_b=False,
+            )
+        if not info == 0:
+            if self._verbose:
+                comment = "Error: The factorization could not be completed."
+                print(" ", comment, flush=True)
+            x = np.ones(x.shape) * 1e30
         return x
 
     def compute_inner_products(self, X=None, y=None, A=None, Xy=None):

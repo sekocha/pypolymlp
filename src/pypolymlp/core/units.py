@@ -19,6 +19,12 @@ EVtoKJmol = 96.48533212331002
 EVtoKbar = 1602.1766208
 EVtoGPa = 160.21766208
 
+# Convert atomic mass to kg
+MasstoKG = 1e-3 / Avogadro
+
+# Convert m/s to angstrom/fs
+M_StoAng_Fs = 1e-5
+
 
 def kjmol_to_ev(e):
     return e / 96.48533212331002
