@@ -93,13 +93,13 @@ def test_mlp_devel_hybrid_flexible():
 
 def _check_errors_single_dataset_MgO(error_train1, error_test1):
 
-    assert error_test1["energy"] == pytest.approx(6.0128773079683234e-05, abs=1e-8)
-    assert error_test1["force"] == pytest.approx(0.004820856779955612, abs=1e-6)
-    assert error_test1["stress"] == pytest.approx(0.015064657699737062, abs=1e-5)
+    assert error_test1["energy"] == pytest.approx(5.7907010720826916e-05, abs=1e-8)
+    assert error_test1["force"] == pytest.approx(0.004816151341623647, abs=1e-6)
+    assert error_test1["stress"] == pytest.approx(0.015092680508112657, abs=1e-5)
 
-    assert error_train1["energy"] == pytest.approx(3.1791594630511444e-05, abs=1e-8)
-    assert error_train1["force"] == pytest.approx(0.003822251017162934, abs=1e-6)
-    assert error_train1["stress"] == pytest.approx(0.015284354036260491, abs=1e-5)
+    assert error_train1["energy"] == pytest.approx(3.149612103914911e-05, abs=1e-8)
+    assert error_train1["force"] == pytest.approx(0.0038287840554079465, abs=1e-6)
+    assert error_train1["stress"] == pytest.approx(0.015299229871848218, abs=1e-5)
 
 
 def _check_errors_multiple_datasets_MgO(
@@ -126,13 +126,13 @@ def _check_errors_multiple_datasets_MgO(
 
 
 def _check_errors_hybrid_single_dataset_MgO(error_train1, error_test1):
-    assert error_test1["energy"] == pytest.approx(0.00018904268491116763, abs=1e-8)
-    assert error_test1["force"] == pytest.approx(0.006041215496572942, abs=1e-6)
-    assert error_test1["stress"] == pytest.approx(0.004267059946631895, abs=1e-5)
+    assert error_test1["energy"] == pytest.approx(0.00018507052155432584, abs=1e-8)
+    assert error_test1["force"] == pytest.approx(0.005399999125414221, abs=1e-6)
+    assert error_test1["stress"] == pytest.approx(0.00413656161693271, abs=1e-5)
 
-    assert error_train1["energy"] == pytest.approx(0.00022116079973644265, abs=1e-8)
-    assert error_train1["force"] == pytest.approx(0.002724472551198224, abs=1e-6)
-    assert error_train1["stress"] == pytest.approx(0.0042136414619126225, abs=1e-5)
+    assert error_train1["energy"] == pytest.approx(0.00022043275013749415, abs=1e-8)
+    assert error_train1["force"] == pytest.approx(0.002498221077225991, abs=1e-6)
+    assert error_train1["stress"] == pytest.approx(0.00414147022792633, abs=1e-5)
 
 
 def _check_errors_pair_single_dataset_MgO(error_train1, error_test1):

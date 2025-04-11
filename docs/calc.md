@@ -11,7 +11,7 @@ If a newer version (0.9.0 or later) is used, polymlp files are generated in YAML
 ```
 
 When using a hybrid polynomial MLP, multiple MLP files should be given for --pot option.
-```
+```shell
 --pot polymlp.lammps*
 or
 --pot polymlp.lammps.1 polymlp.lammps.2
@@ -32,7 +32,7 @@ or
 ```
 If a cutoff radius is introduced to evaluate FC3s, use "--cutoff" option as follows.
 ```shell
-pypolymlp-calc --force_constants --pot polymlp.lammps --poscar POSCAR --geometry_optimization --fc_n_samples 300 --fc_orders 2 3 --disp 0.001 --batch_size 100 --supercell 3 3 2 --cutoff 6
+> pypolymlp-calc --force_constants --pot polymlp.lammps --poscar POSCAR --geometry_optimization --fc_n_samples 300 --fc_orders 2 3 --disp 0.001 --batch_size 100 --supercell 3 3 2 --cutoff 6
 ```
 
 ## Local geometry optimization
