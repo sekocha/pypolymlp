@@ -1,6 +1,5 @@
 """Class for estimating computational cost of polymlp."""
 
-import glob
 import time
 from typing import Optional, Union
 
@@ -9,7 +8,7 @@ import numpy as np
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.interface_vasp import Poscar
-from pypolymlp.core.io_polymlp import load_mlps
+from pypolymlp.core.io_polymlp import find_mlps, load_mlps
 from pypolymlp.utils.structure_utils import supercell_diagonal
 
 
@@ -36,12 +35,21 @@ class PolymlpCost:
 
     def _parse_elements_from_pot(self):
         """Get elements from MLP file."""
+        pot_elements = None
         if self._path_pot is None:
             pot_elements = self._pot
         else:
-            pot_elements = sorted(glob.glob(self._path_pot[0] + "/polymlp.lammps*"))[0]
+            for path in self._path_pot:
+                pot_elements = find_mlps(path)[0]
+                if pot_elements is not None:
+                    break
+
+        if pot_elements is None:
+            raise RuntimeError("polymlp potential files not found.")
+
         params, _ = load_mlps(pot_elements)
         self._elements = params.elements
+        self._system = "-".join(self._elements)
         return self._elements
 
     def _set_structure(self):
@@ -126,22 +134,25 @@ class PolymlpCost:
         else:
             pot_dirs = sorted(self._path_pot)
             for dir1 in pot_dirs:
-                pot = sorted(glob.glob(dir1 + "/polymlp.lammps*"))
+                pot = find_mlps(dir1)
                 if self._verbose:
                     print("------- Target MLP:", dir1, "-------")
-                    print(pot)
-                cost1, cost2 = self._run_single(pot, n_calc=n_calc)
-                self._write_single_yaml(
-                    cost1,
-                    cost2,
-                    filename=dir1 + "/polymlp_cost.yaml",
-                )
+                    print("polymlp:", pot)
+
+                if pot is not None:
+                    cost1, cost2 = self._run_single(pot, n_calc=n_calc)
+                    self._write_single_yaml(
+                        cost1,
+                        cost2,
+                        filename=dir1 + "/polymlp_cost.yaml",
+                    )
 
     def _write_single_yaml(
         self, cost1: float, cost2: float, filename: str = "polymlp_cost.yaml"
     ):
         """Save computational costs to a file."""
         f = open(filename, "w")
+        print("system:", self._system, file=f)
         print("units:", file=f)
         print("  time: msec/atom/step", file=f)
         print("", file=f)

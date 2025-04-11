@@ -1,5 +1,6 @@
 """Class for saving and loading polymlp.yaml files"""
 
+import glob
 import io
 from typing import Union
 
@@ -94,6 +95,19 @@ def load_mlps(file_list_or_file):
         return params_array, coeffs_array
 
     return load_mlp(file_list_or_file)
+
+
+def find_mlps(path: str):
+    """Find polymlp files in directory."""
+    files = glob.glob(path + "/polymlp.yaml*")
+    if len(files) > 0:
+        return sorted(files)
+
+    files = glob.glob(path + "/polymlp.lammps*")
+    if len(files) > 0:
+        return sorted(files)
+
+    return None
 
 
 def convert_to_yaml(
