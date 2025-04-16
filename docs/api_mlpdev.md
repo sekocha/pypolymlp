@@ -67,6 +67,7 @@ train_vaspruns = glob.glob('vaspruns/train/vasprun-*.xml.polymlp')
 test_vaspruns = glob.glob('vaspruns/test/vasprun-*.xml.polymlp')
 polymlp.set_datasets_vasp(train_vaspruns, test_vaspruns)
 polymlp.run(verbose=True)
+polymlp.save_mlp(filename="polymlp.yaml")
 ```
 
 ## MLP development from phono3py.yaml.xz without using polymlp.in
@@ -101,6 +102,7 @@ polymlp.set_datasets_phono3py(
     test_ids=test_ids,
 )
 polymlp.run(verbose=True)
+polymlp.save_mlp(filename="polymlp.yaml")
 ```
 
 When energy values are read from phono3py.yaml.xz, train_energy_dat and test_energy dat are not required as follows.
@@ -117,6 +119,7 @@ polymlp.set_datasets_phono3py(
     test_ids=test_ids,
 )
 polymlp.run(verbose=True)
+polymlp.save_mlp(filename="polymlp.yaml")
 ```
 
 ## MLP development using POSCAR files
@@ -164,6 +167,7 @@ polymlp.set_datasets_structures(
     test_stresses = test_stresses,
 )
 polymlp.run(verbose=True)
+polymlp.save_mlp(filename="polymlp.yaml")
 ```
 
 
@@ -229,6 +233,7 @@ polymlp.set_datasets_displacements(
     structure_without_disp,
 )
 polymlp.run(verbose=True)
+polymlp.save_mlp(filename="polymlp.yaml")
 ```
 
 ## MLP development using a dataset of structure and properties.
@@ -289,6 +294,7 @@ polymlp.set_datasets_structures(
     test_stresses = test_stresses,
 )
 polymlp.run(verbose=True)
+polymlp.save_mlp(filename="polymlp.yaml")
 ```
 
 If force or stress tensor data are not available, the corresponding input lines may be omitted.
