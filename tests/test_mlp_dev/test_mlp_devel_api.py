@@ -68,8 +68,6 @@ def test_mlp_devel_api_single_dataset():
     error_train1 = polymlp.summary.error_train["data1"]
     error_test1 = polymlp.summary.error_test["data2"]
 
-    print(error_test1)
-    print(error_train1)
     assert error_test1["energy"] == pytest.approx(5.7907010720826916e-05, abs=1e-8)
     assert error_test1["force"] == pytest.approx(0.0048161516715470466, abs=1e-6)
     assert error_test1["stress"] == pytest.approx(0.015092685843715342, abs=1e-5)
