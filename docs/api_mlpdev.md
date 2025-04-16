@@ -231,6 +231,79 @@ polymlp.set_datasets_displacements(
 polymlp.run(verbose=True)
 ```
 
+## MLP development using a dataset of structure and properties.
+
+```python
+from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
+
+polymlp = Pypolymlp()
+polymlp.set_params(
+    ['Ag','I'],
+    cutoff=8.0,
+    model_type=3,
+    max_p=2,
+    gtinv_order=3,
+    gtinv_maxl=[4,4],
+    gaussian_params2=[0.0,7.0,10],
+    atomic_energy=[-0.19820116,-0.21203241],
+)
+
+'''
+Parameters in polymlp.set_datasets_structures
+-------------------------------------------------
+train_structures: shape=(n_train), list of PolymlpStructure.
+train_energies: shape=(n_test), list of PolymlpStructure.
+test_energies: shape=(n_test), unit: eV/cell.
+train_forces: shape=(n_train, (3, n_atom)), unit: eV/ang.
+test_forces: shape=(n_test, (3, n_atom)), unit: eV/ang.
+train_stresses: shape=(n_train, 3, 3), unit: eV/cell.
+test_stresses: shape=(n_test, 3, 3), unit: eV/cell.
+
+Each structure must be provided in the `PolymlpStructure` format as
+
+structure = PolymlpStructure(
+    axis = axis,
+    positions = positions,
+    n_atoms = n_atoms,
+    elements = elements,
+    types = types,
+)
+
+(attributes)
+- axis: shape=(3, 3), [a, b, c]
+- positions: shape=(3, n_atom) [x1, x2, ...]
+- n_atoms: [4, 4]
+- elements: Element list (e.g.) ['Mg','Mg','Mg','Mg','O','O','O','O']
+- types: Atomic type integers (e.g.) [0, 0, 0, 0, 1, 1, 1, 1]
+- volume: 64.0 (ang.^3)
+'''
+
+polymlp.set_datasets_structures(
+    train_structures = train_structures,
+    test_structures = test_structures,
+    train_energies = train_energies,
+    test_energies = test_energies,
+    train_forces = train_forces,
+    test_forces = test_forces,
+    train_stresses = train_stresses,
+    test_stresses = test_stresses,
+)
+polymlp.run(verbose=True)
+```
+
+If force or stress tensor data are not available, the corresponding input lines may be omitted.
+```python
+polymlp.set_datasets_structures(
+    train_structures = train_structures,
+    test_structures = test_structures,
+    train_energies = train_energies,
+    test_energies = test_energies,
+    train_forces = train_forces,
+    test_forces = test_forces,
+)
+polymlp.run(verbose=True)
+```
+
 ## From multiple sets of vasprun.xml files
 
 ```python
