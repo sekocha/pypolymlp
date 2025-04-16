@@ -322,5 +322,5 @@ polymlp.run(verbose=True)
 ## File IO
 - Save polynomial MLP to a file.
 ```python
-polymlp.save_mlp(filename="polymlp.lammps")
+polymlp.save_mlp(filename="polymlp.yaml")
 ```
