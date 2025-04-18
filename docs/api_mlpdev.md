@@ -54,7 +54,7 @@ rearrange_by_elements: Set True if not developing special MLPs.
 
 polymlp = Pypolymlp()
 polymlp.set_params(
-    ['Mg','O'],
+    elements=['Mg','O'],
     cutoff=8.0,
     model_type=3,
     max_p=2,
@@ -77,7 +77,7 @@ from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
 
 polymlp = Pypolymlp()
 polymlp.set_params(
-    ['Ag','I'],
+    elements=['Ag','I'],
     cutoff=8.0,
     model_type=3,
     max_p=2,
@@ -129,7 +129,7 @@ from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
 
 polymlp = Pypolymlp()
 polymlp.set_params(
-    ['Ag','I'],
+    elements=['Ag','I'],
     cutoff=8.0,
     model_type=3,
     max_p=2,
@@ -179,7 +179,7 @@ from pypolymlp.core.data_format import PolymlpStructure
 
 polymlp = Pypolymlp()
 polymlp.set_params(
-    ['Ag','I'],
+    elements=['Ag','I'],
     cutoff=8.0,
     model_type=3,
     max_p=2,
@@ -243,7 +243,7 @@ from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
 
 polymlp = Pypolymlp()
 polymlp.set_params(
-    ['Ag','I'],
+    elements=['Ag','I'],
     cutoff=8.0,
     model_type=3,
     max_p=2,
