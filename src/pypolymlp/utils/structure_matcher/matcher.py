@@ -1,6 +1,7 @@
 """Utilities for structure matchers"""
 
 import itertools
+import time
 
 import numpy as np
 
@@ -47,23 +48,30 @@ def normalize_positions(
         along each axis.
     3. Sort the irreducible representation of fractional coordinates.
     """
+    t1 = time.time()
     rpositions = round_positions(positions, tol=tol, decimals=decimals)
     centers = []
-    for i, pos1d in enumerate(rpositions):
+    for pos1d in rpositions:
         center_trans = _normalize_positions_1d(pos1d, tol=tol, decimals=decimals)
         centers.append(center_trans)
+    t2 = time.time()
 
-    rpositions -= np.tile(np.average(rpositions, axis=1), (rpositions.shape[1], 1)).T
+    center = np.average(rpositions, axis=1)
+    for rpos in rpositions.T:
+        rpos -= center
+    t3 = time.time()
 
     cands = []
     for t in itertools.product(*centers):
         t = np.array(t)
-        pos = rpositions + np.tile(t, (rpositions.shape[1], 1)).T
-        rpos = round_positions(pos, tol=tol, decimals=decimals)
+        rpos = round_positions(rpositions + t[:, None], tol=tol, decimals=decimals)
         rpos = _sort_positions(rpos, n_atoms)
         cands.append(tuple(rpos.reshape(-1)))
+    t4 = time.time()
 
     positions_irrep = np.array(min(cands)).reshape(3, -1)
+    t5 = time.time()
+    print(t2 - t1, t3 - t2, t4 - t3, t5 - t4)
 
     return positions_irrep
 
@@ -79,46 +87,42 @@ def _sort_positions(positions: np.array, n_atoms: np.ndarray):
     return positions
 
 
-#
-# if __name__ == '__main__':
-# #    pos1d_a = np.array([0, 0.5, 0.46, 0.96, 0.42, 0.92, 0.21, 0.71])
-# #    pos1d_c = np.array([0, 0, 0.25, 0.25, 0.5, 0.5, 0.75, 0.75])
-# #    _normalize_positions_1d(pos1d_a)
-# #    _normalize_positions_1d(pos1d_c)
-# #    pos1d_a += 0.11686568
-# #    pos1d_c += 0.55659138
-# #    _normalize_positions_1d(pos1d_a)
-# #    _normalize_positions_1d(pos1d_c)
-#
-# #    pos1d_a += 0.3
-# #    pos1d_c += 0.3
-# #    _normalize_positions_1d(pos1d_a)
-# #    _normalize_positions_1d(pos1d_c)
-# #    pos1d_a += 0.6
-# #    pos1d_c += 0.6
-# #    _normalize_positions_1d(pos1d_a)
-# #    _normalize_positions_1d(pos1d_c)
-#
-#     n_atoms = [8]
-#     positions = np.array([
-#         [0.  , 0. , 0. ],
-#         [0.5 , 0. , 0. ],
-# #        [0.25, 0.5, 0. ],
-# #        [0.75, 0.5, 0. ],
-#         [0.46, 0. , 0.25],
-#         [0.96, 0. , 0.25],
-# #        [0.21, 0.5, 0.25],
-# #        [0.71, 0.5, 0.25],
-#         [0.42, 0. , 0.5 ],
-#         [0.92, 0. , 0.5 ],
-# #        [0.17, 0.5, 0.5 ],
-# #        [0.67, 0.5, 0.5 ],
-#         [0.21, 0. , 0.75],
-#         [0.71, 0. , 0.75],
-# #        [0.46, 0.5, 0.75],
-# #        [0.96, 0.5, 0.75],
-#     ]).T
-#
-#     positions[0] += 0.11686568
-#     positions[2] += 0.55659138
-#     normalize_positions(positions, n_atoms)
+if __name__ == "__main__":
+
+    n_atoms = [16]
+    positions = np.array(
+        [
+            [0.0, 0.0, 0.0],
+            [0.5, 0.0, 0.0],
+            [0.25, 0.5, 0.0],
+            [0.75, 0.5, 0.0],
+            [0.46, 0.0, 0.25],
+            [0.96, 0.0, 0.25],
+            [0.21, 0.5, 0.25],
+            [0.71, 0.5, 0.25],
+            [0.42, 0.0, 0.5],
+            [0.92, 0.0, 0.5],
+            [0.17, 0.5, 0.5],
+            [0.67, 0.5, 0.5],
+            [0.21, 0.0, 0.75],
+            [0.71, 0.0, 0.75],
+            [0.46, 0.5, 0.75],
+            [0.96, 0.5, 0.75],
+        ]
+    ).T
+
+    positions[0] += 0.21686568
+    positions[2] += 0.55659138
+
+    t1 = time.time()
+    rep = normalize_positions(positions, n_atoms)
+    t2 = time.time()
+    print(rep)
+    print("Time:", t2 - t1)
+
+    positions = np.random.rand(3, 16)
+    t1 = time.time()
+    rep = normalize_positions(positions, n_atoms)
+    t2 = time.time()
+    print(rep)
+    print("Time:", t2 - t1)
