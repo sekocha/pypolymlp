@@ -19,12 +19,11 @@ def _normalize_positions_1d(pos1d: np.ndarray, tol: float = 1e-13, decimals: int
     pos = pos1d - np.average(pos1d)
     natom = pos.shape[0]
     center_shifts = np.arange(0.0, 1.0, 1.0 / natom)
-    candidates = np.array(
-        [
-            np.sort(round_positions(pos + shift, tol=tol, decimals=decimals))
-            for shift in center_shifts
-        ]
+    candidates = pos[None, :] + center_shifts[:, None]
+    candidates = np.sort(
+        round_positions(candidates, tol=tol, decimals=decimals), axis=1
     )
+
     rep_id = np.lexsort(candidates.T[::-1])[0]
     diff = candidates - candidates[rep_id]
     rep_ids = np.where(np.linalg.norm(diff, axis=1) < tol)[0]
@@ -48,18 +47,15 @@ def normalize_positions(
         along each axis.
     3. Sort the irreducible representation of fractional coordinates.
     """
-    t1 = time.time()
     rpositions = round_positions(positions, tol=tol, decimals=decimals)
     centers = []
     for pos1d in rpositions:
         center_trans = _normalize_positions_1d(pos1d, tol=tol, decimals=decimals)
         centers.append(center_trans)
-    t2 = time.time()
 
     center = np.average(rpositions, axis=1)
     for rpos in rpositions.T:
         rpos -= center
-    t3 = time.time()
 
     cands = []
     for t in itertools.product(*centers):
@@ -67,12 +63,8 @@ def normalize_positions(
         rpos = round_positions(rpositions + t[:, None], tol=tol, decimals=decimals)
         rpos = _sort_positions(rpos, n_atoms)
         cands.append(tuple(rpos.reshape(-1)))
-    t4 = time.time()
 
     positions_irrep = np.array(min(cands)).reshape(3, -1)
-    t5 = time.time()
-    print(t2 - t1, t3 - t2, t4 - t3, t5 - t4)
-
     return positions_irrep
 
 
@@ -121,6 +113,34 @@ if __name__ == "__main__":
     print("Time:", t2 - t1)
 
     positions = np.random.rand(3, 16)
+    t1 = time.time()
+    rep = normalize_positions(positions, n_atoms)
+    t2 = time.time()
+    print(rep)
+    print("Time:", t2 - t1)
+
+    n_atoms = [8, 8]
+    positions = np.array(
+        [
+            [0.0, 0.0, 0.0],
+            [0.5, 0.0, 0.0],
+            [0.46, 0.0, 0.25],
+            [0.96, 0.0, 0.25],
+            [0.42, 0.0, 0.5],
+            [0.92, 0.0, 0.5],
+            [0.21, 0.0, 0.75],
+            [0.71, 0.0, 0.75],
+            [0.25, 0.5, 0.0],
+            [0.75, 0.5, 0.0],
+            [0.21, 0.5, 0.25],
+            [0.71, 0.5, 0.25],
+            [0.17, 0.5, 0.5],
+            [0.67, 0.5, 0.5],
+            [0.46, 0.5, 0.75],
+            [0.96, 0.5, 0.75],
+        ]
+    ).T
+
     t1 = time.time()
     rep = normalize_positions(positions, n_atoms)
     t2 = time.time()
