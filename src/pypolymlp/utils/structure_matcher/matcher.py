@@ -6,28 +6,51 @@ import time
 import numpy as np
 
 
-def round_positions(positions: np.ndarray, tol: float = 1e-13, decimals: int = 5):
+def _argsort_2d(array: np.ndarray):
+    """Returns the indices that sort rows in numpy 2D array."""
+    return np.lexsort(array.T[::-1])
+
+
+def _sort_positions(positions: np.array, n_atoms: np.ndarray):
+    """Sort positions with respect to fractional coordinate numbers."""
+    ibegin = 0
+    for n in n_atoms:
+        iend = ibegin + n
+        ids = _argsort_2d(positions[:, ibegin:iend].T) + ibegin
+        positions[:, ibegin:iend] = positions[:, ids]
+        ibegin = iend
+    return positions
+
+
+def _round_positions(
+    positions: np.ndarray,
+    tol: float = 1e-13,
+    decimals: int = 5,
+    use_center: bool = False,
+):
     """Round fractional coordinates of positions (-0.5 <= p < 0.5)."""
-    positions_rint = positions - np.rint(positions)
+    positions_rint = np.round(positions - np.rint(positions), decimals)
     positions_rint[np.abs(positions_rint - 0.5) < tol] = -0.5
-    positions_rint = np.round(positions_rint, decimals)
+    if use_center:
+        center = np.average(positions_rint, axis=1)
+        for rpos in positions_rint.T:
+            rpos -= center
     return positions_rint
 
 
-def _normalize_positions_1d(pos1d: np.ndarray, tol: float = 1e-13, decimals: int = 5):
-    """Get an irreducible representation of one-dimensional fractional coordinates."""
+def _apply_origin_shifts_1d(pos1d: np.ndarray, tol: float = 1e-13, decimals: int = 5):
+    """Return 1D position candidates where origin shifts are applied."""
     pos = pos1d - np.average(pos1d)
     natom = pos.shape[0]
-    center_shifts = np.arange(0.0, 1.0, 1.0 / natom)
-    candidates = pos[None, :] + center_shifts[:, None]
-    candidates = np.sort(
-        round_positions(candidates, tol=tol, decimals=decimals), axis=1
-    )
+    shifts = np.arange(0.0, 1.0, 1.0 / natom)
+    candidates = pos[None, :] + shifts[:, None]
+    candidates = _round_positions(candidates, tol=tol, decimals=decimals)
 
-    rep_id = np.lexsort(candidates.T[::-1])[0]
-    diff = candidates - candidates[rep_id]
+    candidates_sorted = np.sort(candidates, axis=1)
+    rep_id = _argsort_2d(candidates_sorted)[0]
+    diff = candidates_sorted - candidates_sorted[rep_id]
     rep_ids = np.where(np.linalg.norm(diff, axis=1) < tol)[0]
-    return center_shifts[rep_ids]
+    return candidates[rep_ids]
 
 
 def normalize_positions(
@@ -47,36 +70,25 @@ def normalize_positions(
         along each axis.
     3. Sort the irreducible representation of fractional coordinates.
     """
-    rpositions = round_positions(positions, tol=tol, decimals=decimals)
-    centers = []
-    for pos1d in rpositions:
-        center_trans = _normalize_positions_1d(pos1d, tol=tol, decimals=decimals)
-        centers.append(center_trans)
+    rpositions = _round_positions(
+        positions,
+        tol=tol,
+        decimals=decimals,
+        use_center=True,
+    )
+    candidates_each_axis = [
+        _apply_origin_shifts_1d(pos1d, tol=tol, decimals=decimals)
+        for pos1d in rpositions
+    ]
 
-    center = np.average(rpositions, axis=1)
-    for rpos in rpositions.T:
-        rpos -= center
-
-    cands = []
-    for t in itertools.product(*centers):
-        t = np.array(t)
-        rpos = round_positions(rpositions + t[:, None], tol=tol, decimals=decimals)
-        rpos = _sort_positions(rpos, n_atoms)
-        cands.append(tuple(rpos.reshape(-1)))
-
-    positions_irrep = np.array(min(cands)).reshape(3, -1)
+    cands = np.array(
+        [
+            _sort_positions(np.array(rpos), n_atoms).reshape(-1)
+            for rpos in itertools.product(*candidates_each_axis)
+        ]
+    )
+    positions_irrep = cands[_argsort_2d(cands)[0]].reshape((3, -1))
     return positions_irrep
-
-
-def _sort_positions(positions: np.array, n_atoms: np.ndarray):
-    """Sort positions with respect to fractional coordinate numbers."""
-    ibegin = 0
-    for n in n_atoms:
-        iend = ibegin + n
-        ids = np.lexsort(positions[:, ibegin:iend][::-1]) + ibegin
-        positions[:, ibegin:iend] = positions[:, ids]
-        ibegin = iend
-    return positions
 
 
 if __name__ == "__main__":
