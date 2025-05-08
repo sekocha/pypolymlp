@@ -3,7 +3,7 @@ from pypolymlp.core.utils import split_ids_train_test
 from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
 
 # Parse openmx data files.
-datafiles = ["AgC_444_5C_1.md"]
+datafiles = ["sample.md"]
 structures, energies, forces = parse_openmx(datafiles)
 
 # Split dataset into training and test datasets automatically.
