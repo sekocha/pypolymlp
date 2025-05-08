@@ -33,7 +33,10 @@ def parse_single_openmx(filename: str):
         # parse energy and axis matrix
         sp = lines[iline].split()
         energy = float(sp[4]) * HartreetoEV
-        axis = np.array([float(s) for s in sp[7:]]).reshape((3, 3)).T
+        if "Temperature" in lines[iline]:
+            axis = np.array([float(s) for s in sp[12:]]).reshape((3, 3)).T
+        else:
+            axis = np.array([float(s) for s in sp[7:]]).reshape((3, 3)).T
         iline += 1
         # parse positions, elements, and forces
         positions_cartesian, elements, force = [], [], []
