@@ -15,6 +15,7 @@ from pypolymlp.utils.structure_utils import supercell_diagonal
 # from ase import Atoms
 
 
+# TODO: Implement Nose-Hoover-chain thermostat.
 class PypolymlpMD:
     """API Class for performing MD simulations."""
 
@@ -48,8 +49,8 @@ class PypolymlpMD:
 
         self._unitcell = None
         self._supercell = None
-        self._unitcell_atoms = None
-        self._supercell_atoms = None
+        self._unitcell_ase = None
+        self._supercell_ase = None
 
     def set_ase_calculator(self):
         """Set ASE calculator with polymlp."""
@@ -59,9 +60,9 @@ class PypolymlpMD:
     def load_poscar(self, poscar: str):
         """Parse POSCAR file and supercell matrix."""
         self._unitcell = Poscar(poscar).structure
-        self._unitcell_atoms = structure_to_ase_atoms(self._unitcell)
+        self._unitcell_ase = structure_to_ase_atoms(self._unitcell)
         self._supercell = self._unitcell
-        self._supercell_atoms = self._unitcell_atoms
+        self._supercell_ase = self._unitcell_ase
         return self
 
     def set_supercell(self, size: tuple):
@@ -71,7 +72,7 @@ class PypolymlpMD:
         if len(size) != 3:
             raise RuntimeError("Supercell size is not equal to 3.")
         self._supercell = supercell_diagonal(self._unitcell, size)
-        self._supercell_atoms = structure_to_ase_atoms(self._supercell)
+        self._supercell_ase = structure_to_ase_atoms(self._supercell)
         return self
 
     @property
@@ -83,7 +84,7 @@ class PypolymlpMD:
     def unitcell(self, cell: PolymlpStructure):
         """Set unitcell."""
         self._unitcell = cell
-        self._unitcell_atoms = structure_to_ase_atoms(self._unitcell)
+        self._unitcell_ase = structure_to_ase_atoms(self._unitcell)
 
     @property
     def supercell(self):
@@ -94,10 +95,30 @@ class PypolymlpMD:
     def supercell(self, cell: PolymlpStructure):
         """Set supercell."""
         self._supercell = cell
-        self._supercell_atoms = structure_to_ase_atoms(self._supercell)
+        self._supercell_ase = structure_to_ase_atoms(self._supercell)
 
     def run_nvt(
         self,
+        temperature: int = 300,
+        time_step: float = 1.0,
+        ttime: float = 20.0,
+        n_eq: int = 5000,
+        n_steps: int = 20000,
     ):
+        """Run NVT-MD simulation.
+
+        Parameters
+        ----------
+        temperature : int
+            Target temperature (K).
+        time_step : float
+            Time step for MD (fs).
+        ttime : float
+            Timescale of the Nose-Hoover thermostat (fs).
+        n_eq : int
+            Number of equilibration steps.
+        n_steps : int
+            Number of production steps.
+        """
         if self._supercell is None:
             raise RuntimeError("Supercell not found.")
