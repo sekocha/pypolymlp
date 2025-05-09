@@ -9,7 +9,8 @@ from ase.md import MDLogger
 from ase.md.langevin import Langevin
 from ase.md.npt import NPT
 from ase.md.velocitydistribution import MaxwellBoltzmannDistribution, Stationary
-from polymlpase import PolymlpASECalculator
+
+from pypolymlp.calculator.md_ase.ase_calculator import PolymlpASECalculator
 
 
 def run_NVT(

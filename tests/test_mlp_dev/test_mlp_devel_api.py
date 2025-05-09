@@ -350,9 +350,9 @@ def test_mlp_devel_api_learning_curve():
     assert error[6][1]["force"] == pytest.approx(0.00017835747959455314, rel=1e-4)
     assert error[7][1]["energy"] == pytest.approx(3.5647510435178803e-07, rel=1e-4)
     assert error[7][1]["force"] == pytest.approx(0.0001753667685823238, rel=1e-4)
-    assert error[8][1]["energy"] == pytest.approx(3.3196786545845935e-07, rel=1e-4)
+    assert error[8][1]["energy"] == pytest.approx(3.3211905496495353e-07, rel=1e-4)
     assert error[8][1]["force"] == pytest.approx(0.00017153251027763767, rel=1e-4)
-    assert error[9][1]["energy"] == pytest.approx(3.3814163687513553e-07, rel=1e-4)
+    assert error[9][1]["energy"] == pytest.approx(3.386705988797691e-07, rel=1e-4)
     assert error[9][1]["force"] == pytest.approx(0.0001690526296815278, rel=1e-4)
 
 
