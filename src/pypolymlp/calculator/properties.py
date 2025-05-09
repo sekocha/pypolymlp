@@ -1,6 +1,6 @@
 """Class for calculating properties."""
 
-from typing import Union
+from typing import Optional, Union
 
 import numpy as np
 
@@ -360,3 +360,31 @@ class Properties:
     @property
     def stresses_gpa(self):
         return convert_stresses_in_gpa(self._s, self._structures)
+
+
+def set_instance_properties(
+    pot: Union[str, list[str]] = None,
+    params: Union[PolymlpParams, list[PolymlpParams]] = None,
+    coeffs: Union[np.ndarray, list[np.ndarray]] = None,
+    properties: Optional[Properties] = None,
+    require_mlp: bool = True,
+):
+    """Set instance of Properties class.
+
+    Parameters
+    ----------
+    pot: polymlp file.
+    params: Parameters for polymlp.
+    coeffs: Polymlp coefficients.
+    properties: Properties instance.
+
+    Any one of pot, (params, coeffs), and properties is needed.
+    """
+    if require_mlp:
+        if pot is None and params is None and properties is None:
+            raise RuntimeError("polymlp not defined.")
+
+        if properties is None:
+            return Properties(pot=pot, params=params, coeffs=coeffs)
+        return properties
+    return None

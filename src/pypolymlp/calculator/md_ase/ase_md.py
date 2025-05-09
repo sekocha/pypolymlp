@@ -43,7 +43,7 @@ def run_NVT(
         Number of production steps.
     """
     atoms = read(poscar_file)
-    calc = PolymlpASECalculator(potentials=potentials)
+    calc = PolymlpASECalculator(pot=potentials)
     ase_md = MDCalculator_ASE(atoms=atoms, calc=calc)
     ase_md.set_NVT_dynamics(
         temperature=temperature,

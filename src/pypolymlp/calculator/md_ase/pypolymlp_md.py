@@ -1,0 +1,103 @@
+"""API Class for performing MD simulations."""
+
+from typing import Optional, Union
+
+import numpy as np
+
+from pypolymlp.calculator.md_ase.ase_calculator import PolymlpASECalculator
+from pypolymlp.calculator.properties import Properties, set_instance_properties
+from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
+from pypolymlp.core.interface_vasp import Poscar
+from pypolymlp.utils.ase_utils import structure_to_ase_atoms
+from pypolymlp.utils.structure_utils import supercell_diagonal
+
+# from pypolymlp.calculator.md_ase.ase_md import
+# from ase import Atoms
+
+
+class PypolymlpMD:
+    """API Class for performing MD simulations."""
+
+    def __init__(
+        self,
+        pot: Union[str, list[str]] = None,
+        params: Union[PolymlpParams, list[PolymlpParams]] = None,
+        coeffs: Union[np.ndarray, list[np.ndarray]] = None,
+        properties: Optional[Properties] = None,
+        verbose: bool = True,
+    ):
+        """Init method.
+
+        Parameters
+        ----------
+        pot: polymlp file.
+        params: Parameters for polymlp.
+        coeffs: Polymlp coefficients.
+        properties: Properties instance.
+
+        Any one of pot, (params, coeffs), and properties is needed.
+        """
+        self._prop = set_instance_properties(
+            pot=pot,
+            params=params,
+            coeffs=coeffs,
+            properties=properties,
+        )
+        self._calculator = PolymlpASECalculator(properties=self._prop)
+        self._verbose = verbose
+
+        self._unitcell = None
+        self._supercell = None
+        self._unitcell_atoms = None
+        self._supercell_atoms = None
+
+    def set_ase_calculator(self):
+        """Set ASE calculator with polymlp."""
+        self._calculator = PolymlpASECalculator(properties=self._prop)
+        return self
+
+    def load_poscar(self, poscar: str):
+        """Parse POSCAR file and supercell matrix."""
+        self._unitcell = Poscar(poscar).structure
+        self._unitcell_atoms = structure_to_ase_atoms(self._unitcell)
+        self._supercell = self._unitcell
+        self._supercell_atoms = self._unitcell_atoms
+        return self
+
+    def set_supercell(self, size: tuple):
+        """Set supercell from unitcell."""
+        if self._unitcell is None:
+            raise RuntimeError("Unitcell not found.")
+        if len(size) != 3:
+            raise RuntimeError("Supercell size is not equal to 3.")
+        self._supercell = supercell_diagonal(self._unitcell, size)
+        self._supercell_atoms = structure_to_ase_atoms(self._supercell)
+        return self
+
+    @property
+    def unitcell(self):
+        """Return unitcell."""
+        return self._unitcell
+
+    @unitcell.setter
+    def unitcell(self, cell: PolymlpStructure):
+        """Set unitcell."""
+        self._unitcell = cell
+        self._unitcell_atoms = structure_to_ase_atoms(self._unitcell)
+
+    @property
+    def supercell(self):
+        """Return supercell."""
+        return self._supercell
+
+    @supercell.setter
+    def supercell(self, cell: PolymlpStructure):
+        """Set supercell."""
+        self._supercell = cell
+        self._supercell_atoms = structure_to_ase_atoms(self._supercell)
+
+    def run_nvt(
+        self,
+    ):
+        if self._supercell is None:
+            raise RuntimeError("Supercell not found.")
