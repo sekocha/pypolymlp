@@ -26,6 +26,7 @@ class PolymlpASECalculator(Calculator):
         params: Optional[PolymlpParams] = None,
         coeffs: Optional[np.ndarray] = None,
         properties: Optional[Properties] = None,
+        require_mlp: bool = True,
         **kwargs,
     ):
         """Initialize PolymlpASECalculator.
@@ -43,6 +44,7 @@ class PolymlpASECalculator(Calculator):
             params=params,
             coeffs=coeffs,
             properties=properties,
+            require_mlp=require_mlp,
         )
 
     def set_calculator(
@@ -85,7 +87,7 @@ class PolymlpFC2ASECalculator(Calculator):
         alpha: float = 0.0,
         **kwargs,
     ):
-        """Initialize PolymlpASECalculator.
+        """Initialize PolymlpFC2ASECalculator.
 
         Parameters
         ----------
@@ -114,15 +116,6 @@ class PolymlpFC2ASECalculator(Calculator):
             self._ignore_polymlp = False
             self._alpha = alpha
 
-    def set_calculator(
-        self,
-        pot: Optional[Union[str, list]] = None,
-        params: Optional[PolymlpParams] = None,
-        coeffs: Optional[np.ndarray] = None,
-    ):
-        """Set polymlp."""
-        self._prop = set_instance_properties(pot=pot, params=params, coeffs=coeffs)
-
     def calculate(
         self,
         atoms: Optional[Atoms] = None,
@@ -133,7 +126,9 @@ class PolymlpFC2ASECalculator(Calculator):
         super().calculate(atoms, properties, system_changes)
         structure = ase_atoms_to_structure(atoms)
         disps = convert_positions_to_disps(structure, self._structure_without_disp)
+        disps = disps.T.reshape(-1)
 
+        # TODO: Implement energy calculation for equilibrium structure
         if self._ignore_polymlp:
             energy, forces = eval_properties_fc2(self._fc2, disps)
         else:

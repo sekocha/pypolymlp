@@ -384,7 +384,8 @@ def set_instance_properties(
         if pot is None and params is None and properties is None:
             raise RuntimeError("polymlp not defined.")
 
-        if properties is None:
-            return Properties(pot=pot, params=params, coeffs=coeffs)
+    if properties is not None:
         return properties
+    elif pot is not None or params is not None:
+        return Properties(pot=pot, params=params, coeffs=coeffs)
     return None

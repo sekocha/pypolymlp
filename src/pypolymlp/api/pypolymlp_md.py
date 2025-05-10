@@ -3,11 +3,16 @@
 from typing import Optional, Union
 
 import numpy as np
+from ase.calculators.calculator import Calculator
 
 from pypolymlp.calculator.md.ase_md import IntegratorASE
-from pypolymlp.calculator.properties import Properties, set_instance_properties
-from pypolymlp.calculator.utils.ase_calculator import PolymlpASECalculator
+from pypolymlp.calculator.properties import Properties
+from pypolymlp.calculator.utils.ase_calculator import (
+    PolymlpASECalculator,
+    PolymlpFC2ASECalculator,
+)
 from pypolymlp.calculator.utils.ase_utils import structure_to_ase_atoms
+from pypolymlp.calculator.utils.fc_utils import load_fc2_hdf5
 from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
 from pypolymlp.core.interface_vasp import Poscar
 from pypolymlp.utils.structure_utils import supercell_diagonal
@@ -36,13 +41,13 @@ class PypolymlpMD:
 
         Any one of pot, (params, coeffs), and properties is needed.
         """
-        self._prop = set_instance_properties(
+        self._calculator = PolymlpASECalculator(
             pot=pot,
             params=params,
             coeffs=coeffs,
             properties=properties,
+            require_mlp=False,
         )
-        self._calculator = PolymlpASECalculator(properties=self._prop)
         self._verbose = verbose
 
         self._unitcell = None
@@ -51,9 +56,57 @@ class PypolymlpMD:
         self._supercell_ase = None
         self._integrator = None
 
-    def set_ase_calculator(self):
+    def set_ase_calculator(
+        self,
+        pot: Union[str, list[str]] = None,
+        params: Union[PolymlpParams, list[PolymlpParams]] = None,
+        coeffs: Union[np.ndarray, list[np.ndarray]] = None,
+        properties: Optional[Properties] = None,
+    ):
         """Set ASE calculator with polymlp."""
-        self._calculator = PolymlpASECalculator(properties=self._prop)
+        self._calculator = PolymlpASECalculator(
+            pot=pot,
+            params=params,
+            coeffs=coeffs,
+            properties=properties,
+        )
+        return self
+
+    def set_ase_calculator_with_fc2(
+        self,
+        pot: Union[str, list[str]] = None,
+        params: Union[PolymlpParams, list[PolymlpParams]] = None,
+        coeffs: Union[np.ndarray, list[np.ndarray]] = None,
+        properties: Optional[Properties] = None,
+        fc2hdf5: str = "fc2.hdf5",
+        alpha: float = 0.0,
+    ):
+        """Set ASE calculator using difference between pypolymlp and fc2.
+
+        Parameters
+        ----------
+        pot: polymlp file.
+        params: Parameters for polymlp.
+        coeffs: Polymlp coefficients.
+        properties: Properties object.
+        alpha: Mixing parameter. E = alpha * E_polymlp + (1 - alpha) * E_fc2
+        fc2hdf5: HDF5 file for second-order force constants.
+        """
+        if self._supercell is None:
+            raise RuntimeError("Supercell not found.")
+
+        fc2 = load_fc2_hdf5(fc2hdf5, return_matrix=True)
+        assert fc2.shape[0] == self._supercell.positions.shape[1] * 3
+
+        self._calculator = PolymlpFC2ASECalculator(
+            fc2,
+            self._supercell,
+            pot=pot,
+            params=params,
+            coeffs=coeffs,
+            properties=properties,
+            alpha=alpha,
+        )
         return self
 
     def load_poscar(self, poscar: str):
@@ -101,6 +154,8 @@ class PypolymlpMD:
         """
         if self._supercell_ase is None:
             raise RuntimeError("Supercell not found.")
+        if self._calculator is None:
+            raise RuntimeError("Calculator not found.")
 
         self._integrator = IntegratorASE(
             atoms=self._supercell_ase, calc=self._calculator
@@ -142,6 +197,8 @@ class PypolymlpMD:
         """
         if self._supercell_ase is None:
             raise RuntimeError("Supercell not found.")
+        if self._calculator is None:
+            raise RuntimeError("Calculator not found.")
 
         self._integrator = IntegratorASE(
             atoms=self._supercell_ase, calc=self._calculator
@@ -177,3 +234,13 @@ class PypolymlpMD:
         """Set supercell."""
         self._supercell = cell
         self._supercell_ase = structure_to_ase_atoms(self._supercell)
+
+    @property
+    def calculator(self):
+        """Return calculator."""
+        return self._calculator
+
+    @calculator.setter
+    def calculator(self, calc: Calculator):
+        """Set calculator."""
+        self._calculator = calc
