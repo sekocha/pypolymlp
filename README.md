@@ -106,4 +106,5 @@ Building C++ codes in pypolymlp may require a significant amount of time.
   - Self-consistent phonon calculations
 - [How to use polymlp in other calculator tools](docs/api_other_calc.md)
   - LAMMPS
+  - Phonopy
   - ASE
