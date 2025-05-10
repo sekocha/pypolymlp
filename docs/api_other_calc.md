@@ -16,16 +16,16 @@ calculator = PolymlpASECalculator(pot="polymlp.yaml")
 ## Phonopy
 ```python
 from phonopy import Phonopy
-from pypolymlp.calculator.properties import Properties
 from pypolymlp.utils.phonopy_utils import phonopy_cell_to_structure
+from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
 
 supercell_matrix = np.diag([2, 2, 2])
 ph = Phonopy(unitcell, supercell_matrix) # unitcell: PhonopyAtoms
 ph.generate_displacements(distance=0.01)
 structures = [phonopy_cell_to_structure(cell) for cell in ph.supercells_with_displacements]
 
-properties = Properties(pot="polymlp.yaml")
-_, forces, _ = self.prop.eval_multiple(structures)
+polymlp = PypolymlpCalc(pot="polymlp.yaml")
+_, forces, _ = polymlp.eval(structures) # Forces. shape=(n_disp, 3, natom), unit: eV/angstrom.
 forces = np.array(forces).transpose((0, 2, 1))
 
 ph.forces = forces
