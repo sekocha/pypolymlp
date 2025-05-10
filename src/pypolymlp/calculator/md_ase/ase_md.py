@@ -1,127 +1,27 @@
-"""Functions for running MD simulations using ASE."""
-
-from typing import Optional
+"""Functions for MD integrators in ASE."""
 
 from ase import Atoms, units
 from ase.calculators.calculator import Calculator
-from ase.io import read
 from ase.md import MDLogger
 from ase.md.langevin import Langevin
 from ase.md.npt import NPT
 from ase.md.velocitydistribution import MaxwellBoltzmannDistribution, Stationary
 
-from pypolymlp.calculator.md_ase.ase_calculator import PolymlpASECalculator
 
+class IntegratorASE:
+    """Wrapper of integrators in ASE."""
 
-def run_NVT(
-    poscar_file: str,
-    potentials: list,
-    temperature: int,
-    time_step: float,
-    ttime: float,
-    n_eq: int,
-    n_steps: int,
-):
-    """
-    Helper method to run NVT MD simulation.
+    def __init__(self, atoms: Atoms, calc: Calculator):
+        """Initialize IntegratorASE.
 
-    Parameters
-    ----------
-    poscar_file : str
-        Path to POSCAR file.
-    potentials : list
-        List of PolyMLP potential files.
-    temperature : int
-        Target temperature (K).
-    time_step : float
-        Time step for MD (fs).
-    ttime : float
-        Timescale of the thermostat (fs).
-    n_eq : int
-        Number of equilibration steps.
-    n_steps : int
-        Number of production steps.
-    """
-    atoms = read(poscar_file)
-    calc = PolymlpASECalculator(pot=potentials)
-    ase_md = MDCalculator_ASE(atoms=atoms, calc=calc)
-    ase_md.set_NVT_dynamics(
-        temperature=temperature,
-        time_step=time_step,
-        ttime=ttime,
-    )
-    ase_md.set_MDLogger(logfile=f"logs_T{temperature}")
-    ase_md.run_MD(temperature=temperature, n_eq=n_eq, n_steps=n_steps)
-
-
-def run_Langevin(
-    poscar_file: str,
-    potentials: list,
-    temperature: int,
-    time_step: float,
-    friction: float,
-    n_eq: int,
-    n_steps: int,
-):
-    """
-    Helper method to run Langevin MD simulation.
-
-    Parameters
-    ----------
-    poscar_file : str
-        Path to POSCAR file.
-    potentials : list
-        List of PolyMLP potential files.
-    temperature : int
-        Target temperature (K).
-    time_step : float
-        Time step for MD (fs).
-    friction : float
-        Friction coefficient (1/fs).
-    n_eq : int
-        Number of equilibration steps.
-    n_steps : int
-        Number of production steps.
-    """
-    atoms = read(poscar_file)
-    calc = PolymlpASECalculator(potentials=potentials)
-    ase_md = MDCalculator_ASE(atoms=atoms, calc=calc)
-    ase_md.set_Langevin_dynamics(
-        temperature=temperature,
-        time_step=time_step,
-        friction=friction,
-    )
-    ase_md.set_MDLogger(logfile=f"logs_T{temperature}")
-    ase_md.run_MD(temperature=temperature, n_eq=n_eq, n_steps=n_steps)
-
-
-class MDCalculator_ASE:
-    """
-    MD calculator wrapper for ASE.
-    """
-
-    def __init__(
-        self,
-        atoms: Optional[Atoms] = None,
-        calc: Optional[Calculator] = None,
-    ):
-        """Initialize MDCalculator_ASE."""
-        self.atoms = None
-        if atoms:
-            self.set_atoms(atoms)
-        if calc:
-            self.set_calculator(calc)
-
-    def set_atoms(self, atoms: Atoms):
-        """Set ASEAtoms object."""
+        Parameters
+        ----------
+        atoms: Initial structure in ASE Atoms.
+        calc: ASE calculator used for computing energies and forces.
+        """
         self.atoms = atoms
-        self.referenced_positions = atoms.get_positions()
-
-    def set_calculator(self, calc: Calculator):
-        """Set ASECalculator."""
-        if self.atoms is None:
-            raise ValueError("Please set ASEAtoms object.")
-        self.atoms.calc = calc
+        self.calculator = calc
+        self._dyn = None
 
     def set_MDLogger(
         self,
@@ -129,61 +29,96 @@ class MDCalculator_ASE:
         header: bool = True,
         stress: bool = False,
         peratom: bool = True,
+        mode: str = "w",
         dump_interval: int = 1,
     ):
         """Attach MDLogger to the current dynamics."""
         logger = MDLogger(
             dyn=self._dyn,
-            atoms=self.atoms,
+            atoms=self._atoms,
             logfile=logfile,
-            header=True,
-            stress=False,
-            peratom=True,
-            mode="w",
+            header=header,
+            stress=stress,
+            peratom=peratom,
+            mode=mode,
         )
         self._dyn.attach(logger, interval=dump_interval)
+        return self
 
-    def set_NVT_dynamics(
+    def set_integrator_Nose_Hoover_NVT(
         self,
-        temperature: int,
-        time_step: float,
-        ttime: float,
-        dump_trajectory: bool = False,
+        temperature: float = 300.0,
+        time_step: float = 1.0,
+        ttime: float = 1.0,
+        append_trajectory: bool = False,
+        initialize: bool = True,
     ):
-        """Set up NVT dynamics using Nose-Hoover thermostat."""
+        """Set integrator using Nose-Hoover NVT thermostat."""
+        if initialize:
+            self.initialize(temperature)
+
         self._dyn = NPT(
-            atoms=self.atoms,
+            atoms=self._atoms,
             timestep=time_step * units.fs,
             temperature_K=temperature,
-            # externalstress=1e-07*units.GPa,  # Ignored in NVT
             ttime=ttime * units.fs,
             pfactor=None,
-            append_trajectory=dump_trajectory,
+            append_trajectory=append_trajectory,
+            # externalstress=1e-07*units.GPa,  # Ignored in NVT
         )
+        return self
 
-    def set_Langevin_dynamics(
+    def set_integrator_Langevin(
         self,
-        temperature: int,
-        time_step: float,
-        friction: float,
-        dump_trajectory: bool = False,
+        temperature: float = 300.0,
+        time_step: float = 1.0,
+        friction: float = 0.01,
+        append_trajectory: bool = False,
+        initialize: bool = True,
     ):
-        """Set up Langevin dynamics."""
+        """Set integrator using Langevin dynamics."""
+        if initialize:
+            self.initialize(temperature)
+
         self._dyn = Langevin(
-            atoms=self.atoms,
+            atoms=self._atoms,
             timestep=time_step * units.fs,
             temperature_K=temperature,
             friction=friction,
-            append_trajectory=dump_trajectory,
+            append_trajectory=append_trajectory,
         )
+        return self
 
-    def run_MD(
-        self,
-        temperature: float,
-        n_eq: int,
-        n_steps: int,
-    ):
-        """Run molecular dynamics simulation."""
-        MaxwellBoltzmannDistribution(atoms=self.atoms, temperature_K=temperature)
-        Stationary(self.atoms)
+    def initialize(self, temperature: float = 300):
+        """Initialize MD."""
+        MaxwellBoltzmannDistribution(atoms=self._atoms, temperature_K=temperature)
+        Stationary(self._atoms)
+        return self
+
+    def run(self, n_eq: int = 5000, n_steps: int = 20000):
+        """Run integrator for molecular dynamics."""
+        if self._dyn is None:
+            raise RuntimeError("Integrator not found.")
         self._dyn.run(n_eq + n_steps)
+        return self
+
+    @property
+    def atoms(self):
+        """Return ASE atoms."""
+        return self._atoms
+
+    @atoms.setter
+    def atoms(self, atoms_in: Atoms):
+        """Set ASE atoms."""
+        self._atoms = atoms_in
+        self._referenced_positions = atoms_in.get_positions()
+
+    @property
+    def calculator(self):
+        """Return ASE calculator."""
+        return self._atoms.calc
+
+    @calculator.setter
+    def calculator(self, calc: Calculator):
+        """Set ASE calculator."""
+        self._atoms.calc = calc
