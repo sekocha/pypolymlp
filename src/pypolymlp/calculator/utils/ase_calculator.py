@@ -108,13 +108,16 @@ class PolymlpFC2ASECalculator(Calculator):
             properties=properties,
         )
         self._fc2 = fc2
+        self._alpha = alpha
         self._structure_without_disp = structure_without_disp
+        self._static_energy, _, _ = self._prop.eval(structure_without_disp)
+        self._ignore_polymlp = np.isclose(alpha, 0.0)
 
-        if np.isclose(alpha, 0.0):
-            self._ignore_polymlp = True
-        else:
-            self._ignore_polymlp = False
-            self._alpha = alpha
+    def _eval_fc2_model(self, disps: np.array):
+        """Calculate energy and forces using FC2."""
+        energy, forces = eval_properties_fc2(self._fc2, disps)
+        energy += self._static_energy
+        return energy, forces
 
     def calculate(
         self,
@@ -127,13 +130,13 @@ class PolymlpFC2ASECalculator(Calculator):
         structure = ase_atoms_to_structure(atoms)
         disps = convert_positions_to_disps(structure, self._structure_without_disp)
         disps = disps.T.reshape(-1)
+        print(disps)
 
-        # TODO: Implement energy calculation for equilibrium structure
         if self._ignore_polymlp:
-            energy, forces = eval_properties_fc2(self._fc2, disps)
+            energy, forces = self._eval_fc2_model(disps)
         else:
             energy1, forces1, _ = self._prop.eval(structure)
-            energy2, forces2 = eval_properties_fc2(self._fc2, disps)
+            energy2, forces2 = self._eval_fc2_model(disps)
             energy = energy1 * self._alpha + energy2 * (1 - self._alpha)
             forces = forces1 * self._alpha + forces2 * (1 - self._alpha)
 
