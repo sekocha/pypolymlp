@@ -92,3 +92,16 @@ def generate_random_const_displacements(
     disps = np.array(disps)
     structures = get_structures_from_displacements(disps, structure)
     return disps, structures
+
+
+def convert_positions_to_disps(st_disps: PolymlpStructure, st_origin: PolymlpStructure):
+    """Transform structure into displacements.
+
+    Return
+    ------
+    disps: Displacements, shape=(3, n_atoms)
+    """
+    diff = st_disps.positions - st_origin.positions
+    diff -= np.rint(diff)
+    disps = st_origin.axis @ diff
+    return disps
