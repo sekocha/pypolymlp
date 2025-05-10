@@ -4,12 +4,12 @@ from typing import Optional, Union
 
 import numpy as np
 
-from pypolymlp.calculator.md_ase.ase_calculator import PolymlpASECalculator
-from pypolymlp.calculator.md_ase.ase_md import IntegratorASE
+from pypolymlp.calculator.md.ase_md import IntegratorASE
 from pypolymlp.calculator.properties import Properties, set_instance_properties
+from pypolymlp.calculator.utils.ase_calculator import PolymlpASECalculator
+from pypolymlp.calculator.utils.ase_utils import structure_to_ase_atoms
 from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
 from pypolymlp.core.interface_vasp import Poscar
-from pypolymlp.utils.ase_utils import structure_to_ase_atoms
 from pypolymlp.utils.structure_utils import supercell_diagonal
 
 

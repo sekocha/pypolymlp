@@ -7,8 +7,8 @@ from ase import Atoms
 from ase.calculators.calculator import Calculator, all_changes
 
 from pypolymlp.calculator.properties import Properties, set_instance_properties
+from pypolymlp.calculator.utils.ase_utils import ase_atoms_to_structure
 from pypolymlp.core.data_format import PolymlpParams
-from pypolymlp.utils.ase_utils import ase_atoms_to_structure
 
 ALL_CHANGES = tuple(all_changes)
 
