@@ -239,6 +239,11 @@ class PypolymlpMD:
             self._integrator.activate_save_trajectory(interval=interval_save_trajectory)
         return self
 
+    def save_yaml(self, filename: str = "polymlp_md.yaml"):
+        """Save properties to yaml file."""
+        self._integrator.save_yaml(filename=filename)
+        return self
+
     @property
     def unitcell(self):
         """Return unitcell."""
@@ -292,7 +297,7 @@ class PypolymlpMD:
         return self._integrator.average_energy
 
     @property
-    def heat_capacityy(self):
+    def heat_capacity(self):
         """Return heat capacity."""
         return self._integrator.heat_capacity
 
