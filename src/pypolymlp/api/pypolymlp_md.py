@@ -11,7 +11,10 @@ from pypolymlp.calculator.utils.ase_calculator import (
     PolymlpASECalculator,
     PolymlpFC2ASECalculator,
 )
-from pypolymlp.calculator.utils.ase_utils import structure_to_ase_atoms
+from pypolymlp.calculator.utils.ase_utils import (
+    ase_atoms_to_structure,
+    structure_to_ase_atoms,
+)
 from pypolymlp.calculator.utils.fc_utils import load_fc2_hdf5
 from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
 from pypolymlp.core.interface_vasp import Poscar
@@ -166,7 +169,7 @@ class PypolymlpMD:
             ttime=ttime,
             initialize=initialize,
         )
-        self._integrator.set_MDLogger(logfile=logfile)
+        self._integrator.activate_MDLogger(logfile=logfile)
         self._integrator.run(n_eq=n_eq, n_steps=n_steps)
         return self
 
@@ -209,8 +212,14 @@ class PypolymlpMD:
             friction=friction,
             initialize=initialize,
         )
-        self._integrator.set_MDLogger(logfile=logfile)
+        self._integrator.activate_save_energies(interval=1)
+
+        self._integrator.activate_MDLogger(logfile=logfile, interval=1)
+        self._integrator.activate_save_forces(interval=1)
+        self._integrator.activate_save_trajectory(interval=1000)
+
         self._integrator.run(n_eq=n_eq, n_steps=n_steps)
+        print(self._integrator.energies)
         return self
 
     @property
@@ -244,3 +253,23 @@ class PypolymlpMD:
     def calculator(self, calc: Calculator):
         """Set calculator."""
         self._calculator = calc
+
+    @property
+    def energies(self):
+        """Return potential energies."""
+        return self._integrator.energies
+
+    @property
+    def forces(self):
+        """Return forces."""
+        return self._integrator.forces
+
+    @property
+    def trajectory(self):
+        """Return trajectory."""
+        return [ase_atoms_to_structure(t) for t in self._integrator.trajectory]
+
+    @property
+    def final_structure(self):
+        """Return structure at the final step."""
+        return ase_atoms_to_structure(self._supercell_ase)
