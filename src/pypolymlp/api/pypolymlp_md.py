@@ -137,6 +137,9 @@ class PypolymlpMD:
         ttime: float = 20.0,
         n_eq: int = 5000,
         n_steps: int = 20000,
+        interval_save_forces: Optional[int] = None,
+        interval_save_trajectory: Optional[int] = None,
+        interval_log: int = 1,
         logfile: str = "log.dat",
         initialize: bool = True,
     ):
@@ -169,7 +172,7 @@ class PypolymlpMD:
             ttime=ttime,
             initialize=initialize,
         )
-        self._integrator.activate_MDLogger(logfile=logfile)
+        self._activate_logger(logfile=logfile)
         self._integrator.run(n_eq=n_eq, n_steps=n_steps)
         return self
 
@@ -180,6 +183,9 @@ class PypolymlpMD:
         friction: float = 0.01,
         n_eq: int = 5000,
         n_steps: int = 20000,
+        interval_save_forces: Optional[int] = None,
+        interval_save_trajectory: Optional[int] = None,
+        interval_log: int = 1,
         logfile: str = "log.dat",
         initialize: bool = True,
     ):
@@ -212,14 +218,25 @@ class PypolymlpMD:
             friction=friction,
             initialize=initialize,
         )
-        self._integrator.activate_save_energies(interval=1)
-
-        self._integrator.activate_MDLogger(logfile=logfile, interval=1)
-        self._integrator.activate_save_forces(interval=1)
-        self._integrator.activate_save_trajectory(interval=1000)
-
+        self._activate_logger(logfile=logfile)
         self._integrator.run(n_eq=n_eq, n_steps=n_steps)
-        print(self._integrator.energies)
+        return self
+
+    def _activate_logger(
+        self,
+        logfile: str = "log.dat",
+        interval_log: int = 1,
+        interval_save_forces: Optional[int] = None,
+        interval_save_trajectory: Optional[int] = None,
+    ):
+        """Activate logger and array allocation."""
+        self._integrator.activate_save_energies(interval=1)
+        if logfile is not None:
+            self._integrator.activate_MDLogger(logfile=logfile, interval=interval_log)
+        if interval_save_forces is not None:
+            self._integrator.activate_save_forces(interval=interval_save_forces)
+        if interval_save_trajectory is not None:
+            self._integrator.activate_save_trajectory(interval=interval_save_trajectory)
         return self
 
     @property
@@ -268,6 +285,16 @@ class PypolymlpMD:
     def trajectory(self):
         """Return trajectory."""
         return [ase_atoms_to_structure(t) for t in self._integrator.trajectory]
+
+    @property
+    def average_energy(self):
+        """Return avarage energy."""
+        return self._integrator.average_energy
+
+    @property
+    def heat_capacityy(self):
+        """Return heat capacity."""
+        return self._integrator.heat_capacity
 
     @property
     def final_structure(self):
