@@ -130,7 +130,6 @@ class PolymlpFC2ASECalculator(Calculator):
         structure = ase_atoms_to_structure(atoms)
         disps = convert_positions_to_disps(structure, self._structure_without_disp)
         disps = disps.T.reshape(-1)
-        print(disps)
 
         if self._ignore_polymlp:
             energy, forces = self._eval_fc2_model(disps)

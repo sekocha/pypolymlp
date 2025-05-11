@@ -16,7 +16,7 @@ def load_fc2_hdf5(filefc2: str = "fc2.hdf5", return_matrix: bool = True):
     fc = np.array(h5file["force_constants"])
     n_atom = fc.shape[1]
     if return_matrix:
-        return fc.reshape((n_atom * 3, n_atom * 3))
+        return fc.transpose((0, 2, 1, 3)).reshape((n_atom * 3, n_atom * 3))
     return fc
 
 
