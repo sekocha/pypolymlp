@@ -7,6 +7,8 @@
 
 #include "polymlp_eval_openmp.h"
 
+#include <chrono>
+
 
 PolymlpEvalOpenMP::PolymlpEvalOpenMP(){}
 
@@ -272,6 +274,9 @@ void PolymlpEvalOpenMP::eval_gtinv(const vector2d& positions_c,
         fz_array[i].resize(jsize);
     }
 
+    std::chrono::system_clock::time_point start, end;
+    start = std::chrono::system_clock::now();
+
     #ifdef _OPENMP
     #pragma omp parallel for schedule(guided)
     #endif
@@ -340,6 +345,14 @@ void PolymlpEvalOpenMP::eval_gtinv(const vector2d& positions_c,
             }
         }
     }
+
+    end = std::chrono::system_clock::now();
+    double time = static_cast<double>(
+        std::chrono::duration_cast<std::chrono::microseconds>
+            (end - start).count() / 1000.0
+        );
+    std::cout << "Final sum:" << time << std::endl;
+
     collect_properties(
         e_array, fx_array, fy_array, fz_array, neighbor_half, neighbor_diff,
         energy, forces, stress
@@ -364,6 +377,9 @@ void PolymlpEvalOpenMP::collect_properties(
     forces.resize(n_atom);
     for (int i = 0; i < n_atom; ++i) forces[i] = vector1d(3, 0.0);
     stress = vector1d(6, 0.0);
+
+    std::chrono::system_clock::time_point start, end;
+    start = std::chrono::system_clock::now();
 
     double dx, dy, dz, dis, fx, fy, fz;
     for (int i = 0; i < n_atom; ++i) {
@@ -391,6 +407,12 @@ void PolymlpEvalOpenMP::collect_properties(
             }
         }
     }
+    end = std::chrono::system_clock::now();
+    double time = static_cast<double>(
+        std::chrono::duration_cast<std::chrono::microseconds>
+            (end - start).count() / 1000.0
+        );
+    std::cout << "Collect:" << time << std::endl;
 }
 
 
@@ -457,9 +479,15 @@ void PolymlpEvalOpenMP::compute_anlmtp_openmp(const vector2d& positions_c,
     const int n_atom = types.size();
     vector2d anlmtp_r(n_atom, vector1d(nlmtp_attrs_no_conj.size(), 0.0));
     vector2d anlmtp_i(n_atom, vector1d(nlmtp_attrs_no_conj.size(), 0.0));
+    vector2d anlmtp_r2(n_atom, vector1d(nlmtp_attrs_no_conj.size(), 0.0));
+    vector2d anlmtp_i2(n_atom, vector1d(nlmtp_attrs_no_conj.size(), 0.0));
+
+    std::chrono::system_clock::time_point start, end;
+    start = std::chrono::system_clock::now();
 
     #ifdef _OPENMP
     #pragma omp parallel for schedule(guided)
+    #endif
     for (int i = 0; i < n_atom; ++i) {
         int type1, type2, tp;
         double dx, dy, dz, dis;
@@ -480,26 +508,46 @@ void PolymlpEvalOpenMP::compute_anlmtp_openmp(const vector2d& positions_c,
                 const auto& params = tp_to_params[tp];
                 get_fn_(dis, pot.fp, params, fn);
                 get_ylm_(sph[0], sph[1], pot.fp.maxl, ylm);
+
                 for (const auto& nlmtp: nlmtp_attrs_no_conj){
-                    const auto& lm_attr = nlmtp.lm;
-                    const int idx = nlmtp.nlmtp_noconj_key;
                     if (tp == nlmtp.tp){
+                        const auto& lm_attr = nlmtp.lm;
+                        const int idx = nlmtp.nlmtp_noconj_key;
                         val = fn[nlmtp.n_id] * ylm[lm_attr.ylmkey];
-                        #pragma omp atomic
                         anlmtp_r[i][idx] += val.real();
-                        #pragma omp atomic
-                        anlmtp_r[j][idx] += val.real() * lm_attr.sign_j;
-                        #pragma omp atomic
                         anlmtp_i[i][idx] += val.imag();
+                        #ifdef _OPENMP
                         #pragma omp atomic
-                        anlmtp_i[j][idx] += val.imag() * lm_attr.sign_j;
+                        #endif
+                        anlmtp_r2[j][idx] += val.real() * lm_attr.sign_j;
+                        #ifdef _OPENMP
+                        #pragma omp atomic
+                        #endif
+                        anlmtp_i2[j][idx] += val.imag() * lm_attr.sign_j;
                     }
                 }
             }
         }
     }
+
+    #ifdef _OPENMP
+    #pragma omp parallel for schedule(guided)
     #endif
+    for (int i = 0; i < n_atom; ++i) {
+        for (int j = 0; j < anlmtp_r2[0].size(); ++j) {
+            anlmtp_r[i][j] += anlmtp_r2[i][j];
+            anlmtp_i[i][j] += anlmtp_i2[i][j];
+        }
+    }
     compute_anlmtp_conjugate(anlmtp_r, anlmtp_i, anlmtp);
+
+    end = std::chrono::system_clock::now();
+    double time = static_cast<double>(
+        std::chrono::duration_cast<std::chrono::microseconds>
+            (end - start).count() / 1000.0
+        );
+    std::cout << "anlmtp:" << time << std::endl;
+
 }
 
 void PolymlpEvalOpenMP::compute_anlmtp_conjugate(const vector2d& anlmtp_r,
@@ -538,29 +586,24 @@ void PolymlpEvalOpenMP::compute_sum_of_prod_anlmtp(const vector1i& types,
     prod_sum_e = vector2dc(n_atom, vector1dc(n_head_keys));
     prod_sum_f = vector2dc(n_atom, vector1dc(n_head_keys));
 
+    std::chrono::system_clock::time_point start, end;
+    start = std::chrono::system_clock::now();
+
     #ifdef _OPENMP
     #pragma omp parallel for schedule(guided)
     #endif
     for (int i = 0; i < n_atom; ++i) {
         int type1 = types[i];
-
         const auto& prod_map = pot.p_obj.get_prod_map(type1);
         const auto& prod_map_erased = pot.p_obj.get_prod_map_erased(type1);
         const auto& prod_features_map = pot.p_obj.get_prod_features_map(type1);
 
-        // computing nonequivalent products of order parameters (anlmtp)
-        vector1d prod_anlmtp;
-        compute_products_real(prod_map, anlmtp[i], prod_anlmtp);
-        // end: computing products of order parameters (anlmtp)
+        vector1d prod_anlmtp, features, prod_features;
+        vector1dc prod_anlmtp_erased;
 
-        // computing linear features
-        //   and nonequivalent products of linear features
-        vector1d features, prod_features;
+        compute_products_real(prod_map, anlmtp[i], prod_anlmtp);
         compute_linear_features(prod_anlmtp, type1, features);
         compute_products<double>(prod_features_map, features, prod_features);
-        // end: computing linear features
-
-        vector1dc prod_anlmtp_erased;
         compute_products<dc>(prod_map_erased, anlmtp[i], prod_anlmtp_erased);
 
         for (size_t key = 0; key < nlmtp_attrs_no_conj.size(); ++key){
@@ -580,6 +623,14 @@ void PolymlpEvalOpenMP::compute_sum_of_prod_anlmtp(const vector1i& types,
             prod_sum_f[i][key] = sum_f;
         }
     }
+
+    end = std::chrono::system_clock::now();
+    double time = static_cast<double>(
+        std::chrono::duration_cast<std::chrono::microseconds>
+            (end - start).count() / 1000.0
+        );
+    std::cout << "prod:" << time << std::endl;
+
 }
 
 void PolymlpEvalOpenMP::compute_linear_features(const vector1d& prod_anlmtp,
