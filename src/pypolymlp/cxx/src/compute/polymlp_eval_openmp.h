@@ -77,6 +77,18 @@ class PolymlpEvalOpenMP {
                     vector2d& forces,
                     vector1d& stress);
 
+    void collect_properties(
+        const vector2d& e_array,
+        const vector2d& fx_array,
+        const vector2d& fy_array,
+        const vector2d& fz_array,
+        const vector2i& neighbor_half,
+        const vector3d& neighbor_diff,
+        double& energy,
+        vector2d& forces,
+        vector1d& stress
+    );
+
     public:
 
     PolymlpEvalOpenMP();

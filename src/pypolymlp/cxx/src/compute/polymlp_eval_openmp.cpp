@@ -74,15 +74,23 @@ void PolymlpEvalOpenMP::eval_pair(const vector2d& positions_c,
     compute_antp(positions_c, types, neighbor_half, neighbor_diff, antp);
     compute_sum_of_prod_antp(types, antp, prod_sum_e, prod_sum_f);
 
-    energy = 0.0;
-    forces.resize(n_atom);
-    for (int i = 0; i < n_atom; ++i) forces[i] = vector1d(3, 0.0);
-    stress = vector1d(6, 0.0);
-
-    int type1, type2, tp;
-    double dx, dy, dz, dis, e_ij, f_ij, fx, fy, fz;
-    vector1d fn, fn_d;
+    vector2d e_array(n_atom),fx_array(n_atom),fy_array(n_atom),fz_array(n_atom);
     for (int i = 0; i < n_atom; ++i) {
+        int jsize = neighbor_half[i].size();
+        e_array[i].resize(jsize);
+        fx_array[i].resize(jsize);
+        fy_array[i].resize(jsize);
+        fz_array[i].resize(jsize);
+    }
+
+    #ifdef _OPENMP
+    #pragma omp parallel for schedule(guided)
+    #endif
+    for (int i = 0; i < n_atom; ++i) {
+        int type1, type2, tp;
+        double dx, dy, dz, dis, e_ij, f_ij, fx, fy, fz;
+        vector1d fn, fn_d;
+
         type1 = types[i];
         const vector1i& neighbor_i = neighbor_half[i];
         for (size_t jj = 0; jj < neighbor_i.size(); ++jj){
@@ -115,18 +123,18 @@ void PolymlpEvalOpenMP::eval_pair(const vector2d& positions_c,
                 fy = f_ij * dy;
                 fz = f_ij * dz;
 
-                energy += e_ij;
-                forces[i][0] += fx, forces[i][1] += fy, forces[i][2] += fz;
-                forces[j][0] -= fx, forces[j][1] -= fy, forces[j][2] -= fz;
-                stress[0] += dx * fx;
-                stress[1] += dy * fy;
-                stress[2] += dz * fz;
-                stress[3] += dx * fy;
-                stress[4] += dy * fz;
-                stress[5] += dz * fx;
+                e_array[i][jj] = e_ij;
+                fx_array[i][jj] = fx;
+                fy_array[i][jj] = fy;
+                fz_array[i][jj] = fz;
             }
         }
     }
+
+    collect_properties(
+        e_array, fx_array, fy_array, fz_array, neighbor_half, neighbor_diff,
+        energy, forces, stress
+    );
 }
 
 void PolymlpEvalOpenMP::compute_antp(const vector2d& positions_c,
@@ -170,6 +178,7 @@ void PolymlpEvalOpenMP::compute_antp(const vector2d& positions_c,
             }
         }
     }
+
 }
 
 void PolymlpEvalOpenMP::compute_sum_of_prod_antp(const vector1i& types,
@@ -183,6 +192,9 @@ void PolymlpEvalOpenMP::compute_sum_of_prod_antp(const vector1i& types,
     prod_antp_sum_e = vector2d(n_atom, vector1d(ntp_attrs.size(), 0.0));
     prod_antp_sum_f = vector2d(n_atom, vector1d(ntp_attrs.size(), 0.0));
 
+    #ifdef _OPENMP
+    #pragma omp parallel for schedule(guided)
+    #endif
     for (int i = 0; i < n_atom; ++i) {
         int type1 = types[i];
         const auto& linear_features = pot.p_obj.get_linear_features(type1);
@@ -241,23 +253,15 @@ void PolymlpEvalOpenMP::eval_gtinv(const vector2d& positions_c,
     const int n_atom = types.size();
 
     vector2dc anlmtp, prod_sum_e, prod_sum_f;
-    clock_t t1 = clock();
     if (n_atom < 200)
         compute_anlmtp(positions_c, types, neighbor_half, neighbor_diff, anlmtp);
     else
         compute_anlmtp_openmp(positions_c, types, neighbor_half, neighbor_diff, anlmtp);
-    clock_t t2 = clock();
 
     compute_sum_of_prod_anlmtp(types, anlmtp, prod_sum_e, prod_sum_f);
-    clock_t t3 = clock();
 
     const auto& nlmtp_attrs_no_conj = pot.mapping.get_nlmtp_attrs_no_conjugate();
     const auto& tp_to_params = pot.mapping.get_type_pair_to_params();
-
-    energy = 0.0;
-    forces.resize(n_atom);
-    for (int i = 0; i < n_atom; ++i) forces[i] = vector1d(3, 0.0);
-    stress = vector1d(6, 0.0);
 
     vector2d e_array(n_atom),fx_array(n_atom),fy_array(n_atom),fz_array(n_atom);
     for (int i = 0; i < n_atom; ++i) {
@@ -336,6 +340,30 @@ void PolymlpEvalOpenMP::eval_gtinv(const vector2d& positions_c,
             }
         }
     }
+    collect_properties(
+        e_array, fx_array, fy_array, fz_array, neighbor_half, neighbor_diff,
+        energy, forces, stress
+    );
+
+}
+
+void PolymlpEvalOpenMP::collect_properties(
+    const vector2d& e_array,
+    const vector2d& fx_array,
+    const vector2d& fy_array,
+    const vector2d& fz_array,
+    const vector2i& neighbor_half,
+    const vector3d& neighbor_diff,
+    double& energy,
+    vector2d& forces,
+    vector1d& stress
+){
+    const int n_atom = e_array.size();
+
+    energy = 0.0;
+    forces.resize(n_atom);
+    for (int i = 0; i < n_atom; ++i) forces[i] = vector1d(3, 0.0);
+    stress = vector1d(6, 0.0);
 
     double dx, dy, dz, dis, fx, fy, fz;
     for (int i = 0; i < n_atom; ++i) {
@@ -364,6 +392,7 @@ void PolymlpEvalOpenMP::eval_gtinv(const vector2d& positions_c,
         }
     }
 }
+
 
 void PolymlpEvalOpenMP::compute_anlmtp(const vector2d& positions_c,
                                        const vector1i& types,
@@ -470,7 +499,6 @@ void PolymlpEvalOpenMP::compute_anlmtp_openmp(const vector2d& positions_c,
         }
     }
     #endif
-
     compute_anlmtp_conjugate(anlmtp_r, anlmtp_i, anlmtp);
 }
 
