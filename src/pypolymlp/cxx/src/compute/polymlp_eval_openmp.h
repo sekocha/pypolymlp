@@ -19,6 +19,7 @@
 #include "polymlp/polymlp_potential.h"
 #include "compute/polymlp_eval.h"
 
+
 class PolymlpEvalOpenMP {
 
     struct DataPolyMLP pot;
@@ -50,6 +51,11 @@ class PolymlpEvalOpenMP {
                         const vector2i& neighbor_half,
                         const vector3d& neighbor_diff,
                         vector2dc& anlmtp);
+    void compute_anlmtp_openmp(const vector2d& positions_c,
+                               const vector1i& types,
+                               const vector2i& neighbor_half,
+                               const vector3d& neighbor_diff,
+                               vector2dc& anlmtp);
     void compute_anlmtp_conjugate(const vector2d& anlmtp_r,
                                   const vector2d& anlmtp_i,
                                   vector2dc& anlmtp);
