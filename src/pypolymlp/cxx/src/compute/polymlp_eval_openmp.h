@@ -5,8 +5,8 @@
 
 ****************************************************************************/
 
-#ifndef __POLYMLP_EVAL
-#define __POLYMLP_EVAL
+#ifndef __POLYMLP_EVAL_OPENMP
+#define __POLYMLP_EVAL_OPENMP
 
 #include "mlpcpp.h"
 
@@ -17,18 +17,11 @@
 #include "polymlp/polymlp_model_params.h"
 #include "polymlp/polymlp_features.h"
 #include "polymlp/polymlp_potential.h"
+#include "compute/polymlp_eval.h"
 
+class PolymlpEvalOpenMP {
 
-struct DataPolyMLP {
-    struct feature_params fp;
-    Mapping mapping;
-    ModelParams modelp;
-    Potential p_obj;
-};
-
-
-class PolymlpEval {
-
+    struct DataPolyMLP pot;
     vector2i type_pairs;
 
     /* for feature_type = pair */
@@ -70,7 +63,6 @@ class PolymlpEval {
                                  const int type1,
                                  vector1d& feature_values);
 
-
     void eval_gtinv(const vector2d& positions_c,
                     const vector1i& types,
                     const vector2i& neighbor_half,
@@ -81,11 +73,11 @@ class PolymlpEval {
 
     public:
 
-    PolymlpEval();
-    PolymlpEval(const feature_params& fp, const vector1d& coeffs);
-    ~PolymlpEval();
+    PolymlpEvalOpenMP();
+    PolymlpEvalOpenMP(const feature_params& fp, const vector1d& coeffs);
+    PolymlpEvalOpenMP(const PolymlpEval& polymlp);
+    ~PolymlpEvalOpenMP();
 
-    struct DataPolyMLP pot;
     void eval(const vector2d& positions_c,
               const vector1i& types,
               const vector2i& neighbor_half,

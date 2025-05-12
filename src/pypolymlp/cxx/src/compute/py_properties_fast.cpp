@@ -12,6 +12,7 @@ PyPropertiesFast::PyPropertiesFast(const py::dict& params_dict,
 
     convert_params_dict_to_feature_params(params_dict, fp);
     polymlp = PolymlpEval(fp, coeffs);
+    polymlp_openmp = PolymlpEvalOpenMP(polymlp);
 }
 
 PyPropertiesFast::~PyPropertiesFast(){}
@@ -21,13 +22,10 @@ void PyPropertiesFast::eval(const vector2d& axis,
                             const vector1i& types){
     /* positions_c: (3, n_atom) */
     NeighborHalf neigh(axis, positions_c, types, fp.cutoff);
-    polymlp.eval(positions_c,
-                 types,
-                 neigh.get_half_list(),
-                 neigh.get_diff_list(),
-                 energy,
-                 force,
-                 stress);
+    polymlp_openmp.eval(
+        positions_c, types, neigh.get_half_list(), neigh.get_diff_list(),
+        energy, force, stress
+    );
 }
 
 void PyPropertiesFast::eval_multiple(const vector3d& axis_array,
@@ -38,21 +36,30 @@ void PyPropertiesFast::eval_multiple(const vector3d& axis_array,
     f_array = vector3d(n_st);
     s_array = vector2d(n_st);
 
-    #ifdef _OPENMP
-    #pragma omp parallel for schedule(guided,1)
-    #endif
-    for (int i = 0; i < n_st; ++i){
-        NeighborHalf neigh(axis_array[i],
-                           positions_c_array[i],
-                           types_array[i],
-                           fp.cutoff);
-        polymlp.eval(positions_c_array[i],
-                     types_array[i],
-                     neigh.get_half_list(),
-                     neigh.get_diff_list(),
-                     e_array[i],
-                     f_array[i],
-                     s_array[i]);
+    if (n_st > 1) {
+        #ifdef _OPENMP
+        #pragma omp parallel for schedule(guided,1)
+        #endif
+        for (int i = 0; i < n_st; ++i){
+            NeighborHalf neigh(
+                axis_array[i], positions_c_array[i], types_array[i], fp.cutoff
+            );
+            polymlp.eval(
+                positions_c_array[i], types_array[i],
+                neigh.get_half_list(), neigh.get_diff_list(),
+                e_array[i], f_array[i], s_array[i]
+            );
+        }
+    }
+    else if (n_st == 1) {
+        NeighborHalf neigh(
+            axis_array[0], positions_c_array[0], types_array[0], fp.cutoff
+        );
+        polymlp_openmp.eval(
+            positions_c_array[0], types_array[0],
+            neigh.get_half_list(), neigh.get_diff_list(),
+            e_array[0], f_array[0], s_array[0]
+        );
     }
 }
 
