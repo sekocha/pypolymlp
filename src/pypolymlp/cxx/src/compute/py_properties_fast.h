@@ -40,7 +40,8 @@ class PyPropertiesFast {
 
     void eval(const vector2d& axis,
               const vector2d& positions_c,
-              const vector1i& types);
+              const vector1i& types,
+              const bool use_openmp_atom);
 
     void eval_multiple(const vector3d& axis_array,
                        const vector3d& positions_c_array,

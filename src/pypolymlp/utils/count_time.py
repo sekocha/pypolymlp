@@ -95,22 +95,11 @@ class PolymlpCost:
     def _run_single(self, pot: Union[str, list[str]], n_calc: int = 20):
         """Estimate computational cost for a single polymlp."""
         if self._verbose:
-            print("Calculations have been started.")
-        n_atoms_sum = sum(self._supercell.n_atoms)
-        prop = Properties(pot=pot)
-        t1 = time.time()
-        _ = [prop.eval(self._supercell) for i in range(n_calc)]
-        t2 = time.time()
-        cost1 = (t2 - t1) * 1000 / n_atoms_sum / n_calc
-
-        if self._verbose:
-            print("Total time (sec):", t2 - t1)
-            print("Number of atoms:", n_atoms_sum)
-            print("Number of steps:", n_calc)
-            print("Computational cost (msec/atom/step):", cost1)
-
             print("Calculations have been started (openmp).")
 
+        prop = Properties(pot=pot)
+
+        n_atoms_sum = sum(self._supercell.n_atoms)
         n_calc2 = n_calc * 10
         structures = [self._supercell for i in range(n_calc2)]
         t3 = time.time()
@@ -123,6 +112,20 @@ class PolymlpCost:
             print("Number of atoms:", n_atoms_sum)
             print("Number of steps:", n_calc2)
             print("Computational cost (msec/atom/step):", cost2)
+
+        if self._verbose:
+            print("Calculations have been started.")
+
+        t1 = time.time()
+        _ = [prop.eval(self._supercell, use_openmp=False) for i in range(n_calc)]
+        t2 = time.time()
+        cost1 = (t2 - t1) * 1000 / n_atoms_sum / n_calc
+
+        if self._verbose:
+            print("Total time (sec):", t2 - t1)
+            print("Number of atoms:", n_atoms_sum)
+            print("Number of steps:", n_calc)
+            print("Computational cost (msec/atom/step):", cost1)
 
         return cost1, cost2
 
