@@ -158,11 +158,7 @@ class PypolymlpMD:
         n_steps : int
             Number of production steps.
         """
-        if self._supercell_ase is None:
-            raise RuntimeError("Supercell not found.")
-        if self._calculator is None:
-            raise RuntimeError("Calculator not found.")
-
+        self._check_requisites()
         self._integrator = IntegratorASE(
             atoms=self._supercell_ase, calc=self._calculator
         )
@@ -172,7 +168,12 @@ class PypolymlpMD:
             ttime=ttime,
             initialize=initialize,
         )
-        self._activate_logger(logfile=logfile)
+        self._integrator.activate_loggers(
+            logfile=logfile,
+            interval_log=interval_log,
+            interval_save_forces=interval_save_forces,
+            interval_save_trajectory=interval_save_trajectory,
+        )
         self._integrator.run(n_eq=n_eq, n_steps=n_steps)
         return self
 
@@ -204,11 +205,7 @@ class PypolymlpMD:
         n_steps : int
             Number of production steps.
         """
-        if self._supercell_ase is None:
-            raise RuntimeError("Supercell not found.")
-        if self._calculator is None:
-            raise RuntimeError("Calculator not found.")
-
+        self._check_requisites()
         self._integrator = IntegratorASE(
             atoms=self._supercell_ase, calc=self._calculator
         )
@@ -218,26 +215,21 @@ class PypolymlpMD:
             friction=friction,
             initialize=initialize,
         )
-        self._activate_logger(logfile=logfile)
+        self._integrator.activate_loggers(
+            logfile=logfile,
+            interval_log=interval_log,
+            interval_save_forces=interval_save_forces,
+            interval_save_trajectory=interval_save_trajectory,
+        )
         self._integrator.run(n_eq=n_eq, n_steps=n_steps)
         return self
 
-    def _activate_logger(
-        self,
-        logfile: str = "log.dat",
-        interval_log: int = 1,
-        interval_save_forces: Optional[int] = None,
-        interval_save_trajectory: Optional[int] = None,
-    ):
-        """Activate logger and array allocation."""
-        self._integrator.activate_save_energies(interval=1)
-        if logfile is not None:
-            self._integrator.activate_MDLogger(logfile=logfile, interval=interval_log)
-        if interval_save_forces is not None:
-            self._integrator.activate_save_forces(interval=interval_save_forces)
-        if interval_save_trajectory is not None:
-            self._integrator.activate_save_trajectory(interval=interval_save_trajectory)
-        return self
+    def _check_requisites(self):
+        """Check requisites for MD simulations."""
+        if self._supercell_ase is None:
+            raise RuntimeError("Supercell not found.")
+        if self._calculator is None:
+            raise RuntimeError("Calculator not found.")
 
     def save_yaml(self, filename: str = "polymlp_md.yaml"):
         """Save properties to yaml file."""
