@@ -113,6 +113,9 @@ class PolymlpFC2ASECalculator(Calculator):
         self._static_energy, _, _ = self._prop.eval(structure_without_disp)
         self._ignore_polymlp = np.isclose(alpha, 0.0)
 
+        self._delta_energy = None
+        self._use_reference = True
+
     def _eval_fc2_model(self, disps: np.array):
         """Calculate energy and forces using FC2."""
         energy, forces = eval_properties_fc2(self._fc2, disps)
@@ -133,11 +136,19 @@ class PolymlpFC2ASECalculator(Calculator):
 
         if self._ignore_polymlp:
             energy, forces = self._eval_fc2_model(disps)
+            self._delta_energy = 0.0
         else:
-            energy1, forces1, _ = self._prop.eval(structure)
-            energy2, forces2 = self._eval_fc2_model(disps)
-            energy = energy1 * self._alpha + energy2 * (1 - self._alpha)
-            forces = forces1 * self._alpha + forces2 * (1 - self._alpha)
+            energy1, forces1 = self._eval_fc2_model(disps)
+            energy2, forces2, _ = self._prop.eval(structure)
+            self._delta_energy = energy2 - energy1
+
+            energy = energy2 * self._alpha + energy1 * (1 - self._alpha)
+            forces = forces2 * self._alpha + forces1 * (1 - self._alpha)
 
         self.results["energy"] = energy
         self.results["forces"] = forces.T
+
+    @property
+    def delta_energy(self):
+        """Return energy difference from reference state."""
+        return self._delta_energy
