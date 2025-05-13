@@ -31,7 +31,7 @@ class PypolymlpMD:
         params: Union[PolymlpParams, list[PolymlpParams]] = None,
         coeffs: Union[np.ndarray, list[np.ndarray]] = None,
         properties: Optional[Properties] = None,
-        verbose: bool = True,
+        verbose: bool = False,
     ):
         """Init method.
 
@@ -174,6 +174,8 @@ class PypolymlpMD:
             interval_save_forces=interval_save_forces,
             interval_save_trajectory=interval_save_trajectory,
         )
+        if self._verbose:
+            self._integrator.activate_standard_output(interval=100)
         self._integrator.run(n_eq=n_eq, n_steps=n_steps)
         return self
 
@@ -221,6 +223,8 @@ class PypolymlpMD:
             interval_save_forces=interval_save_forces,
             interval_save_trajectory=interval_save_trajectory,
         )
+        if self._verbose:
+            self._integrator.activate_standard_output(interval=100)
         self._integrator.run(n_eq=n_eq, n_steps=n_steps)
         return self
 
