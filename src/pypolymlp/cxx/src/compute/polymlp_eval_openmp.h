@@ -26,8 +26,7 @@ class PolymlpEvalOpenMP {
     vector2i type_pairs;
 
     /* for feature_type = pair */
-    void compute_antp(const vector2d& positions_c,
-                      const vector1i& types,
+    void compute_antp(const vector1i& types,
                       const vector2i& neighbor_half,
                       const vector3d& neighbor_diff,
                       vector2d& antp);
@@ -37,8 +36,7 @@ class PolymlpEvalOpenMP {
                                   vector2d& prod_antp_sum_e,
                                   vector2d& prod_antp_sum_f);
 
-    void eval_pair(const vector2d& positions_c,
-                   const vector1i& types,
+    void eval_pair(const vector1i& types,
                    const vector2i& neighbor_half,
                    const vector3d& neighbor_diff,
                    double& energy,
@@ -46,19 +44,17 @@ class PolymlpEvalOpenMP {
                    vector1d& stress);
 
     /* for feature_type = gtinv */
-    void compute_anlmtp(const vector2d& positions_c,
-                        const vector1i& types,
+    void compute_anlmtp(const vector1i& types,
                         const vector2i& neighbor_half,
                         const vector3d& neighbor_diff,
                         vector2dc& anlmtp);
-    void compute_anlmtp_openmp(const vector2d& positions_c,
-                               const vector1i& types,
-                               const vector2i& neighbor_half,
-                               const vector3d& neighbor_diff,
-                               vector2dc& anlmtp);
     void compute_anlmtp_conjugate(const vector2d& anlmtp_r,
                                   const vector2d& anlmtp_i,
                                   vector2dc& anlmtp);
+    void compute_anlmtp_openmp(const vector1i& types,
+                               const vector2i& neighbor_half,
+                               const vector3d& neighbor_diff,
+                               vector2dc& anlmtp);
 
     void compute_sum_of_prod_anlmtp(const vector1i& types,
                                     const vector2dc& anlmtp,
@@ -69,8 +65,7 @@ class PolymlpEvalOpenMP {
                                  const int type1,
                                  vector1d& feature_values);
 
-    void eval_gtinv(const vector2d& positions_c,
-                    const vector1i& types,
+    void eval_gtinv(const vector1i& types,
                     const vector2i& neighbor_half,
                     const vector3d& neighbor_diff,
                     double& energy,
@@ -96,8 +91,7 @@ class PolymlpEvalOpenMP {
     PolymlpEvalOpenMP(const PolymlpEval& polymlp);
     ~PolymlpEvalOpenMP();
 
-    void eval(const vector2d& positions_c,
-              const vector1i& types,
+    void eval(const vector1i& types,
               const vector2i& neighbor_half,
               const vector3d& neighbor_diff,
               double& energy,

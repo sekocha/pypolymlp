@@ -27,8 +27,7 @@ PolymlpEval::PolymlpEval(const feature_params& fp, const vector1d& coeffs){
 
 PolymlpEval::~PolymlpEval(){}
 
-void PolymlpEval::eval(const vector2d& positions_c,
-                       const vector1i& types,
+void PolymlpEval::eval(const vector1i& types,
                        const vector2i& neighbor_half,
                        const vector3d& neighbor_diff,
                        double& energy,
@@ -36,23 +35,16 @@ void PolymlpEval::eval(const vector2d& positions_c,
                        vector1d& stress){
 
     if (pot.fp.feature_type == "pair"){
-        eval_pair(
-            positions_c, types, neighbor_half, neighbor_diff,
-            energy, forces, stress
-        );
+        eval_pair(types, neighbor_half, neighbor_diff, energy, forces, stress);
     }
     else if (pot.fp.feature_type == "gtinv"){
-        eval_gtinv(
-            positions_c, types, neighbor_half, neighbor_diff,
-            energy, forces, stress
-        );
+        eval_gtinv(types, neighbor_half, neighbor_diff, energy, forces, stress);
     }
 }
 
 /*--- feature_type = pair ----------------------------------------------*/
 
-void PolymlpEval::eval_pair(const vector2d& positions_c,
-                            const vector1i& types,
+void PolymlpEval::eval_pair(const vector1i& types,
                             const vector2i& neighbor_half,
                             const vector3d& neighbor_diff,
                             double& energy,
@@ -64,7 +56,7 @@ void PolymlpEval::eval_pair(const vector2d& positions_c,
 
     const int n_atom = types.size();
     vector2d antp, prod_sum_e, prod_sum_f;
-    compute_antp(positions_c, types, neighbor_half, neighbor_diff, antp);
+    compute_antp(types, neighbor_half, neighbor_diff, antp);
     compute_sum_of_prod_antp(types, antp, prod_sum_e, prod_sum_f);
 
     energy = 0.0;
@@ -122,8 +114,7 @@ void PolymlpEval::eval_pair(const vector2d& positions_c,
     }
 }
 
-void PolymlpEval::compute_antp(const vector2d& positions_c,
-                               const vector1i& types,
+void PolymlpEval::compute_antp(const vector1i& types,
                                const vector2i& neighbor_half,
                                const vector3d& neighbor_diff,
                                vector2d& antp){
@@ -223,8 +214,7 @@ void PolymlpEval::compute_sum_of_prod_antp(const vector1i& types,
 
 
 /*--- feature_type = gtinv ----------------------------------------------*/
-void PolymlpEval::eval_gtinv(const vector2d& positions_c,
-                             const vector1i& types,
+void PolymlpEval::eval_gtinv(const vector1i& types,
                              const vector2i& neighbor_half,
                              const vector3d& neighbor_diff,
                              double& energy,
@@ -234,7 +224,7 @@ void PolymlpEval::eval_gtinv(const vector2d& positions_c,
     const int n_atom = types.size();
 
     vector2dc anlmtp, prod_sum_e, prod_sum_f;
-    compute_anlmtp(positions_c, types, neighbor_half, neighbor_diff, anlmtp);
+    compute_anlmtp(types, neighbor_half, neighbor_diff, anlmtp);
 
     compute_sum_of_prod_anlmtp(types, anlmtp, prod_sum_e, prod_sum_f);
 
@@ -319,8 +309,7 @@ void PolymlpEval::eval_gtinv(const vector2d& positions_c,
 }
 
 
-void PolymlpEval::compute_anlmtp(const vector2d& positions_c,
-                                 const vector1i& types,
+void PolymlpEval::compute_anlmtp(const vector1i& types,
                                  const vector2i& neighbor_half,
                                  const vector3d& neighbor_diff,
                                  vector2dc& anlmtp){

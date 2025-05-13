@@ -32,8 +32,7 @@ class PolymlpEval {
     vector2i type_pairs;
 
     /* for feature_type = pair */
-    void compute_antp(const vector2d& positions_c,
-                      const vector1i& types,
+    void compute_antp(const vector1i& types,
                       const vector2i& neighbor_half,
                       const vector3d& neighbor_diff,
                       vector2d& antp);
@@ -43,8 +42,7 @@ class PolymlpEval {
                                   vector2d& prod_antp_sum_e,
                                   vector2d& prod_antp_sum_f);
 
-    void eval_pair(const vector2d& positions_c,
-                   const vector1i& types,
+    void eval_pair(const vector1i& types,
                    const vector2i& neighbor_half,
                    const vector3d& neighbor_diff,
                    double& energy,
@@ -52,8 +50,7 @@ class PolymlpEval {
                    vector1d& stress);
 
     /* for feature_type = gtinv */
-    void compute_anlmtp(const vector2d& positions_c,
-                        const vector1i& types,
+    void compute_anlmtp(const vector1i& types,
                         const vector2i& neighbor_half,
                         const vector3d& neighbor_diff,
                         vector2dc& anlmtp);
@@ -71,8 +68,7 @@ class PolymlpEval {
                                  vector1d& feature_values);
 
 
-    void eval_gtinv(const vector2d& positions_c,
-                    const vector1i& types,
+    void eval_gtinv(const vector1i& types,
                     const vector2i& neighbor_half,
                     const vector3d& neighbor_diff,
                     double& energy,
@@ -86,8 +82,7 @@ class PolymlpEval {
     ~PolymlpEval();
 
     struct DataPolyMLP pot;
-    void eval(const vector2d& positions_c,
-              const vector1i& types,
+    void eval(const vector1i& types,
               const vector2i& neighbor_half,
               const vector3d& neighbor_diff,
               double& energy,

@@ -25,14 +25,14 @@ void PyPropertiesFast::eval(const vector2d& axis,
     if (use_openmp_atom == true){
         NeighborHalfOpenMP neigh(axis, positions_c, types, fp.cutoff);
         polymlp_openmp.eval(
-            positions_c, types, neigh.get_half_list(), neigh.get_diff_list(),
+            types, neigh.get_half_list(), neigh.get_diff_list(),
             energy, force, stress
         );
     }
     else {
         NeighborHalf neigh(axis, positions_c, types, fp.cutoff);
         polymlp.eval(
-            positions_c, types, neigh.get_half_list(), neigh.get_diff_list(),
+            types, neigh.get_half_list(), neigh.get_diff_list(),
             energy, force, stress
         );
     }
@@ -55,8 +55,7 @@ void PyPropertiesFast::eval_multiple(const vector3d& axis_array,
                 axis_array[i], positions_c_array[i], types_array[i], fp.cutoff
             );
             polymlp.eval(
-                positions_c_array[i], types_array[i],
-                neigh.get_half_list(), neigh.get_diff_list(),
+                types_array[i], neigh.get_half_list(), neigh.get_diff_list(),
                 e_array[i], f_array[i], s_array[i]
             );
         }
@@ -66,8 +65,7 @@ void PyPropertiesFast::eval_multiple(const vector3d& axis_array,
             axis_array[0], positions_c_array[0], types_array[0], fp.cutoff
         );
         polymlp_openmp.eval(
-            positions_c_array[0], types_array[0],
-            neigh.get_half_list(), neigh.get_diff_list(),
+            types_array[0], neigh.get_half_list(), neigh.get_diff_list(),
             e_array[0], f_array[0], s_array[0]
         );
     }

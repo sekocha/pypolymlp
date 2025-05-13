@@ -36,8 +36,7 @@ PolymlpEvalOpenMP::PolymlpEvalOpenMP(const PolymlpEval& polymlp){
 
 PolymlpEvalOpenMP::~PolymlpEvalOpenMP(){}
 
-void PolymlpEvalOpenMP::eval(const vector2d& positions_c,
-                             const vector1i& types,
+void PolymlpEvalOpenMP::eval(const vector1i& types,
                              const vector2i& neighbor_half,
                              const vector3d& neighbor_diff,
                              double& energy,
@@ -45,23 +44,16 @@ void PolymlpEvalOpenMP::eval(const vector2d& positions_c,
                              vector1d& stress){
 
     if (pot.fp.feature_type == "pair"){
-        eval_pair(
-            positions_c, types, neighbor_half, neighbor_diff,
-            energy, forces, stress
-        );
+        eval_pair(types, neighbor_half, neighbor_diff, energy, forces, stress);
     }
     else if (pot.fp.feature_type == "gtinv"){
-        eval_gtinv(
-            positions_c, types, neighbor_half, neighbor_diff,
-            energy, forces, stress
-        );
+        eval_gtinv(types, neighbor_half, neighbor_diff, energy, forces, stress);
     }
 }
 
 /*--- feature_type = pair ----------------------------------------------*/
 
-void PolymlpEvalOpenMP::eval_pair(const vector2d& positions_c,
-                                  const vector1i& types,
+void PolymlpEvalOpenMP::eval_pair(const vector1i& types,
                                   const vector2i& neighbor_half,
                                   const vector3d& neighbor_diff,
                                   double& energy,
@@ -73,7 +65,7 @@ void PolymlpEvalOpenMP::eval_pair(const vector2d& positions_c,
 
     const int n_atom = types.size();
     vector2d antp, prod_sum_e, prod_sum_f;
-    compute_antp(positions_c, types, neighbor_half, neighbor_diff, antp);
+    compute_antp(types, neighbor_half, neighbor_diff, antp);
     compute_sum_of_prod_antp(types, antp, prod_sum_e, prod_sum_f);
 
     vector2d e_array(n_atom),fx_array(n_atom),fy_array(n_atom),fz_array(n_atom);
@@ -139,8 +131,7 @@ void PolymlpEvalOpenMP::eval_pair(const vector2d& positions_c,
     );
 }
 
-void PolymlpEvalOpenMP::compute_antp(const vector2d& positions_c,
-                                     const vector1i& types,
+void PolymlpEvalOpenMP::compute_antp(const vector1i& types,
                                      const vector2i& neighbor_half,
                                      const vector3d& neighbor_diff,
                                      vector2d& antp){
@@ -243,8 +234,7 @@ void PolymlpEvalOpenMP::compute_sum_of_prod_antp(const vector1i& types,
 
 
 /*--- feature_type = gtinv ----------------------------------------------*/
-void PolymlpEvalOpenMP::eval_gtinv(const vector2d& positions_c,
-                                   const vector1i& types,
+void PolymlpEvalOpenMP::eval_gtinv(const vector1i& types,
                                    const vector2i& neighbor_half,
                                    const vector3d& neighbor_diff,
                                    double& energy,
@@ -255,7 +245,7 @@ void PolymlpEvalOpenMP::eval_gtinv(const vector2d& positions_c,
     //t1 = std::chrono::system_clock::now();
     const int n_atom = types.size();
     vector2dc anlmtp, prod_sum_e, prod_sum_f;
-    compute_anlmtp_openmp(positions_c, types, neighbor_half, neighbor_diff, anlmtp);
+    compute_anlmtp_openmp(types, neighbor_half, neighbor_diff, anlmtp);
     compute_sum_of_prod_anlmtp(types, anlmtp, prod_sum_e, prod_sum_f);
 
     //t2 = std::chrono::system_clock::now();
@@ -421,8 +411,7 @@ void PolymlpEvalOpenMP::collect_properties(
 }
 
 
-void PolymlpEvalOpenMP::compute_anlmtp(const vector2d& positions_c,
-                                       const vector1i& types,
+void PolymlpEvalOpenMP::compute_anlmtp(const vector1i& types,
                                        const vector2i& neighbor_half,
                                        const vector3d& neighbor_diff,
                                        vector2dc& anlmtp){
@@ -496,11 +485,12 @@ void PolymlpEvalOpenMP::compute_anlmtp_conjugate(const vector2d& anlmtp_r,
     }
 }
 
-void PolymlpEvalOpenMP::compute_anlmtp_openmp(const vector2d& positions_c,
-                                       const vector1i& types,
-                                       const vector2i& neighbor_half,
-                                       const vector3d& neighbor_diff,
-                                       vector2dc& anlmtp){
+void PolymlpEvalOpenMP::compute_anlmtp_openmp(
+    const vector1i& types,
+    const vector2i& neighbor_half,
+    const vector3d& neighbor_diff,
+    vector2dc& anlmtp
+){
 
     const auto& nlmtp_attrs_no_conj = pot.mapping.get_nlmtp_attrs_no_conjugate();
     const auto& tp_to_params = pot.mapping.get_type_pair_to_params();
