@@ -180,7 +180,6 @@ void PolymlpEvalOpenMP::compute_antp(const vector2d& positions_c,
             }
         }
     }
-
 }
 
 void PolymlpEvalOpenMP::compute_sum_of_prod_antp(const vector1i& types,
@@ -252,16 +251,15 @@ void PolymlpEvalOpenMP::eval_gtinv(const vector2d& positions_c,
                                    vector2d& forces,
                                    vector1d& stress){
 
+    //std::chrono::system_clock::time_point t1, t2, t3, t4, t5;
+    //t1 = std::chrono::system_clock::now();
     const int n_atom = types.size();
-
     vector2dc anlmtp, prod_sum_e, prod_sum_f;
-    if (n_atom < 200)
-        compute_anlmtp(positions_c, types, neighbor_half, neighbor_diff, anlmtp);
-    else
-        compute_anlmtp_openmp(positions_c, types, neighbor_half, neighbor_diff, anlmtp);
-
+    compute_anlmtp_openmp(positions_c, types, neighbor_half, neighbor_diff, anlmtp);
     compute_sum_of_prod_anlmtp(types, anlmtp, prod_sum_e, prod_sum_f);
 
+    //t2 = std::chrono::system_clock::now();
+    //t3 = std::chrono::system_clock::now();
     const auto& nlmtp_attrs_no_conj = pot.mapping.get_nlmtp_attrs_no_conjugate();
     const auto& tp_to_params = pot.mapping.get_type_pair_to_params();
 
@@ -273,9 +271,7 @@ void PolymlpEvalOpenMP::eval_gtinv(const vector2d& positions_c,
         fy_array[i].resize(jsize);
         fz_array[i].resize(jsize);
     }
-
-    std::chrono::system_clock::time_point start, end;
-    start = std::chrono::system_clock::now();
+    //t3 = std::chrono::system_clock::now();
 
     #ifdef _OPENMP
     #pragma omp parallel for schedule(guided)
@@ -345,20 +341,38 @@ void PolymlpEvalOpenMP::eval_gtinv(const vector2d& positions_c,
             }
         }
     }
-
-    end = std::chrono::system_clock::now();
-    double time = static_cast<double>(
-        std::chrono::duration_cast<std::chrono::microseconds>
-            (end - start).count() / 1000.0
-        );
-    std::cout << "Final sum:" << time << std::endl;
+    //t4 = std::chrono::system_clock::now();
 
     collect_properties(
         e_array, fx_array, fy_array, fz_array, neighbor_half, neighbor_diff,
         energy, forces, stress
     );
-
+    //t5 = std::chrono::system_clock::now();
+    /*
+    double time;
+    time = static_cast<double>(
+        std::chrono::duration_cast<std::chrono::microseconds>
+            (t2 - t1).count() / 1000.0
+        );
+    std::cout << "anlmt:" << time << std::endl;
+    time = static_cast<double>(
+        std::chrono::duration_cast<std::chrono::microseconds>
+            (t3 - t2).count() / 1000.0
+        );
+    std::cout << "prod:" << time << std::endl;
+    time = static_cast<double>(
+        std::chrono::duration_cast<std::chrono::microseconds>
+            (t4 - t3).count() / 1000.0
+        );
+    std::cout << "final_sum:" << time << std::endl;
+    time = static_cast<double>(
+        std::chrono::duration_cast<std::chrono::microseconds>
+            (t5 - t4).count() / 1000.0
+        );
+    std::cout << "collect:" << time << std::endl;
+    */
 }
+
 
 void PolymlpEvalOpenMP::collect_properties(
     const vector2d& e_array,
@@ -377,9 +391,6 @@ void PolymlpEvalOpenMP::collect_properties(
     forces.resize(n_atom);
     for (int i = 0; i < n_atom; ++i) forces[i] = vector1d(3, 0.0);
     stress = vector1d(6, 0.0);
-
-    std::chrono::system_clock::time_point start, end;
-    start = std::chrono::system_clock::now();
 
     double dx, dy, dz, dis, fx, fy, fz;
     for (int i = 0; i < n_atom; ++i) {
@@ -407,12 +418,6 @@ void PolymlpEvalOpenMP::collect_properties(
             }
         }
     }
-    end = std::chrono::system_clock::now();
-    double time = static_cast<double>(
-        std::chrono::duration_cast<std::chrono::microseconds>
-            (end - start).count() / 1000.0
-        );
-    std::cout << "Collect:" << time << std::endl;
 }
 
 
@@ -467,89 +472,6 @@ void PolymlpEvalOpenMP::compute_anlmtp(const vector2d& positions_c,
 }
 
 
-void PolymlpEvalOpenMP::compute_anlmtp_openmp(const vector2d& positions_c,
-                                              const vector1i& types,
-                                              const vector2i& neighbor_half,
-                                              const vector3d& neighbor_diff,
-                                              vector2dc& anlmtp){
-
-    const auto& nlmtp_attrs_no_conj = pot.mapping.get_nlmtp_attrs_no_conjugate();
-    const auto& tp_to_params = pot.mapping.get_type_pair_to_params();
-
-    const int n_atom = types.size();
-    vector2d anlmtp_r(n_atom, vector1d(nlmtp_attrs_no_conj.size(), 0.0));
-    vector2d anlmtp_i(n_atom, vector1d(nlmtp_attrs_no_conj.size(), 0.0));
-    vector2d anlmtp_r2(n_atom, vector1d(nlmtp_attrs_no_conj.size(), 0.0));
-    vector2d anlmtp_i2(n_atom, vector1d(nlmtp_attrs_no_conj.size(), 0.0));
-
-    std::chrono::system_clock::time_point start, end;
-    start = std::chrono::system_clock::now();
-
-    #ifdef _OPENMP
-    #pragma omp parallel for schedule(guided)
-    #endif
-    for (int i = 0; i < n_atom; ++i) {
-        int type1, type2, tp;
-        double dx, dy, dz, dis;
-        vector1d fn; vector1dc ylm; dc val;
-        type1 = types[i];
-        const vector1i& neighbor_i = neighbor_half[i];
-        for (size_t jj = 0; jj < neighbor_i.size(); ++jj){
-            int j = neighbor_i[jj];
-            const auto& diff = neighbor_diff[i][jj];
-            dx = - diff[0];
-            dy = - diff[1];
-            dz = - diff[2];
-            dis = sqrt(dx*dx + dy*dy + dz*dz);
-            if (dis < pot.fp.cutoff){
-                type2 = types[j];
-                const auto &sph = cartesian_to_spherical_(vector1d{dx,dy,dz});
-                tp = type_pairs[type1][type2];
-                const auto& params = tp_to_params[tp];
-                get_fn_(dis, pot.fp, params, fn);
-                get_ylm_(sph[0], sph[1], pot.fp.maxl, ylm);
-
-                for (const auto& nlmtp: nlmtp_attrs_no_conj){
-                    if (tp == nlmtp.tp){
-                        const auto& lm_attr = nlmtp.lm;
-                        const int idx = nlmtp.nlmtp_noconj_key;
-                        val = fn[nlmtp.n_id] * ylm[lm_attr.ylmkey];
-                        anlmtp_r[i][idx] += val.real();
-                        anlmtp_i[i][idx] += val.imag();
-                        #ifdef _OPENMP
-                        #pragma omp atomic
-                        #endif
-                        anlmtp_r2[j][idx] += val.real() * lm_attr.sign_j;
-                        #ifdef _OPENMP
-                        #pragma omp atomic
-                        #endif
-                        anlmtp_i2[j][idx] += val.imag() * lm_attr.sign_j;
-                    }
-                }
-            }
-        }
-    }
-
-    #ifdef _OPENMP
-    #pragma omp parallel for schedule(guided)
-    #endif
-    for (int i = 0; i < n_atom; ++i) {
-        for (int j = 0; j < anlmtp_r2[0].size(); ++j) {
-            anlmtp_r[i][j] += anlmtp_r2[i][j];
-            anlmtp_i[i][j] += anlmtp_i2[i][j];
-        }
-    }
-    compute_anlmtp_conjugate(anlmtp_r, anlmtp_i, anlmtp);
-
-    end = std::chrono::system_clock::now();
-    double time = static_cast<double>(
-        std::chrono::duration_cast<std::chrono::microseconds>
-            (end - start).count() / 1000.0
-        );
-    std::cout << "anlmtp:" << time << std::endl;
-
-}
-
 void PolymlpEvalOpenMP::compute_anlmtp_conjugate(const vector2d& anlmtp_r,
                                                  const vector2d& anlmtp_i,
                                                  vector2dc& anlmtp){
@@ -574,6 +496,77 @@ void PolymlpEvalOpenMP::compute_anlmtp_conjugate(const vector2d& anlmtp_r,
     }
 }
 
+void PolymlpEvalOpenMP::compute_anlmtp_openmp(const vector2d& positions_c,
+                                       const vector1i& types,
+                                       const vector2i& neighbor_half,
+                                       const vector3d& neighbor_diff,
+                                       vector2dc& anlmtp){
+
+    const auto& nlmtp_attrs_no_conj = pot.mapping.get_nlmtp_attrs_no_conjugate();
+    const auto& tp_to_params = pot.mapping.get_type_pair_to_params();
+
+    const int n_atom = types.size();
+    const auto& n_nlmtp_all = pot.mapping.get_n_nlmtp_all();
+    anlmtp = vector2dc(n_atom, vector1dc(n_nlmtp_all, 0.0));
+
+    vector2i neighbor_full(neighbor_half);
+    vector3d neighbor_diff_full(neighbor_diff);
+    for (int i = 0; i < n_atom; ++i){
+        for (size_t jj = 0; jj < neighbor_half[i].size(); ++jj){
+            int j = neighbor_half[i][jj];
+            auto& diff = neighbor_diff[i][jj];
+            neighbor_full[j].emplace_back(i);
+            neighbor_diff_full[j].emplace_back(
+                vector1d{-diff[0], -diff[1], -diff[2]}
+            );
+        }
+    }
+
+    #ifdef _OPENMP
+    #pragma omp parallel for schedule(guided)
+    #endif
+    for (int i = 0; i < n_atom; ++i) {
+        int type1, type2, tp;
+        double dx, dy, dz, dis;
+        vector1d fn; vector1dc ylm; dc val;
+
+        type1 = types[i];
+        const vector1i& neighbor_i = neighbor_full[i];
+        vector1dc local = vector1dc(nlmtp_attrs_no_conj.size(), 0.0);
+        for (size_t jj = 0; jj < neighbor_i.size(); ++jj){
+            int j = neighbor_i[jj];
+            const auto& diff = neighbor_diff_full[i][jj];
+            dx = - diff[0];
+            dy = - diff[1];
+            dz = - diff[2];
+            dis = sqrt(dx*dx + dy*dy + dz*dz);
+            if (dis < pot.fp.cutoff){
+                type2 = types[j];
+                const auto &sph = cartesian_to_spherical_(vector1d{dx,dy,dz});
+                tp = type_pairs[type1][type2];
+                const auto& params = tp_to_params[tp];
+                get_fn_(dis, pot.fp, params, fn);
+                get_ylm_(sph[0], sph[1], pot.fp.maxl, ylm);
+                for (const auto& nlmtp: nlmtp_attrs_no_conj){
+                    if (tp == nlmtp.tp){
+                        const auto& lm_attr = nlmtp.lm;
+                        const int idx = nlmtp.nlmtp_noconj_key;
+                        local[idx] += fn[nlmtp.n_id] * ylm[lm_attr.ylmkey];
+                    }
+                }
+            }
+        }
+        int idx(0);
+        for (const auto& nlmtp: nlmtp_attrs_no_conj){
+            const auto& cc_coeff = nlmtp.lm.cc_coeff;
+            anlmtp[i][nlmtp.nlmtp_key] = local[idx];
+            anlmtp[i][nlmtp.conj_key] = {cc_coeff * local[idx].real(),
+                                          - cc_coeff * local[idx].imag()};
+            ++idx;
+        }
+    }
+}
+
 
 void PolymlpEvalOpenMP::compute_sum_of_prod_anlmtp(const vector1i& types,
                                                    const vector2dc& anlmtp,
@@ -585,9 +578,6 @@ void PolymlpEvalOpenMP::compute_sum_of_prod_anlmtp(const vector1i& types,
     const int n_atom = types.size();
     prod_sum_e = vector2dc(n_atom, vector1dc(n_head_keys));
     prod_sum_f = vector2dc(n_atom, vector1dc(n_head_keys));
-
-    std::chrono::system_clock::time_point start, end;
-    start = std::chrono::system_clock::now();
 
     #ifdef _OPENMP
     #pragma omp parallel for schedule(guided)
@@ -623,14 +613,6 @@ void PolymlpEvalOpenMP::compute_sum_of_prod_anlmtp(const vector1i& types,
             prod_sum_f[i][key] = sum_f;
         }
     }
-
-    end = std::chrono::system_clock::now();
-    double time = static_cast<double>(
-        std::chrono::duration_cast<std::chrono::microseconds>
-            (end - start).count() / 1000.0
-        );
-    std::cout << "prod:" << time << std::endl;
-
 }
 
 void PolymlpEvalOpenMP::compute_linear_features(const vector1d& prod_anlmtp,

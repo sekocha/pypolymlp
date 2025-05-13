@@ -5,13 +5,15 @@
 
 *****************************************************************************/
 
-#include "compute/neighbor_half.h"
+#include "compute/neighbor_half_openmp.h"
 
 
-NeighborHalf::NeighborHalf(const vector2d& axis,
-                           const vector2d& positions_c,
-                           const vector1i& types,
-                           const double& cutoff){
+NeighborHalfOpenMP::NeighborHalfOpenMP(
+    const vector2d& axis,
+    const vector2d& positions_c,
+    const vector1i& types,
+    const double& cutoff
+){
 
     NeighborCell neigh_cell(axis, positions_c, cutoff);
     const auto& trans = neigh_cell.get_translations();
@@ -22,6 +24,9 @@ NeighborHalf::NeighborHalf(const vector2d& axis,
     half_list = vector2i(n_total_atom);
     diff_list = vector3d(n_total_atom);
 
+    #ifdef _OPENMP
+    #pragma omp parallel for schedule(guided)
+    #endif
     for (int i = 0; i < n_total_atom; ++i){
         double dx, dy, dz, dx_ij, dy_ij, dz_ij, dis;
         bool bool_half;
@@ -57,49 +62,7 @@ NeighborHalf::NeighborHalf(const vector2d& axis,
     }
 }
 
-NeighborHalf::~NeighborHalf(){}
+NeighborHalfOpenMP::~NeighborHalfOpenMP(){}
 
-const vector2i& NeighborHalf::get_half_list() const { return half_list; }
-const vector3d& NeighborHalf::get_diff_list() const { return diff_list; }
-
-
-
-/* lammps convention for pair choice
-NeighborHalf::NeighborHalf(const vector2d& axis,
-                           const vector2d& positions_c,
-                           const vector1i& types,
-                           const double& cutoff){
-
-    const double tol = 1e-12;
-    const auto& trans = find_trans(axis, cutoff);
-
-    const int n_total_atom = types.size();
-    half_list = vector2i(n_total_atom);
-    diff_list = vector3d(n_total_atom);
-
-    double dx, dy, dz;
-    for (int i = 0; i < n_total_atom; ++i){
-        for (int j = 0; j < n_total_atom; ++j){
-            for (const auto& tr: trans){
-                dx = positions_c[0][j] + tr[0] - positions_c[0][i];
-                dy = positions_c[1][j] + tr[1] - positions_c[1][i];
-                dz = positions_c[2][j] + tr[2] - positions_c[2][i];
-                bool bool_half = false;
-                double dis = sqrt(dx*dx + dy*dy + dz*dz);
-                if (dis < cutoff and dis > 1e-10){
-                    if (dz >= tol)
-                        bool_half = true;
-                    else if (fabs(dz) < tol and dy >= tol)
-                        bool_half = true;
-                    else if (fabs(dz) < tol and fabs(dy) < tol and dx >=tol)
-                        bool_half = true;
-                }
-                if (bool_half == true){
-                    half_list[i].emplace_back(j);
-                    diff_list[i].emplace_back(vector1d({dx, dy, dz}));
-                }
-            }
-        }
-    }
-}
-*/
+const vector2i& NeighborHalfOpenMP::get_half_list() const { return half_list; }
+const vector3d& NeighborHalfOpenMP::get_diff_list() const { return diff_list; }

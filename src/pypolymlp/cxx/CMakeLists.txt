@@ -50,6 +50,7 @@ set(SRC_FILES
     src/polymlp/polymlp_products.cpp
     src/compute/neighbor.cpp
     src/compute/neighbor_half.cpp
+    src/compute/neighbor_half_openmp.cpp
     src/compute/neighbor_cell.cpp
     src/compute/py_params.cpp
     src/compute/py_model.cpp

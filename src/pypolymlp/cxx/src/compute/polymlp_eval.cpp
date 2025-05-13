@@ -234,12 +234,9 @@ void PolymlpEval::eval_gtinv(const vector2d& positions_c,
     const int n_atom = types.size();
 
     vector2dc anlmtp, prod_sum_e, prod_sum_f;
-    clock_t t1 = clock();
     compute_anlmtp(positions_c, types, neighbor_half, neighbor_diff, anlmtp);
-    clock_t t2 = clock();
 
     compute_sum_of_prod_anlmtp(types, anlmtp, prod_sum_e, prod_sum_f);
-    clock_t t3 = clock();
 
     const auto& nlmtp_attrs_no_conj = pot.mapping.get_nlmtp_attrs_no_conjugate();
     const auto& tp_to_params = pot.mapping.get_type_pair_to_params();
@@ -319,15 +316,6 @@ void PolymlpEval::eval_gtinv(const vector2d& positions_c,
             }
         }
     }
-    /*
-    clock_t t4 = clock();
-    std::cout << "all"
-        << double(t2-t1)/CLOCKS_PER_SEC << " "
-        << double(t3-t2)/CLOCKS_PER_SEC << " "
-        << double(t4-t3)/CLOCKS_PER_SEC << " "
-        << std::endl;
-    */
-
 }
 
 
@@ -420,11 +408,9 @@ void PolymlpEval::compute_sum_of_prod_anlmtp(const vector1i& types,
         const auto& prod_map_erased = pot.p_obj.get_prod_map_erased(type1);
         const auto& prod_features_map = pot.p_obj.get_prod_features_map(type1);
 
-        clock_t t1 = clock();
         // computing nonequivalent products of order parameters (anlmtp)
         vector1d prod_anlmtp;
         compute_products_real(prod_map, anlmtp[i], prod_anlmtp);
-        clock_t t2 = clock();
         // end: computing products of order parameters (anlmtp)
 
         // computing linear features
@@ -433,11 +419,9 @@ void PolymlpEval::compute_sum_of_prod_anlmtp(const vector1i& types,
         compute_linear_features(prod_anlmtp, type1, features);
         compute_products<double>(prod_features_map, features, prod_features);
         // end: computing linear features
-        clock_t t3 = clock();
 
         vector1dc prod_anlmtp_erased;
         compute_products<dc>(prod_map_erased, anlmtp[i], prod_anlmtp_erased);
-        clock_t t4 = clock();
 
         for (size_t key = 0; key < nlmtp_attrs_no_conj.size(); ++key){
             const auto& pmodel = pot.p_obj.get_potential_model(type1, key);
@@ -463,16 +447,6 @@ void PolymlpEval::compute_sum_of_prod_anlmtp(const vector1i& types,
             prod_sum_e[i][key] = sum_e;
             prod_sum_f[i][key] = sum_f;
         }
-
-        clock_t t5 = clock();
-   /*
-        std::cout << "prod"
-            << double(t2-t1)/CLOCKS_PER_SEC << " "
-            << double(t3-t2)/CLOCKS_PER_SEC << " "
-            << double(t4-t3)/CLOCKS_PER_SEC << " "
-            << double(t5-t4)/CLOCKS_PER_SEC << " "
-            << std::endl;
-    */
     }
 }
 
