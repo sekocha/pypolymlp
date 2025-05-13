@@ -103,3 +103,7 @@ Building C++ codes in pypolymlp may require a significant amount of time.
   - Phonon properties, Quasi-harmonic approximation
   - Local geometry optimization
   - Self-consistent phonon calculations
+- [How to use polymlp in other calculator tools](docs/api_other_calc.md)
+  - LAMMPS
+  - Phonopy
+  - ASE

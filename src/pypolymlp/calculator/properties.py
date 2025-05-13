@@ -1,6 +1,6 @@
 """Class for calculating properties."""
 
-from typing import Union
+from typing import Optional, Union
 
 import numpy as np
 
@@ -77,7 +77,7 @@ class PropertiesSingle:
             self._params.as_dict(), self._coeffs
         )
 
-    def eval(self, st: PolymlpStructure):
+    def eval(self, st: PolymlpStructure, use_openmp: bool = True):
         """Evaluate properties for a single structure.
 
         Return
@@ -100,7 +100,7 @@ class PropertiesSingle:
 
         if st_calc is not None:
             positions_c = st_calc.axis @ st_calc.positions
-            self.obj.eval(st_calc.axis, positions_c, st_calc.types)
+            self.obj.eval(st_calc.axis, positions_c, st_calc.types, use_openmp)
 
             energy = self.obj.get_e()
             force = np.array(self.obj.get_f()).T
@@ -217,11 +217,11 @@ class PropertiesHybrid:
                 PropertiesSingle(params=p, coeffs=c) for p, c in zip(params, coeffs)
             ]
 
-    def eval(self, st: PolymlpStructure):
+    def eval(self, st: PolymlpStructure, use_openmp: bool = True):
         """Evaluate properties for a single structure."""
-        energy, force, stress = self.props[0].eval(st)
+        energy, force, stress = self.props[0].eval(st, use_openmp=use_openmp)
         for prop in self.props[1:]:
-            e_single, f_single, s_single = prop.eval(st)
+            e_single, f_single, s_single = prop.eval(st, use_openmp=use_openmp)
             energy += e_single
             force += f_single
             stress += s_single
@@ -282,9 +282,9 @@ class Properties:
             else:
                 self.prop = PropertiesSingle(params=params, coeffs=coeffs)
 
-    def eval(self, st: PolymlpStructure):
+    def eval(self, st: PolymlpStructure, use_openmp: bool = True):
         """Evaluate properties for a single structure."""
-        e, f, s = self.prop.eval(st)
+        e, f, s = self.prop.eval(st, use_openmp=use_openmp)
         self._e, self._f, self._s = [e], [f], [s]
         self._structures = [st]
         return e, f, s
@@ -295,12 +295,12 @@ class Properties:
         self._structures = structures
         return self._e, self._f, self._s
 
-    def eval_phonopy(self, str_ph):
+    def eval_phonopy(self, str_ph, use_openmp: bool = True):
         """Evaluate properties for a single structure in phonopy format."""
         from pypolymlp.utils.phonopy_utils import phonopy_cell_to_structure
 
         st = phonopy_cell_to_structure(str_ph)
-        e, f, s = self.prop.eval(st)
+        e, f, s = self.prop.eval(st, use_openmp=use_openmp)
         self._e, self._f, self._s = [e], [f], [s]
         self._structures = [st]
         return e, f, s
@@ -360,3 +360,32 @@ class Properties:
     @property
     def stresses_gpa(self):
         return convert_stresses_in_gpa(self._s, self._structures)
+
+
+def set_instance_properties(
+    pot: Union[str, list[str]] = None,
+    params: Union[PolymlpParams, list[PolymlpParams]] = None,
+    coeffs: Union[np.ndarray, list[np.ndarray]] = None,
+    properties: Optional[Properties] = None,
+    require_mlp: bool = True,
+):
+    """Set instance of Properties class.
+
+    Parameters
+    ----------
+    pot: polymlp file.
+    params: Parameters for polymlp.
+    coeffs: Polymlp coefficients.
+    properties: Properties instance.
+
+    Any one of pot, (params, coeffs), and properties is needed.
+    """
+    if require_mlp:
+        if pot is None and params is None and properties is None:
+            raise RuntimeError("polymlp not defined.")
+
+    if properties is not None:
+        return properties
+    elif pot is not None or params is not None:
+        return Properties(pot=pot, params=params, coeffs=coeffs)
+    return None

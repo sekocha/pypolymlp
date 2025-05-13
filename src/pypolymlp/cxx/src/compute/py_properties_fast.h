@@ -10,7 +10,9 @@
 
 #include "mlpcpp.h"
 #include "compute/neighbor_half.h"
+#include "compute/neighbor_half_openmp.h"
 #include "compute/polymlp_eval.h"
+#include "compute/polymlp_eval_openmp.h"
 #include "compute/py_params.h"
 
 #include <pybind11/pybind11.h>
@@ -30,6 +32,7 @@ class PyPropertiesFast {
 
     struct feature_params fp;
     PolymlpEval polymlp;
+    PolymlpEvalOpenMP polymlp_openmp;
 
     public:
 
@@ -38,7 +41,8 @@ class PyPropertiesFast {
 
     void eval(const vector2d& axis,
               const vector2d& positions_c,
-              const vector1i& types);
+              const vector1i& types,
+              const bool use_openmp_atom);
 
     void eval_multiple(const vector3d& axis_array,
                        const vector3d& positions_c_array,

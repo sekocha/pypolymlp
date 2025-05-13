@@ -5,8 +5,8 @@
 
 ****************************************************************************/
 
-#ifndef __POLYMLP_EVAL
-#define __POLYMLP_EVAL
+#ifndef __POLYMLP_EVAL_OPENMP
+#define __POLYMLP_EVAL_OPENMP
 
 #include "mlpcpp.h"
 
@@ -17,18 +17,12 @@
 #include "polymlp/polymlp_model_params.h"
 #include "polymlp/polymlp_features.h"
 #include "polymlp/polymlp_potential.h"
+#include "compute/polymlp_eval.h"
 
 
-struct DataPolyMLP {
-    struct feature_params fp;
-    Mapping mapping;
-    ModelParams modelp;
-    Potential p_obj;
-};
+class PolymlpEvalOpenMP {
 
-
-class PolymlpEval {
-
+    struct DataPolyMLP pot;
     vector2i type_pairs;
 
     /* for feature_type = pair */
@@ -57,6 +51,10 @@ class PolymlpEval {
     void compute_anlmtp_conjugate(const vector2d& anlmtp_r,
                                   const vector2d& anlmtp_i,
                                   vector2dc& anlmtp);
+    void compute_anlmtp_openmp(const vector1i& types,
+                               const vector2i& neighbor_half,
+                               const vector3d& neighbor_diff,
+                               vector2dc& anlmtp);
 
     void compute_sum_of_prod_anlmtp(const vector1i& types,
                                     const vector2dc& anlmtp,
@@ -67,7 +65,6 @@ class PolymlpEval {
                                  const int type1,
                                  vector1d& feature_values);
 
-
     void eval_gtinv(const vector1i& types,
                     const vector2i& neighbor_half,
                     const vector3d& neighbor_diff,
@@ -75,13 +72,25 @@ class PolymlpEval {
                     vector2d& forces,
                     vector1d& stress);
 
+    void collect_properties(
+        const vector2d& e_array,
+        const vector2d& fx_array,
+        const vector2d& fy_array,
+        const vector2d& fz_array,
+        const vector2i& neighbor_half,
+        const vector3d& neighbor_diff,
+        double& energy,
+        vector2d& forces,
+        vector1d& stress
+    );
+
     public:
 
-    PolymlpEval();
-    PolymlpEval(const feature_params& fp, const vector1d& coeffs);
-    ~PolymlpEval();
+    PolymlpEvalOpenMP();
+    PolymlpEvalOpenMP(const feature_params& fp, const vector1d& coeffs);
+    PolymlpEvalOpenMP(const PolymlpEval& polymlp);
+    ~PolymlpEvalOpenMP();
 
-    struct DataPolyMLP pot;
     void eval(const vector1i& types,
               const vector2i& neighbor_half,
               const vector3d& neighbor_diff,

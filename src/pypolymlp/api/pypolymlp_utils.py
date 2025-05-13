@@ -96,7 +96,7 @@ class PypolymlpUtils:
         path_pot: Optional[list] = None,
         poscar: Optional[str] = None,
         supercell: np.ndarray = (4, 4, 4),
-        n_calc: int = 20,
+        n_calc: int = 50,
     ):
         """Estimate computational cost of MLP.
 

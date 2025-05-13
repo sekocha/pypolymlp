@@ -4,7 +4,6 @@ import time
 from typing import Literal, Optional, Union
 
 import numpy as np
-import phono3py
 import phonopy
 from phono3py.file_IO import write_fc2_to_hdf5, write_fc3_to_hdf5
 from symfc import Symfc
@@ -20,7 +19,6 @@ from pypolymlp.core.displacements import (
 from pypolymlp.core.interface_phono3py import parse_phono3py_yaml_fcs
 from pypolymlp.utils.phonopy_utils import (
     phonopy_cell_to_structure,
-    phonopy_supercell,
     structure_to_phonopy_cell,
 )
 
@@ -372,97 +370,3 @@ class PolymlpFC:
         self._cutoff = value
         self._fc_cutoff = FCCutoff(self._supercell_ph, cutoff=value)
         return self
-
-
-if __name__ == "__main__":
-
-    import argparse
-    import signal
-
-    from pypolymlp.core.interface_vasp import Poscar
-
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--poscar", type=str, default=None, help="poscar")
-    parser.add_argument(
-        "--supercell",
-        nargs=3,
-        type=int,
-        default=None,
-        help="Supercell size (diagonal components)",
-    )
-
-    parser.add_argument("--pot", type=str, default=None, help="polymlp file")
-    parser.add_argument(
-        "--fc_n_samples",
-        type=int,
-        default=None,
-        help="Number of random displacement samples",
-    )
-    parser.add_argument(
-        "--disp",
-        type=float,
-        default=0.03,
-        help="Displacement (in Angstrom)",
-    )
-    parser.add_argument(
-        "--is_plusminus",
-        action="store_true",
-        help="Plus-minus displacements will be generated.",
-    )
-    parser.add_argument(
-        "--geometry_optimization",
-        action="store_true",
-        help="Geometry optimization is performed " "for initial structure.",
-    )
-    parser.add_argument(
-        "--batch_size",
-        type=int,
-        default=100,
-        help="Batch size for FC solver.",
-    )
-    parser.add_argument(
-        "--cutoff",
-        type=float,
-        default=None,
-        help="Cutoff radius for setting zero elements.",
-    )
-    parser.add_argument("--run_ltc", action="store_true", help="Run LTC calculations")
-    parser.add_argument(
-        "--ltc_mesh",
-        type=int,
-        nargs=3,
-        default=[19, 19, 19],
-        help="k-mesh used for phono3py calculation",
-    )
-    args = parser.parse_args()
-
-    unitcell_dict = Poscar(args.poscar).get_structure()
-    supercell_matrix = np.diag(args.supercell)
-    supercell = phonopy_supercell(unitcell_dict, supercell_matrix)
-
-    polyfc = PolymlpFC(supercell=supercell, pot=args.pot, cutoff=args.cutoff)
-
-    if args.fc_n_samples is not None:
-        polyfc.sample(
-            n_samples=args.fc_n_samples,
-            displacements=args.disp,
-            is_plusminus=args.is_plusminus,
-        )
-
-    if args.geometry_optimization:
-        polyfc.run_geometry_optimization()
-
-    polyfc.run(write_fc=True, batch_size=args.batch_size)
-
-    if args.run_ltc:
-        ph3 = phono3py.load(
-            unitcell_filename=args.poscar,
-            supercell_matrix=supercell_matrix,
-            primitive_matrix="auto",
-            log_level=1,
-        )
-        ph3.mesh_numbers = args.ltc_mesh
-        ph3.init_phph_interaction()
-        ph3.run_thermal_conductivity(temperatures=range(0, 1001, 10), write_kappa=True)
