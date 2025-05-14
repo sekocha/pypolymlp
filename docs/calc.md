@@ -58,11 +58,6 @@ If a cutoff radius is introduced to evaluate FC3s, use "--cutoff" option as foll
 > pypolymlp-calc --elastic --poscar POSCAR --pot polymlp.lammps
 ```
 
-
-<!--
-> pypolymlp-calc --force_constants --pot polymlp.lammps --phono3py_yaml phono3py_params_wurtzite_AlN.yaml.xz
--->
-
 ## Phonon calculations
 
 (phonopy is required.)

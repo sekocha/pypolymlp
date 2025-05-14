@@ -153,6 +153,7 @@ polymlp.save_features()
 
 
 ## Force constant calculations
+(Requirement: symfc)
 - Force constant calculations using a POSCAR file
 ```python
 import numpy as np
@@ -339,6 +340,27 @@ polymlp.run_eos(
 )
 polymlp.write_eos()
 energy0, volume0, bulk_modulus = polymlp.eos_fit_data
+```
+
+## Molecular dynamics calculations
+(Requirement: ASE, phonopy)
+```python
+import numpy as np
+from pypolymlp.api.pypolymlp_md import PypolymlpMD
+
+md = PypolymlpMD()
+md.load_poscar("POSCAR")
+md.set_supercell([4, 4, 3])
+
+md.set_ase_calculator(pot="polymlp.yaml")
+md.run_Langevin(
+    temperature=300,
+    time_step=1.0,
+    friction=0.01,
+    n_eq=5000,
+    n_steps=20000,
+)
+md.save_yaml(filename="polymlp_md.yaml")
 ```
 
 ## SSCHA calculations

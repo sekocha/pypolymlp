@@ -243,7 +243,7 @@ class PypolymlpMD:
     def run_thermodynamic_integration(
         self,
         thermostat: Literal["Nose-Hoover", "Langevin"] = "Langevin",
-        n_alphas: int = 10,
+        n_alphas: int = 15,
         temperature: int = 300,
         time_step: float = 1.0,
         ttime: float = 20.0,

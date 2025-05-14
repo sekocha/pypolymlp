@@ -38,6 +38,8 @@
 - symfc (if computing force constants)
 - sparse_dot_mkl (if computing force constants)
 - spglib
+- pymatgen
+- ase
 
 ## How to install pypolymlp
 
@@ -104,6 +106,8 @@ Building C++ codes in pypolymlp may require a significant amount of time.
   - Phonon properties, Quasi-harmonic approximation
   - Local geometry optimization
   - Self-consistent phonon calculations
+  - Molecular dynamics
+  - Thermodynamic integration using MD
 - [How to use polymlp in other calculator tools](docs/api_other_calc.md)
   - LAMMPS
   - Phonopy
