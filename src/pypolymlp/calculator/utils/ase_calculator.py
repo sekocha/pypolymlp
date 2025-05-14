@@ -110,11 +110,20 @@ class PolymlpFC2ASECalculator(Calculator):
         self._fc2 = fc2
         self._alpha = alpha
         self._structure_without_disp = structure_without_disp
+        self._check_errors()
+
         self._static_energy, _, _ = self._prop.eval(structure_without_disp)
         self._ignore_polymlp = np.isclose(alpha, 0.0)
 
-        self._delta_energy = None
         self._use_reference = True
+        self._delta_energy = None
+
+    def _check_errors(self):
+        """Check errors in input parameters."""
+        assert self._fc2.shape[0] == self._structure_without_disp.positions.shape[1] * 3
+        assert self._fc2.shape[1] == self._structure_without_disp.positions.shape[1] * 3
+        assert self._alpha >= 0.0
+        assert self._alpha <= 1.0
 
     def _eval_fc2_model(self, disps: np.array):
         """Calculate energy and forces using FC2."""

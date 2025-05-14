@@ -58,7 +58,6 @@ class PypolymlpMD:
         self._unitcell_ase = None
         self._supercell_ase = None
         self._integrator = None
-        self._use_reference = False
 
     def set_ase_calculator(
         self,
@@ -111,7 +110,6 @@ class PypolymlpMD:
             properties=properties,
             alpha=alpha,
         )
-        self._use_reference = True
         return self
 
     def load_poscar(self, poscar: str):
@@ -178,8 +176,6 @@ class PypolymlpMD:
         )
         if self._verbose:
             self._integrator.activate_standard_output(interval=100)
-        if self._use_reference:
-            self._integrator.activate_save_energy_differences(interval=1)
 
         self._integrator.run(n_eq=n_eq, n_steps=n_steps)
         return self
@@ -230,8 +226,6 @@ class PypolymlpMD:
         )
         if self._verbose:
             self._integrator.activate_standard_output(interval=100)
-        if self._use_reference:
-            self._integrator.activate_save_energy_differences(interval=1)
 
         self._integrator.run(n_eq=n_eq, n_steps=n_steps)
         return self
