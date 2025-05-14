@@ -161,3 +161,14 @@ class PolymlpFC2ASECalculator(Calculator):
     def delta_energy(self):
         """Return energy difference from reference state."""
         return self._delta_energy
+
+    @property
+    def alpha(self):
+        """Return alpha."""
+        return self._alpha
+
+    @alpha.setter
+    def alpha(self, _alpha):
+        """Return alpha."""
+        self._alpha = _alpha
+        self._ignore_polymlp = np.isclose(_alpha, 0.0)
