@@ -404,7 +404,7 @@ n_steps : int
 
 md = PypolymlpMD(verbose=True)
 md.load_poscar("POSCAR")
-md.set_supercell([4, 4, 3])
+md.set_supercell([5, 5, 3])
 
 md.set_ase_calculator_with_fc2(pot="polymlp.yaml", fc2hdf5="fc2.hdf5)
 md.run_thermodynamic_integration(
@@ -417,7 +417,22 @@ md.run_thermodynamic_integration(
 )
 md.save_thermodynamic_integration_yaml(filename="polymlp_ti.yaml")
 ```
+or
+```python
+from pypolymlp.api.pypolymlp_md import run_thermodynamic_integration
 
+md = run_thermodynamic_integration(
+    pot="polymlp.lammps",
+    poscar="POSCAR",
+    supercell_size=(5, 5, 3),
+    fc2hdf5="fc2.hdf5",
+    temperature=300.0,
+    n_alphas=15,
+    n_eq=5000,
+    n_steps=20000,
+    filename="polymlp_ti.yaml",
+)
+```
 
 ## SSCHA calculations
 (Requirement: phonopy)

@@ -407,3 +407,61 @@ class PypolymlpMD:
     def final_structure(self):
         """Return structure at the final step."""
         return ase_atoms_to_structure(self._supercell_ase)
+
+
+def run_thermodynamic_integration(
+    pot: str = "polymlp.yaml",
+    poscar: str = "POSCAR",
+    supercell_size: tuple = (1, 1, 1),
+    thermostat: Literal["Nose-Hoover", "Langevin"] = "Langevin",
+    n_alphas: int = 15,
+    fc2hdf5: str = "fc2.hdf5",
+    temperature: float = 300.0,
+    time_step: float = 1.0,
+    ttime: float = 20.0,
+    friction: float = 0.01,
+    n_eq: int = 2000,
+    n_steps: int = 20000,
+    filename: str = "polymlp_ti.yaml",
+    verbose: bool = True,
+):
+    """Run thermodynamic integration.
+
+    Parameters
+    ----------
+    pot: polymlp file.
+    poscar: Structure in POSCAR format.
+    supercell_size: Diagonal supercell size.
+    thermostat: Thermostat.
+    n_alphas: Number of sample points for thermodynamic integration
+              using Gaussian quadrature.
+    fc2hdf5: HDF5 file for second-order force constants.
+    temperature : int
+        Target temperature (K).
+    time_step : float
+        Time step for MD (fs).
+    ttime : float
+        Timescale of the Nose-Hoover thermostat (fs).
+    friction : float
+        Friction coefficient for Langevin thermostat (1/fs).
+    n_eq : int
+        Number of equilibration steps.
+    n_steps : int
+        Number of production steps.
+    """
+
+    md = PypolymlpMD(verbose=verbose)
+    md.load_poscar(poscar)
+    md.set_supercell(supercell_size)
+    md.set_ase_calculator_with_fc2(pot=pot, fc2hdf5=fc2hdf5, alpha=0.0)
+    md.run_thermodynamic_integration(
+        thermostat=thermostat,
+        temperature=temperature,
+        time_step=time_step,
+        ttime=ttime,
+        friction=friction,
+        n_eq=n_eq,
+        n_steps=n_steps,
+    )
+    md.save_thermodynamic_integration_yaml(filename=filename)
+    return md
