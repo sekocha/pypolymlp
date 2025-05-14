@@ -309,8 +309,6 @@ class PypolymlpMD:
             a=0.0,
             b=1.0,
         )
-        print(self._delta_free_energy)
-        print(self._delta_energies)
         return self
 
     def _check_requisites(self):
