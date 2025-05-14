@@ -6,7 +6,11 @@ import numpy as np
 from ase.calculators.calculator import Calculator
 
 from pypolymlp.calculator.md.ase_md import IntegratorASE
-from pypolymlp.calculator.md.md_utils import calc_integral, get_p_roots
+from pypolymlp.calculator.md.md_utils import (
+    calc_integral,
+    get_p_roots,
+    save_thermodynamic_integration_yaml,
+)
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.utils.ase_calculator import (
     PolymlpASECalculator,
@@ -61,6 +65,8 @@ class PypolymlpMD:
         self._integrator = None
 
         self._use_reference = False
+        self._delta_energies = None
+        self._delta_free_energy = None
 
     def set_ase_calculator(
         self,
@@ -269,7 +275,7 @@ class PypolymlpMD:
             raise RuntimeError("Reference state not found in Calculator.")
 
         alphas, weights = get_p_roots(n=n_alphas, a=0.0, b=1.0)
-        delta_energies = []
+        self._delta_energies = []
         for alpha in alphas:
             if self._verbose:
                 print("TI (alpha):", alpha, flush=True)
@@ -295,12 +301,16 @@ class PypolymlpMD:
                     interval_log=None,
                     logfile=None,
                 )
-            delta_energies.append([alpha, self.average_delta_energy])
-        delta_energies = np.array(delta_energies)
-
-        delta_free_energy = calc_integral(weights, delta_energies[:, 1], a=0.0, b=1.0)
-        print(delta_free_energy)
-        print(delta_energies)
+            self._delta_energies.append([alpha, self.average_delta_energy])
+        self._delta_energies = np.array(self._delta_energies)
+        self._delta_free_energy = calc_integral(
+            weights,
+            self._delta_energies[:, 1],
+            a=0.0,
+            b=1.0,
+        )
+        print(self._delta_free_energy)
+        print(self._delta_energies)
         return self
 
     def _check_requisites(self):
@@ -313,6 +323,19 @@ class PypolymlpMD:
     def save_yaml(self, filename: str = "polymlp_md.yaml"):
         """Save properties to yaml file."""
         self._integrator.save_yaml(filename=filename)
+        return self
+
+    def save_thermodynamic_integration_yaml(self, filename: str = "polymlp_ti.yaml"):
+        """Save results of thermodynamic integration."""
+        if not self._use_reference:
+            raise RuntimeError("Reference state not found in Calculator.")
+
+        save_thermodynamic_integration_yaml(
+            self._integrator,
+            self._delta_free_energy,
+            self._delta_energies,
+            filename=filename,
+        )
         return self
 
     @property
