@@ -345,10 +345,24 @@ energy0, volume0, bulk_modulus = polymlp.eos_fit_data
 ## Molecular dynamics calculations
 (Requirement: ASE, phonopy)
 ```python
-import numpy as np
 from pypolymlp.api.pypolymlp_md import PypolymlpMD
 
-md = PypolymlpMD()
+"""
+Parameters
+----------
+temperature : int
+    Target temperature (K).
+time_step : float
+    Time step for MD (fs).
+friction : float
+    Friction coefficient for Langevin thermostat (1/fs).
+n_eq : int
+    Number of equilibration steps.
+n_steps : int
+    Number of production steps.
+"""
+
+md = PypolymlpMD(verbose=True)
 md.load_poscar("POSCAR")
 md.set_supercell([4, 4, 3])
 
@@ -362,6 +376,48 @@ md.run_Langevin(
 )
 md.save_yaml(filename="polymlp_md.yaml")
 ```
+
+## Thermodynamic integration using MD
+(Requirement: ASE, phonopy)
+```python
+from pypolymlp.api.pypolymlp_md import PypolymlpMD
+
+"""
+Parameters
+----------
+thermostat: Thermostat.
+n_alphas: Number of sample points for thermodynamic integration
+          using Gaussian quadrature.
+temperature : int
+    Target temperature (K).
+time_step : float
+    Time step for MD (fs).
+ttime : float
+    Timescale of the Nose-Hoover thermostat (fs).
+friction : float
+    Friction coefficient for Langevin thermostat (1/fs).
+n_eq : int
+    Number of equilibration steps.
+n_steps : int
+    Number of production steps.
+"""
+
+md = PypolymlpMD(verbose=True)
+md.load_poscar("POSCAR")
+md.set_supercell([4, 4, 3])
+
+md.set_ase_calculator_with_fc2(pot="polymlp.yaml", fc2hdf5="fc2.hdf5)
+md.run_thermodynamic_integration(
+    thermostat="Langevin",
+    temperature=300.0,
+    time_step=1.0,
+    friction=0.01,
+    n_eq=5000,
+    n_steps=20000,
+)
+md.save_thermodynamic_integration_yaml(filename="polymlp_ti.yaml")
+```
+
 
 ## SSCHA calculations
 (Requirement: phonopy)
