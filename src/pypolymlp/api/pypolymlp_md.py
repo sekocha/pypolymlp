@@ -1,11 +1,12 @@
 """API Class for performing MD simulations."""
 
-from typing import Optional, Union
+from typing import Literal, Optional, Union
 
 import numpy as np
 from ase.calculators.calculator import Calculator
 
 from pypolymlp.calculator.md.ase_md import IntegratorASE
+from pypolymlp.calculator.md.md_utils import calc_integral, get_p_roots
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.utils.ase_calculator import (
     PolymlpASECalculator,
@@ -59,6 +60,8 @@ class PypolymlpMD:
         self._supercell_ase = None
         self._integrator = None
 
+        self._use_reference = False
+
     def set_ase_calculator(
         self,
         pot: Union[str, list[str]] = None,
@@ -110,6 +113,7 @@ class PypolymlpMD:
             properties=properties,
             alpha=alpha,
         )
+        self._use_reference = True
         return self
 
     def load_poscar(self, poscar: str):
@@ -228,6 +232,75 @@ class PypolymlpMD:
             self._integrator.activate_standard_output(interval=100)
 
         self._integrator.run(n_eq=n_eq, n_steps=n_steps)
+        return self
+
+    def run_thermodynamic_integration(
+        self,
+        thermostat: Literal["Nose-Hoover", "Langevin"] = "Langevin",
+        n_alphas: int = 10,
+        temperature: int = 300,
+        time_step: float = 1.0,
+        ttime: float = 20.0,
+        friction: float = 0.01,
+        n_eq: int = 5000,
+        n_steps: int = 20000,
+    ):
+        """Run thermodynamic integration.
+
+        Parameters
+        ----------
+        thermostat: Thermostat.
+        n_alphas: Number of sample points for thermodynamic integration
+                  using Gaussian quadrature.
+        temperature : int
+            Target temperature (K).
+        time_step : float
+            Time step for MD (fs).
+        ttime : float
+            Timescale of the Nose-Hoover thermostat (fs).
+        friction : float
+            Friction coefficient for Langevin thermostat (1/fs).
+        n_eq : int
+            Number of equilibration steps.
+        n_steps : int
+            Number of production steps.
+        """
+        if not self._use_reference:
+            raise RuntimeError("Reference state not found in Calculator.")
+
+        alphas, weights = get_p_roots(n=n_alphas, a=0.0, b=1.0)
+        delta_energies = []
+        for alpha in alphas:
+            if self._verbose:
+                print("TI (alpha):", alpha, flush=True)
+
+            self._calculator.alpha = alpha
+            if thermostat == "Nose-Hoover":
+                self.run_Nose_Hoover_NVT(
+                    temperature=temperature,
+                    time_step=time_step,
+                    ttime=ttime,
+                    n_eq=n_eq,
+                    n_steps=n_steps,
+                    interval_log=None,
+                    logfile=None,
+                )
+            elif thermostat == "Langevin":
+                self.run_Langevin(
+                    temperature=temperature,
+                    time_step=time_step,
+                    friction=friction,
+                    n_eq=n_eq,
+                    n_steps=n_steps,
+                    interval_log=None,
+                    logfile=None,
+                )
+            delta_energies.append([alpha, self.average_delta_energy])
+        delta_energies = np.array(delta_energies)
+
+        delta_free_energy = calc_integral(weights, delta_energies[:, 1], a=0.0, b=1.0)
+        print(delta_free_energy)
+        print(delta_energies)
         return self
 
     def _check_requisites(self):
