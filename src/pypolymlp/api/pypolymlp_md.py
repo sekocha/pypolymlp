@@ -31,7 +31,7 @@ class PypolymlpMD:
         params: Union[PolymlpParams, list[PolymlpParams]] = None,
         coeffs: Union[np.ndarray, list[np.ndarray]] = None,
         properties: Optional[Properties] = None,
-        verbose: bool = True,
+        verbose: bool = False,
     ):
         """Init method.
 
@@ -174,6 +174,9 @@ class PypolymlpMD:
             interval_save_forces=interval_save_forces,
             interval_save_trajectory=interval_save_trajectory,
         )
+        if self._verbose:
+            self._integrator.activate_standard_output(interval=100)
+
         self._integrator.run(n_eq=n_eq, n_steps=n_steps)
         return self
 
@@ -221,6 +224,9 @@ class PypolymlpMD:
             interval_save_forces=interval_save_forces,
             interval_save_trajectory=interval_save_trajectory,
         )
+        if self._verbose:
+            self._integrator.activate_standard_output(interval=100)
+
         self._integrator.run(n_eq=n_eq, n_steps=n_steps)
         return self
 
@@ -284,9 +290,19 @@ class PypolymlpMD:
         return [ase_atoms_to_structure(t) for t in self._integrator.trajectory]
 
     @property
+    def delta_energies(self):
+        """Return potential energies from reference state."""
+        return self._integrator.delta_energies
+
+    @property
     def average_energy(self):
         """Return avarage energy."""
         return self._integrator.average_energy
+
+    @property
+    def average_delta_energy(self):
+        """Return avarage energy."""
+        return self._integrator.average_delta_energy
 
     @property
     def heat_capacity(self):
