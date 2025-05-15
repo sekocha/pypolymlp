@@ -73,6 +73,7 @@ class PypolymlpMD:
         self._params = params
         self._coeffs = coeffs
         self._properties = properties
+
         self._calculator = PolymlpASECalculator(
             pot=pot,
             params=params,
@@ -104,14 +105,13 @@ class PypolymlpMD:
         if self._supercell is None:
             raise RuntimeError("Supercell not found.")
 
-        fc2 = load_fc2_hdf5(fc2hdf5, return_matrix=True)
-        assert fc2.shape[0] == self._supercell.positions.shape[1] * 3
-
         self._use_reference = True
         self._pot = pot
         self._params = params
         self._coeffs = coeffs
         self._properties = properties
+
+        fc2 = load_fc2_hdf5(fc2hdf5, return_matrix=True)
         self._calculator = PolymlpFC2ASECalculator(
             fc2,
             self._supercell,
@@ -317,6 +317,8 @@ class PypolymlpMD:
             Number of equilibration steps.
         n_steps : int
             Number of production steps.
+        heat_capacity: bool
+            Calculate heat capacity.
         """
         if not self._use_reference:
             raise RuntimeError("Reference state not found in Calculator.")
@@ -339,7 +341,6 @@ class PypolymlpMD:
             delta_energies.append([alpha, self.average_delta_energy])
         self._delta_energies = delta_energies = np.array(delta_energies)
         self._delta_free_energy = calc_integral(weights, delta_energies[:, 1], a=0.0)
-
         if heat_capacity:
             self.set_ase_calculator(
                 pot=self._pot,
@@ -359,6 +360,15 @@ class PypolymlpMD:
                 logfile=None,
             )
             self._delta_heat_capacity = self.heat_capacity - 1.5 * Kb * Avogadro
+
+        if self._verbose:
+            print("Results (TI):", flush=True)
+            np.set_printoptions(suppress=True)
+            print("  free_energy:", self._delta_free_energy, flush=True)
+            print("  energies:", flush=True)
+            print(delta_energies)
+            print("  heat_capacity:", self._delta_heat_capacity, flush=True)
+
         return self
 
     def _check_requisites(self):
