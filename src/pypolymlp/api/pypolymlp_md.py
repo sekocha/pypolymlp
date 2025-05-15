@@ -23,6 +23,7 @@ from pypolymlp.calculator.utils.ase_utils import (
 from pypolymlp.calculator.utils.fc_utils import load_fc2_hdf5
 from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
 from pypolymlp.core.interface_vasp import Poscar
+from pypolymlp.core.units import Avogadro, Kb
 from pypolymlp.utils.structure_utils import supercell_diagonal
 
 
@@ -30,33 +31,14 @@ from pypolymlp.utils.structure_utils import supercell_diagonal
 class PypolymlpMD:
     """API Class for performing MD simulations."""
 
-    def __init__(
-        self,
-        pot: Union[str, list[str]] = None,
-        params: Union[PolymlpParams, list[PolymlpParams]] = None,
-        coeffs: Union[np.ndarray, list[np.ndarray]] = None,
-        properties: Optional[Properties] = None,
-        verbose: bool = False,
-    ):
-        """Init method.
-
-        Parameters
-        ----------
-        pot: polymlp file.
-        params: Parameters for polymlp.
-        coeffs: Polymlp coefficients.
-        properties: Properties instance.
-
-        Any one of pot, (params, coeffs), and properties is needed.
-        """
-        self._calculator = PolymlpASECalculator(
-            pot=pot,
-            params=params,
-            coeffs=coeffs,
-            properties=properties,
-            require_mlp=False,
-        )
+    def __init__(self, verbose: bool = False):
+        """Init method."""
         self._verbose = verbose
+
+        self._pot = None
+        self._params = None
+        self._coeffs = None
+        self._properties = None
 
         self._unitcell = None
         self._supercell = None
@@ -67,6 +49,7 @@ class PypolymlpMD:
         self._use_reference = False
         self._delta_energies = None
         self._delta_free_energy = None
+        self._delta_heat_capacity = None
 
     def set_ase_calculator(
         self,
@@ -75,14 +58,28 @@ class PypolymlpMD:
         coeffs: Union[np.ndarray, list[np.ndarray]] = None,
         properties: Optional[Properties] = None,
     ):
-        """Set ASE calculator with polymlp."""
+        """Set ASE calculator with polymlp.
+
+        Parameters
+        ----------
+        pot: polymlp file.
+        params: Parameters for polymlp.
+        coeffs: Polymlp coefficients.
+        properties: Properties instance.
+
+        Any one of pot, (params, coeffs), and properties is needed.
+        """
+        self._pot = pot
+        self._params = params
+        self._coeffs = coeffs
+        self._properties = properties
         self._calculator = PolymlpASECalculator(
             pot=pot,
             params=params,
             coeffs=coeffs,
             properties=properties,
         )
-        return self
+        return self._calculator
 
     def set_ase_calculator_with_fc2(
         self,
@@ -110,6 +107,11 @@ class PypolymlpMD:
         fc2 = load_fc2_hdf5(fc2hdf5, return_matrix=True)
         assert fc2.shape[0] == self._supercell.positions.shape[1] * 3
 
+        self._use_reference = True
+        self._pot = pot
+        self._params = params
+        self._coeffs = coeffs
+        self._properties = properties
         self._calculator = PolymlpFC2ASECalculator(
             fc2,
             self._supercell,
@@ -119,8 +121,7 @@ class PypolymlpMD:
             properties=properties,
             alpha=alpha,
         )
-        self._use_reference = True
-        return self
+        return self._calculator
 
     def load_poscar(self, poscar: str):
         """Parse POSCAR file and supercell matrix."""
@@ -185,6 +186,7 @@ class PypolymlpMD:
             interval_save_trajectory=interval_save_trajectory,
         )
         if self._verbose:
+            self._write_conditions()
             self._integrator.activate_standard_output(interval=100)
 
         self._integrator.run(n_eq=n_eq, n_steps=n_steps)
@@ -235,9 +237,53 @@ class PypolymlpMD:
             interval_save_trajectory=interval_save_trajectory,
         )
         if self._verbose:
+            self._write_conditions()
             self._integrator.activate_standard_output(interval=100)
 
         self._integrator.run(n_eq=n_eq, n_steps=n_steps)
+        return self
+
+    def run_md_nvt(
+        self,
+        thermostat: Literal["Nose-Hoover", "Langevin"] = "Langevin",
+        temperature: int = 300,
+        time_step: float = 1.0,
+        friction: float = 0.01,
+        ttime: float = 20.0,
+        n_eq: int = 5000,
+        n_steps: int = 20000,
+        interval_save_forces: Optional[int] = None,
+        interval_save_trajectory: Optional[int] = None,
+        interval_log: int = 1,
+        logfile: str = "log.dat",
+        initialize: bool = True,
+    ):
+        if thermostat == "Nose-Hoover":
+            self.run_Nose_Hoover_NVT(
+                temperature=temperature,
+                time_step=time_step,
+                ttime=ttime,
+                n_eq=n_eq,
+                n_steps=n_steps,
+                interval_save_forces=interval_save_forces,
+                interval_save_trajectory=interval_save_trajectory,
+                interval_log=interval_log,
+                logfile=logfile,
+                initialize=initialize,
+            )
+        elif thermostat == "Langevin":
+            self.run_Langevin(
+                temperature=temperature,
+                time_step=time_step,
+                friction=friction,
+                n_eq=n_eq,
+                n_steps=n_steps,
+                interval_save_forces=interval_save_forces,
+                interval_save_trajectory=interval_save_trajectory,
+                interval_log=interval_log,
+                logfile=logfile,
+                initialize=initialize,
+            )
         return self
 
     def run_thermodynamic_integration(
@@ -250,6 +296,7 @@ class PypolymlpMD:
         friction: float = 0.01,
         n_eq: int = 5000,
         n_steps: int = 20000,
+        heat_capacity: bool = False,
     ):
         """Run thermodynamic integration.
 
@@ -275,40 +322,43 @@ class PypolymlpMD:
             raise RuntimeError("Reference state not found in Calculator.")
 
         alphas, weights = get_p_roots(n=n_alphas, a=0.0, b=1.0)
-        self._delta_energies = []
+        delta_energies = []
         for alpha in alphas:
-            if self._verbose:
-                print("TI (alpha):", alpha, flush=True)
-
             self._calculator.alpha = alpha
-            if thermostat == "Nose-Hoover":
-                self.run_Nose_Hoover_NVT(
-                    temperature=temperature,
-                    time_step=time_step,
-                    ttime=ttime,
-                    n_eq=n_eq,
-                    n_steps=n_steps,
-                    interval_log=None,
-                    logfile=None,
-                )
-            elif thermostat == "Langevin":
-                self.run_Langevin(
-                    temperature=temperature,
-                    time_step=time_step,
-                    friction=friction,
-                    n_eq=n_eq,
-                    n_steps=n_steps,
-                    interval_log=None,
-                    logfile=None,
-                )
-            self._delta_energies.append([alpha, self.average_delta_energy])
-        self._delta_energies = np.array(self._delta_energies)
-        self._delta_free_energy = calc_integral(
-            weights,
-            self._delta_energies[:, 1],
-            a=0.0,
-            b=1.0,
-        )
+            self.run_md_nvt(
+                thermostat=thermostat,
+                temperature=temperature,
+                time_step=time_step,
+                ttime=ttime,
+                friction=friction,
+                n_eq=n_eq,
+                n_steps=n_steps,
+                interval_log=None,
+                logfile=None,
+            )
+            delta_energies.append([alpha, self.average_delta_energy])
+        self._delta_energies = delta_energies = np.array(delta_energies)
+        self._delta_free_energy = calc_integral(weights, delta_energies[:, 1], a=0.0)
+
+        if heat_capacity:
+            self.set_ase_calculator(
+                pot=self._pot,
+                params=self._params,
+                coeffs=self._coeffs,
+                properties=self._properties,
+            )
+            self.run_md_nvt(
+                thermostat=thermostat,
+                temperature=temperature,
+                time_step=time_step,
+                ttime=ttime,
+                friction=friction,
+                n_eq=n_eq,
+                n_steps=n_steps * 10,
+                interval_log=None,
+                logfile=None,
+            )
+            self._delta_heat_capacity = self.heat_capacity - 1.5 * Kb * Avogadro
         return self
 
     def _check_requisites(self):
@@ -317,6 +367,11 @@ class PypolymlpMD:
             raise RuntimeError("Supercell not found.")
         if self._calculator is None:
             raise RuntimeError("Calculator not found.")
+
+    def _write_conditions(self):
+        """Write conditions as standard output."""
+        self._integrator.write_conditions()
+        return self
 
     def save_yaml(self, filename: str = "polymlp_md.yaml"):
         """Save properties to yaml file."""
@@ -332,6 +387,7 @@ class PypolymlpMD:
             self._integrator,
             self._delta_free_energy,
             self._delta_energies,
+            delta_heat_capacity=self._delta_heat_capacity,
             filename=filename,
         )
         return self
@@ -384,14 +440,19 @@ class PypolymlpMD:
         return [ase_atoms_to_structure(t) for t in self._integrator.trajectory]
 
     @property
-    def delta_energies(self):
-        """Return potential energies from reference state."""
-        return self._integrator.delta_energies
-
-    @property
     def average_energy(self):
         """Return avarage energy."""
         return self._integrator.average_energy
+
+    @property
+    def heat_capacity(self):
+        """Return heat capacity."""
+        return self._integrator.heat_capacity
+
+    @property
+    def delta_energies(self):
+        """Return potential energies from reference state."""
+        return self._integrator.delta_energies
 
     @property
     def average_delta_energy(self):
@@ -399,9 +460,14 @@ class PypolymlpMD:
         return self._integrator.average_delta_energy
 
     @property
-    def heat_capacity(self):
-        """Return heat capacity."""
-        return self._integrator.heat_capacity
+    def delta_free_energy(self):
+        """Return difference of free energy from reference state."""
+        return self._delta_free_energy
+
+    @property
+    def delta_heat_capacity(self):
+        """Return difference of heat capacity from reference state."""
+        return self._delta_heat_capacity
 
     @property
     def final_structure(self):
@@ -423,6 +489,7 @@ def run_thermodynamic_integration(
     n_eq: int = 2000,
     n_steps: int = 20000,
     filename: str = "polymlp_ti.yaml",
+    heat_capacity: bool = False,
     verbose: bool = True,
 ):
     """Run thermodynamic integration.
@@ -462,6 +529,7 @@ def run_thermodynamic_integration(
         friction=friction,
         n_eq=n_eq,
         n_steps=n_steps,
+        heat_capacity=heat_capacity,
     )
     md.save_thermodynamic_integration_yaml(filename=filename)
     return md

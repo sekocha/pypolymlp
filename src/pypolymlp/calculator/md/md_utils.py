@@ -1,5 +1,7 @@
 """Utility functions for MD."""
 
+from typing import Optional
+
 import numpy as np
 from scipy.special.orthogonal import p_roots
 
@@ -27,6 +29,7 @@ def save_thermodynamic_integration_yaml(
     integrator: IntegratorASE,
     delta_free_energy: float,
     delta_energies: np.array,
+    delta_heat_capacity: Optional[float] = None,
     filename: str = "polymlp_ti.yaml",
 ):
     """Save results of thermodynamic integration."""
@@ -39,7 +42,7 @@ def save_thermodynamic_integration_yaml(
         print("  temperature:    K", file=f)
         print("  time_step:      fs", file=f)
         print("  energy:         eV/supercell", file=f)
-        print("  heat_capacity:  eV/K", file=f)
+        print("  heat_capacity:  J/K/mol (/Avogadro's number of atoms)", file=f)
         print(file=f)
 
         print("conditions:", file=f)
@@ -53,10 +56,10 @@ def save_thermodynamic_integration_yaml(
 
         print("properties:", file=f)
         print("  free_energy:", delta_free_energy, file=f)
+        print("  delta_heat_capacity: ", delta_heat_capacity, file=f)
+        print(file=f)
+
         print("  delta_energies:", file=f)
         for alpha, de in delta_energies:
             print("  - alpha:  ", alpha, file=f)
             print("    delta_e:", de, file=f)
-
-
-#        print("  heat_capacity: ", self._heat_capacity, file=f)

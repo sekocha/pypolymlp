@@ -308,6 +308,18 @@ class IntegratorASE:
         """Return heat capacity in eV."""
         return self._heat_capacity_eV
 
+    def write_conditions(self):
+        """Write input conditions as standard output."""
+        print("--- Input conditions for MD calculation ---", flush=True)
+        print("N atoms:                ", len(self._atoms.numbers), flush=True)
+        print("Volume (ang.3):         ", self._atoms.get_volume(), flush=True)
+        print("Temperature (K):        ", self._temperature, flush=True)
+        print("Time step (fs):         ", self._time_step, flush=True)
+        if hasattr(self.calculator, "_alpha"):
+            print("alpha_fc2:              ", self.calculator._alpha, flush=True)
+        print("-------------------------------------------", flush=True)
+        return self
+
     def save_yaml(self, filename="polymlp_md.yaml"):
         """Save properties to yaml file."""
         with open(filename, "w") as f:
