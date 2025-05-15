@@ -6,8 +6,9 @@ Avogadro = 6.02214076e23
 # Planck constant  (6.62607015e−34 J*s)
 Planck = 6.62607015e-34
 
-# Boltzmann constant (1.380649e-23 J/K)
-Boltzmann = 1.380649e-23
+# Boltzmann constant (1.380649e-23 J/K, 8.617389435726849e-05 eV/K)
+Kb = 1.380649e-23
+KbEV = 8.617389435726849e-05
 
 # Electron volt in J (1 eV = 1.602176634e-19 J)
 EVtoJ = 1.602176634e-19
