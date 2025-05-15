@@ -319,8 +319,8 @@ class IntegratorASE:
             print("  temperature:      K", file=f)
             print("  time_step:        fs", file=f)
             print("  average_energy:   eV/supercell", file=f)
-            print("  heat_capacity_eV: eV/K", file=f)
-            print("  heat_capacity:    J/K/mol", file=f)
+            print("  heat_capacity_eV: eV/K/supercell", file=f)
+            print("  heat_capacity:    J/K/mol (/Avogadro's number of atoms)", file=f)
             print(file=f)
 
             print("conditions:", file=f)
