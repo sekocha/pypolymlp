@@ -406,7 +406,7 @@ md = PypolymlpMD(verbose=True)
 md.load_poscar("POSCAR")
 md.set_supercell([5, 5, 3])
 
-md.set_ase_calculator_with_fc2(pot="polymlp.yaml", fc2hdf5="fc2.hdf5)
+md.set_ase_calculator_with_fc2(pot="polymlp.yaml", fc2hdf5="fc2.hdf5")
 md.run_thermodynamic_integration(
     thermostat="Langevin",
     temperature=300.0,

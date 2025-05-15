@@ -10,6 +10,8 @@ from ase.md.langevin import Langevin
 from ase.md.npt import NPT
 from ase.md.velocitydistribution import MaxwellBoltzmannDistribution, Stationary
 
+from pypolymlp.core.units import Avogadro, EVtoJ, KbEV
+
 
 class IntegratorASE:
     """Wrapper of integrators in ASE."""
@@ -32,6 +34,7 @@ class IntegratorASE:
 
         self._average_energy = None
         self._heat_capacity = None
+        self._heat_capacity_eV = None
 
         if not hasattr(calc, "_use_reference") or not calc._use_reference:
             self._use_reference = False
@@ -176,6 +179,8 @@ class IntegratorASE:
         if initialize:
             self.initialize(temperature)
 
+        self._temperature = temperature
+        self._time_step = time_step
         self._dyn = NPT(
             atoms=self._atoms,
             timestep=time_step * units.fs,
@@ -185,8 +190,6 @@ class IntegratorASE:
             append_trajectory=append_trajectory,
             # externalstress=1e-07*units.GPa,  # Ignored in NVT
         )
-        self._temperature = temperature
-        self._time_step = time_step
         return self
 
     def set_integrator_Langevin(
@@ -201,6 +204,8 @@ class IntegratorASE:
         if initialize:
             self.initialize(temperature)
 
+        self._temperature = temperature
+        self._time_step = time_step
         self._dyn = Langevin(
             atoms=self._atoms,
             timestep=time_step * units.fs,
@@ -208,8 +213,6 @@ class IntegratorASE:
             friction=friction / units.fs,
             append_trajectory=append_trajectory,
         )
-        self._temperature = temperature
-        self._time_step = time_step
         return self
 
     def initialize(self, temperature: float = 300):
@@ -222,17 +225,21 @@ class IntegratorASE:
         """Run integrator for molecular dynamics."""
         if self._dyn is None:
             raise RuntimeError("Integrator not found.")
-        self._dyn.run(n_eq + n_steps)
-        self._calc_avarages(n_eq)
         self._n_eq = n_eq
         self._n_steps = n_steps
+        self._dyn.run(n_eq + n_steps)
+        self._calc_avarages(n_eq)
         return self
 
     def _calc_avarages(self, n_eq: int):
         """Calculate avareges."""
         if self._energies is not None:
-            self._average_energy = np.average(self._energies[n_eq:])
-            # TODO: heat capacity
+            energies_slice = self._energies[n_eq:]
+            self._average_energy = np.average(energies_slice)
+            var = np.average(np.square(energies_slice)) - self._average_energy**2
+            self._heat_capacity_eV = var / KbEV / self._temperature**2
+            self._heat_capacity = self._heat_capacity_eV * EVtoJ * Avogadro
+
         if self._delta_energies is not None:
             self._average_delta_energy = np.average(self._delta_energies[n_eq:])
         return self
@@ -289,9 +296,14 @@ class IntegratorASE:
         return self._average_delta_energy
 
     @property
-    def heat_capacityy(self):
-        """Return heat capacity."""
+    def heat_capacity(self):
+        """Return heat capacity in J/K/mol."""
         return self._heat_capacity
+
+    @property
+    def heat_capacity_eV(self):
+        """Return heat capacity in eV."""
+        return self._heat_capacity_eV
 
     def save_yaml(self, filename="polymlp_md.yaml"):
         """Save properties to yaml file."""
@@ -300,11 +312,12 @@ class IntegratorASE:
             print(file=f)
 
             print("units:", file=f)
-            print("  volume:         angstrom3", file=f)
-            print("  temperature:    K", file=f)
-            print("  time_step:      fs", file=f)
-            print("  average_energy: eV/supercell", file=f)
-            print("  heat_capacity:  eV/K", file=f)
+            print("  volume:           angstrom3", file=f)
+            print("  temperature:      K", file=f)
+            print("  time_step:        fs", file=f)
+            print("  average_energy:   eV/supercell", file=f)
+            print("  heat_capacity_eV: eV/K", file=f)
+            print("  heat_capacity:    J/K/mol", file=f)
             print(file=f)
 
             print("conditions:", file=f)
@@ -319,7 +332,8 @@ class IntegratorASE:
             print(file=f)
 
             print("properties:", file=f)
-            print("  average_energy:", self._average_energy, file=f)
-            print("  heat_capacity: ", self._heat_capacity, file=f)
+            print("  average_energy:   ", self._average_energy, file=f)
+            print("  heat_capacity_eV: ", self._heat_capacity_eV, file=f)
+            print("  heat_capacity:    ", self._heat_capacity, file=f)
             if self._use_reference:
                 print("  average_delta_energy:", self._average_delta_energy, file=f)
