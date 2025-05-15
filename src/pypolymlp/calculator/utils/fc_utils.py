@@ -44,4 +44,4 @@ def eval_properties_fc2(fc2: np.ndarray, disps: np.ndarray):
     energy = disps_minus @ forces
 
     forces = forces.reshape((n_atom, 3)).T
-    return energy, forces
+    return 0.5 * energy, forces
