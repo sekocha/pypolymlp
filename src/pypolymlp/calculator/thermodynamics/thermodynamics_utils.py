@@ -6,6 +6,7 @@ from typing import Literal, Optional
 import numpy as np
 
 from pypolymlp.calculator.sscha.sscha_utils import Restart
+from pypolymlp.calculator.utils.eos_utils import EOS
 
 
 @dataclass
@@ -37,7 +38,13 @@ class GridData:
         """Init method."""
         self._data = data
         self._data_type = data_type
+        self._volumes = None
+        self._temperatures = None
+        self._grid = None
+        self._eos_fits = None
+
         self._scan_data()
+        self._run_eos_fits()
 
     def _scan_data(self):
         """Scan and reconstruct data."""
@@ -55,6 +62,19 @@ class GridData:
 
         return self
 
+    def _run_eos_fits(self):
+        """Fit volume-free energy data to Vinet EOS."""
+        self._eos_fits = []
+        for itemp, data in enumerate(self._grid.T):
+            volumes = [d.volume for d in data if d is not None]
+            free_energies = [d.free_energy for d in data if d is not None]
+            try:
+                eos = EOS(volumes, free_energies)
+            except:
+                eos = None
+            self._eos_fits.append(eos)
+        return self
+
     @property
     def grid(self):
         """Return grid points.
@@ -63,37 +83,41 @@ class GridData:
         """
         return self._grid
 
+    @property
+    def free_energy(self):
+        """Return free energy data on grid points."""
+        pass
+
 
 def load_sscha_yamls(filenames: tuple[str]) -> GridData:
     """Load sscha_results.yaml files."""
     data = []
     for yamlfile in filenames:
         res = Restart(yamlfile, unit="eV/atom")
-        n_atom = len(res.unitcell.elements)
-        volume = np.round(res.volume, decimals=12) / n_atom
-        temp = np.round(res.temperature, decimals=3)
-        grid = GridPointData(
-            volume=volume,
-            temperature=temp,
-            data_type="sscha",
-            restart=res,
-            path_yaml=yamlfile,
-            path_fc2="/".join(yamlfile.split("/")[:-1]) + "/fc2.hdf5",
-        )
         if res.converge and not res.imaginary:
+            n_atom = len(res.unitcell.elements)
+            volume = np.round(res.volume, decimals=12) / n_atom
+            temp = np.round(res.temperature, decimals=3)
+            grid = GridPointData(
+                volume=volume,
+                temperature=temp,
+                data_type="sscha",
+                restart=res,
+                path_yaml=yamlfile,
+                path_fc2="/".join(yamlfile.split("/")[:-1]) + "/fc2.hdf5",
+            )
             grid.free_energy = res.free_energy + res.static_potential
             grid.entropy = res.entropy
             grid.harmonic_heat_capacity = res.harmonic_heat_capacity
-
-        data.append(grid)
+            data.append(grid)
     return GridData(data=data, data_type="sscha")
 
 
-def load_ti_yamls(self, filenames: tuple[str]):
+def load_ti_yamls(self, filenames: tuple[str]) -> GridData:
     """Load polymlp_ti.yaml files."""
     pass
 
 
-def load_electron_yamls(self, filenames: tuple[str]):
+def load_electron_yamls(self, filenames: tuple[str]) -> GridData:
     """Load electron.yaml files."""
     pass
