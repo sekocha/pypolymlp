@@ -51,7 +51,7 @@ class GridData:
         self._cv_fits = None
 
         self._scan_data()
-        self._run_eos_fits()
+        self.fit_eos()
 
     def _scan_data(self):
         """Scan and reconstruct data."""
@@ -69,8 +69,10 @@ class GridData:
 
         return self
 
-    def _run_eos_fits(self):
+    def fit_eos(self):
         """Fit volume-free energy data to Vinet EOS."""
+        if self._verbose:
+            print("Volume-FreeEnergy fit.", flush=True)
         self._eos_fits = []
         for itemp, data in enumerate(self._grid.T):
             volumes = [d.volume for d in data if d is not None]
@@ -84,6 +86,8 @@ class GridData:
 
     def fit_entropy_volume(self, max_order: int = 6, intercept: bool = True):
         """Fit volume-entropy data using polynomial."""
+        if self._verbose:
+            print("Volume-Entropy fit.", flush=True)
         self._sv_fits = []
         for itemp, data in enumerate(self._grid.T):
             volumes = [d.volume for d in data if d is not None]
@@ -92,43 +96,39 @@ class GridData:
             polyfit.fit(max_order=max_order, intercept=intercept, add_sqrt=False)
             self._sv_fits.append(polyfit)
             if self._verbose:
-                print(
-                    "- temperature:",
-                    self._temperatures[itemp],
-                    "  rmse:",
-                    polyfit.error,
-                    "  max_order:",
-                    polyfit.best_model[0],
-                    flush=True,
-                )
+                print("- Temp.:", self._temperatures[itemp], flush=True)
+                print("  RMSE: ", polyfit.error, flush=True)
+                print("  Order:", polyfit.best_model[0], flush=True)
+        return self
+
+    def fit_cv_volume(self, max_order: int = 6, intercept: bool = True):
+        """Fit volume-Cv data using polynomial."""
+        if self._verbose:
+            print("Volume-Cv fit.", flush=True)
+        self._cv_fits = []
+        for itemp, data in enumerate(self._grid.T):
+            volumes = [d.volume for d in data if d is not None]
+            cvs = [d.heat_capacity for d in data if d is not None]
+            polyfit = Polyfit(volumes, cvs)
+            polyfit.fit(max_order=max_order, intercept=intercept, add_sqrt=False)
+            self._cv_fits.append(polyfit)
+            if self._verbose:
+                print("- Temp.:", self._temperatures[itemp], flush=True)
+                print("  RMSE: ", polyfit.error, flush=True)
+                print("  Order:", polyfit.best_model[0], flush=True)
         return self
 
     def fit_entropy_temperature(self, max_order: int = 6, intercept: bool = True):
         """Fit temperature-entropy data using polynomial."""
         self._st_fits = []
 
-    def fit_cv_volume(self, max_order: int = 6, intercept: bool = True):
-        """Fit volume-Cv data using polynomial."""
-        self._cv_fits = []
+    def compute_cp(self):
+        """Calculate Cp - Cv."""
+        pass
 
-        #        self._sv_fits = []
-        #        for itemp, data in enumerate(self._grid.T):
-        #            volumes = [d.volume for d in data if d is not None]
-        #            entropies = [d.entropy for d in data if d is not None]
-        #            polyfit = Polyfit(volumes, entropies)
-        #            polyfit.fit(max_order=max_order, intercept=intercept, add_sqrt=False)
-        #            self._sv_fits.append(polyfit)
-        #            if self._verbose:
-        #                print(
-        #                    "- temperature:",
-        #                    self._temperatures[itemp],
-        #                    "  rmse:",
-        #                    polyfit.error,
-        #                    "  max_order:",
-        #                    polyfit.best_model[0],
-        #                    flush=True,
-        #                )
-        return self
+    def save_data(self):
+        """Save raw data and fitted functions."""
+        pass
 
     @property
     def grid(self):
@@ -138,10 +138,10 @@ class GridData:
         """
         return self._grid
 
-    @property
-    def free_energy(self):
-        """Return free energy data on grid points."""
-        pass
+
+def calculate_heat_capacities_from_entropies(grid_data: np.array):
+    """Compute heat capacities from temperature-entropy fitting."""
+    pass
 
 
 def load_sscha_yamls(filenames: tuple[str]) -> GridData:

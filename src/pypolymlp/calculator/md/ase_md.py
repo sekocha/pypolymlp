@@ -228,11 +228,11 @@ class IntegratorASE:
         self._n_eq = n_eq
         self._n_steps = n_steps
         self._dyn.run(n_eq + n_steps)
-        self._calc_avarages(n_eq)
+        self._calc_averages(n_eq)
         return self
 
-    def _calc_avarages(self, n_eq: int):
-        """Calculate avareges."""
+    def _calc_averages(self, n_eq: int):
+        """Calculate averages."""
         if self._energies is not None:
             energies_slice = self._energies[n_eq:]
             self._average_energy = np.average(energies_slice)
@@ -290,12 +290,12 @@ class IntegratorASE:
 
     @property
     def average_energy(self):
-        """Return avarage energy."""
+        """Return average energy."""
         return self._average_energy
 
     @property
     def average_delta_energy(self):
-        """Return avarage energy difference from reference."""
+        """Return average energy difference from reference."""
         return self._average_delta_energy
 
     @property
