@@ -22,8 +22,8 @@ class Polyfit:
 
     def __init__(self, x: np.ndarray, y: np.ndarray):
         """Init method."""
-        self._x = x
-        self._y = y
+        self._x = np.array(x)
+        self._y = np.array(y)
         self._coeffs = None
         self._error = None
         self._order = None
@@ -35,16 +35,12 @@ class Polyfit:
 
     def eval_derivative(self, x: float):
         """Evaluate derivative of fitted polynomial at given x."""
-        deriv = self._get_poly_deriv()
+        deriv = self._coeffs * np.arange(len(self._coeffs) - 1, -1, -1, dtype=int)
+        deriv = deriv[:-1]
         val = np.polyval(deriv, x)
         if self._add_sqrt:
             val += 0.5 * self._coeffs[0] * np.power(x, -0.5)
         return val
-
-    def _get_poly_deriv(self):
-        """Return derivatives of coefficients from polynomial fits."""
-        deriv = self._coeffs * np.arange(len(self._coeffs) - 1, -1, -1, dtype=int)
-        return deriv[:-1]
 
     def fit(
         self,
@@ -67,7 +63,7 @@ class Polyfit:
             params = list(itertools.product(sqrts, orders))
             for add_sqrt, order in params:
                 res = self._fit_single(order, intercept=intercept, add_sqrt=add_sqrt)
-                (_, y_pred, _), X = res
+                (_, y_pred, y_rmse), X = res
                 cv = loocv(X, self._y, y_pred)
                 if min_loocv > cv:
                     min_loocv = cv

@@ -6,6 +6,7 @@ from typing import Literal, Optional
 import numpy as np
 
 from pypolymlp.calculator.sscha.sscha_utils import Restart
+from pypolymlp.calculator.thermodynamics.fit_utils import Polyfit
 from pypolymlp.calculator.utils.eos_utils import EOS
 
 
@@ -34,14 +35,20 @@ class GridData:
         self,
         data: list[GridPointData],
         data_type: Optional[Literal["sscha", "ti", "electron"]] = None,
+        verbose: bool = False,
     ):
         """Init method."""
         self._data = data
         self._data_type = data_type
+        self._verbose = verbose
         self._volumes = None
         self._temperatures = None
         self._grid = None
+
         self._eos_fits = None
+        self._sv_fits = None
+        self._st_fits = None
+        self._cv_fits = None
 
         self._scan_data()
         self._run_eos_fits()
@@ -73,6 +80,54 @@ class GridData:
             except:
                 eos = None
             self._eos_fits.append(eos)
+        return self
+
+    def fit_entropy_volume(self, max_order: int = 6, intercept: bool = True):
+        """Fit volume-entropy data using polynomial."""
+        self._sv_fits = []
+        for itemp, data in enumerate(self._grid.T):
+            volumes = [d.volume for d in data if d is not None]
+            entropies = [d.entropy for d in data if d is not None]
+            polyfit = Polyfit(volumes, entropies)
+            polyfit.fit(max_order=max_order, intercept=intercept, add_sqrt=False)
+            self._sv_fits.append(polyfit)
+            if self._verbose:
+                print(
+                    "- temperature:",
+                    self._temperatures[itemp],
+                    "  rmse:",
+                    polyfit.error,
+                    "  max_order:",
+                    polyfit.best_model[0],
+                    flush=True,
+                )
+        return self
+
+    def fit_entropy_temperature(self, max_order: int = 6, intercept: bool = True):
+        """Fit temperature-entropy data using polynomial."""
+        self._st_fits = []
+
+    def fit_cv_volume(self, max_order: int = 6, intercept: bool = True):
+        """Fit volume-Cv data using polynomial."""
+        self._cv_fits = []
+
+        #        self._sv_fits = []
+        #        for itemp, data in enumerate(self._grid.T):
+        #            volumes = [d.volume for d in data if d is not None]
+        #            entropies = [d.entropy for d in data if d is not None]
+        #            polyfit = Polyfit(volumes, entropies)
+        #            polyfit.fit(max_order=max_order, intercept=intercept, add_sqrt=False)
+        #            self._sv_fits.append(polyfit)
+        #            if self._verbose:
+        #                print(
+        #                    "- temperature:",
+        #                    self._temperatures[itemp],
+        #                    "  rmse:",
+        #                    polyfit.error,
+        #                    "  max_order:",
+        #                    polyfit.best_model[0],
+        #                    flush=True,
+        #                )
         return self
 
     @property
