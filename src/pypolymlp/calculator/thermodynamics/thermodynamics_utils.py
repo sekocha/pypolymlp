@@ -4,10 +4,14 @@ from dataclasses import dataclass
 from typing import Literal, Optional
 
 import numpy as np
+from phono3py.file_IO import read_fc2_from_hdf5
+from phonopy import Phonopy
 
 from pypolymlp.calculator.sscha.sscha_utils import Restart
 from pypolymlp.calculator.thermodynamics.fit_utils import Polyfit
 from pypolymlp.calculator.utils.eos_utils import EOS
+from pypolymlp.core.units import EVtoJmol
+from pypolymlp.utils.phonopy_utils import structure_to_phonopy_cell
 
 
 @dataclass
@@ -20,10 +24,13 @@ class GridPointData:
     restart: Optional[Restart] = None
     free_energy: Optional[float] = None
     entropy: Optional[float] = None
-    reference_entropy: Optional[float] = None
     heat_capacity: Optional[float] = None
     harmonic_heat_capacity: Optional[float] = None
+
+    reference_free_energy: Optional[float] = None
+    reference_entropy: Optional[float] = None
     reference_heat_capacity: Optional[float] = None
+
     path_yaml: Optional[float] = None
     path_fc2: Optional[float] = None
 
@@ -89,7 +96,7 @@ class GridData:
             self._eos_fits.append(eos)
         return self
 
-    def fit_entropy_volume(self, max_order: int = 6, intercept: bool = True):
+    def fit_entropy_volume(self, max_order: int = 6):
         """Fit volume-entropy data using polynomial."""
         if self._verbose:
             print("Volume-Entropy fitting.", flush=True)
@@ -98,7 +105,7 @@ class GridData:
             volumes = [d.volume for d in data if d is not None]
             entropies = [d.entropy for d in data if d is not None]
             polyfit = Polyfit(volumes, entropies)
-            polyfit.fit(max_order=max_order, intercept=intercept, add_sqrt=False)
+            polyfit.fit(max_order=max_order, intercept=True, add_sqrt=False)
             self._sv_fits.append(polyfit)
             if self._verbose:
                 order = polyfit.best_model[0]
@@ -106,7 +113,7 @@ class GridData:
                 print("  RMSE, order: ", polyfit.error, ",", order, flush=True)
         return self
 
-    def fit_cv_volume(self, max_order: int = 6, intercept: bool = True):
+    def fit_cv_volume(self, max_order: int = 6):
         """Fit volume-Cv data using polynomial."""
         if self._verbose:
             print("Volume-Cv fitting.", flush=True)
@@ -115,7 +122,7 @@ class GridData:
             volumes = [d.volume for d in data if d is not None]
             cvs = [d.heat_capacity for d in data if d is not None]
             polyfit = Polyfit(volumes, cvs)
-            polyfit.fit(max_order=max_order, intercept=intercept, add_sqrt=False)
+            polyfit.fit(max_order=max_order, intercept=True, add_sqrt=False)
             self._cv_fits.append(polyfit)
             if self._verbose:
                 order = polyfit.best_model[0]
@@ -123,14 +130,22 @@ class GridData:
                 print("  RMSE, order: ", polyfit.error, ",", order, flush=True)
         return self
 
-    def fit_entropy_temperature(self, max_order: int = 6, intercept: bool = True):
+    def fit_free_energy_temperature(self, max_order: int = 6):
+        """Fit temperature-free energy data using polynomial."""
+
+    def fit_entropy_temperature(self, max_order: int = 6, reference: bool = True):
         """Fit temperature-entropy data using polynomial."""
         self._st_fits = []
         for ivol, data in enumerate(self._grid):
-            temperatures = [d.temperature for d in data if d is not None]
-            entropies = [d.entropy for d in data if d is not None]
+            points = np.array([d for d in data if d is not None])
+            points = calculate_reference(points)
+            # temperatures = np.array([d.temperature for d in data if d is not None])
+            # entropies = np.array([d.entropy for d in data if d is not None])
+            # ref_entropies = np.array(
+            #     [d.reference_entropy for d in data if d is not None]
+            # )
 
-            calculate_heat_capacities_from_entropies(temperatures, entropies)
+            # del_entropies = entropies - ref_entropies
 
     def compute_cp(self):
         """Calculate Cp - Cv."""
@@ -169,6 +184,33 @@ class GridData:
         if self._eos_fits is None:
             raise RuntimeError("EOS functions not found.")
         return np.array([eos.eval_gibbs_pressure(volumes) for eos in self._eos_fits])
+
+
+def calculate_reference(
+    grid_points: list[GridPointData],
+    mesh: np.ndarray = (10, 10, 10),
+):
+    """Return reference entropies.
+
+    Harmonic phonon entropies calculated with SSCHA FC2 and frequencies
+    is used as reference entropies to fit entropies with respect to temperature.
+    """
+    temperatures = np.array([p.temperature for p in grid_points])
+
+    ref_id = 0
+    res = grid_points[ref_id].restart
+    n_atom = len(res.unitcell.elements)
+    ph = Phonopy(structure_to_phonopy_cell(res.unitcell), res.supercell_matrix)
+    ph.force_constants = read_fc2_from_hdf5(grid_points[ref_id].path_fc2)
+    ph.run_mesh(mesh)
+    ph.run_thermal_properties(temperatures=temperatures)
+    tp_dict = ph.get_thermal_properties_dict()
+
+    for s, cv, point in zip(tp_dict["entropy"], tp_dict["heat_capacity"], grid_points):
+        point.reference_entropy = s / EVtoJmol / n_atom
+        point.reference_heat_capacity = cv / n_atom
+
+    return grid_points
 
 
 def calculate_entropies_from_free_energy(grid_data: np.array):

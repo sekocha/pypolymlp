@@ -15,6 +15,7 @@ EVtoJ = 1.602176634e-19
 
 # Convert eV to kJ/mol
 EVtoKJmol = 96.48533212331002
+EVtoJmol = 96485.33212331002
 
 # Convert eV to kbar and eV to GPa
 EVtoKbar = 1602.1766208
