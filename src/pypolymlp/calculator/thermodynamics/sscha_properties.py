@@ -1,8 +1,6 @@
 """Class for calculating thermodynamic properties from SSCHA results."""
 
 import copy
-
-# import itertools
 import os
 from dataclasses import dataclass
 from typing import Literal, Optional
@@ -11,13 +9,9 @@ import numpy as np
 import scipy
 from phono3py.file_IO import read_fc2_from_hdf5
 from phonopy import Phonopy
-from phonopy.qha.core import BulkModulus
 from phonopy.units import EVAngstromToGPa
 
 from pypolymlp.calculator.compute_phonon import PolymlpPhonon
-
-# from pypolymlp.calculator.sscha.sscha_utils import Restart
-# from pypolymlp.calculator.sscha.utils.lsq import loocv
 from pypolymlp.core.units import Avogadro, EVtoJ
 from pypolymlp.core.utils import rmse
 from pypolymlp.utils.phonopy_utils import structure_to_phonopy_cell
@@ -76,152 +70,6 @@ class SSCHAProperties:
         self._load_sscha_yamls(filenames)
         if self._verbose:
             self._print_grid()
-
-    #    def _find_grid(self, filenames):
-    #        """Find unique volumes and temperatures."""
-    #        self._temperatures = []
-    #        self._volumes = []
-    #        self._volumes_all = []
-    #        for yamlfile in filenames:
-    #            res = Restart(yamlfile)
-    #            if res.converge and not res.imaginary:
-    #                self._temperatures.append(np.round(res.temperature, decimals=3))
-    #                self._volumes.append(np.round(res.volume, decimals=12))
-    #            self._volumes_all.append(np.round(res.volume, decimals=12))
-    #        self._volumes = np.unique(self._volumes)
-    #        self._volumes_all = np.unique(self._volumes_all)
-    #        self._temperatures = np.unique(self._temperatures)
-    #
-    #        shape = (self._volumes.shape[0], self._temperatures.shape[0])
-    #        self._grid_vt = np.zeros(shape, dtype=GridVolTemp)
-    #        self._grid_t = np.zeros(shape[1], dtype=GridTemp)
-    #        for ivol, vol in enumerate(self._volumes):
-    #            for itemp, temp in enumerate(self._temperatures):
-    #                self._grid_vt[ivol, itemp] = GridVolTemp(temperature=temp, volume=vol)
-    #        for itemp, temp in enumerate(self._temperatures):
-    #            self._grid_t[itemp] = GridTemp(temperature=temp)
-    #        return self
-
-    #    def _load_sscha_yamls(self, filenames: list[str]):
-    #        """Load sscha_results.yaml files."""
-    #        for yamlfile in filenames:
-    #            res = Restart(yamlfile)
-    #            volume = np.round(res.volume, decimals=12)
-    #            temp = np.round(res.temperature, decimals=3)
-    #            try:
-    #                ivol = np.where(volume == self._volumes)[0][0]
-    #                itemp = np.where(temp == self._temperatures)[0][0]
-    #            except:
-    #                continue
-    #
-    #            grid = self._grid_vt[ivol][itemp]
-    #            grid.restart = res
-    #            grid.path_yaml = yamlfile
-    #            grid.path_fc2 = "/".join(yamlfile.split("/")[:-1]) + "/fc2.hdf5"
-    #            if res.converge and not res.imaginary:
-    #                res.unit = "eV/cell"
-    #                grid.free_energy = res.free_energy + res.static_potential
-    #                res.unit = "kJ/mol"
-    #                grid.entropy = res.entropy
-    #                grid.harmonic_heat_capacity = res.harmonic_heat_capacity
-    #
-    #        for itemp, temp in enumerate(self._temperatures):
-    #            volumes, free_energies, entropies = [], [], []
-    #            for g in self._grid_vt[:, itemp]:
-    #                if g.free_energy is not None:
-    #                    volumes.append(g.volume)
-    #                    free_energies.append(g.free_energy)
-    #                    entropies.append(g.entropy)
-    #            self._grid_t[itemp].free_energies = np.stack([volumes, free_energies]).T
-    #            self._grid_t[itemp].entropies = np.stack([volumes, entropies]).T
-    #
-    #        return self
-
-    def _print_grid(self):
-        """Print SSCHA status on grid points."""
-        print("SSCHA status:", flush=True)
-        volumes_nodata = list(set(self._volumes_all) - set(self._volumes))
-        for itemp, temp in enumerate(self._temperatures):
-            print("- temperature:", temp, flush=True)
-            n_data = 0
-            imag_vol = []
-            for ivol, vol in enumerate(self._volumes):
-                grid = self._grid_vt[ivol, itemp]
-                if grid.restart is not None:
-                    if grid.free_energy is not None:
-                        n_data += 1
-                    if grid.restart.imaginary:
-                        imag_vol.append(vol)
-            imag_vol = np.round(volumes_nodata + imag_vol, 3)
-            print("  - n_data:", n_data, flush=True)
-            print("  - volumes (imag. freq.):", imag_vol, flush=True)
-        return self
-
-        #    def _eos_function(self, bm: BulkModulus, volumes: np.ndarray):
-        #        """EOS function.
-        #
-        #        Return
-        #        ------
-        #        Energies.
-        #        """
-        #        parameters = bm.get_parameters()
-        #        energies = bm._eos(volumes, *parameters)
-        #        return energies
-
-        #    def _fit_eos(self):
-        #        """Fit EOS curves."""
-        #        for itemp, temp in enumerate(self._temperatures):
-        #            grid = self._grid_t[itemp]
-        #            volumes = grid.free_energies[:, 0]
-        #            free_energies = grid.free_energies[:, 1]
-        #            bm = BulkModulus(volumes=volumes, energies=free_energies, eos="vinet")
-        #            grid.eqm_volume = bm.equilibrium_volume
-        #            grid.eqm_free_energy = bm.energy
-        #            grid.bulk_modulus = bm.bulk_modulus * EVAngstromToGPa
-        #
-        #            grid_volumes = np.linspace(min(volumes) * 0.9, max(volumes) * 1.1, 200)
-        #            fitted = self._eos_function(bm, grid_volumes)
-        #            grid.eos_fit_data = np.stack([grid_volumes, fitted]).T
-        #            grid.gibbs_free_energies = self._transformFVTtoGPT(bm, grid_volumes, fitted)
-        #
-        return self
-
-    def _transformFVTtoGPT(
-        self,
-        bm: BulkModulus,
-        volumes: np.ndarray,
-        free_energies: np.ndarray,
-        eps: float = 1e-4,
-    ):
-        """Transform Helmholtz free energy to Gibbs free energy."""
-        pressure_gibbs_free_energies = []
-        for vol, fe in zip(volumes, free_energies):
-            eos_f = self._eos_function(bm, vol + eps)
-            eos_b = self._eos_function(bm, vol - eps)
-            deriv = (eos_f - eos_b) / (2 * eps)
-            press = -deriv  # in eV/ang^3
-            gibbs = fe + press * vol
-            press_gpa = press * EVAngstromToGPa  # in GPa
-            pressure_gibbs_free_energies.append([press_gpa, gibbs])
-        return pressure_gibbs_free_energies
-
-    #    def _fit_volume_entropy(self):
-    #        """Fit volume-entropy curves."""
-    #        if self._verbose:
-    #            print("RMSE (V-S fit):", flush=True)
-    #        for itemp, temp in enumerate(self._temperatures):
-    #            volumes, entropies, _ = self._get_data(itemp=itemp, attr="entropy")
-    #            (coeffs, _, error), _ = self._polyfit(volumes, entropies, max_order=6)
-    #            deriv = self._get_poly_deriv(coeffs)
-    #            if self._verbose:
-    #                print("- temperature:", temp, ", rmse", np.round(error, 5), flush=True)
-    #
-    #            grid = self._grid_t[itemp]
-    #            grid.eqm_entropy = np.polyval(coeffs, grid.eqm_volume)
-    #            grid.volume_entropy_fit = coeffs
-    #            grid.eqm_entropy_vol_deriv = np.polyval(deriv, grid.eqm_volume)
-    #
-    #        return self
 
     def _fit_heat_capacity(self):
         """Fit properties for calculating heat capacity."""
@@ -288,21 +136,6 @@ class SSCHAProperties:
 
         return self
 
-    #    def _fit_volume_heat_capacity(self):
-    #        """Fit volume-Cv at temperatures."""
-    #        if self._verbose:
-    #            print("RMSE (V-Cv fit):", flush=True)
-    #        for itemp, temp in enumerate(self._temperatures):
-    #            volumes, cvs, _ = self._get_data(itemp=itemp, attr="heat_capacity")
-    #            (coeffs, _, error), _ = self._polyfit(volumes, cvs, max_order=6)
-    #            if self._verbose:
-    #                print("- temperature:", temp, ", rmse", np.round(error, 5), flush=True)
-    #
-    #            grid = self._grid_t[itemp]
-    #            grid.eqm_heat_capacity = np.polyval(coeffs, grid.eqm_volume)
-    #            grid.volume_cv_fit = coeffs
-    #        return self
-
     def _compute_cp(self):
         """Calculate Cp - Cv."""
         for itemp, temp in enumerate(self._temperatures):
@@ -333,86 +166,12 @@ class SSCHAProperties:
         ids = [i for i, g in enumerate(grid) if getattr(g, attr) is not None]
         return np.array(x), np.array(y), np.array(ids)
 
-    #    def _polyfit(
-    #        self,
-    #        x: np.ndarray,
-    #        y: np.ndarray,
-    #        order: Optional[int] = None,
-    #        max_order: int = 4,
-    #        intercept: bool = True,
-    #        add_sqrt: bool = False,
-    #    ):
-    #        """Fit data to a polynomial.
-    #
-    #        If order is None, the optimal value of order will be automatically
-    #        determined by minimizing the leave-one-out cross validation score.
-    #        """
-    #        orders = list(range(2, max_order + 1)) if order is None else [order]
-    #        sqrts = [True, False] if add_sqrt is None else [add_sqrt]
-    #        if len(orders) == 1 and len(sqrts) == 1:
-    #            best_order = orders[0]
-    #            best_add_sqrt = sqrts[0]
-    #        else:
-    #            min_loocv = 1e10
-    #            best_order, best_add_sqrt = None, None
-    #            params = list(itertools.product(sqrts, orders))
-    #            for add_sqrt, order in params:
-    #                (poly_coeffs, y_pred, y_rmse), X = self._polyfit_single(
-    #                    x,
-    #                    y,
-    #                    order,
-    #                    intercept=intercept,
-    #                    add_sqrt=add_sqrt,
-    #                )
-    #                cv = loocv(X, y, y_pred)
-    #                if min_loocv > cv:
-    #                    min_loocv = cv
-    #                    best_order = order
-    #                    best_add_sqrt = add_sqrt
-    #
-    #        (poly_coeffs, y_pred, y_rmse), _ = self._polyfit_single(
-    #            x,
-    #            y,
-    #            best_order,
-    #            intercept=intercept,
-    #            add_sqrt=best_add_sqrt,
-    #        )
-    #        if not intercept:
-    #            poly_coeffs = list(poly_coeffs)
-    #            poly_coeffs.append(0.0)
-    #            poly_coeffs = np.array(poly_coeffs)
-    #
-    #        return (poly_coeffs, y_pred, y_rmse), (best_order, best_add_sqrt)
-    #
-    #    def _polyfit_single(
-    #        self,
-    #        x: np.ndarray,
-    #        y: np.ndarray,
-    #        order: int,
-    #        intercept: bool = True,
-    #        add_sqrt: bool = False,
-    #    ):
-    #        """Fit data to a polynomial with a given order."""
-    #        X = []
-    #        if add_sqrt:
-    #            X.append(np.sqrt(x))
-    #        for power in np.arange(order, 0, -1, dtype=int):
-    #            X.append(x**power)
-    #        if intercept:
-    #            X.append(np.ones(x.shape))
-    #        X = np.array(X).T
-    #
-    #        poly_coeffs = np.linalg.solve(X.T @ X, X.T @ y)
-    #        y_pred = X @ poly_coeffs
-    #        y_rmse = rmse(y, y_pred)
-    #        return (poly_coeffs, y_pred, y_rmse), X
-
-    def run(self, reference: Literal["auto", "harmonic"] = "auto"):
-        """Fit all properties."""
-        self._fit_eos()
-        self._fit_volume_entropy()
-        self._fit_heat_capacity()
-        return self
+    #    def run(self, reference: Literal["auto", "harmonic"] = "auto"):
+    #        """Fit all properties."""
+    #        self._fit_eos()
+    #        self._fit_volume_entropy()
+    #        self._fit_heat_capacity()
+    #        return self
 
     def _set_reference_entropies(self, reference: Literal["auto", "harmonic"] = "auto"):
         """Set reference entropies."""
@@ -576,18 +335,3 @@ class SSCHAProperties:
                 print("  -", list(vals), file=f)
             print("", file=f)
         return self
-
-    def _get_poly_deriv(self, coeffs: np.ndarray):
-        """Return derivatives of coefficients from polynomial fits."""
-        deriv = coeffs * np.arange(len(coeffs) - 1, -1, -1, dtype=int)
-        return deriv[:-1]
-
-    @property
-    def grid_data_temperature(self):
-        """Return properties at temperatures."""
-        return self._grid_t
-
-    @property
-    def grid_data_volume_temperature(self):
-        """Return properties at grid points (V, T)."""
-        return self._grid_vt

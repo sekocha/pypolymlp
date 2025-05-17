@@ -44,14 +44,12 @@ class GridData:
         self._volumes = None
         self._temperatures = None
         self._grid = None
+        self._scan_data()
 
         self._eos_fits = None
         self._sv_fits = None
         self._st_fits = None
         self._cv_fits = None
-
-        self._scan_data()
-        self.fit_eos()
 
     def _scan_data(self):
         """Scan and reconstruct data."""
@@ -67,12 +65,19 @@ class GridData:
             itemp = np.where(d.temperature == self._temperatures)[0][0]
             self._grid[ivol, itemp] = d
 
+        if self._verbose:
+            print("Dataset type:", self._data_type, flush=True)
+            for itemp, data in enumerate(self._grid.T):
+                n_data = len([d.volume for d in data if d is not None])
+                print("- Temp.:", self._temperatures[itemp], flush=True)
+                print("  n_data:", n_data, flush=True)
+
         return self
 
     def fit_eos(self):
         """Fit volume-free energy data to Vinet EOS."""
         if self._verbose:
-            print("Volume-FreeEnergy fit.", flush=True)
+            print("Volume-FreeEnergy fitting.", flush=True)
         self._eos_fits = []
         for itemp, data in enumerate(self._grid.T):
             volumes = [d.volume for d in data if d is not None]
@@ -87,7 +92,7 @@ class GridData:
     def fit_entropy_volume(self, max_order: int = 6, intercept: bool = True):
         """Fit volume-entropy data using polynomial."""
         if self._verbose:
-            print("Volume-Entropy fit.", flush=True)
+            print("Volume-Entropy fitting.", flush=True)
         self._sv_fits = []
         for itemp, data in enumerate(self._grid.T):
             volumes = [d.volume for d in data if d is not None]
@@ -96,15 +101,15 @@ class GridData:
             polyfit.fit(max_order=max_order, intercept=intercept, add_sqrt=False)
             self._sv_fits.append(polyfit)
             if self._verbose:
+                order = polyfit.best_model[0]
                 print("- Temp.:", self._temperatures[itemp], flush=True)
-                print("  RMSE: ", polyfit.error, flush=True)
-                print("  Order:", polyfit.best_model[0], flush=True)
+                print("  RMSE, order: ", polyfit.error, ",", order, flush=True)
         return self
 
     def fit_cv_volume(self, max_order: int = 6, intercept: bool = True):
         """Fit volume-Cv data using polynomial."""
         if self._verbose:
-            print("Volume-Cv fit.", flush=True)
+            print("Volume-Cv fitting.", flush=True)
         self._cv_fits = []
         for itemp, data in enumerate(self._grid.T):
             volumes = [d.volume for d in data if d is not None]
@@ -113,14 +118,19 @@ class GridData:
             polyfit.fit(max_order=max_order, intercept=intercept, add_sqrt=False)
             self._cv_fits.append(polyfit)
             if self._verbose:
+                order = polyfit.best_model[0]
                 print("- Temp.:", self._temperatures[itemp], flush=True)
-                print("  RMSE: ", polyfit.error, flush=True)
-                print("  Order:", polyfit.best_model[0], flush=True)
+                print("  RMSE, order: ", polyfit.error, ",", order, flush=True)
         return self
 
     def fit_entropy_temperature(self, max_order: int = 6, intercept: bool = True):
         """Fit temperature-entropy data using polynomial."""
         self._st_fits = []
+        for ivol, data in enumerate(self._grid):
+            temperatures = [d.temperature for d in data if d is not None]
+            entropies = [d.entropy for d in data if d is not None]
+
+            calculate_heat_capacities_from_entropies(temperatures, entropies)
 
     def compute_cp(self):
         """Calculate Cp - Cv."""
@@ -138,13 +148,40 @@ class GridData:
         """
         return self._grid
 
+    @property
+    def temperatures(self):
+        """Retrun temperatures."""
+        return self._temperatures
+
+    @property
+    def volumes(self):
+        """Retrun volumes."""
+        return self._volumes
+
+    def get_gibbs_free_energies(self, volumes: np.ndarray):
+        """Return Gibbs free energy.
+
+        Return
+        ------
+        Gibbs free energies.
+            Array of (temperature index, pressure in GPa, Gibbs free energy).
+        """
+        if self._eos_fits is None:
+            raise RuntimeError("EOS functions not found.")
+        return np.array([eos.eval_gibbs_pressure(volumes) for eos in self._eos_fits])
+
+
+def calculate_entropies_from_free_energy(grid_data: np.array):
+    """Compute entropies from temperature-free-energy fitting."""
+    pass
+
 
 def calculate_heat_capacities_from_entropies(grid_data: np.array):
     """Compute heat capacities from temperature-entropy fitting."""
     pass
 
 
-def load_sscha_yamls(filenames: tuple[str]) -> GridData:
+def load_sscha_yamls(filenames: tuple[str], verbose: bool = False) -> GridData:
     """Load sscha_results.yaml files."""
     data = []
     for yamlfile in filenames:
@@ -165,7 +202,7 @@ def load_sscha_yamls(filenames: tuple[str]) -> GridData:
             grid.entropy = res.entropy
             grid.harmonic_heat_capacity = res.harmonic_heat_capacity
             data.append(grid)
-    return GridData(data=data, data_type="sscha")
+    return GridData(data=data, data_type="sscha", verbose=verbose)
 
 
 def load_ti_yamls(self, filenames: tuple[str]) -> GridData:
