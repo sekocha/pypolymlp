@@ -6,6 +6,7 @@ from typing import Literal, Optional
 import numpy as np
 from phono3py.file_IO import read_fc2_from_hdf5
 from phonopy import Phonopy
+from phonopy.units import EVAngstromToGPa
 
 from pypolymlp.calculator.sscha.sscha_utils import Restart
 from pypolymlp.calculator.thermodynamics.fit_utils import Polyfit
@@ -57,6 +58,7 @@ class GridData:
         self._sv_fits = None
         self._st_fits = None
         self._cv_fits = None
+        self._cp = None
 
     def _scan_data(self):
         """Scan and reconstruct data."""
@@ -108,9 +110,9 @@ class GridData:
             polyfit.fit(max_order=max_order, intercept=True, add_sqrt=False)
             self._sv_fits.append(polyfit)
             if self._verbose:
-                order = polyfit.best_model[0]
                 print("- Temp.:", self._temperatures[itemp], flush=True)
-                print("  RMSE, order: ", polyfit.error, ",", order, flush=True)
+                print("  RMSE: ", polyfit.error, flush=True)
+                print("  model:", polyfit.best_model, flush=True)
         return self
 
     def fit_cv_volume(self, max_order: int = 6):
@@ -125,33 +127,63 @@ class GridData:
             polyfit.fit(max_order=max_order, intercept=True, add_sqrt=False)
             self._cv_fits.append(polyfit)
             if self._verbose:
-                order = polyfit.best_model[0]
                 print("- Temp.:", self._temperatures[itemp], flush=True)
-                print("  RMSE, order: ", polyfit.error, ",", order, flush=True)
+                print("  RMSE: ", polyfit.error, flush=True)
+                print("  model:", polyfit.best_model, flush=True)
         return self
 
-    def fit_free_energy_temperature(self, max_order: int = 6):
-        """Fit temperature-free energy data using polynomial."""
-
-    def fit_entropy_temperature(self, max_order: int = 6, reference: bool = True):
+    def fit_entropy_temperature(self, max_order: int = 4, reference: bool = True):
         """Fit temperature-entropy data using polynomial."""
         self._st_fits = []
         for ivol, data in enumerate(self._grid):
             points = np.array([d for d in data if d is not None])
             points = calculate_reference(points)
-            # temperatures = np.array([d.temperature for d in data if d is not None])
-            # entropies = np.array([d.entropy for d in data if d is not None])
-            # ref_entropies = np.array(
-            #     [d.reference_entropy for d in data if d is not None]
-            # )
 
-            # del_entropies = entropies - ref_entropies
+            temperatures = np.array([p.temperature for p in points])
+            entropies = np.array([p.entropy for p in points])
+            ref = np.array([p.reference_entropy for p in points])
+            del_entropies = entropies - ref
+            polyfit = Polyfit(temperatures, del_entropies)
+            polyfit.fit(max_order=max_order, intercept=False, add_sqrt=True)
+            self._st_fits.append(polyfit)
+            if self._verbose:
+                print("- Volume:", np.round(self._volumes[ivol], 3), flush=True)
+                print("  RMSE:  ", polyfit.error, flush=True)
+                print("  model: ", polyfit.best_model, flush=True)
 
-    def compute_cp(self):
-        """Calculate Cp - Cv."""
-        pass
+            cv_from_ref = temperatures * polyfit.eval_derivative(temperatures)
+            cv_from_ref = np.nan_to_num(cv_from_ref)
+            for p, val in zip(points, cv_from_ref):
+                p.heat_capacity = p.reference_heat_capacity + val * EVtoJmol
 
-    def save_data(self):
+        return self
+
+    def eval_cp(self):
+        """Evaluate Cp - Cv."""
+        if self._eos_fits is None:
+            raise RuntimeError("EOS functions not found.")
+        if self._sv_fits is None:
+            raise RuntimeError("S-V functions not found.")
+        if self._cv_fits is None:
+            raise RuntimeError("Cv-V functions not found.")
+
+        self._cp = []
+        for itemp, data in enumerate(self._grid.T):
+            temp = self._temperatures[itemp]
+            eos = self._eos_fits[itemp]
+            sv = self._sv_fits[itemp]
+            cv = self._cv_fits[itemp]
+            v0, b0 = eos.v0, eos.b0
+
+            s_deriv = sv.eval_derivative(v0)
+            bm = b0 / EVAngstromToGPa
+            add = temp * v0 * (s_deriv**2) / bm
+            add *= EVtoJmol
+            cp = cv.eval(v0) + add
+            self._cp.append(cp)
+        return self
+
+    def save_data(self, filename="polymlp_thermodynamics.yaml"):
         """Save raw data and fitted functions."""
         pass
 
@@ -172,6 +204,26 @@ class GridData:
     def volumes(self):
         """Retrun volumes."""
         return self._volumes
+
+    @property
+    def eos_fits(self):
+        """Retrun EOS fits."""
+        return self._eos_fits
+
+    @property
+    def sv_fits(self):
+        """Retrun S-V fits."""
+        return self._sv_fits
+
+    @property
+    def st_fits(self):
+        """Retrun S-T fits."""
+        return self._st_fits
+
+    @property
+    def cv_fits(self):
+        """Retrun Cv-V fits."""
+        return self._cv_fits
 
     def get_gibbs_free_energies(self, volumes: np.ndarray):
         """Return Gibbs free energy.

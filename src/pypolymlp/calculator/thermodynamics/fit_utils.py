@@ -35,7 +35,8 @@ class Polyfit:
 
     def eval_derivative(self, x: float):
         """Evaluate derivative of fitted polynomial at given x."""
-        deriv = self._coeffs * np.arange(len(self._coeffs) - 1, -1, -1, dtype=int)
+        coeffs = self._coeffs[1:] if self._add_sqrt else self._coeffs
+        deriv = coeffs * np.arange(len(coeffs) - 1, -1, -1, dtype=int)
         deriv = deriv[:-1]
         val = np.polyval(deriv, x)
         if self._add_sqrt:
