@@ -33,9 +33,9 @@ class Thermodynamics:
         self._volumes = None
         self._temperatures = None
         self._grid = None
+        self._models = None
         self._scan_data()
 
-        self._models = FittedModels(self._volumes, self._temperatures)
         self._eq_entropies = None
         self._eq_cp = None
 
@@ -52,6 +52,8 @@ class Thermodynamics:
             ivol = np.where(d.volume == self._volumes)[0][0]
             itemp = np.where(d.temperature == self._temperatures)[0][0]
             self._grid[ivol, itemp] = d
+
+        self._models = FittedModels(self._volumes, self._temperatures)
 
         if self._verbose:
             print("Dataset type:", self._data_type, flush=True)
@@ -237,6 +239,17 @@ class Thermodynamics:
     #            print("", file=f)
     #        return self
     #
+
+    def eval_gibbs_free_energies(self, volumes: np.ndarray):
+        """Return Gibbs free energy.
+
+        Return
+        ------
+        Gibbs free energies.
+            Array of (temperature index, pressure in GPa, Gibbs free energy).
+        """
+        return self._models.eval_gibbs_free_energies(volumes)
+
     @property
     def grid(self):
         """Return grid points.
@@ -256,37 +269,9 @@ class Thermodynamics:
         return self._volumes
 
     @property
-    def eos_fits(self):
-        """Retrun EOS fits."""
-        return self._eos_fits
-
-    @property
-    def sv_fits(self):
-        """Retrun S-V fits."""
-        return self._sv_fits
-
-    @property
-    def st_fits(self):
-        """Retrun S-T fits."""
-        return self._st_fits
-
-    @property
-    def cv_fits(self):
-        """Retrun Cv-V fits."""
-        return self._cv_fits
-
-
-#    def get_gibbs_free_energies(self, volumes: np.ndarray):
-#        """Return Gibbs free energy.
-#
-#        Return
-#        ------
-#        Gibbs free energies.
-#            Array of (temperature index, pressure in GPa, Gibbs free energy).
-#        """
-#        if self._eos_fits is None:
-#            raise RuntimeError("EOS functions not found.")
-#        return np.array([eos.eval_gibbs_pressure(volumes) for eos in self._eos_fits])
+    def fitted_models(self):
+        """Retrun fitted models."""
+        return self._models
 
 
 def calculate_reference(
@@ -338,3 +323,13 @@ def load_sscha_yamls(filenames: tuple[str], verbose: bool = False) -> Thermodyna
             grid.harmonic_heat_capacity = res.harmonic_heat_capacity
             data.append(grid)
     return Thermodynamics(data=data, data_type="sscha", verbose=verbose)
+
+
+def load_ti_yamls(self, filenames: tuple[str]) -> Thermodynamics:
+    """Load polymlp_ti.yaml files."""
+    pass
+
+
+def load_electron_yamls(self, filenames: tuple[str]) -> Thermodynamics:
+    """Load electron.yaml files."""
+    pass

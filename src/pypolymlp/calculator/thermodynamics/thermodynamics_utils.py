@@ -86,36 +86,14 @@ class FittedModels:
 
         return cv_val + add
 
+    def eval_gibbs_free_energies(self, volumes: np.ndarray):
+        """Return Gibbs free energy.
 
-# def load_sscha_yamls(filenames: tuple[str], verbose: bool = False) -> Thermodynamics:
-#    """Load sscha_results.yaml files."""
-#    data = []
-#    for yamlfile in filenames:
-#        res = Restart(yamlfile, unit="eV/atom")
-#        if res.converge and not res.imaginary:
-#            n_atom = len(res.unitcell.elements)
-#            volume = np.round(res.volume, decimals=12) / n_atom
-#            temp = np.round(res.temperature, decimals=3)
-#            grid = GridPointData(
-#                volume=volume,
-#                temperature=temp,
-#                data_type="sscha",
-#                restart=res,
-#                path_yaml=yamlfile,
-#                path_fc2="/".join(yamlfile.split("/")[:-1]) + "/fc2.hdf5",
-#            )
-#            grid.free_energy = res.free_energy + res.static_potential
-#            grid.entropy = res.entropy
-#            grid.harmonic_heat_capacity = res.harmonic_heat_capacity
-#            data.append(grid)
-#    return Thermodynamics(data=data, data_type="sscha", verbose=verbose)
-#
-#
-# def load_ti_yamls(self, filenames: tuple[str]) -> GridData:
-#    """Load polymlp_ti.yaml files."""
-#    pass
-#
-#
-# def load_electron_yamls(self, filenames: tuple[str]) -> GridData:
-#    """Load electron.yaml files."""
-#    pass
+        Return
+        ------
+        Gibbs free energies.
+            Array of (temperature index, pressure in GPa, Gibbs free energy).
+        """
+        if self.eos_fits is None:
+            raise RuntimeError("EOS functions not found.")
+        return np.array([eos.eval_gibbs_pressure(volumes) for eos in self.eos_fits])
