@@ -40,7 +40,10 @@ class Polyfit:
         deriv = deriv[:-1]
         val = np.polyval(deriv, x)
         if self._add_sqrt:
+            ids = np.where(np.abs(x) < 1e-10)[0]
+            x[ids] = 1.0
             val += 0.5 * self._coeffs[0] * np.power(x, -0.5)
+            x[ids] = 0.0
         return val
 
     def fit(

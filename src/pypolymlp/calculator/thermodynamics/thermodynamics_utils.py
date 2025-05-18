@@ -58,7 +58,9 @@ class GridData:
         self._sv_fits = None
         self._st_fits = None
         self._cv_fits = None
-        self._cp = None
+
+        self._eq_entropies = None
+        self._eq_cp = None
 
     def _scan_data(self):
         """Scan and reconstruct data."""
@@ -87,6 +89,7 @@ class GridData:
         """Fit volume-free energy data to Vinet EOS."""
         if self._verbose:
             print("Volume-FreeEnergy fitting.", flush=True)
+
         self._eos_fits = []
         for itemp, data in enumerate(self._grid.T):
             volumes = [d.volume for d in data if d is not None]
@@ -102,20 +105,25 @@ class GridData:
         """Fit volume-entropy data using polynomial."""
         if self._verbose:
             print("Volume-Entropy fitting.", flush=True)
+
         self._sv_fits = []
         for itemp, data in enumerate(self._grid.T):
             volumes = [d.volume for d in data if d is not None]
             entropies = [d.entropy for d in data if d is not None]
-            polyfit = Polyfit(volumes, entropies)
-            polyfit.fit(max_order=max_order, intercept=True, add_sqrt=False)
-            self._sv_fits.append(polyfit)
-            if self._verbose:
-                print("- Temp.:", self._temperatures[itemp], flush=True)
-                print("  RMSE: ", polyfit.error, flush=True)
-                print("  model:", polyfit.best_model, flush=True)
+            if len(entropies) > 4:
+                polyfit = Polyfit(volumes, entropies)
+                polyfit.fit(max_order=max_order, intercept=True, add_sqrt=False)
+                self._sv_fits.append(polyfit)
+                if self._verbose:
+                    print("- Temp.:", self._temperatures[itemp], flush=True)
+                    print("  RMSE: ", polyfit.error, flush=True)
+                    print("  model:", polyfit.best_model, flush=True)
+            else:
+                self._sv_fits.append(None)
+
         return self
 
-    def fit_cv_volume(self, max_order: int = 6):
+    def fit_cv_volume(self, max_order: int = 4):
         """Fit volume-Cv data using polynomial."""
         if self._verbose:
             print("Volume-Cv fitting.", flush=True)
@@ -123,13 +131,16 @@ class GridData:
         for itemp, data in enumerate(self._grid.T):
             volumes = [d.volume for d in data if d is not None]
             cvs = [d.heat_capacity for d in data if d is not None]
-            polyfit = Polyfit(volumes, cvs)
-            polyfit.fit(max_order=max_order, intercept=True, add_sqrt=False)
-            self._cv_fits.append(polyfit)
-            if self._verbose:
-                print("- Temp.:", self._temperatures[itemp], flush=True)
-                print("  RMSE: ", polyfit.error, flush=True)
-                print("  model:", polyfit.best_model, flush=True)
+            if len(cvs) > 4:
+                polyfit = Polyfit(volumes, cvs)
+                polyfit.fit(max_order=max_order, intercept=True, add_sqrt=False)
+                self._cv_fits.append(polyfit)
+                if self._verbose:
+                    print("- Temp.:", self._temperatures[itemp], flush=True)
+                    print("  RMSE: ", polyfit.error, flush=True)
+                    print("  model:", polyfit.best_model, flush=True)
+            else:
+                self._cv_fits.append(None)
         return self
 
     def fit_entropy_temperature(self, max_order: int = 4, reference: bool = True):
@@ -137,24 +148,26 @@ class GridData:
         self._st_fits = []
         for ivol, data in enumerate(self._grid):
             points = np.array([d for d in data if d is not None])
-            points = calculate_reference(points)
+            if len(points) > 4:
+                points = calculate_reference(points)
+                temperatures = np.array([p.temperature for p in points])
+                entropies = np.array([p.entropy for p in points])
+                ref = np.array([p.reference_entropy for p in points])
+                del_entropies = entropies - ref
 
-            temperatures = np.array([p.temperature for p in points])
-            entropies = np.array([p.entropy for p in points])
-            ref = np.array([p.reference_entropy for p in points])
-            del_entropies = entropies - ref
-            polyfit = Polyfit(temperatures, del_entropies)
-            polyfit.fit(max_order=max_order, intercept=False, add_sqrt=True)
-            self._st_fits.append(polyfit)
-            if self._verbose:
-                print("- Volume:", np.round(self._volumes[ivol], 3), flush=True)
-                print("  RMSE:  ", polyfit.error, flush=True)
-                print("  model: ", polyfit.best_model, flush=True)
+                polyfit = Polyfit(temperatures, del_entropies)
+                polyfit.fit(max_order=max_order, intercept=False, add_sqrt=True)
+                self._st_fits.append(polyfit)
+                if self._verbose:
+                    print("- Volume:", np.round(self._volumes[ivol], 3), flush=True)
+                    print("  RMSE:  ", polyfit.error, flush=True)
+                    print("  model: ", polyfit.best_model, flush=True)
 
-            cv_from_ref = temperatures * polyfit.eval_derivative(temperatures)
-            cv_from_ref = np.nan_to_num(cv_from_ref)
-            for p, val in zip(points, cv_from_ref):
-                p.heat_capacity = p.reference_heat_capacity + val * EVtoJmol
+                cv_from_ref = temperatures * polyfit.eval_derivative(temperatures)
+                for p, val in zip(points, cv_from_ref):
+                    p.heat_capacity = p.reference_heat_capacity + val * EVtoJmol
+            else:
+                self._st_fits.append(None)
 
         return self
 
@@ -167,26 +180,88 @@ class GridData:
         if self._cv_fits is None:
             raise RuntimeError("Cv-V functions not found.")
 
-        self._cp = []
+        self._eq_cp = []
         for itemp, data in enumerate(self._grid.T):
             temp = self._temperatures[itemp]
             eos = self._eos_fits[itemp]
             sv = self._sv_fits[itemp]
             cv = self._cv_fits[itemp]
-            v0, b0 = eos.v0, eos.b0
+            if eos is not None and sv is not None and cv is not None:
+                v0, b0 = eos.v0, eos.b0
+                s_deriv = sv.eval_derivative(v0)
+                bm = b0 / EVAngstromToGPa
+                add = temp * v0 * (s_deriv**2) / bm
+                add *= EVtoJmol
+                cp = cv.eval(v0) + add
+                self._eq_cp.append(cp)
+            else:
+                self._eq_cp.append(None)
+        return np.array(self._eq_cp)
 
-            s_deriv = sv.eval_derivative(v0)
-            bm = b0 / EVAngstromToGPa
-            add = temp * v0 * (s_deriv**2) / bm
-            add *= EVtoJmol
-            cp = cv.eval(v0) + add
-            self._cp.append(cp)
-        return self
+    def eval_entropy(self):
+        """Evaluate entropies at equilibrium volumes."""
+        self._eq_entropies = []
+        for itemp, data in enumerate(self._grid.T):
+            eos = self._eos_fits[itemp]
+            sv = self._sv_fits[itemp]
+            self._eq_entropies.append(sv.eval(eos.v0))
+        return np.array(self._eq_entropies)
 
     def save_data(self, filename="polymlp_thermodynamics.yaml"):
         """Save raw data and fitted functions."""
-        pass
+        f = open(filename, "w")
+        print("units:", file=f)
+        print("  temperature:   K", file=f)
+        print("  volume:        angstroms^3/atom", file=f)
+        print("  bulk_modulus:  GPa", file=f)
+        print("  pressure:      GPa", file=f)
+        print("  free_energy:   eV/atom", file=f)
+        print("  entropy:       J/K/mol (/Avogadro's number of atoms)", file=f)
+        print("  heat_capacity: J/K/mol (/Avogadro's number of atoms)", file=f)
+        print("", file=f)
 
+        print("equilibrium_properties:", file=f)
+        for itemp, data in enumerate(self._grid.T):
+            print("- temperature:      ", self._temperatures[itemp], file=f)
+            if self._eos_fits is not None and self._eos_fits[itemp] is not None:
+                print("  volume:           ", self._eos_fits[itemp].v0, file=f)
+                print("  bulk_modulus:     ", self._eos_fits[itemp].b0, file=f)
+                print("  free_energy:      ", self._eos_fits[itemp].e0, file=f)
+            if self._eq_entropies is not None and self._eq_entropies[itemp] is not None:
+                val = self._eq_entropies[itemp] * EVtoJmol
+                print("  entropy:          ", val, file=f)
+            if self._eq_cp is not None and self._eq_cp[itemp] is not None:
+                print("  heat_capacity_cp: ", self._eq_cp[itemp], file=f)
+            print("", file=f)
+
+        #        self._save_2d_array(f, tag="free_energies")
+        #        self._save_2d_array(f, tag="eos_fit_data")
+        #        self._save_2d_array(f, tag="entropies")
+        #        self._save_2d_array(f, tag="gibbs_free_energies")
+
+        #        print("cv:", file=f)
+        #        for ivol, vol in enumerate(self._volumes):
+        #            print("- volume:", vol, file=f)
+        #            print("  values:", file=f)
+        #            for itemp, temp in enumerate(self._temperatures):
+        #                grid = self._grid_vt[ivol, itemp]
+        #                print("  -", [temp, grid.heat_capacity], file=f)
+        #            print("", file=f)
+
+        f.close()
+
+    #    def _save_2d_array(self, f, tag: str):
+    #        """Save dict of 2D array"""
+    #        print(tag + ":", file=f)
+    #        for itemp, temp in enumerate(self._temperatures):
+    #            array1d = getattr(self._grid_t[itemp], tag)
+    #            print("- temperature:", temp, file=f)
+    #            print("  values:", file=f)
+    #            for vals in array1d:
+    #                print("  -", list(vals), file=f)
+    #            print("", file=f)
+    #        return self
+    #
     @property
     def grid(self):
         """Return grid points.
