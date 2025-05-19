@@ -30,6 +30,17 @@ class GridPointData:
     path_yaml: Optional[float] = None
     path_fc2: Optional[float] = None
 
+    def reset(self):
+        """Reset data."""
+        self.restart = None
+        self.harmonic_heat_capacity = None
+        self.reference_free_energy = None
+        self.reference_entropy = None
+        self.reference_heat_capacity = None
+        self.path_yaml = None
+        self.path_fc2 = None
+        return self
+
 
 @dataclass
 class FittedModels:
@@ -85,6 +96,45 @@ class FittedModels:
             return None
 
         return cv_val + add
+
+    def eval_helmholtz_free_energies(self, volumes: np.ndarray):
+        """Return free energy.
+
+        Return
+        ------
+        Helmholtz free energies.
+
+        Rows and columns correspond to volumes and temperatures, respectively.
+        """
+        if self.eos_fits is None:
+            raise RuntimeError("EOS functions not found.")
+        return np.array([eos.eval(volumes) for eos in self.eos_fits]).T
+
+    def eval_entropies(self, volumes: np.ndarray):
+        """Return entropies.
+
+        Return
+        ------
+        Entropies.
+
+        Rows and columns correspond to volumes and temperatures, respectively.
+        """
+        if self.sv_fits is None:
+            raise RuntimeError("S-V functions not found.")
+        return np.array([sv.eval(volumes) for sv in self.sv_fits]).T
+
+    def eval_heat_capacities(self, volumes: np.ndarray):
+        """Return heat capacities.
+
+        Return
+        ------
+        Heat capacities.
+
+        Rows and columns correspond to volumes and temperatures, respectively.
+        """
+        if self.cv_fits is None:
+            raise RuntimeError("Cv-V functions not found.")
+        return np.array([cv.eval(volumes) for cv in self.cv_fits]).T
 
     def eval_gibbs_free_energies(self, volumes: np.ndarray):
         """Return Gibbs free energy.

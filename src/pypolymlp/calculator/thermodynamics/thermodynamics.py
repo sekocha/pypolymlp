@@ -1,11 +1,14 @@
 """Functions for calculating thermodynamic properties."""
 
+import copy
 from typing import Literal, Optional
 
 import numpy as np
+import yaml
 from phono3py.file_IO import read_fc2_from_hdf5
 from phonopy import Phonopy
 
+from pypolymlp.calculator.md.md_utils import load_thermodynamic_integration_yaml
 from pypolymlp.calculator.sscha.sscha_utils import Restart
 from pypolymlp.calculator.thermodynamics.fit_utils import Polyfit
 from pypolymlp.calculator.thermodynamics.thermodynamics_utils import (
@@ -26,7 +29,14 @@ class Thermodynamics:
         data_type: Optional[Literal["sscha", "ti", "electron"]] = None,
         verbose: bool = False,
     ):
-        """Init method."""
+        """Init method.
+
+        Units of input data
+        -------------------
+        free_energy: eV/atom
+        entropy: eV/K/atom
+        heat_capacity: J/K/mol (/Avogadro's number of atoms)
+        """
         self._data = data
         self._data_type = data_type
         self._verbose = verbose
@@ -152,14 +162,14 @@ class Thermodynamics:
         self._models.st_fits = st_fits
         return self
 
-    def eval_entropy(self):
+    def eval_entropy_equilibrium(self):
         """Evaluate entropies at equilibrium volumes."""
         self._eq_entropies = [
             self._models.eval_eq_entropy(i) for i, _ in enumerate(self._temperatures)
         ]
         return np.array(self._eq_entropies)
 
-    def eval_cp(self):
+    def eval_cp_equilibrium(self):
         """Evaluate Cp from S and Cv functions."""
         self._eq_cp = [
             self._models.eval_eq_cp(i) for i, _ in enumerate(self._temperatures)
@@ -172,7 +182,7 @@ class Thermodynamics:
             pass
             # self.fit_free_energy_temperature()
         self.fit_entropy_volume(max_order=max_order)
-        self.eval_entropy()
+        self.eval_entropy_equilibrium()
         return self
 
     def fit_eval_cp(self, max_order: int = 4, from_entropy: bool = True):
@@ -180,7 +190,7 @@ class Thermodynamics:
         if from_entropy:
             self.fit_entropy_temperature(max_order=max_order)
         self.fit_cv_volume(max_order=max_order)
-        self.eval_cp()
+        self.eval_cp_equilibrium()
         return self
 
     def save_data(self, filename="polymlp_thermodynamics.yaml"):
@@ -211,34 +221,40 @@ class Thermodynamics:
                 print("  heat_capacity_cp: ", self._eq_cp[itemp], file=f)
             print("", file=f)
 
-        #        self._save_2d_array(f, tag="free_energies")
-        #        self._save_2d_array(f, tag="eos_fit_data")
-        #        self._save_2d_array(f, tag="entropies")
-        #        self._save_2d_array(f, tag="gibbs_free_energies")
-
-        #        print("cv:", file=f)
-        #        for ivol, vol in enumerate(self._volumes):
-        #            print("- volume:", vol, file=f)
-        #            print("  values:", file=f)
-        #            for itemp, temp in enumerate(self._temperatures):
-        #                grid = self._grid_vt[ivol, itemp]
-        #                print("  -", [temp, grid.heat_capacity], file=f)
-        #            print("", file=f)
-
         f.close()
 
-    #    def _save_2d_array(self, f, tag: str):
-    #        """Save dict of 2D array"""
-    #        print(tag + ":", file=f)
-    #        for itemp, temp in enumerate(self._temperatures):
-    #            array1d = getattr(self._grid_t[itemp], tag)
-    #            print("- temperature:", temp, file=f)
-    #            print("  values:", file=f)
-    #            for vals in array1d:
-    #                print("  -", list(vals), file=f)
-    #            print("", file=f)
-    #        return self
-    #
+    def eval_free_energies(self, volumes: np.ndarray):
+        """Return free energy.
+
+        Return
+        ------
+        Helmholtz free energies.
+
+        Rows and columns correspond to volumes and temperatures, respectively.
+        """
+        return self._models.eval_helmholtz_free_energies(volumes)
+
+    def eval_entropies(self, volumes: np.ndarray):
+        """Return entropies.
+
+        Return
+        ------
+        Entropies.
+
+        Rows and columns correspond to volumes and temperatures, respectively.
+        """
+        return self._models.eval_entropies(volumes)
+
+    def eval_heat_capacities(self, volumes: np.ndarray):
+        """Return heat capacities.
+
+        Return
+        ------
+        Heat capacities.
+
+        Rows and columns correspond to volumes and temperatures, respectively.
+        """
+        return self._models.eval_heat_capacities(volumes)
 
     def eval_gibbs_free_energies(self, volumes: np.ndarray):
         """Return Gibbs free energy.
@@ -258,6 +274,11 @@ class Thermodynamics:
         """
         return self._grid
 
+    @grid.setter
+    def grid(self, _grid: np.ndarray):
+        """Set grid points."""
+        self._grid = _grid
+
     @property
     def temperatures(self):
         """Retrun temperatures."""
@@ -272,6 +293,72 @@ class Thermodynamics:
     def fitted_models(self):
         """Retrun fitted models."""
         return self._models
+
+    def add(self, grid_add: np.ndarray):
+        """Add grid data to the current grid data."""
+        mask = np.equal(self._grid, None)  # | np.equal(grid_add, None)
+        for g1, g2 in zip(self._grid[~mask], grid_add[:5][~mask]):
+            if g2 is not None:
+                if g1.free_energy is not None and g2.free_energy is not None:
+                    g1.free_energy += g2.free_energy
+                else:
+                    g1.free_energy = None
+                if g1.entropy is not None and g2.entropy is not None:
+                    g1.entropy += g2.entropy
+                else:
+                    g1.entropy = None
+                if g1.heat_capacity is not None and g2.heat_capacity is not None:
+                    g1.heat_capacity += g2.heat_capacity
+                else:
+                    g1.heat_capacity = None
+            g1.reset()
+        return self
+
+    def replace_free_energies(self, free_energies: np.ndarray):
+        """Replace free energies."""
+        for i, g1 in enumerate(self._grid):
+            for j, g2 in enumerate(g1):
+                if g2 is None:
+                    print("None-")
+                    self._grid[i, j] = GridPointData(
+                        volume=self._volumes[i],
+                        temperature=self._temperatures[j],
+                        data_type=self._data_type,
+                        free_energy=free_energies[i, j],
+                    )
+                else:
+                    self._grid[i, j].free_energy = free_energies[i, j]
+        return self
+
+    def replace_entropies(self, entropies: np.ndarray):
+        """Replace entropies."""
+        for i, g1 in enumerate(self._grid):
+            for j, g2 in enumerate(g1):
+                if g2 is None:
+                    self._grid[i, j] = GridPointData(
+                        volume=self._volumes[i],
+                        temperature=self._temperatures[j],
+                        data_type=self._data_type,
+                        entropy=entropies[i, j],
+                    )
+                else:
+                    self._grid[i, j].entropy = entropies[i, j]
+        return self
+
+    def replace_heat_capacities(self, heat_capacities: np.ndarray):
+        """Replace heat capacities."""
+        for i, g1 in enumerate(self._grid):
+            for j, g2 in enumerate(g1):
+                if g2 is None:
+                    self._grid[i, j] = GridPointData(
+                        volume=self._volumes[i],
+                        temperature=self._temperatures[j],
+                        data_type=self._data_type,
+                        heat_capacity=heat_capacities[i, j],
+                    )
+                else:
+                    self._grid[i, j].heat_capacity = heat_capacities[i, j]
+        return self
 
 
 def calculate_reference(
@@ -325,11 +412,59 @@ def load_sscha_yamls(filenames: tuple[str], verbose: bool = False) -> Thermodyna
     return Thermodynamics(data=data, data_type="sscha", verbose=verbose)
 
 
-def load_ti_yamls(self, filenames: tuple[str]) -> Thermodynamics:
+def load_ti_yamls(filenames: tuple[str], verbose: bool = False) -> Thermodynamics:
     """Load polymlp_ti.yaml files."""
-    pass
+    data = []
+    for yamlfile in filenames:
+        temp, volume, free_e, cv, _ = load_thermodynamic_integration_yaml(yamlfile)
+        grid = GridPointData(
+            volume=volume,
+            temperature=temp,
+            data_type="ti",
+            free_energy=free_e,
+            heat_capacity=cv,
+            path_yaml=yamlfile,
+        )
+        data.append(grid)
+    return Thermodynamics(data=data, data_type="ti", verbose=verbose)
 
 
-def load_electron_yamls(self, filenames: tuple[str]) -> Thermodynamics:
+def load_electron_yamls(filenames: tuple[str], verbose: bool = False) -> Thermodynamics:
     """Load electron.yaml files."""
-    pass
+    data = []
+    for yamlfile in filenames:
+        yml = yaml.safe_load(open(yamlfile))
+        n_atom = len(yml["structure"]["elements"])
+        volume = float(yml["structure"]["volume"]) / n_atom
+        for prop in yml["properties"]:
+            temp = float(prop["temperature"])
+            free_e = float(prop["free_energy"]) / n_atom
+            entropy = float(prop["entropy"]) / n_atom
+            cv = float(prop["specific_heat"]) * EVtoJmol / n_atom
+            grid = GridPointData(
+                volume=volume,
+                temperature=temp,
+                data_type="electron",
+                free_energy=free_e,
+                entropy=entropy,
+                heat_capacity=cv,
+                path_yaml=yamlfile,
+            )
+            data.append(grid)
+    return Thermodynamics(data=data, data_type="electron", verbose=verbose)
+
+
+def denoise_free_energy(thermo_base: Thermodynamics, thermo_denoise: Thermodynamics):
+    """Reduce noises in free energies using EOS fitting."""
+    thermo_sum = copy.deepcopy(thermo_denoise)
+    thermo_sum = thermo_sum.add(thermo_base.grid)
+    # temporarily used
+    thermo_sum = copy.deepcopy(thermo_base)
+
+    if thermo_base.fitted_models.eos_fits is None:
+        thermo_base.fit_eos()
+    thermo_sum.fit_eos()
+    f1 = thermo_base.eval_free_energies(thermo_sum.volumes)
+    f2 = thermo_sum.eval_free_energies(thermo_sum.volumes)
+    thermo_denoise.replace_free_energies(f2 - f1)
+    return thermo_denoise

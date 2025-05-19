@@ -3,6 +3,7 @@
 from typing import Optional
 
 import numpy as np
+import yaml
 from scipy.special.orthogonal import p_roots
 
 from pypolymlp.calculator.md.ase_md import IntegratorASE
@@ -63,3 +64,25 @@ def save_thermodynamic_integration_yaml(
         for alpha, de in delta_energies:
             print("  - alpha:  ", alpha, file=f)
             print("    delta_e:", de, file=f)
+
+
+def load_thermodynamic_integration_yaml(filename: str = "polymlp_ti.yaml"):
+    """Load results of thermodynamic integration.
+
+    Return
+    ------
+    temperature: Temperature in K.
+    volume: Volume in ang^3/atom.
+    free_energy: Free energy difference in eV/atom.
+    heat_capacity: Cv in J/K/mol (/Avogadro's number of atoms).
+    log: Array of (alpha, delta_energy) in thermodynamic integration.
+    """
+    data = yaml.safe_load(open(filename))
+    n_atom = int(data["conditions"]["n_atom"])
+    temperature = float(data["conditions"]["temperature"])
+    volume = float(data["conditions"]["volume"]) / n_atom
+    prop = data["properties"]
+    free_energy = float(prop["free_energy"]) / n_atom
+    heat_capacity = float(prop["delta_heat_capacity"])
+    log = [[float(d["alpha"]), float(d["delta_e"])] for d in prop["delta_energies"]]
+    return temperature, volume, free_energy, heat_capacity, np.array(log)

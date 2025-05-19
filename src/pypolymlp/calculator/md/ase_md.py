@@ -270,12 +270,12 @@ class IntegratorASE:
 
     @property
     def energies(self):
-        """Return potential energies."""
+        """Return potential energies in eV/supercell."""
         return np.array(self._energies)
 
     @property
     def forces(self):
-        """Return forces."""
+        """Return forces in eV/ang."""
         return np.array(self._forces)
 
     @property
@@ -285,17 +285,17 @@ class IntegratorASE:
 
     @property
     def delta_energies(self):
-        """Return energy differences from reference state."""
+        """Return energy differences from reference state in eV/supercell."""
         return np.array(self._delta_energies)
 
     @property
     def average_energy(self):
-        """Return average energy."""
+        """Return average energy in eV/supercell."""
         return self._average_energy
 
     @property
     def average_delta_energy(self):
-        """Return average energy difference from reference."""
+        """Return average energy difference from reference in eV/supercell."""
         return self._average_delta_energy
 
     @property
