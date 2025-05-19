@@ -68,7 +68,7 @@ class Thermodynamics:
         if self._verbose:
             print("Dataset type:", self._data_type, flush=True)
             for itemp, data in enumerate(self._grid.T):
-                n_data = len([d.volume for d in data if d is not None])
+                n_data = len([d for d in data if d.free_energy is not None])
                 print("- Temp.:", self._temperatures[itemp], flush=True)
                 print("  n_data:", n_data, flush=True)
 
@@ -81,8 +81,8 @@ class Thermodynamics:
 
         eos_fits = []
         for itemp, data in enumerate(self._grid.T):
-            volumes = [d.volume for d in data if d is not None]
-            free_energies = [d.free_energy for d in data if d is not None]
+            volumes = [d.volume for d in data if d.free_energy is not None]
+            free_energies = [d.free_energy for d in data if d.free_energy is not None]
             try:
                 eos = EOS(volumes, free_energies)
             except:
@@ -98,8 +98,8 @@ class Thermodynamics:
 
         sv_fits = []
         for itemp, data in enumerate(self._grid.T):
-            volumes = [d.volume for d in data if d is not None]
-            entropies = [d.entropy for d in data if d is not None]
+            volumes = [d.volume for d in data if d.entropy is not None]
+            entropies = [d.entropy for d in data if d.entropy is not None]
             if len(entropies) > 4:
                 polyfit = Polyfit(volumes, entropies)
                 polyfit.fit(max_order=max_order, intercept=True, add_sqrt=False)
@@ -119,8 +119,8 @@ class Thermodynamics:
             print("Volume-Cv fitting.", flush=True)
         cv_fits = []
         for itemp, data in enumerate(self._grid.T):
-            volumes = [d.volume for d in data if d is not None]
-            cvs = [d.heat_capacity for d in data if d is not None]
+            volumes = [d.volume for d in data if d.heat_capacity is not None]
+            cvs = [d.heat_capacity for d in data if d.heat_capacity is not None]
             if len(cvs) > 4:
                 polyfit = Polyfit(volumes, cvs)
                 polyfit.fit(max_order=max_order, intercept=True, add_sqrt=False)
@@ -138,15 +138,19 @@ class Thermodynamics:
         """Fit temperature-entropy data using polynomial."""
         st_fits = []
         for ivol, data in enumerate(self._grid):
-            points = np.array([d for d in data if d is not None])
+            points = np.array([d for d in data if d.entropy is not None])
             if len(points) > 4:
-                points = calculate_reference(points)
+                if reference:
+                    points = calculate_reference(points)
                 temperatures = np.array([p.temperature for p in points])
                 entropies = np.array([p.entropy for p in points])
-                ref = np.array([p.reference_entropy for p in points])
-                del_entropies = entropies - ref
+                if reference:
+                    ref = np.array([p.reference_entropy for p in points])
+                    del_entropies = entropies - ref
+                    polyfit = Polyfit(temperatures, del_entropies)
+                else:
+                    polyfit = Polyfit(temperatures, entropies)
 
-                polyfit = Polyfit(temperatures, del_entropies)
                 polyfit.fit(max_order=max_order, intercept=False, add_sqrt=True)
                 st_fits.append(polyfit)
                 if self._verbose:
@@ -155,8 +159,12 @@ class Thermodynamics:
                     print("  model: ", polyfit.best_model, flush=True)
 
                 cv_from_ref = temperatures * polyfit.eval_derivative(temperatures)
-                for p, val in zip(points, cv_from_ref):
-                    p.heat_capacity = p.reference_heat_capacity + val * EVtoJmol
+                if reference:
+                    for p, val in zip(points, cv_from_ref):
+                        p.heat_capacity = p.reference_heat_capacity + val * EVtoJmol
+                else:
+                    for p, val in zip(points, cv_from_ref):
+                        p.heat_capacity = val * EVtoJmol
             else:
                 st_fits.append(None)
         self._models.st_fits = st_fits
@@ -281,36 +289,36 @@ class Thermodynamics:
 
     @property
     def temperatures(self):
-        """Retrun temperatures."""
+        """Return temperatures."""
         return self._temperatures
 
     @property
     def volumes(self):
-        """Retrun volumes."""
+        """Return volumes."""
         return self._volumes
 
     @property
     def fitted_models(self):
-        """Retrun fitted models."""
+        """Return fitted models."""
         return self._models
 
     def add(self, grid_add: np.ndarray):
         """Add grid data to the current grid data."""
-        mask = np.equal(self._grid, None)  # | np.equal(grid_add, None)
-        for g1, g2 in zip(self._grid[~mask], grid_add[:5][~mask]):
-            if g2 is not None:
-                if g1.free_energy is not None and g2.free_energy is not None:
-                    g1.free_energy += g2.free_energy
-                else:
-                    g1.free_energy = None
-                if g1.entropy is not None and g2.entropy is not None:
-                    g1.entropy += g2.entropy
-                else:
-                    g1.entropy = None
-                if g1.heat_capacity is not None and g2.heat_capacity is not None:
-                    g1.heat_capacity += g2.heat_capacity
-                else:
-                    g1.heat_capacity = None
+        mask = np.equal(self._grid, None) | np.equal(grid_add, None)
+        for g1, g2 in zip(self._grid[~mask], grid_add[~mask]):
+            if g1.free_energy is not None and g2.free_energy is not None:
+                g1.free_energy += g2.free_energy
+            else:
+                g1.free_energy = None
+            if g1.entropy is not None and g2.entropy is not None:
+                g1.entropy += g2.entropy
+            else:
+                g1.entropy = None
+            if g1.heat_capacity is not None and g2.heat_capacity is not None:
+                g1.heat_capacity += g2.heat_capacity
+            else:
+                g1.heat_capacity = None
+            g1.restart = g2.restart
             g1.reset()
         return self
 
@@ -319,7 +327,6 @@ class Thermodynamics:
         for i, g1 in enumerate(self._grid):
             for j, g2 in enumerate(g1):
                 if g2 is None:
-                    print("None-")
                     self._grid[i, j] = GridPointData(
                         volume=self._volumes[i],
                         temperature=self._temperatures[j],
@@ -393,22 +400,27 @@ def load_sscha_yamls(filenames: tuple[str], verbose: bool = False) -> Thermodyna
     data = []
     for yamlfile in filenames:
         res = Restart(yamlfile, unit="eV/atom")
+        n_atom = len(res.unitcell.elements)
+        volume = np.round(res.volume, decimals=12) / n_atom
+        temp = np.round(res.temperature, decimals=3)
+        grid = GridPointData(
+            volume=volume,
+            temperature=temp,
+            data_type="sscha",
+            restart=res,
+            path_yaml=yamlfile,
+            path_fc2="/".join(yamlfile.split("/")[:-1]) + "/fc2.hdf5",
+        )
         if res.converge and not res.imaginary:
-            n_atom = len(res.unitcell.elements)
-            volume = np.round(res.volume, decimals=12) / n_atom
-            temp = np.round(res.temperature, decimals=3)
-            grid = GridPointData(
-                volume=volume,
-                temperature=temp,
-                data_type="sscha",
-                restart=res,
-                path_yaml=yamlfile,
-                path_fc2="/".join(yamlfile.split("/")[:-1]) + "/fc2.hdf5",
-            )
             grid.free_energy = res.free_energy + res.static_potential
             grid.entropy = res.entropy
             grid.harmonic_heat_capacity = res.harmonic_heat_capacity
-            data.append(grid)
+        else:
+            grid.free_energy = None
+            grid.entropy = None
+            grid.harmonic_heat_capacity = None
+        data.append(grid)
+
     return Thermodynamics(data=data, data_type="sscha", verbose=verbose)
 
 
@@ -458,8 +470,6 @@ def denoise_free_energy(thermo_base: Thermodynamics, thermo_denoise: Thermodynam
     """Reduce noises in free energies using EOS fitting."""
     thermo_sum = copy.deepcopy(thermo_denoise)
     thermo_sum = thermo_sum.add(thermo_base.grid)
-    # temporarily used
-    thermo_sum = copy.deepcopy(thermo_base)
 
     if thermo_base.fitted_models.eos_fits is None:
         thermo_base.fit_eos()

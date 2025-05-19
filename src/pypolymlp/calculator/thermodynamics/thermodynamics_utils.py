@@ -32,7 +32,6 @@ class GridPointData:
 
     def reset(self):
         """Reset data."""
-        self.restart = None
         self.harmonic_heat_capacity = None
         self.reference_free_energy = None
         self.reference_entropy = None
