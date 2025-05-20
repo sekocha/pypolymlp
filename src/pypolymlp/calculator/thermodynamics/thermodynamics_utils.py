@@ -70,6 +70,20 @@ class FittedModels:
     st_fits: Optional[list] = None
     cv_fits: Optional[list] = None
 
+    def reshape(self, ix_v: np.ndarray, ix_t: np.ndarray):
+        """Reshape objects with common grid."""
+        self.volumes = self.volumes[ix_v]
+        self.temperatures = self.temperatures[ix_t]
+        if self.eos_fits is not None:
+            self.eos_fits = [self.eos_fits[i] for i in ix_t]
+        if self.sv_fits is not None:
+            self.sv_fits = [self.sv_fits[i] for i in ix_t]
+        if self.cv_fits is not None:
+            self.cv_fits = [self.cv_fits[i] for i in ix_t]
+        if self.st_fits is not None:
+            self.st_fits = [self.st_fits[i] for i in ix_v]
+        return self
+
     def extract(self, itemp: int):
         """Retrun fitted functions for at a temperature index."""
         eos = self.eos_fits[itemp] if self.eos_fits is not None else None
@@ -201,3 +215,26 @@ def save_thermodynamics_yaml(
         print("", file=f)
 
     f.close()
+
+
+def compare_conditions(array1: np.ndarray, array2: np.ndarray):
+    """Return indices with the same values in two arrays"""
+    ids1, ids2 = [], []
+    for i1, val in enumerate(array1):
+        i2 = np.where(np.isclose(array2, val))[0]
+        if len(i2) > 0:
+            ids1.append(i1)
+            ids2.append(i2[0])
+    return np.array(ids1), np.array(ids2)
+
+
+def get_common_grid(
+    volumes1: np.ndarray,
+    volumes2: np.ndarray,
+    temperatures1: np.ndarray,
+    temperatures2: np.ndarray,
+):
+    """Return common grid for two conditions."""
+    ids1_v, ids2_v = compare_conditions(volumes1, volumes2)
+    ids1_t, ids2_t = compare_conditions(temperatures1, temperatures2)
+    return (ids1_v, ids1_t), (ids2_v, ids2_t)

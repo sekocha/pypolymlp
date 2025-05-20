@@ -14,6 +14,7 @@ from pypolymlp.calculator.thermodynamics.fit_utils import Polyfit
 from pypolymlp.calculator.thermodynamics.thermodynamics_utils import (
     FittedModels,
     GridPointData,
+    get_common_grid,
     save_thermodynamics_yaml,
 )
 from pypolymlp.calculator.utils.eos_utils import EOS
@@ -272,23 +273,53 @@ class Thermodynamics:
         """Return temperatures."""
         return self._temperatures
 
+    @temperatures.setter
+    def temperatures(self, _temperatures: np.ndarray):
+        """Set temperatures."""
+        self._temperatures = _temperatures
+
     @property
     def volumes(self):
         """Return volumes."""
         return self._volumes
+
+    @volumes.setter
+    def volumes(self, _volumes: np.ndarray):
+        """Set volumes."""
+        self._volumes = _volumes
 
     @property
     def fitted_models(self):
         """Return fitted models."""
         return self._models
 
-    def add(self, grid_add: np.ndarray):
+    def add(self, thermo_add: np.ndarray):
         """Add grid data to the current grid data."""
-        self._models = FittedModels(self._volumes, self._temperatures)
+        (ix1_v, ix1_t), (ix2_v, ix2_t) = get_common_grid(
+            self._volumes,
+            thermo_add.volumes,
+            self._temperatures,
+            thermo_add.temperatures,
+        )
+        self.reshape(ix1_v, ix1_t)
+        grid_add = thermo_add.grid[np.ix_(ix2_v, ix2_t)]
+
         mask = np.equal(self._grid, None) | np.equal(grid_add, None)
         for g1, g2 in zip(self._grid[~mask], grid_add[~mask]):
             g1 = g1.add(g2)
+
+        self._models = FittedModels(self._volumes, self._temperatures)
         return self
+
+    def _check_temperatures(self, temperatures: np.ndarray):
+        """Update temperatures."""
+        ids1, ids2 = [], []
+        for i, temp in enumerate(self._temperatures):
+            id_add = np.where(np.isclose(temperatures, temp))[0]
+            if len(id_add) > 0:
+                ids1.append(i)
+                ids2.append(id_add[0])
+        return np.array(ids1), np.array(ids2)
 
     def replace_free_energies(self, free_energies: np.ndarray):
         """Replace free energies."""
@@ -311,6 +342,9 @@ class Thermodynamics:
 
     def _replace(self, properties: np.ndarray, attr: str = "free_energy"):
         """Replace properties."""
+        if properties.shape != self._grid.shape:
+            raise RuntimeError("Mismatch size.")
+
         for i, g1 in enumerate(self._grid):
             for j, g2 in enumerate(g1):
                 if g2 is None:
@@ -320,6 +354,14 @@ class Thermodynamics:
                         data_type=self._data_type,
                     )
                 setattr(self._grid[i, j], attr, properties[i, j])
+        return self
+
+    def reshape(self, ix_v: np.ndarray, ix_t: np.ndarray):
+        """Reshape using ixgrid."""
+        self._volumes = self._volumes[ix_v]
+        self._temperatures = self._temperatures[ix_t]
+        self._grid = self._grid[np.ix_(ix_v, ix_t)]
+        self._models.reshape(ix_v, ix_t)
         return self
 
 
@@ -423,10 +465,23 @@ def load_electron_yamls(filenames: tuple[str], verbose: bool = False) -> Thermod
     return Thermodynamics(data=data, data_type="electron", verbose=verbose)
 
 
+def adjust_to_common_grid(thermo1: Thermodynamics, thermo2: Thermodynamics):
+    """Reshape objects with common grid."""
+    (ix1_v, ix1_t), (ix2_v, ix2_t) = get_common_grid(
+        thermo1.volumes,
+        thermo2.volumes,
+        thermo1.temperatures,
+        thermo2.temperatures,
+    )
+    thermo1.reshape(ix1_v, ix1_t)
+    thermo2.reshape(ix2_v, ix2_t)
+    return thermo1, thermo2
+
+
 def denoise_free_energy(thermo_base: Thermodynamics, thermo_denoise: Thermodynamics):
     """Reduce noises in free energies using EOS fitting."""
     thermo_sum = copy.deepcopy(thermo_denoise)
-    thermo_sum = thermo_sum.add(thermo_base.grid)
+    thermo_sum = thermo_sum.add(thermo_base)
 
     if thermo_base.fitted_models.eos_fits is None:
         thermo_base.fit_eos()
@@ -435,3 +490,13 @@ def denoise_free_energy(thermo_base: Thermodynamics, thermo_denoise: Thermodynam
     f2 = thermo_sum.eval_free_energies(thermo_sum.volumes)
     thermo_denoise.replace_free_energies(f2 - f1)
     return thermo_denoise, (thermo_sum, f2)
+
+
+def calc_sscha_properties(yamls: list[str]):
+    """Calculate thermodynamic properties from SSCHA."""
+    sscha = load_sscha_yamls(yamls, verbose=True)
+    sscha.fit_eos()
+    sscha.fit_eval_entropy(max_order=6)
+    sscha.fit_eval_cp(max_order=4, from_entropy=True)
+    # gibbs = sscha.eval_gibbs_free_energies(sscha.volumes)
+    return sscha
