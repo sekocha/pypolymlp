@@ -30,14 +30,32 @@ class GridPointData:
     path_yaml: Optional[float] = None
     path_fc2: Optional[float] = None
 
-    def reset(self):
+    def reset_reference(self):
         """Reset data."""
-        self.harmonic_heat_capacity = None
         self.reference_free_energy = None
         self.reference_entropy = None
         self.reference_heat_capacity = None
-        self.path_yaml = None
-        self.path_fc2 = None
+        return self
+
+    def add(self, gp_data):
+        """Add data."""
+        if self.free_energy is not None and gp_data.free_energy is not None:
+            self.free_energy += gp_data.free_energy
+        else:
+            self.free_energy = None
+        if self.entropy is not None and gp_data.entropy is not None:
+            self.entropy += gp_data.entropy
+        else:
+            self.entropy = None
+        if self.heat_capacity is not None and gp_data.heat_capacity is not None:
+            self.heat_capacity += gp_data.heat_capacity
+        else:
+            self.heat_capacity = None
+        if self.restart is None:
+            self.restart = gp_data.restart
+        if self.path_fc2 is None:
+            self.path_fc2 = gp_data.path_fc2
+        self.reset_reference()
         return self
 
 
@@ -146,3 +164,40 @@ class FittedModels:
         if self.eos_fits is None:
             raise RuntimeError("EOS functions not found.")
         return np.array([eos.eval_gibbs_pressure(volumes) for eos in self.eos_fits])
+
+
+def save_thermodynamics_yaml(
+    temperatures: np.ndarray,
+    models: FittedModels,
+    eq_entropies: Optional[np.ndarray] = None,
+    eq_cp: Optional[np.ndarray] = None,
+    filename: str = "polymlp_thermodynamics.yaml",
+):
+    """Save fitted thermodynamics properties."""
+    f = open(filename, "w")
+    print("units:", file=f)
+    print("  temperature:   K", file=f)
+    print("  volume:        angstroms^3/atom", file=f)
+    print("  bulk_modulus:  GPa", file=f)
+    print("  pressure:      GPa", file=f)
+    print("  free_energy:   eV/atom", file=f)
+    print("  entropy:       J/K/mol (/Avogadro's number of atoms)", file=f)
+    print("  heat_capacity: J/K/mol (/Avogadro's number of atoms)", file=f)
+    print("", file=f)
+
+    print("equilibrium_properties:", file=f)
+    for itemp, temp in enumerate(temperatures):
+        eos, sv, cv = models.extract(itemp)
+        print("- temperature:      ", temp, file=f)
+        if eos is not None:
+            print("  volume:           ", eos.v0, file=f)
+            print("  bulk_modulus:     ", eos.b0, file=f)
+            print("  free_energy:      ", eos.e0, file=f)
+        if eq_entropies is not None and eq_entropies[itemp] is not None:
+            val = eq_entropies[itemp] * EVtoJmol
+            print("  entropy:          ", val, file=f)
+        if eq_cp is not None and eq_cp[itemp] is not None:
+            print("  heat_capacity_cp: ", eq_cp[itemp], file=f)
+        print("", file=f)
+
+    f.close()

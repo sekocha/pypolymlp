@@ -36,6 +36,7 @@ class ElectronProperties:
         self._free_energies = np.array(self._free_energies) - self._free_energies[0]
         self._energies = np.array(self._energies) - self._energies[0]
         self._entropies = np.array(self._entropies)
+        self._entropies[1:] /= self._temperatures[1:]
         self._cvs = np.array(self._cvs)
         return self
 
