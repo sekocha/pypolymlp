@@ -295,14 +295,17 @@ class Thermodynamics:
 
     def add(self, thermo_add: np.ndarray):
         """Add grid data to the current grid data."""
-        (ix1_v, ix1_t), (ix2_v, ix2_t) = get_common_grid(
-            self._volumes,
-            thermo_add.volumes,
-            self._temperatures,
-            thermo_add.temperatures,
-        )
-        self.reshape(ix1_v, ix1_t)
-        grid_add = thermo_add.grid[np.ix_(ix2_v, ix2_t)]
+        if self._grid.shape != thermo_add.grid.shape:
+            (ix1_v, ix1_t), (ix2_v, ix2_t) = get_common_grid(
+                self._volumes,
+                thermo_add.volumes,
+                self._temperatures,
+                thermo_add.temperatures,
+            )
+            self.reshape(ix1_v, ix1_t)
+            grid_add = thermo_add.grid[np.ix_(ix2_v, ix2_t)]
+        else:
+            grid_add = thermo_add.grid
 
         mask = np.equal(self._grid, None) | np.equal(grid_add, None)
         for g1, g2 in zip(self._grid[~mask], grid_add[~mask]):
@@ -343,7 +346,7 @@ class Thermodynamics:
     def _replace(self, properties: np.ndarray, attr: str = "free_energy"):
         """Replace properties."""
         if properties.shape != self._grid.shape:
-            raise RuntimeError("Mismatch size.")
+            raise RuntimeError("Different grid points in two objects.")
 
         for i, g1 in enumerate(self._grid):
             for j, g2 in enumerate(g1):
@@ -480,13 +483,16 @@ def adjust_to_common_grid(thermo1: Thermodynamics, thermo2: Thermodynamics):
 
 def denoise_free_energy(thermo_base: Thermodynamics, thermo_denoise: Thermodynamics):
     """Reduce noises in free energies using EOS fitting."""
+    if thermo_base.grid.shape != thermo_denoise.grid.shape:
+        raise RuntimeError("Different grid points in two objects.")
+
     thermo_sum = copy.deepcopy(thermo_denoise)
     thermo_sum = thermo_sum.add(thermo_base)
 
     if thermo_base.fitted_models.eos_fits is None:
         thermo_base.fit_eos()
     thermo_sum.fit_eos()
-    f1 = thermo_base.eval_free_energies(thermo_sum.volumes)
+    f1 = thermo_base.eval_free_energies(thermo_base.volumes)
     f2 = thermo_sum.eval_free_energies(thermo_sum.volumes)
     thermo_denoise.replace_free_energies(f2 - f1)
     return thermo_denoise, (thermo_sum, f2)
