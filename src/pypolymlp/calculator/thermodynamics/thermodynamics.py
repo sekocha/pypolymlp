@@ -459,7 +459,6 @@ def load_ti_yamls(filenames: tuple[str], verbose: bool = False) -> Thermodynamic
     data = []
     for yamlfile in filenames:
         temp, volume, free_e, cv, _ = load_thermodynamic_integration_yaml(yamlfile)
-        print(free_e)
         grid = GridPointData(
             volume=volume,
             temperature=temp,
