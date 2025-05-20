@@ -31,7 +31,11 @@ class Polyfit:
 
     def eval(self, x: float):
         """Evaluate value of fitted polynomial at given x."""
-        return np.polyval(self._coeffs, x)
+        coeffs = self._coeffs[1:] if self._add_sqrt else self._coeffs
+        val = np.polyval(coeffs, x)
+        if self._add_sqrt:
+            val += self._coeffs[0] * np.power(x, 0.5)
+        return val
 
     def eval_derivative(self, x: float):
         """Evaluate derivative of fitted polynomial at given x."""

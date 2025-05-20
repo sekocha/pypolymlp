@@ -71,7 +71,9 @@ class Thermodynamics:
         if self._verbose:
             print("Dataset type:", self._data_type, flush=True)
             for itemp, data in enumerate(self._grid.T):
-                n_data = len([d for d in data if d.free_energy is not None])
+                n_data = len(
+                    [d for d in data if d is not None and d.free_energy is not None]
+                )
                 print("- temperature:", self._temperatures[itemp], flush=True)
                 print("  n_data:     ", n_data, flush=True)
 
@@ -84,8 +86,14 @@ class Thermodynamics:
 
         eos_fits = []
         for itemp, data in enumerate(self._grid.T):
-            volumes = [d.volume for d in data if d.free_energy is not None]
-            free_energies = [d.free_energy for d in data if d.free_energy is not None]
+            volumes = [
+                d.volume for d in data if d is not None and d.free_energy is not None
+            ]
+            free_energies = [
+                d.free_energy
+                for d in data
+                if d is not None and d.free_energy is not None
+            ]
             try:
                 eos = EOS(volumes, free_energies)
             except:
@@ -113,8 +121,14 @@ class Thermodynamics:
         """Fit volume-property data using polynomial."""
         fits = []
         for itemp, data in enumerate(self._grid.T):
-            volumes = [d.volume for d in data if d.entropy is not None]
-            props = [getattr(d, attr) for d in data if getattr(d, attr) is not None]
+            volumes = [
+                d.volume for d in data if d is not None and d.entropy is not None
+            ]
+            props = [
+                getattr(d, attr)
+                for d in data
+                if d is not None and getattr(d, attr) is not None
+            ]
             if len(props) > 4:
                 polyfit = Polyfit(volumes, props)
                 polyfit.fit(max_order=max_order, intercept=True, add_sqrt=False)
@@ -134,7 +148,9 @@ class Thermodynamics:
 
         st_fits = []
         for ivol, data in enumerate(self._grid):
-            points = np.array([d for d in data if d.entropy is not None])
+            points = np.array(
+                [d for d in data if d is not None and d.entropy is not None]
+            )
             if len(points) > 4:
                 if reference:
                     points = calculate_reference(points)
@@ -153,6 +169,12 @@ class Thermodynamics:
                     print("- Volume:", np.round(self._volumes[ivol], 3), flush=True)
                     print("  RMSE:  ", polyfit.error, flush=True)
                     print("  model: ", polyfit.best_model, flush=True)
+
+                if ivol == 2:
+                    tp = np.arange(temperatures[0], temperatures[-1], 1)
+                    predict = polyfit.eval(tp)
+                    np.savetxt("entropy.dat", np.stack([temperatures, del_entropies]).T)
+                    np.savetxt("entropy_fit.dat", np.stack([tp, predict]).T)
 
                 cv_from_ref = temperatures * polyfit.eval_derivative(temperatures)
                 if reference:
@@ -293,6 +315,11 @@ class Thermodynamics:
         """Return fitted models."""
         return self._models
 
+    def get_data(self, attr="free_energy"):
+        """Retrun data of given attribute."""
+        props = [[getattr(d, attr) for d in data1] for data1 in self._grid]
+        return np.array(props)
+
     def add(self, thermo_add: np.ndarray):
         """Add grid data to the current grid data."""
         if self._grid.shape != thermo_add.grid.shape:
@@ -308,6 +335,7 @@ class Thermodynamics:
             grid_add = thermo_add.grid
 
         mask = np.equal(self._grid, None) | np.equal(grid_add, None)
+        self._grid[mask] = None
         for g1, g2 in zip(self._grid[~mask], grid_add[~mask]):
             g1 = g1.add(g2)
 
@@ -431,6 +459,7 @@ def load_ti_yamls(filenames: tuple[str], verbose: bool = False) -> Thermodynamic
     data = []
     for yamlfile in filenames:
         temp, volume, free_e, cv, _ = load_thermodynamic_integration_yaml(yamlfile)
+        print(free_e)
         grid = GridPointData(
             volume=volume,
             temperature=temp,

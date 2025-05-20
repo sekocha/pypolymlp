@@ -238,3 +238,20 @@ def get_common_grid(
     ids1_v, ids2_v = compare_conditions(volumes1, volumes2)
     ids1_t, ids2_t = compare_conditions(temperatures1, temperatures2)
     return (ids1_v, ids1_t), (ids2_v, ids2_t)
+
+
+def sum_matrix_data(matrix1: np.ndarray, matrix2: np.ndarray):
+    """Calculate sum of two matrices."""
+    if matrix1.shape != matrix2.shape:
+        raise RuntimeError("Inconsistent matrix shape.")
+    res = np.full(matrix1.shape, None)
+    mask = np.equal(matrix1, None) | np.equal(matrix2, None)
+    res[~mask] = matrix1[~mask] + matrix2[~mask]
+
+    #    for i, (r1, r2) in enumerate(zip(matrix1, matrix2)):
+    #        for j, (val1, val2) in enumerate(zip(r1, r2)):
+    #            if val1 is not None and val2 is not None:
+    #                res[i, j] = val1 + val2
+
+    # mask = np.equal(s_sscha, None) | np.equal(s_ele, None)
+    return res
