@@ -55,6 +55,7 @@ class Polyfit:
         order: Optional[int] = None,
         max_order: int = 4,
         intercept: bool = True,
+        first_order: bool = True,
         add_sqrt: bool = False,
     ):
         """Fit data to polynomial functions.
@@ -70,7 +71,12 @@ class Polyfit:
             min_loocv, best_order, best_add_sqrt = 1e10, None, None
             params = list(itertools.product(sqrts, orders))
             for add_sqrt, order in params:
-                res = self._fit_single(order, intercept=intercept, add_sqrt=add_sqrt)
+                res = self._fit_single(
+                    order,
+                    intercept=intercept,
+                    first_order=first_order,
+                    add_sqrt=add_sqrt,
+                )
                 (_, y_pred, y_rmse), X = res
                 cv = loocv(X, self._y, y_pred)
                 if min_loocv > cv:
@@ -80,26 +86,46 @@ class Polyfit:
         (coeffs, y_pred, y_rmse), _ = self._fit_single(
             best_order,
             intercept=intercept,
+            first_order=first_order,
             add_sqrt=best_add_sqrt,
         )
-        if not intercept:
-            coeffs = list(coeffs)
-            coeffs.append(0.0)
-            coeffs = np.array(coeffs)
-
-        self._coeffs = coeffs
+        self._coeffs = self._adjust_coeffs(coeffs, intercept, first_order)
         self._error = y_rmse
         self._order = best_order
         self._add_sqrt = best_add_sqrt
         return self
 
-    def _fit_single(self, order: int, intercept: bool = True, add_sqrt: bool = False):
+    def _adjust_coeffs(self, coeffs: np.ndarray, intercept: bool, first_order: bool):
+        """Adjust regression coefficients."""
+        coeffs = list(coeffs)
+        if intercept:
+            intercept_c = coeffs[-1]
+            poly_c = coeffs[:-1]
+        else:
+            intercept_c = 0.0
+            poly_c = coeffs
+
+        if not first_order:
+            poly_c.append(0.0)
+
+        coeffs = poly_c
+        coeffs.append(intercept_c)
+        return np.array(coeffs)
+
+    def _fit_single(
+        self,
+        order: int,
+        intercept: bool = True,
+        first_order: bool = True,
+        add_sqrt: bool = False,
+    ):
         """Fit data to a single polynomial with a given order."""
         x, y = self._x, self._y
         X = []
+        range_end = 0 if first_order else 1
         if add_sqrt:
             X.append(np.sqrt(x))
-        for power in np.arange(order, 0, -1, dtype=int):
+        for power in np.arange(order, range_end, -1, dtype=int):
             X.append(x**power)
         if intercept:
             X.append(np.ones(x.shape))

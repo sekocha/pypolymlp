@@ -236,12 +236,16 @@ class IntegratorASE:
         if self._energies is not None:
             energies_slice = self._energies[n_eq:]
             self._average_energy = np.average(energies_slice)
-            var = np.average(np.square(energies_slice)) - self._average_energy**2
 
-            self._heat_capacity_eV = var / KbEV / self._temperature**2
-            self._heat_capacity = (
-                self._heat_capacity_eV * EVtoJ * Avogadro / len(self._atoms.numbers)
-            )
+            if np.isclose(self._temperature, 0.0):
+                self._heat_capacity_eV = 0.0
+                self._heat_capacity = 0.0
+            else:
+                var = np.average(np.square(energies_slice)) - self._average_energy**2
+                self._heat_capacity_eV = var / KbEV / self._temperature**2
+                self._heat_capacity = (
+                    self._heat_capacity_eV * EVtoJ * Avogadro / len(self._atoms.numbers)
+                )
 
         if self._delta_energies is not None:
             self._average_delta_energy = np.average(self._delta_energies[n_eq:])

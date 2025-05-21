@@ -67,8 +67,9 @@ class FittedModels:
     temperatures: np.ndarray
     eos_fits: Optional[list] = None
     sv_fits: Optional[list] = None
-    st_fits: Optional[list] = None
     cv_fits: Optional[list] = None
+    ft_fits: Optional[list] = None
+    st_fits: Optional[list] = None
 
     def reshape(self, ix_v: np.ndarray, ix_t: np.ndarray):
         """Reshape objects with common grid."""
@@ -80,6 +81,8 @@ class FittedModels:
             self.sv_fits = [self.sv_fits[i] for i in ix_t]
         if self.cv_fits is not None:
             self.cv_fits = [self.cv_fits[i] for i in ix_t]
+        if self.ft_fits is not None:
+            self.ft_fits = [self.ft_fits[i] for i in ix_v]
         if self.st_fits is not None:
             self.st_fits = [self.st_fits[i] for i in ix_v]
         return self
@@ -214,6 +217,7 @@ def save_thermodynamics_yaml(
             print("  heat_capacity_cp: ", eq_cp[itemp], file=f)
         print("", file=f)
 
+    # gibbs = sscha.eval_gibbs_free_energies(sscha.volumes)
     f.close()
 
 
@@ -247,11 +251,4 @@ def sum_matrix_data(matrix1: np.ndarray, matrix2: np.ndarray):
     res = np.full(matrix1.shape, None)
     mask = np.equal(matrix1, None) | np.equal(matrix2, None)
     res[~mask] = matrix1[~mask] + matrix2[~mask]
-
-    #    for i, (r1, r2) in enumerate(zip(matrix1, matrix2)):
-    #        for j, (val1, val2) in enumerate(zip(r1, r2)):
-    #            if val1 is not None and val2 is not None:
-    #                res[i, j] = val1 + val2
-
-    # mask = np.equal(s_sscha, None) | np.equal(s_ele, None)
     return res

@@ -122,13 +122,17 @@ class Thermodynamics:
         fits = []
         for itemp, data in enumerate(self._grid.T):
             volumes = [
-                d.volume for d in data if d is not None and d.entropy is not None
+                d.volume for d in data if d is not None and getattr(d, attr) is not None
             ]
-            props = [
-                getattr(d, attr)
-                for d in data
-                if d is not None and getattr(d, attr) is not None
-            ]
+            props = np.array(
+                [
+                    getattr(d, attr)
+                    for d in data
+                    if d is not None and getattr(d, attr) is not None
+                ]
+            )
+            # temporarily revised.
+            props[np.abs(props) == np.inf] = 0.0
             if len(props) > 4:
                 polyfit = Polyfit(volumes, props)
                 polyfit.fit(max_order=max_order, intercept=True, add_sqrt=False)
@@ -140,6 +144,41 @@ class Thermodynamics:
             else:
                 fits.append(None)
         return fits
+
+    def fit_free_energy_temperature(self, max_order: int = 6):
+        """Fit temperature-free-energy data using polynomial."""
+        if self._verbose:
+            print("Temperature-FreeEnergy fitting.", flush=True)
+
+        ft_fits = []
+        for ivol, data in enumerate(self._grid):
+            points = np.array(
+                [d for d in data if d is not None and d.free_energy is not None]
+            )
+            if len(points) > 4:
+                temperatures = np.array([p.temperature for p in points])
+                free_energies = np.array([p.free_energy for p in points])
+                polyfit = Polyfit(temperatures, free_energies)
+                polyfit.fit(
+                    max_order=max_order,
+                    intercept=False,
+                    first_order=False,
+                    add_sqrt=True,
+                )
+                ft_fits.append(polyfit)
+                if self._verbose:
+                    print("- Volume:", np.round(self._volumes[ivol], 3), flush=True)
+                    print("  RMSE:  ", polyfit.error, flush=True)
+                    print("  model: ", polyfit.best_model, flush=True)
+
+                # entropy calculations
+                entropies = -polyfit.eval_derivative(temperatures)
+                for p, val in zip(points, entropies):
+                    p.entropy = val
+            else:
+                ft_fits.append(None)
+        self._models.ft_fits = ft_fits
+        return self
 
     def fit_entropy_temperature(self, max_order: int = 4, reference: bool = True):
         """Fit temperature-entropy data using polynomial."""
@@ -170,12 +209,7 @@ class Thermodynamics:
                     print("  RMSE:  ", polyfit.error, flush=True)
                     print("  model: ", polyfit.best_model, flush=True)
 
-                if ivol == 2:
-                    tp = np.arange(temperatures[0], temperatures[-1], 1)
-                    predict = polyfit.eval(tp)
-                    np.savetxt("entropy.dat", np.stack([temperatures, del_entropies]).T)
-                    np.savetxt("entropy_fit.dat", np.stack([tp, predict]).T)
-
+                # Cv calculations
                 cv_from_ref = temperatures * polyfit.eval_derivative(temperatures)
                 if reference:
                     for p, val in zip(points, cv_from_ref):
@@ -291,16 +325,6 @@ class Thermodynamics:
         self._grid = _grid
 
     @property
-    def temperatures(self):
-        """Return temperatures."""
-        return self._temperatures
-
-    @temperatures.setter
-    def temperatures(self, _temperatures: np.ndarray):
-        """Set temperatures."""
-        self._temperatures = _temperatures
-
-    @property
     def volumes(self):
         """Return volumes."""
         return self._volumes
@@ -311,11 +335,21 @@ class Thermodynamics:
         self._volumes = _volumes
 
     @property
+    def temperatures(self):
+        """Return temperatures."""
+        return self._temperatures
+
+    @temperatures.setter
+    def temperatures(self, _temperatures: np.ndarray):
+        """Set temperatures."""
+        self._temperatures = _temperatures
+
+    @property
     def fitted_models(self):
         """Return fitted models."""
         return self._models
 
-    def get_data(self, attr="free_energy"):
+    def get_data(self, attr: str = "free_energy"):
         """Retrun data of given attribute."""
         props = [[getattr(d, attr) for d in data1] for data1 in self._grid]
         return np.array(props)
@@ -341,16 +375,6 @@ class Thermodynamics:
 
         self._models = FittedModels(self._volumes, self._temperatures)
         return self
-
-    def _check_temperatures(self, temperatures: np.ndarray):
-        """Update temperatures."""
-        ids1, ids2 = [], []
-        for i, temp in enumerate(self._temperatures):
-            id_add = np.where(np.isclose(temperatures, temp))[0]
-            if len(id_add) > 0:
-                ids1.append(i)
-                ids2.append(id_add[0])
-        return np.array(ids1), np.array(ids2)
 
     def replace_free_energies(self, free_energies: np.ndarray):
         """Replace free energies."""
@@ -458,6 +482,7 @@ def load_ti_yamls(filenames: tuple[str], verbose: bool = False) -> Thermodynamic
     """Load polymlp_ti.yaml files."""
     data = []
     for yamlfile in filenames:
+        # TODO: Include checking melting behavior in this function.
         temp, volume, free_e, cv, _ = load_thermodynamic_integration_yaml(yamlfile)
         grid = GridPointData(
             volume=volume,
@@ -509,6 +534,28 @@ def adjust_to_common_grid(thermo1: Thermodynamics, thermo2: Thermodynamics):
     return thermo1, thermo2
 
 
+def load_yamls(
+    yamls_sscha: list[str],
+    yamls_electron: Optional[list[str]] = None,
+    yamls_ti: Optional[list[str]] = None,
+):
+    """Load yaml files needed for calculating thermodynamics."""
+    sscha = load_sscha_yamls(yamls_sscha, verbose=True)
+    if yamls_electron is not None:
+        electron = load_electron_yamls(yamls_electron, verbose=True)
+        sscha, electron = adjust_to_common_grid(sscha, electron)
+    else:
+        electron = None
+    if yamls_ti is not None:
+        ti = load_ti_yamls(yamls_ti, verbose=True)
+        sscha, ti = adjust_to_common_grid(sscha, ti)
+        if yamls_electron is not None:
+            sscha, electron = adjust_to_common_grid(sscha, electron)
+    else:
+        ti = None
+    return sscha, electron, ti
+
+
 def denoise_free_energy(thermo_base: Thermodynamics, thermo_denoise: Thermodynamics):
     """Reduce noises in free energies using EOS fitting."""
     if thermo_base.grid.shape != thermo_denoise.grid.shape:
@@ -526,11 +573,32 @@ def denoise_free_energy(thermo_base: Thermodynamics, thermo_denoise: Thermodynam
     return thermo_denoise, (thermo_sum, f2)
 
 
-def calc_sscha_properties(yamls: list[str]):
+def calc_sscha_properties(sscha: Thermodynamics):
     """Calculate thermodynamic properties from SSCHA."""
-    sscha = load_sscha_yamls(yamls, verbose=True)
     sscha.fit_eos()
     sscha.fit_eval_entropy(max_order=6)
     sscha.fit_eval_cp(max_order=4, from_entropy=True)
-    # gibbs = sscha.eval_gibbs_free_energies(sscha.volumes)
     return sscha
+
+
+def include_electron_contrib(sscha: Thermodynamics, electron: Thermodynamics):
+    """Calculate thermodynamic properties from electronic contribution."""
+    electron, _ = denoise_free_energy(sscha, electron)
+    # electron.fit_entropy_volume(max_order=6)
+    # electron.fit_cv_volume(max_order=4)
+
+    # f_total = f_sscha_ele
+    # f_ = sscha.get_data(attr="entropy")
+    # s_sscha = sscha.get_data(attr="entropy")
+    # s_ele = electron.get_data(attr="entropy")
+    # s_total = sum_matrix_data(s_sscha, s_ele)
+    return sscha, electron
+
+
+def include_ti_contrib(sscha: Thermodynamics, ti: Thermodynamics):
+    """Calculate thermodynamic properties from thermodynamic integration."""
+    ti, _ = denoise_free_energy(sscha, ti)
+    ti.fit_free_energy_temperature(max_order=6)
+    ti.fit_entropy_volume(max_order=6)
+    ti.fit_cv_volume(max_order=4)
+    return sscha, ti

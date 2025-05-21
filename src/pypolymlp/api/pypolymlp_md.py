@@ -359,7 +359,10 @@ class PypolymlpMD:
                 interval_log=None,
                 logfile=None,
             )
-            self._delta_heat_capacity = self.heat_capacity - 1.5 * Kb * Avogadro
+            if np.isclose(temperature, 0.0):
+                self._delta_heat_capacity = 0.0
+            else:
+                self._delta_heat_capacity = self.heat_capacity - 1.5 * Kb * Avogadro
 
         if self._verbose:
             print("Results (TI):", flush=True)
