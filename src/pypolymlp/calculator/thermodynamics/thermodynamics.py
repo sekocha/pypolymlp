@@ -163,7 +163,7 @@ class Thermodynamics:
                     max_order=max_order,
                     intercept=False,
                     first_order=False,
-                    add_sqrt=True,
+                    add_sqrt=False,
                 )
                 ft_fits.append(polyfit)
                 if self._verbose:
@@ -236,11 +236,18 @@ class Thermodynamics:
         )
         return self._eq_cp
 
+    def add_cp(self, cp: np.array):
+        """Add  Cp ."""
+        if self._eq_cp is None:
+            raise RuntimeError("Cp at V_eq not found.")
+
+        self._eq_cp += np.array(cp)
+        return self._eq_cp
+
     def fit_eval_entropy(self, max_order: int = 6, from_free_energy: bool = False):
         """Evaluate entropy from data."""
         if from_free_energy:
-            pass
-            # self.fit_free_energy_temperature()
+            self.fit_free_energy_temperature(max_order=max_order)
         self.fit_entropy_volume(max_order=max_order)
         self.eval_entropy_equilibrium()
         return self
@@ -256,6 +263,13 @@ class Thermodynamics:
             self.fit_entropy_temperature(max_order=max_order, reference=reference)
         self.fit_cv_volume(max_order=max_order)
         self.eval_cp_equilibrium()
+        return self
+
+    def fit_eval_sscha(self):
+        """Calculate thermodynamic properties from SSCHA."""
+        self.fit_eos()
+        self.fit_eval_entropy(max_order=6)
+        self.fit_eval_cp(max_order=4, from_entropy=True)
         return self
 
     def save_thermodynamics_yaml(self, filename="polymlp_thermodynamics.yaml"):
@@ -351,7 +365,14 @@ class Thermodynamics:
 
     def get_data(self, attr: str = "free_energy"):
         """Retrun data of given attribute."""
-        props = [[getattr(d, attr) for d in data1] for data1 in self._grid]
+        props = []
+        for data1 in self._grid:
+            array = []
+            for d in data1:
+                p = None if d is None else getattr(d, attr)
+                array.append(p)
+            props.append(array)
+
         return np.array(props)
 
     def add(self, thermo_add: np.ndarray):
@@ -376,22 +397,28 @@ class Thermodynamics:
         self._models = FittedModels(self._volumes, self._temperatures)
         return self
 
-    def replace_free_energies(self, free_energies: np.ndarray):
+    def replace_free_energies(self, free_energies: np.ndarray, reset_fit: bool = True):
         """Replace free energies."""
-        self._models.eos_fits = None
+        if reset_fit:
+            self._models.eos_fits = None
+            self._models.ft_fits = None
         self._replace(free_energies, attr="free_energy")
         return self
 
-    def replace_entropies(self, entropies: np.ndarray):
+    def replace_entropies(self, entropies: np.ndarray, reset_fit: bool = True):
         """Replace entropies."""
-        self._models.sv_fits = None
-        self._models.st_fits = None
+        if reset_fit:
+            self._models.sv_fits = None
+            self._models.st_fits = None
         self._replace(entropies, attr="entropy")
         return self
 
-    def replace_heat_capacities(self, heat_capacities: np.ndarray):
+    def replace_heat_capacities(
+        self, heat_capacities: np.ndarray, reset_fit: bool = True
+    ):
         """Replace heat capacities."""
-        self._models.cv_fits = None
+        if reset_fit:
+            self._models.cv_fits = None
         self._replace(heat_capacities, attr="heat_capacity")
         return self
 
@@ -447,6 +474,27 @@ def calculate_reference(
         point.reference_heat_capacity = cv / n_atom
 
     return grid_points
+
+
+def adjust_to_common_grid(thermo1: Thermodynamics, thermo2: Thermodynamics):
+    """Reshape objects with common grid."""
+    (ix1_v, ix1_t), (ix2_v, ix2_t) = get_common_grid(
+        thermo1.volumes,
+        thermo2.volumes,
+        thermo1.temperatures,
+        thermo2.temperatures,
+    )
+    thermo1.reshape(ix1_v, ix1_t)
+    thermo2.reshape(ix2_v, ix2_t)
+    return thermo1, thermo2
+
+
+def calc_sscha_properties(sscha: Thermodynamics):
+    """Calculate thermodynamic properties from SSCHA."""
+    sscha.fit_eos()
+    sscha.fit_eval_entropy(max_order=6)
+    sscha.fit_eval_cp(max_order=4, from_entropy=True)
+    return sscha
 
 
 def load_sscha_yamls(filenames: tuple[str], verbose: bool = False) -> Thermodynamics:
@@ -521,33 +569,21 @@ def load_electron_yamls(filenames: tuple[str], verbose: bool = False) -> Thermod
     return Thermodynamics(data=data, data_type="electron", verbose=verbose)
 
 
-def adjust_to_common_grid(thermo1: Thermodynamics, thermo2: Thermodynamics):
-    """Reshape objects with common grid."""
-    (ix1_v, ix1_t), (ix2_v, ix2_t) = get_common_grid(
-        thermo1.volumes,
-        thermo2.volumes,
-        thermo1.temperatures,
-        thermo2.temperatures,
-    )
-    thermo1.reshape(ix1_v, ix1_t)
-    thermo2.reshape(ix2_v, ix2_t)
-    return thermo1, thermo2
-
-
 def load_yamls(
     yamls_sscha: list[str],
     yamls_electron: Optional[list[str]] = None,
     yamls_ti: Optional[list[str]] = None,
+    verbose: bool = False,
 ):
     """Load yaml files needed for calculating thermodynamics."""
-    sscha = load_sscha_yamls(yamls_sscha, verbose=True)
+    sscha = load_sscha_yamls(yamls_sscha, verbose=verbose)
     if yamls_electron is not None:
-        electron = load_electron_yamls(yamls_electron, verbose=True)
+        electron = load_electron_yamls(yamls_electron, verbose=verbose)
         sscha, electron = adjust_to_common_grid(sscha, electron)
     else:
         electron = None
     if yamls_ti is not None:
-        ti = load_ti_yamls(yamls_ti, verbose=True)
+        ti = load_ti_yamls(yamls_ti, verbose=verbose)
         sscha, ti = adjust_to_common_grid(sscha, ti)
         if yamls_electron is not None:
             sscha, electron = adjust_to_common_grid(sscha, electron)
@@ -573,32 +609,8 @@ def denoise_free_energy(thermo_base: Thermodynamics, thermo_denoise: Thermodynam
     return thermo_denoise, (thermo_sum, f2)
 
 
-def calc_sscha_properties(sscha: Thermodynamics):
-    """Calculate thermodynamic properties from SSCHA."""
-    sscha.fit_eos()
-    sscha.fit_eval_entropy(max_order=6)
-    sscha.fit_eval_cp(max_order=4, from_entropy=True)
-    return sscha
-
-
-def include_electron_contrib(sscha: Thermodynamics, electron: Thermodynamics):
-    """Calculate thermodynamic properties from electronic contribution."""
-    electron, _ = denoise_free_energy(sscha, electron)
-    # electron.fit_entropy_volume(max_order=6)
-    # electron.fit_cv_volume(max_order=4)
-
-    # f_total = f_sscha_ele
-    # f_ = sscha.get_data(attr="entropy")
-    # s_sscha = sscha.get_data(attr="entropy")
-    # s_ele = electron.get_data(attr="entropy")
-    # s_total = sum_matrix_data(s_sscha, s_ele)
-    return sscha, electron
-
-
-def include_ti_contrib(sscha: Thermodynamics, ti: Thermodynamics):
+def include_ti_contrib(ti: Thermodynamics):
     """Calculate thermodynamic properties from thermodynamic integration."""
-    ti, _ = denoise_free_energy(sscha, ti)
     ti.fit_free_energy_temperature(max_order=6)
-    ti.fit_entropy_volume(max_order=6)
     ti.fit_cv_volume(max_order=4)
-    return sscha, ti
+    return ti
