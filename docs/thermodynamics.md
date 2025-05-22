@@ -31,7 +31,11 @@ SSCHA calculations at a single volume and multiple temperatures can be performed
 
 5. (Optional) Thermodynamic integration with MD calculations at various volumes and temperatures.
 
-In this thermodynamic integration, converged states of SSCHA calculations are used as reference states.
+```shell
+> pypolymlp-md --ti --poscar POSCAR --pot polymlp.yaml --supercell_size 5 5 3 --temp 300 --n_eq 5000 --n_steps 20000 --n_samples 15 --fc2 ./sscha/300/fc2.hdf5
+```
+
+Converged states of SSCHA calculations are used as reference states.
 
 6. Calculate thermodynamic properties from the precedent calculations.
 ```shell

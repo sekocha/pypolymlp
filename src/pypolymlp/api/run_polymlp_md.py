@@ -39,7 +39,7 @@ def run():
     parser.add_argument(
         "--thermostat",
         type=str,
-        choice=["Langevin", "Nose-Hoover"],
+        choices=["Langevin", "Nose-Hoover"],
         default="Langevin",
         help="Thermostat.",
     )
@@ -90,7 +90,7 @@ def run():
             fc2hdf5=args.fc2,
             thermostat=args.thermostat,
             n_alphas=args.n_samples,
-            temperature=args.temperature,
+            temperature=args.temp,
             time_step=args.time_step,
             ttime=args.ttime,
             friction=args.friction,
@@ -108,7 +108,7 @@ def run():
         md.set_ase_calculator(pot=args.pot)
         md.run_md_nvt(
             thermostat=args.thermostat,
-            temperature=args.temperature,
+            temperature=args.temp,
             time_step=args.time_step,
             friction=args.friction,
             ttime=args.ttime,
