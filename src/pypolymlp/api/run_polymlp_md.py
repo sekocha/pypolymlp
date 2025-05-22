@@ -6,9 +6,7 @@ import signal
 
 import numpy as np
 
-from pypolymlp.api.pypolymlp_md import run_thermodynamic_integration
-
-# from pypolymlp.api.pypolymlp_md import PypolymlpMD, run_thermodynamic_integration
+from pypolymlp.api.pypolymlp_md import PypolymlpMD, run_thermodynamic_integration
 
 
 def run():
@@ -66,25 +64,19 @@ def run():
 
     # for TI
     parser.add_argument(
+        "--n_samples", type=int, default=15, help="Number of MD simulations for TI."
+    )
+    parser.add_argument(
         "--fc2",
         type=str,
         default="fc2.hdf5",
         help="Force constant HDF5 file.",
     )
     parser.add_argument(
-        "--n_samples", type=int, default=15, help="Number of MD simulations for TI."
-    )
-    parser.add_argument(
         "--heat_capacity",
         action="store_true",
         help="Calculate heat capacity in TI.",
     )
-    parser.add_argument(
-        "--heat_capacity",
-        action="store_true",
-        help="Calculate heat capacity in TI.",
-    )
-
     args = parser.parse_args()
 
     np.set_printoptions(legacy="1.21")
@@ -108,3 +100,23 @@ def run():
             filename=path + "/polymlp_ti.yaml",
             verbose=True,
         )
+    else:
+        path = "/".join(os.path.abspath(args.poscar).split("/")[-1])
+        md = PypolymlpMD(verbose=True)
+        md.load_poscar(args.poscar)
+        md.set_supercell(args.supercell_size)
+        md.set_ase_calculator(pot=args.pot)
+        md.run_md_nvt(
+            thermostat=args.thermostat,
+            temperature=args.temperature,
+            time_step=args.time_step,
+            friction=args.friction,
+            ttime=args.ttime,
+            n_eq=args.n_eq,
+            n_steps=args.n_steps,
+            interval_save_forces=None,
+            interval_save_trajectory=None,
+            interval_log=1,
+            logfile=path + "/polymlp_md_log.dat",
+        )
+        md.save_yaml(filename=path + "/polymlp_md.yaml")
