@@ -40,6 +40,7 @@ Thermodynamic integration with MD calculations at a single volume and a single t
 ```
 
 Converged states of SSCHA calculations are used as reference states.
+Log file `polymlp_ti.yaml` will be generated in the directory where fc2.hdf5 is located.
 
 6. Calculate thermodynamic properties from the precedent calculations.
 ```shell
