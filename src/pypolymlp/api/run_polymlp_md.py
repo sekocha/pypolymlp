@@ -82,7 +82,7 @@ def run():
     np.set_printoptions(legacy="1.21")
 
     if args.ti:
-        path = "/".join(os.path.abspath(args.fc2).split("/")[-1])
+        path = "/".join(os.path.abspath(args.fc2).split("/")[:-1])
         run_thermodynamic_integration(
             pot=args.pot,
             poscar=args.poscar,
@@ -101,7 +101,7 @@ def run():
             verbose=True,
         )
     else:
-        path = "/".join(os.path.abspath(args.poscar).split("/")[-1])
+        path = "/".join(os.path.abspath(args.poscar).split("/")[:-1])
         md = PypolymlpMD(verbose=True)
         md.load_poscar(args.poscar)
         md.set_supercell(args.supercell_size)
