@@ -43,6 +43,7 @@ pypolymlp-structure = "pypolymlp.api.run_polymlp_str:run"
 pypolymlp-sscha = "pypolymlp.api.run_polymlp_sscha:run"
 pypolymlp-sscha-structure = "pypolymlp.api.run_polymlp_sscha_str:run"
 pypolymlp-sscha-post = "pypolymlp.api.run_polymlp_sscha_post:run"
+pypolymlp-thermodynamics = "pypolymlp.api.run_polymlp_thermodynamics:run"
 
 [tool.scikit-build]
 cmake.verbose = true
