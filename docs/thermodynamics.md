@@ -15,6 +15,7 @@ SSCHA calculations at a single volume and multiple temperatures can be performed
 ```shell
 > pypolymlp-sscha --poscar POSCAR --pot polymlp.yaml --supercell 5 5 3 --temp_min 50 --temp_max 2000 --temp_step 50 --mixing 0.5 --tol 0.005
 ```
+(symfc and phonopy are required.)
 
 4. (Optional) Electronic free energy calculations using DFT.
 
@@ -25,7 +26,7 @@ SSCHA calculations at a single volume and multiple temperatures can be performed
 ```shell
 > pypolymlp-utils --electron_vasprun */vasprun.xml --temp_max 2000 --temp_step 50
 
-(joblib required.)
+# joblib required.
 > pypolymlp-utils --electron_vasprun */vasprun.xml --temp_max 2000 --temp_step 50 --n_jobs -1
 ```
 
@@ -38,6 +39,7 @@ Thermodynamic integration with MD calculations at a single volume and a single t
 # Calculate heat capacity from the variance of potential energy in MD simulation
 > pypolymlp-md --ti --heat_capacity --poscar POSCAR --pot polymlp.lammps --supercell_size 5 5 3 --temp 300 --n_eq 5 --n_steps 20 --n_samples 15 --fc2 ./sscha/300/fc2.hdf5
 ```
+(ASE and phonopy are required.)
 
 Converged states of SSCHA calculations are used as reference states.
 Log file `polymlp_ti.yaml` will be generated in the directory where fc2.hdf5 is located.
