@@ -183,42 +183,6 @@ class FittedModels:
         return np.array([eos.eval_gibbs_pressure(volumes) for eos in self.eos_fits])
 
 
-def save_thermodynamics_yaml(
-    temperatures: np.ndarray,
-    models: FittedModels,
-    eq_entropies: Optional[np.ndarray] = None,
-    eq_cp: Optional[np.ndarray] = None,
-    filename: str = "polymlp_thermodynamics.yaml",
-):
-    """Save fitted thermodynamics properties."""
-    f = open(filename, "w")
-    print("units:", file=f)
-    print("  temperature:   K", file=f)
-    print("  volume:        angstroms^3/atom", file=f)
-    print("  bulk_modulus:  GPa", file=f)
-    print("  pressure:      GPa", file=f)
-    print("  free_energy:   eV/atom", file=f)
-    print("  entropy:       J/K/mol (/Avogadro's number of atoms)", file=f)
-    print("  heat_capacity: J/K/mol (/Avogadro's number of atoms)", file=f)
-    print("", file=f)
-
-    print("equilibrium_properties:", file=f)
-    for itemp, temp in enumerate(temperatures):
-        eos, sv, cv = models.extract(itemp)
-        print("- temperature:      ", temp, file=f)
-        if eos is not None:
-            print("  volume:           ", eos.v0, file=f)
-            print("  bulk_modulus:     ", eos.b0, file=f)
-            print("  free_energy:      ", eos.e0, file=f)
-        if eq_entropies is not None and eq_entropies[itemp] is not None:
-            val = eq_entropies[itemp] * EVtoJmol
-            print("  entropy:          ", val, file=f)
-        if eq_cp is not None and eq_cp[itemp] is not None:
-            print("  heat_capacity_cp: ", eq_cp[itemp], file=f)
-        print("", file=f)
-    f.close()
-
-
 def compare_conditions(array1: np.ndarray, array2: np.ndarray):
     """Return indices with the same values in two arrays"""
     ids1, ids2 = [], []

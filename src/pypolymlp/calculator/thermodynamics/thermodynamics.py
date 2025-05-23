@@ -11,11 +11,11 @@ from phonopy import Phonopy
 from pypolymlp.calculator.md.md_utils import load_thermodynamic_integration_yaml
 from pypolymlp.calculator.sscha.sscha_utils import Restart
 from pypolymlp.calculator.thermodynamics.fit_utils import Polyfit
+from pypolymlp.calculator.thermodynamics.io_utils import save_thermodynamics_yaml
 from pypolymlp.calculator.thermodynamics.thermodynamics_utils import (
     FittedModels,
     GridPointData,
     get_common_grid,
-    save_thermodynamics_yaml,
 )
 from pypolymlp.calculator.utils.eos_utils import EOS
 from pypolymlp.core.units import EVtoJmol
@@ -133,6 +133,7 @@ class Thermodynamics:
             )
             # temporarily revised.
             props[np.abs(props) == np.inf] = 0.0
+            ###
             if len(props) > 4:
                 polyfit = Polyfit(volumes, props)
                 polyfit.fit(max_order=max_order, intercept=True, add_sqrt=False)
@@ -275,10 +276,12 @@ class Thermodynamics:
     def save_thermodynamics_yaml(self, filename="polymlp_thermodynamics.yaml"):
         """Save fitted thermodynamics properties."""
         save_thermodynamics_yaml(
+            self._volumes,
             self._temperatures,
             self._models,
             self._eq_entropies,
             self._eq_cp,
+            self.get_data(attr="free_energy"),
             filename=filename,
         )
 
