@@ -4,7 +4,7 @@ import itertools
 
 import numpy as np
 
-from pypolymlp.utils.structure_matcher.matcher import normalize_positions
+from pypolymlp.calculator.utils.structure_matcher.matcher import normalize_positions
 
 
 def _test_normalize_positions(positions: np.ndarray, n_atoms: np.ndarray):
