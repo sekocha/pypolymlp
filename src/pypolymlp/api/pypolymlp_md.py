@@ -1,8 +1,10 @@
 """API Class for performing MD simulations."""
 
+import os
 from typing import Literal, Optional, Union
 
 import numpy as np
+import yaml
 from ase.calculators.calculator import Calculator
 
 from pypolymlp.calculator.md.ase_md import IntegratorASE
@@ -111,6 +113,7 @@ class PypolymlpMD:
         self._coeffs = coeffs
         self._properties = properties
 
+        self._check_fc2(fc2hdf5)
         fc2 = load_fc2_hdf5(fc2hdf5, return_matrix=True)
         self._calculator = PolymlpFC2ASECalculator(
             fc2,
@@ -122,6 +125,15 @@ class PypolymlpMD:
             alpha=alpha,
         )
         return self._calculator
+
+    def _check_fc2(self, fc2hdf5: str = "fc2.hdf5"):
+        """Check FC2 whether it shows imaginary phonon frequencies."""
+        path = "/".join(os.path.abspath(fc2hdf5).split("/")[:-1])
+        sscha_yaml = path + "/sscha_results.yaml"
+        if os.path.exists(sscha_yaml):
+            yaml_data = yaml.safe_load(open(sscha_yaml))
+            if yaml_data["status"]["imaginary"]:
+                raise RuntimeError("Given FC2 shows imaginary frequencies.")
 
     def load_poscar(self, poscar: str):
         """Parse POSCAR file and supercell matrix."""
