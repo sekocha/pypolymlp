@@ -529,21 +529,31 @@ def load_sscha_yamls(filenames: tuple[str], verbose: bool = False) -> Thermodyna
     return Thermodynamics(data=data, data_type="sscha", verbose=verbose)
 
 
+def _check_melting(log: np.ndarray):
+    """Check whether MD simulation converges to a melting state."""
+    grad = np.gradient(log[:, 1], log[:, 0])
+    return np.any(grad > 1e-3)
+
+
 def load_ti_yamls(filenames: tuple[str], verbose: bool = False) -> Thermodynamics:
     """Load polymlp_ti.yaml files."""
     data = []
     for yamlfile in filenames:
-        # TODO: Include checking melting behavior in this function.
-        temp, volume, free_e, cv, _ = load_thermodynamic_integration_yaml(yamlfile)
-        grid = GridPointData(
-            volume=volume,
-            temperature=temp,
-            data_type="ti",
-            free_energy=free_e,
-            heat_capacity=cv,
-            path_yaml=yamlfile,
-        )
-        data.append(grid)
+        temp, volume, free_e, cv, log = load_thermodynamic_integration_yaml(yamlfile)
+        if _check_melting(log):
+            if verbose:
+                message = yamlfile + " was eliminated (found to be in a melting state)."
+                print(message, flush=True)
+        else:
+            grid = GridPointData(
+                volume=volume,
+                temperature=temp,
+                data_type="ti",
+                free_energy=free_e,
+                heat_capacity=cv,
+                path_yaml=yamlfile,
+            )
+            data.append(grid)
     return Thermodynamics(data=data, data_type="ti", verbose=verbose)
 
 
