@@ -216,8 +216,6 @@ def save_thermodynamics_yaml(
         if eq_cp is not None and eq_cp[itemp] is not None:
             print("  heat_capacity_cp: ", eq_cp[itemp], file=f)
         print("", file=f)
-
-    # gibbs = sscha.eval_gibbs_free_energies(sscha.volumes)
     f.close()
 
 

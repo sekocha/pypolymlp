@@ -34,6 +34,7 @@ def save_thermodynamic_integration_yaml(
     filename: str = "polymlp_ti.yaml",
 ):
     """Save results of thermodynamic integration."""
+    np.set_printoptions(legacy="1.21")
     with open(filename, "w") as f:
         print("system:", integrator._atoms.symbols, file=f)
         print(file=f)
