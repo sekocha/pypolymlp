@@ -414,6 +414,7 @@ md.run_thermodynamic_integration(
     friction=0.01,
     n_eq=5000,
     n_steps=20000,
+    heat_capacity=False,
 )
 md.save_thermodynamic_integration_yaml(filename="polymlp_ti.yaml")
 ```
@@ -430,6 +431,7 @@ md = run_thermodynamic_integration(
     n_alphas=15,
     n_eq=5000,
     n_steps=20000,
+    heat_capacity=False,
     filename="polymlp_ti.yaml",
 )
 ```

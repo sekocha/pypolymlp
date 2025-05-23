@@ -51,7 +51,7 @@ If a cutoff radius is introduced to evaluate FC3s, use "--cutoff" option as foll
 > pypolymlp-calc --eos --poscar POSCAR --pot polymlp.lammps
 ```
 
-## Elastic constants
+## Elastic constant calculation
 
 (pymatgen is required.)
 ```shell
@@ -63,4 +63,11 @@ If a cutoff radius is introduced to evaluate FC3s, use "--cutoff" option as foll
 (phonopy is required.)
 ```shell
 > pypolymlp-calc --phonon --pot polymlp.lammps --poscar POSCAR --supercell 3 3 2 --ph_mesh 20 20 20
+```
+
+## Molecular dynamics calculations
+
+(ASE and phonopy are required.)
+```shell
+> pypolymlp-md --poscar POSCAR --pot polymlp.yaml --supercell_size 3 3 3 --temp 300 --n_eq 5000 --n_steps 20000
 ```

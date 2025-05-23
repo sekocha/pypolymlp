@@ -10,7 +10,7 @@ from phono3py.file_IO import read_fc2_from_hdf5
 
 from pypolymlp.calculator.sscha.sscha_params import SSCHAParameters
 from pypolymlp.core.data_format import PolymlpStructure
-from pypolymlp.core.units import kjmol_to_ev
+from pypolymlp.core.units import EVtoKJmol
 from pypolymlp.utils.phonopy_utils import phonopy_supercell, structure_to_phonopy_cell
 from pypolymlp.utils.yaml_utils import (
     load_cell,
@@ -128,9 +128,9 @@ class Restart:
         if self._unit == "kJ/mol":
             return val
         elif self._unit == "eV/cell":
-            return kjmol_to_ev(val)
+            return val / EVtoKJmol
         elif self._unit == "eV/atom":
-            return kjmol_to_ev(val) / self._n_atom_unitcell
+            return val / EVtoKJmol / self._n_atom_unitcell
         raise RuntimeError("Unit must be kJ/mol, eV/cell, or eV/atom")
 
     def _unit_conversion_entropy(self, val):
@@ -138,9 +138,9 @@ class Restart:
         if self._unit == "kJ/mol":
             return val
         elif self._unit == "eV/cell":
-            return kjmol_to_ev(val) / 1000
+            return val / EVtoKJmol / 1000
         elif self._unit == "eV/atom":
-            return kjmol_to_ev(val) / 1000 / self._n_atom_unitcell
+            return val / EVtoKJmol / 1000 / self._n_atom_unitcell
         raise RuntimeError("Unit must be kJ/mol, eV/cell, or eV/atom")
 
     @property

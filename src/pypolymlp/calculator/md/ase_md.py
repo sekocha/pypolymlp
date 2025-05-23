@@ -228,20 +228,24 @@ class IntegratorASE:
         self._n_eq = n_eq
         self._n_steps = n_steps
         self._dyn.run(n_eq + n_steps)
-        self._calc_avarages(n_eq)
+        self._calc_averages(n_eq)
         return self
 
-    def _calc_avarages(self, n_eq: int):
-        """Calculate avareges."""
+    def _calc_averages(self, n_eq: int):
+        """Calculate averages."""
         if self._energies is not None:
             energies_slice = self._energies[n_eq:]
             self._average_energy = np.average(energies_slice)
-            var = np.average(np.square(energies_slice)) - self._average_energy**2
 
-            self._heat_capacity_eV = var / KbEV / self._temperature**2
-            self._heat_capacity = (
-                self._heat_capacity_eV * EVtoJ * Avogadro / len(self._atoms.numbers)
-            )
+            if np.isclose(self._temperature, 0.0):
+                self._heat_capacity_eV = 0.0
+                self._heat_capacity = 0.0
+            else:
+                var = np.average(np.square(energies_slice)) - self._average_energy**2
+                self._heat_capacity_eV = var / KbEV / self._temperature**2
+                self._heat_capacity = (
+                    self._heat_capacity_eV * EVtoJ * Avogadro / len(self._atoms.numbers)
+                )
 
         if self._delta_energies is not None:
             self._average_delta_energy = np.average(self._delta_energies[n_eq:])
@@ -270,12 +274,12 @@ class IntegratorASE:
 
     @property
     def energies(self):
-        """Return potential energies."""
+        """Return potential energies in eV/supercell."""
         return np.array(self._energies)
 
     @property
     def forces(self):
-        """Return forces."""
+        """Return forces in eV/ang."""
         return np.array(self._forces)
 
     @property
@@ -285,17 +289,17 @@ class IntegratorASE:
 
     @property
     def delta_energies(self):
-        """Return energy differences from reference state."""
+        """Return energy differences from reference state in eV/supercell."""
         return np.array(self._delta_energies)
 
     @property
     def average_energy(self):
-        """Return avarage energy."""
+        """Return average energy in eV/supercell."""
         return self._average_energy
 
     @property
     def average_delta_energy(self):
-        """Return avarage energy difference from reference."""
+        """Return average energy difference from reference in eV/supercell."""
         return self._average_delta_energy
 
     @property
@@ -307,6 +311,18 @@ class IntegratorASE:
     def heat_capacity_eV(self):
         """Return heat capacity in eV."""
         return self._heat_capacity_eV
+
+    def write_conditions(self):
+        """Write input conditions as standard output."""
+        print("--- Input conditions for MD calculation ---", flush=True)
+        print("N atoms:                ", len(self._atoms.numbers), flush=True)
+        print("Volume (ang.3):         ", self._atoms.get_volume(), flush=True)
+        print("Temperature (K):        ", self._temperature, flush=True)
+        print("Time step (fs):         ", self._time_step, flush=True)
+        if hasattr(self.calculator, "_alpha"):
+            print("alpha_fc2:              ", self.calculator._alpha, flush=True)
+        print("-------------------------------------------", flush=True)
+        return self
 
     def save_yaml(self, filename="polymlp_md.yaml"):
         """Save properties to yaml file."""
