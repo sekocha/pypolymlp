@@ -42,7 +42,9 @@ class IntegratorASE:
             self._use_reference = True
         # Required if reference state is given.
         self._delta_energies = None
+        self._displacements = None
         self._average_delta_energy = None
+        self._average_displacement = None
 
         self._temperature = None
         self._time_step = None
@@ -148,6 +150,23 @@ class IntegratorASE:
         self._dyn.attach(store_de_in_memory, interval=interval)
         return self
 
+    def activate_save_displacement(self, interval: int = 1):
+        """Save average displacement."""
+        if self._dyn is None:
+            raise RuntimeError("Integrator not found.")
+
+        if not self._use_reference:
+            raise RuntimeError("Reference state not defined in Calculator.")
+
+        self._displacements = []
+
+        def store_displacement_in_memory():
+            d = self.calculator.average_displacement
+            self._displacements.append(d)
+
+        self._dyn.attach(store_displacement_in_memory, interval=interval)
+        return self
+
     def activate_loggers(
         self,
         logfile: str = "log.dat",
@@ -158,6 +177,7 @@ class IntegratorASE:
         self.activate_save_energies(interval=1)
         if self._use_reference:
             self.activate_save_energy_differences(interval=1)
+            self.activate_save_displacement(interval=1)
 
         if logfile is not None:
             self.activate_MDLogger(logfile=logfile, interval=interval_log)
@@ -249,6 +269,8 @@ class IntegratorASE:
 
         if self._delta_energies is not None:
             self._average_delta_energy = np.average(self._delta_energies[n_eq:])
+        if self._displacements is not None:
+            self._average_displacement = np.average(self._displacements[n_eq:])
         return self
 
     @property
@@ -301,6 +323,11 @@ class IntegratorASE:
     def average_delta_energy(self):
         """Return average energy difference from reference in eV/supercell."""
         return self._average_delta_energy
+
+    @property
+    def average_displacement(self):
+        """Return average displacement in angstrom."""
+        return self._average_displacement
 
     @property
     def heat_capacity(self):

@@ -350,16 +350,21 @@ class PypolymlpMD:
                 interval_log=None,
                 logfile=None,
             )
-            delta_energies.append([alpha, self.average_delta_energy])
+            delta_energies.append(
+                [alpha, self.average_delta_energy, self.average_displacement]
+            )
+
         self._delta_energies = delta_energies = np.array(delta_energies)
         self._delta_free_energy = calc_integral(weights, delta_energies[:, 1], a=0.0)
+
         if heat_capacity:
-            self.set_ase_calculator(
-                pot=self._pot,
-                params=self._params,
-                coeffs=self._coeffs,
-                properties=self._properties,
-            )
+            #            self.set_ase_calculator(
+            #                pot=self._pot,
+            #                params=self._params,
+            #                coeffs=self._coeffs,
+            #                properties=self._properties,
+            #            )
+            self._calculator.alpha = 1.0
             self.run_md_nvt(
                 thermostat=thermostat,
                 temperature=temperature,
@@ -376,13 +381,20 @@ class PypolymlpMD:
             else:
                 self._delta_heat_capacity = self.heat_capacity - 1.5 * Kb * Avogadro
 
+            self._delta_energies = np.vstack(
+                [
+                    self._delta_energies,
+                    [1.0, self.average_delta_energy, self.average_displacement],
+                ]
+            )
+
         if self._verbose:
             print("Results (TI):", flush=True)
             np.set_printoptions(suppress=True)
             print("  free_energy:", self._delta_free_energy, flush=True)
             print("  energies:", flush=True)
             print(delta_energies)
-            print("  heat_capacity:", self._delta_heat_capacity, flush=True)
+            print("  delta_heat_capacity:", self._delta_heat_capacity, flush=True)
 
         return self
 
@@ -483,6 +495,11 @@ class PypolymlpMD:
     def average_delta_energy(self):
         """Return avarage energy."""
         return self._integrator.average_delta_energy
+
+    @property
+    def average_displacement(self):
+        """Return avarage energy."""
+        return self._integrator.average_displacement
 
     @property
     def delta_free_energy(self):
