@@ -49,7 +49,7 @@ class PypolymlpMD:
         self._integrator = None
 
         self._use_reference = False
-        self._delta_energies = None
+        self._log_ti = None
         self._delta_free_energy = None
         self._delta_heat_capacity = None
 
@@ -302,6 +302,7 @@ class PypolymlpMD:
         self,
         thermostat: Literal["Nose-Hoover", "Langevin"] = "Langevin",
         n_alphas: int = 15,
+        max_alpha: float = 1.0,
         temperature: int = 300,
         time_step: float = 1.0,
         ttime: float = 20.0,
@@ -335,8 +336,8 @@ class PypolymlpMD:
         if not self._use_reference:
             raise RuntimeError("Reference state not found in Calculator.")
 
-        alphas, weights = get_p_roots(n=n_alphas, a=0.0, b=1.0)
-        delta_energies = []
+        alphas, weights = get_p_roots(n=n_alphas, a=0.0, b=max_alpha)
+        log_ti = []
         for alpha in alphas:
             self._calculator.alpha = alpha
             self.run_md_nvt(
@@ -350,21 +351,21 @@ class PypolymlpMD:
                 interval_log=None,
                 logfile=None,
             )
-            delta_energies.append(
-                [alpha, self.average_delta_energy, self.average_displacement]
-            )
+            log_append = [
+                alpha,
+                self.average_delta_energy,
+                self.average_energy,
+                self.average_displacement,
+            ]
+            log_ti.append(log_append)
 
-        self._delta_energies = delta_energies = np.array(delta_energies)
-        self._delta_free_energy = calc_integral(weights, delta_energies[:, 1], a=0.0)
+        self._log_ti = log_ti = np.array(log_ti)
+        self._delta_free_energy = calc_integral(
+            weights, log_ti[:, 1], a=0.0, b=max_alpha
+        )
 
         if heat_capacity:
-            #            self.set_ase_calculator(
-            #                pot=self._pot,
-            #                params=self._params,
-            #                coeffs=self._coeffs,
-            #                properties=self._properties,
-            #            )
-            self._calculator.alpha = 1.0
+            self._calculator.alpha = max_alpha
             self.run_md_nvt(
                 thermostat=thermostat,
                 temperature=temperature,
@@ -381,19 +382,24 @@ class PypolymlpMD:
             else:
                 self._delta_heat_capacity = self.heat_capacity - 1.5 * Kb * Avogadro
 
-            self._delta_energies = np.vstack(
-                [
-                    self._delta_energies,
-                    [1.0, self.average_delta_energy, self.average_displacement],
-                ]
-            )
+            log_append = [
+                max_alpha,
+                self.average_delta_energy,
+                self.average_energy,
+                self.average_displacement,
+            ]
+            self._log_ti = np.vstack([self._log_ti, log_append])
 
         if self._verbose:
             print("Results (TI):", flush=True)
             np.set_printoptions(suppress=True)
-            print("  free_energy:", self._delta_free_energy, flush=True)
+            print("  delta_free_energy:", self._delta_free_energy, flush=True)
+            print("  delta_energies:", flush=True)
+            print(log_ti[:, [0, 1]])
             print("  energies:", flush=True)
-            print(delta_energies)
+            print(log_ti[:, [0, 2]])
+            print("  displacements:", flush=True)
+            print(log_ti[:, [0, 3]])
             print("  delta_heat_capacity:", self._delta_heat_capacity, flush=True)
 
         return self
@@ -423,7 +429,7 @@ class PypolymlpMD:
         save_thermodynamic_integration_yaml(
             self._integrator,
             self._delta_free_energy,
-            self._delta_energies,
+            self._log_ti,
             delta_heat_capacity=self._delta_heat_capacity,
             filename=filename,
         )
@@ -523,6 +529,7 @@ def run_thermodynamic_integration(
     supercell_size: tuple = (1, 1, 1),
     thermostat: Literal["Nose-Hoover", "Langevin"] = "Langevin",
     n_alphas: int = 15,
+    max_alpha: float = 1.0,
     fc2hdf5: str = "fc2.hdf5",
     temperature: float = 300.0,
     time_step: float = 1.0,
@@ -565,6 +572,8 @@ def run_thermodynamic_integration(
     md.set_ase_calculator_with_fc2(pot=pot, fc2hdf5=fc2hdf5, alpha=0.0)
     md.run_thermodynamic_integration(
         thermostat=thermostat,
+        n_alphas=n_alphas,
+        max_alpha=max_alpha,
         temperature=temperature,
         time_step=time_step,
         ttime=ttime,
