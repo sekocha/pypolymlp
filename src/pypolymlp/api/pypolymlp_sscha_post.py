@@ -2,12 +2,7 @@
 
 from typing import Optional
 
-from pypolymlp.calculator.sscha.sscha_properties import SSCHAProperties
 from pypolymlp.calculator.sscha.utils.distribution import SSCHADistribution
-from pypolymlp.calculator.sscha.utils.transition import (
-    compute_phase_boundary,
-    find_transition,
-)
 
 
 class PypolymlpSSCHAPost:
@@ -17,44 +12,6 @@ class PypolymlpSSCHAPost:
         """Init method."""
         self._verbose = verbose
         self._distrib = None
-
-    def compute_thermodynamic_properties(
-        self,
-        yamlfiles: list[str],
-        filename: str = "sscha_properties.yaml",
-    ):
-        """Calculate thermodynamic properties from SSCHA results."""
-        sscha = SSCHAProperties(yamlfiles, verbose=self._verbose)
-        sscha.run()
-        sscha.save_properties(filename=filename)
-        sscha.save_equilibrium_structures(path="sscha_eqm_poscars")
-        return self
-
-    def find_phase_transition(self, yaml1: str, yaml2: str):
-        """Find phase transition and its temperature.
-
-        Parameters
-        ----------
-        yaml1: sscha_properties.yaml for the first structure.
-        yaml2: sscha_properties.yaml for the second structure.
-        """
-        tc_linear, tc_quartic = find_transition(yaml1, yaml2)
-        return tc_linear, tc_quartic
-
-    def compute_phase_boundary(self, yaml1: str, yaml2: str):
-        """Compute phase boundary between two structures.
-
-        Parameters
-        ----------
-        yaml1: sscha_properties.yaml for the first structure.
-        yaml2: sscha_properties.yaml for the second structure.
-
-        Return
-        ------
-        boundary: [pressures, temperatures].
-        """
-        boundary = compute_phase_boundary(yaml1, yaml2)
-        return boundary
 
     def init_structure_distribution(
         self,
@@ -117,3 +74,42 @@ class PypolymlpSSCHAPost:
     def supercells(self):
         """Return supercell structures sampled from density matrix."""
         return self._distrib.supercells
+
+
+#     def compute_thermodynamic_properties(
+#         self,
+#         yamlfiles: list[str],
+#         filename: str = "sscha_properties.yaml",
+#     ):
+#         """Calculate thermodynamic properties from SSCHA results."""
+#         sscha = SSCHAProperties(yamlfiles, verbose=self._verbose)
+#         sscha.run()
+#         sscha.save_properties(filename=filename)
+#         sscha.save_equilibrium_structures(path="sscha_eqm_poscars")
+#         return self
+#
+#     def find_phase_transition(self, yaml1: str, yaml2: str):
+#         """Find phase transition and its temperature.
+#
+#         Parameters
+#         ----------
+#         yaml1: sscha_properties.yaml for the first structure.
+#         yaml2: sscha_properties.yaml for the second structure.
+#         """
+#         tc_linear, tc_quartic = find_transition(yaml1, yaml2)
+#         return tc_linear, tc_quartic
+#
+#     def compute_phase_boundary(self, yaml1: str, yaml2: str):
+#         """Compute phase boundary between two structures.
+#
+#         Parameters
+#         ----------
+#         yaml1: sscha_properties.yaml for the first structure.
+#         yaml2: sscha_properties.yaml for the second structure.
+#
+#         Return
+#         ------
+#         boundary: [pressures, temperatures].
+#         """
+#         boundary = compute_phase_boundary(yaml1, yaml2)
+#         return boundary
