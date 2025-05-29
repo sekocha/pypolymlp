@@ -4,6 +4,7 @@ import itertools
 from typing import Optional
 
 import numpy as np
+import scipy
 
 from pypolymlp.core.utils import rmse
 
@@ -165,3 +166,56 @@ def fit_cv_temperature(temperatures: np.ndarray, cv: np.ndarray, verbose: bool =
         for t, cv1, cv2 in zip(temperatures, cv, cv_pred):
             print("   ", t, np.round(cv1, 5), np.round(cv2, 5), flush=True)
     return cv_pred
+
+
+def _func_poly(x, *args):
+    """Define polynomial function."""
+    return np.polyval(args[0], x)
+
+
+def _fit_poly(
+    f1: np.ndarray,
+    f2: np.ndarray,
+    order: Optional[int] = None,
+    max_order: int = 6,
+):
+    """Fit two data using a polynomial."""
+    p1 = Polyfit(f1[:, 0], f1[:, 1]).fit(order=order, max_order=max_order)
+    p2 = Polyfit(f2[:, 0], f2[:, 1]).fit(order=order, max_order=max_order)
+
+    z1, z2 = p1.coeffs, p2.coeffs
+    len_diff = len(z1) - len(z2)
+    if len_diff > 0:
+        z2 = np.hstack([np.zeros(len_diff), z2])
+    elif len_diff < 0:
+        z1 = np.hstack([np.zeros(-len_diff), z1])
+    return z1, z2
+
+
+def fit_solve_poly(
+    f1: np.ndarray,
+    f2: np.ndarray,
+    f0: float = 0.0,
+    order: Optional[int] = None,
+    max_order: int = 6,
+):
+    """Fit and solve delta f = 0."""
+    z1, z2 = _fit_poly(f1, f2, order=order, max_order=max_order)
+    coeffs = z1 - z2
+    res = scipy.optimize.fsolve(_func_poly, f0, args=coeffs)
+    return res[0]
+
+
+def _func_spline(x, *args):
+    """Define spline function."""
+    sp1, sp2 = args
+    return sp1(x) - sp2(x)
+
+
+def fit_solve_spline(f1: np.ndarray, f2: np.ndarray, f0: float = 0.0, k: int = 3):
+    """Fit and solve delta f = 0."""
+    sp1 = scipy.interpolate.make_interp_spline(f1[:, 0], f1[:, 1], k=k)
+    sp2 = scipy.interpolate.make_interp_spline(f2[:, 0], f2[:, 1], k=k)
+    args = sp1, sp2
+    res = scipy.optimize.fsolve(_func_spline, f0, args=args)
+    return res[0]

@@ -29,7 +29,7 @@ def calc_integral(
 def save_thermodynamic_integration_yaml(
     integrator: IntegratorASE,
     delta_free_energy: float,
-    delta_energies: np.array,
+    log_ti: np.array,
     delta_heat_capacity: Optional[float] = None,
     filename: str = "polymlp_ti.yaml",
 ):
@@ -57,14 +57,18 @@ def save_thermodynamic_integration_yaml(
         print(file=f)
 
         print("properties:", file=f)
-        print("  free_energy:", delta_free_energy, file=f)
+        print("  free_energy:         ", delta_free_energy, file=f)
+        print("  average_energy:      ", integrator.average_energy, file=f)
         print("  delta_heat_capacity: ", delta_heat_capacity, file=f)
         print(file=f)
 
         print("  delta_energies:", file=f)
-        for alpha, de in delta_energies:
-            print("  - alpha:  ", alpha, file=f)
-            print("    delta_e:", de, file=f)
+        for alpha, de, e, dis in log_ti:
+            print("  - alpha:       ", alpha, file=f)
+            print("    delta_e:     ", de, file=f)
+            print("    energy:      ", e, file=f)
+            print("    displacement:", np.round(dis, 5), file=f)
+            print(file=f)
 
 
 def load_thermodynamic_integration_yaml(filename: str = "polymlp_ti.yaml"):
@@ -85,5 +89,8 @@ def load_thermodynamic_integration_yaml(filename: str = "polymlp_ti.yaml"):
     prop = data["properties"]
     free_energy = float(prop["free_energy"]) / n_atom
     heat_capacity = float(prop["delta_heat_capacity"])
-    log = [[float(d["alpha"]), float(d["delta_e"])] for d in prop["delta_energies"]]
+    log = [
+        [float(d["alpha"]), float(d["delta_e"]), float(d["displacement"])]
+        for d in prop["delta_energies"]
+    ]
     return temperature, volume, free_energy, heat_capacity, np.array(log)

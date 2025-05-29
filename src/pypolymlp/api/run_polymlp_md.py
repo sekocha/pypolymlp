@@ -67,6 +67,9 @@ def run():
         "--n_samples", type=int, default=15, help="Number of MD simulations for TI."
     )
     parser.add_argument(
+        "--max_alpha", type=float, default=1.0, help="Maximum alpha value for TI."
+    )
+    parser.add_argument(
         "--fc2",
         type=str,
         default="fc2.hdf5",
@@ -90,6 +93,7 @@ def run():
             fc2hdf5=args.fc2,
             thermostat=args.thermostat,
             n_alphas=args.n_samples,
+            max_alpha=args.max_alpha,
             temperature=args.temp,
             time_step=args.time_step,
             ttime=args.ttime,

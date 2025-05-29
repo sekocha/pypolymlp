@@ -176,6 +176,7 @@ class PypolymlpStructureGenerator:
         n_samples: int = 30,
         eps_min: float = 0.8,
         eps_max: float = 2.0,
+        dense_equilibrium: bool = False,
     ):
         """Generate structures with isotropic volume changes.
 
@@ -186,19 +187,56 @@ class PypolymlpStructureGenerator:
         eps_max: Maximum ratio of volume.
 
         """
-        if self._verbose:
-            print("Volume ratios:", flush=True)
-            print(np.linspace(eps_min, eps_max, num=n_samples), flush=True)
 
         if self._supercell is None:
             self._supercell = self.first_structure
 
-        structures = multiple_isotropic_volume_changes(
-            self._supercell,
-            eps_min=eps_min,
-            eps_max=eps_max,
-            n_eps=n_samples,
-        )
+        if not dense_equilibrium:
+            if self._verbose:
+                print("Volume ratios:", flush=True)
+                print(np.linspace(eps_min, eps_max, num=n_samples), flush=True)
+            structures = multiple_isotropic_volume_changes(
+                self._supercell,
+                eps_min=eps_min,
+                eps_max=eps_max,
+                n_eps=n_samples,
+            )
+        else:
+            interval_dense = 0.2 / (n_samples + 1)
+            if eps_min > 0.9:
+                raise RuntimeError("eps_min must be lower than 0.9.")
+            if eps_max < 1.1:
+                raise RuntimeError("eps_max must be higher than 1.1.")
+
+            dense_min = 0.9 + interval_dense
+            dense_max = 1.1 - interval_dense
+            if self._verbose:
+                print("Volume ratios:", flush=True)
+                print(np.linspace(eps_min, 0.9, num=n_samples // 3), flush=True)
+                print(np.linspace(dense_min, dense_max, num=n_samples), flush=True)
+                print(np.linspace(1.1, eps_max, num=n_samples // 3), flush=True)
+
+            structures = multiple_isotropic_volume_changes(
+                self._supercell,
+                eps_min=eps_min,
+                eps_max=0.9,
+                n_eps=n_samples // 3,
+            )
+            structures_add = multiple_isotropic_volume_changes(
+                self._supercell,
+                eps_min=dense_min,
+                eps_max=dense_max,
+                n_eps=n_samples,
+            )
+            structures.extend(structures_add)
+            structures_add = multiple_isotropic_volume_changes(
+                self._supercell,
+                eps_min=1.1,
+                eps_max=eps_max,
+                n_eps=n_samples // 3,
+            )
+            structures.extend(structures_add)
+
         structures = set_structure_id(structures, "single-str", "volume")
         self._sample_structures.extend(structures)
         return self

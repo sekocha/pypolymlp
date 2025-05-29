@@ -42,6 +42,12 @@ def run():
         help="Number of structures sampled using isotropic volume changes.",
     )
     parser.add_argument(
+        "--dense_equilibrium",
+        action="store_true",
+        help="Use dense grid around equilibrium volume.",
+    )
+
+    parser.add_argument(
         "--standard",
         type=int,
         default=None,
@@ -132,6 +138,7 @@ def run():
             n_samples=args.isotropic,
             eps_min=args.min_volume,
             eps_max=args.max_volume,
+            dense_equilibrium=args.dense_equilibrium,
         )
     else:
         print("Pypolymlp structure generator: Standard algorithms", flush=True)

@@ -531,8 +531,13 @@ def load_sscha_yamls(filenames: tuple[str], verbose: bool = False) -> Thermodyna
 
 def _check_melting(log: np.ndarray):
     """Check whether MD simulation converges to a melting state."""
-    grad = np.gradient(log[:, 1], log[:, 0])
-    return np.any(grad > 1e-3)
+    try:
+        displacement_ratio = log[-1, 2] / log[0, 2]
+        return displacement_ratio > 2.0
+    except:
+        return False
+    # grad = np.gradient(log[:, 1], log[:, 0])
+    # return np.any(grad > 1e-3)
 
 
 def load_ti_yamls(filenames: tuple[str], verbose: bool = False) -> Thermodynamics:

@@ -23,6 +23,10 @@ class ThermodynamicProperties:
     eos_fit_data: np.ndarray
     gibbs: np.ndarray
 
+    def get_T_F(self):
+        """Return temperature-Helmholtz data at equilibrium volumes."""
+        return np.array([self.temperatures, self.eq_helmholtz]).T
+
 
 def save_thermodynamics_yaml(
     volumes: np.ndarray,

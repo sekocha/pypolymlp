@@ -117,6 +117,7 @@ class PolymlpFC2ASECalculator(Calculator):
 
         self._use_reference = True
         self._delta_energy = None
+        self._average_displacement = None
 
     def _check_errors(self):
         """Check errors in input parameters."""
@@ -142,6 +143,7 @@ class PolymlpFC2ASECalculator(Calculator):
         structure = ase_atoms_to_structure(atoms)
         disps = convert_positions_to_disps(structure, self._structure_without_disp)
         disps = disps.T.reshape(-1)
+        self._average_displacement = np.sqrt(np.average(np.square(disps)))
 
         if self._ignore_polymlp:
             energy, forces = self._eval_fc2_model(disps)
@@ -161,6 +163,11 @@ class PolymlpFC2ASECalculator(Calculator):
     def delta_energy(self):
         """Return energy difference from reference state."""
         return self._delta_energy
+
+    @property
+    def average_displacement(self):
+        """Return average displacement."""
+        return self._average_displacement
 
     @property
     def alpha(self):
