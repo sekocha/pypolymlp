@@ -119,6 +119,7 @@ class PypolymlpSSCHA:
         fc2: Optional[np.ndarray] = None,
         precondition: bool = True,
         cutoff_radius: Optional[float] = None,
+        use_temporal_cutoff: bool = False,
     ):
         """Run SSCHA iterations.
 
@@ -170,100 +171,22 @@ class PypolymlpSSCHA:
             self._sscha_params.print_params()
             self._sscha_params.print_unitcell()
 
-        self._sscha = run_sscha(
-            self._sscha_params,
-            properties=self._prop,
-            fc2=self._fc2,
-            precondition=precondition,
-            verbose=self._verbose,
-        )
-        #        self._sscha = run_sscha_large_system(
-        #            self._sscha_params,
-        #            properties=self._prop,
-        #            fc2=self._fc2,
-        #            precondition=precondition,
-        #            verbose=self._verbose,
-        #        )
-
-        self._fc2 = self._sscha.force_constants
-        return self
-
-    def run_large_system(
-        self,
-        temp: Optional[float] = None,
-        temp_min: float = 0,
-        temp_max: float = 2000,
-        temp_step: float = 50,
-        ascending_temp: bool = False,
-        n_samples_init: Optional[int] = None,
-        n_samples_final: Optional[int] = None,
-        tol: float = 0.01,
-        max_iter: int = 30,
-        mixing: float = 0.5,
-        mesh: tuple = (10, 10, 10),
-        init_fc_algorithm: Literal["harmonic", "const", "random", "file"] = "harmonic",
-        init_fc_file: Optional[str] = None,
-        fc2: Optional[np.ndarray] = None,
-        precondition: bool = True,
-        cutoff_radius: Optional[float] = None,
-    ):
-        """Run SSCHA iterations.
-
-        Parameters
-        ----------
-        temp: Single simulation temperature.
-        temp_min: Minimum temperature.
-        temp_max: Maximum temperature.
-        temp_step: Temperature interval.
-        ascending_temp: Set simulation temperatures in ascending order.
-        n_samples_init: Number of samples in first loop of SSCHA iterations.
-                        If None, the number of samples is automatically determined.
-        n_samples_final: Number of samples in second loop of SSCHA iterations.
-                        If None, the number of samples is automatically determined.
-        tol: Convergence tolerance for FCs.
-        max_iter: Maximum number of iterations.
-        mixing: Mixing parameter.
-                FCs are updated by FC2 = FC2(new) * mixing + FC2(old) * (1-mixing).
-        mesh: q-point mesh for computing harmonic properties using effective FC2.
-        init_fc_algorithm: Algorithm for generating initial FCs.
-        init_fc_file: If algorithm = "file", coefficients are read from init_fc_file.
-        """
-        if self._prop is None:
-            raise RuntimeError("Set polymlp.")
-        if self._unitcell is None:
-            raise RuntimeError("Set structure.")
-
-        self._sscha_params = SSCHAParameters(
-            unitcell=self._unitcell,
-            supercell_matrix=self._supercell_matrix,
-            pot=self._pot,
-            temp=temp,
-            temp_min=temp_min,
-            temp_max=temp_max,
-            temp_step=temp_step,
-            ascending_temp=ascending_temp,
-            n_samples_init=n_samples_init,
-            n_samples_final=n_samples_final,
-            tol=tol,
-            max_iter=max_iter,
-            mixing=mixing,
-            mesh=mesh,
-            init_fc_algorithm=init_fc_algorithm,
-            init_fc_file=init_fc_file,
-            nac_params=self._nac_params,
-            cutoff_radius=cutoff_radius,
-        )
-        if self._verbose:
-            self._sscha_params.print_params()
-            self._sscha_params.print_unitcell()
-
-        self._sscha = run_sscha_large_system(
-            self._sscha_params,
-            properties=self._prop,
-            fc2=self._fc2,
-            precondition=precondition,
-            verbose=self._verbose,
-        )
+        if use_temporal_cutoff:
+            self._sscha = run_sscha_large_system(
+                self._sscha_params,
+                properties=self._prop,
+                fc2=self._fc2,
+                precondition=precondition,
+                verbose=self._verbose,
+            )
+        else:
+            self._sscha = run_sscha(
+                self._sscha_params,
+                properties=self._prop,
+                fc2=self._fc2,
+                precondition=precondition,
+                verbose=self._verbose,
+            )
         self._fc2 = self._sscha.force_constants
         return self
 

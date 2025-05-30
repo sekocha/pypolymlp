@@ -120,7 +120,7 @@ def run():
         help="Cutoff radius for effective force constants.",
     )
     parser.add_argument(
-        "--use_cutoff_algorithm",
+        "--use_temporal_cutoff",
         action="store_true",
         help="Use an algorithm temporarily using cutoff radius.",
     )
@@ -145,38 +145,20 @@ def run():
     else:
         n_samples_init, n_samples_final = args.n_samples
 
-    if args.use_cutoff_algorithm:
-        sscha.run_large_system(
-            temp=args.temp,
-            temp_min=args.temp_min,
-            temp_max=args.temp_max,
-            temp_step=args.temp_step,
-            ascending_temp=args.ascending_temp,
-            n_samples_init=n_samples_init,
-            n_samples_final=n_samples_final,
-            tol=args.tol,
-            max_iter=args.max_iter,
-            mixing=args.mixing,
-            mesh=args.mesh,
-            init_fc_algorithm=args.init,
-            init_fc_file=args.init_file,
-            cutoff_radius=args.cutoff_fc2,
-        )
-
-    else:
-        sscha.run(
-            temp=args.temp,
-            temp_min=args.temp_min,
-            temp_max=args.temp_max,
-            temp_step=args.temp_step,
-            ascending_temp=args.ascending_temp,
-            n_samples_init=n_samples_init,
-            n_samples_final=n_samples_final,
-            tol=args.tol,
-            max_iter=args.max_iter,
-            mixing=args.mixing,
-            mesh=args.mesh,
-            init_fc_algorithm=args.init,
-            init_fc_file=args.init_file,
-            cutoff_radius=args.cutoff_fc2,
-        )
+    sscha.run(
+        temp=args.temp,
+        temp_min=args.temp_min,
+        temp_max=args.temp_max,
+        temp_step=args.temp_step,
+        ascending_temp=args.ascending_temp,
+        n_samples_init=n_samples_init,
+        n_samples_final=n_samples_final,
+        tol=args.tol,
+        max_iter=args.max_iter,
+        mixing=args.mixing,
+        mesh=args.mesh,
+        init_fc_algorithm=args.init,
+        init_fc_file=args.init_file,
+        cutoff_radius=args.cutoff_fc2,
+        use_temporal_cutoff=args.use_temporal_cutoff,
+    )
