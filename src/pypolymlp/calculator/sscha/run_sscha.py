@@ -514,6 +514,8 @@ def run_sscha_large_system(
             verbose=verbose,
         )
         sscha.set_initial_force_constants(fc2=fc2_rerun)
+        if verbose:
+            print("Size of FC2 basis-set:", sscha.n_fc_basis, flush=True)
 
     for temp in sscha_params.temperatures:
         if verbose:
