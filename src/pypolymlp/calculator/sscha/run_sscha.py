@@ -378,6 +378,7 @@ def _run_precondition(
     """Run a procedure to perform precondition."""
 
     if verbose:
+        print("---", flush=True)
         print("Preconditioning.", flush=True)
 
     n_samples = max(min(sscha_params.n_samples_init // 50, 100), 5)
@@ -395,6 +396,24 @@ def _run_precondition(
             tol=0.005,
             max_iter=5,
         )
+    return sscha
+
+
+def _run_target_sscha(
+    sscha: SSCHA,
+    sscha_params: SSCHAParameters,
+    verbose: bool = False,
+):
+    """Run SSCHA for target temperatures."""
+    for temp in sscha_params.temperatures:
+        if verbose:
+            print("************** Temperature:", temp, "**************", flush=True)
+            print("Increasing number of samples.", flush=True)
+        sscha.run(t=temp, accurate=False)
+        if verbose:
+            print("Increasing number of samples.", flush=True)
+        sscha.run(t=temp, accurate=True, initialize_history=False)
+        sscha.save_results()
     return sscha
 
 
@@ -431,21 +450,13 @@ def run_sscha(
     if verbose:
         print("Frequency (min):      ", np.round(np.min(freq), 5), flush=True)
         print("Frequency (max):      ", np.round(np.max(freq), 5), flush=True)
-        print("Size of FC2 basis-set:", sscha.n_fc_basis, flush=True)
 
     if precondition:
         sscha = _run_precondition(sscha, sscha_params, verbose=verbose)
 
-    for temp in sscha_params.temperatures:
-        if verbose:
-            print("************** Temperature:", temp, "**************", flush=True)
-        if verbose:
-            print("Increasing number of samples.", flush=True)
-        sscha.run(t=temp, accurate=False)
-        if verbose:
-            print("Increasing number of samples.", flush=True)
-        sscha.run(t=temp, accurate=True, initialize_history=False)
-        sscha.save_results()
+    if verbose:
+        print("Size of FC2 basis-set:", sscha.n_fc_basis, flush=True)
+    sscha = _run_target_sscha(sscha, sscha_params, verbose=verbose)
     return sscha
 
 
@@ -470,8 +481,8 @@ def run_sscha_large_system(
     properties: Properties instance.
     """
     sscha_params_target = copy.deepcopy(sscha_params)
-    if sscha_params.cutoff_radius is None or sscha_params.cutoff_radius > 6.0:
-        sscha_params.cutoff_radius = 5.0
+    if sscha_params.cutoff_radius is None or sscha_params.cutoff_radius > 7.0:
+        sscha_params.cutoff_radius = 6.0
         rerun = True
     else:
         rerun = False
@@ -489,12 +500,16 @@ def run_sscha_large_system(
     if verbose:
         print("Frequency (min):      ", np.round(np.min(freq), 5), flush=True)
         print("Frequency (max):      ", np.round(np.max(freq), 5), flush=True)
-        print("Size of FC2 basis-set:", sscha.n_fc_basis, flush=True)
 
     if precondition:
         sscha = _run_precondition(sscha, sscha_params, verbose=verbose)
 
     if rerun:
+        if verbose:
+            print("---", flush=True)
+            print("Run SSCHA with temporal cutoff.", flush=True)
+            print("Temporal cutoff radius:", sscha_params.cutoff_radius, flush=True)
+            print("Size of FC2 basis-set: ", sscha.n_fc_basis, flush=True)
         sscha.run(t=sscha_params.temperatures[0], accurate=False)
         fc2_rerun = sscha.force_constants
         sscha_params.cutoff_radius = sscha_params_target.cutoff_radius
@@ -508,17 +523,9 @@ def run_sscha_large_system(
             verbose=verbose,
         )
         sscha.set_initial_force_constants(fc2=fc2_rerun)
-        if verbose:
-            print("Size of FC2 basis-set:", sscha.n_fc_basis, flush=True)
 
-    for temp in sscha_params_target.temperatures:
-        if verbose:
-            print("************** Temperature:", temp, "**************", flush=True)
-        if verbose:
-            print("Increasing number of samples.", flush=True)
-        sscha.run(t=temp, accurate=False)
-        if verbose:
-            print("Increasing number of samples.", flush=True)
-        sscha.run(t=temp, accurate=True, initialize_history=False)
-        sscha.save_results()
+    if verbose:
+        print("Size of FC2 basis-set:", sscha.n_fc_basis, flush=True)
+
+    sscha = _run_target_sscha(sscha, sscha_params, verbose=verbose)
     return sscha
