@@ -260,7 +260,8 @@ class SSCHA:
         n_iter, delta = 1, 1e10
         while n_iter <= max_iter and delta > tol:
             if self._verbose:
-                print("----------- Iteration :", n_iter, "-----------", flush=True)
+                txt = "--------------- Iteration : " + str(n_iter) + " ---------------"
+                print(txt, flush=True)
             self._fc2 = self._single_iter(t=t, n_samples=n_samples)
             if self._verbose:
                 self._print_progress()
@@ -295,7 +296,8 @@ class SSCHA:
         n_iter, delta = 1, 1e10
         while n_iter <= self._sscha_params.max_iter and delta > self._sscha_params.tol:
             if self._verbose:
-                print("----------- Iteration :", n_iter, "-----------", flush=True)
+                txt = "--------------- Iteration : " + str(n_iter) + " ---------------"
+                print(txt, flush=True)
             self._fc2 = self._single_iter(t=t, n_samples=n_samples)
             if self._verbose:
                 self._print_progress()
@@ -368,6 +370,34 @@ class SSCHA:
         self._fc2 = fc2
 
 
+def _run_precondition(
+    sscha: SSCHA,
+    sscha_params: SSCHAParameters,
+    verbose: bool = False,
+):
+    """Run a procedure to perform precondition."""
+
+    if verbose:
+        print("Preconditioning.", flush=True)
+
+    n_samples = max(min(sscha_params.n_samples_init // 50, 100), 5)
+    sscha.precondition(
+        t=sscha_params.temperatures[0],
+        n_samples=n_samples,
+        tol=0.01,
+        max_iter=5,
+    )
+    if sscha_params.tol < 0.003:
+        n_samples = max(min(sscha_params.n_samples_init // 10, 500), 10)
+        sscha.precondition(
+            t=sscha_params.temperatures[0],
+            n_samples=n_samples,
+            tol=0.005,
+            max_iter=5,
+        )
+    return sscha
+
+
 def run_sscha(
     sscha_params: SSCHAParameters,
     pot: Optional[str] = None,
@@ -404,23 +434,8 @@ def run_sscha(
         print("Size of FC2 basis-set:", sscha.n_fc_basis, flush=True)
 
     if precondition:
-        if verbose:
-            print("Preconditioning.", flush=True)
-        n_samples = max(min(sscha_params.n_samples_init // 50, 100), 5)
-        sscha.precondition(
-            t=sscha_params.temperatures[0],
-            n_samples=n_samples,
-            tol=0.01,
-            max_iter=10,
-        )
-        if sscha_params.tol < 0.003:
-            n_samples = max(min(sscha_params.n_samples_init // 10, 500), 10)
-            sscha.precondition(
-                t=sscha_params.temperatures[0],
-                n_samples=n_samples,
-                tol=0.005,
-                max_iter=5,
-            )
+        sscha = _run_precondition(sscha, sscha_params, verbose=verbose)
+
     for temp in sscha_params.temperatures:
         if verbose:
             print("************** Temperature:", temp, "**************", flush=True)
@@ -454,17 +469,12 @@ def run_sscha_large_system(
     coeffs: Polymlp coefficients.
     properties: Properties instance.
     """
-    sscha_params_init = copy.deepcopy(sscha_params)
-    cutoff = sscha_params_init.cutoff_radius
-    if cutoff is None:
-        sscha_params.cutoff_radius = 6.0
+    sscha_params_target = copy.deepcopy(sscha_params)
+    if sscha_params.cutoff_radius is None or sscha_params.cutoff_radius > 6.0:
+        sscha_params.cutoff_radius = 5.0
         rerun = True
     else:
-        if cutoff > 7.0:
-            sscha_params.cutoff_radius = 6.0
-            rerun = True
-        else:
-            rerun = False
+        rerun = False
 
     sscha = SSCHA(
         sscha_params,
@@ -482,31 +492,15 @@ def run_sscha_large_system(
         print("Size of FC2 basis-set:", sscha.n_fc_basis, flush=True)
 
     if precondition:
-        if verbose:
-            print("Preconditioning.", flush=True)
-        n_samples = max(min(sscha_params.n_samples_init // 50, 100), 5)
-        sscha.precondition(
-            t=sscha_params.temperatures[0],
-            n_samples=n_samples,
-            tol=0.01,
-            max_iter=10,
-        )
-        if sscha_params.tol < 0.003:
-            n_samples = max(min(sscha_params.n_samples_init // 10, 500), 10)
-            sscha.precondition(
-                t=sscha_params.temperatures[0],
-                n_samples=n_samples,
-                tol=0.005,
-                max_iter=5,
-            )
+        sscha = _run_precondition(sscha, sscha_params, verbose=verbose)
 
     if rerun:
         sscha.run(t=sscha_params.temperatures[0], accurate=False)
         fc2_rerun = sscha.force_constants
+        sscha_params.cutoff_radius = sscha_params_target.cutoff_radius
 
-        sscha_params.cutoff_radius = cutoff
         sscha = SSCHA(
-            sscha_params_init,
+            sscha_params_target,
             pot=pot,
             params=params,
             coeffs=coeffs,
@@ -517,7 +511,7 @@ def run_sscha_large_system(
         if verbose:
             print("Size of FC2 basis-set:", sscha.n_fc_basis, flush=True)
 
-    for temp in sscha_params.temperatures:
+    for temp in sscha_params_target.temperatures:
         if verbose:
             print("************** Temperature:", temp, "**************", flush=True)
         if verbose:
