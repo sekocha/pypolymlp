@@ -149,6 +149,8 @@ class SSCHA:
 
     def _compute_sscha_properties(self, t: float = 1000):
         """Compute SSCHA properties using FC2."""
+        if self._verbose:
+            print("Computing SSCHA properties from FC2.", flush=True)
         qmesh = self._sscha_params.mesh
         self.ph_recip.force_constants = self._fc2
         self.ph_recip.compute_thermal_properties(t=t, qmesh=qmesh)
@@ -380,6 +382,7 @@ def _run_precondition(
     if verbose:
         print("---", flush=True)
         print("Preconditioning.", flush=True)
+        print("Size of FC2 basis-set:", sscha.n_fc_basis, flush=True)
 
     n_samples = max(min(sscha_params.n_samples_init // 50, 100), 5)
     sscha.precondition(
@@ -482,7 +485,7 @@ def run_sscha_large_system(
     """
     sscha_params_target = copy.deepcopy(sscha_params)
     if sscha_params.cutoff_radius is None or sscha_params.cutoff_radius > 7.0:
-        sscha_params.cutoff_radius = 6.0
+        sscha_params.cutoff_radius = 4.0
         rerun = True
     else:
         rerun = False
