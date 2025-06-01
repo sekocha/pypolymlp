@@ -19,7 +19,7 @@ from pypolymlp.calculator.sscha.sscha_utils import (
     save_sscha_yaml,
 )
 from pypolymlp.core.data_format import PolymlpParams
-from pypolymlp.core.units import ev_to_kjmol
+from pypolymlp.core.units import EVtoKJmol
 from pypolymlp.utils.phonopy_utils import (
     phonopy_cell_to_structure,
     structure_to_phonopy_cell,
@@ -145,7 +145,7 @@ class SSCHA:
 
     def _unit_kjmol(self, e):
         """Convert energy in eV/supercell to energy in kJ/mol."""
-        return ev_to_kjmol(e) / self.n_unitcells
+        return e * EVtoKJmol / self.n_unitcells
 
     def _compute_sscha_properties(self, t: float = 1000):
         """Compute SSCHA properties using FC2."""

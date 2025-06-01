@@ -8,10 +8,10 @@ from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.utils.fc_utils import eval_properties_fc2
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.displacements import get_structures_from_displacements
-from pypolymlp.core.units import Avogadro, Kb
+from pypolymlp.core.units import Avogadro, Kb, Planck
 from pypolymlp.core.utils import mass_table
 
-const_planck = 6.62607015e-22
+const_planck = Planck * 1e12  # 6.62607015e-22
 const_sq_angfreq_to_sq_freq_thz = 2.4440020137144617e2
 const_amplitude = 1.010758017933576
 
