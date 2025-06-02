@@ -3,9 +3,16 @@
 import copy
 from typing import Optional
 
+import numpy as np
+
 from pypolymlp.calculator.thermodynamics.fit_utils import fit_cv_temperature
+from pypolymlp.calculator.thermodynamics.io_utils import load_thermodynamics_yaml
 from pypolymlp.calculator.thermodynamics.thermodynamics import load_yamls
 from pypolymlp.calculator.thermodynamics.thermodynamics_utils import sum_matrix_data
+from pypolymlp.calculator.thermodynamics.transition import (
+    compute_phase_boundary,
+    find_transition,
+)
 
 
 class PypolymlpThermodynamics:
@@ -23,7 +30,15 @@ class PypolymlpThermodynamics:
             yamls_sscha, yamls_electron, yamls_ti, verbose
         )
         self._verbose = verbose
+        self._sscha_el = None
         self._total = None
+
+    def _replace_thermodynamics(self, free_energies: np.ndarray, entropies: np.ndarray):
+        """Initialize Thermodynamics instance."""
+        new = copy.deepcopy(self._sscha)
+        new.replace_free_energies(free_energies)
+        new.replace_entropies(entropies)
+        return new
 
     def run(self):
         """Fit results and evalulate equilibrium properties."""
@@ -42,6 +57,9 @@ class PypolymlpThermodynamics:
             f_total = sum_matrix_data(f_total, f_ele)
             s_total = sum_matrix_data(s_total, s_ele)
 
+            self._sscha_el = self._replace_thermodynamics(f_total, s_total)
+            self._sscha_el.fit_eval_sscha()
+
         if self._ti is not None:
             if self._verbose:
                 print("### TI contribution ###", flush=True)
@@ -58,9 +76,7 @@ class PypolymlpThermodynamics:
         if self._electron is not None or self._ti is not None:
             if self._verbose:
                 print("### Total properties ###", flush=True)
-            self._total = copy.deepcopy(self._sscha)
-            self._total.replace_free_energies(f_total_ti)
-            self._total.replace_entropies(s_total_ti)
+            self._total = self._replace_thermodynamics(f_total_ti, s_total_ti)
             self._total.fit_eos()
             self._total.fit_eval_entropy(max_order=6)
 
@@ -72,10 +88,11 @@ class PypolymlpThermodynamics:
                 temperatures = self._total.temperatures
                 eos_fits = self._total.fitted_models.eos_fits
                 cv_fits_ti = self._ti.fitted_models.cv_fits
-                # cv_ti = self._ti.get_data(attr="heat_capacity")
                 cp_add = [
                     cv_fit.eval(eos.v0) for eos, cv_fit in zip(eos_fits, cv_fits_ti)
                 ]
+                for t, c in zip(temperatures, cp_add):
+                    print(t, c)
                 cp_add = fit_cv_temperature(temperatures, cp_add, verbose=self._verbose)
                 self._total.add_cp(cp_add)
 
@@ -86,34 +103,43 @@ class PypolymlpThermodynamics:
         self._sscha.save_thermodynamics_yaml(filename=filename)
         return self
 
+    def save_sscha_ele(self, filename: str = "polymlp_thermodynamics_sscha_ele.yaml"):
+        """Save fitted SSCHA + electronic properties."""
+        self._sscha_el.save_thermodynamics_yaml(filename=filename)
+        return self
+
     def save_total(self, filename: str = "polymlp_thermodynamics_total.yaml"):
         """Save fitted SSCHA properties."""
         self._total.save_thermodynamics_yaml(filename=filename)
         return self
 
 
-#     def find_phase_transition(self, yaml1: str, yaml2: str):
-#         """Find phase transition and its temperature.
-#
-#         Parameters
-#         ----------
-#         yaml1: sscha_properties.yaml for the first structure.
-#         yaml2: sscha_properties.yaml for the second structure.
-#         """
-#         tc_linear, tc_quartic = find_transition(yaml1, yaml2)
-#         return tc_linear, tc_quartic
-#
-#     def compute_phase_boundary(self, yaml1: str, yaml2: str):
-#         """Compute phase boundary between two structures.
-#
-#         Parameters
-#         ----------
-#         yaml1: sscha_properties.yaml for the first structure.
-#         yaml2: sscha_properties.yaml for the second structure.
-#
-#         Return
-#         ------
-#         boundary: [pressures, temperatures].
-#         """
-#         boundary = compute_phase_boundary(yaml1, yaml2)
-#         return boundary
+class PypolymlpTransition:
+    """API class for finding phase boundary."""
+
+    def __init__(self, yaml1: str, yaml2: str, verbose: bool = False):
+        """Init method.
+
+        Parameters
+        ----------
+        yaml1: polymlp_thermodynamics.yaml for the first structure.
+        yaml2: polymlp_thermodynamics.yaml for the second structure.
+        """
+        self._verbose = verbose
+        self._prop1 = load_thermodynamics_yaml(yaml1)
+        self._prop2 = load_thermodynamics_yaml(yaml2)
+
+    def find_phase_transition(self):
+        """Find phase transition and its temperature."""
+        tc = find_transition(self._prop1.get_T_F(), self._prop2.get_T_F())
+        return tc
+
+    def compute_phase_boundary(self):
+        """Compute phase boundary between two structures."""
+        boundary = compute_phase_boundary(
+            self._prop1.gibbs,
+            self._prop1.temperatures,
+            self._prop2.gibbs,
+            self._prop2.temperatures,
+        )
+        return boundary

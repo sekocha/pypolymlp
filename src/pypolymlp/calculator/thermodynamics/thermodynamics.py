@@ -1,6 +1,5 @@
 """Functions for calculating thermodynamic properties."""
 
-import copy
 from typing import Literal, Optional
 
 import numpy as np
@@ -66,17 +65,29 @@ class Thermodynamics:
             itemp = np.where(d.temperature == self._temperatures)[0][0]
             self._grid[ivol, itemp] = d
 
-        self._models = FittedModels(self._volumes, self._temperatures)
-
         if self._verbose:
             print("Dataset type:", self._data_type, flush=True)
-            for itemp, data in enumerate(self._grid.T):
-                n_data = len(
-                    [d for d in data if d is not None and d.free_energy is not None]
-                )
-                print("- temperature:", self._temperatures[itemp], flush=True)
-                print("  n_data:     ", n_data, flush=True)
 
+        self._eliminate_temperatures(threshold=5)
+        self._models = FittedModels(self._volumes, self._temperatures)
+        return self
+
+    def _eliminate_temperatures(self, threshold: int = 5):
+        """Eliminate data for temperatures where only a small number of data exist."""
+        ids = []
+        for itemp, data in enumerate(self._grid.T):
+            n_data = len(
+                [d for d in data if d is not None and d.free_energy is not None]
+            )
+            if n_data >= threshold:
+                ids.append(itemp)
+                if self._verbose:
+                    print("- temperature:", self._temperatures[itemp], flush=True)
+                    print("  n_data:     ", n_data, flush=True)
+
+        ids = np.array(ids)
+        self._temperatures = self._temperatures[ids]
+        self._grid = self._grid[:, ids]
         return self
 
     def fit_eos(self):
@@ -156,9 +167,12 @@ class Thermodynamics:
             points = np.array(
                 [d for d in data if d is not None and d.free_energy is not None]
             )
+            import time
+
             if len(points) > 4:
                 temperatures = np.array([p.temperature for p in points])
                 free_energies = np.array([p.free_energy for p in points])
+                t1 = time.time()
                 polyfit = Polyfit(temperatures, free_energies)
                 polyfit.fit(
                     max_order=max_order,
@@ -166,6 +180,7 @@ class Thermodynamics:
                     first_order=False,
                     add_sqrt=False,
                 )
+                t2 = time.time()
                 ft_fits.append(polyfit)
                 if self._verbose:
                     print("- Volume:", np.round(self._volumes[ivol], 3), flush=True)
@@ -174,6 +189,8 @@ class Thermodynamics:
 
                 # entropy calculations
                 entropies = -polyfit.eval_derivative(temperatures)
+                t3 = time.time()
+                print(t2 - t1, t3 - t2)
                 for p, val in zip(points, entropies):
                     p.entropy = val
             else:
@@ -492,14 +509,6 @@ def adjust_to_common_grid(thermo1: Thermodynamics, thermo2: Thermodynamics):
     return thermo1, thermo2
 
 
-def calc_sscha_properties(sscha: Thermodynamics):
-    """Calculate thermodynamic properties from SSCHA."""
-    sscha.fit_eos()
-    sscha.fit_eval_entropy(max_order=6)
-    sscha.fit_eval_cp(max_order=4, from_entropy=True)
-    return sscha
-
-
 def load_sscha_yamls(filenames: tuple[str], verbose: bool = False) -> Thermodynamics:
     """Load sscha_results.yaml files."""
     data = []
@@ -536,8 +545,6 @@ def _check_melting(log: np.ndarray):
         return displacement_ratio > 2.0
     except:
         return False
-    # grad = np.gradient(log[:, 1], log[:, 0])
-    # return np.any(grad > 1e-3)
 
 
 def load_ti_yamls(filenames: tuple[str], verbose: bool = False) -> Thermodynamics:
@@ -608,27 +615,3 @@ def load_yamls(
     else:
         ti = None
     return sscha, electron, ti
-
-
-def denoise_free_energy(thermo_base: Thermodynamics, thermo_denoise: Thermodynamics):
-    """Reduce noises in free energies using EOS fitting."""
-    if thermo_base.grid.shape != thermo_denoise.grid.shape:
-        raise RuntimeError("Different grid points in two objects.")
-
-    thermo_sum = copy.deepcopy(thermo_denoise)
-    thermo_sum = thermo_sum.add(thermo_base)
-
-    if thermo_base.fitted_models.eos_fits is None:
-        thermo_base.fit_eos()
-    thermo_sum.fit_eos()
-    f1 = thermo_base.eval_free_energies(thermo_base.volumes)
-    f2 = thermo_sum.eval_free_energies(thermo_sum.volumes)
-    thermo_denoise.replace_free_energies(f2 - f1)
-    return thermo_denoise, (thermo_sum, f2)
-
-
-def include_ti_contrib(ti: Thermodynamics):
-    """Calculate thermodynamic properties from thermodynamic integration."""
-    ti.fit_free_energy_temperature(max_order=6)
-    ti.fit_cv_volume(max_order=4)
-    return ti

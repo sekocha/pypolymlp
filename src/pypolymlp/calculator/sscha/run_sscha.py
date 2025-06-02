@@ -485,7 +485,7 @@ def run_sscha_large_system(
     """
     sscha_params_target = copy.deepcopy(sscha_params)
     if sscha_params.cutoff_radius is None or sscha_params.cutoff_radius > 7.0:
-        sscha_params.cutoff_radius = 4.0
+        sscha_params.cutoff_radius = 6.0
         rerun = True
     else:
         rerun = False
