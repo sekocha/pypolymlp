@@ -167,12 +167,10 @@ class Thermodynamics:
             points = np.array(
                 [d for d in data if d is not None and d.free_energy is not None]
             )
-            import time
 
             if len(points) > 4:
                 temperatures = np.array([p.temperature for p in points])
                 free_energies = np.array([p.free_energy for p in points])
-                t1 = time.time()
                 polyfit = Polyfit(temperatures, free_energies)
                 polyfit.fit(
                     max_order=max_order,
@@ -180,7 +178,6 @@ class Thermodynamics:
                     first_order=False,
                     add_sqrt=False,
                 )
-                t2 = time.time()
                 ft_fits.append(polyfit)
                 if self._verbose:
                     print("- Volume:", np.round(self._volumes[ivol], 3), flush=True)
@@ -189,8 +186,6 @@ class Thermodynamics:
 
                 # entropy calculations
                 entropies = -polyfit.eval_derivative(temperatures)
-                t3 = time.time()
-                print(t2 - t1, t3 - t2)
                 for p, val in zip(points, entropies):
                     p.entropy = val
             else:
@@ -208,10 +203,14 @@ class Thermodynamics:
             points = np.array(
                 [d for d in data if d is not None and d.entropy is not None]
             )
+            import time
+
             if len(points) > 4:
+                t0 = time.time()
                 if reference:
                     points = calculate_reference(points)
                 temperatures = np.array([p.temperature for p in points])
+                t1 = time.time()
                 entropies = np.array([p.entropy for p in points])
                 if reference:
                     ref = np.array([p.reference_entropy for p in points])
@@ -220,8 +219,11 @@ class Thermodynamics:
                 else:
                     polyfit = Polyfit(temperatures, entropies)
 
+                t2 = time.time()
+
                 polyfit.fit(max_order=max_order, intercept=False, add_sqrt=True)
                 st_fits.append(polyfit)
+                t3 = time.time()
                 if self._verbose:
                     print("- Volume:", np.round(self._volumes[ivol], 3), flush=True)
                     print("  RMSE:  ", polyfit.error, flush=True)
@@ -229,6 +231,8 @@ class Thermodynamics:
 
                 # Cv calculations
                 cv_from_ref = temperatures * polyfit.eval_derivative(temperatures)
+                t4 = time.time()
+                print(t1 - t0, t2 - t1, t3 - t2, t4 - t3)
                 if reference:
                     for p, val in zip(points, cv_from_ref):
                         p.heat_capacity = p.reference_heat_capacity + val * EVtoJmol

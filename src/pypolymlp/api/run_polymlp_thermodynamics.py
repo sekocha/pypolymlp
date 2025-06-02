@@ -69,5 +69,5 @@ def run():
         thermo.save_sscha(filename="polymlp_thermodynamics_sscha.yaml")
         if args.electron is not None:
             thermo.save_sscha_ele(filename="polymlp_thermodynamics_sscha_ele.yaml")
-        if args.electron is not None or args.ti is not None:
+        if args.ti is not None:
             thermo.save_total(filename="polymlp_thermodynamics_total.yaml")
