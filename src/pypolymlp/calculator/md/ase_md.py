@@ -50,6 +50,7 @@ class IntegratorASE:
         self._time_step = None
         self._n_eq = None
         self._n_steps = None
+        self._thermostat = None
 
     def activate_MDLogger(
         self,
@@ -201,6 +202,7 @@ class IntegratorASE:
 
         self._temperature = temperature
         self._time_step = time_step
+        self._thermostat = "Nose-Hoover"
         self._dyn = NPT(
             atoms=self._atoms,
             timestep=time_step * units.fs,
@@ -226,6 +228,7 @@ class IntegratorASE:
 
         self._temperature = temperature
         self._time_step = time_step
+        self._thermostat = "Langevin"
         self._dyn = Langevin(
             atoms=self._atoms,
             timestep=time_step * units.fs,
@@ -342,12 +345,13 @@ class IntegratorASE:
     def write_conditions(self):
         """Write input conditions as standard output."""
         print("--- Input conditions for MD calculation ---", flush=True)
-        print("N atoms:                ", len(self._atoms.numbers), flush=True)
-        print("Volume (ang.3):         ", self._atoms.get_volume(), flush=True)
-        print("Temperature (K):        ", self._temperature, flush=True)
-        print("Time step (fs):         ", self._time_step, flush=True)
+        print("N atoms:           ", len(self._atoms.numbers), flush=True)
+        print("Volume (ang.3):    ", np.round(self._atoms.get_volume(), 5), flush=True)
+        print("Thermostat:        ", self._thermostat, flush=True)
+        print("Temperature (K):   ", self._temperature, flush=True)
+        print("Time step (fs):    ", self._time_step, flush=True)
         if hasattr(self.calculator, "_alpha"):
-            print("alpha_fc2:              ", self.calculator._alpha, flush=True)
+            print("alpha_fc2:         ", self.calculator._alpha, flush=True)
         print("-------------------------------------------", flush=True)
         return self
 
@@ -369,6 +373,7 @@ class IntegratorASE:
             print("conditions:", file=f)
             print("  n_atom:     ", len(self._atoms.numbers), file=f)
             print("  volume:     ", self._atoms.get_volume(), file=f)
+            print("  thermostat: ", self._thermostat, file=f)
             print("  temperature:", self._temperature, file=f)
             print("  time_step:  ", self._time_step, file=f)
             print("  n_steps_eq: ", self._n_eq, file=f)
@@ -378,8 +383,8 @@ class IntegratorASE:
             print(file=f)
 
             print("properties:", file=f)
-            print("  average_energy:   ", self._average_energy, file=f)
-            print("  heat_capacity_eV: ", self._heat_capacity_eV, file=f)
-            print("  heat_capacity:    ", self._heat_capacity, file=f)
+            print("  average_energy:      ", self._average_energy, file=f)
+            print("  heat_capacity_eV:    ", self._heat_capacity_eV, file=f)
+            print("  heat_capacity:       ", self._heat_capacity, file=f)
             if self._use_reference:
                 print("  average_delta_energy:", self._average_delta_energy, file=f)

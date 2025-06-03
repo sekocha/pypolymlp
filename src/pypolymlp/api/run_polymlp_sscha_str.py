@@ -6,6 +6,7 @@ import signal
 import numpy as np
 
 from pypolymlp.api.pypolymlp_sscha_str import PypolymlpSSCHAStructureGenerator
+from pypolymlp.core.utils import print_credit
 
 
 def run():
@@ -68,6 +69,7 @@ def run():
     )
     args = parser.parse_args()
     np.set_printoptions(legacy="1.21")
+    print_credit()
 
     if not args.sym and not args.volume and not args.cell:
         args.sym = True
