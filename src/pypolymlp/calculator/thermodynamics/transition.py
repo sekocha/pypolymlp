@@ -3,7 +3,6 @@
 import numpy as np
 
 from pypolymlp.calculator.thermodynamics.fit_utils import Polyfit, fit_solve_poly
-from pypolymlp.calculator.thermodynamics.io_utils import load_thermodynamics_yaml
 
 
 def find_transition(f1: np.ndarray, f2: np.ndarray):
@@ -59,16 +58,3 @@ def compute_phase_boundary(
                 boundary.append([press, tc_polyfit])
 
     return np.array(boundary)
-
-
-def run_phase_boundary_calculations(yaml1: str, yaml2: str):
-    """Run phase boundary calculations from two yaml files."""
-
-    prop1 = load_thermodynamics_yaml(yaml1)
-    prop2 = load_thermodynamics_yaml(yaml2)
-
-    tc = find_transition(prop1.get_T_F(), prop2.get_T_F())
-    boundary = compute_phase_boundary(
-        prop1.gibbs, prop1.temperatures, prop2.gibbs, prop2.temperatures
-    )
-    return tc, boundary

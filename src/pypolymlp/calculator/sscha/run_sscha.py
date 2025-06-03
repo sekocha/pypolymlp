@@ -1,5 +1,6 @@
 """Class for performing SSCHA."""
 
+import copy
 import os
 from typing import Optional
 
@@ -18,7 +19,7 @@ from pypolymlp.calculator.sscha.sscha_utils import (
     save_sscha_yaml,
 )
 from pypolymlp.core.data_format import PolymlpParams
-from pypolymlp.core.units import ev_to_kjmol
+from pypolymlp.core.units import EVtoKJmol
 from pypolymlp.utils.phonopy_utils import (
     phonopy_cell_to_structure,
     structure_to_phonopy_cell,
@@ -144,10 +145,12 @@ class SSCHA:
 
     def _unit_kjmol(self, e):
         """Convert energy in eV/supercell to energy in kJ/mol."""
-        return ev_to_kjmol(e) / self.n_unitcells
+        return e * EVtoKJmol / self.n_unitcells
 
     def _compute_sscha_properties(self, t: float = 1000):
         """Compute SSCHA properties using FC2."""
+        if self._verbose:
+            print("Computing SSCHA properties from FC2.", flush=True)
         qmesh = self._sscha_params.mesh
         self.ph_recip.force_constants = self._fc2
         self.ph_recip.compute_thermal_properties(t=t, qmesh=qmesh)
@@ -259,7 +262,8 @@ class SSCHA:
         n_iter, delta = 1, 1e10
         while n_iter <= max_iter and delta > tol:
             if self._verbose:
-                print("----------- Iteration :", n_iter, "-----------", flush=True)
+                txt = "--------------- Iteration : " + str(n_iter) + " ---------------"
+                print(txt, flush=True)
             self._fc2 = self._single_iter(t=t, n_samples=n_samples)
             if self._verbose:
                 self._print_progress()
@@ -294,7 +298,8 @@ class SSCHA:
         n_iter, delta = 1, 1e10
         while n_iter <= self._sscha_params.max_iter and delta > self._sscha_params.tol:
             if self._verbose:
-                print("----------- Iteration :", n_iter, "-----------", flush=True)
+                txt = "--------------- Iteration : " + str(n_iter) + " ---------------"
+                print(txt, flush=True)
             self._fc2 = self._single_iter(t=t, n_samples=n_samples)
             if self._verbose:
                 self._print_progress()
@@ -367,6 +372,54 @@ class SSCHA:
         self._fc2 = fc2
 
 
+def _run_precondition(
+    sscha: SSCHA,
+    sscha_params: SSCHAParameters,
+    verbose: bool = False,
+):
+    """Run a procedure to perform precondition."""
+
+    if verbose:
+        print("---", flush=True)
+        print("Preconditioning.", flush=True)
+        print("Size of FC2 basis-set:", sscha.n_fc_basis, flush=True)
+
+    n_samples = max(min(sscha_params.n_samples_init // 50, 100), 5)
+    sscha.precondition(
+        t=sscha_params.temperatures[0],
+        n_samples=n_samples,
+        tol=0.01,
+        max_iter=5,
+    )
+    if sscha_params.tol < 0.003:
+        n_samples = max(min(sscha_params.n_samples_init // 10, 500), 10)
+        sscha.precondition(
+            t=sscha_params.temperatures[0],
+            n_samples=n_samples,
+            tol=0.005,
+            max_iter=5,
+        )
+    return sscha
+
+
+def _run_target_sscha(
+    sscha: SSCHA,
+    sscha_params: SSCHAParameters,
+    verbose: bool = False,
+):
+    """Run SSCHA for target temperatures."""
+    for temp in sscha_params.temperatures:
+        if verbose:
+            print("************** Temperature:", temp, "**************", flush=True)
+            print("Increasing number of samples.", flush=True)
+        sscha.run(t=temp, accurate=False)
+        if verbose:
+            print("Increasing number of samples.", flush=True)
+        sscha.run(t=temp, accurate=True, initialize_history=False)
+        sscha.save_results()
+    return sscha
+
+
 def run_sscha(
     sscha_params: SSCHAParameters,
     pot: Optional[str] = None,
@@ -374,6 +427,7 @@ def run_sscha(
     coeffs: Optional[np.ndarray] = None,
     properties: Optional[Properties] = None,
     fc2: Optional[np.ndarray] = None,
+    precondition: bool = True,
     verbose: bool = False,
 ):
     """Run sscha iterations for multiple temperatures.
@@ -399,33 +453,82 @@ def run_sscha(
     if verbose:
         print("Frequency (min):      ", np.round(np.min(freq), 5), flush=True)
         print("Frequency (max):      ", np.round(np.max(freq), 5), flush=True)
-        print("Size of FC2 basis-set:", sscha.n_fc_basis, flush=True)
+
+    if precondition:
+        sscha = _run_precondition(sscha, sscha_params, verbose=verbose)
 
     if verbose:
-        print("Preconditioning.", flush=True)
-    n_samples = max(min(sscha_params.n_samples_init // 50, 100), 5)
-    sscha.precondition(
-        t=sscha_params.temperatures[0],
-        n_samples=n_samples,
-        tol=0.01,
-        max_iter=10,
+        print("Size of FC2 basis-set:", sscha.n_fc_basis, flush=True)
+    sscha = _run_target_sscha(sscha, sscha_params, verbose=verbose)
+    return sscha
+
+
+def run_sscha_large_system(
+    sscha_params: SSCHAParameters,
+    pot: Optional[str] = None,
+    params: Optional[PolymlpParams] = None,
+    coeffs: Optional[np.ndarray] = None,
+    properties: Optional[Properties] = None,
+    fc2: Optional[np.ndarray] = None,
+    precondition: bool = True,
+    verbose: bool = False,
+):
+    """Run sscha iterations for multiple temperatures using cutoff temporarily.
+
+    Parameters
+    ----------
+    sscha_params: Parameters for SSCHA in SSCHAParameters.
+    pot: polymlp file.
+    params: Parameters for polymlp.
+    coeffs: Polymlp coefficients.
+    properties: Properties instance.
+    """
+    sscha_params_target = copy.deepcopy(sscha_params)
+    if sscha_params.cutoff_radius is None or sscha_params.cutoff_radius > 7.0:
+        sscha_params.cutoff_radius = 6.0
+        rerun = True
+    else:
+        rerun = False
+
+    sscha = SSCHA(
+        sscha_params,
+        pot=pot,
+        params=params,
+        coeffs=coeffs,
+        properties=properties,
+        verbose=verbose,
     )
-    if sscha_params.tol < 0.003:
-        n_samples = max(min(sscha_params.n_samples_init // 10, 500), 10)
-        sscha.precondition(
-            t=sscha_params.temperatures[0],
-            n_samples=n_samples,
-            tol=0.005,
-            max_iter=5,
+    sscha.set_initial_force_constants(fc2=fc2)
+    freq = sscha.run_frequencies()
+    if verbose:
+        print("Frequency (min):      ", np.round(np.min(freq), 5), flush=True)
+        print("Frequency (max):      ", np.round(np.max(freq), 5), flush=True)
+
+    if precondition:
+        sscha = _run_precondition(sscha, sscha_params, verbose=verbose)
+
+    if rerun:
+        if verbose:
+            print("---", flush=True)
+            print("Run SSCHA with temporal cutoff.", flush=True)
+            print("Temporal cutoff radius:", sscha_params.cutoff_radius, flush=True)
+            print("Size of FC2 basis-set: ", sscha.n_fc_basis, flush=True)
+        sscha.run(t=sscha_params.temperatures[0], accurate=False)
+        fc2_rerun = sscha.force_constants
+        sscha_params.cutoff_radius = sscha_params_target.cutoff_radius
+
+        sscha = SSCHA(
+            sscha_params_target,
+            pot=pot,
+            params=params,
+            coeffs=coeffs,
+            properties=properties,
+            verbose=verbose,
         )
-    for temp in sscha_params.temperatures:
-        if verbose:
-            print("************** Temperature:", temp, "**************", flush=True)
-        if verbose:
-            print("Increasing number of samples.", flush=True)
-        sscha.run(t=temp, accurate=False)
-        if verbose:
-            print("Increasing number of samples.", flush=True)
-        sscha.run(t=temp, accurate=True, initialize_history=False)
-        sscha.save_results()
+        sscha.set_initial_force_constants(fc2=fc2_rerun)
+
+    if verbose:
+        print("Size of FC2 basis-set:", sscha.n_fc_basis, flush=True)
+
+    sscha = _run_target_sscha(sscha, sscha_params, verbose=verbose)
     return sscha

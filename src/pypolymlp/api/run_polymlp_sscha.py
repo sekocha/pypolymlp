@@ -119,6 +119,12 @@ def run():
         default=None,
         help="Cutoff radius for effective force constants.",
     )
+    parser.add_argument(
+        "--use_temporal_cutoff",
+        action="store_true",
+        help="Use an algorithm temporarily using cutoff radius.",
+    )
+
     args = parser.parse_args()
 
     np.set_printoptions(legacy="1.21")
@@ -154,4 +160,5 @@ def run():
         init_fc_algorithm=args.init,
         init_fc_file=args.init_file,
         cutoff_radius=args.cutoff_fc2,
+        use_temporal_cutoff=args.use_temporal_cutoff,
     )

@@ -5,7 +5,7 @@ from typing import Literal, Optional, Union
 import numpy as np
 
 from pypolymlp.calculator.properties import Properties
-from pypolymlp.calculator.sscha.run_sscha import run_sscha
+from pypolymlp.calculator.sscha.run_sscha import run_sscha, run_sscha_large_system
 from pypolymlp.calculator.sscha.sscha_params import SSCHAParameters
 from pypolymlp.calculator.sscha.sscha_utils import PolymlpDataSSCHA, Restart
 from pypolymlp.core.data_format import PolymlpParams
@@ -116,7 +116,10 @@ class PypolymlpSSCHA:
         mesh: tuple = (10, 10, 10),
         init_fc_algorithm: Literal["harmonic", "const", "random", "file"] = "harmonic",
         init_fc_file: Optional[str] = None,
+        fc2: Optional[np.ndarray] = None,
+        precondition: bool = True,
         cutoff_radius: Optional[float] = None,
+        use_temporal_cutoff: bool = False,
     ):
         """Run SSCHA iterations.
 
@@ -164,17 +167,27 @@ class PypolymlpSSCHA:
             nac_params=self._nac_params,
             cutoff_radius=cutoff_radius,
         )
-
         if self._verbose:
             self._sscha_params.print_params()
             self._sscha_params.print_unitcell()
 
-        self._sscha = run_sscha(
-            self._sscha_params,
-            properties=self._prop,
-            fc2=self._fc2,
-            verbose=self._verbose,
-        )
+        if use_temporal_cutoff:
+            self._sscha = run_sscha_large_system(
+                self._sscha_params,
+                properties=self._prop,
+                fc2=self._fc2,
+                precondition=precondition,
+                verbose=self._verbose,
+            )
+        else:
+            self._sscha = run_sscha(
+                self._sscha_params,
+                properties=self._prop,
+                fc2=self._fc2,
+                precondition=precondition,
+                verbose=self._verbose,
+            )
+        self._fc2 = self._sscha.force_constants
         return self
 
     @property

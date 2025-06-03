@@ -118,11 +118,11 @@ class FittedModels:
     def eval_eq_cp(self, itemp: int):
         """Evaluate Cp at equilibrium volume."""
         cv_val = self.eval_eq_cv(itemp)
-        eos, sv, _ = self.extract(itemp)
-        v0, b0 = eos.v0, eos.b0
-        s_deriv = sv.eval_derivative(v0)
-        temp = self.temperatures[itemp]
         try:
+            eos, sv, _ = self.extract(itemp)
+            v0, b0 = eos.v0, eos.b0
+            s_deriv = sv.eval_derivative(v0)
+            temp = self.temperatures[itemp]
             bm = b0 / EVAngstromToGPa
             add = temp * v0 * (s_deriv**2) / bm
             add *= EVtoJmol
