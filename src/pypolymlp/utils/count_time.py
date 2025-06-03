@@ -37,7 +37,10 @@ class PolymlpCost:
         """Get elements from MLP file."""
         pot_elements = None
         if self._path_pot is None:
-            pot_elements = self._pot
+            if isinstance(self._pot, list):
+                pot_elements = self._pot[0]
+            else:
+                pot_elements = self._pot
         else:
             for path in self._path_pot:
                 pot_elements = find_mlps(path)[0]
