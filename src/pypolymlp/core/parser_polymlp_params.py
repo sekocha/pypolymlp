@@ -293,7 +293,6 @@ def set_common_params(multiple_params: list[PolymlpParams]) -> PolymlpParams:
     """Set common parameters of multiple PolymlpParams."""
     keys = set()
     for single in multiple_params:
-        print(single)
         for k in single.as_dict().keys():
             keys.add(k)
 
