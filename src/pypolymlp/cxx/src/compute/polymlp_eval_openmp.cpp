@@ -298,7 +298,7 @@ void PolymlpEvalOpenMP::eval_gtinv(const vector1i& types,
                     const auto& lm_attr = nlmtp.lm;
                     const int ylmkey = lm_attr.ylmkey;
                     const int head_key = nlmtp.nlmtp_noconj_key;
-                    if (tp == nlmtp.tp){
+                    if (tp == nlmtp.tp and fn[nlmtp.n_id] > 1e-20){
                         val = fn[nlmtp.n_id] * ylm[ylmkey];
                         d1 = fn_d[nlmtp.n_id] * ylm[ylmkey] / dis;
                         valx = - (d1 * dx + fn[nlmtp.n_id] * ylm_dx[ylmkey]);
@@ -446,7 +446,7 @@ void PolymlpEvalOpenMP::compute_anlmtp(const vector1i& types,
                 for (const auto& nlmtp: nlmtp_attrs_no_conj){
                     const auto& lm_attr = nlmtp.lm;
                     const int idx = nlmtp.nlmtp_noconj_key;
-                    if (tp == nlmtp.tp){
+                    if (tp == nlmtp.tp and fn[nlmtp.n_id] > 1e-20){
                         val = fn[nlmtp.n_id] * ylm[lm_attr.ylmkey];
                         anlmtp_r[i][idx] += val.real();
                         anlmtp_r[j][idx] += val.real() * lm_attr.sign_j;
@@ -538,7 +538,7 @@ void PolymlpEvalOpenMP::compute_anlmtp_openmp(
                 get_fn_(dis, pot.fp, params, fn);
                 get_ylm_(sph[0], sph[1], pot.fp.maxl, ylm);
                 for (const auto& nlmtp: nlmtp_attrs_no_conj){
-                    if (tp == nlmtp.tp){
+                    if (tp == nlmtp.tp and fn[nlmtp.n_id] > 1e-20){
                         const auto& lm_attr = nlmtp.lm;
                         const int idx = nlmtp.nlmtp_noconj_key;
                         local[idx] += fn[nlmtp.n_id] * ylm[lm_attr.ylmkey];
@@ -590,7 +590,7 @@ void PolymlpEvalOpenMP::compute_sum_of_prod_anlmtp(const vector1i& types,
             const auto& pmodel = pot.p_obj.get_potential_model(type1, key);
             dc sum_e(0.0), sum_f(0.0);
             for (const auto& pterm: pmodel){
-                if (fabs(prod_features[pterm.prod_features_key]) > 1e-50){
+                if (fabs(prod_features[pterm.prod_features_key]) > 1e-30){
                     sum_e += pterm.coeff_e
                            * prod_features[pterm.prod_features_key]
                            * prod_anlmtp_erased[pterm.prod_key];
