@@ -268,7 +268,7 @@ void PolymlpEval::eval_gtinv(const vector1i& types,
                     const auto& lm_attr = nlmtp.lm;
                     const int ylmkey = lm_attr.ylmkey;
                     const int head_key = nlmtp.nlmtp_noconj_key;
-                    if (tp == nlmtp.tp){
+                    if (tp == nlmtp.tp and fn[nlmtp.n_id] > 1e-20){
                         val = fn[nlmtp.n_id] * ylm[ylmkey];
                         d1 = fn_d[nlmtp.n_id] * ylm[ylmkey] / dis;
                         valx = - (d1 * dx + fn[nlmtp.n_id] * ylm_dx[ylmkey]);
@@ -344,7 +344,7 @@ void PolymlpEval::compute_anlmtp(const vector1i& types,
                 for (const auto& nlmtp: nlmtp_attrs_no_conj){
                     const auto& lm_attr = nlmtp.lm;
                     const int idx = nlmtp.nlmtp_noconj_key;
-                    if (tp == nlmtp.tp){
+                    if (tp == nlmtp.tp and fn[nlmtp.n_id] > 1e-20){
                         val = fn[nlmtp.n_id] * ylm[lm_attr.ylmkey];
                         anlmtp_r[i][idx] += val.real();
                         anlmtp_r[j][idx] += val.real() * lm_attr.sign_j;
@@ -415,22 +415,12 @@ void PolymlpEval::compute_sum_of_prod_anlmtp(const vector1i& types,
         for (size_t key = 0; key < nlmtp_attrs_no_conj.size(); ++key){
             const auto& pmodel = pot.p_obj.get_potential_model(type1, key);
             dc sum_e(0.0), sum_f(0.0);
-            //dc prod;
             for (const auto& pterm: pmodel){
-                // TODO: examine accuracy
-                if (fabs(prod_features[pterm.prod_features_key]) > 1e-50){
-                    sum_e += pterm.coeff_e
-                           * prod_features[pterm.prod_features_key]
-                           * prod_anlmtp_erased[pterm.prod_key];
-                    sum_f += pterm.coeff_f
-                           * prod_features[pterm.prod_features_key]
-                           * prod_anlmtp_erased[pterm.prod_key];
-                    /*
-                    prod = prod_anlmtp_erased[pterm.prod_key]
+                if (fabs(prod_features[pterm.prod_features_key]) > 1e-30){
+                    dc prod = prod_anlmtp_erased[pterm.prod_key]
                           * prod_features[pterm.prod_features_key];
                     sum_e += pterm.coeff_e * prod;
                     sum_f += pterm.coeff_f * prod;
-                    */
                 }
             }
             prod_sum_e[i][key] = sum_e;
