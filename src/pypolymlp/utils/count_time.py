@@ -37,7 +37,10 @@ class PolymlpCost:
         """Get elements from MLP file."""
         pot_elements = None
         if self._path_pot is None:
-            pot_elements = self._pot
+            if isinstance(self._pot, list):
+                pot_elements = self._pot[0]
+            else:
+                pot_elements = self._pot
         else:
             for path in self._path_pot:
                 pot_elements = find_mlps(path)[0]
@@ -48,6 +51,7 @@ class PolymlpCost:
             raise RuntimeError("polymlp potential files not found.")
 
         params, _ = load_mlps(pot_elements)
+
         self._elements = params.elements
         self._system = "-".join(self._elements)
         return self._elements
