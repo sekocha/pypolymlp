@@ -72,7 +72,7 @@ def run():
     parser.add_argument(
         "--fc2",
         type=str,
-        default="fc2.hdf5",
+        default=None,
         help="Force constant HDF5 file.",
     )
     parser.add_argument(
@@ -85,6 +85,7 @@ def run():
     np.set_printoptions(legacy="1.21")
 
     if args.ti:
+        print("Run thermodynamic integration.", flush=True)
         path = "/".join(os.path.abspath(args.fc2).split("/")[:-1])
         run_thermodynamic_integration(
             pot=args.pot,
@@ -105,11 +106,17 @@ def run():
             verbose=True,
         )
     else:
+        print("Run molecular dynamics with NVT thermostat.", flush=True)
         path = "/".join(os.path.abspath(args.poscar).split("/")[:-1])
         md = PypolymlpMD(verbose=True)
         md.load_poscar(args.poscar)
         md.set_supercell(args.supercell_size)
-        md.set_ase_calculator(pot=args.pot)
+        if args.fc2 is None:
+            print("Potential:", args.pot, flush=True)
+            md.set_ase_calculator(pot=args.pot)
+        else:
+            print("Potential:", args.fc2, flush=True)
+            md.set_ase_calculator_with_fc2(pot=args.pot, fc2hdf5=args.fc2, alpha=0.0)
         md.run_md_nvt(
             thermostat=args.thermostat,
             temperature=args.temp,
