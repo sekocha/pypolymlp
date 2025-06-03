@@ -6,6 +6,7 @@ import signal
 import numpy as np
 
 from pypolymlp.api.pypolymlp_sscha_post import PypolymlpSSCHAPost
+from pypolymlp.core.utils import print_credit
 
 
 def run():
@@ -60,6 +61,7 @@ def run():
     )
     args = parser.parse_args()
     np.set_printoptions(legacy="1.21")
+    print_credit()
 
     sscha = PypolymlpSSCHAPost(verbose=True)
     if args.distribution:

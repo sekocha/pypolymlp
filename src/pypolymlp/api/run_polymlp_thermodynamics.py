@@ -9,6 +9,7 @@ from pypolymlp.api.pypolymlp_thermodynamics import (
     PypolymlpThermodynamics,
     PypolymlpTransition,
 )
+from pypolymlp.core.utils import print_credit
 
 
 def run():
@@ -46,6 +47,7 @@ def run():
     args = parser.parse_args()
 
     np.set_printoptions(legacy="1.21")
+    print_credit()
 
     if args.boundary:
         transition = PypolymlpTransition(args.boundary[0], args.boundary[1])

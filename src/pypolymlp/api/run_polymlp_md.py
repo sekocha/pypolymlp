@@ -7,6 +7,7 @@ import signal
 import numpy as np
 
 from pypolymlp.api.pypolymlp_md import PypolymlpMD, run_thermodynamic_integration
+from pypolymlp.core.utils import print_credit
 
 
 def run():
@@ -82,6 +83,7 @@ def run():
     )
     args = parser.parse_args()
 
+    print_credit()
     np.set_printoptions(legacy="1.21")
 
     if args.ti:

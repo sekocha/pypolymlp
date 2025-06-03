@@ -6,6 +6,7 @@ import signal
 import numpy as np
 
 from pypolymlp.api.pypolymlp_utils import PypolymlpUtils
+from pypolymlp.core.utils import print_credit
 from pypolymlp.utils.atomic_energies.atomic_energies import (
     get_atomic_energies_polymlp_in,
 )
@@ -131,6 +132,7 @@ def run():
     parser.add_argument("--space_group", action="store_true", help="get space group")
 
     args = parser.parse_args()
+    print_credit()
 
     np.set_printoptions(legacy="1.21")
     polymlp = PypolymlpUtils(verbose=True)
