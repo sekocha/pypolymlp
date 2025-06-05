@@ -61,8 +61,12 @@ def save_thermodynamics_yaml(
         if eq_entropies is not None and eq_entropies[itemp] is not None:
             val = eq_entropies[itemp] * EVtoJmol
             print("  entropy:          ", val, file=f)
+        else:
+            print("  entropy:           None", file=f)
         if eq_cp is not None and eq_cp[itemp] is not None:
             print("  heat_capacity_cp: ", eq_cp[itemp], file=f)
+        else:
+            print("  heat_capacity_cp:  None", file=f)
         print("", file=f)
 
     print("data_helmholtz_volume:", file=f)

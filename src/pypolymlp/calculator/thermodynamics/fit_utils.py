@@ -153,21 +153,6 @@ class Polyfit:
         return (self._order, self._add_sqrt)
 
 
-def fit_cv_temperature(temperatures: np.ndarray, cv: np.ndarray, verbose: bool = True):
-    """Fit Cv-temperature data to a polynomial."""
-    polyfit = Polyfit(temperatures, cv)
-    polyfit.fit(max_order=6, intercept=False, first_order=False, add_sqrt=True)
-    cv_pred = polyfit.eval(temperatures)
-    if verbose:
-        print("Cv-Temperature Fit", flush=True)
-        print("  RMSE:  ", polyfit.error, flush=True)
-        print("  model: ", polyfit.best_model, flush=True)
-        print("  # temp., Cv(observed), Cv(fitted):", flush=True)
-        for t, cv1, cv2 in zip(temperatures, cv, cv_pred):
-            print("   ", t, np.round(cv1, 5), np.round(cv2, 5), flush=True)
-    return cv_pred
-
-
 def _func_poly(x, *args):
     """Define polynomial function."""
     return np.polyval(args[0], x)
