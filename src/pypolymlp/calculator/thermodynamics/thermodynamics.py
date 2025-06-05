@@ -376,6 +376,11 @@ class Thermodynamics:
         """Return fitted models."""
         return self._models
 
+    @property
+    def is_heat_capacity(self):
+        """Return whether heat capacity exists or not."""
+        return self._is_heat_capacity
+
     def get_data(self, attr: str = "free_energy"):
         """Retrun data of given attribute."""
         props = []
@@ -401,6 +406,7 @@ class Thermodynamics:
         if reset_fit:
             self._models.sv_fits = None
             self._models.st_fits = None
+            self._eq_entropies = None
         self._replace(entropies, attr="entropy")
         return self
 
@@ -410,7 +416,17 @@ class Thermodynamics:
         """Replace heat capacities."""
         if reset_fit:
             self._models.cv_fits = None
+            self._eq_cp = None
         self._replace(heat_capacities, attr="heat_capacity")
+        return self
+
+    def clear_heat_capacities(self):
+        """Clear heat capacities."""
+        self._models.cv_fits = None
+        self._eq_cp = None
+        for i, g1 in enumerate(self._grid):
+            for j, g2 in enumerate(g1):
+                self._grid[i, j].heat_capacity = None
         return self
 
     def _replace(self, properties: np.ndarray, attr: str = "free_energy"):

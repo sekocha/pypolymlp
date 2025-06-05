@@ -92,16 +92,19 @@ class PypolymlpThermodynamics:
             self._total.fit_free_energy_volume()
             self._total.fit_eval_entropy(max_order=6)
 
-            self._total.replace_entropies(s_total, reset_fit=False)
-            self._total.fit_eval_heat_capacity(max_order=4, from_entropy=True)
-            self._total.replace_entropies(s_total_ti, reset_fit=False)
+            if self._ti.is_heat_capacity:
+                self._total.replace_entropies(s_total, reset_fit=False)
+                self._total.fit_eval_heat_capacity(max_order=4, from_entropy=True)
+                self._total.replace_entropies(s_total_ti, reset_fit=False)
 
-            temperatures = self._total.temperatures
-            fv_fits = self._total.fitted_models.fv_fits
-            cv_fits_ti = self._ti.fitted_models.cv_fits
-            cp_add = [cv.eval(fv.v0) for fv, cv in zip(fv_fits, cv_fits_ti)]
-            cp_add = fit_cv_temperature(temperatures, cp_add, verbose=self._verbose)
-            self._total.add_cp(cp_add)
+                temperatures = self._total.temperatures
+                fv_fits = self._total.fitted_models.fv_fits
+                cv_fits_ti = self._ti.fitted_models.cv_fits
+                cp_add = [cv.eval(fv.v0) for fv, cv in zip(fv_fits, cv_fits_ti)]
+                cp_add = fit_cv_temperature(temperatures, cp_add, verbose=self._verbose)
+                self._total.add_cp(cp_add)
+            else:
+                self._total.clear_heat_capacities()
 
         return self
 
