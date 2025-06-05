@@ -88,7 +88,11 @@ def load_thermodynamic_integration_yaml(filename: str = "polymlp_ti.yaml"):
     volume = float(data["conditions"]["volume"]) / n_atom
     prop = data["properties"]
     free_energy = float(prop["free_energy"]) / n_atom
-    heat_capacity = float(prop["delta_heat_capacity"])
+
+    if prop["delta_heat_capacity"] == "None":
+        heat_capacity = None
+    else:
+        heat_capacity = float(prop["delta_heat_capacity"])
     log = [
         [float(d["alpha"]), float(d["delta_e"]), float(d["displacement"])]
         for d in prop["delta_energies"]

@@ -53,11 +53,11 @@ class PypolymlpThermodynamics:
         s_sum = sum_matrix_data(s_total, s_contrib)
         return f_sum, s_sum
 
-    def _fit_eval_electron(self, f_total: np.ndarray, s_total: np.ndarray):
+    def _run_electron(self, f_total: np.ndarray, s_total: np.ndarray):
         """Include electronic contribution."""
         f_total, s_total = self._sum_properties(self._electron, f_total, s_total)
         self._sscha_el = self._replace_thermodynamics(f_total, s_total)
-        self._sscha_el.fit_eval_sscha()
+        self._sscha_el.run_standard()
         return f_total, s_total
 
     def _fit_ti(self, f_total: np.ndarray, s_total: np.ndarray):
@@ -69,7 +69,7 @@ class PypolymlpThermodynamics:
 
     def run(self):
         """Fit results and evalulate equilibrium properties."""
-        self._sscha.fit_eval_sscha()
+        self._sscha.run_standard()
 
         if self._electron is None and self._ti is None:
             return self
@@ -79,32 +79,27 @@ class PypolymlpThermodynamics:
         if self._electron is not None:
             if self._verbose:
                 print("### Electronic contribution ###", flush=True)
-            f_total, s_total = self._fit_eval_electron(f_total, s_total)
+            f_total, s_total = self._run_electron(f_total, s_total)
 
         if self._ti is not None:
             if self._verbose:
                 print("### TI contribution ###", flush=True)
             f_total_ti, s_total_ti = self._fit_ti(f_total, s_total)
-            # self._ti.fit_free_energy_temperature(max_order=6)
-            # self._ti.fit_cv_volume(max_order=4)
-            # f_total_ti, s_total_ti = self._sum_properties(self._ti, f_total, s_total)
 
             if self._verbose:
                 print("### Total properties ###", flush=True)
             self._total = self._replace_thermodynamics(f_total_ti, s_total_ti)
-            self._total.fit_eos()
+            self._total.fit_free_energy_volume()
             self._total.fit_eval_entropy(max_order=6)
 
             self._total.replace_entropies(s_total, reset_fit=False)
-            self._total.fit_eval_cp(max_order=4, from_entropy=True)
+            self._total.fit_eval_heat_capacity(max_order=4, from_entropy=True)
             self._total.replace_entropies(s_total_ti, reset_fit=False)
 
             temperatures = self._total.temperatures
-            eos_fits = self._total.fitted_models.eos_fits
+            fv_fits = self._total.fitted_models.fv_fits
             cv_fits_ti = self._ti.fitted_models.cv_fits
-            cp_add = [cv_fit.eval(eos.v0) for eos, cv_fit in zip(eos_fits, cv_fits_ti)]
-            # for t, c in zip(temperatures, cp_add):
-            #     print(t, c)
+            cp_add = [cv.eval(fv.v0) for fv, cv in zip(fv_fits, cv_fits_ti)]
             cp_add = fit_cv_temperature(temperatures, cp_add, verbose=self._verbose)
             self._total.add_cp(cp_add)
 

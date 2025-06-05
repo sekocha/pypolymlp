@@ -4,10 +4,13 @@ from dataclasses import dataclass
 from typing import Literal, Optional
 
 import numpy as np
+from phono3py.file_IO import read_fc2_from_hdf5
+from phonopy import Phonopy
 from phonopy.units import EVAngstromToGPa
 
 from pypolymlp.calculator.sscha.sscha_utils import Restart
 from pypolymlp.core.units import EVtoJmol
+from pypolymlp.utils.phonopy_utils import structure_to_phonopy_cell
 
 
 @dataclass
@@ -65,7 +68,7 @@ class FittedModels:
 
     volumes: np.ndarray
     temperatures: np.ndarray
-    eos_fits: Optional[list] = None
+    fv_fits: Optional[list] = None
     sv_fits: Optional[list] = None
     cv_fits: Optional[list] = None
     ft_fits: Optional[list] = None
@@ -75,8 +78,8 @@ class FittedModels:
         """Reshape objects with common grid."""
         self.volumes = self.volumes[ix_v]
         self.temperatures = self.temperatures[ix_t]
-        if self.eos_fits is not None:
-            self.eos_fits = [self.eos_fits[i] for i in ix_t]
+        if self.fv_fits is not None:
+            self.fv_fits = [self.fv_fits[i] for i in ix_t]
         if self.sv_fits is not None:
             self.sv_fits = [self.sv_fits[i] for i in ix_t]
         if self.cv_fits is not None:
@@ -89,38 +92,38 @@ class FittedModels:
 
     def extract(self, itemp: int):
         """Retrun fitted functions for at a temperature index."""
-        eos = self.eos_fits[itemp] if self.eos_fits is not None else None
+        fv = self.fv_fits[itemp] if self.fv_fits is not None else None
         sv = self.sv_fits[itemp] if self.sv_fits is not None else None
         cv = self.cv_fits[itemp] if self.cv_fits is not None else None
-        return eos, sv, cv
+        return fv, sv, cv
 
     def eval_eq_entropy(self, itemp: int):
         """Evaluate entropy at equilibrium volume."""
-        if self.eos_fits is None:
-            raise RuntimeError("EOS functions not found.")
+        if self.fv_fits is None:
+            raise RuntimeError("F-V functions not found.")
         if self.sv_fits is None:
             raise RuntimeError("S-V functions not found.")
-        if self.eos_fits[itemp] is None or self.sv_fits[itemp] is None:
+        if self.fv_fits[itemp] is None or self.sv_fits[itemp] is None:
             return None
 
-        return self.sv_fits[itemp].eval(self.eos_fits[itemp].v0)
+        return self.sv_fits[itemp].eval(self.fv_fits[itemp].v0)
 
     def eval_eq_cv(self, itemp: int):
         """Evaluate Cv contribution at equilibrium volume."""
-        if self.eos_fits is None:
-            raise RuntimeError("EOS functions not found.")
+        if self.fv_fits is None:
+            raise RuntimeError("F-V functions not found.")
         if self.cv_fits is None:
             raise RuntimeError("Cv-V functions not found.")
-        if self.eos_fits[itemp] is None or self.cv_fits[itemp] is None:
+        if self.fv_fits[itemp] is None or self.cv_fits[itemp] is None:
             return None
-        return self.cv_fits[itemp].eval(self.eos_fits[itemp].v0)
+        return self.cv_fits[itemp].eval(self.fv_fits[itemp].v0)
 
     def eval_eq_cp(self, itemp: int):
         """Evaluate Cp at equilibrium volume."""
         cv_val = self.eval_eq_cv(itemp)
         try:
-            eos, sv, _ = self.extract(itemp)
-            v0, b0 = eos.v0, eos.b0
+            fv, sv, _ = self.extract(itemp)
+            v0, b0 = fv.v0, fv.b0
             s_deriv = sv.eval_derivative(v0)
             temp = self.temperatures[itemp]
             bm = b0 / EVAngstromToGPa
@@ -140,9 +143,9 @@ class FittedModels:
 
         Rows and columns correspond to volumes and temperatures, respectively.
         """
-        if self.eos_fits is None:
-            raise RuntimeError("EOS functions not found.")
-        return np.array([eos.eval(volumes) for eos in self.eos_fits]).T
+        if self.fv_fits is None:
+            raise RuntimeError("F-V functions not found.")
+        return np.array([fv.eval(volumes) for fv in self.fv_fits]).T
 
     def eval_entropies(self, volumes: np.ndarray):
         """Return entropies.
@@ -178,9 +181,9 @@ class FittedModels:
         Gibbs free energies.
             Array of (temperature index, pressure in GPa, Gibbs free energy).
         """
-        if self.eos_fits is None:
-            raise RuntimeError("EOS functions not found.")
-        return np.array([eos.eval_gibbs_pressure(volumes) for eos in self.eos_fits])
+        if self.fv_fits is None:
+            raise RuntimeError("F-V functions not found.")
+        return np.array([fv.eval_gibbs_pressure(volumes) for fv in self.fv_fits])
 
 
 def compare_conditions(array1: np.ndarray, array2: np.ndarray):
@@ -214,3 +217,32 @@ def sum_matrix_data(matrix1: np.ndarray, matrix2: np.ndarray):
     mask = np.equal(matrix1, None) | np.equal(matrix2, None)
     res[~mask] = matrix1[~mask] + matrix2[~mask]
     return res
+
+
+def calculate_reference(
+    grid_points: list[GridPointData],
+    mesh: np.ndarray = (10, 10, 10),
+):
+    """Return reference entropies.
+
+    Harmonic phonon entropies calculated with SSCHA FC2 and frequencies
+    is used as reference entropies to fit entropies with respect to temperature.
+    """
+    ref_id = 0
+    if grid_points[ref_id].path_fc2 is None:
+        raise RuntimeError("Reference state not found.")
+
+    temperatures = np.array([p.temperature for p in grid_points])
+    res = grid_points[ref_id].restart
+    n_atom = len(res.unitcell.elements)
+    ph = Phonopy(structure_to_phonopy_cell(res.unitcell), res.supercell_matrix)
+    ph.force_constants = read_fc2_from_hdf5(grid_points[ref_id].path_fc2)
+    ph.run_mesh(mesh)
+    ph.run_thermal_properties(temperatures=temperatures)
+    tp_dict = ph.get_thermal_properties_dict()
+
+    for s, cv, point in zip(tp_dict["entropy"], tp_dict["heat_capacity"], grid_points):
+        point.reference_entropy = s / EVtoJmol / n_atom
+        point.reference_heat_capacity = cv / n_atom
+
+    return grid_points
