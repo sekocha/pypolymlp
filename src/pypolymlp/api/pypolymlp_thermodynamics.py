@@ -5,10 +5,10 @@ from typing import Optional
 
 import numpy as np
 
-from pypolymlp.calculator.thermodynamics.fit_utils import fit_cv_temperature
 from pypolymlp.calculator.thermodynamics.io_utils import load_thermodynamics_yaml
 from pypolymlp.calculator.thermodynamics.thermodynamics import (
     Thermodynamics,
+    fit_cv_temperature,
     load_yamls,
 )
 from pypolymlp.calculator.thermodynamics.thermodynamics_utils import sum_matrix_data
