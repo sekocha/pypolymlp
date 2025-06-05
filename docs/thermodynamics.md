@@ -5,8 +5,8 @@
 2. Generate structures with various volumes.
 ```shell
 > pypolymlp-structure -p POSCAR --isotropic 20 --min_volume 0.8 --max_volume 1.2
-> mkdir -p sscha_results/{00001..00020}
-> for i in {00001..00020};do mv poscars/poscar-00001 sscha_results/$i/POSCAR;done
+> mkdir -p runs/{00001..00020}
+> for i in {00001..00020};do mv poscars/poscar-00001 runs/$i/POSCAR;done
 ```
 
 3. Run SSCHA calculations at various volumes and temperatures.
@@ -14,6 +14,7 @@
 (symfc and phonopy are required.)
 SSCHA calculations at a single volume and multiple temperatures can be performed as follows.
 ```shell
+> cd runs/00001
 > pypolymlp-sscha --poscar POSCAR --pot polymlp.yaml --supercell 5 5 3 --temp_min 50 --temp_max 2000 --temp_step 50 --mixing 0.5 --tol 0.005
 ```
 
@@ -35,6 +36,7 @@ SSCHA calculations at a single volume and multiple temperatures can be performed
 (ASE and phonopy are required.)
 Thermodynamic integration with MD calculations at a single volume and a single temperature can be performed as follows.
 ```shell
+> cd runs/00001
 > pypolymlp-md --ti --poscar POSCAR --pot polymlp.yaml --supercell_size 5 5 3 --temp 300 --n_eq 5000 --n_steps 20000 --n_samples 15 --fc2 ./sscha/300/fc2.hdf5
 
 # Calculate heat capacity from the variance of potential energy in MD simulation
@@ -46,8 +48,8 @@ Log file `polymlp_ti.yaml` will be generated in the directory where fc2.hdf5 is 
 
 6. Calculate thermodynamic properties from the precedent calculations.
 ```shell
-> pypolymlp-thermodynamics --sscha ./sscha_results/0*/sscha/*/sscha_results.yaml
+> pypolymlp-thermodynamics --sscha ./runs/0*/sscha/*/sscha_results.yaml
 
 # Include electronic contribution or thermodynamic integration contribution
-> pypolymlp-thermodynamics --sscha ./sscha_results/*/sscha/*/sscha_results.yaml --electron electrons/*/electron.yaml --ti sscha_runs/*/sscha/*/polymlp_ti.yaml
+> pypolymlp-thermodynamics --sscha ./runs/*/sscha/*/sscha_results.yaml --electron electrons/*/electron.yaml --ti runs/*/sscha/*/polymlp_ti.yaml
 ```
