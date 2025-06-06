@@ -102,7 +102,7 @@ class SSCHAParameters:
 
     def set_n_samples_from_basis(self, n_basis: int):
         """Set number of supercells using basis size."""
-        coeff = 300 * (0.01 / self.tol) ** 2
+        coeff = 300 * (0.01 / self.tol) ** 2.5
         self.n_samples_init = round(coeff * n_basis / self._n_atom)
         self.n_samples_final = 3 * self.n_samples_init
         return self.n_samples_init, self.n_samples_final
