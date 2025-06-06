@@ -79,10 +79,11 @@ class Polyfit:
                     add_sqrt=add_sqrt,
                 )
                 (_, y_pred, y_rmse), X = res
-                cv = loocv(X, self._y, y_pred)
-                if min_loocv > cv:
-                    min_loocv = cv
-                    best_order, best_add_sqrt = order, add_sqrt
+                if X is not None:
+                    cv = loocv(X, self._y, y_pred)
+                    if min_loocv > cv:
+                        min_loocv = cv
+                        best_order, best_add_sqrt = order, add_sqrt
 
         (coeffs, y_pred, y_rmse), _ = self._fit_single(
             best_order,
@@ -132,7 +133,11 @@ class Polyfit:
             X.append(np.ones(x.shape))
         X = np.array(X).T
 
-        coeffs = np.linalg.solve(X.T @ X, X.T @ y)
+        try:
+            coeffs = np.linalg.solve(X.T @ X, X.T @ y)
+        except:
+            return (None, None, None), None
+
         y_pred = X @ coeffs
         y_rmse = rmse(y, y_pred)
         return (coeffs, y_pred, y_rmse), X
