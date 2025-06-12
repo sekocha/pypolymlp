@@ -281,6 +281,15 @@ class Thermodynamics:
         self.fit_eval_heat_capacity(max_order=4, from_entropy=True)
         return self
 
+    def run_sscha_harmonic(self):
+        """Calculate thermodynamic properties from SSCHA."""
+        self.fit_free_energy_volume()
+        self.fit_eval_entropy(max_order=6)
+        self.assign_heat_capacity()
+        self.fit_cv_volume(max_order=4)
+        self.eval_cp_equilibrium()
+        return self
+
     def save_thermodynamics_yaml(self, filename: str = "polymlp_thermodynamics.yaml"):
         """Save fitted thermodynamics properties."""
         save_thermodynamics_yaml(
@@ -486,7 +495,7 @@ def load_sscha_yamls(filenames: tuple[str], verbose: bool = False) -> Thermodyna
         if res.converge and not res.imaginary:
             grid.free_energy = res.free_energy + res.static_potential
             grid.entropy = res.entropy
-            grid.harmonic_heat_capacity = res.harmonic_heat_capacity
+            grid.harmonic_heat_capacity = res.harmonic_heat_capacity * EVtoJmol
         else:
             grid.free_energy = None
             grid.entropy = None
@@ -511,7 +520,9 @@ def load_ti_yamls(filenames: tuple[str], verbose: bool = False) -> Thermodynamic
     """Load polymlp_ti.yaml files."""
     data = []
     for yamlfile in filenames:
-        temp, volume, free_e, cv, log = load_thermodynamic_integration_yaml(yamlfile)
+        temp, volume, free_e, ent, cv, log = load_thermodynamic_integration_yaml(
+            yamlfile
+        )
         if _check_melting(log):
             if verbose:
                 message = yamlfile + " was eliminated (found to be in a melting state)."
@@ -522,6 +533,7 @@ def load_ti_yamls(filenames: tuple[str], verbose: bool = False) -> Thermodynamic
                 temperature=temp,
                 data_type="ti",
                 free_energy=free_e,
+                entropy=ent,
                 heat_capacity=cv,
                 path_yaml=yamlfile,
             )

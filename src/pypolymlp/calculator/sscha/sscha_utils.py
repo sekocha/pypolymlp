@@ -273,9 +273,22 @@ def save_sscha_yaml(
 
     print("properties:", file=f)
     print("  free_energy:           ", properties.free_energy, file=f)
+    print("  harmonic_free_energy:  ", properties.harmonic_free_energy, file=f)
+    print("  anharmonic_free_energy:", properties.anharmonic_free_energy, file=f)
     print("  static_potential:      ", properties.static_potential, file=f)
     print("  entropy:               ", properties.entropy, file=f)
     print("  harmonic_heat_capacity:", properties.harmonic_heat_capacity, file=f)
+    print("", file=f)
+
+    print("properties_eV:", file=f)
+    val = properties.free_energy / EVtoKJmol
+    print("  free_energy:           ", val, file=f)
+    val = properties.harmonic_free_energy / EVtoKJmol
+    print("  harmonic_free_energy:  ", val, file=f)
+    val = properties.anharmonic_free_energy / EVtoKJmol
+    print("  anharmonic_free_energy:", val, file=f)
+    val = properties.static_potential / EVtoKJmol
+    print("  static_potential:      ", val, file=f)
     print("", file=f)
 
     print("status:", file=f)
