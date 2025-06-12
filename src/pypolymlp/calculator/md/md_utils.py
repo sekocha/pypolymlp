@@ -44,6 +44,7 @@ def save_thermodynamic_integration_yaml(
         print("  temperature:    K", file=f)
         print("  time_step:      fs", file=f)
         print("  energy:         eV/supercell", file=f)
+        print("  entropy:        eV/K/supercell", file=f)
         print("  heat_capacity:  J/K/mol (/Avogadro's number of atoms)", file=f)
         print(file=f)
 
@@ -56,8 +57,16 @@ def save_thermodynamic_integration_yaml(
         print("  n_steps:    ", integrator._n_steps, file=f)
         print(file=f)
 
+        delta_entropy = 0.0
+        if not np.isclose(integrator._temperature, 0.0):
+            e_final = float(log_ti[-1][2])
+            e_ref = float(log_ti[0][2])
+            de = e_final - e_ref
+            delta_entropy = (de - delta_free_energy) / integrator._temperature
+
         print("properties:", file=f)
         print("  free_energy:         ", delta_free_energy, file=f)
+        print("  entropy:             ", delta_entropy, file=f)
         print("  average_energy:      ", integrator.average_energy, file=f)
         print("  delta_heat_capacity: ", delta_heat_capacity, file=f)
         print(file=f)
@@ -79,6 +88,7 @@ def load_thermodynamic_integration_yaml(filename: str = "polymlp_ti.yaml"):
     temperature: Temperature in K.
     volume: Volume in ang^3/atom.
     free_energy: Free energy difference in eV/atom.
+    entropy: Entropy difference in eV/K/atom.
     heat_capacity: Cv in J/K/mol (/Avogadro's number of atoms).
     log: Array of (alpha, delta_energy) in thermodynamic integration.
     """
@@ -89,6 +99,14 @@ def load_thermodynamic_integration_yaml(filename: str = "polymlp_ti.yaml"):
     prop = data["properties"]
     free_energy = float(prop["free_energy"]) / n_atom
 
+    if np.isclose(temperature, 0.0):
+        entropy = 0.0
+    else:
+        e_final = float(prop["delta_energies"][-1]["energy"])
+        e_ref = float(prop["delta_energies"][0]["energy"])
+        de = (e_final - e_ref) / n_atom
+        entropy = (de - free_energy) / temperature
+
     if prop["delta_heat_capacity"] == "None":
         heat_capacity = None
     else:
@@ -97,4 +115,4 @@ def load_thermodynamic_integration_yaml(filename: str = "polymlp_ti.yaml"):
         [float(d["alpha"]), float(d["delta_e"]), float(d["displacement"])]
         for d in prop["delta_energies"]
     ]
-    return temperature, volume, free_energy, heat_capacity, np.array(log)
+    return temperature, volume, free_energy, entropy, heat_capacity, np.array(log)

@@ -364,6 +364,45 @@ class PypolymlpMD:
             weights, log_ti[:, 1], a=0.0, b=max_alpha
         )
 
+        self._calculator.alpha = 1e-6
+        self.run_md_nvt(
+            thermostat=thermostat,
+            temperature=temperature,
+            time_step=time_step,
+            ttime=ttime,
+            friction=friction,
+            n_eq=n_eq,
+            n_steps=n_steps * 2,
+            interval_log=None,
+            logfile=None,
+        )
+        log_prepend = [
+            self._calculator.alpha,
+            self.average_delta_energy,
+            self.average_energy,
+            self.average_displacement,
+        ]
+
+        self._calculator.alpha = max_alpha
+        self.run_md_nvt(
+            thermostat=thermostat,
+            temperature=temperature,
+            time_step=time_step,
+            ttime=ttime,
+            friction=friction,
+            n_eq=n_eq,
+            n_steps=n_steps * 2,
+            interval_log=None,
+            logfile=None,
+        )
+        log_append = [
+            max_alpha,
+            self.average_delta_energy,
+            self.average_energy,
+            self.average_displacement,
+        ]
+        self._log_ti = np.vstack([log_prepend, self._log_ti, log_append])
+
         if heat_capacity:
             self._calculator.alpha = max_alpha
             self.run_md_nvt(

@@ -77,9 +77,21 @@ def run():
         help="Force constant HDF5 file.",
     )
     parser.add_argument(
+        "--alpha",
+        type=float,
+        default=0.0,
+        help="Alpha value for TI.",
+    )
+    parser.add_argument(
         "--heat_capacity",
         action="store_true",
         help="Calculate heat capacity in TI.",
+    )
+    parser.add_argument(
+        "--output",
+        type=str,
+        default="polymlp_md.yaml",
+        help="Output filename.",
     )
     args = parser.parse_args()
 
@@ -118,7 +130,9 @@ def run():
             md.set_ase_calculator(pot=args.pot)
         else:
             print("Potential:", args.fc2, flush=True)
-            md.set_ase_calculator_with_fc2(pot=args.pot, fc2hdf5=args.fc2, alpha=0.0)
+            md.set_ase_calculator_with_fc2(
+                pot=args.pot, fc2hdf5=args.fc2, alpha=args.alpha
+            )
         md.run_md_nvt(
             thermostat=args.thermostat,
             temperature=args.temp,
@@ -132,4 +146,4 @@ def run():
             interval_log=1,
             logfile=path + "/polymlp_md_log.dat",
         )
-        md.save_yaml(filename=path + "/polymlp_md.yaml")
+        md.save_yaml(filename=path + "/" + args.output)

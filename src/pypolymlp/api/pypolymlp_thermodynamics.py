@@ -67,7 +67,85 @@ class PypolymlpThermodynamics:
         f_total_ti, s_total_ti = self._sum_properties(self._ti, f_total, s_total)
         return f_total_ti, s_total_ti
 
+    def run_use_harmonic(self):
+        """Fit results and evalulate equilibrium properties."""
+        self._sscha.run_standard()
+
+        if self._electron is None and self._ti is None:
+            return self
+
+        f_total = self._sscha.get_data(attr="free_energy")
+        s_total = self._sscha.get_data(attr="entropy")
+        if self._electron is not None:
+            if self._verbose:
+                print("### Electronic contribution ###", flush=True)
+            f_total, s_total = self._run_electron(f_total, s_total)
+
+        if self._ti is not None:
+            if self._verbose:
+                print("### TI contribution ###", flush=True)
+
+            f_ti = self._ti.get_data(attr="free_energy")
+            s_ti = self._ti.get_data(attr="entropy")
+            if self._electron is not None:
+                f_ele_ti, s_ele_ti = self._sum_properties(self._electron, f_ti, s_ti)
+            else:
+                f_ele_ti, s_ele_ti = f_ti, s_ti
+
+            ele_ti = self._replace_thermodynamics(f_ele_ti, s_ele_ti)
+            ele_ti.fit_entropy_temperature(max_order=6, reference=False)
+            ele_ti.fit_cv_volume(max_order=4)
+            print(ele_ti.get_data(attr="heat_capacity"))
+            print(ele_ti.eval_heat_capacities(ele_ti.volumes))
+
+            cv_fc2 = self._sscha.get_data(attr="harmonic_heat_capacity")
+
+            if self._verbose:
+                print("### Total contribution ###", flush=True)
+
+            f_total, s_total = self._sum_properties(self._ti, f_total, s_total)
+            self._total = self._replace_thermodynamics(f_total, s_total)
+            self._total.replace_heat_capacities(cv_fc2)
+            self._total.fit_free_energy_volume()
+            self._total.fit_eval_entropy(max_order=6)
+            self._total.fit_cv_volume(max_order=4)
+            self._total.eval_cp_equilibrium()
+
+            # temperatures = self._total.temperatures
+            fv_fits = self._total.fitted_models.fv_fits
+            cv_fits_ti = ele_ti.fitted_models.cv_fits
+            cp_add = [cv.eval(fv.v0) for fv, cv in zip(fv_fits, cv_fits_ti)]
+            print(cp_add)
+            # cp_add = fit_cv_temperature(temperatures, cp_add, verbose=self._verbose)
+            self._total.add_cp(cp_add)
+
+        return self
+
+    # def run_without_use_md_heat_capacity(self):
     def run(self):
+        """Fit results and evalulate equilibrium properties."""
+        self._sscha.run_standard()
+
+        if self._electron is None and self._ti is None:
+            return self
+
+        f_total = self._sscha.get_data(attr="free_energy")
+        s_total = self._sscha.get_data(attr="entropy")
+        if self._electron is not None:
+            if self._verbose:
+                print("### Electronic contribution ###", flush=True)
+            f_total, s_total = self._run_electron(f_total, s_total)
+
+        if self._ti is not None:
+            if self._verbose:
+                print("### TI contribution ###", flush=True)
+            f_total, s_total = self._sum_properties(self._ti, f_total, s_total)
+            self._total = self._replace_thermodynamics(f_total, s_total)
+            self._total.run_standard()
+
+        return self
+
+    def run_use_md_heat_capacity(self):
         """Fit results and evalulate equilibrium properties."""
         self._sscha.run_standard()
 
