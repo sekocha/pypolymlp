@@ -29,10 +29,12 @@ class IntegratorASE:
         self._dyn = None
 
         self._energies = None
+        self._total_energies = None
         self._forces = None
         self._trajectory = None
 
         self._average_energy = None
+        self._average_total_energy = None
         self._heat_capacity = None
         self._heat_capacity_eV = None
 
@@ -99,10 +101,13 @@ class IntegratorASE:
             raise RuntimeError("Integrator not found.")
 
         self._energies = []
+        self._total_energies = []
 
         def store_energies_in_memory():
             e = self._atoms.get_potential_energy()
             self._energies.append(e)
+            e = self._atoms.get_total_energy()
+            self._total_energies.append(e)
 
         self._dyn.attach(store_energies_in_memory, interval=interval)
         return self
@@ -259,6 +264,8 @@ class IntegratorASE:
         if self._energies is not None:
             energies_slice = self._energies[n_eq:]
             self._average_energy = np.average(energies_slice)
+            energies_slice = self._total_energies[n_eq:]
+            self._average_total_energy = np.average(energies_slice)
 
             if np.isclose(self._temperature, 0.0):
                 self._heat_capacity_eV = 0.0
@@ -323,6 +330,11 @@ class IntegratorASE:
         return self._average_energy
 
     @property
+    def average_total_energy(self):
+        """Return average total energy in eV/supercell."""
+        return self._average_total_energy
+
+    @property
     def average_delta_energy(self):
         """Return average energy difference from reference in eV/supercell."""
         return self._average_delta_energy
@@ -384,6 +396,7 @@ class IntegratorASE:
 
             print("properties:", file=f)
             print("  average_energy:      ", self._average_energy, file=f)
+            print("  average_total_energy:", self._average_total_energy, file=f)
             print("  heat_capacity_eV:    ", self._heat_capacity_eV, file=f)
             print("  heat_capacity:       ", self._heat_capacity, file=f)
             if self._use_reference:

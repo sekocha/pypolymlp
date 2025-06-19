@@ -68,14 +68,16 @@ def save_thermodynamic_integration_yaml(
         print("  free_energy:         ", delta_free_energy, file=f)
         print("  entropy:             ", delta_entropy, file=f)
         print("  average_energy:      ", integrator.average_energy, file=f)
+        print("  average_total_energy:", integrator.average_total_energy, file=f)
         print("  delta_heat_capacity: ", delta_heat_capacity, file=f)
         print(file=f)
 
         print("  delta_energies:", file=f)
-        for alpha, de, e, dis in log_ti:
+        for alpha, de, e, total_e, dis in log_ti:
             print("  - alpha:       ", alpha, file=f)
             print("    delta_e:     ", de, file=f)
             print("    energy:      ", e, file=f)
+            print("    total_energy:", total_e, file=f)
             print("    displacement:", np.round(dis, 5), file=f)
             print(file=f)
 
@@ -99,13 +101,17 @@ def load_thermodynamic_integration_yaml(filename: str = "polymlp_ti.yaml"):
     prop = data["properties"]
     free_energy = float(prop["free_energy"]) / n_atom
 
-    if np.isclose(temperature, 0.0):
-        entropy = 0.0
+    e_final = float(prop["delta_energies"][-1]["energy"])
+    e_ref = float(prop["delta_energies"][0]["energy"])
+    energy = (e_final - e_ref) / n_atom
+
+    if "entropy" in prop:
+        entropy = float(prop["entropy"]) / n_atom
     else:
-        e_final = float(prop["delta_energies"][-1]["energy"])
-        e_ref = float(prop["delta_energies"][0]["energy"])
-        de = (e_final - e_ref) / n_atom
-        entropy = (de - free_energy) / temperature
+        if np.isclose(temperature, 0.0):
+            entropy = 0.0
+        else:
+            entropy = (energy - free_energy) / temperature
 
     if prop["delta_heat_capacity"] == "None":
         heat_capacity = None
@@ -115,4 +121,12 @@ def load_thermodynamic_integration_yaml(filename: str = "polymlp_ti.yaml"):
         [float(d["alpha"]), float(d["delta_e"]), float(d["displacement"])]
         for d in prop["delta_energies"]
     ]
-    return temperature, volume, free_energy, entropy, heat_capacity, np.array(log)
+    return (
+        temperature,
+        volume,
+        free_energy,
+        entropy,
+        heat_capacity,
+        energy,
+        np.array(log),
+    )
