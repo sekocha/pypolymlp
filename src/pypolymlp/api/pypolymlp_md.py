@@ -355,6 +355,7 @@ class PypolymlpMD:
                 alpha,
                 self.average_delta_energy,
                 self.average_energy,
+                self.average_total_energy,
                 self.average_displacement,
             ]
             log_ti.append(log_append)
@@ -364,7 +365,7 @@ class PypolymlpMD:
             weights, log_ti[:, 1], a=0.0, b=max_alpha
         )
 
-        self._calculator.alpha = 1e-6
+        self._calculator.alpha = 0.0
         self.run_md_nvt(
             thermostat=thermostat,
             temperature=temperature,
@@ -380,6 +381,7 @@ class PypolymlpMD:
             self._calculator.alpha,
             self.average_delta_energy,
             self.average_energy,
+            self.average_total_energy,
             self.average_displacement,
         ]
 
@@ -399,6 +401,7 @@ class PypolymlpMD:
             max_alpha,
             self.average_delta_energy,
             self.average_energy,
+            self.average_total_energy,
             self.average_displacement,
         ]
         self._log_ti = np.vstack([log_prepend, self._log_ti, log_append])
@@ -425,6 +428,7 @@ class PypolymlpMD:
                 max_alpha,
                 self.average_delta_energy,
                 self.average_energy,
+                self.average_total_energy,
                 self.average_displacement,
             ]
             self._log_ti = np.vstack([self._log_ti, log_append])
@@ -525,6 +529,11 @@ class PypolymlpMD:
     def average_energy(self):
         """Return avarage energy."""
         return self._integrator.average_energy
+
+    @property
+    def average_total_energy(self):
+        """Return avarage total energy."""
+        return self._integrator.average_total_energy
 
     @property
     def heat_capacity(self):

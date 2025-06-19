@@ -121,7 +121,6 @@ class PypolymlpThermodynamics:
 
         return self
 
-    # def run_without_use_md_heat_capacity(self):
     def run(self):
         """Fit results and evalulate equilibrium properties."""
         self._sscha.run_standard()
@@ -145,7 +144,7 @@ class PypolymlpThermodynamics:
 
         return self
 
-    def run_use_md_heat_capacity(self):
+    def run_use_md_energy(self):
         """Fit results and evalulate equilibrium properties."""
         self._sscha.run_standard()
 
@@ -161,11 +160,11 @@ class PypolymlpThermodynamics:
 
         if self._ti is not None:
             if self._verbose:
-                print("### TI contribution ###", flush=True)
-            f_total_ti, s_total_ti = self._fit_ti(f_total, s_total)
-
-            if self._verbose:
                 print("### Total properties ###", flush=True)
+            self._ti.fit_energy_temperature(max_order=6)
+            self._ti.fit_cv_volume(max_order=4)
+
+            f_total_ti, s_total_ti = self._sum_properties(self._ti, f_total, s_total)
             self._total = self._replace_thermodynamics(f_total_ti, s_total_ti)
             self._total.fit_free_energy_volume()
             self._total.fit_eval_entropy(max_order=6)

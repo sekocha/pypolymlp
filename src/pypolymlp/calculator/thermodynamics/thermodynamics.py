@@ -162,7 +162,6 @@ class Thermodynamics:
         ft_fits = []
         for ivol, data in enumerate(self._grid):
             points = np.array([d for d in data if _exist_attr(d, "free_energy")])
-
             if len(points) > 4:
                 temperatures = np.array([p.temperature for p in points])
                 free_energies = np.array([p.free_energy for p in points])
@@ -224,6 +223,41 @@ class Thermodynamics:
             else:
                 st_fits.append(None)
         self._models.st_fits = st_fits
+        self._is_heat_capacity = True
+        return self
+
+    def fit_energy_temperature(self, max_order: int = 6):
+        """Fit temperature-energy data using polynomial."""
+        if self._verbose:
+            print("Temperature-Energy fitting.", flush=True)
+
+        et_fits = []
+        for ivol, data in enumerate(self._grid):
+            points = np.array([d for d in data if _exist_attr(d, "energy")])
+            if len(points) > 4:
+                temperatures = np.array([p.temperature for p in points])
+                energies = np.array([p.energy for p in points])
+                print(energies)
+                polyfit = Polyfit(temperatures, energies)
+                polyfit.fit(
+                    max_order=max_order,
+                    intercept=False,
+                    first_order=False,
+                    add_sqrt=False,
+                )
+                et_fits.append(polyfit)
+                if self._verbose:
+                    print("- volume:", np.round(self._volumes[ivol], 3), flush=True)
+                    print("  rmse:  ", polyfit.error, flush=True)
+                    print("  model: ", polyfit.best_model, flush=True)
+
+                # Cv calculations
+                cvs = polyfit.eval_derivative(temperatures)
+                for p, val in zip(points, cvs):
+                    p.heat_capacity = val * EVtoJmol
+            else:
+                et_fits.append(None)
+        self._models.et_fits = et_fits
         self._is_heat_capacity = True
         return self
 
@@ -520,7 +554,7 @@ def load_ti_yamls(filenames: tuple[str], verbose: bool = False) -> Thermodynamic
     """Load polymlp_ti.yaml files."""
     data = []
     for yamlfile in filenames:
-        temp, volume, free_e, ent, cv, log = load_thermodynamic_integration_yaml(
+        temp, volume, free_e, ent, cv, eng, log = load_thermodynamic_integration_yaml(
             yamlfile
         )
         if _check_melting(log):
@@ -535,6 +569,7 @@ def load_ti_yamls(filenames: tuple[str], verbose: bool = False) -> Thermodynamic
                 free_energy=free_e,
                 entropy=ent,
                 heat_capacity=cv,
+                energy=eng,
                 path_yaml=yamlfile,
             )
             data.append(grid)

@@ -25,6 +25,7 @@ class GridPointData:
     entropy: Optional[float] = None
     heat_capacity: Optional[float] = None
     harmonic_heat_capacity: Optional[float] = None
+    energy: Optional[float] = None
 
     reference_free_energy: Optional[float] = None
     reference_entropy: Optional[float] = None
@@ -73,6 +74,7 @@ class FittedModels:
     cv_fits: Optional[list] = None
     ft_fits: Optional[list] = None
     st_fits: Optional[list] = None
+    et_fits: Optional[list] = None
 
     def reshape(self, ix_v: np.ndarray, ix_t: np.ndarray):
         """Reshape objects with common grid."""
@@ -88,6 +90,8 @@ class FittedModels:
             self.ft_fits = [self.ft_fits[i] for i in ix_v]
         if self.st_fits is not None:
             self.st_fits = [self.st_fits[i] for i in ix_v]
+        if self.et_fits is not None:
+            self.et_fits = [self.et_fits[i] for i in ix_v]
         return self
 
     def extract(self, itemp: int):
