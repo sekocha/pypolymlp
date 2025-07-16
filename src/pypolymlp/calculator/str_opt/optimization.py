@@ -286,6 +286,7 @@ class GeometryOptimization:
                 options["c1"] = c1
             if c2 is not None:
                 options["c2"] = c2
+        options["disp"] = self._verbose
 
         if self._relax_cell:
             fun = self.fun_relax_cell

@@ -65,5 +65,5 @@ if __name__ == "__main__":
     for order in range(2, args.order + 1):
         print(
             "Number of basis vectors (order " + str(order) + "):",
-            symfc.basis_set[order].basis_set.shape[1],
+            symfc.basis_set[order].blocked_basis_set.shape[1],
         )
