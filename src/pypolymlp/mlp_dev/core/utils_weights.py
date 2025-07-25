@@ -120,3 +120,36 @@ def apply_weights(
         min_e=min_e,
     )
     return x, y, w
+
+
+#
+#
+# def _round_scales(
+#     scales: np.ndarray, include_force: bool = True, threshold: float = 1e-10
+# ):
+#     """Set scales so that they are not used for zero features."""
+#     if include_force:
+#         zero_ids = np.abs(scales) < threshold
+#     else:
+#         # Threshold value can be improved.
+#         zero_ids = np.abs(scales) < threshold * threshold
+#     scales[zero_ids] = 1.0
+#     return scales, zero_ids
+#
+#
+# def apply_scales(
+#     x: np.ndarray,
+#     scales: Optional[np.ndarray] = None,
+#     include_force: bool = True,
+# ):
+#     """Apply scales to X."""
+#
+#     ne, nf, ns = self._train_xy.n_data
+#     if scales is None:
+#         scales = np.std(x[:ne], axis=0)
+#
+#     scales, zero_ids = _round_scales(scales, include_force=include_force)
+#
+#     x[:, zero_ids] = 0.0
+#     x /= scales
+#     return x, scales

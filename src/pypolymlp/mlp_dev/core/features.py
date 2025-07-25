@@ -4,13 +4,9 @@ from typing import Optional, Union
 
 import numpy as np
 
-from pypolymlp.core.data_format import (
-    PolymlpDataDFT,
-    PolymlpDataXY,
-    PolymlpParams,
-    PolymlpStructure,
-)
+from pypolymlp.core.data_format import PolymlpDataDFT, PolymlpParams, PolymlpStructure
 from pypolymlp.cxx.lib import libmlpcpp
+from pypolymlp.mlp_dev.core.dataclass import PolymlpDataXY
 
 
 def _multiple_dft_to_mlpcpp_obj(multiple_dft: list[PolymlpDataDFT]):
@@ -239,3 +235,26 @@ class FeaturesHybrid:
     def cumulative_n_features(self):
         """Return cumulative numbers of features in hybrid models."""
         return self._xy.cumulative_n_features
+
+
+def compute_features(
+    params: Union[PolymlpParams, list[PolymlpParams]],
+    dft: Optional[Union[PolymlpDataDFT, list[PolymlpDataDFT]]] = None,
+    structures: Optional[list[PolymlpStructure]] = None,
+    element_swap: bool = False,
+    verbose: bool = True,
+):
+    """Compute polymlp features."""
+    if isinstance(params, (list, tuple, np.ndarray)):
+        features_class = FeaturesHybrid
+    else:
+        features_class = Features
+
+    features = features_class(
+        params,
+        dft=dft,
+        structures=structures,
+        print_memory=verbose,
+        element_swap=element_swap,
+    )
+    return features.data_xy

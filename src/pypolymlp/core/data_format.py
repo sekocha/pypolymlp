@@ -358,52 +358,52 @@ class PolymlpDataDFT:
         return train, test
 
 
-@dataclass
-class PolymlpDataXY:
-    """Dataclass of X, y, and related properties used for regression.
-
-    Parameters
-    ----------
-    x: Predictor matrix, shape=(total_n_data, n_features)
-    y: Observation vector, shape=(total_n_data)
-    xtx: x.T @ x
-    xty: x.T @ y
-    scales: Scales of x, shape=(n_features)
-    weights: Weights for data, shape=(total_n_data)
-    n_data: Number of data (energy, force, stress)
-    """
-
-    x: Optional[np.ndarray] = None
-    y: Optional[np.ndarray] = None
-    xtx: Optional[np.ndarray] = None
-    xty: Optional[np.ndarray] = None
-    scales: Optional[np.ndarray] = None
-    weights: Optional[np.ndarray] = None
-    n_data: Optional[tuple[int, int, int]] = None
-    first_indices: Optional[list[tuple[int, int, int]]] = None
-    cumulative_n_features: Optional[int] = None
-    xe_sum: Optional[np.ndarray] = None
-    xe_sq_sum: Optional[np.ndarray] = None
-    y_sq_norm: float = 0.0
-    total_n_data: int = 0
-
-
-@dataclass
-class PolymlpDataMLP:
-    """Dataclass of regression results.
-
-    Parameters
-    ----------
-    coeffs: MLP coefficients, shape=(n_features).
-    scales: Scales of x, shape=(n_features).
-    """
-
-    coeffs: Optional[np.ndarray] = None
-    scales: Optional[np.ndarray] = None
-    rmse: Optional[float] = None
-    alpha: Optional[float] = None
-    beta: Optional[float] = None
-    predictions_train: Optional[np.ndarray] = None
-    predictions_test: Optional[np.ndarray] = None
-    error_train: Optional[dict] = None
-    error_test: Optional[dict] = None
+# @dataclass
+# class PolymlpDataXY:
+#     """Dataclass of X, y, and related properties used for regression.
+#
+#     Parameters
+#     ----------
+#     x: Predictor matrix, shape=(total_n_data, n_features)
+#     y: Observation vector, shape=(total_n_data)
+#     xtx: x.T @ x
+#     xty: x.T @ y
+#     scales: Scales of x, shape=(n_features)
+#     weights: Weights for data, shape=(total_n_data)
+#     n_data: Number of data (energy, force, stress)
+#     """
+#
+#     x: Optional[np.ndarray] = None
+#     y: Optional[np.ndarray] = None
+#     xtx: Optional[np.ndarray] = None
+#     xty: Optional[np.ndarray] = None
+#     scales: Optional[np.ndarray] = None
+#     weights: Optional[np.ndarray] = None
+#     n_data: Optional[tuple[int, int, int]] = None
+#     first_indices: Optional[list[tuple[int, int, int]]] = None
+#     cumulative_n_features: Optional[int] = None
+#     xe_sum: Optional[np.ndarray] = None
+#     xe_sq_sum: Optional[np.ndarray] = None
+#     y_sq_norm: float = 0.0
+#     total_n_data: int = 0
+#
+#
+# @dataclass
+# class PolymlpDataMLP:
+#     """Dataclass of regression results.
+#
+#     Parameters
+#     ----------
+#     coeffs: MLP coefficients, shape=(n_features).
+#     scales: Scales of x, shape=(n_features).
+#     """
+#
+#     coeffs: Optional[np.ndarray] = None
+#     scales: Optional[np.ndarray] = None
+#     rmse: Optional[float] = None
+#     alpha: Optional[float] = None
+#     beta: Optional[float] = None
+#     predictions_train: Optional[np.ndarray] = None
+#     predictions_test: Optional[np.ndarray] = None
+#     error_train: Optional[dict] = None
+#     error_test: Optional[dict] = None
