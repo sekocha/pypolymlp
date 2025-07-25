@@ -1,5 +1,6 @@
 """Utility function for polymlp development."""
 
+import os
 from typing import Union
 
 import numpy as np
@@ -34,14 +35,11 @@ def get_min_energy(dft_all: list[PolymlpDataDFT]) -> float:
     return min_e
 
 
-def round_scales(
-    scales: np.ndarray, include_force: bool = True, threshold: float = 1e-10
-):
-    """Set scales so that they are not used for zero features."""
-    if include_force:
-        zero_ids = np.abs(scales) < threshold
-    else:
-        # Threshold value can be improved.
-        zero_ids = np.abs(scales) < threshold * threshold
-    scales[zero_ids] = 1.0
-    return scales, zero_ids
+def check_memory_size_in_regression(n_features: int):
+    """Estimate memory size in regression."""
+    mem_req = np.round(n_features**2 * 8e-9 * 2, 1)
+    mem_bytes = os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES") * 1e-9
+    if mem_req > mem_bytes:
+        print("Minimum memory required for solver in GB:", mem_req, flush=True)
+        raise RuntimeError("Larger size of memory required.")
+    return mem_req

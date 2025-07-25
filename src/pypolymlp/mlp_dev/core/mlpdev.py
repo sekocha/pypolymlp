@@ -7,13 +7,12 @@ import numpy as np
 from pypolymlp.core.data_format import PolymlpDataDFT, PolymlpParams
 from pypolymlp.core.parser_datasets import ParserDatasets
 from pypolymlp.core.parser_polymlp_params import parse_parameter_files
-from pypolymlp.mlp_dev.core.data import calc_xy
-from pypolymlp.mlp_dev.core.dataclass import PolymlpDataXY
-
-# from pypolymlp.mlp_dev.core.features_attr import (  # write_polymlp_params_yaml,
-#     get_num_features,
-# )
+from pypolymlp.mlp_dev.core.data import PolymlpDataXY, calc_xtx_xty, calc_xy
 from pypolymlp.mlp_dev.core.utils import set_params
+
+# from pypolymlp.mlp_dev.core.features_attr import (
+# write_polymlp_params_yaml,
+# )
 
 
 class PolymlpDev:
@@ -31,6 +30,7 @@ class PolymlpDev:
     def calc_xy(
         self,
         dft: list[PolymlpDataDFT],
+        element_swap: bool = False,
         scales: Optional[np.ndarray] = None,
         min_energy: Optional[float] = None,
         weight_stress: float = 0.1,
@@ -41,6 +41,7 @@ class PolymlpDev:
             self.params,
             self.common_params,
             dft,
+            element_swap=element_swap,
             scales=scales,
             min_energy=min_energy,
             weight_stress=weight_stress,
@@ -51,11 +52,26 @@ class PolymlpDev:
     def calc_xtx_xty(
         self,
         dft: list[PolymlpDataDFT],
-        seq: bool = True,
+        element_swap: bool = False,
+        scales: Optional[np.ndarray] = None,
+        min_energy: Optional[float] = None,
+        weight_stress: float = 0.1,
+        batch_size: Optional[int] = None,
     ) -> PolymlpDataXY:
         """Calculate X.T @ X and X.T @ y data."""
         self._is_list(dft)
-        pass
+        data_xy = calc_xtx_xty(
+            self.params,
+            self.common_params,
+            dft,
+            element_swap=element_swap,
+            scales=scales,
+            min_energy=min_energy,
+            weight_stress=weight_stress,
+            batch_size=batch_size,
+            verbose=self._verbose,
+        )
+        return data_xy
 
     @property
     def params(self) -> Union[PolymlpParams, list[PolymlpParams]]:

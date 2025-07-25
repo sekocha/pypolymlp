@@ -2,8 +2,8 @@
 
 from typing import Optional
 
-from pypolymlp.core.utils import check_memory_size_in_regression
 from pypolymlp.mlp_dev.core.mlpdev_data import PolymlpDevData
+from pypolymlp.mlp_dev.core.utils import check_memory_size_in_regression
 from pypolymlp.mlp_dev.core.utils_sequential import get_auto_batch_size
 from pypolymlp.mlp_dev.standard.learning_curve import LearningCurve
 from pypolymlp.mlp_dev.standard.mlpdev_dataxy import (

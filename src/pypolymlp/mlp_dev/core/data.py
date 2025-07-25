@@ -1,30 +1,130 @@
 """Classes for computing X, y, X.T @ X and X.T @ y."""
 
+from dataclasses import dataclass
 from typing import Optional, Union
 
 import numpy as np
 
 from pypolymlp.core.data_format import PolymlpDataDFT, PolymlpParams
-from pypolymlp.mlp_dev.core.dataclass import PolymlpDataXY, round_scales
 from pypolymlp.mlp_dev.core.features import compute_features
-from pypolymlp.mlp_dev.core.mlpdev_data import PolymlpDevData
-from pypolymlp.mlp_dev.core.mlpdev_dataxy_base import PolymlpDevDataXYBase
-from pypolymlp.mlp_dev.core.utils_sequential import get_batch_slice
+from pypolymlp.mlp_dev.core.features_attr import get_num_features
+from pypolymlp.mlp_dev.core.utils import get_min_energy
+from pypolymlp.mlp_dev.core.utils_scales import compute_scales, round_scales
+from pypolymlp.mlp_dev.core.utils_sequential import (
+    estimate_peak_memory,
+    get_auto_batch_size,
+    get_batch_slice,
+    sum_array,
+    sum_xtx,
+    symmetrize_xtx,
+)
 from pypolymlp.mlp_dev.core.utils_weights import apply_weights
+
+
+@dataclass
+class PolymlpDataXY:
+    """Dataclass of X, y, and related properties used for regression.
+
+    Parameters
+    ----------
+    x: Predictor matrix, shape=(total_n_data, n_features)
+    y: Observation vector, shape=(total_n_data)
+    xtx: x.T @ x
+    xty: x.T @ y
+    scales: Scales of x, shape=(n_features)
+    weights: Weights for data, shape=(total_n_data)
+    n_data: Number of data (energy, force, stress)
+    """
+
+    x: Optional[np.ndarray] = None
+    y: Optional[np.ndarray] = None
+    xtx: Optional[np.ndarray] = None
+    xty: Optional[np.ndarray] = None
+    scales: Optional[np.ndarray] = None
+    weights: Optional[np.ndarray] = None
+    min_energy: Optional[float] = None
+
+    n_data: Optional[tuple[int, int, int]] = None
+    first_indices: Optional[list[tuple[int, int, int]]] = None
+    cumulative_n_features: Optional[int] = None
+    xe_sum: Optional[np.ndarray] = None
+    xe_sq_sum: Optional[np.ndarray] = None
+    y_sq_norm: float = 0.0
+    total_n_data: int = 0
+
+    def apply_scales(
+        self,
+        scales: Optional[np.ndarray] = None,
+        include_force: bool = True,
+    ):
+        """Apply scales to X."""
+        if self.x is None:
+            raise RuntimeError("No data X found.")
+
+        if scales is None:
+            ne, nf, ns = self.n_data
+            scales = np.std(self.x[:ne], axis=0)
+        scales, zero_ids = round_scales(scales, include_force=include_force)
+
+        self.x[:, zero_ids] = 0.0
+        self.x /= scales
+        self.scales = scales
+        return self
+
+    def apply_weights(
+        self,
+        common_params: PolymlpParams,
+        dft_all: list[PolymlpDataDFT],
+        min_energy: Optional[float] = None,
+        weight_stress: float = 0.1,
+    ):
+        """Apply weights to X and y."""
+        if self.x is None:
+            raise RuntimeError("No data X found.")
+        x = self.x
+        n_data = x.shape[0]
+        y = np.zeros(n_data)
+        w = np.ones(n_data)
+
+        if min_energy is None:
+            min_energy = get_min_energy(dft_all)
+        self.min_energy = min_energy
+
+        for dft, indices in zip(dft_all, self.first_indices):
+            x, y, w = apply_weights(
+                x,
+                y,
+                w,
+                dft,
+                common_params,
+                indices,
+                weight_stress=weight_stress,
+                min_e=min_energy,
+            )
+
+        self.x = x
+        self.y = y
+        self.weight = w
+        return self
 
 
 def calc_xy(
     params: Union[PolymlpParams, list[PolymlpParams]],
     common_params: PolymlpParams,
-    dft: list[PolymlpDataDFT],
+    dft_all: list[PolymlpDataDFT],
+    element_swap: bool = False,
     scales: Optional[np.ndarray] = None,
     min_energy: Optional[float] = None,
     weight_stress: float = 0.1,
     verbose: bool = False,
 ):
     """Calculate X and y data."""
-    features = compute_features(params, dft, verbose=verbose)
-    data_xy = features.data_xy
+    data_xy = compute_features(
+        params,
+        dft_all,
+        element_swap=element_swap,
+        verbose=verbose,
+    )
     if verbose:
         ne, nf, ns = data_xy.n_data
         print("Dataset size:", data_xy.x.shape, flush=True)
@@ -33,257 +133,131 @@ def calc_xy(
         print("- n (stress) =", ns, flush=True)
 
     data_xy.apply_scales(scales=scales, include_force=common_params.include_force)
-    data_xy.apply_weights(common_params, dft, min_energy=min_energy)
+    data_xy.apply_weights(common_params, dft_all, min_energy=min_energy)
     return data_xy
 
 
-class PolymlpDevDataXYSequential(PolymlpDevDataXYBase):
-    """Classes for computing X, y, X.T @ X and X.T @ y."""
+def calc_xtx_xty(
+    params: Union[PolymlpParams, list[PolymlpParams]],
+    common_params: PolymlpParams,
+    dft_all: list[PolymlpDataDFT],
+    element_swap: bool = False,
+    scales: Optional[np.ndarray] = None,
+    min_energy: Optional[float] = None,
+    weight_stress: float = 0.1,
+    batch_size: Optional[int] = None,
+    n_features_threshold: int = 50000,
+    verbose: bool = False,
+):
+    """Compute X.T @ X and X.T @ y."""
+    n_features = get_num_features(params)
+    if batch_size is None:
+        batch_size = get_auto_batch_size(n_features, verbose=verbose)
 
-    def __init__(self, polymlp_dev_data: PolymlpDevData, verbose: bool = False):
-        """Init method."""
-        super().__init__(polymlp_dev_data, verbose=verbose)
-        self._n_features = None
+    if min_energy is None:
+        min_energy = get_min_energy(dft_all)
 
-    def run(
-        self,
-        batch_size: int = 128,
-        n_features_threshold: int = 50000,
-        element_swap: bool = False,
-    ):
-        """Compute X.T @ X and X.T @ y where weights and scales are applied."""
-        self.run_train(
-            batch_size=batch_size,
-            n_features_threshold=n_features_threshold,
-            element_swap=element_swap,
-        )
-        self.run_test(
-            batch_size=batch_size,
-            n_features_threshold=n_features_threshold,
-            element_swap=element_swap,
-        )
-        return self
+    data_xy = PolymlpDataXY()
+    for dft in dft_all:
+        if verbose:
+            print("----- Dataset:", dft.name, "-----", flush=True)
+        n_str = len(dft.structures)
+        dft = dft.sort()
+        begin_ids, end_ids = get_batch_slice(n_str, batch_size)
+        for begin, end in zip(begin_ids, end_ids):
+            if verbose:
+                print("Structures:", end, "/", n_str, flush=True)
+            data_xy = _compute_products_single_batch(
+                params,
+                common_params,
+                dft.slice(begin, end),
+                data_xy,
+                element_swap=element_swap,
+                scales=scales,
+                min_energy=min_energy,
+                weight_stress=weight_stress,
+                n_features_threshold=n_features_threshold,
+                verbose=verbose,
+            )
 
-    def run_train(
-        self,
-        batch_size: int = 128,
-        n_features_threshold: int = 50000,
-        element_swap: bool = False,
-    ):
-        """Compute X.T @ X and X.T @ y for training."""
-        self.train_xy = self.compute_products(
-            self.train,
-            scales=None,
-            batch_size=batch_size,
-            n_features_threshold=n_features_threshold,
-            element_swap=element_swap,
-        )
-        return self
+    if n_features > n_features_threshold:
+        data_xy.xtx = symmetrize_xtx(data_xy.xtx)
 
-    def run_test(
-        self,
-        batch_size: int = 128,
-        n_features_threshold: int = 50000,
-        element_swap: bool = False,
-    ):
-        """Compute X.T @ X and X.T @ y for test."""
-        self.test_xy = self.compute_products(
-            self.test,
-            scales=self._scales,
-            batch_size=batch_size,
-            n_features_threshold=n_features_threshold,
-            element_swap=element_swap,
-        )
+    n_data = sum([len(d.energies) for d in dft_all])
+    scales, zero_ids = compute_scales(
+        scales,
+        data_xy.xe_sum,
+        data_xy.xe_sq_sum,
+        n_data,
+        include_force=common_params.include_force,
+    )
+    data_xy.xtx[zero_ids] = 0.0
+    data_xy.xtx[:, zero_ids] = 0.0
+    data_xy.xty[zero_ids] = 0.0
 
-    def compute_products(
-        self,
-        dft_list: list[PolymlpDataDFT],
-        scales: Optional[np.ndarray] = None,
-        batch_size: int = 128,
-        n_features_threshold: int = 50000,
-        element_swap: bool = False,
-        n_batch: int = 10,
-    ):
-        """Compute X.T @ X and X.T @ y."""
-        data_xy = PolymlpDataXY()
-        for dft in dft_list:
-            if self.verbose:
-                print("----- Dataset:", dft.name, "-----", flush=True)
-            n_str = len(dft.structures)
-            dft = dft.sort()
-            begin_ids, end_ids = get_batch_slice(n_str, batch_size)
-            for begin, end in zip(begin_ids, end_ids):
-                if self.verbose:
-                    print("Structures:", end, "/", n_str, flush=True)
-                data_xy = self._compute_products_single_batch(
-                    dft.slice(begin, end),
-                    data_xy,
-                    scales=scales,
-                    element_swap=element_swap,
-                    n_features_threshold=n_features_threshold,
-                    n_batch=n_batch,
-                )
+    data_xy.xtx /= scales[:, np.newaxis]
+    data_xy.xtx /= scales[np.newaxis, :]
+    data_xy.xty /= scales
+    data_xy.scales = scales
 
-        if self._n_features > n_features_threshold:
-            data_xy.xtx = self._symmetrize_xtx(data_xy.xtx, n_batch=n_batch)
+    return data_xy
 
-        n_data = sum([len(d.energies) for d in dft_list])
-        self._scales, zero_ids = self._compute_scales(
-            scales, data_xy.xe_sum, data_xy.xe_sq_sum, n_data
-        )
-        data_xy.xtx[zero_ids] = 0.0
-        data_xy.xtx[:, zero_ids] = 0.0
-        data_xy.xty[zero_ids] = 0.0
 
-        data_xy.xtx /= self._scales[:, np.newaxis]
-        data_xy.xtx /= self._scales[np.newaxis, :]
-        data_xy.xty /= self._scales
-        data_xy.scales = self._scales
+def _compute_products_single_batch(
+    params: Union[PolymlpParams, list[PolymlpParams]],
+    common_params: PolymlpParams,
+    dft_sliced: PolymlpDataDFT,
+    data_xy: PolymlpDataXY,
+    element_swap: bool = False,
+    scales: Optional[np.ndarray] = None,
+    min_energy: Optional[float] = None,
+    weight_stress: float = 0.1,
+    n_features_threshold: int = 50000,
+    verbose: bool = False,
+):
+    """Compute X.T @ X and X.T @ y for a single batch."""
+    features = compute_features(
+        params,
+        dft_sliced,
+        element_swap=element_swap,
+        verbose=verbose,
+    )
+    x = features.x
+    first_indices = features.first_indices[0]
+    n_data, n_features = x.shape
 
-        return data_xy
+    if verbose:
+        peak = estimate_peak_memory(n_data, n_features, n_features_threshold)
+        prefix = " Estimated peak memory allocation (X.T @ X, X):"
+        print(prefix, np.round(peak * 8e-9, 2), "(GB)", flush=True)
 
-    def _compute_scales(
-        self,
-        scales: np.array,
-        xe_sum: np.ndarray,
-        xe_sq_sum: np.ndarray,
-        n_data: int,
-    ):
-        """Compute scales from xe_sum and xe_sq_sum."""
-        if scales is None:
-            variance = xe_sq_sum / n_data - np.square(xe_sum / n_data)
-            variance[variance < 0.0] = 1.0
-            self._scales = np.sqrt(variance)
-        else:
-            self._scales = scales
-
-        self._scales, zero_ids = round_scales(
-            self._scales,
-            include_force=self._common_params.include_force,
-        )
-        return self._scales, zero_ids
-
-    def _compute_products_single_batch(
-        self,
-        dft_sliced: PolymlpDataDFT,
-        data_xy: PolymlpDataXY,
-        scales: Optional[np.ndarray] = None,
-        element_swap: bool = False,
-        n_features_threshold: int = 50000,
-        n_batch: int = 10,
-    ):
-        """Compute X.T @ X and X.T @ y for a single batch."""
-        features = self.features_class(
-            self.params,
-            dft_sliced,
-            print_memory=self.verbose,
-            element_swap=element_swap,
-        )
-        x = features.x
-        first_indices = features.first_indices[0]
+    if scales is None:
         ne, _, _ = features.n_data
-        n_data, self._n_features = x.shape
-
-        if self.verbose:
-            peak = self._estimate_peak_memory(
-                n_data, self._n_features, n_features_threshold
-            )
-            prefix = " Estimated peak memory allocation (X.T @ X, X):"
-            print(prefix, np.round(peak * 8e-9, 2), "(GB)", flush=True)
-
-        if scales is None:
-            data_xy.xe_sum, data_xy.xe_sq_sum = self._compute_xe_sum(
-                data_xy.xe_sum,
-                data_xy.xe_sq_sum,
-                x,
-                ne,
-            )
-
-        y = np.zeros(n_data)
-        w = np.ones(n_data)
-        data_xy.total_n_data += n_data
-        x, y, w = apply_weights(
-            x,
-            y,
-            w,
-            dft_sliced,
-            self.common_params,
-            first_indices,
-            min_e=self.min_energy,
-        )
-        if self.verbose:
-            print("Compute X.T @ X and X.T @ y", flush=True)
-        if self._n_features < n_features_threshold:
-            data_xy.xtx = self._sum_array(data_xy.xtx, x.T @ x)
-        else:
-            data_xy.xtx = self._sum_large_xtx(data_xy.xtx, x, n_batch=n_batch)
-
-        data_xy.xty = self._sum_array(data_xy.xty, x.T @ y)
-        data_xy.y_sq_norm += y @ y
-
-        if self.is_hybrid:
-            data_xy.cumulative_n_features = features.cumulative_n_features
-        return data_xy
-
-    def _estimate_peak_memory(
-        self, n_data: int, n_features: int, n_features_threshold: int
-    ):
-        """Estimate peak memory required for allocating X and X.T @ X."""
-        if n_features > n_features_threshold:
-            peak_mem1 = (n_features**2) * 2
-            peak_mem2 = n_features**2 + n_data * n_features
-            peak_mem = max(peak_mem1, peak_mem2)
-        else:
-            peak_mem = (n_features**2) * 2 + n_data * n_features
-        return peak_mem
-
-    def _compute_xe_sum(
-        self,
-        xe_sum: np.ndarray,
-        xe_sq_sum: np.ndarray,
-        x: np.ndarray,
-        ne: int,
-    ):
-        """Compute sums required for computing scales."""
         xe = x[:ne]
-        xe_sum = self._sum_array(xe_sum, np.sum(xe, axis=0))
-        xe_sq_sum = self._sum_array(xe_sq_sum, np.sum(np.square(xe), axis=0))
-        return xe_sum, xe_sq_sum
+        data_xy.xe_sum = sum_array(data_xy.xe_sum, np.sum(xe, axis=0))
+        data_xy.xe_sq_sum = sum_array(data_xy.xe_sq_sum, np.sum(np.square(xe), axis=0))
 
-    def _sum_array(self, array1: np.ndarray, array2: np.ndarray):
-        """Add x.T @ x to xtx."""
-        if array1 is None:
-            return array2
-        array1 += array2
-        return array1
-
-    def _sum_large_xtx(self, xtx: np.ndarray, x: np.ndarray, n_batch: int = 10):
-        """Add x.T @ x to large xtx using batch calculations."""
-        n_features = x.shape[1]
-        if xtx is None:
-            xtx = np.zeros((n_features, n_features))
-
-        batch_size = max(100, n_features // n_batch)
-        begin_ids, end_ids = get_batch_slice(n_features, batch_size)
-        for i, (begin_row, end_row) in enumerate(zip(begin_ids, end_ids)):
-            if self.verbose:
-                print("Batch:", end_row, "/", n_features, flush=True)
-            x1 = x[:, begin_row:end_row].T
-            for j, (begin_col, end_col) in enumerate(zip(begin_ids, end_ids)):
-                if i <= j:
-                    prod = x1 @ x[:, begin_col:end_col]
-                    xtx[begin_row:end_row, begin_col:end_col] += prod
-        return xtx
-
-    def _symmetrize_xtx(self, xtx: np.ndarray, n_batch: int = 10):
-        """Symmetrize large matrix of xtx."""
-        n_features = xtx.shape[0]
-        batch_size = max(100, n_features // n_batch)
-        begin_ids, end_ids = get_batch_slice(n_features, batch_size)
-        for i, (begin_row, end_row) in enumerate(zip(begin_ids, end_ids)):
-            for j, (begin_col, end_col) in enumerate(zip(begin_ids, end_ids)):
-                if i > j:
-                    xtx[begin_row:end_row, begin_col:end_col] = xtx[
-                        begin_col:end_col, begin_row:end_row
-                    ].T
-        return xtx
+    y = np.zeros(n_data)
+    w = np.ones(n_data)
+    # data_xy.total_n_data += n_data
+    x, y, w = apply_weights(
+        x,
+        y,
+        w,
+        dft_sliced,
+        common_params,
+        first_indices,
+        weight_stress=weight_stress,
+        min_e=min_energy,
+    )
+    data_xy.xtx = sum_xtx(
+        data_xy.xtx,
+        x,
+        n_features_threshold=n_features_threshold,
+        verbose=verbose,
+    )
+    data_xy.xty = sum_array(data_xy.xty, x.T @ y)
+    data_xy.y_sq_norm += y @ y
+    data_xy.total_n_data += n_data
+    data_xy.cumulative_n_features = features.cumulative_n_features
+    return data_xy
