@@ -501,6 +501,8 @@ class Pypolymlp:
         When hybrid models are used, mlp files will be generated as
         filename.1, filename.2, ...
         """
+        if self._mlp_model is None:
+            raise RuntimeError("No polymlp has been developed.")
         if yaml:
             self._mlp_model.save_mlp(filename=filename)
         else:

@@ -15,7 +15,6 @@ from pypolymlp.mlp_dev.standard.solvers import solver_ridge
 
 
 def fit(
-    # def fit_standard(
     params: Union[PolymlpParams, list[PolymlpParams]],
     common_params: PolymlpParams,
     train: list[PolymlpDataDFT],
@@ -69,12 +68,10 @@ def fit(
 
 
 def fit_standard(
-    # def fit(
     params: Union[PolymlpParams, list[PolymlpParams]],
     common_params: PolymlpParams,
     train: list[PolymlpDataDFT],
     test: list[PolymlpDataDFT],
-    batch_size: Optional[int] = None,
     verbose: bool = False,
 ):
     """Estimate MLP coefficients with direct evaluation of X."""
