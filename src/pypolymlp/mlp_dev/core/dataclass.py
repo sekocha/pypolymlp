@@ -18,7 +18,8 @@ class PolymlpDataMLP:
 
     coeffs: Optional[np.ndarray] = None
     scales: Optional[np.ndarray] = None
-    rmse: Optional[float] = None
+    rmse_train: Optional[float] = None
+    rmse_test: Optional[float] = None
     alpha: Optional[float] = None
     beta: Optional[float] = None
     predictions_train: Optional[np.ndarray] = None
