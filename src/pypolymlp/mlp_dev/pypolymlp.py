@@ -427,6 +427,7 @@ class Pypolymlp:
         """
         self._reg = fit(
             self._params,
+            self._common_params,
             self._train,
             self._test,
             batch_size=batch_size,
@@ -437,7 +438,13 @@ class Pypolymlp:
 
     def fit_standard(self, verbose: bool = False):
         """Estimate MLP coefficients with direct evaluation of X."""
-        self._reg = fit_standard(self._params, self._train, self._test, verbose=verbose)
+        self._reg = fit_standard(
+            self._params,
+            self._common_params,
+            self._train,
+            self._test,
+            verbose=verbose,
+        )
         self._mlp_model = self._reg.best_model
         return self
 
