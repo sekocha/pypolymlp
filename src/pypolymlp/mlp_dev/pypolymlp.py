@@ -4,17 +4,20 @@ from typing import Literal, Optional, Union
 
 import numpy as np
 
-from pypolymlp.core.data_format import PolymlpDataMLP, PolymlpParams, PolymlpStructure
+from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
 from pypolymlp.core.dataset import Dataset
 from pypolymlp.core.displacements import get_structures_from_displacements
 from pypolymlp.core.interface_datasets import set_dataset_from_structures
 from pypolymlp.core.interface_vasp import parse_structures_from_poscars
 from pypolymlp.core.io_polymlp import convert_to_yaml, load_mlp
+from pypolymlp.core.parser_datasets import ParserDatasets
 from pypolymlp.core.parser_polymlp_params import parse_parameter_files
 from pypolymlp.core.polymlp_params import print_params, set_all_params
 from pypolymlp.core.utils import split_train_test
-from pypolymlp.mlp_dev.core.accuracy import PolymlpDevAccuracy
-from pypolymlp.mlp_dev.core.parser_datasets import ParserDatasets
+
+# from pypolymlp.mlp_dev.core.accuracy import PolymlpDevAccuracy
+from pypolymlp.mlp_dev.core.dataclass import PolymlpDataMLP
+from pypolymlp.mlp_dev.core.features_attr import write_polymlp_params_yaml
 from pypolymlp.mlp_dev.standard.fit import fit, fit_learning_curve, fit_standard
 
 
@@ -41,7 +44,7 @@ class Pypolymlp:
     def load_parameter_file(self, file_params: Union[str, list[str]]):
         """Load input parameter file and set parameters."""
         self._params, self._common_params, _ = parse_parameter_files(file_params)
-        if len(self._params) > 1:
+        if not isinstance(self._params, PolymlpParams):
             self._hybrid = True
         return self
 
@@ -411,8 +414,6 @@ class Pypolymlp:
         self._test.name = "data2"
         self._train = [self._train]
         self._test = [self._test]
-        self._polymlp_in.train = self._train
-        self._polymlp_in.test = self._test
         return self
 
     def fit(self, batch_size: Optional[int] = None, verbose: bool = False):
@@ -424,13 +425,19 @@ class Pypolymlp:
                     If None, the batch size is automatically determined
                     depending on the memory size and number of features.
         """
-        self._reg = fit(self._polymlp_in, batch_size=batch_size, verbose=verbose)
+        self._reg = fit(
+            self._params,
+            self._train,
+            self._test,
+            batch_size=batch_size,
+            verbose=verbose,
+        )
         self._mlp_model = self._reg.best_model
         return self
 
     def fit_standard(self, verbose: bool = False):
         """Estimate MLP coefficients with direct evaluation of X."""
-        self._reg = fit_standard(self._polymlp_in, verbose=verbose)
+        self._reg = fit_standard(self._params, self._train, self._test, verbose=verbose)
         self._mlp_model = self._reg.best_model
         return self
 
@@ -440,15 +447,17 @@ class Pypolymlp:
         file_path: str = "./",
         verbose: bool = False,
     ):
-        """Estimate prediction errors."""
-        if self._reg is None:
-            raise RuntimeError("Regression must be performed before estimating errors.")
+        pass
 
-        self._acc = PolymlpDevAccuracy(self._reg, verbose=verbose)
-        self._acc.compute_error(log_energy=log_energy, path_output=file_path)
-        self._mlp_model.error_train = self._acc.error_train_dict
-        self._mlp_model.error_test = self._acc.error_test_dict
-        return self
+    #         """Estimate prediction errors."""
+    #         if self._reg is None:
+    #             raise RuntimeError("Regression must be performed before estimating errors.")
+    #
+    #         self._acc = PolymlpDevAccuracy(self._reg, verbose=verbose)
+    #         self._acc.compute_error(log_energy=log_energy, path_output=file_path)
+    #         self._mlp_model.error_train = self._acc.error_train_dict
+    #         self._mlp_model.error_test = self._acc.error_test_dict
+    #         return self
 
     def run(self, batch_size: Optional[int] = None, verbose: bool = False):
         """Estimate MLP coefficients and prediction errors.
@@ -465,7 +474,12 @@ class Pypolymlp:
 
     def fit_learning_curve(self, verbose: bool = False):
         """Compute learing curve."""
-        self._learning = fit_learning_curve(self._polymlp_in, verbose=verbose)
+        self._learning = fit_learning_curve(
+            self._params,
+            self._train,
+            self._test,
+            verbose=verbose,
+        )
         return self
 
     def save_learning_curve(self, filename="polymlp_learning_curve.dat"):
@@ -508,7 +522,7 @@ class Pypolymlp:
 
     def save_params(self, filename="polymlp_params.yaml"):
         """Save MLP parameters as file."""
-        self._polymlp_in.write_polymlp_params_yaml(filename=filename)
+        write_polymlp_params_yaml(self._params, filename=filename)
         return self
 
     def save_errors(self, filename="polymlp_error.yaml"):

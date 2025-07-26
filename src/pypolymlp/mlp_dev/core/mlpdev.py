@@ -5,44 +5,12 @@ from typing import Optional, Union
 import numpy as np
 
 from pypolymlp.core.data_format import PolymlpDataDFT, PolymlpParams
-
-# from pypolymlp.core.parser_polymlp_params import parse_parameter_files
-# from pypolymlp.mlp_dev.core.parser_datasets import ParserDatasets
 from pypolymlp.mlp_dev.core.data import PolymlpDataXY, calc_xtx_xty, calc_xy
-from pypolymlp.mlp_dev.core.utils import set_params
-
-# from pypolymlp.mlp_dev.core.features_attr import (
-# write_polymlp_params_yaml,
-# )
-
-# (
-#     self._params,
-#     self._hybrid_params,
-#     self._hybrid,
-#     self._priority_infile,
-# ) = parse_parameter_files(infiles, prefix=prefix)
-#
-# parser = ParserDatasets(params, train_ratio=0.9)
-# parser.train, parser.test
+from pypolymlp.mlp_dev.core.features_attr import get_features_attr, get_num_features
+from pypolymlp.mlp_dev.core.utils import check_memory_size_in_regression, set_params
 
 
-# def fit_standard(
-#     params: Union[PolymlpParams, list[PolymlpParams]],
-#     train: list[PolymlpDataDFT],
-#     test: list[PolymlpDataDFT],
-# ):
-#
-#     polymlp = PolymlpDev(params)
-#     train_xy = polymlp.calc_xy(train)
-#     test_xy = polymlp.calc_xy(
-#         test,
-#         scales=train_xy.scales,
-#         min_energy=train_xy.min_energy,
-#     )
-#
-
-
-class PolymlpDev:
+class PolymlpDevCore:
     """API Class for developing polymlp."""
 
     def __init__(
@@ -53,6 +21,7 @@ class PolymlpDev:
         """Init method.."""
         self.params = params
         self._verbose = verbose
+        self._n_features = None
 
     def calc_xy(
         self,
@@ -100,6 +69,25 @@ class PolymlpDev:
         )
         return data_xy
 
+    def get_features_attr(self, element_swap: bool = False):
+        """Return feature attributes."""
+        features_attr, polynomial_attr, atomtype_pair_dict = get_features_attr(
+            self._params,
+            element_swap=element_swap,
+        )
+        return (features_attr, polynomial_attr, atomtype_pair_dict)
+
+    def check_memory_size_in_regression(self):
+        """Estimate memory size in regression."""
+        return check_memory_size_in_regression(self.n_features)
+
+    @property
+    def n_features(self):
+        """Return number of features."""
+        if self._n_features is None:
+            self._n_features = get_num_features(self._params)
+        return self._n_features
+
     @property
     def params(self) -> Union[PolymlpParams, list[PolymlpParams]]:
         """Return polymlp parameters."""
@@ -125,9 +113,3 @@ class PolymlpDev:
         """Return whether DFT data is given by list or not."""
         if not isinstance(dft, (list, tuple, np.ndarray)):
             raise RuntimeError("DFT data must be given in list.")
-
-
-#    def write_polymlp_params_yaml(self, filename="polymlp_params.yaml"):
-#        """Write polymlp_params.yaml"""
-#        np.set_printoptions(legacy="1.21")
-#        self._n_features = write_polymlp_params_yaml(self.params, filename=filename)

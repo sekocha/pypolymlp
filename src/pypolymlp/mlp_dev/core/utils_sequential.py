@@ -5,6 +5,17 @@ import os
 import numpy as np
 
 
+def estimate_peak_memory(n_data: int, n_features: int, n_features_threshold: int):
+    """Estimate peak memory required for allocating X and X.T @ X."""
+    if n_features > n_features_threshold:
+        peak_mem1 = (n_features**2) * 2
+        peak_mem2 = n_features**2 + n_data * n_features
+        peak_mem = max(peak_mem1, peak_mem2)
+    else:
+        peak_mem = (n_features**2) * 2 + n_data * n_features
+    return peak_mem
+
+
 def get_batch_slice(n_data, batch_size):
     """Calculate slice indices for a given batch size."""
     begin_batch = list(range(0, n_data, batch_size))
@@ -31,17 +42,6 @@ def get_auto_batch_size(
     N3, max_mem = 450, 4e11
     batch_size = round(min(mem_bytes, max_mem) / (N3 * n_features * 8))
     return batch_size
-
-
-def estimate_peak_memory(n_data: int, n_features: int, n_features_threshold: int):
-    """Estimate peak memory required for allocating X and X.T @ X."""
-    if n_features > n_features_threshold:
-        peak_mem1 = (n_features**2) * 2
-        peak_mem2 = n_features**2 + n_data * n_features
-        peak_mem = max(peak_mem1, peak_mem2)
-    else:
-        peak_mem = (n_features**2) * 2 + n_data * n_features
-    return peak_mem
 
 
 def sum_array(array1: np.ndarray, array2: np.ndarray):

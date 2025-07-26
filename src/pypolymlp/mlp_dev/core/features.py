@@ -6,7 +6,6 @@ import numpy as np
 
 from pypolymlp.core.data_format import PolymlpDataDFT, PolymlpParams, PolymlpStructure
 from pypolymlp.cxx.lib import libmlpcpp
-from pypolymlp.mlp_dev.core.dataclass import PolymlpDataXY
 
 
 def _multiple_dft_to_mlpcpp_obj(multiple_dft: list[PolymlpDataDFT]):
@@ -132,18 +131,9 @@ class Features:
         self._x = obj.get_x()
         ebegin = _set_ebegin(n_st_dataset)
         fbegin, sbegin = obj.get_fbegin(), obj.get_sbegin()
-        ne, nf, ns = obj.get_n_data()
 
-        self._xy = PolymlpDataXY(
-            x=self._x,
-            first_indices=list(zip(ebegin, fbegin, sbegin)),
-            n_data=(ne, nf, ns),
-        )
-
-    @property
-    def data_xy(self):
-        """Return PolymlpDataXY instance where X is assigned."""
-        return self._xy
+        self._first_indices = list(zip(ebegin, fbegin, sbegin))
+        self._n_data = tuple(obj.get_n_data())
 
     @property
     def x(self):
@@ -152,13 +142,33 @@ class Features:
 
     @property
     def first_indices(self):
-        """Return first indices of datasets."""
-        return self._xy.first_indices
+        """Return first indices of datasets.
+
+        Return
+        ------
+        Indices in X corresponding to the first data in datasets.
+        [
+            (ebegin, fbegin, sbegin) for dataset 1,
+            (ebegin, fbegin, sbegin) for dataset 2,
+            ...
+        ]
+        """
+        return self._first_indices
 
     @property
     def n_data(self):
-        """Return numbers of data entries."""
-        return self._xy.n_data
+        """Return numbers of data entries.
+
+        Return
+        ------
+        Numbers of data entries. (tuple of ne, nf, ns)
+        """
+        return self._n_data
+
+    @property
+    def cumulative_n_features(self):
+        """Return cumulative numbers of features in hybrid models."""
+        return None
 
 
 class FeaturesHybrid:
@@ -197,24 +207,13 @@ class FeaturesHybrid:
             force_dataset,
             n_atoms_sum_array,
         )
-
         self._x = obj.get_x()
         ebegin = _set_ebegin(n_st_dataset)
         fbegin, sbegin = obj.get_fbegin(), obj.get_sbegin()
-        cumulative_n_features = obj.get_cumulative_n_features()
-        ne, nf, ns = obj.get_n_data()
 
-        self._xy = PolymlpDataXY(
-            x=self._x,
-            first_indices=list(zip(ebegin, fbegin, sbegin)),
-            n_data=(ne, nf, ns),
-            cumulative_n_features=cumulative_n_features,
-        )
-
-    @property
-    def data_xy(self):
-        """Return PolymlpDataXY instance where X is assigned."""
-        return self._xy
+        self._first_indices = list(zip(ebegin, fbegin, sbegin))
+        self._n_data = tuple(obj.get_n_data())
+        self._cumulative_n_features = obj.get_cumulative_n_features()
 
     @property
     def x(self):
@@ -223,18 +222,33 @@ class FeaturesHybrid:
 
     @property
     def first_indices(self):
-        """Return first indices of datasets."""
-        return self._xy.first_indices
+        """Return first indices of datasets.
+
+        Return
+        ------
+        Indices in X corresponding to the first data in datasets.
+        [
+            (ebegin, fbegin, sbegin) for dataset 1,
+            (ebegin, fbegin, sbegin) for dataset 2,
+            ...
+        ]
+        """
+        return self._first_indices
 
     @property
     def n_data(self):
-        """Return numbers of data entries."""
-        return self._xy.n_data
+        """Return numbers of data entries.
+
+        Return
+        ------
+        Numbers of data entries. (tuple of ne, nf, ns)
+        """
+        return self._n_data
 
     @property
     def cumulative_n_features(self):
         """Return cumulative numbers of features in hybrid models."""
-        return self._xy.cumulative_n_features
+        return self._cumulative_n_features
 
 
 def compute_features(
@@ -257,4 +271,4 @@ def compute_features(
         print_memory=verbose,
         element_swap=element_swap,
     )
-    return features.data_xy
+    return features

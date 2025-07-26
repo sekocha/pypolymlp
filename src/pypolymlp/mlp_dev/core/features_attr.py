@@ -117,67 +117,16 @@ def _write_polymlp_params_yaml(
 
 
 def write_polymlp_params_yaml(
-    self,
     params: Union[PolymlpParams, list[PolymlpParams]],
     filename: str = "polymlp_params.yaml",
 ):
     """Write polymlp_params.yaml"""
     np.set_printoptions(legacy="1.21")
     if isinstance(params, list):
-        self._n_features = 0
+        n_features = 0
         for i, p in enumerate(params):
             filename = "polymlp_params" + str(i + 1) + ".yaml"
-            self._n_features += _write_polymlp_params_yaml(p, filename=filename)
+            n_features += _write_polymlp_params_yaml(p, filename=filename)
     else:
-        self._n_features = _write_polymlp_params_yaml(params, filename=filename)
-    return self._n_features
-
-
-# def print_params(
-#     params: Union[PolymlpParams, list[PolymlpParams]],
-#     common_params: PolymlpParams,
-# ):
-#     """Print parameters."""
-#     if self._hybrid:
-#         print("priority_input:", self._priority_infile, flush=True)
-#
-#     params = self.common_params
-#     print("parameters:", flush=True)
-#     print("  n_types:       ", params.n_type, flush=True)
-#     print("  elements:      ", params.elements, flush=True)
-#     print("  element_order: ", params.element_order, flush=True)
-#     print("  atomic_energy: ", params.atomic_energy, flush=True)
-#     print("  include_force: ", bool(params.include_force), flush=True)
-#     print("  include_stress:", bool(params.include_stress), flush=True)
-#
-#     if self.is_multiple_datasets:
-#         print("  train_data:", flush=True)
-#         for v in params.dft_train:
-#             print("  -", v.location, flush=True)
-#         print("  test_data:", flush=True)
-#         for v in params.dft_test:
-#             print("  -", v.location, flush=True)
-#     else:
-#         if params.dataset_type == "phono3py":
-#             print("  train_data:", flush=True)
-#             print("  -", params.dft_train["phono3py_yaml"], flush=True)
-#             print("  test_data:", flush=True)
-#             print("  -", params.dft_test["phono3py_yaml"], flush=True)
-#         else:
-#             pass
-#
-#     if isinstance(self.params, PolymlpParams):
-#         params = [self.params]
-#     else:
-#         params = self.params
-#     for i, p in enumerate(params):
-#         print("model_" + str(i + 1) + ":", flush=True)
-#         print("  cutoff:      ", p.model.cutoff, flush=True)
-#         print("  model_type:  ", p.model.model_type, flush=True)
-#         print("  max_p:       ", p.model.max_p, flush=True)
-#         print("  n_gaussians: ", len(p.model.pair_params), flush=True)
-#         print("  feature_type:", p.model.feature_type, flush=True)
-#         if p.model.feature_type == "gtinv":
-#             orders = [i for i in range(2, p.model.gtinv.order + 1)]
-#             print("  max_l:       ", p.model.gtinv.max_l, end=" ", flush=True)
-#             print("for order =", orders, flush=True)
+        n_features = _write_polymlp_params_yaml(params, filename=filename)
+    return n_features

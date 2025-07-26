@@ -52,6 +52,11 @@ class PolymlpDataXY:
     y_sq_norm: float = 0.0
     total_n_data: int = 0
 
+    def clear_data(self):
+        """Clear large data."""
+        del self.x, self.y, self.xtx, self.xty
+        del self.weights, self.xe_sum, self.xe_sq_sum
+
     def apply_scales(
         self,
         scales: Optional[np.ndarray] = None,
@@ -108,6 +113,28 @@ class PolymlpDataXY:
         return self
 
 
+def _get_features(
+    params: Union[PolymlpParams, list[PolymlpParams]],
+    dft: Optional[Union[PolymlpDataDFT, list[PolymlpDataDFT]]] = None,
+    element_swap: bool = False,
+    verbose: bool = True,
+):
+    """Calculate features and return features in DataXY format."""
+    features = compute_features(
+        params,
+        dft,
+        element_swap=element_swap,
+        verbose=verbose,
+    )
+    xy = PolymlpDataXY(
+        x=features.x,
+        first_indices=features.first_indices,
+        n_data=features.n_data,
+        cumulative_n_features=features.cumulative_n_features,
+    )
+    return xy
+
+
 def calc_xy(
     params: Union[PolymlpParams, list[PolymlpParams]],
     common_params: PolymlpParams,
@@ -119,7 +146,7 @@ def calc_xy(
     verbose: bool = False,
 ):
     """Calculate X and y data."""
-    data_xy = compute_features(
+    data_xy = _get_features(
         params,
         dft_all,
         element_swap=element_swap,

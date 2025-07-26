@@ -35,11 +35,16 @@ def get_min_energy(dft_all: list[PolymlpDataDFT]) -> float:
     return min_e
 
 
-def check_memory_size_in_regression(n_features: int):
+def check_memory_size_in_regression(n_features: int, verbose: bool = False):
     """Estimate memory size in regression."""
     mem_req = np.round(n_features**2 * 8e-9 * 2, 1)
     mem_bytes = os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES") * 1e-9
     if mem_req > mem_bytes:
         print("Minimum memory required for solver in GB:", mem_req, flush=True)
         raise RuntimeError("Larger size of memory required.")
+
+    if verbose:
+        print("Minimum memory required for solver in GB:", mem_req, flush=True)
+        print("Memory required for allocating X additionally.", flush=True)
+        # print("Batch size for computing X:", batch_size, flush=True)
     return mem_req

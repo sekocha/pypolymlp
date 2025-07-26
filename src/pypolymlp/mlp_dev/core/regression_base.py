@@ -8,15 +8,11 @@ from typing import Optional
 import numpy as np
 from scipy.linalg.lapack import get_lapack_funcs
 
-from pypolymlp.core.data_format import (
-    PolymlpDataDFT,
-    PolymlpDataMLP,
-    PolymlpDataXY,
-    PolymlpParams,
-)
+from pypolymlp.core.data_format import PolymlpDataDFT, PolymlpDataXY, PolymlpParams
 from pypolymlp.core.io_polymlp import save_mlp, save_mlps
 from pypolymlp.core.io_polymlp_legacy import save_mlp_lammps, save_multiple_mlp_lammps
 from pypolymlp.core.utils import rmse
+from pypolymlp.mlp_dev.core.dataclass import PolymlpDataMLP
 from pypolymlp.mlp_dev.core.mlpdev_dataxy_base import PolymlpDevDataXYBase
 
 
