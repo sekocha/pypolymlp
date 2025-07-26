@@ -47,6 +47,7 @@ class PolymlpDataXY:
     n_data: Optional[tuple[int, int, int]] = None
     first_indices: Optional[list[tuple[int, int, int]]] = None
     cumulative_n_features: Optional[int] = None
+
     xe_sum: Optional[np.ndarray] = None
     xe_sq_sum: Optional[np.ndarray] = None
     y_sq_norm: float = 0.0

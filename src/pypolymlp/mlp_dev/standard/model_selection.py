@@ -1,16 +1,36 @@
 """Functions for model selection."""
 
+from typing import Union
+
 import numpy as np
 
+from pypolymlp.core.data_format import PolymlpParams
 from pypolymlp.core.utils import rmse
 from pypolymlp.mlp_dev.core.data import PolymlpDataXY
 from pypolymlp.mlp_dev.core.dataclass import PolymlpDataMLP
 
 
-def compute_rmse_standard(data_xy: PolymlpDataXY, coefs_array: np.ndarray):
+def _check_singular(rmse: np.ndarray, error_threshold: float = 1e6):
+    """Check whether X.T @ X + penalty is ill-defined."""
+    if np.all(np.array(rmse) > error_threshold):
+        raise RuntimeError(
+            "Matrix (X.T @ X + alpha * I) may be singular. "
+            "This singularity issue might be reduced by increasing "
+            "the value of alpha (the magnitude of the penalty term)."
+        )
+
+
+def compute_rmse_standard(
+    data_xy: PolymlpDataXY,
+    coefs_array: np.ndarray,
+    check_singular: bool = False,
+):
     """Compute RMSEs from x and y."""
     pred = (data_xy.x @ coefs_array).T
-    return np.array([rmse(data_xy.y, p) for p in pred])
+    rmse_array = np.array([rmse(data_xy.y, p) for p in pred])
+    if check_singular:
+        _check_singular(rmse_array)
+    return rmse_array
 
 
 def compute_mse(
@@ -26,7 +46,11 @@ def compute_mse(
     return (v1 + v2 + y_sq_norm) / size
 
 
-def compute_rmse_seq(data_xy: PolymlpDataXY, coefs_array: np.ndarray):
+def compute_rmse_seq(
+    data_xy: PolymlpDataXY,
+    coefs_array: np.ndarray,
+    check_singular: bool = False,
+):
     """Compute RMSEs from xtx and xty."""
     rmse_array = []
     for coefs in coefs_array.T:
@@ -41,10 +65,17 @@ def compute_rmse_seq(data_xy: PolymlpDataXY, coefs_array: np.ndarray):
             rmse_array.append(np.sqrt(mse))
         except:
             rmse_array.append(1e10)
+
+    if check_singular:
+        _check_singular(rmse_array)
     return np.array(rmse_array)
 
 
-def compute_rmse(data_xy: PolymlpDataXY, coefs_array: np.ndarray):
+def compute_rmse(
+    data_xy: PolymlpDataXY,
+    coefs_array: np.ndarray,
+    check_singular: bool = False,
+):
     """Compute RMSEs from xtx and xty."""
     if data_xy.xtx is None:
         return compute_rmse_standard(data_xy, coefs_array)
@@ -57,6 +88,8 @@ def get_best_model(
     alphas: np.ndarray,
     rmse_train: np.ndarray,
     rmse_test: np.ndarray,
+    params: Union[PolymlpParams, list[PolymlpParams]],
+    cumulative_n_features: bool = False,
 ):
     """Return best polymlp model."""
 
@@ -67,18 +100,10 @@ def get_best_model(
         rmse_train=rmse_train[idx],
         rmse_test=rmse_test[idx],
         alpha=alphas[idx],
+        params=params,
+        cumulative_n_features=cumulative_n_features,
     )
     return best_model
-
-
-def check_singular(rmse: np.ndarray, error_threshold: float = 1e6):
-    """Check whether X.T @ X + penalty is ill-defined."""
-    if np.all(np.array(rmse) > error_threshold):
-        raise RuntimeError(
-            "Matrix (X.T @ X + alpha * I) may be singular. "
-            "This singularity issue might be reduced by increasing "
-            "the value of alpha (the magnitude of the penalty term)."
-        )
 
 
 def print_log(

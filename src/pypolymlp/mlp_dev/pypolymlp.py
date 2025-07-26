@@ -28,13 +28,12 @@ class Pypolymlp:
         """Init method."""
         self._params = None
         self._common_params = None
-
         self._train = None
         self._test = None
+
         # TODO: set_params is not available for hybrid models at this time.
         self._hybrid = False
 
-        self._reg = None
         self._mlp_model = None
         self._acc = None
         self._learning = None
@@ -425,7 +424,7 @@ class Pypolymlp:
                     If None, the batch size is automatically determined
                     depending on the memory size and number of features.
         """
-        self._reg = fit(
+        self._mlp_model = fit(
             self._params,
             self._common_params,
             self._train,
@@ -433,19 +432,17 @@ class Pypolymlp:
             batch_size=batch_size,
             verbose=verbose,
         )
-        self._mlp_model = self._reg.best_model
         return self
 
     def fit_standard(self, verbose: bool = False):
         """Estimate MLP coefficients with direct evaluation of X."""
-        self._reg = fit_standard(
+        self._mlp_model = fit_standard(
             self._params,
             self._common_params,
             self._train,
             self._test,
             verbose=verbose,
         )
-        self._mlp_model = self._reg.best_model
         return self
 
     def estimate_error(
@@ -505,9 +502,9 @@ class Pypolymlp:
         filename.1, filename.2, ...
         """
         if yaml:
-            self._reg.save_mlp(filename=filename)
+            self._mlp_model.save_mlp(filename=filename)
         else:
-            self._reg.save_mlp_lammps(filename=filename)
+            self._mlp_model.save_mlp_lammps(filename=filename)
         return self
 
     def load_mlp(self, filename: str = "polymlp.yaml"):
@@ -546,9 +543,9 @@ class Pypolymlp:
         coeffs: MLP coefficients.
         scales: Scales of features. scaled_coeffs (= coeffs / scales)
                 must be used for calculating properties.
-        rmse: Root-mean-square error for test data.
+        rmse_train: Root-mean-square error for training data.
+        rmse_test: Root-mean-square error for test data.
         alpha, beta: Optimal regurlarization parameters.
-        predictions_train, predictions_test: Predicted energy values.
         error_train, error_test: Root-mean square error for each dataset.
         """
         return self._mlp_model
@@ -565,7 +562,9 @@ class Pypolymlp:
         Use this scaled coefficients to calculate properties.
         """
         if self._hybrid:
-            return [c / s for c, s in zip(self._reg.coeffs, self._reg.scales)]
+            coeffs = self._mlp_model.coeffs_hybrid
+            scales = self._mlp_model.scales_hybrid
+            return [c / s for c, s in zip(coeffs, scales)]
         return self._mlp_model.coeffs / self._mlp_model.scales
 
     @property
