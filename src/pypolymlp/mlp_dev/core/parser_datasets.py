@@ -22,6 +22,13 @@ class ParserDatasets:
         self._test = None
         self._parse()
 
+    def _check_errors(self):
+        """Check errors."""
+        if self._params.dft_train is None:
+            raise RuntimeError("No file entries for training data.")
+        if self._params.dft_test is None:
+            raise RuntimeError("No file entries for test data.")
+
     def _parse(self):
         """Parse datasets."""
         self._train, self._test = [], []
@@ -133,11 +140,6 @@ class ParserDatasets:
     def test(self) -> list[PolymlpDataDFT]:
         """Return DFT datasets for test."""
         return self._test
-
-    @property
-    def is_multiple_datasets(self) -> bool:
-        """Return whether multiple datasets are considered."""
-        return True
 
     @property
     def dataset_type(self) -> str:

@@ -11,7 +11,7 @@ from pypolymlp.core.parser_polymlp_params import set_common_params
 
 def set_params(params_in: Union[PolymlpParams, list[PolymlpParams]]):
     """Set parameters, hybrid parameters, and common parameters."""
-    if isinstance(params_in, list):
+    if isinstance(params_in, (list, tuple, np.ndarray)):
         if len(params_in) > 1:
             params = hybrid_params = params_in
             common_params = set_common_params(params_in)

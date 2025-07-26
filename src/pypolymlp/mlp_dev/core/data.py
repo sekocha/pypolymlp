@@ -199,6 +199,7 @@ def calc_xtx_xty(
     data_xy.xtx /= scales[np.newaxis, :]
     data_xy.xty /= scales
     data_xy.scales = scales
+    data_xy.min_energy = min_energy
 
     return data_xy
 

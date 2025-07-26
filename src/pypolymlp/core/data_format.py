@@ -214,6 +214,7 @@ class PolymlpParams:
     ] = "free_energy"
     name: Optional[str] = None
     mass: Optional[float] = None
+    priority_infile: Optional[str] = None
 
     def __post_init__(self):
         self.check_errors()

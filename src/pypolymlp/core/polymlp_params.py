@@ -1,7 +1,7 @@
 """Functions for setting input parameters."""
 
 import itertools
-from typing import Literal, Optional
+from typing import Literal, Optional, Union
 
 import numpy as np
 
@@ -206,3 +206,41 @@ def set_all_params(
         element_order=element_order,
     )
     return params
+
+
+def print_params(
+    params: Union[PolymlpParams, list[PolymlpParams]],
+    common_params: PolymlpParams,
+):
+    """Print parameters."""
+    print("priority_input:", common_params.priority_infile, flush=True)
+    print("parameters:", flush=True)
+    print("  n_types:       ", common_params.n_type, flush=True)
+    print("  elements:      ", common_params.elements, flush=True)
+    print("  element_order: ", common_params.element_order, flush=True)
+    print("  atomic_energy: ", common_params.atomic_energy, flush=True)
+    print("  include_force: ", bool(common_params.include_force), flush=True)
+    print("  include_stress:", bool(common_params.include_stress), flush=True)
+
+    if not isinstance(common_params.dft_train, list):
+        raise RuntimeError("DFT files are not kept in list format")
+
+    print("  train_data:", flush=True)
+    for v in common_params.dft_train:
+        print("  -", v.location, flush=True)
+    print("  test_data:", flush=True)
+    for v in common_params.dft_test:
+        print("  -", v.location, flush=True)
+
+    params_print = [params] if isinstance(params, PolymlpParams) else params
+    for i, p in enumerate(params_print):
+        print("model_" + str(i + 1) + ":", flush=True)
+        print("  cutoff:      ", p.model.cutoff, flush=True)
+        print("  model_type:  ", p.model.model_type, flush=True)
+        print("  max_p:       ", p.model.max_p, flush=True)
+        print("  n_gaussians: ", len(p.model.pair_params), flush=True)
+        print("  feature_type:", p.model.feature_type, flush=True)
+        if p.model.feature_type == "gtinv":
+            orders = [i for i in range(2, p.model.gtinv.order + 1)]
+            print("  max_l:       ", p.model.gtinv.max_l, end=" ", flush=True)
+            print("for order =", orders, flush=True)

@@ -10,10 +10,11 @@ from pypolymlp.core.displacements import get_structures_from_displacements
 from pypolymlp.core.interface_datasets import set_dataset_from_structures
 from pypolymlp.core.interface_vasp import parse_structures_from_poscars
 from pypolymlp.core.io_polymlp import convert_to_yaml, load_mlp
-from pypolymlp.core.polymlp_params import set_all_params
+from pypolymlp.core.parser_polymlp_params import parse_parameter_files
+from pypolymlp.core.polymlp_params import print_params, set_all_params
 from pypolymlp.core.utils import split_train_test
 from pypolymlp.mlp_dev.core.accuracy import PolymlpDevAccuracy
-from pypolymlp.mlp_dev.core.mlpdev_data import PolymlpDevData
+from pypolymlp.mlp_dev.core.parser_datasets import ParserDatasets
 from pypolymlp.mlp_dev.standard.fit import fit, fit_learning_curve, fit_standard
 
 
@@ -22,12 +23,11 @@ class Pypolymlp:
 
     def __init__(self):
         """Init method."""
-        self._polymlp_in = PolymlpDevData()
         self._params = None
+        self._common_params = None
 
         self._train = None
         self._test = None
-        self._multiple_datasets = False
         # TODO: set_params is not available for hybrid models at this time.
         self._hybrid = False
 
@@ -40,9 +40,9 @@ class Pypolymlp:
 
     def load_parameter_file(self, file_params: Union[str, list[str]]):
         """Load input parameter file and set parameters."""
-        self._polymlp_in.parse_infiles(file_params)
-        self._params = self._polymlp_in.params
-        self._hybrid = self._polymlp_in.is_hybrid
+        self._params, self._common_params, _ = parse_parameter_files(file_params)
+        if len(self._params) > 1:
+            self._hybrid = True
         return self
 
     def set_params(
@@ -98,7 +98,7 @@ class Pypolymlp:
         rearrange_by_elements: Set True if not developing special MLPs.
         """
         if params is not None:
-            self._params = self._polymlp_in.params = params
+            self._params = self._common_params = params
             return self
 
         self._params = set_all_params(
@@ -119,12 +119,12 @@ class Pypolymlp:
             atomic_energy=atomic_energy,
             rearrange_by_elements=rearrange_by_elements,
         )
-        self._polymlp_in.params = self._params
+        self._common_params = self._params
         return self
 
     def print_params(self):
         """Print input parameters."""
-        self._polymlp_in.print_params()
+        print_params(self._params, self._common_params)
         return self
 
     def _is_params_none(self):
@@ -138,9 +138,9 @@ class Pypolymlp:
 
     def load_datasets(self, train_ratio: float = 0.9):
         """Load datasets provided in params instance."""
-        self._polymlp_in.parse_datasets(train_ratio=train_ratio)
-        self._train = self._polymlp_in.train
-        self._test = self._polymlp_in.test
+        self._is_params_none()
+        parser = ParserDatasets(self._params, train_ratio=train_ratio)
+        self._train, self._test = parser.train, parser.test
         return self
 
     def _split_dataset_auto(self, files: list[str], train_ratio: float = 0.9):
@@ -160,7 +160,6 @@ class Pypolymlp:
         )
         self._params.dft_train = [train]
         self._params.dft_test = [test]
-        self._multiple_datasets = True
         return self
 
     def set_datasets_electron(
@@ -235,7 +234,6 @@ class Pypolymlp:
         )
         self._params.dft_train = [train]
         self._params.dft_test = [test]
-        self._multiple_datasets = True
         self.load_datasets(train_ratio=train_ratio)
         return self
 
@@ -272,7 +270,6 @@ class Pypolymlp:
                 weight=1.0,
             )
             self._params.dft_test.append(test)
-        self._multiple_datasets = True
         self.load_datasets(train_ratio=train_ratio)
         return self
 
@@ -416,7 +413,6 @@ class Pypolymlp:
         self._test = [self._test]
         self._polymlp_in.train = self._train
         self._polymlp_in.test = self._test
-        self._multiple_datasets = True
         return self
 
     def fit(self, batch_size: Optional[int] = None, verbose: bool = False):
