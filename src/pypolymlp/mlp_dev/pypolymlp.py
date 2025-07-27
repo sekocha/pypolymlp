@@ -14,8 +14,7 @@ from pypolymlp.core.parser_datasets import ParserDatasets
 from pypolymlp.core.parser_polymlp_params import parse_parameter_files
 from pypolymlp.core.polymlp_params import print_params, set_all_params
 from pypolymlp.core.utils import split_train_test
-
-# from pypolymlp.mlp_dev.core.accuracy import PolymlpDevAccuracy
+from pypolymlp.mlp_dev.core.accuracy import PolymlpEvalAccuracy, write_error_yaml
 from pypolymlp.mlp_dev.core.dataclass import PolymlpDataMLP
 from pypolymlp.mlp_dev.core.features_attr import write_polymlp_params_yaml
 from pypolymlp.mlp_dev.standard.fit import fit, fit_learning_curve, fit_standard
@@ -35,7 +34,6 @@ class Pypolymlp:
         self._hybrid = False
 
         self._mlp_model = None
-        self._acc = None
         self._learning = None
 
         np.set_printoptions(legacy="1.21")
@@ -451,17 +449,21 @@ class Pypolymlp:
         file_path: str = "./",
         verbose: bool = False,
     ):
-        pass
+        """Estimate prediction errors."""
+        if self._mlp_model is None:
+            raise RuntimeError("Regression must be performed before estimating errors.")
 
-    #         """Estimate prediction errors."""
-    #         if self._reg is None:
-    #             raise RuntimeError("Regression must be performed before estimating errors.")
-    #
-    #         self._acc = PolymlpDevAccuracy(self._reg, verbose=verbose)
-    #         self._acc.compute_error(log_energy=log_energy, path_output=file_path)
-    #         self._mlp_model.error_train = self._acc.error_train_dict
-    #         self._mlp_model.error_test = self._acc.error_test_dict
-    #         return self
+        acc = PolymlpEvalAccuracy(self._mlp_model, verbose=verbose)
+        self._mlp_model.error_train = acc.compute_error(
+            self._train,
+            log_energy=log_energy,
+            path_output=file_path,
+        )
+        self._mlp_model.error_test = acc.compute_error(
+            self._test,
+            log_energy=log_energy,
+            path_output=file_path,
+        )
 
     def run(self, batch_size: Optional[int] = None, verbose: bool = False):
         """Estimate MLP coefficients and prediction errors.
@@ -526,14 +528,17 @@ class Pypolymlp:
         convert_to_yaml(filename_txt, filename_yaml)
         return self
 
-    def save_params(self, filename="polymlp_params.yaml"):
+    def save_params(self, filename: str = "polymlp_params.yaml"):
         """Save MLP parameters as file."""
         write_polymlp_params_yaml(self._params, filename=filename)
         return self
 
-    def save_errors(self, filename="polymlp_error.yaml"):
+    def save_errors(self, filename: str = "polymlp_error.yaml"):
         """Save prediction errors as file."""
-        self._acc.write_error_yaml(filename=filename)
+        if self._mlp_model.error_train is None:
+            raise RuntimeError("estimate_error must be performed before save_errors.")
+        write_error_yaml(self._mlp_model.error_train, filename=filename, mode="w")
+        write_error_yaml(self._mlp_model.error_test, filename=filename, mode="a")
         return self
 
     @property
@@ -563,11 +568,7 @@ class Pypolymlp:
 
         Use this scaled coefficients to calculate properties.
         """
-        if self._hybrid:
-            coeffs = self._mlp_model.coeffs_hybrid
-            scales = self._mlp_model.scales_hybrid
-            return [c / s for c, s in zip(coeffs, scales)]
-        return self._mlp_model.coeffs / self._mlp_model.scales
+        return self._mlp_model.scaled_coeffs
 
     @property
     def learning_curve(self):

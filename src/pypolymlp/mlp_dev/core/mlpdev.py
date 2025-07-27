@@ -1,11 +1,13 @@
 """API Class for developing polymlp."""
 
-from typing import Optional, Union
+from typing import Literal, Optional, Union
 
 import numpy as np
 
 from pypolymlp.core.data_format import PolymlpDataDFT, PolymlpParams
+from pypolymlp.mlp_dev.core.accuracy import PolymlpEvalAccuracy
 from pypolymlp.mlp_dev.core.data import PolymlpDataXY, calc_xtx_xty, calc_xy
+from pypolymlp.mlp_dev.core.dataclass import PolymlpDataMLP
 from pypolymlp.mlp_dev.core.features_attr import get_features_attr, get_num_features
 from pypolymlp.mlp_dev.core.utils import check_memory_size_in_regression, set_params
 
@@ -113,3 +115,26 @@ class PolymlpDevCore:
         """Return whether DFT data is given by list or not."""
         if not isinstance(dft, (list, tuple, np.ndarray)):
             raise RuntimeError("DFT data must be given in list.")
+
+
+def eval_accuracy(
+    mlp_model: PolymlpDataMLP,
+    dft: list[PolymlpDataDFT],
+    stress_unit: Literal["eV", "GPa"] = "eV",
+    log_energy: bool = True,
+    log_force: bool = False,
+    log_stress: bool = False,
+    path_output: str = "./",
+    verbose: bool = False,
+):
+    """Evaluate accuracy."""
+    acc = PolymlpEvalAccuracy(mlp_model, verbose=verbose)
+    error = acc.compute_error(
+        dft,
+        stress_unit=stress_unit,
+        log_energy=log_energy,
+        log_force=log_force,
+        log_stress=log_stress,
+        path_output=path_output,
+    )
+    return error

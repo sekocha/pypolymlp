@@ -36,6 +36,7 @@ class PolymlpDataMLP:
     hybrid: bool = False
     coeffs_hybrid: Optional[np.ndarray] = None
     scales_hybrid: Optional[np.ndarray] = None
+    scaled_coeffs: Optional[np.ndarray] = None
 
     def __post_init__(self):
         """Post init method."""
@@ -45,6 +46,11 @@ class PolymlpDataMLP:
         if self.hybrid:
             self.coeffs_hybrid = self.hybrid_division(self.coeffs)
             self.scales_hybrid = self.hybrid_division(self.scales)
+            self.scaled_coeffs = [
+                c / s for c, s in zip(self.coeffs_hybrid, self.scales_hybrid)
+            ]
+        else:
+            self.scaled_coeffs = self.coeffs / self.scales
 
     def save_mlp(self, filename: str = "polymlp.yaml"):
         """Save polymlp.yaml files"""
