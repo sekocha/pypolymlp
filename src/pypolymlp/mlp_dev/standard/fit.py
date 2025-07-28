@@ -3,15 +3,14 @@
 from typing import Optional, Union
 
 from pypolymlp.core.data_format import PolymlpDataDFT, PolymlpParams
-from pypolymlp.mlp_dev.core.mlpdev import PolymlpDevCore
-from pypolymlp.mlp_dev.standard.model_selection import (
+from pypolymlp.mlp_dev.core.mlpdev import PolymlpDevCore, eval_accuracy
+from pypolymlp.mlp_dev.standard.solvers import solver_ridge
+from pypolymlp.mlp_dev.standard.utils_learning_curve import print_learning_curve_log
+from pypolymlp.mlp_dev.standard.utils_model_selection import (
     compute_rmse,
     get_best_model,
     print_log,
 )
-from pypolymlp.mlp_dev.standard.solvers import solver_ridge
-
-# from pypolymlp.mlp_dev.standard.learning_curve import LearningCurve
 
 
 def fit(
@@ -40,7 +39,7 @@ def fit(
         alphas=common_params.alphas,
         verbose=verbose,
     )
-    rmse_train = compute_rmse(train_xy, coefs, check_singular=True)
+    rmse_train = compute_rmse(coefs, train_xy, check_singular=True)
     train_xy.clear_data()
 
     test_xy = polymlp.calc_xtx_xty(
@@ -49,7 +48,7 @@ def fit(
         min_energy=train_xy.min_energy,
         batch_size=batch_size,
     )
-    rmse_test = compute_rmse(test_xy, coefs)
+    rmse_test = compute_rmse(coefs, test_xy)
     test_xy.clear_data()
 
     best_model = get_best_model(
@@ -86,7 +85,7 @@ def fit_standard(
         alphas=common_params.alphas,
         verbose=verbose,
     )
-    rmse_train = compute_rmse(train_xy, coefs, check_singular=True)
+    rmse_train = compute_rmse(coefs, train_xy, check_singular=True)
     train_xy.clear_data()
 
     test_xy = polymlp.calc_xy(
@@ -94,7 +93,7 @@ def fit_standard(
         scales=train_xy.scales,
         min_energy=train_xy.min_energy,
     )
-    rmse_test = compute_rmse(test_xy, coefs)
+    rmse_test = compute_rmse(coefs, test_xy)
     test_xy.clear_data()
 
     best_model = get_best_model(
@@ -120,19 +119,51 @@ def fit_learning_curve(
     verbose: bool = False,
 ):
     """Calculate learning curve."""
+    if len(train) != 1:
+        raise RuntimeError(
+            "Number of training datasets must be one for learning curve."
+        )
 
     polymlp = PolymlpDevCore(params)
     polymlp.check_memory_size_in_regression()
 
-    if len(train) > 1:
-        raise RuntimeError("Use single dataset for learning curve calculation")
+    train_xy = polymlp.calc_xy(train)
+    test_xy = polymlp.calc_xy(
+        test,
+        scales=train_xy.scales,
+        min_energy=train_xy.min_energy,
+    )
 
-    return None
+    if verbose:
+        print("Calculate learning curve.", flush=True)
 
+    error_log = []
+    n_train = train_xy.n_data[0]
+    for n_samples in range(n_train // 10, n_train + 1, n_train // 10):
+        if verbose:
+            print("------------- n_samples:", n_samples, "-------------", flush=True)
 
-#     polymlp = PolymlpDevDataXY(polymlp_in, verbose=verbose).run()
-#     total_n_atoms = polymlp._train[0].total_n_atoms
-#
-#     learning = LearningCurve(polymlp, total_n_atoms, verbose=verbose)
-#     learning.run()
-#     return learning
+        x, y = train_xy.slices(n_samples, train[0].total_n_atoms)
+        coefs = solver_ridge(x=x, y=y, alphas=common_params.alphas, verbose=False)
+        rmse_train = compute_rmse(coefs, x=x, y=y)
+        rmse_test = compute_rmse(coefs, test_xy)
+        best_model = get_best_model(
+            coefs,
+            train_xy.scales,
+            common_params.alphas,
+            rmse_train,
+            rmse_test,
+            params,
+            train_xy.cumulative_n_features,
+        )
+        if verbose:
+            print_log(rmse_train, rmse_test, common_params.alphas)
+
+        error = eval_accuracy(best_model, test, log_energy=False, tag="test")
+        for val in error.values():
+            error_log.append([n_samples, val])
+
+    if verbose:
+        print_learning_curve_log(error_log)
+
+    return error_log

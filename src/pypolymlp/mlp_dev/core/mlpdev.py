@@ -125,6 +125,7 @@ def eval_accuracy(
     log_force: bool = False,
     log_stress: bool = False,
     path_output: str = "./",
+    tag: str = "train",
     verbose: bool = False,
 ):
     """Evaluate accuracy."""
@@ -136,5 +137,6 @@ def eval_accuracy(
         log_force=log_force,
         log_stress=log_stress,
         path_output=path_output,
+        tag=tag,
     )
     return error

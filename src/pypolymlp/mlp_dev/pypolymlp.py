@@ -16,8 +16,12 @@ from pypolymlp.core.polymlp_params import print_params, set_all_params
 from pypolymlp.core.utils import split_train_test
 from pypolymlp.mlp_dev.core.accuracy import PolymlpEvalAccuracy, write_error_yaml
 from pypolymlp.mlp_dev.core.dataclass import PolymlpDataMLP
-from pypolymlp.mlp_dev.core.features_attr import write_polymlp_params_yaml
+from pypolymlp.mlp_dev.core.features_attr import (
+    get_num_features,
+    write_polymlp_params_yaml,
+)
 from pypolymlp.mlp_dev.standard.fit import fit, fit_learning_curve, fit_standard
+from pypolymlp.mlp_dev.standard.utils_learning_curve import save_learning_curve_log
 
 
 class Pypolymlp:
@@ -34,13 +38,20 @@ class Pypolymlp:
         self._hybrid = False
 
         self._mlp_model = None
-        self._learning = None
+        self._learning_log = None
 
         np.set_printoptions(legacy="1.21")
 
-    def load_parameter_file(self, file_params: Union[str, list[str]]):
+    def load_parameter_file(
+        self,
+        file_params: Union[str, list[str]],
+        prefix: Optional[str] = None,
+    ):
         """Load input parameter file and set parameters."""
-        self._params, self._common_params, _ = parse_parameter_files(file_params)
+        self._params, self._common_params, _ = parse_parameter_files(
+            file_params,
+            prefix=prefix,
+        )
         if not isinstance(self._params, PolymlpParams):
             self._hybrid = True
         return self
@@ -139,7 +150,7 @@ class Pypolymlp:
     def load_datasets(self, train_ratio: float = 0.9):
         """Load datasets provided in params instance."""
         self._is_params_none()
-        parser = ParserDatasets(self._params, train_ratio=train_ratio)
+        parser = ParserDatasets(self._common_params, train_ratio=train_ratio)
         self._train, self._test = parser.train, parser.test
         return self
 
@@ -458,11 +469,13 @@ class Pypolymlp:
             self._train,
             log_energy=log_energy,
             path_output=file_path,
+            tag="train",
         )
         self._mlp_model.error_test = acc.compute_error(
             self._test,
             log_energy=log_energy,
             path_output=file_path,
+            tag="test",
         )
 
     def run(self, batch_size: Optional[int] = None, verbose: bool = False):
@@ -480,17 +493,18 @@ class Pypolymlp:
 
     def fit_learning_curve(self, verbose: bool = False):
         """Compute learing curve."""
-        self._learning = fit_learning_curve(
+        self._learning_log = fit_learning_curve(
             self._params,
+            self._common_params,
             self._train,
             self._test,
             verbose=verbose,
         )
         return self
 
-    def save_learning_curve(self, filename="polymlp_learning_curve.dat"):
+    def save_learning_curve(self, filename: str = "polymlp_learning_curve.dat"):
         """Save learing curve."""
-        self._learning.save_log(filename=filename)
+        save_learning_curve_log(self._learning_log, filename=filename)
         return self
 
     def get_structures_from_poscars(self, poscars: list[str]) -> list[PolymlpStructure]:
@@ -573,4 +587,11 @@ class Pypolymlp:
     @property
     def learning_curve(self):
         """Return instance of LearningCurve."""
-        return self._learning
+        return self._learning_log
+
+    @property
+    def n_features(self):
+        """Return number of features."""
+        if self._mlp_model is None:
+            return get_num_features(self._params)
+        return self._mlp_model.coeffs.shape[0]

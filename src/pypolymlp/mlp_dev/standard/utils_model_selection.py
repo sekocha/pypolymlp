@@ -1,6 +1,6 @@
 """Functions for model selection."""
 
-from typing import Union
+from typing import Optional, Union
 
 import numpy as np
 
@@ -21,13 +21,14 @@ def _check_singular(rmse: np.ndarray, error_threshold: float = 1e6):
 
 
 def compute_rmse_standard(
-    data_xy: PolymlpDataXY,
     coefs_array: np.ndarray,
+    x: np.ndarray,
+    y: np.ndarray,
     check_singular: bool = False,
 ):
     """Compute RMSEs from x and y."""
-    pred = (data_xy.x @ coefs_array).T
-    rmse_array = np.array([rmse(data_xy.y, p) for p in pred])
+    pred = (x @ coefs_array).T
+    rmse_array = np.array([rmse(y, p) for p in pred])
     if check_singular:
         _check_singular(rmse_array)
     return rmse_array
@@ -47,8 +48,8 @@ def compute_mse(
 
 
 def compute_rmse_seq(
-    data_xy: PolymlpDataXY,
     coefs_array: np.ndarray,
+    data_xy: PolymlpDataXY,
     check_singular: bool = False,
 ):
     """Compute RMSEs from xtx and xty."""
@@ -72,14 +73,19 @@ def compute_rmse_seq(
 
 
 def compute_rmse(
-    data_xy: PolymlpDataXY,
     coefs_array: np.ndarray,
+    data_xy: Optional[PolymlpDataXY] = None,
+    x: Optional[np.ndarray] = None,
+    y: Optional[np.ndarray] = None,
     check_singular: bool = False,
 ):
     """Compute RMSEs from xtx and xty."""
-    if data_xy.xtx is None:
-        return compute_rmse_standard(data_xy, coefs_array)
-    return compute_rmse_seq(data_xy, coefs_array)
+    if data_xy is not None:
+        if data_xy.xtx is None:
+            return compute_rmse_standard(coefs_array, data_xy.x, data_xy.y)
+        return compute_rmse_seq(coefs_array, data_xy)
+    else:
+        return compute_rmse_standard(coefs_array, x, y)
 
 
 def get_best_model(

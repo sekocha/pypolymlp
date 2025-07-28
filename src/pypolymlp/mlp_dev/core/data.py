@@ -113,6 +113,24 @@ class PolymlpDataXY:
         self.weight = w
         return self
 
+    def slices(self, n_samples: int, total_n_atoms: np.ndarray):
+        """Return slices for selected data."""
+        if self.x is None:
+            raise RuntimeError("Data X is not found.")
+
+        ids = list(range(n_samples))
+
+        first_id = self.first_indices[0][2]
+        ids_stress = range(first_id, first_id + n_samples * 6)
+        ids.extend(ids_stress)
+
+        first_id = self.first_indices[0][1]
+        n_forces = sum(total_n_atoms[:n_samples]) * 3
+        ids_force = range(first_id, first_id + n_forces)
+        ids.extend(ids_force)
+        ids = np.array(ids)
+        return self.x[ids], self.y[ids]
+
 
 def _get_features(
     params: Union[PolymlpParams, list[PolymlpParams]],

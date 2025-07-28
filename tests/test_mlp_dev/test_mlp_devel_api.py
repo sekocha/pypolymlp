@@ -332,8 +332,8 @@ def test_mlp_devel_api_learning_curve():
         test_energies,
         st_dict,
     )
-    polymlp.fit_learning_curve(verbose=True)
-    error = polymlp.learning_curve.error
+    polymlp.fit_learning_curve(verbose=False)
+    error = polymlp.learning_curve
     assert error[0][1]["energy"] == pytest.approx(1.4029702831658057e-06, rel=1e-4)
     assert error[0][1]["force"] == pytest.approx(0.0003922588310867841, rel=1e-4)
     assert error[1][1]["energy"] == pytest.approx(4.314997208182684e-07, rel=1e-4)

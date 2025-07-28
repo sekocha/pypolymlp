@@ -46,5 +46,4 @@ def check_memory_size_in_regression(n_features: int, verbose: bool = False):
     if verbose:
         print("Minimum memory required for solver in GB:", mem_req, flush=True)
         print("Memory required for allocating X additionally.", flush=True)
-        # print("Batch size for computing X:", batch_size, flush=True)
     return mem_req

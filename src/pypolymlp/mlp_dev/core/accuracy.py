@@ -1,8 +1,8 @@
 """Class for computing prediction errors."""
 
 import itertools
-import math
 import os
+from math import acos, degrees
 from typing import Literal, Optional
 
 import numpy as np
@@ -90,7 +90,7 @@ class PolymlpEvalAccuracy:
 
                 rmse_percent_f_norm = np.average(np.abs((norm_p - norm_t) / norm_t))
                 rmse_f_direction = np.average(np.abs(cosine))
-                rmse_f_direction = math.degrees(math.acos(rmse_f_direction))
+                rmse_f_direction = degrees(acos(rmse_f_direction))
             else:
                 rmse_f_direction = None
                 rmse_percent_f_norm = None
@@ -123,32 +123,12 @@ class PolymlpEvalAccuracy:
 
         if log_energy or log_force or log_stress:
             os.makedirs(path_output + "/predictions", exist_ok=True)
-
-        if log_energy:
-            outdata = np.array([true_e, pred_e, (true_e - pred_e) * 1000]).T
-            f = open(path_output + "/predictions/energy." + output_key + ".dat", "w")
-            print("# DFT(eV/atom), MLP(eV/atom), DFT-MLP(meV/atom)", file=f)
-            for d, name in zip(outdata, dft.files):
-                print(d[0], d[1], d[2], name, file=f)
-            f.close()
-
-        if log_force:
-            outdata = np.array([true_f, pred_f, (true_f - pred_f)]).T
-            filename = path_output + "/predictions/force." + output_key + ".dat"
-            f = open(filename, "w")
-            print("# DFT, MLP, DFT-MLP", file=f)
-            for d in outdata:
-                print(d[0], d[1], d[2], file=f)
-            f.close()
-
-        if log_stress:
-            outdata = np.array([true_s, pred_s, (true_s - pred_s)]).T
-            filename = path_output + "/predictions/stress." + output_key + ".dat"
-            f = open(filename, "w")
-            print("# DFT, MLP, DFT-MLP", file=f)
-            for d in outdata:
-                print(d[0], d[1], d[2], file=f)
-            f.close()
+            if log_energy:
+                self._write_energies(dft, true_e, pred_e, path_output, output_key)
+            if log_force:
+                self._write_forces(dft, true_f, pred_f, path_output, output_key)
+            if log_stress:
+                self._write_stresses(dft, true_s, pred_s, path_output, output_key)
 
         return error_dict
 
@@ -192,6 +172,55 @@ class PolymlpEvalAccuracy:
         output_key = tag + "-" + output_key
         output_key = output_key.replace("---", "-").replace("--", "-")
         return output_key
+
+    def _write_energies(
+        self,
+        dft: PolymlpDataDFT,
+        true_e: np.ndarray,
+        pred_e: np.ndarray,
+        path_output: str,
+        output_key: str,
+    ):
+        """Write energy values of structures in a dataset."""
+        outdata = np.array([true_e, pred_e, (true_e - pred_e) * 1000]).T
+        f = open(path_output + "/predictions/energy." + output_key + ".dat", "w")
+        print("# DFT(eV/atom), MLP(eV/atom), DFT-MLP(meV/atom)", file=f)
+        for d, name in zip(outdata, dft.files):
+            print(d[0], d[1], d[2], name, file=f)
+        f.close()
+
+    def _write_forces(
+        self,
+        dft: PolymlpDataDFT,
+        true_f: np.ndarray,
+        pred_f: np.ndarray,
+        path_output: str,
+        output_key: str,
+    ):
+        """Write force values of structures in a dataset."""
+        outdata = np.array([true_f, pred_f, (true_f - pred_f)]).T
+        filename = path_output + "/predictions/force." + output_key + ".dat"
+        f = open(filename, "w")
+        print("# DFT, MLP, DFT-MLP", file=f)
+        for d in outdata:
+            print(d[0], d[1], d[2], file=f)
+        f.close()
+
+    def _write_stresses(
+        self,
+        dft: PolymlpDataDFT,
+        true_s: np.ndarray,
+        pred_s: np.ndarray,
+        path_output: str,
+        output_key: str,
+    ):
+        outdata = np.array([true_s, pred_s, (true_s - pred_s)]).T
+        filename = path_output + "/predictions/stress." + output_key + ".dat"
+        f = open(filename, "w")
+        print("# DFT, MLP, DFT-MLP", file=f)
+        for d in outdata:
+            print(d[0], d[1], d[2], file=f)
+        f.close()
 
 
 def write_error_yaml(
