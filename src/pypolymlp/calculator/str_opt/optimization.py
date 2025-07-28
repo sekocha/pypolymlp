@@ -66,8 +66,6 @@ class GeometryOptimization:
         if not relax_cell and not relax_volume and not relax_positions:
             raise ValueError("No degree of freedom to be optimized.")
 
-        if relax_volume:
-            relax_cell = True
         self._relax_cell = relax_cell
         self._relax_volume = relax_volume
         self._relax_positions = relax_positions
@@ -135,6 +133,8 @@ class GeometryOptimization:
             xf = np.zeros(self._basis_f.shape[1])
         if self._relax_cell:
             xs = self._basis_axis.T @ self._structure.axis.reshape(-1)
+        elif self._relax_volume and not self.relax_cell:
+            xs = [self._structure.volume]
 
         self._x0 = np.concatenate([xf, xs], 0)
         self._size_pos = 0 if self._basis_f is None else self._basis_f.shape[1]
@@ -215,8 +215,12 @@ class GeometryOptimization:
     def _to_structure_relax_cell(self, x):
         """Convert x to structure."""
         x_positions, x_cells = self.split(x)
-        axis = self._basis_axis @ x_cells
-        axis = axis.reshape((3, 3))
+        if self._relax_cell:
+            axis = self._basis_axis @ x_cells
+            axis = axis.reshape((3, 3))
+        else:
+            scale = (x_cells[0] / self._structure.volume)**(1 / 3)
+            axis = self._structure.axis * scale
         self._change_axis(axis)
 
         if self._relax_positions:
@@ -236,6 +240,10 @@ class GeometryOptimization:
 
         PV @ axis_inv.T is exactly the same as the derivatives of PV term
         with respect to axis components.
+
+        Under the constraint of a fixed cell shape, the mean normal stress
+        serves as an approximation to the derivative of the enthalpy
+        with respect to volume.
         """
         pv = self._pressure * self._structure.volume / EVtoGPa
         sigma = [
@@ -243,10 +251,14 @@ class GeometryOptimization:
             [self._stress[3], self._stress[1] - pv, self._stress[4]],
             [self._stress[5], self._stress[4], self._stress[2] - pv],
         ]
-        derivatives_s = -np.array(sigma) @ self._structure.axis_inv.T
+        if self._relax_cell:
+            """derivatives_s: In the order of ax, bx, cx, ay, by, cy, az, bz, cz"""
+            derivatives_s = -np.array(sigma) @ self._structure.axis_inv.T
+            derivatives_s = self._basis_axis.T @ derivatives_s.reshape(-1)
+        else:
+            derivatives_s = -np.trace(np.array(sigma)) / 3
 
-        """derivatives_s: In the order of ax, bx, cx, ay, by, cy, az, bz, cz"""
-        return self._basis_axis.T @ derivatives_s.reshape(-1)
+        return derivatives_s
 
     def run(
         self,
@@ -288,7 +300,7 @@ class GeometryOptimization:
                 options["c2"] = c2
         options["disp"] = self._verbose
 
-        if self._relax_cell:
+        if self._relax_cell or self._relax_volume:
             fun = self.fun_relax_cell
             jac = self.jac_relax_cell
         else:
@@ -372,7 +384,7 @@ class GeometryOptimization:
     @property
     def residual_forces(self):
         """Return residual forces and stresses represented in basis sets."""
-        if self._relax_cell:
+        if self._relax_cell or self._relax_volume:
             residual_f = -self._res.jac[: self._size_pos]
             residual_s = -self._res.jac[self._size_pos :]
             return residual_f, residual_s
