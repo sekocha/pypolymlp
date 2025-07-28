@@ -33,6 +33,11 @@ def run():
         default=None,
         help="Batch size of feature calculations",
     )
+    parser.add_argument(
+        "--sgd",
+        action="store_true",
+        help="Use stochastic gradient descent",
+    )
     args = parser.parse_args()
     np.set_printoptions(legacy="1.21")
     print_credit()
@@ -52,7 +57,11 @@ def run():
         tlearn2 = time.time()
 
     t1 = time.time()
-    polymlp.fit(batch_size=args.batch_size, verbose=verbose)
+    if args.sgd:
+        polymlp.fit_sgd(verbose=verbose)
+    else:
+        polymlp.fit(batch_size=args.batch_size, verbose=verbose)
+
     polymlp.save_mlp(filename="polymlp.yaml", yaml=True)
     t2 = time.time()
     polymlp.estimate_error(log_energy=True, verbose=verbose)

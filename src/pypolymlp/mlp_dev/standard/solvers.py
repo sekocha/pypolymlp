@@ -54,6 +54,9 @@ def solver_ridge(
     verbose: bool = False,
 ):
     """Estimate MLP coefficients using ridge regression."""
+    if verbose:
+        print("Regression: Use standard ridge solver.", flush=True)
+
     if xtx is None or xty is None:
         if verbose:
             print("Regression: compute X.T @ X and X.T @ y.", flush=True)

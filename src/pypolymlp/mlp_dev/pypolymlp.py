@@ -20,6 +20,7 @@ from pypolymlp.mlp_dev.core.features_attr import (
     get_num_features,
     write_polymlp_params_yaml,
 )
+from pypolymlp.mlp_dev.sgd.fit import fit_sgd
 from pypolymlp.mlp_dev.standard.fit import fit, fit_learning_curve, fit_standard
 from pypolymlp.mlp_dev.standard.utils_learning_curve import save_learning_curve_log
 
@@ -446,6 +447,17 @@ class Pypolymlp:
     def fit_standard(self, verbose: bool = False):
         """Estimate MLP coefficients with direct evaluation of X."""
         self._mlp_model = fit_standard(
+            self._params,
+            self._common_params,
+            self._train,
+            self._test,
+            verbose=verbose,
+        )
+        return self
+
+    def fit_sgd(self, verbose: bool = False):
+        """Estimate MLP coefficients using stochastic gradient descent."""
+        self._mlp_model = fit_sgd(
             self._params,
             self._common_params,
             self._train,
