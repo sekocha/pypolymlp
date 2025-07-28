@@ -3,6 +3,8 @@
 import copy
 from typing import Literal, Optional, Union
 
+import numpy as np
+
 from pypolymlp.core.data_format import PolymlpModelParams, PolymlpParams
 from pypolymlp.core.dataset import Dataset
 from pypolymlp.core.parser_infile import InputParser
@@ -291,6 +293,8 @@ def _get_variable_with_max_length(
 
 def set_common_params(multiple_params: list[PolymlpParams]) -> PolymlpParams:
     """Set common parameters of multiple PolymlpParams."""
+    # TODO: DFT datasets should be automatically found
+    # if they are not included in the first file.
     keys = set()
     for single in multiple_params:
         for k in single.as_dict().keys():
@@ -335,19 +339,12 @@ def _set_unique_types(
 
 def parse_parameter_files(infiles: Union[str, list[str]], prefix: str = None):
     """Parse input files for developing polymlp."""
-    common_params = None
-    hybrid_params = None
-    priority_infile = None
-    is_hybrid = False
-    if not isinstance(infiles, list):
-        p = ParamsParser(infiles, prefix=prefix)
-        common_params = p.params
-        priority_infile = infiles
-    else:
+    if isinstance(infiles, (list, tuple, np.ndarray)):
         priority_infile = infiles[0]
         if len(infiles) == 1:
             p = ParamsParser(priority_infile, prefix=prefix)
-            common_params = p.params
+            params = common_params = p.params
+            hybrid_params = None
         else:
             hybrid_params = []
             for i, infile in enumerate(infiles):
@@ -360,6 +357,12 @@ def parse_parameter_files(infiles: Union[str, list[str]], prefix: str = None):
                 hybrid_params.append(params)
             common_params = set_common_params(hybrid_params)
             hybrid_params = _set_unique_types(hybrid_params, common_params)
-            is_hybrid = True
+            params = hybrid_params
+    else:
+        priority_infile = infiles
+        p = ParamsParser(infiles, prefix=prefix)
+        params = common_params = p.params
+        hybrid_params = None
 
-    return (common_params, hybrid_params, is_hybrid, priority_infile)
+    common_params.priority_infile = priority_infile
+    return (params, common_params, hybrid_params)

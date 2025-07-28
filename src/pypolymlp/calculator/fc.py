@@ -271,19 +271,22 @@ class PolymlpFC:
                 if order == 2:
                     print(
                         "Basis size (FC2):",
-                        self._symfc.basis_set[2].basis_set.shape,
+                        # self._symfc.basis_set[2].basis_set.shape,
+                        self._symfc.basis_set[2].blocked_basis_set.shape,
                         flush=True,
                     )
                 elif order == 3:
                     print(
                         "Basis size (FC3):",
-                        self._symfc.basis_set[3].basis_set.shape,
+                        # self._symfc.basis_set[3].basis_set.shape,
+                        self._symfc.basis_set[3].blocked_basis_set.shape,
                         flush=True,
                     )
                 elif order == 4:
                     print(
                         "Basis size (FC4):",
-                        self._symfc.basis_set[4].basis_set.shape,
+                        # self._symfc.basis_set[3].basis_set.shape,
+                        self._symfc.basis_set[4].blocked_basis_set.shape,
                         flush=True,
                     )
 

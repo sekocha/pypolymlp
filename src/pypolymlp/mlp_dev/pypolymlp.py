@@ -4,17 +4,24 @@ from typing import Literal, Optional, Union
 
 import numpy as np
 
-from pypolymlp.core.data_format import PolymlpDataMLP, PolymlpParams, PolymlpStructure
+from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
 from pypolymlp.core.dataset import Dataset
 from pypolymlp.core.displacements import get_structures_from_displacements
 from pypolymlp.core.interface_datasets import set_dataset_from_structures
 from pypolymlp.core.interface_vasp import parse_structures_from_poscars
 from pypolymlp.core.io_polymlp import convert_to_yaml, load_mlp
-from pypolymlp.core.polymlp_params import set_all_params
+from pypolymlp.core.parser_datasets import ParserDatasets
+from pypolymlp.core.parser_polymlp_params import parse_parameter_files
+from pypolymlp.core.polymlp_params import print_params, set_all_params
 from pypolymlp.core.utils import split_train_test
-from pypolymlp.mlp_dev.core.accuracy import PolymlpDevAccuracy
-from pypolymlp.mlp_dev.core.mlpdev_data import PolymlpDevData
+from pypolymlp.mlp_dev.core.accuracy import PolymlpEvalAccuracy, write_error_yaml
+from pypolymlp.mlp_dev.core.dataclass import PolymlpDataMLP
+from pypolymlp.mlp_dev.core.features_attr import (
+    get_num_features,
+    write_polymlp_params_yaml,
+)
 from pypolymlp.mlp_dev.standard.fit import fit, fit_learning_curve, fit_standard
+from pypolymlp.mlp_dev.standard.utils_learning_curve import save_learning_curve_log
 
 
 class Pypolymlp:
@@ -22,27 +29,31 @@ class Pypolymlp:
 
     def __init__(self):
         """Init method."""
-        self._polymlp_in = PolymlpDevData()
         self._params = None
-
+        self._common_params = None
         self._train = None
         self._test = None
-        self._multiple_datasets = False
+
         # TODO: set_params is not available for hybrid models at this time.
         self._hybrid = False
 
-        self._reg = None
         self._mlp_model = None
-        self._acc = None
-        self._learning = None
+        self._learning_log = None
 
         np.set_printoptions(legacy="1.21")
 
-    def load_parameter_file(self, file_params: Union[str, list[str]]):
+    def load_parameter_file(
+        self,
+        file_params: Union[str, list[str]],
+        prefix: Optional[str] = None,
+    ):
         """Load input parameter file and set parameters."""
-        self._polymlp_in.parse_infiles(file_params)
-        self._params = self._polymlp_in.params
-        self._hybrid = self._polymlp_in.is_hybrid
+        self._params, self._common_params, _ = parse_parameter_files(
+            file_params,
+            prefix=prefix,
+        )
+        if not isinstance(self._params, PolymlpParams):
+            self._hybrid = True
         return self
 
     def set_params(
@@ -98,7 +109,7 @@ class Pypolymlp:
         rearrange_by_elements: Set True if not developing special MLPs.
         """
         if params is not None:
-            self._params = self._polymlp_in.params = params
+            self._params = self._common_params = params
             return self
 
         self._params = set_all_params(
@@ -119,12 +130,12 @@ class Pypolymlp:
             atomic_energy=atomic_energy,
             rearrange_by_elements=rearrange_by_elements,
         )
-        self._polymlp_in.params = self._params
+        self._common_params = self._params
         return self
 
     def print_params(self):
         """Print input parameters."""
-        self._polymlp_in.print_params()
+        print_params(self._params, self._common_params)
         return self
 
     def _is_params_none(self):
@@ -138,9 +149,9 @@ class Pypolymlp:
 
     def load_datasets(self, train_ratio: float = 0.9):
         """Load datasets provided in params instance."""
-        self._polymlp_in.parse_datasets(train_ratio=train_ratio)
-        self._train = self._polymlp_in.train
-        self._test = self._polymlp_in.test
+        self._is_params_none()
+        parser = ParserDatasets(self._common_params, train_ratio=train_ratio)
+        self._train, self._test = parser.train, parser.test
         return self
 
     def _split_dataset_auto(self, files: list[str], train_ratio: float = 0.9):
@@ -160,7 +171,6 @@ class Pypolymlp:
         )
         self._params.dft_train = [train]
         self._params.dft_test = [test]
-        self._multiple_datasets = True
         return self
 
     def set_datasets_electron(
@@ -235,7 +245,6 @@ class Pypolymlp:
         )
         self._params.dft_train = [train]
         self._params.dft_test = [test]
-        self._multiple_datasets = True
         self.load_datasets(train_ratio=train_ratio)
         return self
 
@@ -272,7 +281,6 @@ class Pypolymlp:
                 weight=1.0,
             )
             self._params.dft_test.append(test)
-        self._multiple_datasets = True
         self.load_datasets(train_ratio=train_ratio)
         return self
 
@@ -414,9 +422,6 @@ class Pypolymlp:
         self._test.name = "data2"
         self._train = [self._train]
         self._test = [self._test]
-        self._polymlp_in.train = self._train
-        self._polymlp_in.test = self._test
-        self._multiple_datasets = True
         return self
 
     def fit(self, batch_size: Optional[int] = None, verbose: bool = False):
@@ -428,14 +433,25 @@ class Pypolymlp:
                     If None, the batch size is automatically determined
                     depending on the memory size and number of features.
         """
-        self._reg = fit(self._polymlp_in, batch_size=batch_size, verbose=verbose)
-        self._mlp_model = self._reg.best_model
+        self._mlp_model = fit(
+            self._params,
+            self._common_params,
+            self._train,
+            self._test,
+            batch_size=batch_size,
+            verbose=verbose,
+        )
         return self
 
     def fit_standard(self, verbose: bool = False):
         """Estimate MLP coefficients with direct evaluation of X."""
-        self._reg = fit_standard(self._polymlp_in, verbose=verbose)
-        self._mlp_model = self._reg.best_model
+        self._mlp_model = fit_standard(
+            self._params,
+            self._common_params,
+            self._train,
+            self._test,
+            verbose=verbose,
+        )
         return self
 
     def estimate_error(
@@ -445,14 +461,22 @@ class Pypolymlp:
         verbose: bool = False,
     ):
         """Estimate prediction errors."""
-        if self._reg is None:
+        if self._mlp_model is None:
             raise RuntimeError("Regression must be performed before estimating errors.")
 
-        self._acc = PolymlpDevAccuracy(self._reg, verbose=verbose)
-        self._acc.compute_error(log_energy=log_energy, path_output=file_path)
-        self._mlp_model.error_train = self._acc.error_train_dict
-        self._mlp_model.error_test = self._acc.error_test_dict
-        return self
+        acc = PolymlpEvalAccuracy(self._mlp_model, verbose=verbose)
+        self._mlp_model.error_train = acc.compute_error(
+            self._train,
+            log_energy=log_energy,
+            path_output=file_path,
+            tag="train",
+        )
+        self._mlp_model.error_test = acc.compute_error(
+            self._test,
+            log_energy=log_energy,
+            path_output=file_path,
+            tag="test",
+        )
 
     def run(self, batch_size: Optional[int] = None, verbose: bool = False):
         """Estimate MLP coefficients and prediction errors.
@@ -469,12 +493,18 @@ class Pypolymlp:
 
     def fit_learning_curve(self, verbose: bool = False):
         """Compute learing curve."""
-        self._learning = fit_learning_curve(self._polymlp_in, verbose=verbose)
+        self._learning_log = fit_learning_curve(
+            self._params,
+            self._common_params,
+            self._train,
+            self._test,
+            verbose=verbose,
+        )
         return self
 
-    def save_learning_curve(self, filename="polymlp_learning_curve.dat"):
+    def save_learning_curve(self, filename: str = "polymlp_learning_curve.dat"):
         """Save learing curve."""
-        self._learning.save_log(filename=filename)
+        save_learning_curve_log(self._learning_log, filename=filename)
         return self
 
     def get_structures_from_poscars(self, poscars: list[str]) -> list[PolymlpStructure]:
@@ -487,10 +517,12 @@ class Pypolymlp:
         When hybrid models are used, mlp files will be generated as
         filename.1, filename.2, ...
         """
+        if self._mlp_model is None:
+            raise RuntimeError("No polymlp has been developed.")
         if yaml:
-            self._reg.save_mlp(filename=filename)
+            self._mlp_model.save_mlp(filename=filename)
         else:
-            self._reg.save_mlp_lammps(filename=filename)
+            self._mlp_model.save_mlp_lammps(filename=filename)
         return self
 
     def load_mlp(self, filename: str = "polymlp.yaml"):
@@ -510,14 +542,17 @@ class Pypolymlp:
         convert_to_yaml(filename_txt, filename_yaml)
         return self
 
-    def save_params(self, filename="polymlp_params.yaml"):
+    def save_params(self, filename: str = "polymlp_params.yaml"):
         """Save MLP parameters as file."""
-        self._polymlp_in.write_polymlp_params_yaml(filename=filename)
+        write_polymlp_params_yaml(self._params, filename=filename)
         return self
 
-    def save_errors(self, filename="polymlp_error.yaml"):
+    def save_errors(self, filename: str = "polymlp_error.yaml"):
         """Save prediction errors as file."""
-        self._acc.write_error_yaml(filename=filename)
+        if self._mlp_model.error_train is None:
+            raise RuntimeError("estimate_error must be performed before save_errors.")
+        write_error_yaml(self._mlp_model.error_train, filename=filename, mode="w")
+        write_error_yaml(self._mlp_model.error_test, filename=filename, mode="a")
         return self
 
     @property
@@ -529,9 +564,9 @@ class Pypolymlp:
         coeffs: MLP coefficients.
         scales: Scales of features. scaled_coeffs (= coeffs / scales)
                 must be used for calculating properties.
-        rmse: Root-mean-square error for test data.
+        rmse_train: Root-mean-square error for training data.
+        rmse_test: Root-mean-square error for test data.
         alpha, beta: Optimal regurlarization parameters.
-        predictions_train, predictions_test: Predicted energy values.
         error_train, error_test: Root-mean square error for each dataset.
         """
         return self._mlp_model
@@ -547,11 +582,16 @@ class Pypolymlp:
 
         Use this scaled coefficients to calculate properties.
         """
-        if self._hybrid:
-            return [c / s for c, s in zip(self._reg.coeffs, self._reg.scales)]
-        return self._mlp_model.coeffs / self._mlp_model.scales
+        return self._mlp_model.scaled_coeffs
 
     @property
     def learning_curve(self):
         """Return instance of LearningCurve."""
-        return self._learning
+        return self._learning_log
+
+    @property
+    def n_features(self):
+        """Return number of features."""
+        if self._mlp_model is None:
+            return get_num_features(self._params)
+        return self._mlp_model.coeffs.shape[0]

@@ -1,20 +1,23 @@
 """Functions for estimating regression coefficients from datasets."""
 
-from typing import Optional
+from typing import Optional, Union
 
-from pypolymlp.core.utils import check_memory_size_in_regression
-from pypolymlp.mlp_dev.core.mlpdev_data import PolymlpDevData
-from pypolymlp.mlp_dev.core.utils_sequential import get_auto_batch_size
-from pypolymlp.mlp_dev.standard.learning_curve import LearningCurve
-from pypolymlp.mlp_dev.standard.mlpdev_dataxy import (
-    PolymlpDevDataXY,
-    PolymlpDevDataXYSequential,
+from pypolymlp.core.data_format import PolymlpDataDFT, PolymlpParams
+from pypolymlp.mlp_dev.core.mlpdev import PolymlpDevCore, eval_accuracy
+from pypolymlp.mlp_dev.standard.solvers import solver_ridge
+from pypolymlp.mlp_dev.standard.utils_learning_curve import print_learning_curve_log
+from pypolymlp.mlp_dev.standard.utils_model_selection import (
+    compute_rmse,
+    get_best_model,
+    print_log,
 )
-from pypolymlp.mlp_dev.standard.regression import Regression
 
 
 def fit(
-    polymlp_in: PolymlpDevData,
+    params: Union[PolymlpParams, list[PolymlpParams]],
+    common_params: PolymlpParams,
+    train: list[PolymlpDataDFT],
+    test: list[PolymlpDataDFT],
     batch_size: Optional[int] = None,
     verbose: bool = False,
 ):
@@ -22,57 +25,145 @@ def fit(
 
     Parameters
     ----------
-    polymlp_in: PolymlpDevData instance.
     batch_size: Batch size for sequential regression.
                 If None, the batch size is automatically determined
                 depending on the memory size and number of features.
     """
-    if polymlp_in.train is None or polymlp_in.test is None:
-        raise RuntimeError("Datasets not found.")
+    polymlp = PolymlpDevCore(params)
+    polymlp.check_memory_size_in_regression()
 
-    if batch_size is None:
-        batch_size = get_auto_batch_size(polymlp_in.n_features, verbose=verbose)
+    train_xy = polymlp.calc_xtx_xty(train, batch_size=batch_size)
+    coefs = solver_ridge(
+        xtx=train_xy.xtx,
+        xty=train_xy.xty,
+        alphas=common_params.alphas,
+        verbose=verbose,
+    )
+    rmse_train = compute_rmse(coefs, train_xy, check_singular=True)
+    train_xy.clear_data()
 
-    mem_req = check_memory_size_in_regression(polymlp_in.n_features)
-    if verbose:
-        print("Minimum memory required for solver in GB:", mem_req, flush=True)
-        print("Memory required for allocating X additionally.", flush=True)
-        print("Batch size for computing X:", batch_size, flush=True)
-
-    polymlp = PolymlpDevDataXYSequential(polymlp_in, verbose=verbose)
-    polymlp.run_train(batch_size=batch_size)
-
-    reg = Regression(polymlp, verbose=verbose).fit(
-        seq=True,
-        clear_data=True,
+    test_xy = polymlp.calc_xtx_xty(
+        test,
+        scales=train_xy.scales,
+        min_energy=train_xy.min_energy,
         batch_size=batch_size,
     )
-    return reg
+    rmse_test = compute_rmse(coefs, test_xy)
+    test_xy.clear_data()
 
-
-def fit_standard(polymlp_in: PolymlpDevData, verbose: bool = False):
-    """Estimate MLP coefficients with direct evaluation of X."""
-    if polymlp_in.train is None or polymlp_in.test is None:
-        raise RuntimeError("Datasets not found.")
-
-    polymlp = PolymlpDevDataXY(polymlp_in, verbose=verbose).run()
+    best_model = get_best_model(
+        coefs,
+        train_xy.scales,
+        common_params.alphas,
+        rmse_train,
+        rmse_test,
+        params,
+        train_xy.cumulative_n_features,
+    )
     if verbose:
-        polymlp.print_data_shape()
-    reg = Regression(polymlp, verbose=verbose).fit(seq=False)
-    return reg
+        print_log(rmse_train, rmse_test, common_params.alphas)
+
+    return best_model
 
 
-def fit_learning_curve(polymlp_in: PolymlpDevData, verbose: bool = False):
+def fit_standard(
+    params: Union[PolymlpParams, list[PolymlpParams]],
+    common_params: PolymlpParams,
+    train: list[PolymlpDataDFT],
+    test: list[PolymlpDataDFT],
+    verbose: bool = False,
+):
+    """Estimate MLP coefficients with direct evaluation of X."""
+
+    polymlp = PolymlpDevCore(params)
+    polymlp.check_memory_size_in_regression()
+
+    train_xy = polymlp.calc_xy(train)
+    coefs = solver_ridge(
+        x=train_xy.x,
+        y=train_xy.y,
+        alphas=common_params.alphas,
+        verbose=verbose,
+    )
+    rmse_train = compute_rmse(coefs, train_xy, check_singular=True)
+    train_xy.clear_data()
+
+    test_xy = polymlp.calc_xy(
+        test,
+        scales=train_xy.scales,
+        min_energy=train_xy.min_energy,
+    )
+    rmse_test = compute_rmse(coefs, test_xy)
+    test_xy.clear_data()
+
+    best_model = get_best_model(
+        coefs,
+        train_xy.scales,
+        common_params.alphas,
+        rmse_train,
+        rmse_test,
+        params,
+        train_xy.cumulative_n_features,
+    )
+    if verbose:
+        print_log(rmse_train, rmse_test, common_params.alphas)
+
+    return best_model
+
+
+def fit_learning_curve(
+    params: Union[PolymlpParams, list[PolymlpParams]],
+    common_params: PolymlpParams,
+    train: list[PolymlpDataDFT],
+    test: list[PolymlpDataDFT],
+    verbose: bool = False,
+):
     """Calculate learning curve."""
-    if polymlp_in.train is None or polymlp_in.test is None:
-        raise RuntimeError("Datasets not found.")
+    if len(train) != 1:
+        raise RuntimeError(
+            "Number of training datasets must be one for learning curve."
+        )
 
-    if len(polymlp_in.train) > 1:
-        raise RuntimeError("Use single dataset for learning curve calculation")
+    polymlp = PolymlpDevCore(params)
+    polymlp.check_memory_size_in_regression()
 
-    polymlp = PolymlpDevDataXY(polymlp_in, verbose=verbose).run()
-    total_n_atoms = polymlp._train[0].total_n_atoms
+    train_xy = polymlp.calc_xy(train)
+    test_xy = polymlp.calc_xy(
+        test,
+        scales=train_xy.scales,
+        min_energy=train_xy.min_energy,
+    )
 
-    learning = LearningCurve(polymlp, total_n_atoms, verbose=verbose)
-    learning.run()
-    return learning
+    if verbose:
+        print("Calculate learning curve.", flush=True)
+
+    error_log = []
+    n_train = train_xy.n_data[0]
+    for n_samples in range(n_train // 10, n_train + 1, n_train // 10):
+        if verbose:
+            print("------------- n_samples:", n_samples, "-------------", flush=True)
+
+        x, y = train_xy.slices(n_samples, train[0].total_n_atoms)
+        coefs = solver_ridge(x=x, y=y, alphas=common_params.alphas, verbose=False)
+        rmse_train = compute_rmse(coefs, x=x, y=y)
+        rmse_test = compute_rmse(coefs, test_xy)
+        best_model = get_best_model(
+            coefs,
+            train_xy.scales,
+            common_params.alphas,
+            rmse_train,
+            rmse_test,
+            params,
+            train_xy.cumulative_n_features,
+        )
+        if verbose:
+            print_log(rmse_train, rmse_test, common_params.alphas)
+
+        error = eval_accuracy(best_model, test, log_energy=False, tag="test")
+        for val in error.values():
+            error_log.append([n_samples, val])
+
+    if verbose:
+        print_learning_curve_log(error_log)
+
+    return error_log
