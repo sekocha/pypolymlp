@@ -524,6 +524,7 @@ class Pypolymlp:
         if not use_cg:
             self.fit(batch_size=batch_size, verbose=verbose)
         else:
+            # TODO: batch size must be active.
             self.fit_cg(gtol=gtol, max_iter=max_iter, verbose=verbose)
 
         self.estimate_error(verbose=verbose)

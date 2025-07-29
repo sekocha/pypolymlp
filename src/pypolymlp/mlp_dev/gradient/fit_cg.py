@@ -12,7 +12,7 @@ from pypolymlp.mlp_dev.gradient.solvers_cg import solver_cg
 def _check_use_xy(polymlp: PolymlpDevCore):
     """Check whether xtx and xty data is used or not."""
     try:
-        polymlp.check_memory_size_in_regression()
+        polymlp.check_memory_size_in_regression(use_gradient=True)
     except RuntimeError:
         return True
     return False
@@ -39,7 +39,7 @@ def fit_cg(
         max_iter = polymlp.n_features * 10
 
     coefs, coef0 = [], None
-    for alpha in polymlp.common_params.alphas:
+    for alpha in reversed(polymlp.common_params.alphas):
         c = solver_cg(
             x=train_xy.x,
             y=train_xy.y,
@@ -53,7 +53,7 @@ def fit_cg(
         )
         coef0 = c
         coefs.append(c)
-    coefs = np.array(coefs).T
+    coefs = np.array(coefs)[::-1].T
 
     rmse_train = polymlp.compute_rmse(coefs, train_xy, check_singular=True)
     train_xy.clear_data()

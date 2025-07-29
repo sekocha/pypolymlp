@@ -84,9 +84,13 @@ class PolymlpDevCore:
         )
         return (features_attr, polynomial_attr, atomtype_pair_dict)
 
-    def check_memory_size_in_regression(self):
+    def check_memory_size_in_regression(self, use_gradient: bool = False):
         """Estimate memory size in regression."""
-        return check_memory_size_in_regression(self.n_features, verbose=self._verbose)
+        return check_memory_size_in_regression(
+            self.n_features,
+            use_gradient=use_gradient,
+            verbose=self._verbose,
+        )
 
     def compute_rmse(
         self,
