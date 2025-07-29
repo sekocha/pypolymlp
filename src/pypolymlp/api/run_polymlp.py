@@ -39,10 +39,18 @@ def run():
         help="Use conjugate gradient",
     )
     parser.add_argument(
-        "--sgd",
-        action="store_true",
-        help="Use stochastic gradient descent",
+        "--gtol",
+        type=float,
+        default=1e-3,
+        help="Tolerance for gradient in CG",
     )
+
+    # parser.add_argument(
+    #     "--sgd",
+    #     action="store_true",
+    #     help="Use stochastic gradient descent",
+    # )
+
     args = parser.parse_args()
     np.set_printoptions(legacy="1.21")
     print_credit()
@@ -63,9 +71,9 @@ def run():
 
     t1 = time.time()
     if args.cg:
-        polymlp.fit_cg(verbose=verbose)
-    elif args.sgd:
-        polymlp.fit_sgd(verbose=verbose)
+        polymlp.fit_cg(gtol=args.gtol, verbose=verbose)
+    # elif args.sgd:
+    #     polymlp.fit_sgd(verbose=verbose)
     else:
         polymlp.fit(batch_size=args.batch_size, verbose=verbose)
 
