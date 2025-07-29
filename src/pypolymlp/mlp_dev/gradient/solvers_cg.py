@@ -1,4 +1,4 @@
-"""Solvers for stochastic gradient descent."""
+"""Solvers for conjugate gradient."""
 
 import copy
 from typing import Optional
@@ -6,17 +6,14 @@ from typing import Optional
 import numpy as np
 
 
-def _func(x, xty, coef, grad, alpha, beta, learning_rate):
-    grad_add = x.T @ (x @ coef) + alpha * coef - xty
-    grad_new = beta * grad + (1 - beta) * (-grad_add)
-    coef += learning_rate * grad_new
-    grad = grad_new
-    return coef, grad
+def _eval_dot(x: np.ndarray, alpha: float, vec: np.ndarray):
+    """Calculate (X.T @ X + alpha * I) @ vec."""
+    return x.T @ (x @ vec) + alpha * vec
 
 
 def _eval_residual(coef: np.ndarray, x: np.ndarray, xty: np.ndarray, alpha: float):
     """Evaluate residual."""
-    return xty - alpha * coef - x.T @ (x @ coef)
+    return xty - _eval_dot(x, alpha, coef)
 
 
 def solver_cg(
@@ -24,8 +21,8 @@ def solver_cg(
     y: np.ndarray,
     alpha: float = 1e-3,
     coef0: Optional[np.ndarray] = None,
-    gtol: float = 1e-1,
-    max_iter: int = 100000,
+    gtol: float = 1e-2,
+    max_iter: int = 10000,
     verbose: bool = False,
 ):
     """Estimate MLP coefficients using conjugate gradient."""
@@ -34,30 +31,29 @@ def solver_cg(
         print("Use CG solver.", flush=True)
         print("- alpha:", alpha, flush=True)
 
-    if coef0 is None:
-        coef = np.zeros(x.shape[1])
-    else:
-        coef = coef0
-
+    coef = np.zeros(x.shape[1]) if coef0 is None else copy.deepcopy(coef0)
     xty = x.T @ y
-
     residuals = _eval_residual(coef, x, xty, alpha)
     directions = copy.deepcopy(residuals)
     norm_residual = np.linalg.norm(residuals)
 
+    norm_min, coef_min = 1e10, None
     for i in range(max_iter):
-        if norm_residual < gtol:
+        if i > 0 and norm_residual / x.shape[1] < gtol:
             break
-        t = x.T @ (x @ directions)
+        t = _eval_dot(x, alpha, directions)
         learning_rate = (norm_residual**2) / (t @ directions)
         coef += learning_rate * directions
-        print(coef)
         residuals -= learning_rate * t
         norm_residual_new = np.linalg.norm(residuals)
         beta = (norm_residual_new**2) / (norm_residual**2)
-
         directions = residuals + beta * directions
-        norm = norm_residual
-        print(norm, residuals)
+        norm_residual = norm_residual_new
+        if i % 10 == 0:
+            print(i, norm_residual_new / x.shape[1])
 
-    return coef
+        if norm_min > norm_residual:
+            norm_min = norm_residual
+            coef_min = coef
+
+    return coef_min

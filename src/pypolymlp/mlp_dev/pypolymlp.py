@@ -437,7 +437,6 @@ class Pypolymlp:
         """
         self._mlp_model = fit(
             self._params,
-            self._common_params,
             self._train,
             self._test,
             batch_size=batch_size,
@@ -449,7 +448,6 @@ class Pypolymlp:
         """Estimate MLP coefficients with direct evaluation of X."""
         self._mlp_model = fit_standard(
             self._params,
-            self._common_params,
             self._train,
             self._test,
             verbose=verbose,
@@ -460,7 +458,6 @@ class Pypolymlp:
         """Estimate MLP coefficients using conjugate gradient."""
         self._mlp_model = fit_cg(
             self._params,
-            self._common_params,
             self._train,
             self._test,
             verbose=verbose,
@@ -471,7 +468,6 @@ class Pypolymlp:
         """Estimate MLP coefficients using stochastic gradient descent."""
         self._mlp_model = fit_sgd(
             self._params,
-            self._common_params,
             self._train,
             self._test,
             verbose=verbose,
@@ -519,7 +515,6 @@ class Pypolymlp:
         """Compute learing curve."""
         self._learning_log = fit_learning_curve(
             self._params,
-            self._common_params,
             self._train,
             self._test,
             verbose=verbose,

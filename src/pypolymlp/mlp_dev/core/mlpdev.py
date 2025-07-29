@@ -10,6 +10,11 @@ from pypolymlp.mlp_dev.core.data import PolymlpDataXY, calc_xtx_xty, calc_xy
 from pypolymlp.mlp_dev.core.dataclass import PolymlpDataMLP
 from pypolymlp.mlp_dev.core.features_attr import get_features_attr, get_num_features
 from pypolymlp.mlp_dev.core.utils import check_memory_size_in_regression, set_params
+from pypolymlp.mlp_dev.core.utils_model_selection import (
+    compute_rmse,
+    get_best_model,
+    print_log,
+)
 
 
 class PolymlpDevCore:
@@ -82,6 +87,46 @@ class PolymlpDevCore:
     def check_memory_size_in_regression(self):
         """Estimate memory size in regression."""
         return check_memory_size_in_regression(self.n_features)
+
+    def compute_rmse(
+        self,
+        coefs_array: np.ndarray,
+        data_xy: Optional[PolymlpDataXY] = None,
+        x: Optional[np.ndarray] = None,
+        y: Optional[np.ndarray] = None,
+        check_singular: bool = False,
+    ):
+        """Compute RMSE for model coefficients."""
+        return compute_rmse(
+            coefs_array,
+            data_xy=data_xy,
+            x=x,
+            y=y,
+            check_singular=check_singular,
+        )
+
+    def get_best_model(
+        self,
+        coefs: np.ndarray,
+        scales: np.ndarray,
+        rmse_train: np.ndarray,
+        rmse_test: np.ndarray,
+        cumulative_n_features: Optional[tuple] = None,
+    ):
+        """Return best polymlp model."""
+        return get_best_model(
+            coefs,
+            scales,
+            self._common_params.alphas,
+            rmse_train,
+            rmse_test,
+            self._params,
+            cumulative_n_features,
+        )
+
+    def print_model_selection_log(self, rmse_train: np.ndarray, rmse_test: np.ndarray):
+        """Print log from model selection."""
+        print_log(rmse_train, rmse_test, self._common_params.alphas)
 
     @property
     def n_features(self):
