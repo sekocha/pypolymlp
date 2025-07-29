@@ -34,6 +34,11 @@ def run():
         help="Batch size of feature calculations",
     )
     parser.add_argument(
+        "--cg",
+        action="store_true",
+        help="Use conjugate gradient",
+    )
+    parser.add_argument(
         "--sgd",
         action="store_true",
         help="Use stochastic gradient descent",
@@ -57,7 +62,9 @@ def run():
         tlearn2 = time.time()
 
     t1 = time.time()
-    if args.sgd:
+    if args.cg:
+        polymlp.fit_cg(verbose=verbose)
+    elif args.sgd:
         polymlp.fit_sgd(verbose=verbose)
     else:
         polymlp.fit(batch_size=args.batch_size, verbose=verbose)
