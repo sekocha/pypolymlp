@@ -51,6 +51,10 @@ def check_memory_size_in_regression(
         raise RuntimeError("Larger size of memory required.")
 
     if verbose:
-        print("Minimum memory required for solver in GB:", mem_req, flush=True)
+        if use_gradient:
+            text = "Minimum memory required for gradient-based solver in GB:"
+            print(text, mem_req, flush=True)
+        else:
+            print("Minimum memory required for solver in GB:", mem_req, flush=True)
         print("Memory required for allocating X additionally.", flush=True)
     return mem_req
