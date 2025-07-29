@@ -1,6 +1,6 @@
 """Functions for estimating regression coefficients using CG."""
 
-from typing import Union
+from typing import Optional, Union
 
 import numpy as np
 
@@ -13,6 +13,8 @@ def fit_cg(
     params: Union[PolymlpParams, list[PolymlpParams]],
     train: list[PolymlpDataDFT],
     test: list[PolymlpDataDFT],
+    gtol: float = 1e-3,
+    max_iter: Optional[int] = None,
     verbose: bool = False,
 ):
     """Estimate MLP coefficients using CG."""
@@ -20,14 +22,15 @@ def fit_cg(
 
     train_xy = polymlp.calc_xy(train)
     coefs, coef0 = [], None
-    max_iter = train_xy.x.shape[0] * 5
+    if max_iter is None:
+        max_iter = train_xy.x.shape[1] * 5
     for alpha in polymlp.common_params.alphas:
         c = solver_cg(
             train_xy.x,
             train_xy.y,
             alpha=alpha,
             coef0=coef0,
-            gtol=1e-2,
+            gtol=gtol,
             max_iter=max_iter,
             verbose=verbose,
         )

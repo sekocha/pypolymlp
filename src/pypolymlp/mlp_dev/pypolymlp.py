@@ -454,12 +454,19 @@ class Pypolymlp:
         )
         return self
 
-    def fit_cg(self, verbose: bool = False):
+    def fit_cg(
+        self,
+        gtol: float = 1e-3,
+        max_iter: Optional[int] = None,
+        verbose: bool = False,
+    ):
         """Estimate MLP coefficients using conjugate gradient."""
         self._mlp_model = fit_cg(
             self._params,
             self._train,
             self._test,
+            gtol=gtol,
+            max_iter=max_iter,
             verbose=verbose,
         )
         return self
@@ -498,7 +505,14 @@ class Pypolymlp:
             tag="test",
         )
 
-    def run(self, batch_size: Optional[int] = None, verbose: bool = False):
+    def run(
+        self,
+        batch_size: Optional[int] = None,
+        use_cg: bool = False,
+        gtol: float = 1e-3,
+        max_iter: Optional[int] = None,
+        verbose: bool = False,
+    ):
         """Estimate MLP coefficients and prediction errors.
 
         Parameters
@@ -507,7 +521,11 @@ class Pypolymlp:
                     If None, the batch size is automatically determined
                     depending on the memory size and number of features.
         """
-        self._polymlp = self.fit(batch_size=batch_size, verbose=verbose)
+        if not use_cg:
+            self.fit(batch_size=batch_size, verbose=verbose)
+        else:
+            self.fit_cg(gtol=gtol, max_iter=max_iter, verbose=verbose)
+
         self.estimate_error(verbose=verbose)
         return self
 

@@ -29,7 +29,10 @@ def solver_cg(
 
     if verbose:
         print("Use CG solver.", flush=True)
-        print("- alpha:", alpha, flush=True)
+        print("conditions:", flush=True)
+        print("- alpha:   ", alpha, flush=True)
+        print("  gtol:    ", gtol, flush=True)
+        print("  max_iter:", max_iter, flush=True)
 
     coef = np.zeros(x.shape[1]) if coef0 is None else copy.deepcopy(coef0)
     xty = x.T @ y
@@ -39,7 +42,16 @@ def solver_cg(
 
     norm_min, coef_min = 1e10, None
     for i in range(max_iter):
+        if verbose:
+            if i % 50 == 0:
+                header = " CG iter. " + str(i) + ": residual ="
+                print(header, np.round(norm_residual / x.shape[1], 5), flush=True)
+
         if i > 0 and norm_residual / x.shape[1] < gtol:
+            if verbose:
+                print("CG successfully finished.", flush=True)
+                header = " CG iter. " + str(i) + ": residual ="
+                print(header, np.round(norm_residual / x.shape[1], 5), flush=True)
             break
         t = _eval_dot(x, alpha, directions)
         learning_rate = (norm_residual**2) / (t @ directions)
@@ -49,8 +61,6 @@ def solver_cg(
         beta = (norm_residual_new**2) / (norm_residual**2)
         directions = residuals + beta * directions
         norm_residual = norm_residual_new
-        if i % 10 == 0:
-            print(i, norm_residual_new / x.shape[1])
 
         if norm_min > norm_residual:
             norm_min = norm_residual
