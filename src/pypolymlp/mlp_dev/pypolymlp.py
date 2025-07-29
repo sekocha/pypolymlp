@@ -20,6 +20,8 @@ from pypolymlp.mlp_dev.core.features_attr import (
     get_num_features,
     write_polymlp_params_yaml,
 )
+from pypolymlp.mlp_dev.gradient.fit_cg import fit_cg
+from pypolymlp.mlp_dev.gradient.fit_sgd import fit_sgd
 from pypolymlp.mlp_dev.standard.fit import fit, fit_learning_curve, fit_standard
 from pypolymlp.mlp_dev.standard.utils_learning_curve import save_learning_curve_log
 
@@ -435,7 +437,6 @@ class Pypolymlp:
         """
         self._mlp_model = fit(
             self._params,
-            self._common_params,
             self._train,
             self._test,
             batch_size=batch_size,
@@ -447,7 +448,33 @@ class Pypolymlp:
         """Estimate MLP coefficients with direct evaluation of X."""
         self._mlp_model = fit_standard(
             self._params,
-            self._common_params,
+            self._train,
+            self._test,
+            verbose=verbose,
+        )
+        return self
+
+    def fit_cg(
+        self,
+        gtol: float = 1e-3,
+        max_iter: Optional[int] = None,
+        verbose: bool = False,
+    ):
+        """Estimate MLP coefficients using conjugate gradient."""
+        self._mlp_model = fit_cg(
+            self._params,
+            self._train,
+            self._test,
+            gtol=gtol,
+            max_iter=max_iter,
+            verbose=verbose,
+        )
+        return self
+
+    def fit_sgd(self, verbose: bool = False):
+        """Estimate MLP coefficients using stochastic gradient descent."""
+        self._mlp_model = fit_sgd(
+            self._params,
             self._train,
             self._test,
             verbose=verbose,
@@ -478,7 +505,14 @@ class Pypolymlp:
             tag="test",
         )
 
-    def run(self, batch_size: Optional[int] = None, verbose: bool = False):
+    def run(
+        self,
+        batch_size: Optional[int] = None,
+        use_cg: bool = False,
+        gtol: float = 1e-3,
+        max_iter: Optional[int] = None,
+        verbose: bool = False,
+    ):
         """Estimate MLP coefficients and prediction errors.
 
         Parameters
@@ -487,7 +521,11 @@ class Pypolymlp:
                     If None, the batch size is automatically determined
                     depending on the memory size and number of features.
         """
-        self._polymlp = self.fit(batch_size=batch_size, verbose=verbose)
+        if not use_cg:
+            self.fit(batch_size=batch_size, verbose=verbose)
+        else:
+            self.fit_cg(gtol=gtol, max_iter=max_iter, verbose=verbose)
+
         self.estimate_error(verbose=verbose)
         return self
 
@@ -495,7 +533,6 @@ class Pypolymlp:
         """Compute learing curve."""
         self._learning_log = fit_learning_curve(
             self._params,
-            self._common_params,
             self._train,
             self._test,
             verbose=verbose,

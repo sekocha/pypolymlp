@@ -79,7 +79,7 @@ def compute_rmse(
     y: Optional[np.ndarray] = None,
     check_singular: bool = False,
 ):
-    """Compute RMSEs from xtx and xty."""
+    """Compute RMSEs."""
     if data_xy is not None:
         if data_xy.xtx is None:
             return compute_rmse_standard(coefs_array, data_xy.x, data_xy.y)
