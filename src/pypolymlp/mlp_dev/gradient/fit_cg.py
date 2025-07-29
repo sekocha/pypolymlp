@@ -9,6 +9,15 @@ from pypolymlp.mlp_dev.core.mlpdev import PolymlpDevCore
 from pypolymlp.mlp_dev.gradient.solvers_cg import solver_cg
 
 
+def _check_use_xy(polymlp: PolymlpDevCore):
+    """Check whether xtx and xty data is used or not."""
+    try:
+        polymlp.check_memory_size_in_regression()
+    except RuntimeError:
+        return True
+    return False
+
+
 def fit_cg(
     params: Union[PolymlpParams, list[PolymlpParams]],
     train: list[PolymlpDataDFT],
@@ -18,16 +27,24 @@ def fit_cg(
     verbose: bool = False,
 ):
     """Estimate MLP coefficients using CG."""
-    polymlp = PolymlpDevCore(params)
+    polymlp = PolymlpDevCore(params, verbose=verbose)
+    use_xy = _check_use_xy(polymlp)
 
-    train_xy = polymlp.calc_xy(train)
-    coefs, coef0 = [], None
+    if use_xy:
+        train_xy = polymlp.calc_xy(train)
+    else:
+        train_xy = polymlp.calc_xtx_xty(train)
+
     if max_iter is None:
-        max_iter = train_xy.x.shape[1] * 5
+        max_iter = polymlp.n_features * 10
+
+    coefs, coef0 = [], None
     for alpha in polymlp.common_params.alphas:
         c = solver_cg(
-            train_xy.x,
-            train_xy.y,
+            x=train_xy.x,
+            y=train_xy.y,
+            xtx=train_xy.xtx,
+            xty=train_xy.xty,
             alpha=alpha,
             coef0=coef0,
             gtol=gtol,
@@ -41,11 +58,19 @@ def fit_cg(
     rmse_train = polymlp.compute_rmse(coefs, train_xy, check_singular=True)
     train_xy.clear_data()
 
-    test_xy = polymlp.calc_xy(
-        test,
-        scales=train_xy.scales,
-        min_energy=train_xy.min_energy,
-    )
+    if use_xy:
+        test_xy = polymlp.calc_xy(
+            test,
+            scales=train_xy.scales,
+            min_energy=train_xy.min_energy,
+        )
+    else:
+        test_xy = polymlp.calc_xtx_xty(
+            test,
+            scales=train_xy.scales,
+            min_energy=train_xy.min_energy,
+        )
+
     rmse_test = polymlp.compute_rmse(coefs, test_xy)
     test_xy.clear_data()
 

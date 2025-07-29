@@ -86,7 +86,7 @@ class PolymlpDevCore:
 
     def check_memory_size_in_regression(self):
         """Estimate memory size in regression."""
-        return check_memory_size_in_regression(self.n_features)
+        return check_memory_size_in_regression(self.n_features, verbose=self._verbose)
 
     def compute_rmse(
         self,

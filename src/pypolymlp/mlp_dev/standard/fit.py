@@ -23,7 +23,7 @@ def fit(
                 If None, the batch size is automatically determined
                 depending on the memory size and number of features.
     """
-    polymlp = PolymlpDevCore(params)
+    polymlp = PolymlpDevCore(params, verbose=verbose)
     polymlp.check_memory_size_in_regression()
 
     train_xy = polymlp.calc_xtx_xty(train, batch_size=batch_size)
@@ -66,7 +66,7 @@ def fit_standard(
 ):
     """Estimate MLP coefficients with direct evaluation of X."""
 
-    polymlp = PolymlpDevCore(params)
+    polymlp = PolymlpDevCore(params, verbose=verbose)
     polymlp.check_memory_size_in_regression()
 
     train_xy = polymlp.calc_xy(train)
@@ -112,7 +112,7 @@ def fit_learning_curve(
             "Number of training datasets must be one for learning curve."
         )
 
-    polymlp = PolymlpDevCore(params)
+    polymlp = PolymlpDevCore(params, verbose=verbose)
     polymlp.check_memory_size_in_regression()
 
     train_xy = polymlp.calc_xy(train)
