@@ -41,7 +41,7 @@ def run():
     parser.add_argument(
         "--gtol",
         type=float,
-        default=1e-3,
+        default=1e-2,
         help="Tolerance for gradient in CG",
     )
 

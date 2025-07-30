@@ -456,7 +456,7 @@ class Pypolymlp:
 
     def fit_cg(
         self,
-        gtol: float = 1e-3,
+        gtol: float = 1e-2,
         max_iter: Optional[int] = None,
         verbose: bool = False,
     ):
@@ -509,7 +509,7 @@ class Pypolymlp:
         self,
         batch_size: Optional[int] = None,
         use_cg: bool = False,
-        gtol: float = 1e-3,
+        gtol: float = 1e-2,
         max_iter: Optional[int] = None,
         verbose: bool = False,
     ):

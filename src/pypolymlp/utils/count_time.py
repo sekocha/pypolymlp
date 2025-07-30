@@ -78,8 +78,13 @@ class PolymlpCost:
             elif len(self._elements) == 3:
                 n_atoms = np.array([1, 1, 2])
                 types = np.array([0, 1, 2, 2])
+            elif len(self._elements) == 4:
+                n_atoms = np.array([1, 1, 1, 1])
+                types = np.array([0, 1, 2, 3])
             else:
-                raise RuntimeError("No structure setting for more than ternary system.")
+                raise RuntimeError(
+                    "No structure setting for more than quaternary system."
+                )
 
             elements = [self._elements[t] for t in types]
             volume = np.linalg.det(axis)

@@ -36,7 +36,7 @@ def solver_cg(
     xty: Optional[np.ndarray] = None,
     alpha: float = 1e-3,
     coef0: Optional[np.ndarray] = None,
-    gtol: float = 1e-3,
+    gtol: float = 1e-2,
     max_iter: int = 10000,
     verbose: bool = False,
 ):
@@ -65,16 +65,17 @@ def solver_cg(
 
     norm_min, coef_min = 1e10, None
     for i in range(max_iter):
+        norm_check = norm_residual / np.sqrt(n_features)
         if verbose:
             if i % 50 == 0:
                 header = " CG iter. " + str(i) + ": residual ="
-                print(header, np.round(norm_residual / n_features, 5), flush=True)
+                print(header, np.round(norm_check, 5), flush=True)
 
-        if i > 100 and norm_residual / n_features < gtol:
+        if i > 100 and norm_check < gtol:
             if verbose:
                 print("CG successfully finished.", flush=True)
                 header = " CG iter. " + str(i) + ": residual ="
-                print(header, np.round(norm_residual / n_features, 5), flush=True)
+                print(header, np.round(norm_check, 5), flush=True)
             break
         t = _eval_dot(directions, xtx=xtx, x=x, alpha=alpha)
         learning_rate = (norm_residual**2) / (t @ directions)
