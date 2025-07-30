@@ -36,7 +36,7 @@ def fit_cg(
 
     train_xy = calc_features(train)
     if max_iter is None:
-        max_iter = polymlp.n_features * 2
+        max_iter = max(polymlp.n_features * 3, 50000)
 
     coefs, coef0 = [], None
     for alpha in reversed(polymlp.common_params.alphas):

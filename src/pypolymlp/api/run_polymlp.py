@@ -44,6 +44,12 @@ def run():
         default=1e-2,
         help="Tolerance for gradient in CG",
     )
+    parser.add_argument(
+        "--max_iter",
+        type=int,
+        default=None,
+        help="Maximum number of iterations in CG",
+    )
 
     # parser.add_argument(
     #     "--sgd",
@@ -71,7 +77,7 @@ def run():
 
     t1 = time.time()
     if args.cg:
-        polymlp.fit_cg(gtol=args.gtol, verbose=verbose)
+        polymlp.fit_cg(gtol=args.gtol, max_iter=args.max_iter, verbose=verbose)
     # elif args.sgd:
     #     polymlp.fit_sgd(verbose=verbose)
     else:
