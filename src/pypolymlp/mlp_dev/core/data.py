@@ -192,13 +192,18 @@ def calc_xtx_xty(
     min_energy: Optional[float] = None,
     weight_stress: float = 0.1,
     batch_size: Optional[int] = None,
+    use_gradient: bool = False,
     n_features_threshold: int = 50000,
     verbose: bool = False,
 ):
     """Compute X.T @ X and X.T @ y."""
     n_features = get_num_features(params)
     if batch_size is None:
-        batch_size = get_auto_batch_size(n_features, verbose=verbose)
+        batch_size = get_auto_batch_size(
+            n_features,
+            use_gradient=use_gradient,
+            verbose=verbose,
+        )
 
     if min_energy is None:
         min_energy = get_min_energy(dft_all)
@@ -222,6 +227,7 @@ def calc_xtx_xty(
                 scales=scales,
                 min_energy=min_energy,
                 weight_stress=weight_stress,
+                use_gradient=use_gradient,
                 n_features_threshold=n_features_threshold,
                 verbose=verbose,
             )
@@ -259,6 +265,7 @@ def _compute_products_single_batch(
     scales: Optional[np.ndarray] = None,
     min_energy: Optional[float] = None,
     weight_stress: float = 0.1,
+    use_gradient: bool = False,
     n_features_threshold: int = 50000,
     verbose: bool = False,
 ):
@@ -274,9 +281,14 @@ def _compute_products_single_batch(
     n_data, n_features = x.shape
 
     if verbose:
-        peak = estimate_peak_memory(n_data, n_features, n_features_threshold)
+        peak = estimate_peak_memory(
+            n_data,
+            n_features,
+            n_features_threshold,
+            use_gradient=use_gradient,
+        )
         prefix = " Estimated peak memory allocation (X.T @ X, X):"
-        print(prefix, np.round(peak * 8e-9, 2), "(GB)", flush=True)
+        print(prefix, np.round(peak, 2), "(GB)", flush=True)
 
     if scales is None:
         ne, _, _ = features.n_data
@@ -286,7 +298,6 @@ def _compute_products_single_batch(
 
     y = np.zeros(n_data)
     w = np.ones(n_data)
-    # data_xy.total_n_data += n_data
     x, y, w = apply_weights(
         x,
         y,

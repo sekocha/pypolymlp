@@ -45,16 +45,24 @@ def check_memory_size_in_regression(
         mem_req = np.round(n_features**2 * 8e-9 * 1.1, 1)
     else:
         mem_req = np.round(n_features**2 * 8e-9 * 2, 1)
-    mem_bytes = os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES") * 1e-9
-    if mem_req > mem_bytes:
-        print("Minimum memory required for solver in GB:", mem_req, flush=True)
-        raise RuntimeError("Larger size of memory required.")
 
     if verbose:
+        print("n_features:", n_features, flush=True)
         if use_gradient:
-            text = "Minimum memory required for gradient-based solver in GB:"
-            print(text, mem_req, flush=True)
+            text = (
+                "Minimum memory required for allocating X.T @ X ",
+                "in gradient-based solver in GB:",
+            )
         else:
-            print("Minimum memory required for solver in GB:", mem_req, flush=True)
+            text = "Minimum memory required for Cholesky solver in GB:"
+        print(text, mem_req, flush=True)
+
+    mem_bytes = os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES") * 1e-9
+    if mem_req > mem_bytes:
+        if verbose and use_gradient:
+            print("Failed to allocate X.T @ X. Use X directly.", flush=True)
+        raise RuntimeError("Larger amount of memory is required.")
+
+    if verbose:
         print("Memory required for allocating X additionally.", flush=True)
     return mem_req

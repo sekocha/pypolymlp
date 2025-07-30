@@ -70,7 +70,7 @@ def solver_cg(
                 header = " CG iter. " + str(i) + ": residual ="
                 print(header, np.round(norm_residual / n_features, 5), flush=True)
 
-        if i > 0 and norm_residual / n_features < gtol:
+        if i > 100 and norm_residual / n_features < gtol:
             if verbose:
                 print("CG successfully finished.", flush=True)
                 header = " CG iter. " + str(i) + ": residual ="

@@ -23,11 +23,13 @@ class PolymlpDevCore:
     def __init__(
         self,
         params: Union[PolymlpParams, list[PolymlpParams]],
+        use_gradient: bool = False,
         verbose: bool = False,
     ):
         """Init method.."""
         self.params = params
         self._verbose = verbose
+        self._use_gradient = use_gradient
         self._n_features = None
 
     def calc_xy(
@@ -72,6 +74,7 @@ class PolymlpDevCore:
             min_energy=min_energy,
             weight_stress=weight_stress,
             batch_size=batch_size,
+            use_gradient=self._use_gradient,
             verbose=self._verbose,
         )
         return data_xy
@@ -84,11 +87,11 @@ class PolymlpDevCore:
         )
         return (features_attr, polynomial_attr, atomtype_pair_dict)
 
-    def check_memory_size_in_regression(self, use_gradient: bool = False):
+    def check_memory_size_in_regression(self):
         """Estimate memory size in regression."""
         return check_memory_size_in_regression(
             self.n_features,
-            use_gradient=use_gradient,
+            use_gradient=self._use_gradient,
             verbose=self._verbose,
         )
 

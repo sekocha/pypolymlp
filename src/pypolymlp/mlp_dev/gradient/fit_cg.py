@@ -12,7 +12,7 @@ from pypolymlp.mlp_dev.gradient.solvers_cg import solver_cg
 def _check_use_xy(polymlp: PolymlpDevCore):
     """Check whether xtx and xty data is used or not."""
     try:
-        polymlp.check_memory_size_in_regression(use_gradient=True)
+        polymlp.check_memory_size_in_regression()
     except RuntimeError:
         return True
     return False
@@ -27,14 +27,14 @@ def fit_cg(
     verbose: bool = False,
 ):
     """Estimate MLP coefficients using CG."""
-    polymlp = PolymlpDevCore(params, verbose=verbose)
+    polymlp = PolymlpDevCore(params, use_gradient=True, verbose=verbose)
+
     use_xy = _check_use_xy(polymlp)
+    calc_features = polymlp.calc_xy if use_xy else polymlp.calc_xtx_xty
+    if verbose:
+        print("Use X.T @ X:", np.logical_not(use_xy), flush=True)
 
-    if use_xy:
-        train_xy = polymlp.calc_xy(train)
-    else:
-        train_xy = polymlp.calc_xtx_xty(train)
-
+    train_xy = calc_features(train)
     if max_iter is None:
         max_iter = polymlp.n_features * 10
 
@@ -58,19 +58,11 @@ def fit_cg(
     rmse_train = polymlp.compute_rmse(coefs, train_xy, check_singular=True)
     train_xy.clear_data()
 
-    if use_xy:
-        test_xy = polymlp.calc_xy(
-            test,
-            scales=train_xy.scales,
-            min_energy=train_xy.min_energy,
-        )
-    else:
-        test_xy = polymlp.calc_xtx_xty(
-            test,
-            scales=train_xy.scales,
-            min_energy=train_xy.min_energy,
-        )
-
+    test_xy = calc_features(
+        test,
+        scales=train_xy.scales,
+        min_energy=train_xy.min_energy,
+    )
     rmse_test = polymlp.compute_rmse(coefs, test_xy)
     test_xy.clear_data()
 
