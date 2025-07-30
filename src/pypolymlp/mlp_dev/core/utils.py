@@ -49,10 +49,7 @@ def check_memory_size_in_regression(
     if verbose:
         print("n_features:", n_features, flush=True)
         if use_gradient:
-            text = (
-                "Minimum memory required for allocating X.T @ X ",
-                "in gradient-based solver in GB:",
-            )
+            text = "Minimum memory required for X.T @ X in gradient-based solver in GB:"
         else:
             text = "Minimum memory required for Cholesky solver in GB:"
         print(text, mem_req, flush=True)

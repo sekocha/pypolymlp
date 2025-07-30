@@ -24,7 +24,7 @@ def estimate_peak_memory(
     return peak_mem * 8e-9
 
 
-def get_batch_slice(n_data, batch_size):
+def get_batch_slice(n_data: int, batch_size: int):
     """Calculate slice indices for a given batch size."""
     begin_batch = list(range(0, n_data, batch_size))
     if len(begin_batch) > 1:
