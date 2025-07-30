@@ -22,7 +22,7 @@ def fit_cg(
     params: Union[PolymlpParams, list[PolymlpParams]],
     train: list[PolymlpDataDFT],
     test: list[PolymlpDataDFT],
-    gtol: float = 1e-3,
+    gtol: float = 1e-2,
     max_iter: Optional[int] = None,
     verbose: bool = False,
 ):
@@ -36,7 +36,7 @@ def fit_cg(
 
     train_xy = calc_features(train)
     if max_iter is None:
-        max_iter = polymlp.n_features * 10
+        max_iter = polymlp.n_features * 2
 
     coefs, coef0 = [], None
     for alpha in reversed(polymlp.common_params.alphas):
