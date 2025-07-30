@@ -54,6 +54,7 @@ class InputParser:
         required: bool = False,
         dtype: Any = str,
         return_array: bool = False,
+        use_warnings: bool = True,
     ):
         """Get parameters specified by tag."""
         if tag not in self._data:
@@ -62,7 +63,7 @@ class InputParser:
             return default
 
         params = list(self._data[tag])
-        if len(params) != size:
+        if use_warnings and len(params) != size:
             sentence = "Length " + tag + " is not compatible with its required size."
             warnings.warn(sentence)
 

@@ -237,13 +237,13 @@ class ParamsParser:
         dataset_type: Literal["vasp", "phono3py", "sscha", "electron"],
     ):
         """Set files in datasets."""
+        self._multiple_datasets = True
         if dataset_type in ["vasp", "sscha", "electron"]:
             if len(self.parser.train) == 0 and len(self.parser.train_test) == 0:
                 raise RuntimeError("Training data not found.")
             if len(self.parser.test) == 0 and len(self.parser.train_test) == 0:
                 raise RuntimeError("Test data not found.")
 
-            self._multiple_datasets = True
             dft_train, dft_test = set_data_locations(
                 self.parser,
                 include_force=self.include_force,
@@ -251,14 +251,15 @@ class ParamsParser:
             )
             return dft_train, dft_test
         elif dataset_type == "phono3py":
-            self._multiple_datasets = False
             return self._get_phono3py_set()
-        else:
-            raise KeyError("Given dataset_type is unavailable.")
+
+        raise KeyError("Given dataset_type is unavailable.")
 
     def _get_phono3py_set(self):
         """Set dataset for input in phono3py format."""
-        yml = self.parser.get_params("data_phono3py", size=2, default=None)
+        yml = self.parser.get_params(
+            "data_phono3py", size=2, default=None, use_warnings=False
+        )
         location = yml[0]
         energy_dat = yml[1] if len(yml) > 1 else None
 
