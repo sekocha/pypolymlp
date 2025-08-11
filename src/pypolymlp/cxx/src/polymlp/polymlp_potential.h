@@ -9,78 +9,74 @@
 #define __POLYMLP_POTENTIAL
 
 #include "polymlp_mlpcpp.h"
-#include "polymlp_mapping.h"
+#include "polymlp_eval.h"
 #include "polymlp_features.h"
 
 
-struct MappedSingleTerm {
-    double coeff;
-    int prod_key;
-};
-
-struct PotentialTerm {
-    double coeff_e;
-    double coeff_f;
-    int head_key;
-    int prod_key;
-    int prod_features_key;
-    int feature_idx;
-};
-
-typedef std::vector<MappedSingleTerm> MappedSingleFeature;
-typedef std::vector<MappedSingleFeature> MappedMultipleFeatures;
-typedef std::vector<PotentialTerm> PotentialModel;
-typedef std::vector<std::vector<std::vector<PotentialTerm> > >
-        PotentialModelEachKey;
-
-typedef std::unordered_map<vector1i,int,HashVI> ProdMapFromKeys;
-
 class Potential {
 
-    PotentialModelEachKey potential_model_each_key;
-    std::vector<ProdMapFromKeys> prod_map_from_keys,
-                                 prod_map_erased_from_keys,
-                                 prod_features_map_from_keys;
-    std::vector<MappedMultipleFeatures> linear_features;
-
-    vector3i prod_map, prod_map_erased, prod_features_map;
-    vector2i type1_feature_combs;
-
-    Mapping mapping;
-    std::vector<nlmtpAttr> nlmtp_attrs;
-
     int n_type;
-    bool eliminate_conj, separate_erased;
+    Features f_obj;
+    bool elim_conj;
 
-    void set_mapping_prod(const Features& f_obj, const bool erased);
-    void set_mapping_prod_erased(const Features& f_obj);
-    void set_mapping_prod_of_features(const Features& f_obj);
-    void get_types_for_feature_combinations(const Features& f_obj);
+    vector3i prod_features;
+    std::vector<std::vector<PotentialModel> > potential_model;
 
-    void set_features_using_mappings(const Features& f_obj);
-    void set_terms_using_mappings(const Features& f_obj, const vector1d& pot);
-
+    int set_mapping_prod_of_features();
+    int set_terms_using_mapping(const vector1d& pot);
     void sort_potential_model();
-
-    vector1i erase_a_key(const vector1i& original, const int idx);
-    void print_keys(const vector1i& keys);
-
-    void nonequiv_set_to_mappings(const std::set<vector1i>& nonequiv_keys,
-                                  ProdMapFromKeys& map_from_keys,
-                                  vector2i& map);
 
     public:
 
     Potential();
-    Potential(const Features& f_obj, const vector1d& pot);
+    Potential(const feature_params& fp, const vector1d& pot);
     ~Potential();
 
-    const Mapping& get_mapping() const;
-    const vector2i& get_prod_map(const int t) const;
-    const vector2i& get_prod_map_erased(const int t) const;
-    const vector2i& get_prod_features_map(const int t) const;
-    const MappedMultipleFeatures& get_linear_features(const int t) const;
-    const PotentialModel& get_potential_model(const int type1, const int head_key) const;
+    Maps& get_maps();
+
+    void compute_features(
+        const vector1d& antp,
+        const int type1,
+        vector1d& feature_values
+    );
+
+    void compute_features(
+        const vector1dc& anlmtp,
+        const int type1,
+        vector1d& feature_values
+    );
+
+    void compute_prod_antp_deriv(
+        const vector1d& antp,
+        const int type1,
+        vector1d& prod_antp_deriv
+    );
+
+    void compute_prod_anlmtp_deriv(
+        const vector1dc& anlmtp,
+        const int type1,
+        vector1dc& prod_anlmtp_deriv
+    );
+
+    void compute_prod_features(
+        const vector1d& features,
+        const int type1,
+        vector1d& prod_features
+    );
+
+    void compute_sum_of_prod_antp(
+        const vector1d& antp,
+        const int type1,
+        vector1d& prod_sum_e,
+        vector1d& prod_sum_f
+    );
+
+    void compute_sum_of_prod_anlmtp(
+        const vector1dc& anlmtp,
+        const int type1,
+        vector1dc& prod_sum_e,
+        vector1dc& prod_sum_f
+    );
 
 };
 

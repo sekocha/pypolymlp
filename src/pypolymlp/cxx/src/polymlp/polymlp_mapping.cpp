@@ -1,11 +1,12 @@
 /****************************************************************************
 
-        Copyright (C) 2024 Atsuto Seko
+        Copyright (C) 2025 Atsuto Seko
                 seko@cms.mtl.kyoto-u.ac.jp
 
 *****************************************************************************/
 
 #include "polymlp_mapping.h"
+
 
 Mapping::Mapping(){}
 Mapping::Mapping(const struct feature_params& fp){
@@ -14,117 +15,193 @@ Mapping::Mapping(const struct feature_params& fp){
     n_fn = fp.params.size();
     maxl = fp.maxl;
 
+    maps.maps_type.resize(n_type);
     set_type_pairs(fp);
     set_map_n_to_tplist();
-    if (fp.feature_type == "pair") set_ntp_attrs();
-    else if (fp.feature_type == "gtinv") set_nlmtp_attrs();
+    if (fp.feature_type == "pair"){
+        set_ntp_global_attrs();
+        set_ntp_local_attrs();
+    }
+    else if (fp.feature_type == "gtinv"){
+        set_lm_attrs();
+        set_nlmtp_global_attrs();
+        set_nlmtp_local_attrs();
+        set_nlmtp_local_conj_ids();
+    }
 }
 
 Mapping::~Mapping(){}
 
 void Mapping::set_type_pairs(const struct feature_params& fp){
 
-    type_pairs.resize(n_type);
-    for (int i = 0; i < n_type; ++i) type_pairs[i].resize(n_type);
-
     int tp = 0;
+    maps.type_pairs.resize(n_type);
+    for (int i = 0; i < n_type; ++i)
+        maps.type_pairs[i].resize(n_type);
+
     for (int i = 0; i < n_type; ++i){
         for (int j = 0; j < n_type; ++j){
             if (i <= j){
-                type_pairs[i][j] = type_pairs[j][i] = tp;
-                map_tp_to_nlist.emplace_back(fp.params_conditional[i][j]);
+                maps.type_pairs[i][j] = maps.type_pairs[j][i] = tp;
+                maps.tp_to_types.emplace_back(vector1i({i, j}));
+                maps.tp_to_n.emplace_back(fp.params_conditional[i][j]);
                 vector2d params_match;
-                for (const auto& n: map_tp_to_nlist[tp]){
+                for (const auto& n: maps.tp_to_n[tp]){
                     params_match.emplace_back(fp.params[n]);
                 }
-                map_tp_to_params.emplace_back(params_match);
+                maps.tp_to_params.emplace_back(params_match);
                 ++tp;
             }
         }
     }
-    n_type_pairs = tp;
-}
-
-void Mapping::set_type_pairs_charge(const feature_params& fp){
-
-    int tp = 0;
-    type_pairs.resize(n_type);
-    for (int i = 0; i < n_type; ++i){
-        for (int j = 0; j < n_type; ++j){
-            type_pairs[i].emplace_back(tp);
-            map_tp_to_nlist.emplace_back(fp.params_conditional[i][j]);
-            ++tp;
-        }
-    }
-    n_type_pairs = n_type * n_type;
 }
 
 void Mapping::set_map_n_to_tplist(){
 
-    map_n_to_tplist.resize(n_fn);
-    n_id_list.resize(n_type_pairs);
+    const int n_type_pairs = maps.get_n_type_pairs();
+    maps.n_to_tp.resize(n_fn);
+    maps.tpn_to_n_id.resize(n_type_pairs);
     for (int tp = 0; tp < n_type_pairs; ++tp){
-        n_id_list[tp].resize(n_fn);
+        maps.tpn_to_n_id[tp].resize(n_fn);
         int id = 0;
-        for (const int n: map_tp_to_nlist[tp]){
-            map_n_to_tplist[n].emplace_back(tp);
-            n_id_list[tp][n] = id;
+        for (const int n: maps.tp_to_n[tp]){
+            maps.n_to_tp[n].emplace_back(tp);
+            maps.tpn_to_n_id[tp][n] = id;
             ++id;
         }
     }
 }
 
-void Mapping::set_ntp_attrs(){
 
-    int ntp_key(0), n_id;
+void Mapping::set_ntp_global_attrs(){
+
+    const int n_type_pairs = maps.get_n_type_pairs();
+    int global_id(0), n_id;
     for (int tp = 0; tp < n_type_pairs; ++tp){
-        for (const auto& n: map_tp_to_nlist[tp]){
-            n_id = n_id_list[tp][n];
-            ntpAttr ntp = {n, n_id, tp, ntp_key};
-            ntp_attrs.emplace_back(ntp);
-            map_ntp_to_key[vector1i({n, tp})] = ntp_key;
-            ++ntp_key;
-        }
-    }
-    n_ntp_all = ntp_attrs.size();
-
-    ntp_attrs_type.resize(n_type);
-    for (const auto& ntp: ntp_attrs){
-        for (int type1 = 0; type1 < n_type; ++type1){
-            const auto& tp_array = type_pairs[type1];
-            if (std::find(tp_array.begin(), tp_array.end(), ntp.tp) != tp_array.end()){
-                ntp_attrs_type[type1].emplace_back(ntp);
-            }
+        for (const auto& n: maps.tp_to_n[tp]){
+            n_id = maps.tpn_to_n_id[tp][n];
+            ntpAttr ntp = {n, n_id, tp, global_id};
+            maps.ntp_attrs.emplace_back(ntp);
+            maps.ntp_to_global[vector1i({n, tp})] = global_id;
+            ++global_id;
         }
     }
 }
 
-void Mapping::set_nlmtp_attrs(){
+void Mapping::set_ntp_local_attrs(){
 
-    set_lm_attrs();
-    int nlmtp_key(0), nlmtp_noconj_key(0), conj_key, conj_key_add, n_id;
+    auto& maps_type = maps.maps_type;
+    for (const auto& ntp: maps.ntp_attrs){
+        const int type1 = maps.tp_to_types[ntp.tp][0];
+        const int type2 = maps.tp_to_types[ntp.tp][1];
+        auto ntp_type1 = ntp;
+        ntp_type1.ilocal_id = maps_type[type1].ntp_attrs.size();
+        ntp_type1.jlocal_id = maps_type[type2].ntp_attrs.size();
+
+        ntpAttr ntp_type2;
+        if (type1 != type2){
+            ntp_type2 = ntp;
+            ntp_type2.ilocal_id = maps_type[type2].ntp_attrs.size();
+            ntp_type2.jlocal_id = maps_type[type1].ntp_attrs.size();
+            maps_type[type2].ntp_attrs.emplace_back(ntp_type2);
+        }
+        maps_type[type1].ntp_attrs.emplace_back(ntp_type1);
+
+        vector1i key = {ntp.global_id, type1};
+        maps.ntp_global_to_iloc[key] = ntp_type1.ilocal_id;
+        if (type1 != type2){
+            key = {ntp.global_id, type2};
+            maps.ntp_global_to_iloc[key] = ntp_type2.ilocal_id;
+        }
+    }
+}
+
+void Mapping::set_nlmtp_global_attrs(){
+
+    int global_id(0), global_noconj_id(0), global_conj_id, conj_subtract, n_id;
+    const int n_lm = maps.get_n_lm();
     for (int n = 0; n < n_fn; ++n){
-        const auto& tp_list = map_n_to_tplist[n];
-        for (int lm = 0; lm < n_lm_all; ++lm){
-            const auto& lm_attr = lm_attrs[lm];
-            conj_key_add = 2 * lm_attr.m * tp_list.size();
-            for (const auto& tp: tp_list){
-                conj_key = nlmtp_key - conj_key_add;
-                n_id = n_id_list[tp][n];
+        const auto& tp_n = maps.n_to_tp[n];
+        for (int lm = 0; lm < n_lm; ++lm){
+            const auto& lm_attr = maps.lm_attrs[lm];
+            conj_subtract = 2 * lm_attr.m * tp_n.size();
+            for (const auto& tp: tp_n){
+                global_conj_id = global_id - conj_subtract;
+                n_id = maps.tpn_to_n_id[tp][n];
                 nlmtpAttr nlmtps = {
-                    n, n_id, lm_attr, tp, nlmtp_key, conj_key, nlmtp_noconj_key
+                    n, n_id, lm_attr, tp,
+                    global_id, global_noconj_id, global_conj_id
                 };
-                nlmtp_attrs.emplace_back(nlmtps);
-                map_nlmtp_to_key[vector1i({n, lm, tp})] = nlmtp_key;
-                ++nlmtp_key;
+                maps.nlmtp_attrs.emplace_back(nlmtps);
+                maps.nlmtp_to_global[vector1i({n, lm, tp})] = global_id;
+                ++global_id;
+
                 if (lm_attr.conj == false) {
-                    nlmtp_attrs_no_conjugate.emplace_back(nlmtps);
-                    ++nlmtp_noconj_key;
+                    maps.nlmtp_attrs_noconj.emplace_back(nlmtps);
+                    ++global_noconj_id;
                 }
             }
         }
     }
-    n_nlmtp_all = nlmtp_attrs.size();
+
+    maps.global_to_global_conj.resize(maps.nlmtp_attrs.size());
+    for (const auto& nlmtp: maps.nlmtp_attrs){
+        maps.global_to_global_conj[nlmtp.global_id] = nlmtp.global_conj_id;
+    }
+}
+
+void Mapping::set_nlmtp_local_attrs(){
+
+    auto& maps_type = maps.maps_type;
+    for (const auto& nlmtp: maps.nlmtp_attrs){
+        const int type1 = maps.tp_to_types[nlmtp.tp][0];
+        const int type2 = maps.tp_to_types[nlmtp.tp][1];
+        auto nlmtp_type1 = nlmtp;
+        nlmtp_type1.ilocal_id = maps_type[type1].nlmtp_attrs.size();
+        nlmtp_type1.ilocal_noconj_id = maps_type[type1].nlmtp_attrs_noconj.size();
+        nlmtp_type1.jlocal_noconj_id = maps_type[type2].nlmtp_attrs_noconj.size();
+
+        nlmtpAttr nlmtp_type2;
+        if (type1 != type2){
+            nlmtp_type2 = nlmtp;
+            nlmtp_type2.ilocal_id = maps_type[type2].nlmtp_attrs.size();
+            nlmtp_type2.ilocal_noconj_id = maps_type[type2].nlmtp_attrs_noconj.size();
+            nlmtp_type2.jlocal_noconj_id = maps_type[type1].nlmtp_attrs_noconj.size();
+        }
+
+        maps_type[type1].nlmtp_attrs.emplace_back(nlmtp_type1);
+        if (type1 != type2){
+            maps_type[type2].nlmtp_attrs.emplace_back(nlmtp_type2);
+        }
+        if (nlmtp.lm.conj == false) {
+            maps_type[type1].nlmtp_attrs_noconj.emplace_back(nlmtp_type1);
+            if (type1 != type2){
+                maps_type[type2].nlmtp_attrs_noconj.emplace_back(nlmtp_type2);
+            }
+        }
+
+        vector1i key = {nlmtp.global_id, type1};
+        maps.nlmtp_global_to_iloc[key] = nlmtp_type1.ilocal_id;
+        if (type1 != type2){
+            key = {nlmtp.global_id, type2};
+            maps.nlmtp_global_to_iloc[key] = nlmtp_type2.ilocal_id;
+        }
+    }
+}
+
+void Mapping::set_nlmtp_local_conj_ids(){
+
+    for (int t = 0; t < n_type; ++t){
+        auto& maps_type = maps.maps_type[t];
+        for (auto& nlmtp: maps_type.nlmtp_attrs){
+            vector1i key = {nlmtp.global_conj_id, t};
+            nlmtp.ilocal_conj_id = maps.nlmtp_global_to_iloc[key];
+        }
+        for (auto& nlmtp: maps_type.nlmtp_attrs_noconj){
+            vector1i key = {nlmtp.global_conj_id, t};
+            nlmtp.ilocal_conj_id = maps.nlmtp_global_to_iloc[key];
+        }
+    }
 }
 
 
@@ -156,53 +233,26 @@ void Mapping::set_lm_attrs(){
                 conj = true;
             }
             lmAttr lm_attr = {l, m, ylm_key, conj, cc, sign_j};
-            lm_attrs.emplace_back(lm_attr);
+            maps.lm_attrs.emplace_back(lm_attr);
         }
     }
-    n_lm_all = lm_attrs.size();
-    n_lm = (n_lm_all + maxl + 1) / 2;
 }
 
 
-const int Mapping::get_n_type_pairs() const { return n_type_pairs; }
-const int Mapping::get_n_ntp_all() const { return n_ntp_all; }
-const int Mapping::get_n_nlmtp_all() const { return n_nlmtp_all; }
+Maps& Mapping::get_maps() { return maps; }
 
-const vector2i& Mapping::get_type_pairs() const {
-    return type_pairs;
-}
-const vector2i& Mapping::get_type_pair_to_nlist() const {
-    return map_tp_to_nlist;
-}
-const vector2i& Mapping::get_n_to_type_pairs() const {
-    return map_n_to_tplist;
-}
-const vector2i& Mapping::get_n_ids() const {
-    return n_id_list;
-}
-const vector3d& Mapping::get_type_pair_to_params() const {
-    return map_tp_to_params;
-}
+/*
+void Mapping::set_type_pairs_charge(const feature_params& fp){
 
-const std::vector<ntpAttr>& Mapping::get_ntp_attrs() const {
-    return ntp_attrs;
+    int tp = 0;
+    type_pairs.resize(n_type);
+    for (int i = 0; i < n_type; ++i){
+        for (int j = 0; j < n_type; ++j){
+            type_pairs[i].emplace_back(tp);
+            map_tp_to_nlist.emplace_back(fp.params_conditional[i][j]);
+            ++tp;
+        }
+    }
+    n_type_pairs = n_type * n_type;
 }
-const std::vector<ntpAttr>& Mapping::get_ntp_attrs(const int type1) const {
-    return ntp_attrs_type[type1];
-}
-const std::vector<nlmtpAttr>& Mapping::get_nlmtp_attrs_no_conjugate() const {
-    return nlmtp_attrs_no_conjugate;
-}
-const std::vector<nlmtpAttr>& Mapping::get_nlmtp_attrs() const {
-    return nlmtp_attrs;
-}
-const std::vector<lmAttr>& Mapping::get_lm_attrs() const {
-    return lm_attrs;
-}
-
-const MapFromVec& Mapping::get_ntp_to_key() const {
-    return map_ntp_to_key;
-}
-const MapFromVec& Mapping::get_nlmtp_to_key() const {
-    return map_nlmtp_to_key;
-}
+*/

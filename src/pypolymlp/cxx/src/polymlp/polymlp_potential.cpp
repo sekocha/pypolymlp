@@ -7,13 +7,6 @@
 
 /*****************************************************************************
 
-        SingleTerm: [coeff,[(n1,l1,m1,tc1), (n2,l2,m2,tc2), ...]]
-            (n1,l1,m1,tc1) is represented with nlmtc_key.
-
-        SingleFeature: [SingleTerm1, SingleTerm2, ...]
-
-        MultipleFeatures: [SingleFeature1, SingleFeature2, ...]
-
         PotentialModel: [PotentialTerm1, PotentialTerm2, ...]
 
         PotentialTerm: anlmtc[head_key] * prod_anlmtc[prod_key]
@@ -24,314 +17,113 @@
 *****************************************************************************/
 
 #include "polymlp_potential.h"
+#include "time.h"
 
 Potential::Potential(){}
 
-Potential::Potential(const Features& f_obj, const vector1d& pot){
+Potential::Potential(const feature_params& fp, const vector1d& pot){
 
-    mapping = f_obj.get_mapping();
-    nlmtp_attrs = mapping.get_nlmtp_attrs();
-    n_type = f_obj.get_n_type();
+    f_obj = Features(fp, true);
+    n_type = fp.n_type;
 
-    int size;
-    const auto& ntp_attrs = mapping.get_ntp_attrs();
-    if (ntp_attrs.size() > 0){
-        eliminate_conj = false;
-        separate_erased = false;
-        size = ntp_attrs.size();
-    }
-    else {
-        const auto& nlmtp_attrs_no_conjugate = mapping.get_nlmtp_attrs_no_conjugate();
-        const int n_nlmtp_all = mapping.get_n_nlmtp_all();
-        eliminate_conj = true;
-        separate_erased = true;
-        if (eliminate_conj == true) size = nlmtp_attrs_no_conjugate.size();
-        else size = n_nlmtp_all;
-    }
-    potential_model_each_key = PotentialModelEachKey(n_type);
-    for (int t1 = 0; t1 < n_type; ++t1)
-        potential_model_each_key[t1].resize(size);
+    auto& maps = f_obj.get_maps();
+    if (maps.ntp_attrs.size() > 0) elim_conj = false;
+    else elim_conj = true;
 
-    prod_map.resize(n_type);
-    prod_map_from_keys.resize(n_type);
-    prod_map_erased.resize(n_type);
-    prod_map_erased_from_keys.resize(n_type);
-    prod_features_map.resize(n_type);
-    prod_features_map_from_keys.resize(n_type);
-    linear_features.resize(n_type);
-
-    get_types_for_feature_combinations(f_obj);
-
-    if (separate_erased == false) {
-        set_mapping_prod(f_obj, true);
-    }
-    else {
-        set_mapping_prod(f_obj, false);
-        set_mapping_prod_erased(f_obj);
-    }
-    set_mapping_prod_of_features(f_obj);
-
-    set_features_using_mappings(f_obj);
-    set_terms_using_mappings(f_obj, pot);
-
+    set_terms_using_mapping(pot);
     sort_potential_model();
 
 }
 
 Potential::~Potential(){}
 
-void Potential::set_mapping_prod(const Features& f_obj, const bool erased){
+int Potential::set_terms_using_mapping(const vector1d& pot){
 
-    std::vector<std::set<vector1i> > nonequiv_keys(n_type);
+    potential_model.resize(n_type);
+    prod_features.resize(n_type);
 
-    const auto& mfeatures = f_obj.get_features();
-    for (const auto& sfeature: mfeatures){
-        const auto type1 = sfeature[0].type1;
-        for (const auto& sterm: sfeature){
-            for (const auto& t1: type1){
-                nonequiv_keys[t1].insert(sterm.nlmtp_keys);
-            }
-            if (erased == true){
-                for (size_t i = 0; i < sterm.nlmtp_keys.size(); ++i){
-                    const vector1i keys = erase_a_key(sterm.nlmtp_keys, i);
-                    for (const auto& t1: type1){
-                        nonequiv_keys[t1].insert(keys);
-                    }
-                }
-            }
-        }
-    }
-
+    auto& maps = f_obj.get_maps();
     for (int t1 = 0; t1 < n_type; ++t1){
-        nonequiv_set_to_mappings(nonequiv_keys[t1],
-                                 prod_map_from_keys[t1],
-                                 prod_map[t1]);
-    }
-}
+        auto& maps_type = maps.maps_type[t1];
+        const auto& features = maps_type.features;
+        auto& prod_map_deriv = f_obj.get_prod_map_deriv(t1);
+        auto& prod_features_map = f_obj.get_prod_features_map(t1);
+        auto& potential_model1 = potential_model[t1];
 
-void Potential::set_mapping_prod_erased(const Features& f_obj){
-
-    std::vector<std::set<vector1i> > nonequiv_keys(n_type);
-
-    const auto& mfeatures = f_obj.get_features();
-    for (const auto& sfeature: mfeatures){
-        const auto type1 = sfeature[0].type1;
-        for (const auto& sterm: sfeature){
-            for (size_t i = 0; i < sterm.nlmtp_keys.size(); ++i){
-                int head_key = sterm.nlmtp_keys[i];
-                bool append = true;
-                if (eliminate_conj == true and
-                    nlmtp_attrs[head_key].lm.conj == true) append = false;
-                if (append == true){
-                    const vector1i keys = erase_a_key(sterm.nlmtp_keys, i);
-                    for (const auto& t1: type1){
-                        nonequiv_keys[t1].insert(keys);
-                    }
-                }
+        std::unordered_map<vector1i, vector1d, HashVI> nonequiv_map;
+        for (const auto& term: maps_type.polynomial){
+            int n_prods(0);
+            for (const int id: term.local_ids){
+                n_prods += maps_type.get_feature_size(id);
             }
-        }
-    }
+            for (size_t i = 0; i < term.local_ids.size(); ++i){
+                const int head_term_id = term.local_ids[i];
+                vector1i term_keys = erase_a_key(term.local_ids, i);
+                const int prod_features_id = prod_features_map[term_keys];
 
-    for (int t1 = 0; t1 < n_type; ++t1){
-        nonequiv_set_to_mappings(nonequiv_keys[t1],
-                                 prod_map_erased_from_keys[t1],
-                                 prod_map_erased[t1]);
-    }
-}
-
-void Potential::set_features_using_mappings(const Features& f_obj){
-
-    const auto& mfeatures = f_obj.get_features();
-    for (int t1 = 0; t1 < n_type; ++t1){
-        linear_features[t1].resize(mfeatures.size());
-    }
-
-    int idx(0);
-    for (const auto& sfeature: mfeatures){
-        const auto type1 = sfeature[0].type1;
-        for (const auto& t1: type1){
-            std::unordered_map<int, double> sfeature_map;
-            // finding nonequivalent features
-            for (const auto& sterm: sfeature){
-                const int prod_key = prod_map_from_keys[t1][sterm.nlmtp_keys];
-                if (sfeature_map.count(prod_key) == 0){
-                    sfeature_map[prod_key] = sterm.coeff;
-                }
-                else {
-                    sfeature_map[prod_key] += sterm.coeff;
-                }
-            }
-            // end: finding nonequivalent features
-
-            for (const auto& sterm: sfeature_map){
-                MappedSingleTerm msterm = {sterm.second, sterm.first};
-                linear_features[t1][idx].emplace_back(msterm);
-            }
-        }
-        ++idx;
-    }
-}
-
-void Potential::set_mapping_prod_of_features(const Features& f_obj){
-
-    std::vector<std::set<vector1i> > nonequiv_keys(n_type);
-
-    const auto& feature_combinations = f_obj.get_feature_combinations();
-    int count(0);
-    for (const auto& comb: feature_combinations){
-        const vector1i& type1 = type1_feature_combs[count];
-        for (size_t ci = 0; ci < comb.size(); ++ci){
-            vector1i keys = erase_a_key(comb, ci);
-            for (const auto& t1: type1){
-                nonequiv_keys[t1].insert(keys);
-            }
-        }
-        ++count;
-    }
-
-    for (int t1 = 0; t1 < n_type; ++t1){
-        nonequiv_set_to_mappings(nonequiv_keys[t1],
-                                 prod_features_map_from_keys[t1],
-                                 prod_features_map[t1]);
-    }
-}
-
-void Potential::get_types_for_feature_combinations(const Features& f_obj){
-
-    const auto& feature_combinations = f_obj.get_feature_combinations();
-    const auto& mfeatures = f_obj.get_features();
-
-    // finding atom types with nonzero features and feature products
-    for (const auto& comb: feature_combinations){
-        std::set<int> type1_intersection;
-        for (size_t ci = 0; ci < comb.size(); ++ci){
-            const auto& sfeature = mfeatures[comb[ci]];
-            std::set<int> type1_s(sfeature[0].type1.begin(),
-                                  sfeature[0].type1.end());
-            if (ci == 0) type1_intersection = type1_s;
-            else {
-                std::set<int> result;
-                std::set_intersection(type1_intersection.begin(),
-                                      type1_intersection.end(),
-                                      type1_s.begin(), type1_s.end(),
-                                      std::inserter(result, result.end()));
-                type1_intersection = result;
-            }
-        }
-        vector1i type1(type1_intersection.begin(), type1_intersection.end());
-        type1_feature_combs.emplace_back(type1);
-    }
-}
-
-void Potential::set_terms_using_mappings(const Features& f_obj,
-                                         const vector1d& pot){
-
-    const auto& mfeatures = f_obj.get_features();
-    const auto& feature_combinations = f_obj.get_feature_combinations();
-
-    // finding nonequivalent potential terms
-    std::vector<std::unordered_map<vector1i, vector1d, HashVI> > nonequiv_map;
-    nonequiv_map.resize(n_type);
-
-    int idx = 0;
-    for (const auto& comb: feature_combinations){
-        int n_prods(0);
-        for (size_t ci = 0; ci < comb.size(); ++ci){
-            n_prods += mfeatures[comb[ci]][0].nlmtp_keys.size();
-        }
-
-        const auto& type1 = type1_feature_combs[idx];
-        for (const auto& t1: type1){
-            for (size_t ci = 0; ci < comb.size(); ++ci){
-                int head_c = comb[ci];
-                vector1i f_keys = erase_a_key(comb, ci);
-                const int prod_features_key
-                        = prod_features_map_from_keys[t1][f_keys];
-                const auto& sfeature = mfeatures[head_c];
-                for (const auto& sterm: sfeature){
-                    const int n_order = sterm.nlmtp_keys.size();
-                    const double coeff_f = pot[idx] * sterm.coeff;
+                for (const auto& sterm: features[head_term_id]){
+                    const double coeff_f = pot[term.global_id] * sterm.coeff;
                     const double coeff_e = coeff_f / double(n_prods);
-                    for (int i = 0; i < n_order; ++i){
-                        const int head_key = sterm.nlmtp_keys[i];
-                        vector1i keys = erase_a_key(sterm.nlmtp_keys, i);
-                        int prod_key;
-                        if (separate_erased == true){
-                            prod_key = prod_map_erased_from_keys[t1][keys];
-                        }
-                        else {
-                            prod_key = prod_map_from_keys[t1][keys];
-                        }
 
-                        vector1i keys_all = {head_key,
-                                             prod_key,
-                                             prod_features_key,
-                                             idx};
+                    for (int j = 0; j < sterm.nlmtp_ids.size(); ++j){
+                        const int head_id = sterm.nlmtp_ids[j];
+                        vector1i keys = erase_a_key(sterm.nlmtp_ids, j);
+                        const int prod_id = prod_map_deriv[keys];
 
-                        bool append = true;
-                        if (eliminate_conj == true and
-                            nlmtp_attrs[head_key].lm.conj == true) append = false;
-
-                        if (append == true){
-                            if (nonequiv_map[t1].count(keys_all) == 0){
-                                nonequiv_map[t1][keys_all]
-                                    = vector1d{coeff_e,coeff_f};
+                        vector1i keys_all = {head_id, prod_id, prod_features_id};
+                        if (elim_conj == false or maps_type.is_conj(head_id) == false){
+                            if (nonequiv_map.count(keys_all) == 0){
+                                nonequiv_map[keys_all] = vector1d{coeff_e,coeff_f};
                             }
                             else {
-                                nonequiv_map[t1][keys_all][0] += coeff_e;
-                                nonequiv_map[t1][keys_all][1] += coeff_f;
+                                nonequiv_map[keys_all][0] += coeff_e;
+                                nonequiv_map[keys_all][1] += coeff_f;
                             }
                         }
                     }
                 }
             }
         }
-        ++idx;
-    }
-    // end: finding nonequivalent potential terms
 
-    for (int t1 = 0; t1 < n_type; ++t1){
-        for (const auto& term: nonequiv_map[t1]){
+        int n_head_ids;
+        if (maps_type.ntp_attrs.size() > 0) n_head_ids = maps_type.ntp_attrs.size();
+        else n_head_ids = maps_type.nlmtp_attrs_noconj.size();
+
+        potential_model1.resize(n_head_ids);
+        for (const auto& term: nonequiv_map){
             const double coeff_e = term.second[0];
             const double coeff_f = term.second[1];
-            const int head_key = term.first[0];
-            const int prod_key = term.first[1];
-            const int prod_features_key = term.first[2];
-            const int feature_idx = term.first[3];
-            PotentialTerm pterm = {coeff_e,
-                                   coeff_f,
-                                   head_key,
-                                   prod_key,
-                                   prod_features_key,
-                                   feature_idx};
+            const int head_id = term.first[0];
+            const int prod_id = term.first[1];
+            const int prod_features_id = term.first[2];
+            PotentialTerm pterm = {coeff_e, coeff_f, prod_id, prod_features_id};
 
-            if (eliminate_conj == false){
-                potential_model_each_key[t1][head_key].emplace_back(pterm);
+            if (elim_conj == false){
+                potential_model1[head_id].emplace_back(pterm);
             }
             else {
-                const auto& nlmtp = nlmtp_attrs[head_key];
-                if (nlmtp.lm.conj == false){
-                    int noconj_key = nlmtp.nlmtp_noconj_key;
-                    potential_model_each_key[t1][noconj_key]
-                                                .emplace_back(pterm);
+                if (maps_type.is_conj(head_id) == false){
+                    const int noconj_id = maps_type.get_noconj_id(head_id);
+                    potential_model1[noconj_id].emplace_back(pterm);
                 }
             }
         }
     }
+    return 0;
 }
 
-void Potential::sort_potential_model(){
 
+void Potential::sort_potential_model(){
     // sorted by prod_key and then by prod_features_key
     for (int t1 = 0; t1 < n_type; ++t1){
-        for (auto& pmodel: potential_model_each_key[t1]){
+        for (auto& pmodel: potential_model[t1]){
             std::sort(pmodel.begin(), pmodel.end(),
                     [](const PotentialTerm& lhs, const PotentialTerm& rhs){
-                    if (lhs.prod_key != rhs.prod_key){
-                        return lhs.prod_key < rhs.prod_key;
+                    if (lhs.prod_id != rhs.prod_id){
+                        return lhs.prod_id < rhs.prod_id;
                     }
                     else {
-                        return lhs.prod_features_key < rhs.prod_features_key;
+                        return lhs.prod_features_id < rhs.prod_features_id;
                     }
                     });
         }
@@ -339,49 +131,129 @@ void Potential::sort_potential_model(){
 }
 
 
-void Potential::nonequiv_set_to_mappings
-(const std::set<vector1i>& nonequiv_keys,
- ProdMapFromKeys& map_from_keys,
- vector2i& map){
+void Potential::compute_features(
+    const vector1d& antp,
+    const int type1,
+    vector1d& values
+){
+    f_obj.compute_features(antp, type1, values);
+}
 
-    map = vector2i(nonequiv_keys.begin(), nonequiv_keys.end());
-    std::sort(map.begin(), map.end());
 
-    int i(0);
-    for (const auto& keys: map){
-        map_from_keys[keys] = i;
+void Potential::compute_features(
+    const vector1dc& anlmtp,
+    const int type1,
+    vector1d& values
+){
+    f_obj.compute_features(anlmtp, type1, values);
+}
+
+
+void Potential::compute_prod_antp_deriv(
+    const vector1d& antp,
+    const int type1,
+    vector1d& prod_antp_deriv
+){
+    f_obj.compute_prod_antp_deriv(antp, type1, prod_antp_deriv);
+}
+
+
+void Potential::compute_prod_anlmtp_deriv(
+    const vector1dc& anlmtp,
+    const int type1,
+    vector1dc& prod_anlmtp_deriv
+){
+    f_obj.compute_prod_anlmtp_deriv(anlmtp, type1, prod_anlmtp_deriv);
+}
+
+
+void Potential::compute_prod_features(
+    const vector1d& features,
+    const int type1,
+    vector1d& values
+){
+    f_obj.compute_prod_features(features, type1, values);
+}
+
+
+void Potential::compute_sum_of_prod_antp(
+    const vector1d& antp,
+    const int type1,
+    vector1d& prod_sum_e,
+    vector1d& prod_sum_f
+){
+    vector1d features, prod_features_vals, prod_antp_deriv;
+
+    compute_features(antp, type1, features);
+    compute_prod_features(features, type1, prod_features_vals);
+    compute_prod_antp_deriv(antp, type1, prod_antp_deriv);
+
+    const auto& potential_model1 = potential_model[type1];
+    prod_sum_e = vector1d(potential_model1.size());
+    prod_sum_f = vector1d(potential_model1.size());
+
+    int i = 0;
+    for (const auto& pterms1: potential_model1){
+        double sum_e(0.0), sum_f(0.0), prod;
+        for (const auto& pterm: pterms1){
+            double fval = prod_features_vals[pterm.prod_features_id];
+            if (fabs(fval) > 1e-20){
+                prod = fval * prod_antp_deriv[pterm.prod_id];
+                sum_e += pterm.coeff_e * prod;
+                sum_f += pterm.coeff_f * prod;
+            }
+        }
+        prod_sum_e[i] = 0.5 * sum_e;
+        prod_sum_f[i] = 0.5 * sum_f;
         ++i;
     }
 }
 
-vector1i Potential::erase_a_key(const vector1i& original, const int idx){
-    vector1i keys = original;
-    keys.erase(keys.begin() + idx);
-    std::sort(keys.begin(), keys.end());
-    return keys;
+
+void Potential::compute_sum_of_prod_anlmtp(
+    const vector1dc& anlmtp,
+    const int type1,
+    vector1dc& prod_sum_e,
+    vector1dc& prod_sum_f
+){
+    vector1d features, prod_features_vals;
+    vector1dc prod_anlmtp_deriv;
+    clock_t t1 = clock();
+    compute_features(anlmtp, type1, features);
+    clock_t t2 = clock();
+    compute_prod_features(features, type1, prod_features_vals);
+    clock_t t3 = clock();
+    compute_prod_anlmtp_deriv(anlmtp, type1, prod_anlmtp_deriv);
+    clock_t t4 = clock();
+
+    const auto& potential_model1 = potential_model[type1];
+    prod_sum_e = vector1dc(potential_model1.size());
+    prod_sum_f = vector1dc(potential_model1.size());
+
+    int i = 0;
+    for (const auto& pterms1: potential_model1){
+        dc sum_e(0.0), sum_f(0.0);
+        for (const auto& pterm: pterms1){
+            double fval = prod_features_vals[pterm.prod_features_id];
+            if (fabs(fval) > 1e-20){
+                sum_e += pterm.coeff_e * fval * prod_anlmtp_deriv[pterm.prod_id];
+                sum_f += pterm.coeff_f * fval * prod_anlmtp_deriv[pterm.prod_id];
+            }
+        }
+        prod_sum_e[i] = sum_e;
+        prod_sum_f[i] = sum_f;
+        ++i;
+    }
+    clock_t t5 = clock();
+    /*
+    std::cout
+        << double(t2-t1)/CLOCKS_PER_SEC << " "
+        << double(t3-t2)/CLOCKS_PER_SEC << " "
+        << double(t4-t3)/CLOCKS_PER_SEC << " "
+        << double(t5-t4)/CLOCKS_PER_SEC << " "
+        << std::endl;
+    */
 }
 
-void Potential::print_keys(const vector1i& keys){
-    for (const auto& k: keys)
-        std::cout << k << " ";
-    std::cout << std::endl;
-}
 
-const Mapping& Potential::get_mapping() const {
-    return mapping;
-}
-const vector2i& Potential::get_prod_map(const int t) const {
-    return prod_map[t];
-}
-const vector2i& Potential::get_prod_map_erased(const int t) const {
-    return prod_map_erased[t];
-}
-const vector2i& Potential::get_prod_features_map(const int t) const {
-    return prod_features_map[t];
-}
-const MappedMultipleFeatures& Potential::get_linear_features(const int t) const {
-    return linear_features[t];
-}
-const PotentialModel& Potential::get_potential_model(const int type1, const int head_key) const {
-    return potential_model_each_key[type1][head_key];
-}
+Maps& Potential::get_maps() { return f_obj.get_maps(); }
