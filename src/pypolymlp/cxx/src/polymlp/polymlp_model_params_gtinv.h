@@ -9,7 +9,7 @@
 #define __POLYMLP_MODEL_PARAMS_GTINV
 
 #include "polymlp_mlpcpp.h"
-#include "polymlp_eval.h"
+#include "polymlp_structs.h"
 
 
 template < typename SEQUENCE >

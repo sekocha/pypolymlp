@@ -9,7 +9,7 @@
 #define __POLYMLP_API
 
 #include "polymlp_mlpcpp.h"
-#include "polymlp_eval.h"
+#include "polymlp_structs.h"
 #include "polymlp_parse_potential.h"
 #include "polymlp_parse_potential_legacy.h"
 

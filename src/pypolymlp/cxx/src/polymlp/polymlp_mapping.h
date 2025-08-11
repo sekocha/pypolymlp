@@ -9,7 +9,7 @@
 #define __POLYMLP_MAPPING
 
 #include "polymlp_mlpcpp.h"
-#include "polymlp_eval.h"
+#include "polymlp_structs.h"
 
 
 class Mapping {

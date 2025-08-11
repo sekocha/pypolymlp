@@ -9,7 +9,7 @@
 #define __POLYMLP_POTENTIAL
 
 #include "polymlp_mlpcpp.h"
-#include "polymlp_eval.h"
+#include "polymlp_structs.h"
 #include "polymlp_features.h"
 
 

@@ -9,7 +9,7 @@
 #define __POLYMLP_MODEL_PARAMS
 
 #include "polymlp_mlpcpp.h"
-#include "polymlp_eval.h"
+#include "polymlp_structs.h"
 #include "polymlp_model_params_gtinv.h"
 #include "polymlp_model_params_polynomial.h"
 

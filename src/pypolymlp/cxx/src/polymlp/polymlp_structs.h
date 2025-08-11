@@ -24,8 +24,8 @@
 *****************************************************************************/
 
 
-#ifndef __POLYMLP_EVAL
-#define __POLYMLP_EVAL
+#ifndef __POLYMLP_STRUCTS
+#define __POLYMLP_STRUCTS
 
 #include "polymlp_mlpcpp.h"
 

@@ -9,7 +9,7 @@
 #define __POLYMLP_FEATURES_POLYNOMIAL
 
 #include "polymlp_mlpcpp.h"
-#include "polymlp_eval.h"
+#include "polymlp_structs.h"
 #include "polymlp_model_params.h"
 #include "polymlp_products.h"
 
