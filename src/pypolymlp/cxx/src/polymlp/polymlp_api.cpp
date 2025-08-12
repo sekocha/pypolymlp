@@ -24,6 +24,18 @@ int PolymlpAPI::parse_polymlp_file(
 }
 
 
+int PolymlpAPI::set_potential_model(const feature_params& fp, const vector1d& pot){
+    pmodel = Potential(fp, pot);
+    return 0;
+}
+
+
+int PolymlpAPI::set_features(const feature_params& fp){
+    features = Features(fp, false);
+    return 0;
+}
+
+
 int PolymlpAPI::compute_anlmtp_conjugate(
     const vector1d& anlmtp_r,
     const vector1d& anlmtp_i,
@@ -50,6 +62,55 @@ int PolymlpAPI::compute_anlmtp_conjugate(
 }
 
 
+int PolymlpAPI::compute_anlmtp_conjugate(
+    const vector2d& anlmtp_r,
+    const vector2d& anlmtp_i,
+    const int type1,
+    vector2dc& anlmtp
+){
+
+    const auto& maps = pmodel.get_maps();
+    const auto& maps_type = maps.maps_type[type1];
+    const auto& nlmtp_attrs = maps_type.nlmtp_attrs;
+    const auto& nlmtp_attrs_noconj = maps_type.nlmtp_attrs_noconj;
+
+    anlmtp = vector2dc(nlmtp_attrs.size(), 0.0);
+    int idx(0);
+    for (const auto& nlmtp: nlmtp_attrs_noconj){
+        const auto& cc_coeff = nlmtp.lm.cc_coeff;
+        anlmtp.resize(anlmtp_r[0].size());
+        for (size_t k = 0; k < anlmtp_r[0].size(); ++k){
+            anlmtp[nlmtp.ilocal_id][k] = {anlmtp_r[idx][k], anlmtp_i[idx][k]};
+            anlmtp[nlmtp.ilocal_conj_id][k] = {
+                cc_coeff * anlmtp_r[idx][k], - cc_coeff * anlmtp_i[idx][k]
+            };
+        }
+        ++idx;
+    }
+    return 0;
+}
+
+
+int PolymlpAPI::compute_features(
+    const vector1d& antp,
+    const int type1,
+    vector1d& feature_values
+){
+    features.compute_features(antp, type1, feature_values);
+    return 0;
+}
+
+
+int PolymlpAPI::compute_features(
+    const vector1dc& anlmtp,
+    const int type1,
+    vector1d& feature_values
+){
+    features.compute_features(anlmtp, type1, feature_values);
+    return 0;
+}
+
+
 int PolymlpAPI::compute_sum_of_prod_antp(
     const vector1d& antp,
     const int type1,
@@ -68,18 +129,6 @@ int PolymlpAPI::compute_sum_of_prod_anlmtp(
     vector1dc& prod_sum_f
 ){
     pmodel.compute_sum_of_prod_anlmtp(anlmtp, type1, prod_sum_e, prod_sum_f);
-    return 0;
-}
-
-
-int PolymlpAPI::set_features(const feature_params& fp){
-    features = Features(fp, false);
-    return 0;
-}
-
-
-int PolymlpAPI::set_potential_model(){
-    pmodel = Potential(fp, pot);
     return 0;
 }
 

@@ -39,15 +39,19 @@ message(STATUS "Eigen3 include dir: ${EIGEN3_INCLUDE_DIR}")
 find_package(OpenMP)
 
 set(SRC_FILES
-    src/polymlp/polymlp_mapping.cpp
-    src/polymlp/polymlp_model_params.cpp
-    src/polymlp/polymlp_features.cpp
-    src/polymlp/polymlp_read_gtinv.cpp
+    src/polymlp/polymlp_api.cpp
     src/polymlp/polymlp_basis_function.cpp
+    src/polymlp/polymlp_features.cpp
+    src/polymlp/polymlp_features_polynomial.cpp
     src/polymlp/polymlp_functions_interface.cpp
+    src/polymlp/polymlp_mapping.cpp
     src/polymlp/polymlp_mlipkk_spherical_harmonics.cpp
+    src/polymlp/polymlp_model_params.cpp
+    src/polymlp/polymlp_model_params_gtinv.cpp
+    src/polymlp/polymlp_model_params_polynomial.cpp
     src/polymlp/polymlp_potential.cpp
     src/polymlp/polymlp_products.cpp
+    src/polymlp/polymlp_read_gtinv.cpp
     src/compute/neighbor.cpp
     src/compute/neighbor_half.cpp
     src/compute/neighbor_half_openmp.cpp

@@ -239,24 +239,6 @@ void FunctionFeatures::set_polynomials(const ModelParams& modelp){
     }
 }
 
-const Mapping& FunctionFeatures::get_mapping() const {
-    return mapping;
-}
-const ModelParams& FunctionFeatures::get_model_params() const {
-    return modelp;
-}
-
-const vector2i& FunctionFeatures::get_prod_map(const int t) const {
-    return prod_map[t];
-}
-const vector2i& FunctionFeatures::get_prod_map_deriv(const int t) const {
-    return prod_map_deriv[t];
-}
-
-const FeatureVector&
-FunctionFeatures::get_linear_features(const int t) const {
-    return linear_features[t];
-}
 const FeatureVectorDeriv&
 FunctionFeatures::get_linear_features_deriv(const int t) const {
     return linear_features_deriv[t];

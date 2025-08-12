@@ -36,11 +36,33 @@ class PolymlpAPI {
         vector1d& mass
     );
 
+    int set_potential_model(const feature_params& fp, const vector1d& pot);
+    int set_features(const feature_params& fp);
+
     int compute_anlmtp_conjugate(
         const vector1d& anlmtp_r,
         const vector1d& anlmtp_i,
         const int type1,
         vector1dc& anlmtp
+    );
+
+    int compute_anlmtp_conjugate(
+        const vector2d& anlmtp_r,
+        const vector2d& anlmtp_i,
+        const int type1,
+        vector2dc& anlmtp
+    ){
+
+    int compute_features(
+        const vector1d& antp,
+        const int type1,
+        vector1d& feature_values
+    );
+
+    int compute_features(
+        const vector1dc& anlmtp,
+        const int type1,
+        vector1d& feature_values
     );
 
     int compute_sum_of_prod_antp(
@@ -56,11 +78,6 @@ class PolymlpAPI {
         vector1dc& prod_sum_e,
         vector1dc& prod_sum_f
     );
-
-
-    int set_features(const feature_params& fp);
-    int set_potential_model();
-    // int compute_features();
 
     const feature_params& get_fp() const;
     Maps& get_maps();

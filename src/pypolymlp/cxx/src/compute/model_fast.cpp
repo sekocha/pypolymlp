@@ -7,29 +7,36 @@
 
 #include "compute/model_fast.h"
 
+
 ModelFast::ModelFast(){}
 
-ModelFast::ModelFast(const vector3d& dis_array,
-                     const vector4d& diff_array,
-                     const vector3i& atom2_array,
-                     const vector1i& types_i,
-                     const struct feature_params& fp,
-                     const FunctionFeatures& features){
+ModelFast::ModelFast(
+    const vector3d& dis_array,
+    const vector4d& diff_array,
+    const vector3i& atom2_array,
+    const vector1i& types_i,
+    const struct feature_params& fp,
+){
+
+    polymlp.set_features(fp);
+    auto& maps = polymlp.get_maps();
 
     types = types_i;
-    n_atom = dis_array.size();
+    n_atom = types.size();
+
     n_type = fp.n_type;
     force = fp.force;
     model_type = fp.model_type;
     maxp = fp.maxp;
 
-    const auto& modelp = features.get_model_params();
-    n_linear_features = modelp.get_n_linear_features();
-    const int size = modelp.get_n_coeff_all();
+    // const auto& modelp = features.get_model_params();
+    // n_linear_features = modelp.get_n_linear_features();
+    // const int size = modelp.get_n_coeff_all();
+
     xe_sum = vector1d(size, 0.0);
     if (force == true){
-        xf_sum = vector2d(3*n_atom, vector1d(size,0.0));
-        xs_sum = vector2d(6, vector1d(size,0.0));
+        xf_sum = vector2d(3 * n_atom, vector1d(size, 0.0));
+        xs_sum = vector2d(6, vector1d(size, 0.0));
     }
 
     if (fp.feature_type == "pair")
@@ -40,16 +47,14 @@ ModelFast::ModelFast(const vector3d& dis_array,
 
 ModelFast::~ModelFast(){}
 
-void ModelFast::pair(const vector3d& dis_array,
-                     const vector4d& diff_array,
-                     const vector3i& atom2_array,
-                     const struct feature_params& fp,
-                     const FunctionFeatures& features){
+void ModelFast::pair(
+    const vector3d& dis_array,
+    const vector4d& diff_array,
+    const vector3i& atom2_array,
+    const struct feature_params& fp,
+     features
+){
 
-    const auto& mapping = features.get_mapping();
-    //#ifdef _OPENMP
-    //#pragma omp parallel for //reduction(+:xe_sum, xf_sum, xs_sum)
-    //#endif
     for (int atom1 = 0; atom1 < n_atom; ++atom1){
         vector1d de; vector2d dfx, dfy, dfz, ds;
         LocalFast local(n_atom, atom1, types[atom1], fp, features);
@@ -64,23 +69,19 @@ void ModelFast::pair(const vector3d& dis_array,
     }
 }
 
-void ModelFast::gtinv(const vector3d& dis_array,
-                      const vector4d& diff_array,
-                      const vector3i& atom2_array,
-                      const struct feature_params& fp,
-                      const FunctionFeatures& features){
+void ModelFast::gtinv(
+    const vector3d& dis_array,
+    const vector4d& diff_array,
+    const vector3i& atom2_array,
+    const struct feature_params& fp,
+    const FunctionFeatures& features
+){
 
-    const auto& mapping = features.get_mapping();
-    //#ifdef _OPENMP
-    //#pragma omp parallel for //reduction(+:xe_sum, xf_sum, xs_sum)
-    //#endif
     for (int atom1 = 0; atom1 < n_atom; ++atom1){
         vector1d de; vector2d dfx, dfy, dfz, ds;
         LocalFast local(n_atom, atom1, types[atom1], fp, features);
         if (force == false) {
-            local.gtinv(
-                dis_array[atom1], diff_array[atom1], features, de
-            );
+            local.gtinv(dis_array[atom1], diff_array[atom1], features, de);
         }
         else {
             local.gtinv_d(
@@ -92,13 +93,15 @@ void ModelFast::gtinv(const vector3d& dis_array,
     }
 }
 
-void ModelFast::model_common(const vector1d& de,
-                             const vector2d& dfx,
-                             const vector2d& dfy,
-                             const vector2d& dfz,
-                             const vector2d& ds,
-                             const FunctionFeatures& features,
-                             const int type1){
+void ModelFast::model_common(
+    const vector1d& de,
+    const vector2d& dfx,
+    const vector2d& dfy,
+    const vector2d& dfz,
+    const vector2d& ds,
+    const FunctionFeatures& features,
+    const int type1
+){
 
     model_linear(de, dfx, dfy, dfz, ds, features, type1);
     if (model_type == 1 and maxp > 1) {
@@ -110,13 +113,15 @@ void ModelFast::model_common(const vector1d& de,
     }
 }
 
-void ModelFast::model_linear(const vector1d& de,
-                             const vector2d& dfx,
-                             const vector2d& dfy,
-                             const vector2d& dfz,
-                             const vector2d& ds,
-                             const FunctionFeatures& features,
-                             const int type1){
+void ModelFast::model_linear(
+    const vector1d& de,
+    const vector2d& dfx,
+    const vector2d& dfy,
+    const vector2d& dfz,
+    const vector2d& ds,
+    const FunctionFeatures& features,
+    const int type1
+){
 
     const auto& poly = features.get_polynomial1(type1);
     for (size_t tlocal = 0; tlocal < poly.size(); ++tlocal){
@@ -137,13 +142,15 @@ void ModelFast::model_linear(const vector1d& de,
     }
 }
 
-void ModelFast::model1(const vector1d& de,
-                       const vector2d& dfx,
-                       const vector2d& dfy,
-                       const vector2d& dfz,
-                       const vector2d& ds,
-                       const FunctionFeatures& features,
-                       const int type1){
+void ModelFast::model1(
+    const vector1d& de,
+    const vector2d& dfx,
+    const vector2d& dfy,
+    const vector2d& dfz,
+    const vector2d& ds,
+    const FunctionFeatures& features,
+    const int type1
+){
 
     const auto& poly = features.get_polynomial1(type1);
     int col;
@@ -167,13 +174,15 @@ void ModelFast::model1(const vector1d& de,
     }
 }
 
-void ModelFast::model2_comb2(const vector1d& de,
-                             const vector2d& dfx,
-                             const vector2d& dfy,
-                             const vector2d& dfz,
-                             const vector2d& ds,
-                             const FunctionFeatures& features,
-                             const int type1){
+void ModelFast::model2_comb2(
+    const vector1d& de,
+    const vector2d& dfx,
+    const vector2d& dfy,
+    const vector2d& dfz,
+    const vector2d& ds,
+    const FunctionFeatures& features,
+    const int type1
+){
 
     int col, c1, c2;
     double val1, val2;
@@ -200,13 +209,15 @@ void ModelFast::model2_comb2(const vector1d& de,
     }
 }
 
-void ModelFast::model2_comb3(const vector1d& de,
-                             const vector2d& dfx,
-                             const vector2d& dfy,
-                             const vector2d& dfz,
-                             const vector2d& ds,
-                             const FunctionFeatures& features,
-                             const int type1){
+void ModelFast::model2_comb3(
+    const vector1d& de,
+    const vector2d& dfx,
+    const vector2d& dfy,
+    const vector2d& dfz,
+    const vector2d& ds,
+    const FunctionFeatures& features,
+    const int type1
+){
 
     int col, c1, c2, c3;
     double val1, val2, val3;

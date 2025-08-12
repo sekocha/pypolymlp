@@ -8,6 +8,7 @@
 #include "py_features_attr.h"
 
 PyFeaturesAttr::PyFeaturesAttr(const py::dict& params_dict){
+    // TODO: Use polymlp API
 
     struct feature_params fp;
     const bool& element_swap = params_dict["element_swap"].cast<bool>();

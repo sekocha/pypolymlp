@@ -9,7 +9,9 @@
 #define __MODEL_FAST
 
 #include "mlpcpp.h"
-#include "polymlp/polymlp_model_params.h"
+#include "polymlp/polymlp_api.h"
+#include "polymlp/polymlp_structs.h"
+
 #include "compute/local_fast.h"
 #include "compute/features.h"
 

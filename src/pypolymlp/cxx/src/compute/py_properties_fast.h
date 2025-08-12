@@ -9,6 +9,8 @@
 #define __PYPROPERTIES_FAST
 
 #include "mlpcpp.h"
+#include "polymlp/polymlp_api..h"
+
 #include "compute/neighbor_half.h"
 #include "compute/neighbor_half_openmp.h"
 #include "compute/polymlp_eval.h"
@@ -18,9 +20,12 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+
 namespace py = pybind11;
 
 class PyPropertiesFast {
+
+    PolymlpAPI polymlp_api;
 
     vector1d e_array;
     vector3d f_array;

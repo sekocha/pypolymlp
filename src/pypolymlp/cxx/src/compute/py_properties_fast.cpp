@@ -7,8 +7,9 @@
 
 #include "py_properties_fast.h"
 
-PyPropertiesFast::PyPropertiesFast(const py::dict& params_dict,
-                                   const vector1d& coeffs){
+PyPropertiesFast::PyPropertiesFast(
+    const py::dict& params_dict, const vector1d& coeffs
+){
 
     convert_params_dict_to_feature_params(params_dict, fp);
     polymlp = PolymlpEval(fp, coeffs);

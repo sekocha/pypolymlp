@@ -20,9 +20,6 @@ PyModel::PyModel(const py::dict& params_dict,
     const bool& print_memory = params_dict["print_memory"].cast<bool>();
     convert_params_dict_to_feature_params(params_dict, fp);
 
-    const Features f_obj(fp);
-    const FunctionFeatures features_obj(f_obj);
-
     std::vector<bool> force_st;
     vector1i xf_begin, xs_begin;
     set_index(
@@ -31,9 +28,12 @@ PyModel::PyModel(const py::dict& params_dict,
     );
 
     Neighbor neigh(axis[0], positions_c[0], types[0], fp.n_type, fp.cutoff);
-    ModelFast mod(
-        neigh.get_dis_array(), neigh.get_diff_array(), neigh.get_atom2_array(),
-        types[0], fp, features_obj
+    Model mod(
+        neigh.get_dis_array(),
+        neigh.get_diff_array(),
+        neigh.get_atom2_array(),
+        types[0],
+        fp
     );
 
     const int n_features = mod.get_xe_sum().size();

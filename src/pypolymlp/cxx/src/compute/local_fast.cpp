@@ -9,11 +9,12 @@
 
 LocalFast::LocalFast(){}
 
-LocalFast::LocalFast(const int& n_atom_i,
-                     const int& atom1_i,
-                     const int& type1_i,
-                     const struct feature_params& fp_i,
-                     const FunctionFeatures& features){
+LocalFast::LocalFast(
+    const int& n_atom_i,
+    const int& atom1_i,
+    const int& type1_i,
+    const struct feature_params& fp_i,
+    Maps& maps){
 
     n_atom = n_atom_i, atom1 = atom1_i, type1 = type1_i,
     fp = fp_i;
