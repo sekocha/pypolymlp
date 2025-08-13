@@ -39,6 +39,25 @@ int find_local_ids(
 );
 
 int get_nonequiv_ids(const MultipleFeatures& features, std::set<vector1i> nonequiv);
-int get_nonequiv_deriv_ids(const MultipleFeatures& features, std::set<vector1i> nonequiv);
+
+int get_nonequiv_deriv_ids(
+    const MultipleFeatures& features,
+    MapsType& maps_type,
+    const bool eliminate_conj,
+    std::set<vector1i> nonequiv
+);
+
+int convert_to_mapped_features_algo1(
+    const MultipleFeatures& features,
+    MapFromVec& prod_map_from_keys,
+    const vector2i& prod,
+    MappedMultipleFeatures& mapped_features
+);
+
+int convert_to_mapped_features_algo2(
+    const MultipleFeatures& features,
+    MapFromVec& prod_map_from_keys,
+    MappedMultipleFeatures& mapped_features
+);
 
 #endif

@@ -36,12 +36,6 @@ class Features {
     int set_mappings_efficient(const feature_params& fp);
     int set_deriv_mappings();
 
-    int convert_to_mapped_features(
-        const MultipleFeatures& features,
-        const int t1,
-        MapFromVec& prod_map_from_keys
-    );
-
     public:
 
     Features();

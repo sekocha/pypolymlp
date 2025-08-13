@@ -61,11 +61,14 @@ int Features::set_mappings_standard(){
     auto& maps = mapping.get_maps();
 
     for (size_t t1 = 0; t1 < n_type; ++t1){
+        auto& maps_type = maps.maps_type[t1];
         std::set<vector1i> nonequiv;
         MapFromVec prod_map_from_keys;
         get_nonequiv_ids(maps_type.features, nonequiv);
         convert_set_to_mappings(nonequiv, prod_map_from_keys, prod[t1]);
-        convert_to_mapped_features(maps_type.features, t1, prod_map_from_keys);
+        convert_to_mapped_features_algo2(
+            maps_type.features, prod_map_from_keys, mapped_features[t1]
+        );
     }
     return 0;
 }
@@ -85,71 +88,34 @@ int Features::set_mappings_efficient(const feature_params& fp){
         MapFromVec prod_map_from_keys;
         get_nonequiv_ids(features_for_map[t1], nonequiv);
         convert_set_to_mappings(nonequiv, prod_map_from_keys, prod[t1]);
-        convert_to_mapped_features(features_for_map[t1], t1, prod_map_from_keys);
-    }
-    return 0;
-}
-
-
-int Features::convert_to_mapped_features(
-    const MultipleFeatures& features,
-    const int t1,
-    MapFromVec& prod_map_from_keys
-){
-    if (prod[t1].size() > threshold_prod){
-        mapped_features[t1].resize(prod[t1].size());
-        for (int f_id = 0; f_id < features.size(); ++f_id){
-            std::unordered_map<int, double> sfeature_map;
-            for (const auto& sterm: features[f_id]){
-                const int prod_id = prod_map_from_keys[sterm.nlmtp_ids];
-                if (sfeature_map.count(prod_id) == 0)
-                    sfeature_map[prod_id] = sterm.coeff;
-                else sfeature_map[prod_id] += sterm.coeff;
-            }
-            for (const auto& sterm: sfeature_map){
-                MappedSingleTerm msterm = {sterm.second, f_id};
-                mapped_features[t1][sterm.first].emplace_back(msterm);
-            }
+        if (prod[t1].size() > threshold_prod){
+            convert_to_mapped_features_algo1(
+                features_for_map[t1],
+                prod_map_from_keys,
+                prod[t1],
+                mapped_features[t1]
+            );
         }
-    }
-    else {
-        mapped_features[t1].resize(features.size());
-        for (int f_id = 0; f_id < features.size(); ++f_id){
-            std::unordered_map<int, double> sfeature_map;
-            for (const auto& sterm: features[f_id]){
-                const int prod_id = prod_map_from_keys[sterm.nlmtp_ids];
-                if (sfeature_map.count(prod_id) == 0)
-                    sfeature_map[prod_id] = sterm.coeff;
-                else sfeature_map[prod_id] += sterm.coeff;
-            }
-            for (const auto& sterm: sfeature_map){
-                MappedSingleTerm msterm = {sterm.second, sterm.first};
-                mapped_features[t1][f_id].emplace_back(msterm);
-            }
+        else {
+            convert_to_mapped_features_algo2(
+                features_for_map[t1],
+                prod_map_from_keys,
+                mapped_features[t1]
+            );
         }
     }
     return 0;
 }
-
 
 int Features::set_deriv_mappings(){
 
     prod_deriv.resize(n_type);
     prod_map_deriv_from_keys.resize(n_type);
-
     auto& maps = mapping.get_maps();
     for (size_t t1 = 0; t1 < n_type; ++t1){
-        std::set<vector1i> nonequiv;
         auto& maps_type = maps.maps_type[t1];
-        for (const auto& sfeature: maps_type.features){
-            for (const auto& sterm: sfeature){
-                for (size_t i = 0; i < sterm.nlmtp_ids.size(); ++i){
-                    const int head_id = sterm.nlmtp_ids[i];
-                    if (eliminate_conj == false or maps_type.is_conj(head_id) == false)
-                         nonequiv.insert(erase_a_key(sterm.nlmtp_ids, i));
-                }
-            }
-        }
+        std::set<vector1i> nonequiv;
+        get_nonequiv_deriv_ids(features, maps_type, eliminate_conj, nonequiv);
         convert_set_to_mappings(nonequiv, prod_map_deriv_from_keys[t1], prod_deriv[t1]);
     }
     return 0;
@@ -168,20 +134,9 @@ void Features::compute_features(
     const auto& mapped_features1 = mapped_features[type1];
 
     feature_values = vector1d(features1.size(), 0.0);
-    if (prod1.size() > threshold_prod){
-        for (size_t i = 0; i < mapped_features1.size(); ++i){
-            double val = antp[prod1[i][0]];
-            if (fabs(val) > 1e-20){
-                const auto& mf = mapped_features1[i][0];
-                feature_values[mf.id] = val;
-            }
-        }
-    }
-    else {
-        for (size_t i = 0; i < mapped_features1.size(); ++i){
-            const auto& sterm = mapped_features1[i][0];
-            feature_values[i] = antp[prod1[sterm.id][0]];
-        }
+    for (size_t i = 0; i < mapped_features1.size(); ++i){
+        const auto& sterm = mapped_features1[i][0];
+        feature_values[i] = antp[prod1[sterm.id][0]];
     }
 }
 
@@ -228,7 +183,8 @@ void Features::compute_features_deriv(
     const int type1,
     vector2d& derivs
 ){
-    // for gtinv
+    // Derivatives of features for gtinv
+
     // a : local_a_size x n_atom
     // deriv: localsize x n_atom
     auto& maps = mapping.get_maps();
