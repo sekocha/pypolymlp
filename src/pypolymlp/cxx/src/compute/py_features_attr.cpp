@@ -7,20 +7,21 @@
 
 #include "py_features_attr.h"
 
-PyFeaturesAttr::PyFeaturesAttr(const py::dict& params_dict){
-    // TODO: Use polymlp API
 
-    struct feature_params fp;
+PyFeaturesAttr::PyFeaturesAttr(const py::dict& params_dict){
+
+    feature_params fp;
     const bool& element_swap = params_dict["element_swap"].cast<bool>();
     convert_params_dict_to_feature_params(params_dict, fp);
 
-    Mapping mapping(fp);
-    ModelParams modelp(fp, mapping);
-    type_pairs = mapping.get_type_pairs();
+    PolymlpAPI polymlp;
+    polymlp.set_model_parameters(fp);
+    const auto& modelp = polymlp.get_model_params();
+    auto& maps = polymlp.get_maps();
 
+    type_pairs = maps.type_pairs;
     if (fp.feature_type == "pair"){
-        const auto& ntp_attrs = mapping.get_ntp_attrs();
-        for (const auto& ntp: ntp_attrs){
+        for (const auto& ntp: maps.ntp_attrs){
             radial_ids.emplace_back(ntp.n);
             tcomb_ids.emplace_back(vector1i({ntp.tp}));
         }
@@ -45,18 +46,18 @@ PyFeaturesAttr::PyFeaturesAttr(const py::dict& params_dict){
 
 PyFeaturesAttr::~PyFeaturesAttr(){}
 
-const vector1i& PyFeaturesAttr::get_radial_ids() const{
+const vector1i& PyFeaturesAttr::get_radial_ids() const {
     return radial_ids;
 }
-const vector1i& PyFeaturesAttr::get_gtinv_ids() const{
+const vector1i& PyFeaturesAttr::get_gtinv_ids() const {
     return gtinv_ids;
 }
-const vector2i& PyFeaturesAttr::get_tcomb_ids() const{
+const vector2i& PyFeaturesAttr::get_tcomb_ids() const {
     return tcomb_ids;
 }
-const vector2i& PyFeaturesAttr::get_polynomial_ids() const{
+const vector2i& PyFeaturesAttr::get_polynomial_ids() const {
     return polynomial_ids;
 }
-const vector2i& PyFeaturesAttr::get_type_pairs() const{
+const vector2i& PyFeaturesAttr::get_type_pairs() const {
     return type_pairs;
 }

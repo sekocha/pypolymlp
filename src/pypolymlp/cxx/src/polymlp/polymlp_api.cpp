@@ -31,7 +31,17 @@ int PolymlpAPI::set_potential_model(const feature_params& fp, const vector1d& po
 
 
 int PolymlpAPI::set_features(const feature_params& fp){
-    features = Features(fp, false);
+    const bool set_deriv = true;
+    features = Features(fp, set_deriv);
+    n_variables = features.get_n_variables();
+    return 0;
+}
+
+int PolymlpAPI::set_model_parameters(const feature_params& fp){
+    mapping = Mapping(fp);
+    auto& maps = mapping.get_maps();
+    modelp = ModelParams(fp, maps);
+    // n_variables = modelp.get_n_variables();
     return 0;
 }
 
@@ -134,4 +144,9 @@ int PolymlpAPI::compute_sum_of_prod_anlmtp(
 
 
 const feature_params& PolymlpAPI::get_fp() const { return fp; }
+
 Maps& PolymlpAPI::get_maps() { return pmodel.get_maps(); }
+
+const ModelParams& PolymlpAPI::get_model_params() const { return modelp; }
+
+const int PolymlpAPI::get_n_variables() const { return n_variables; }

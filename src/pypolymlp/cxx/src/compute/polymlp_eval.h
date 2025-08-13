@@ -12,12 +12,9 @@
 
 #include "polymlp/polymlp_api.h"
 #include "polymlp/polymlp_functions_interface.h"
-#include "polymlp/polymlp_structs.h"
 
 
 class PolymlpEval {
-
-    PolymlpAPI polymlp;
 
     /* for feature_type = pair */
     void compute_antp(
@@ -74,6 +71,8 @@ class PolymlpEval {
     );
 
     public:
+
+    PolymlpAPI polymlp_api;
 
     PolymlpEval();
     PolymlpEval(const feature_params& fp, const vector1d& coeffs);

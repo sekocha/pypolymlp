@@ -24,6 +24,7 @@ int FeaturesPoly::set_polynomial(const ModelParams& modelp, Maps& maps){
     const int n_linear_features = modelp.get_n_linear_features();
     const auto& comb2 = modelp.get_comb2();
     const auto& comb3 = modelp.get_comb3();
+    n_variables = n_linear_features + comb2.size() + comb3.size();
 
     int c1, c2, c3, begin;
     for (int type1 = 0; type1 < n_type; ++type1){
@@ -83,4 +84,8 @@ void FeaturesPoly::compute_prod_features(
 
 MapFromVec& FeaturesPoly::get_prod_features_map(const int type1){
     return prod_features_map[type1];
+}
+
+const int FeaturesPoly::get_n_variables() const {
+    return n_variables;
 }

@@ -14,8 +14,7 @@ PolymlpEval::PolymlpEval(const feature_params& fp, const vector1d& coeffs){
 
     vector1d coeffs_rev(coeffs.size());
     for (size_t i = 0; i < coeffs.size(); ++i) coeffs_rev[i] = 2.0 * coeffs[i];
-
-    polymlp.set_potential_model(fp, coeffs_rev);
+    polymlp_api.set_potential_model(fp, coeffs_rev);
 }
 
 PolymlpEval::~PolymlpEval(){}
@@ -48,8 +47,8 @@ void PolymlpEval::eval_pair(
     vector1d& stress
 ){
 
-    const auto& fp = polymlp.get_fp();
-    const auto& maps = polymlp.get_maps();
+    const auto& fp = polymlp_api.get_fp();
+    const auto& maps = polymlp_api.get_maps();
     const auto& type_pairs = maps.type_pairs;
     const auto& tp_to_params = maps.tp_to_params;
 
@@ -123,8 +122,8 @@ void PolymlpEval::compute_antp(
     vector2d& antp
 ){
 
-    const auto& fp = polymlp.get_fp();
-    const auto& maps = polymlp.get_maps();
+    const auto& fp = polymlp_api.get_fp();
+    const auto& maps = polymlp_api.get_maps();
     const auto& type_pairs = maps.type_pairs;
     const auto& tp_to_params = maps.tp_to_params;
 
@@ -184,18 +183,22 @@ void PolymlpEval::compute_sum_of_prod_antp(
 
     for (int i = 0; i < n_atom; ++i) {
         const int type1 = types[i];
-        polymlp.compute_sum_of_prod_antp(antp[i], type1, prod_sum_e[i], prod_sum_f[i])
+        polymlp_api.compute_sum_of_prod_antp(
+            antp[i], type1, prod_sum_e[i], prod_sum_f[i]
+        )
     }
 }
 
 
 /*--- feature_type = gtinv ----------------------------------------------*/
-void PolymlpEval::eval_gtinv(const vector1i& types,
-                             const vector2i& neighbor_half,
-                             const vector3d& neighbor_diff,
-                             double& energy,
-                             vector2d& forces,
-                             vector1d& stress){
+void PolymlpEval::eval_gtinv(
+    const vector1i& types,
+    const vector2i& neighbor_half,
+    const vector3d& neighbor_diff,
+    double& energy,
+    vector2d& forces,
+    vector1d& stress
+){
 
     const int n_atom = types.size();
 
@@ -208,8 +211,8 @@ void PolymlpEval::eval_gtinv(const vector1i& types,
     for (int i = 0; i < n_atom; ++i) forces[i] = vector1d(3, 0.0);
     stress = vector1d(6, 0.0);
 
-    const auto& fp = polymlp.get_fp();
-    const auto& maps = polymlp.get_maps();
+    const auto& fp = polymlp_api.get_fp();
+    const auto& maps = polymlp_api.get_maps();
     const auto& type_pairs = maps.type_pairs;
     const auto& tp_to_params = maps.tp_to_params;
 
@@ -295,8 +298,8 @@ void PolymlpEval::compute_anlmtp(
     vector2dc& anlmtp
 ){
 
-    const auto& fp = polymlp.get_fp();
-    const auto& maps = polymlp.get_maps();
+    const auto& fp = polymlp_api.get_fp();
+    const auto& maps = polymlp_api.get_maps();
     const auto& type_pairs = maps.type_pairs;
     const auto& tp_to_params = maps.tp_to_params;
 
@@ -351,6 +354,7 @@ void PolymlpEval::compute_anlmtp(
     compute_anlmtp_conjugate(anlmtp_r, anlmtp_i, anlmtp);
 }
 
+
 void PolymlpEval::compute_anlmtp_conjugate(
     const vector2d& anlmtp_r,
     const vector2d& anlmtp_i,
@@ -359,9 +363,11 @@ void PolymlpEval::compute_anlmtp_conjugate(
     const int n_atom = types.size();
     anlmtp = vector2dc(n_atom);
     for (int i = 0; i < n_atom; ++i) {
-        polymlp.compute_anlmtp_conjugate(anlmtp_r[i], anlmtp_i[i], types[i], anlmtp[i]);
+        polymlp_api.compute_anlmtp_conjugate(
+            anlmtp_r[i], anlmtp_i[i], types[i], anlmtp[i]);
     }
 }
+
 
 void PolymlpEval::compute_sum_of_prod_anlmtp(
     const vector1i& types,
@@ -374,7 +380,7 @@ void PolymlpEval::compute_sum_of_prod_anlmtp(
     prod_sum_e = vector2dc(n_atom);
     prod_sum_f = vector2dc(n_atom);
     for (int i = 0; i < n_atom; ++i) {
-        polymlp.compute_sum_of_prod_anlmtp(
+        polymlp_api.compute_sum_of_prod_anlmtp(
             anlmtp[i], types[i], prod_sum_e[i], prod_sum_f[i]
         );
     }

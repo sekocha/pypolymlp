@@ -16,7 +16,7 @@
 
 class FeaturesPoly {
 
-    int n_type;
+    int n_type, n_variables;
     vector3i prod_features;
     std::vector<MapFromVec> prod_features_map;
 
@@ -32,6 +32,7 @@ class FeaturesPoly {
     void compute_prod_features(const vector1d& features, const int t1, vector1d& vals);
 
     MapFromVec& get_prod_features_map(const int type1);
+    const int get_n_variables() const;
 
 };
 

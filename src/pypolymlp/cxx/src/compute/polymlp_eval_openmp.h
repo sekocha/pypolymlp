@@ -10,20 +10,19 @@
 
 #include "mlpcpp.h"
 
+#include "polymlp/polymlp_api.h"
 #include "polymlp/polymlp_functions_interface.h"
-#include "polymlp/polymlp_products.h"
-
-#include "polymlp/polymlp_mapping.h"
-#include "polymlp/polymlp_model_params.h"
-#include "polymlp/polymlp_features.h"
-#include "polymlp/polymlp_potential.h"
 #include "compute/polymlp_eval.h"
+
+//#include "polymlp/polymlp_mapping.h"
+//#include "polymlp/polymlp_model_params.h"
+//#include "polymlp/polymlp_features.h"
+//#include "polymlp/polymlp_potential.h"
 
 
 class PolymlpEvalOpenMP {
 
-    struct DataPolyMLP pot;
-    vector2i type_pairs;
+    PolymlpAPI polymlp_api;
 
     /* for feature_type = pair */
     void compute_antp(const vector1i& types,

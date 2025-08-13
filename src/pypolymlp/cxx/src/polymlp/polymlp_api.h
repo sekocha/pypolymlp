@@ -13,6 +13,8 @@
 #include "polymlp_parse_potential.h"
 #include "polymlp_parse_potential_legacy.h"
 
+#include "polymlp_mapping.h"
+#include "polymlp_model_params.h"
 #include "polymlp_features.h"
 #include "polymlp_potential.h"
 
@@ -21,9 +23,13 @@ class PolymlpAPI {
 
     feature_params fp;
     vector1d pot;
+    int n_variables;
 
     Features features;
     Potential pmodel;
+
+    Mapping mapping;
+    ModelParams modelp;
 
     public:
 
@@ -35,7 +41,6 @@ class PolymlpAPI {
         std::vector<std::string>& ele,
         vector1d& mass
     );
-
     int set_potential_model(const feature_params& fp, const vector1d& pot);
     int set_features(const feature_params& fp);
 
@@ -81,6 +86,8 @@ class PolymlpAPI {
 
     const feature_params& get_fp() const;
     Maps& get_maps();
+    const ModelParams& get_model_params() const;
+    const int get_n_variables() const;
 };
 
 #endif

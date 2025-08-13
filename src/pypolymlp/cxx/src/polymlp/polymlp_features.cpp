@@ -24,7 +24,7 @@ const int threshold_prod = 1000;
 
 Features::Features(){}
 
-Features::Features(const feature_params& fp, const bool eliminate_conj_i){
+Features::Features(const feature_params& fp, const bool set_deriv_i = false){
 
     n_type = fp.n_type;
     mapping = Mapping(fp);
@@ -32,90 +32,38 @@ Features::Features(const feature_params& fp, const bool eliminate_conj_i){
     modelp = ModelParams(fp, maps);
 
     if (fp.feature_type == "pair") {
+        set_deriv = false
         eliminate_conj = false;
-        set_linear_features_pair();
+
+        set_linear_features_pair(maps);
         set_mappings_standard();
     }
     else if (fp.feature_type == "gtinv") {
-        eliminate_conj = true & eliminate_conj_i;
-        set_linear_features_gtinv(fp);
+        set_deriv = set_deriv_i;
+        eliminate_conj = true;
+        if (set_deriv == true) eliminate_conj = false;
+
+        set_linear_features_gtinv(fp, modelp, maps);
         set_mappings_efficient(fp);
     }
     set_deriv_mappings();
     poly = FeaturesPoly(modelp, maps);
 }
 
+
 Features::~Features(){}
-
-int Features::set_linear_features_pair(){
-
-    auto& maps = mapping.get_maps();
-    int type1, type2, local_id;
-    vector1i key;
-    for (const auto& ntp: maps.ntp_attrs){
-        const auto& types = maps.tp_to_types[ntp.tp];
-        type1 = types[0];
-        type2 = types[1];
-        key = {ntp.global_id, type1};
-        local_id = maps.ntp_global_to_iloc[key];
-        SingleTerm single = {1.0, vector1i({local_id})};
-        SingleFeature feature_local = {single};
-        maps.maps_type[type1].features.emplace_back(feature_local);
-        if (type1 != type2){
-            key = {ntp.global_id, type2};
-            local_id = maps.ntp_global_to_iloc[key];
-            single = {1.0, vector1i({local_id})};
-            feature_local = {single};
-            maps.maps_type[type2].features.emplace_back(feature_local);
-        }
-    }
-    return 0;
-}
-
-int Features::set_linear_features_gtinv(const feature_params& fp){
-
-    const vector3i& lm_array = fp.lm_array;
-    const vector2d& lm_coeffs = fp.lm_coeffs;
-    const auto& tp_combs = modelp.get_tp_combs();
-    auto& maps = mapping.get_maps();
-
-    for (const auto& linear: modelp.get_linear_terms()){
-        const auto& tp_comb = tp_combs[linear.order][linear.tp_comb_id];
-        const auto& lm_list = lm_array[linear.lm_comb_id];
-        const auto& coeff_list = lm_coeffs[linear.lm_comb_id];
-        for (const int t: linear.type1){
-            SingleFeature feature_local;
-            for (size_t i = 0; i < lm_list.size(); ++i){
-                auto global_ids = maps.nlmtp_vec_to_global(
-                    linear.n, lm_list[i], tp_comb
-                );
-                std::sort(global_ids.begin(), global_ids.end());
-                const auto local_ids = maps.nlmtp_global_vec_to_iloc(global_ids, t);
-                SingleTerm single = {coeff_list[i], local_ids};
-                feature_local.emplace_back(single);
-            }
-            maps.maps_type[t].features.emplace_back(feature_local);
-        }
-    }
-    return 0;
-}
 
 
 int Features::set_mappings_standard(){
 
     prod.resize(n_type);
     mapped_features.resize(n_type);
-
     auto& maps = mapping.get_maps();
+
     for (size_t t1 = 0; t1 < n_type; ++t1){
         std::set<vector1i> nonequiv;
-        auto& maps_type = maps.maps_type[t1];
-        for (const auto& sfeature: maps_type.features){
-            for (const auto& sterm: sfeature){
-                nonequiv.insert(sterm.nlmtp_ids);
-            }
-        }
         MapFromVec prod_map_from_keys;
+        get_nonequiv_ids(maps_type.features, nonequiv);
         convert_set_to_mappings(nonequiv, prod_map_from_keys, prod[t1]);
         convert_to_mapped_features(maps_type.features, t1, prod_map_from_keys);
     }
@@ -127,66 +75,18 @@ int Features::set_mappings_efficient(const feature_params& fp){
 
     prod.resize(n_type);
     mapped_features.resize(n_type);
-
-    const vector3i& lm_array = fp.lm_array;
-    const vector2d& lm_coeffs = fp.lm_coeffs;
-    const auto& tp_combs = modelp.get_tp_combs();
     auto& maps = mapping.get_maps();
 
-    std::vector<MultipleFeatures> features_for_map(n_type);
-    for (const auto& linear: modelp.get_linear_terms()){
-        const auto& tp_comb = tp_combs[linear.order][linear.tp_comb_id];
-        const auto& lm_list = lm_array[linear.lm_comb_id];
-        const auto& coeff_list = lm_coeffs[linear.lm_comb_id];
-        for (const int t: linear.type1){
-            SingleFeature feature_local;
-            for (size_t i = 0; i < lm_list.size(); ++i){
-                vector1i local_ids;
-                find_local_ids(maps, t, linear.n, lm_list[i], tp_comb, local_ids);
-                SingleTerm single = {coeff_list[i], local_ids};
-                feature_local.emplace_back(single);
-            }
-            features_for_map[t].emplace_back(feature_local);
-        }
-    }
+    std::vector<MultipleFeatures> features_for_map;
+    get_linear_features_gtinv_with_reps(fp, modelp, maps, features_for_map)
 
     for (size_t t1 = 0; t1 < n_type; ++t1){
         std::set<vector1i> nonequiv;
-        for (const auto& sfeature: features_for_map[t1]){
-            for (const auto& sterm: sfeature){
-                nonequiv.insert(sterm.nlmtp_ids);
-            }
-        }
         MapFromVec prod_map_from_keys;
+        get_nonequiv_ids(features_for_map[t1], nonequiv);
         convert_set_to_mappings(nonequiv, prod_map_from_keys, prod[t1]);
         convert_to_mapped_features(features_for_map[t1], t1, prod_map_from_keys);
     }
-    return 0;
-}
-
-
-int Features::find_local_ids(
-    Maps& maps,
-    const int type1,
-    const int n,
-    const vector1i& lm_comb,
-    const vector1i& tp_comb,
-    vector1i& local_ids
-){
-    auto global_ids1 = maps.nlmtp_vec_to_global(n, lm_comb, tp_comb);
-    std::sort(global_ids1.begin(), global_ids1.end());
-
-    vector1i global_ids2;
-    for (const auto& id: global_ids1)
-        global_ids2.emplace_back(maps.global_to_global_conj[id]);
-    std::sort(global_ids2.begin(), global_ids2.end());
-
-    std::set<vector1i> sort;
-    sort.insert(global_ids1);
-    sort.insert(global_ids2);
-    const auto& rep = *sort.begin();
-    local_ids = maps.nlmtp_global_vec_to_iloc(rep, type1);
-
     return 0;
 }
 
@@ -323,6 +223,32 @@ void Features::compute_features(
 }
 
 
+void Features::compute_features_deriv(
+    const vector2dc& anlmtp_d,
+    const int type1,
+    vector2d& derivs
+){
+    // for gtinv
+    // a : local_a_size x n_atom
+    // deriv: localsize x n_atom
+    auto& maps = mapping.get_maps();
+    const auto& features1 = maps.maps_type[type1].features;
+    derivs = vector2d(features1.size(), vector1d(anlmtp_d[0].size(), 0.0));
+
+    const auto& prod1 = prod[type1];
+    const auto& mapped_features1 = mapped_features[type1];
+
+    for (size_t i = 0; i < mapped_features1.size(); ++i){
+        double val = compute_product_real(prod1[i], anlmtp);
+        if (fabs(val) > 1e-20){
+            for (const auto& mf: mapped_features1[i]){
+                feature_values[mf.id] += mf.coeff * val;
+            }
+        }
+    }
+}
+
+
 void Features::compute_prod_antp_deriv(
     const vector1d& antp,
     const int type1,
@@ -360,4 +286,8 @@ MapFromVec& Features::get_prod_map_deriv(const int type1){
 
 MapFromVec& Features::get_prod_features_map(const int type1){
     return poly.get_prod_features_map(type1);
+}
+
+const int Features::get_n_variables() const {
+    return poly.get_n_variables();
 }

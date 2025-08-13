@@ -17,21 +17,13 @@ PolymlpEvalOpenMP::PolymlpEvalOpenMP(const feature_params& fp, const vector1d& c
     vector1d coeffs_rev(coeffs.size());
     for (size_t i = 0; i < coeffs.size(); ++i) coeffs_rev[i] = 2.0 * coeffs[i];
 
-    const Features f_obj(fp);
-    pot.fp = fp;
-    pot.mapping = f_obj.get_mapping();
-    pot.modelp = f_obj.get_model_params();
-    pot.p_obj = Potential(f_obj, coeffs_rev);
-
-    type_pairs = pot.mapping.get_type_pairs();
+    polymlp_api.set_potential_model(fp, coeffs_rev);
 
 }
 
 PolymlpEvalOpenMP::PolymlpEvalOpenMP(const PolymlpEval& polymlp){
 
-    pot = polymlp.pot;
-    type_pairs = pot.mapping.get_type_pairs();
-
+    polymlp_api = polymlp.polymlp_api;
 }
 
 PolymlpEvalOpenMP::~PolymlpEvalOpenMP(){}

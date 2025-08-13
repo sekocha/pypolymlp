@@ -43,6 +43,7 @@ set(SRC_FILES
     src/polymlp/polymlp_basis_function.cpp
     src/polymlp/polymlp_features.cpp
     src/polymlp/polymlp_features_polynomial.cpp
+    src/polymlp/polymlp_features_utils.cpp
     src/polymlp/polymlp_functions_interface.cpp
     src/polymlp/polymlp_mapping.cpp
     src/polymlp/polymlp_mlipkk_spherical_harmonics.cpp
@@ -59,13 +60,14 @@ set(SRC_FILES
     src/compute/py_params.cpp
     src/compute/py_model.cpp
     src/compute/py_properties_fast.cpp
-    src/compute/py_additive_model.cpp
+    src/compute/py_hybrid_model.cpp
     src/compute/py_features_attr.cpp
     src/compute/polymlp_eval.cpp
     src/compute/polymlp_eval_openmp.cpp
     src/compute/features.cpp
-    src/compute/local_fast.cpp
-    src/compute/model_fast.cpp
+    src/compute/local.cpp
+    src/compute/local_pair.cpp
+    src/compute/model.cpp
     src/python/pybind11_mlp.cpp
     src/polymlp/polymlp_gtinv_data.cpp
     src/polymlp/polymlp_gtinv_data_order1.cpp
