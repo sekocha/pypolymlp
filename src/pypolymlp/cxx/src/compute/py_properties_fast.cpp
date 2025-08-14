@@ -18,10 +18,12 @@ PyPropertiesFast::PyPropertiesFast(
 
 PyPropertiesFast::~PyPropertiesFast(){}
 
-void PyPropertiesFast::eval(const vector2d& axis,
-                            const vector2d& positions_c,
-                            const vector1i& types,
-                            const bool use_openmp_atom){
+void PyPropertiesFast::eval(
+    const vector2d& axis,
+    const vector2d& positions_c,
+    const vector1i& types,
+    const bool use_openmp_atom
+){
     /* positions_c: (3, n_atom) */
     if (use_openmp_atom == true){
         NeighborHalfOpenMP neigh(axis, positions_c, types, fp.cutoff);
@@ -39,9 +41,11 @@ void PyPropertiesFast::eval(const vector2d& axis,
     }
 }
 
-void PyPropertiesFast::eval_multiple(const vector3d& axis_array,
-                                     const vector3d& positions_c_array,
-                                     const vector2i& types_array){
+void PyPropertiesFast::eval_multiple(
+    const vector3d& axis_array,
+    const vector3d& positions_c_array,
+    const vector2i& types_array
+){
     const int n_st = axis_array.size();
     e_array = vector1d(n_st);
     f_array = vector3d(n_st);

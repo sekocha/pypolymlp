@@ -27,7 +27,7 @@ PYBIND11_MODULE(libmlpcpp, m) {
                 py::return_value_policy::reference_internal)
         ;
 
-    py::class_<PyAdditiveModel>(m, "PotentialAdditiveModel")
+    py::class_<PyHybridModel>(m, "PotentialHybridModel")
         .def(py::init<const std::vector<py::dict>&,
                       const vector3d&,
                       const vector3d&,
@@ -35,16 +35,16 @@ PYBIND11_MODULE(libmlpcpp, m) {
                       const vector1i&,
                       const std::vector<bool>&,
                       const vector1i&>())
-        .def("get_x", &PyAdditiveModel::get_x,
+        .def("get_x", &PyHybridModel::get_x,
                 py::return_value_policy::reference_internal)
-        .def("get_fbegin", &PyAdditiveModel::get_fbegin,
+        .def("get_fbegin", &PyHybridModel::get_fbegin,
                 py::return_value_policy::reference_internal)
-        .def("get_sbegin", &PyAdditiveModel::get_sbegin,
+        .def("get_sbegin", &PyHybridModel::get_sbegin,
                 py::return_value_policy::reference_internal)
         .def("get_cumulative_n_features",
-                &PyAdditiveModel::get_cumulative_n_features,
+                &PyHybridModel::get_cumulative_n_features,
                 py::return_value_policy::reference_internal)
-        .def("get_n_data", &PyAdditiveModel::get_n_data,
+        .def("get_n_data", &PyHybridModel::get_n_data,
                 py::return_value_policy::reference_internal)
         ;
 

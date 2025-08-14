@@ -15,7 +15,7 @@ Model::Model(
     const vector4d& diff_array,
     const vector3i& atom2_array,
     const vector1i& types_i,
-    const struct feature_params& fp,
+    const struct feature_params& fp
 ){
 
     polymlp.set_features(fp);
@@ -43,7 +43,7 @@ Model::~Model(){}
 void Model::pair(
     const vector3d& dis_array,
     const vector4d& diff_array,
-    const vector3i& atom2_array,
+    const vector3i& atom2_array
 ){
 
     LocalPair local(n_atom);
@@ -57,7 +57,7 @@ void Model::pair(
         else {
             const auto& diff = diff_array[atom1];
             const auto& atom2 = atom2_array[atom1];
-            local.pair_d(polymlp, type1, dis, diff, atom2, de, dfx, dfy, dfz, ds);
+            local.pair_d(polymlp, atom1, type1, dis, diff, atom2, de, dfx, dfy, dfz, ds);
         }
         model_polynomial(de, dfx, dfy, dfz, ds, type1);
     }
@@ -67,7 +67,7 @@ void Model::pair(
 void Model::gtinv(
     const vector3d& dis_array,
     const vector4d& diff_array,
-    const vector3i& atom2_array,
+    const vector3i& atom2_array
 ){
 
     Local local(n_atom);
@@ -81,7 +81,7 @@ void Model::gtinv(
         }
         else {
             const auto& atom2 = atom2_array[atom1];
-            local.gtinv_d(polymlp, type1, dis, diff, atom2, de, dfx, dfy, dfz, ds);
+            local.gtinv_d(polymlp, atom1, type1, dis, diff, atom2, de, dfx, dfy, dfz, ds);
         }
         model_polynomial(de, dfx, dfy, dfz, ds, type1);
     }
@@ -113,7 +113,7 @@ void Model::model_order1(
     const vector2d& dfx,
     const vector2d& dfy,
     const vector2d& dfz,
-    const vector2d& ds,
+    const vector2d& ds
 ){
     const int col = term.global_id;
     const int c1 = term.local_ids[0];
@@ -137,7 +137,7 @@ void Model::model_order2(
     const vector2d& dfx,
     const vector2d& dfy,
     const vector2d& dfz,
-    const vector2d& ds,
+    const vector2d& ds
 ){
     const int col = term.global_id;
     const int c1 = term.local_ids[0];
@@ -164,7 +164,7 @@ void Model::model_order3(
     const vector2d& dfx,
     const vector2d& dfy,
     const vector2d& dfz,
-    const vector2d& ds,
+    const vector2d& ds
 ){
     const int col = term.global_id;
     const int c1 = term.local_ids[0];

@@ -84,12 +84,12 @@ int PolymlpAPI::compute_anlmtp_conjugate(
     const auto& nlmtp_attrs = maps_type.nlmtp_attrs;
     const auto& nlmtp_attrs_noconj = maps_type.nlmtp_attrs_noconj;
 
-    anlmtp = vector2dc(nlmtp_attrs.size(), 0.0);
+    const int n_col = anlmtp_r[0].size();
+    anlmtp = vector2dc(nlmtp_attrs.size(), vector1dc(n_col, 0.0));
     int idx(0);
     for (const auto& nlmtp: nlmtp_attrs_noconj){
         const auto& cc_coeff = nlmtp.lm.cc_coeff;
-        anlmtp.resize(anlmtp_r[0].size());
-        for (size_t k = 0; k < anlmtp_r[0].size(); ++k){
+        for (size_t k = 0; k < n_col; ++k){
             anlmtp[nlmtp.ilocal_id][k] = {anlmtp_r[idx][k], anlmtp_i[idx][k]};
             anlmtp[nlmtp.ilocal_conj_id][k] = {
                 cc_coeff * anlmtp_r[idx][k], - cc_coeff * anlmtp_i[idx][k]
@@ -167,4 +167,4 @@ Maps& PolymlpAPI::get_maps() { return pmodel.get_maps(); }
 
 const ModelParams& PolymlpAPI::get_model_params() const { return modelp; }
 
-const int PolymlpAPI::get_n_variables() const { return n_variables; }
+int PolymlpAPI::get_n_variables() { return n_variables; }

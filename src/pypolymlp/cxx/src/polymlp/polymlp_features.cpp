@@ -32,7 +32,7 @@ Features::Features(const feature_params& fp, const bool set_deriv_i = false){
     modelp = ModelParams(fp, maps);
 
     if (fp.feature_type == "pair") {
-        set_features_deriv = false
+        set_features_deriv = false;
         eliminate_conj = false;
 
         set_linear_features_pair(maps);
@@ -41,7 +41,7 @@ Features::Features(const feature_params& fp, const bool set_deriv_i = false){
     else if (fp.feature_type == "gtinv") {
         set_features_deriv = set_deriv_i;
         eliminate_conj = true;
-        if (set_deriv == true) eliminate_conj = false;
+        if (set_features_deriv == true) eliminate_conj = false;
 
         set_linear_features_gtinv(fp, modelp, maps);
         set_mappings_efficient(fp);
@@ -83,8 +83,8 @@ int Features::set_mappings_efficient(const feature_params& fp){
     mapped_features.resize(n_type);
     auto& maps = mapping.get_maps();
 
-    std::vector<MultipleFeatures> features_for_map;
-    get_linear_features_gtinv_with_reps(fp, modelp, maps, features_for_map)
+    std::vector<MultipleFeatures> features_for_map(n_type);
+    get_linear_features_gtinv_with_reps(fp, modelp, maps, features_for_map);
 
     for (size_t t1 = 0; t1 < n_type; ++t1){
         std::set<vector1i> nonequiv;
@@ -212,9 +212,9 @@ void Features::compute_features_deriv(
 ){
     // Derivatives of features for gtinv
     auto& maps = mapping.get_maps();
-    const auto& mapped_features1 = mapped_features[type1];
+    const auto& mapped_features_deriv1 = mapped_features_deriv[type1];
 
-    const int n_row = mapped_features1.size();
+    const int n_row = mapped_features_deriv1.size();
     const int n_atom = anlmtp_dfx[0].size();
     dn_dfx = vector2d(n_row, vector1d(n_atom, 0.0));
     dn_dfy = vector2d(n_row, vector1d(n_atom, 0.0));
@@ -225,8 +225,8 @@ void Features::compute_features_deriv(
     compute_prod_anlmtp_deriv(anlmtp, type1, prod_anlmtp_deriv);
 
     dc val_dc;
-    for (size_t i = 0; i < mapped_features1.size(); ++i){
-        for (const auto& sterm: mapped_features1[i]){
+    for (size_t i = 0; i < mapped_features_deriv1.size(); ++i){
+        for (const auto& sterm: mapped_features_deriv1[i]){
             val_dc = sterm.coeff * prod_anlmtp_deriv[sterm.prod_id];
             // if val_dc > 1e-20
             for (int j = 0; j < n_atom; ++j){
@@ -239,7 +239,6 @@ void Features::compute_features_deriv(
             }
         }
     }
-    return 0;
 }
 
 

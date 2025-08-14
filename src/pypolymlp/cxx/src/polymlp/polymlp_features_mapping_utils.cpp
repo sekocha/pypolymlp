@@ -90,7 +90,7 @@ int convert_to_mapped_features_algo2(
 ){
     mapped_features.resize(features.size());
     for (int f_id = 0; f_id < features.size(); ++f_id){
-        std::unordered_map<int, double> sfeature_map;
+        std::unordered_map<int, double> smap;
         _convert_single_feature_to_map(features[f_id], prod_map_from_keys, smap);
         for (const auto& sterm: smap){
             MappedSingleTerm msterm = {sterm.second, sterm.first};
@@ -110,10 +110,10 @@ int convert_to_mapped_features_deriv(
     for (int f_id = 0; f_id < features.size(); ++f_id){
         std::unordered_map<vector1i, double, HashVI> smap;
         for (const auto& sterm: features[f_id]){
-            for (size_t i = 0; i < sterm.nlmtp_keys.size(); ++i){
-                const vector1i keys = erase_a_key(sterm.nlmtp_keys, i);
+            for (size_t i = 0; i < sterm.nlmtp_ids.size(); ++i){
+                const vector1i keys = erase_a_key(sterm.nlmtp_ids, i);
                 const int prod_id = prod_map_deriv_from_keys[keys];
-                const int head_id = sterm.nlmtp_keys[i];
+                const int head_id = sterm.nlmtp_ids[i];
                 vector1i map_key = {head_id, prod_id};
                 if (smap.count(map_key) == 0)
                     smap[map_key] = sterm.coeff;
@@ -121,7 +121,7 @@ int convert_to_mapped_features_deriv(
             }
         }
         for (const auto& sterm: smap){
-            MappedSingleTermDeriv msterm = {sterm.second, sterm.first[0], sterm.first[1]};
+            MappedSingleDerivTerm msterm = {sterm.second, sterm.first[0], sterm.first[1]};
             mapped_features_deriv[f_id].emplace_back(msterm);
         }
     }

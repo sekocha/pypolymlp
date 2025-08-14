@@ -29,10 +29,11 @@ void PolymlpEval::eval(
     vector1d& stress
 ){
 
-    if (pot.fp.feature_type == "pair"){
+    const auto& fp = polymlp_api.get_fp();
+    if (fp.feature_type == "pair"){
         eval_pair(types, neighbor_half, neighbor_diff, energy, forces, stress);
     }
-    else if (pot.fp.feature_type == "gtinv"){
+    else if (fp.feature_type == "gtinv"){
         eval_gtinv(types, neighbor_half, neighbor_diff, energy, forces, stress);
     }
 }
@@ -185,7 +186,7 @@ void PolymlpEval::compute_sum_of_prod_antp(
         const int type1 = types[i];
         polymlp_api.compute_sum_of_prod_antp(
             antp[i], type1, prod_sum_e[i], prod_sum_f[i]
-        )
+        );
     }
 }
 
@@ -201,7 +202,6 @@ void PolymlpEval::eval_gtinv(
 ){
 
     const int n_atom = types.size();
-
     vector2dc anlmtp, prod_sum_e, prod_sum_f;
     compute_anlmtp(types, neighbor_half, neighbor_diff, anlmtp);
     compute_sum_of_prod_anlmtp(types, anlmtp, prod_sum_e, prod_sum_f);
@@ -245,7 +245,7 @@ void PolymlpEval::eval_gtinv(
                          ylm, ylm_dx, ylm_dy, ylm_dz);
 
                 e_ij = 0.0, fx = 0.0, fy = 0.0, fz = 0.0;
-                for (const auto& nlmtp: nlmtp_attrs_no_conj){
+                for (const auto& nlmtp: nlmtp_attrs_noconj){
                     if (tp == nlmtp.tp){
                         const auto& lm_attr = nlmtp.lm;
                         const int ylmkey = lm_attr.ylmkey;
@@ -336,7 +336,7 @@ void PolymlpEval::compute_anlmtp(
                 const auto& params = tp_to_params[tp];
                 get_fn_(dis, fp, params, fn);
                 get_ylm_(sph[0], sph[1], fp.maxl, ylm);
-                for (const auto& nlmtp: nlmtp_attrs_no_conj){
+                for (const auto& nlmtp: nlmtp_attrs_noconj){
                     if (tp == nlmtp.tp){
                         const auto& lm_attr = nlmtp.lm;
                         const int idx_i = nlmtp.ilocal_noconj_id;
@@ -351,13 +351,14 @@ void PolymlpEval::compute_anlmtp(
             }
         }
     }
-    compute_anlmtp_conjugate(anlmtp_r, anlmtp_i, anlmtp);
+    compute_anlmtp_conjugate(anlmtp_r, anlmtp_i, types, anlmtp);
 }
 
 
 void PolymlpEval::compute_anlmtp_conjugate(
     const vector2d& anlmtp_r,
     const vector2d& anlmtp_i,
+    const vector1i& types,
     vector2dc& anlmtp
 ){
     const int n_atom = types.size();

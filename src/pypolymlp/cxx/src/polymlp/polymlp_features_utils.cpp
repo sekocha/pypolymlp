@@ -87,7 +87,6 @@ int get_linear_features_gtinv_with_reps(
     const vector2d& lm_coeffs = fp.lm_coeffs;
     const auto& tp_combs = modelp.get_tp_combs();
 
-    features_for_map.resize(n_type);
     for (const auto& linear: modelp.get_linear_terms()){
         const auto& tp_comb = tp_combs[linear.order][linear.tp_comb_id];
         const auto& lm_list = lm_array[linear.lm_comb_id];

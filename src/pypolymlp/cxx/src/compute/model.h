@@ -16,6 +16,8 @@
 
 class Model {
 
+    PolymlpAPI polymlp;
+
     int n_atom;
     bool force;
     vector1i types;
@@ -26,13 +28,13 @@ class Model {
     void pair(
         const vector3d& dis_array,
         const vector4d& diff_array,
-        const vector3i& atom2_array,
+        const vector3i& atom2_array
     );
 
     void gtinv(
         const vector3d& dis_array,
         const vector4d& diff_array,
-        const vector3i& atom2_array,
+        const vector3i& atom2_array
     );
 
     void model_polynomial(
@@ -50,7 +52,7 @@ class Model {
         const vector2d& dfx,
         const vector2d& dfy,
         const vector2d& dfz,
-        const vector2d& ds,
+        const vector2d& ds
     );
     void model_order2(
         const PolynomialTerm& term,
@@ -58,7 +60,7 @@ class Model {
         const vector2d& dfx,
         const vector2d& dfy,
         const vector2d& dfz,
-        const vector2d& ds,
+        const vector2d& ds
     );
     void model_order3(
         const PolynomialTerm& term,
@@ -66,7 +68,7 @@ class Model {
         const vector2d& dfx,
         const vector2d& dfy,
         const vector2d& dfz,
-        const vector2d& ds,
+        const vector2d& ds
     );
 
     public:
@@ -77,7 +79,7 @@ class Model {
         const vector4d& diff_array_all,
         const vector3i& atom2_array_all,
         const vector1i& types_i,
-        const struct feature_params& fp,
+        const struct feature_params& fp
     );
     ~Model();
 

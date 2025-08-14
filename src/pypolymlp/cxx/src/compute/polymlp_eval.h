@@ -12,6 +12,7 @@
 
 #include "polymlp/polymlp_api.h"
 #include "polymlp/polymlp_functions_interface.h"
+#include "polymlp/polymlp_products.h"
 
 
 class PolymlpEval {
@@ -51,6 +52,7 @@ class PolymlpEval {
     void compute_anlmtp_conjugate(
         const vector2d& anlmtp_r,
         const vector2d& anlmtp_i,
+        const vector1i& types,
         vector2dc& anlmtp
     );
 
@@ -86,7 +88,6 @@ class PolymlpEval {
         vector2d& forces,
         vector1d& stress
     );
-
 };
 
 #endif

@@ -5,7 +5,7 @@
 
 ****************************************************************************/
 
-#include "py_additive_model.h"
+#include "py_hybrid_model.h"
 
 PyHybridModel::PyHybridModel(
     const std::vector<py::dict>& params_dict_array,
@@ -63,7 +63,7 @@ PyHybridModel::PyHybridModel(
             neigh.get_diff_array(),
             neigh.get_atom2_array(),
             types_active,
-            fp,
+            fp
         );
         n_features += mod.get_xe_sum().size();
         cumulative_n_features.emplace_back(n_features);
@@ -113,7 +113,7 @@ PyHybridModel::PyHybridModel(
                 neigh.get_diff_array(),
                 neigh.get_atom2_array(),
                 types_active,
-                fp1,
+                fp1
             );
 
             const auto &xe = mod.get_xe_sum();

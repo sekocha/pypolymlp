@@ -15,7 +15,7 @@ LocalPair::LocalPair(const int n_atom_i){
 LocalPair::~LocalPair(){}
 
 void LocalPair::pair(
-    const Polymlp& polymlp,
+    PolymlpAPI& polymlp,
     const int type1,
     const vector2d& dis_a,
     vector1d& dn
@@ -26,6 +26,7 @@ void LocalPair::pair(
     const auto& type_pairs = maps.type_pairs;
     const auto& tp_to_params = maps.tp_to_params;
 
+    const int n_type = fp.n_type;
     const auto& maps_type = maps.maps_type[type1];
     const auto& ntp_attrs = maps_type.ntp_attrs;
 
@@ -33,7 +34,7 @@ void LocalPair::pair(
     int tp;
     vector1d fn;
     for (int type2 = 0; type2 < n_type; ++type2){
-        tp = type_pairs[type2];
+        tp = type_pairs[type1][type2];
         for (const auto& dis: dis_a[type2]){
             const auto& params = tp_to_params[tp];
             get_fn_(dis, fp, params, fn);
@@ -45,7 +46,8 @@ void LocalPair::pair(
 }
 
 void LocalPair::pair_d(
-    const Polymlp& polymlp,
+    PolymlpAPI& polymlp,
+    const int atom1,
     const int type1,
     const vector2d& dis_a,
     const vector3d& diff_a,
@@ -62,6 +64,7 @@ void LocalPair::pair_d(
     const auto& type_pairs = maps.type_pairs;
     const auto& tp_to_params = maps.tp_to_params;
 
+    const int n_type = fp.n_type;
     const auto& maps_type = maps.maps_type[type1];
     const auto& ntp_attrs = maps_type.ntp_attrs;
 
@@ -73,7 +76,7 @@ void LocalPair::pair_d(
     double dis,delx,dely,delz,valx,valy,valz;
     vector1d fn,fn_d;
     for (int type2 = 0; type2 < n_type; ++type2){
-        tp = type_pairs[type2];
+        tp = type_pairs[type1][type2];
         for (size_t j = 0; j < dis_a[type2].size(); ++j){
             dis = dis_a[type2][j];
             delx = diff_a[type2][j][0];

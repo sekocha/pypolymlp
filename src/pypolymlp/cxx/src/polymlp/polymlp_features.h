@@ -53,6 +53,19 @@ class Features {
     void compute_features(const vector1d& antp, const int t1, vector1d& vals);
     void compute_features(const vector1dc& anlmtp, const int t1, vector1d& vals);
 
+    void compute_features_deriv(
+        const vector1dc& anlmtp,
+        const vector2dc& anlmtp_dfx,
+        const vector2dc& anlmtp_dfy,
+        const vector2dc& anlmtp_dfz,
+        const vector2dc& anlmtp_ds,
+        const int type1,
+        vector2d& dn_dfx,
+        vector2d& dn_dfy,
+        vector2d& dn_dfz,
+        vector2d& dn_ds
+    );
+
     void compute_prod_antp_deriv(const vector1d& antp, const int t1, vector1d& deriv);
     void compute_prod_anlmtp_deriv(
         const vector1dc& anlmtp, const int t1, vector1dc& deriv

@@ -25,14 +25,15 @@ class LocalPair{
     ~LocalPair();
 
     void pair(
-        const Polymlp& polymlp,
+        PolymlpAPI& polymlp,
         const int type1,
         const vector2d& dis_a,
         vector1d& dn
     );
 
     void pair_d(
-        const Polymlp& polymlp,
+        PolymlpAPI& polymlp,
+        const int atom1,
         const int type1,
         const vector2d& dis_a,
         const vector3d& diff_a,

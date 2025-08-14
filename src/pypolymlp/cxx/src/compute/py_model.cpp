@@ -58,10 +58,13 @@ PyModel::PyModel(const py::dict& params_dict,
                        types[i],
                        fp1.n_type,
                        fp1.cutoff);
-        ModelFast mod(neigh.get_dis_array(),
-                      neigh.get_diff_array(),
-                      neigh.get_atom2_array(),
-                      types[i], fp1, features_obj);
+        Model mod(
+            neigh.get_dis_array(),
+            neigh.get_diff_array(),
+            neigh.get_atom2_array(),
+            types[i],
+            fp1
+        );
 
         const auto &xe = mod.get_xe_sum();
         for (size_t j = 0; j < xe.size(); ++j) x_all(i,j) = xe[j];

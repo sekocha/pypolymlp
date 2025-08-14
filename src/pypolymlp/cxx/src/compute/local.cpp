@@ -8,6 +8,7 @@
 #include "compute/local.h"
 
 
+Local::Local(){}
 Local::Local(const int n_atom_i){
     n_atom = n_atom_i;
 }
@@ -15,7 +16,7 @@ Local::Local(const int n_atom_i){
 Local::~Local(){}
 
 void Local::gtinv(
-    const Polymlp& polymlp,
+    PolymlpAPI& polymlp,
     const int type1,
     const vector2d& dis_a,
     const vector3d& diff_a,
@@ -23,13 +24,14 @@ void Local::gtinv(
 ){
 
     vector1dc anlmtp;
-    compute_anlm(polymlp, type1, dis_a, diff_a, anlmtp);
+    compute_anlmtp(polymlp, type1, dis_a, diff_a, anlmtp);
     polymlp.compute_features(anlmtp, type1, dn);
 }
 
 
 void Local::gtinv_d(
-    const Polymlp& polymlp,
+    PolymlpAPI& polymlp,
+    const int atom1,
     const int type1,
     const vector2d& dis_a,
     const vector3d& diff_a,
@@ -43,8 +45,8 @@ void Local::gtinv_d(
 
     vector1dc anlmtp;
     vector2dc anlmtp_dfx, anlmtp_dfy, anlmtp_dfz, anlmtp_ds;
-    compute_anlm_d(
-        polymlp, type1, dis_a, diff_a, atom2_a,
+    compute_anlmtp_d(
+        polymlp, atom1, type1, dis_a, diff_a, atom2_a,
         anlmtp, anlmtp_dfx, anlmtp_dfy, anlmtp_dfz, anlmtp_ds
     );
 
@@ -57,7 +59,7 @@ void Local::gtinv_d(
 
 
 void Local::compute_anlmtp(
-    const Polymlp& polymlp,
+    PolymlpAPI& polymlp,
     const int type1,
     const vector2d& dis_a,
     const vector3d& diff_a,
@@ -69,6 +71,7 @@ void Local::compute_anlmtp(
     const auto& type_pairs = maps.type_pairs;
     const auto& tp_to_params = maps.tp_to_params;
 
+    const int n_type = fp.n_type;
     const auto& maps_type = maps.maps_type[type1];
     const auto& nlmtp_attrs_noconj = maps_type.nlmtp_attrs_noconj;
 
@@ -77,6 +80,7 @@ void Local::compute_anlmtp(
 
     int ylmkey;
     double dis;
+    dc val;
     vector1d fn;
     vector1dc ylm;
 
@@ -89,7 +93,7 @@ void Local::compute_anlmtp(
                 const auto& params = tp_to_params[tp];
                 get_fn_(dis, fp, params, fn);
                 get_ylm_(sph[0], sph[1], fp.maxl, ylm);
-                for (const auto& nlmtp: nlmtp_attrs_no_conj){
+                for (const auto& nlmtp: nlmtp_attrs_noconj){
                     if (tp == nlmtp.tp){
                         const auto& lm_attr = nlmtp.lm;
                         const int idx_i = nlmtp.ilocal_noconj_id;
@@ -105,8 +109,9 @@ void Local::compute_anlmtp(
 }
 
 
-void Local::compute_anlm_d(
-    const Polymlp& polymlp,
+void Local::compute_anlmtp_d(
+    PolymlpAPI& polymlp,
+    const int atom1,
     const int type1,
     const vector2d& dis_a,
     const vector3d& diff_a,
@@ -122,6 +127,7 @@ void Local::compute_anlm_d(
     const auto& type_pairs = maps.type_pairs;
     const auto& tp_to_params = maps.tp_to_params;
 
+    const int n_type = fp.n_type;
     const auto& maps_type = maps.maps_type[type1];
     const auto& nlmtp_attrs_noconj = maps_type.nlmtp_attrs_noconj;
 
@@ -138,12 +144,12 @@ void Local::compute_anlm_d(
 
     vector1d fn, fn_d;
     vector1dc ylm,ylm_dx,ylm_dy,ylm_dz;
-    double delx,dely,delz,dis,cc,val;
-    dc d1,valx,valy,valz,val0,val1,val2,val3,val4,val5;
+    double delx,dely,delz,dis,cc;
+    dc d1,val,valx,valy,valz,val0,val1,val2,val3,val4,val5;
     int atom2;
 
     for (int type2 = 0; type2 < n_type; ++type2){
-        const int tp = type_pairs[type2];
+        const int tp = type_pairs[type1][type2];
         for (size_t j = 0; j < dis_a[type2].size(); ++j){
             dis = dis_a[type2][j];
             delx = diff_a[type2][j][0];
@@ -155,7 +161,7 @@ void Local::compute_anlm_d(
                 const auto& params = tp_to_params[tp];
                 get_fn_(dis, fp, params, fn, fn_d);
                 get_ylm_(dis, sph[0], sph[1], fp.maxl, ylm, ylm_dx, ylm_dy, ylm_dz);
-                for (const auto& nlmtp: nlmtp_attrs_no_conj){
+                for (const auto& nlmtp: nlmtp_attrs_noconj){
                     if (tp == nlmtp.tp){
                         const auto& lm_attr = nlmtp.lm;
                         const int ylmkey = lm_attr.ylmkey;

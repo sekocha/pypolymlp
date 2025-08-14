@@ -15,7 +15,7 @@
 
 #include "mlpcpp.h"
 #include "compute/py_model.h"
-#include "compute/py_additive_model.h"
+#include "compute/py_hybrid_model.h"
 #include "compute/py_properties_fast.h"
 #include "compute/py_features_attr.h"
 #include "compute/neighbor.h"

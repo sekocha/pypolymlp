@@ -43,6 +43,7 @@ class PolymlpAPI {
     );
     int set_potential_model(const feature_params& fp, const vector1d& pot);
     int set_features(const feature_params& fp);
+    int set_model_parameters(const feature_params& fp);
 
     int compute_anlmtp_conjugate(
         const vector1d& anlmtp_r,
@@ -56,7 +57,7 @@ class PolymlpAPI {
         const vector2d& anlmtp_i,
         const int type1,
         vector2dc& anlmtp
-    ){
+    );
 
     int compute_features(
         const vector1d& antp,
@@ -100,7 +101,7 @@ class PolymlpAPI {
     const feature_params& get_fp() const;
     Maps& get_maps();
     const ModelParams& get_model_params() const;
-    const int get_n_variables() const;
+    int get_n_variables();
 };
 
 #endif
