@@ -8,7 +8,12 @@
 #include "polymlp_api.h"
 
 
-PolymlpAPI::PolymlpAPI(){}
+PolymlpAPI::PolymlpAPI(){
+    use_features = false;
+    use_potential = false;
+    use_model_params = false;
+
+}
 PolymlpAPI::~PolymlpAPI(){}
 
 
@@ -17,6 +22,7 @@ int PolymlpAPI::parse_polymlp_file(
     std::vector<std::string>& ele,
     vector1d& mass
 ){
+    use_potential = true;
     const bool legacy = check_polymlp_legacy(file);
     if (legacy == true) parse_polymlp_legacy(file, fp, pot, ele, mass);
     else parse_polymlp(file, fp, pot, ele, mass);
@@ -24,20 +30,27 @@ int PolymlpAPI::parse_polymlp_file(
 }
 
 
-int PolymlpAPI::set_potential_model(const feature_params& fp, const vector1d& pot){
+int PolymlpAPI::set_potential_model(const feature_params& fp_i, const vector1d& pot_i){
+    use_potential = true;
+    fp = fp_i;
+    pot = pot_i;
     pmodel = Potential(fp, pot);
     return 0;
 }
 
 
-int PolymlpAPI::set_features(const feature_params& fp){
+int PolymlpAPI::set_features(const feature_params& fp_i){
+    use_features = true;
+    fp = fp_i;
     const bool set_deriv = true;
     features = Features(fp, set_deriv);
     n_variables = features.get_n_variables();
     return 0;
 }
 
-int PolymlpAPI::set_model_parameters(const feature_params& fp){
+int PolymlpAPI::set_model_parameters(const feature_params& fp_i){
+    use_model_params = true;
+    fp = fp_i;
     mapping = Mapping(fp);
     auto& maps = mapping.get_maps();
     modelp = ModelParams(fp, maps);
@@ -53,7 +66,7 @@ int PolymlpAPI::compute_anlmtp_conjugate(
     vector1dc& anlmtp
 ){
 
-    const auto& maps = pmodel.get_maps();
+    const auto& maps = get_maps();
     const auto& maps_type = maps.maps_type[type1];
     const auto& nlmtp_attrs = maps_type.nlmtp_attrs;
     const auto& nlmtp_attrs_noconj = maps_type.nlmtp_attrs_noconj;
@@ -79,7 +92,7 @@ int PolymlpAPI::compute_anlmtp_conjugate(
     vector2dc& anlmtp
 ){
 
-    const auto& maps = pmodel.get_maps();
+    const auto& maps = get_maps();
     const auto& maps_type = maps.maps_type[type1];
     const auto& nlmtp_attrs = maps_type.nlmtp_attrs;
     const auto& nlmtp_attrs_noconj = maps_type.nlmtp_attrs_noconj;
@@ -163,7 +176,10 @@ int PolymlpAPI::compute_sum_of_prod_anlmtp(
 
 const feature_params& PolymlpAPI::get_fp() const { return fp; }
 
-Maps& PolymlpAPI::get_maps() { return pmodel.get_maps(); }
+Maps& PolymlpAPI::get_maps() {
+    if (use_potential) return pmodel.get_maps();
+    return features.get_maps();
+}
 
 const ModelParams& PolymlpAPI::get_model_params() const { return modelp; }
 

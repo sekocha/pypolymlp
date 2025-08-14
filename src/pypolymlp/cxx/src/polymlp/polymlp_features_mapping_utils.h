@@ -13,13 +13,13 @@
 #include "polymlp_structs.h"
 
 
-int get_nonequiv_ids(const MultipleFeatures& features, std::set<vector1i> nonequiv);
+int get_nonequiv_ids(const MultipleFeatures& features, std::set<vector1i>& nonequiv);
 
 int get_nonequiv_deriv_ids(
     const MultipleFeatures& features,
     MapsType& maps_type,
     const bool eliminate_conj,
-    std::set<vector1i> nonequiv
+    std::set<vector1i>& nonequiv
 );
 
 

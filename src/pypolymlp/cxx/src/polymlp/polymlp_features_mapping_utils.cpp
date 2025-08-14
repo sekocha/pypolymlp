@@ -20,7 +20,7 @@
 #include "polymlp_features_mapping_utils.h"
 
 
-int get_nonequiv_ids(const MultipleFeatures& features, std::set<vector1i> nonequiv){
+int get_nonequiv_ids(const MultipleFeatures& features, std::set<vector1i>& nonequiv){
 
     for (const auto& sfeature: features){
         for (const auto& sterm: sfeature){
@@ -34,7 +34,7 @@ int get_nonequiv_deriv_ids(
     const MultipleFeatures& features,
     MapsType& maps_type,
     const bool eliminate_conj,
-    std::set<vector1i> nonequiv
+    std::set<vector1i>& nonequiv
 ){
     // TODO: Interface for eliminate_conj and is_conj.
     for (const auto& sfeature: features){

@@ -9,9 +9,7 @@
 
 
 Local::Local(){}
-Local::Local(const int n_atom_i){
-    n_atom = n_atom_i;
-}
+Local::Local(const int n_atom_i) : n_atom(n_atom_i) {}
 
 Local::~Local(){}
 

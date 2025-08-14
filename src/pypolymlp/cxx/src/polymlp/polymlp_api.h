@@ -24,10 +24,10 @@ class PolymlpAPI {
     feature_params fp;
     vector1d pot;
     int n_variables;
+    bool use_features, use_potential, use_model_params;
 
     Features features;
     Potential pmodel;
-
     Mapping mapping;
     ModelParams modelp;
 

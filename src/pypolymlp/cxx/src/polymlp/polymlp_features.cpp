@@ -40,8 +40,8 @@ Features::Features(const feature_params& fp, const bool set_deriv_i = false){
     }
     else if (fp.feature_type == "gtinv") {
         set_features_deriv = set_deriv_i;
-        eliminate_conj = true;
         if (set_features_deriv == true) eliminate_conj = false;
+        else eliminate_conj = true;
 
         set_linear_features_gtinv(fp, modelp, maps);
         set_mappings_efficient(fp);
