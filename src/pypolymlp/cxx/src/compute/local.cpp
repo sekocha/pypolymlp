@@ -25,7 +25,6 @@ void Local::gtinv(
     vector1dc anlmtp;
     compute_anlm(polymlp, type1, dis_a, diff_a, anlmtp);
     polymlp.compute_features(anlmtp, type1, dn);
-
 }
 
 
@@ -42,32 +41,18 @@ void Local::gtinv_d(
     vector2d& dn_ds
 ){
 
-    // const auto& prod_map = features.get_prod_map(type1);
-    // const auto& prod_map_d = features.get_prod_map_deriv(type1);
-
     vector1dc anlmtp;
     vector2dc anlmtp_dfx, anlmtp_dfy, anlmtp_dfz, anlmtp_ds;
     compute_anlm_d(
         polymlp, type1, dis_a, diff_a, atom2_a,
         anlmtp, anlmtp_dfx, anlmtp_dfy, anlmtp_dfz, anlmtp_ds
     );
+
     polymlp.compute_features(anlmtp, type1, dn);
-
-    // TODO: Implement feature derivatives.
-    vector1dc prod_anlmtp_deriv;
-    features.compute_prod_anlmtp_deriv(anlmtp, type1, prod_anlmtp_deriv);
-    features.compute_features_deriv(anlmtp_dfx, type1, dn_dfx);
-    features.compute_features_deriv(anlmtp_dfy, type1, dn_dfy);
-    features.compute_features_deriv(anlmtp_dfz, type1, dn_dfz);
-    features.compute_features_deriv(anlmtp_ds, type1, dn_ds);
-/*
-    compute_linear_features_deriv(
-        prod_anlmtp_d, features,
-        anlmtp_dfx, anlmtp_dfy, anlmtp_dfz, anlmtp_ds,
-        dn_dfx, dn_dfy, dn_dfz, dn_ds
+    polymlp.compute_features_deriv(
+        anlmtp, anlmtp_dfx, anlmtp_dfy, anlmtp_dfz, anlmtp_ds,
+        type1, dn_dfx, dn_dfy, dn_dfz, dn_ds
     );
-    */
-
 }
 
 
@@ -231,7 +216,7 @@ void Local::compute_anlm_d(
 
 }
 
-
+/*
 void Local::compute_linear_features_deriv(
     const vector1dc& prod_anlmtp_d,
     const FunctionFeatures& features,
@@ -279,3 +264,4 @@ void Local::compute_linear_features_deriv(
         }
     }
 }
+*/

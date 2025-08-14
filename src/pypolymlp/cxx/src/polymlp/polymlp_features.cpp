@@ -32,14 +32,14 @@ Features::Features(const feature_params& fp, const bool set_deriv_i = false){
     modelp = ModelParams(fp, maps);
 
     if (fp.feature_type == "pair") {
-        set_deriv = false
+        set_features_deriv = false
         eliminate_conj = false;
 
         set_linear_features_pair(maps);
         set_mappings_standard();
     }
     else if (fp.feature_type == "gtinv") {
-        set_deriv = set_deriv_i;
+        set_features_deriv = set_deriv_i;
         eliminate_conj = true;
         if (set_deriv == true) eliminate_conj = false;
 
@@ -48,6 +48,8 @@ Features::Features(const feature_params& fp, const bool set_deriv_i = false){
     }
     set_deriv_mappings();
     poly = FeaturesPoly(modelp, maps);
+
+    if (set_features_deriv == true) set_mapped_features_deriv();
 }
 
 
@@ -63,8 +65,9 @@ int Features::set_mappings_standard(){
     for (size_t t1 = 0; t1 < n_type; ++t1){
         auto& maps_type = maps.maps_type[t1];
         std::set<vector1i> nonequiv;
-        MapFromVec prod_map_from_keys;
         get_nonequiv_ids(maps_type.features, nonequiv);
+
+        MapFromVec prod_map_from_keys;
         convert_set_to_mappings(nonequiv, prod_map_from_keys, prod[t1]);
         convert_to_mapped_features_algo2(
             maps_type.features, prod_map_from_keys, mapped_features[t1]
@@ -88,6 +91,7 @@ int Features::set_mappings_efficient(const feature_params& fp){
         MapFromVec prod_map_from_keys;
         get_nonequiv_ids(features_for_map[t1], nonequiv);
         convert_set_to_mappings(nonequiv, prod_map_from_keys, prod[t1]);
+
         if (prod[t1].size() > threshold_prod){
             convert_to_mapped_features_algo1(
                 features_for_map[t1],
@@ -115,8 +119,24 @@ int Features::set_deriv_mappings(){
     for (size_t t1 = 0; t1 < n_type; ++t1){
         auto& maps_type = maps.maps_type[t1];
         std::set<vector1i> nonequiv;
-        get_nonequiv_deriv_ids(features, maps_type, eliminate_conj, nonequiv);
+        get_nonequiv_deriv_ids(maps_type.features, maps_type, eliminate_conj, nonequiv);
         convert_set_to_mappings(nonequiv, prod_map_deriv_from_keys[t1], prod_deriv[t1]);
+    }
+    return 0;
+}
+
+
+int Features::set_mapped_features_deriv(){
+
+    mapped_features_deriv.resize(n_type);
+    auto& maps = mapping.get_maps();
+    for (size_t t1 = 0; t1 < n_type; ++t1){
+        auto& maps_type = maps.maps_type[t1];
+        convert_to_mapped_features_deriv(
+            maps_type.features,
+            prod_map_deriv_from_keys[t1],
+            mapped_features_deriv[t1]
+        );
     }
     return 0;
 }
@@ -179,29 +199,47 @@ void Features::compute_features(
 
 
 void Features::compute_features_deriv(
-    const vector2dc& anlmtp_d,
+    const vector1dc& anlmtp,
+    const vector2dc& anlmtp_dfx,
+    const vector2dc& anlmtp_dfy,
+    const vector2dc& anlmtp_dfz,
+    const vector2dc& anlmtp_ds,
     const int type1,
-    vector2d& derivs
+    vector2d& dn_dfx,
+    vector2d& dn_dfy,
+    vector2d& dn_dfz,
+    vector2d& dn_ds
 ){
     // Derivatives of features for gtinv
-
-    // a : local_a_size x n_atom
-    // deriv: localsize x n_atom
     auto& maps = mapping.get_maps();
-    const auto& features1 = maps.maps_type[type1].features;
-    derivs = vector2d(features1.size(), vector1d(anlmtp_d[0].size(), 0.0));
-
-    const auto& prod1 = prod[type1];
     const auto& mapped_features1 = mapped_features[type1];
 
+    const int n_row = mapped_features1.size();
+    const int n_atom = anlmtp_dfx[0].size();
+    dn_dfx = vector2d(n_row, vector1d(n_atom, 0.0));
+    dn_dfy = vector2d(n_row, vector1d(n_atom, 0.0));
+    dn_dfz = vector2d(n_row, vector1d(n_atom, 0.0));
+    dn_ds = vector2d(n_row, vector1d(6, 0.0));
+
+    vector1dc prod_anlmtp_deriv;
+    compute_prod_anlmtp_deriv(anlmtp, type1, prod_anlmtp_deriv);
+
+    dc val_dc;
     for (size_t i = 0; i < mapped_features1.size(); ++i){
-        double val = compute_product_real(prod1[i], anlmtp);
-        if (fabs(val) > 1e-20){
-            for (const auto& mf: mapped_features1[i]){
-                feature_values[mf.id] += mf.coeff * val;
+        for (const auto& sterm: mapped_features1[i]){
+            val_dc = sterm.coeff * prod_anlmtp_deriv[sterm.prod_id];
+            // if val_dc > 1e-20
+            for (int j = 0; j < n_atom; ++j){
+                dn_dfx[i][j] += prod_real(val_dc, anlmtp_dfx[sterm.head_id][j]);
+                dn_dfy[i][j] += prod_real(val_dc, anlmtp_dfy[sterm.head_id][j]);
+                dn_dfz[i][j] += prod_real(val_dc, anlmtp_dfz[sterm.head_id][j]);
+            }
+            for (int j = 0; j < 6; ++j){
+                dn_ds[i][j] += prod_real(val_dc, anlmtp_ds[sterm.head_id][j]);
             }
         }
     }
+    return 0;
 }
 
 

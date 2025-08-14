@@ -120,6 +120,24 @@ int PolymlpAPI::compute_features(
     return 0;
 }
 
+int PolymlpAPI::compute_features_deriv(
+    const vector1dc& anlmtp,
+    const vector2dc& anlmtp_dfx,
+    const vector2dc& anlmtp_dfy,
+    const vector2dc& anlmtp_dfz,
+    const vector2dc& anlmtp_ds,
+    const int type1,
+    vector2d& dn_dfx,
+    vector2d& dn_dfy,
+    vector2d& dn_dfz,
+    vector2d& dn_ds
+){
+    features.compute_features_deriv(
+        anlmtp, anlmtp_dfx, anlmtp_dfy, anlmtp_dfz, anlmtp_ds, type1,
+        dn_dfx, dn_dfy, dn_dfz, dn_ds
+    );
+    return 0;
+}
 
 int PolymlpAPI::compute_sum_of_prod_antp(
     const vector1d& antp,

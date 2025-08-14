@@ -44,6 +44,7 @@ int set_linear_features_pair(Maps& maps){
     return 0;
 }
 
+
 int set_linear_features_gtinv(
     const feature_params& fp,
     const ModelParams& modelp,
@@ -79,7 +80,7 @@ int get_linear_features_gtinv_with_reps(
     const feature_params& fp,
     const ModelParams& modelp,
     Maps& maps,
-    std::vector<MultipleFeatures> features_for_map
+    std::vector<MultipleFeatures>& features_for_map
 ){
 
     const vector3i& lm_array = fp.lm_array;
@@ -128,79 +129,5 @@ int find_local_ids(
     const auto& rep = *sort.begin();
     local_ids = maps.nlmtp_global_vec_to_iloc(rep, type1);
 
-    return 0;
-}
-
-
-int get_nonequiv_ids(const MultipleFeatures& features, std::set<vector1i> nonequiv){
-
-    for (const auto& sfeature: features){
-        for (const auto& sterm: sfeature){
-            nonequiv.insert(sterm.nlmtp_ids);
-        }
-    }
-    return 0;
-}
-
-int get_nonequiv_deriv_ids(
-    const MultipleFeatures& features,
-    MapsType& maps_type,
-    const bool eliminate_conj,
-    std::set<vector1i> nonequiv
-){
-    for (const auto& sfeature: features){
-        for (const auto& sterm: sfeature){
-            for (size_t i = 0; i < sterm.nlmtp_ids.size(); ++i){
-                const int head_id = sterm.nlmtp_ids[i];
-                if (eliminate_conj == false or maps_type.is_conj(head_id) == false)
-                     nonequiv.insert(erase_a_key(sterm.nlmtp_ids, i));
-            }
-        }
-    }
-    return 0;
-}
-
-int convert_to_mapped_features_algo1(
-    const MultipleFeatures& features,
-    MapFromVec& prod_map_from_keys,
-    const vector2i& prod,
-    MappedMultipleFeatures& mapped_features
-){
-    mapped_features.resize(prod.size());
-    for (int f_id = 0; f_id < features.size(); ++f_id){
-        std::unordered_map<int, double> sfeature_map;
-        for (const auto& sterm: features[f_id]){
-            const int prod_id = prod_map_from_keys[sterm.nlmtp_ids];
-            if (sfeature_map.count(prod_id) == 0)
-                sfeature_map[prod_id] = sterm.coeff;
-            else sfeature_map[prod_id] += sterm.coeff;
-        }
-        for (const auto& sterm: sfeature_map){
-            MappedSingleTerm msterm = {sterm.second, f_id};
-            mapped_features[sterm.first].emplace_back(msterm);
-        }
-    }
-    return 0;
-}
-
-int convert_to_mapped_features_algo2(
-    const MultipleFeatures& features,
-    MapFromVec& prod_map_from_keys,
-    MappedMultipleFeatures& mapped_features
-){
-    mapped_features.resize(features.size());
-    for (int f_id = 0; f_id < features.size(); ++f_id){
-        std::unordered_map<int, double> sfeature_map;
-        for (const auto& sterm: features[f_id]){
-            const int prod_id = prod_map_from_keys[sterm.nlmtp_ids];
-            if (sfeature_map.count(prod_id) == 0)
-                sfeature_map[prod_id] = sterm.coeff;
-            else sfeature_map[prod_id] += sterm.coeff;
-        }
-        for (const auto& sterm: sfeature_map){
-            MappedSingleTerm msterm = {sterm.second, sterm.first};
-            mapped_features[f_id].emplace_back(msterm);
-        }
-    }
     return 0;
 }

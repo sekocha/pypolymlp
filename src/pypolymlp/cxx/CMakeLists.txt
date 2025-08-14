@@ -43,6 +43,7 @@ set(SRC_FILES
     src/polymlp/polymlp_basis_function.cpp
     src/polymlp/polymlp_features.cpp
     src/polymlp/polymlp_features_polynomial.cpp
+    src/polymlp/polymlp_features_mapping_utils.cpp
     src/polymlp/polymlp_features_utils.cpp
     src/polymlp/polymlp_functions_interface.cpp
     src/polymlp/polymlp_mapping.cpp
@@ -64,7 +65,6 @@ set(SRC_FILES
     src/compute/py_features_attr.cpp
     src/compute/polymlp_eval.cpp
     src/compute/polymlp_eval_openmp.cpp
-    src/compute/features.cpp
     src/compute/local.cpp
     src/compute/local_pair.cpp
     src/compute/model.cpp

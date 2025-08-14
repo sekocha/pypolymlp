@@ -70,6 +70,19 @@ class PolymlpAPI {
         vector1d& feature_values
     );
 
+    int compute_features_deriv(
+        const vector1dc& anlmtp,
+        const vector2dc& anlmtp_dfx,
+        const vector2dc& anlmtp_dfy,
+        const vector2dc& anlmtp_dfz,
+        const vector2dc& anlmtp_ds,
+        const int type1,
+        vector2d& dn_dfx,
+        vector2d& dn_dfy,
+        vector2d& dn_dfz,
+        vector2d& dn_ds
+    );
+
     int compute_sum_of_prod_antp(
         const vector1d& antp,
         const int type1,

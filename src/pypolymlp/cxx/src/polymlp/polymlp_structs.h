@@ -89,11 +89,19 @@ struct MappedSingleTerm {
     int id;
 };
 
+struct MappedSingleDerivTerm {
+    double coeff;
+    int head_id;
+    int prod_id;
+};
+
 
 typedef std::vector<SingleTerm> SingleFeature;
 typedef std::vector<SingleFeature> MultipleFeatures;
 typedef std::vector<MappedSingleTerm> MappedSingleFeature;
 typedef std::vector<MappedSingleFeature> MappedMultipleFeatures;
+typedef std::vector<MappedSingleDerivTerm> MappedSingleFeatureDeriv;
+typedef std::vector<MappedSingleFeatureDeriv> MappedMultipleFeaturesDeriv;
 
 
 struct PolynomialTerm {
