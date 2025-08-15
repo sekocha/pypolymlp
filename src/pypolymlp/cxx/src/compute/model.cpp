@@ -7,6 +7,8 @@
 
 #include "compute/model.h"
 
+#include <chrono>
+
 
 Model::Model(){}
 
@@ -76,6 +78,7 @@ void Model::gtinv(
         const auto& dis = dis_array[atom1];
         const auto& diff = diff_array[atom1];
         vector1d de; vector2d dfx, dfy, dfz, ds;
+        auto t1 = std::chrono::system_clock::now();
         if (force == false) {
             local.gtinv(polymlp, type1, dis, diff, de);
         }
@@ -83,8 +86,23 @@ void Model::gtinv(
             const auto& atom2 = atom2_array[atom1];
             local.gtinv_d(polymlp, atom1, type1, dis, diff, atom2, de, dfx, dfy, dfz, ds);
         }
+        auto t2 = std::chrono::system_clock::now();
         model_polynomial(de, dfx, dfy, dfz, ds, type1);
-    }
+
+        /*
+        auto t3 = std::chrono::system_clock::now();
+        double time1, time2;
+        time1 = static_cast<double>(
+            std::chrono::duration_cast<std::chrono::microseconds>
+                (t2 - t1).count() / 1000.0
+            );
+        time2 = static_cast<double>(
+            std::chrono::duration_cast<std::chrono::microseconds>
+                (t3 - t2).count() / 1000.0
+            );
+        std::cout << "Total: " << time1 << " " << time2 << std::endl;
+        */
+   }
 }
 
 

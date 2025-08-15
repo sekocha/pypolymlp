@@ -12,8 +12,8 @@ PolymlpAPI::PolymlpAPI(){
     use_features = false;
     use_potential = false;
     use_model_params = false;
-
 }
+
 PolymlpAPI::~PolymlpAPI(){}
 
 
@@ -44,7 +44,6 @@ int PolymlpAPI::set_features(const feature_params& fp_i){
     fp = fp_i;
     const bool set_deriv = true;
     features = Features(fp, set_deriv);
-    n_variables = features.get_n_variables();
     return 0;
 }
 
@@ -54,7 +53,6 @@ int PolymlpAPI::set_model_parameters(const feature_params& fp_i){
     mapping = Mapping(fp);
     auto& maps = mapping.get_maps();
     modelp = ModelParams(fp, maps);
-    // n_variables = modelp.get_n_variables();
     return 0;
 }
 
@@ -100,13 +98,18 @@ int PolymlpAPI::compute_anlmtp_conjugate(
     const int n_col = anlmtp_r[0].size();
     anlmtp = vector2dc(nlmtp_attrs.size(), vector1dc(n_col, 0.0));
     int idx(0);
+    double rval, ival;
     for (const auto& nlmtp: nlmtp_attrs_noconj){
         const auto& cc_coeff = nlmtp.lm.cc_coeff;
+        auto& anlmtp1 = anlmtp[nlmtp.ilocal_id];
+        auto& anlmtp2 = anlmtp[nlmtp.ilocal_conj_id];
         for (size_t k = 0; k < n_col; ++k){
-            anlmtp[nlmtp.ilocal_id][k] = {anlmtp_r[idx][k], anlmtp_i[idx][k]};
-            anlmtp[nlmtp.ilocal_conj_id][k] = {
-                cc_coeff * anlmtp_r[idx][k], - cc_coeff * anlmtp_i[idx][k]
-            };
+            rval = anlmtp_r[idx][k];
+            ival = anlmtp_i[idx][k];
+            anlmtp1[k] = {rval, ival};
+            anlmtp2[k] = {cc_coeff * rval, - cc_coeff * ival};
+            //anlmtp[nlmtp.ilocal_id][k] = {rval, ival};
+            //anlmtp[nlmtp.ilocal_conj_id][k] = {cc_coeff * rval, - cc_coeff * ival};
         }
         ++idx;
     }
@@ -175,12 +178,16 @@ int PolymlpAPI::compute_sum_of_prod_anlmtp(
 
 
 const feature_params& PolymlpAPI::get_fp() const { return fp; }
+const ModelParams& PolymlpAPI::get_model_params() const { return modelp; }
 
 Maps& PolymlpAPI::get_maps() {
     if (use_potential) return pmodel.get_maps();
     return features.get_maps();
 }
 
-const ModelParams& PolymlpAPI::get_model_params() const { return modelp; }
-
-int PolymlpAPI::get_n_variables() { return n_variables; }
+int PolymlpAPI::get_n_variables() {
+    if (use_features) return features.get_n_variables();
+    else
+        std::cerr << "No method is found for getting n_variables." << std::endl;
+        exit(8);
+}

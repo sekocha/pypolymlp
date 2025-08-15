@@ -91,8 +91,8 @@ struct MappedSingleTerm {
 
 struct MappedSingleDerivTerm {
     double coeff;
-    int head_id;
     int prod_id;
+    int head_id;
 };
 
 

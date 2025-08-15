@@ -41,6 +41,26 @@ class Local{
         vector2dc& anlmtp_ds
     );
 
+    void compute_conjugate(
+        PolymlpAPI& polymlp,
+        const int type1,
+        const vector1d& anlmtp_r,
+        const vector1d& anlmtp_i,
+        const vector2d& anlmtp_dfx_r,
+        const vector2d& anlmtp_dfx_i,
+        const vector2d& anlmtp_dfy_r,
+        const vector2d& anlmtp_dfy_i,
+        const vector2d& anlmtp_dfz_r,
+        const vector2d& anlmtp_dfz_i,
+        const vector2d& anlmtp_ds_r,
+        const vector2d& anlmtp_ds_i,
+        vector1dc& anlmtp,
+        vector2dc& anlmtp_dfx,
+        vector2dc& anlmtp_dfy,
+        vector2dc& anlmtp_dfz,
+        vector2dc& anlmtp_ds
+    );
+
     public:
 
     Local();

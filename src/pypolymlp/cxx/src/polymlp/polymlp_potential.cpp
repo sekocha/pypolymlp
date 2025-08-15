@@ -255,5 +255,4 @@ void Potential::compute_sum_of_prod_anlmtp(
     */
 }
 
-
 Maps& Potential::get_maps() { return f_obj.get_maps(); }

@@ -42,10 +42,19 @@ int convert_to_mapped_features_algo2(
     MappedMultipleFeatures& mapped_features
 );
 
-int convert_to_mapped_features_deriv(
+int convert_to_mapped_features_deriv_algo1(
+    const MultipleFeatures& features,
+    MapFromVec& prod_map_deriv_from_keys,
+    const vector2i& prod_deriv,
+    MappedMultipleFeaturesDeriv& mapped_features_deriv
+);
+
+int convert_to_mapped_features_deriv_algo2(
     const MultipleFeatures& features,
     MapFromVec& prod_map_deriv_from_keys,
     MappedMultipleFeaturesDeriv& mapped_features_deriv
 );
+
+void sort(MappedMultipleFeaturesDeriv& mapped_features_deriv);
 
 #endif

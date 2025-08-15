@@ -132,11 +132,18 @@ int Features::set_mapped_features_deriv(){
     auto& maps = mapping.get_maps();
     for (size_t t1 = 0; t1 < n_type; ++t1){
         auto& maps_type = maps.maps_type[t1];
-        convert_to_mapped_features_deriv(
+        convert_to_mapped_features_deriv_algo2(
             maps_type.features,
             prod_map_deriv_from_keys[t1],
             mapped_features_deriv[t1]
         );
+        //convert_to_mapped_features_deriv_algo1(
+        //    maps_type.features,
+        //    prod_map_deriv_from_keys[t1],
+        //    prod_deriv[t1],
+        //    mapped_features_deriv[t1]
+        //);
+
     }
     return 0;
 }
@@ -210,34 +217,33 @@ void Features::compute_features_deriv(
     vector2d& dn_dfz,
     vector2d& dn_ds
 ){
-    // Derivatives of features for gtinv
-    auto& maps = mapping.get_maps();
+    //Calculate derivatives of gtinv features.
     const auto& mapped_features_deriv1 = mapped_features_deriv[type1];
-
-    const int n_row = mapped_features_deriv1.size();
     const int n_atom = anlmtp_dfx[0].size();
-    dn_dfx = vector2d(n_row, vector1d(n_atom, 0.0));
-    dn_dfy = vector2d(n_row, vector1d(n_atom, 0.0));
-    dn_dfz = vector2d(n_row, vector1d(n_atom, 0.0));
-    dn_ds = vector2d(n_row, vector1d(6, 0.0));
 
     vector1dc prod_anlmtp_deriv;
-    compute_prod_anlmtp_deriv(anlmtp, type1, prod_anlmtp_deriv);
+    compute_products<dc>(prod_deriv[type1], anlmtp, prod_anlmtp_deriv);
 
-    dc val_dc;
-    for (size_t i = 0; i < mapped_features_deriv1.size(); ++i){
-        for (const auto& sterm: mapped_features_deriv1[i]){
-            val_dc = sterm.coeff * prod_anlmtp_deriv[sterm.prod_id];
-            // if val_dc > 1e-20
-            for (int j = 0; j < n_atom; ++j){
-                dn_dfx[i][j] += prod_real(val_dc, anlmtp_dfx[sterm.head_id][j]);
-                dn_dfy[i][j] += prod_real(val_dc, anlmtp_dfy[sterm.head_id][j]);
-                dn_dfz[i][j] += prod_real(val_dc, anlmtp_dfz[sterm.head_id][j]);
-            }
-            for (int j = 0; j < 6; ++j){
-                dn_ds[i][j] += prod_real(val_dc, anlmtp_ds[sterm.head_id][j]);
-            }
+    dc val;
+    // int head_id;
+    for (const auto& mf: mapped_features_deriv1){
+        vector1d dx(n_atom, 0.0), dy(n_atom, 0.0), dz(n_atom, 0.0), ds(6, 0.0);
+        for (const auto& sterm: mf){
+            val = sterm.coeff * prod_anlmtp_deriv[sterm.prod_id];
+            // head_id = sterm.head_id;
+            for (int j = 0; j < n_atom; ++j)
+                dx[j] += prod_real(val, anlmtp_dfx[sterm.head_id][j]);
+            for (int j = 0; j < n_atom; ++j)
+                dy[j] += prod_real(val, anlmtp_dfy[sterm.head_id][j]);
+            for (int j = 0; j < n_atom; ++j)
+                dz[j] += prod_real(val, anlmtp_dfz[sterm.head_id][j]);
+            for (int j = 0; j < 6; ++j)
+                ds[j] += prod_real(val, anlmtp_ds[sterm.head_id][j]);
         }
+        dn_dfx.emplace_back(std::move(dx));
+        dn_dfy.emplace_back(std::move(dy));
+        dn_dfz.emplace_back(std::move(dz));
+        dn_ds.emplace_back(std::move(ds));
     }
 }
 

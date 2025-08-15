@@ -100,8 +100,36 @@ int convert_to_mapped_features_algo2(
     return 0;
 }
 
+int convert_to_mapped_features_deriv_algo1(
+    const MultipleFeatures& features,
+    MapFromVec& prod_map_deriv_from_keys,
+    const vector2i& prod_deriv,
+    MappedMultipleFeaturesDeriv& mapped_features_deriv
+){
+    mapped_features_deriv.resize(prod_deriv.size());
+    for (int f_id = 0; f_id < features.size(); ++f_id){
+        std::unordered_map<vector1i, double, HashVI> smap;
+        for (const auto& sterm: features[f_id]){
+            for (size_t i = 0; i < sterm.nlmtp_ids.size(); ++i){
+                const vector1i keys = erase_a_key(sterm.nlmtp_ids, i);
+                const int prod_id = prod_map_deriv_from_keys[keys];
+                const int head_id = sterm.nlmtp_ids[i];
+                vector1i map_key = {head_id, prod_id};
+                if (smap.count(map_key) == 0)
+                    smap[map_key] = sterm.coeff;
+                else smap[map_key] += sterm.coeff;
+            }
+        }
+        for (const auto& sterm: smap){
+            MappedSingleDerivTerm msterm = {sterm.second, sterm.first[0], f_id};
+            mapped_features_deriv[sterm.first[1]].emplace_back(msterm);
+        }
+    }
+    return 0;
+}
 
-int convert_to_mapped_features_deriv(
+
+int convert_to_mapped_features_deriv_algo2(
     const MultipleFeatures& features,
     MapFromVec& prod_map_deriv_from_keys,
     MappedMultipleFeaturesDeriv& mapped_features_deriv
@@ -121,9 +149,21 @@ int convert_to_mapped_features_deriv(
             }
         }
         for (const auto& sterm: smap){
-            MappedSingleDerivTerm msterm = {sterm.second, sterm.first[0], sterm.first[1]};
+            MappedSingleDerivTerm msterm = {sterm.second, sterm.first[1], sterm.first[0]};
             mapped_features_deriv[f_id].emplace_back(msterm);
         }
     }
+    sort(mapped_features_deriv);
     return 0;
+}
+
+void sort(MappedMultipleFeaturesDeriv& mapped_features_deriv){
+    for (auto& mf: mapped_features_deriv){
+        std::sort(mf.begin(), mf.end(), [](
+            const MappedSingleDerivTerm& lhs, const MappedSingleDerivTerm& rhs
+            ){
+            if (lhs.head_id != rhs.head_id) return lhs.head_id < rhs.head_id;
+            else return lhs.prod_id < rhs.prod_id;
+        });
+    }
 }
