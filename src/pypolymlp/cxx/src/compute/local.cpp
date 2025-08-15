@@ -187,12 +187,12 @@ void Local::compute_anlmtp_d(
                         anlmtp_dfy_i[idx_i][atom2] -= valy.imag();
                         anlmtp_dfz_i[idx_i][atom2] -= valz.imag();
 
-                        val0 -= valx * delx;
-                        val1 -= valy * dely;
-                        val2 -= valz * delz;
-                        val3 -= valx * dely;
-                        val4 -= valy * delz;
-                        val5 -= valz * delx;
+                        val0 = valx * delx;
+                        val1 = valy * dely;
+                        val2 = valz * delz;
+                        val3 = valx * dely;
+                        val4 = valy * delz;
+                        val5 = valz * delx;
 
                         anlmtp_ds_r[idx_i][0] -= val0.real();
                         anlmtp_ds_r[idx_i][1] -= val1.real();

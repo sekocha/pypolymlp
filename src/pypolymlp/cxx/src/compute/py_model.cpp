@@ -19,7 +19,6 @@ PyModel::PyModel(const py::dict& params_dict,
     const bool& element_swap = params_dict["element_swap"].cast<bool>();
     const bool& print_memory = params_dict["print_memory"].cast<bool>();
     convert_params_dict_to_feature_params(params_dict, fp);
-    std::cout << fp.cutoff << std::endl;
 
     std::vector<bool> force_st;
     vector1i xf_begin, xs_begin;
