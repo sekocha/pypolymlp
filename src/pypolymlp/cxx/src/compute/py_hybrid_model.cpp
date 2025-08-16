@@ -45,6 +45,7 @@ PyHybridModel::PyHybridModel(
     const int n_st = axis.size();
     const int total_n_data = n_data[0] + n_data[1] + n_data[2];
     int n_features(0), imodel(0);
+    std::vector<Model> model_array;
     for (const auto& fp: fp_array){
         vector1i active_atoms, types_active;
         vector2d positions_c_active;
@@ -58,13 +59,16 @@ PyHybridModel::PyHybridModel(
             positions_c_active
         );
         Neighbor neigh(axis[0], positions_c_active, types_active, fp.n_type, fp.cutoff);
-        Model mod(
+
+        Model mod(fp);
+        model_array.emplace_back(mod);
+        mod.run(
             neigh.get_dis_array(),
             neigh.get_diff_array(),
             neigh.get_atom2_array(),
-            types_active,
-            fp
+            types_active
         );
+
         n_features += mod.get_xe_sum().size();
         cumulative_n_features.emplace_back(n_features);
         ++imodel;
@@ -82,9 +86,6 @@ PyHybridModel::PyHybridModel(
     for (int i = 0; i < n_st; ++i){
         std::set<int> uniq_types(types[i].begin(), types[i].end());
         for (size_t n = 0; n < cumulative_n_features.size(); ++n){
-            auto fp1 = fp_array[n];
-            fp1.force = force_st[i];
-
             int first_index;
             if (n == 0) first_index = 0;
             else first_index = cumulative_n_features[n-1];
@@ -105,15 +106,17 @@ PyHybridModel::PyHybridModel(
                 axis[i],
                 positions_c_active,
                 types_active,
-                fp1.n_type,
-                fp1.cutoff
+                fp_array[n].n_type,
+                fp_array[n].cutoff
             );
-            Model mod(
+
+            Model mod = model_array[n];
+            mod.set_force(force_st[i]);
+            mod.run(
                 neigh.get_dis_array(),
                 neigh.get_diff_array(),
                 neigh.get_atom2_array(),
-                types_active,
-                fp1
+                types_active
             );
 
             const auto &xe = mod.get_xe_sum();

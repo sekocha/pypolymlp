@@ -93,6 +93,7 @@ struct MappedSingleDerivTerm {
     double coeff;
     int prod_id;
     int head_id;
+    int feature_id;
 };
 
 

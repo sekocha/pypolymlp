@@ -22,7 +22,6 @@ int get_nonequiv_deriv_ids(
     std::set<vector1i>& nonequiv
 );
 
-
 int _convert_single_feature_to_map(
     const SingleFeature& sfeature,
     MapFromVec& prod_map_from_keys,

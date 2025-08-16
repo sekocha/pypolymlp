@@ -7,24 +7,29 @@
 
 #include "compute/model.h"
 
-#include <chrono>
-
 
 Model::Model(){}
 
-Model::Model(
+Model::Model(const struct feature_params& fp){
+
+    polymlp.set_features(fp);
+    force = fp.force;
+
+}
+
+Model::~Model(){}
+
+
+void Model::run(
     const vector3d& dis_array,
     const vector4d& diff_array,
     const vector3i& atom2_array,
-    const vector1i& types_i,
-    const struct feature_params& fp
+    const vector1i& types_i
 ){
 
-    polymlp.set_features(fp);
-
+    auto& fp = polymlp.get_fp();
     types = types_i;
     n_atom = types.size();
-    force = fp.force;
 
     const int size = polymlp.get_n_variables();
     xe_sum = vector1d(size, 0.0);
@@ -39,7 +44,10 @@ Model::Model(
         gtinv(dis_array, diff_array, atom2_array);
 }
 
-Model::~Model(){}
+
+void Model::set_force(const bool force_i){
+    force = force_i;
+}
 
 
 void Model::pair(
@@ -78,7 +86,6 @@ void Model::gtinv(
         const auto& dis = dis_array[atom1];
         const auto& diff = diff_array[atom1];
         vector1d de; vector2d dfx, dfy, dfz, ds;
-        auto t1 = std::chrono::system_clock::now();
         if (force == false) {
             local.gtinv(polymlp, type1, dis, diff, de);
         }
@@ -86,22 +93,7 @@ void Model::gtinv(
             const auto& atom2 = atom2_array[atom1];
             local.gtinv_d(polymlp, atom1, type1, dis, diff, atom2, de, dfx, dfy, dfz, ds);
         }
-        auto t2 = std::chrono::system_clock::now();
         model_polynomial(de, dfx, dfy, dfz, ds, type1);
-
-        /*
-        auto t3 = std::chrono::system_clock::now();
-        double time1, time2;
-        time1 = static_cast<double>(
-            std::chrono::duration_cast<std::chrono::microseconds>
-                (t2 - t1).count() / 1000.0
-            );
-        time2 = static_cast<double>(
-            std::chrono::duration_cast<std::chrono::microseconds>
-                (t3 - t2).count() / 1000.0
-            );
-        std::cout << "Total: " << time1 << " " << time2 << std::endl;
-        */
    }
 }
 

@@ -39,6 +39,13 @@ class Features {
     int set_deriv_mappings();
     int set_mapped_features_deriv();
 
+    void compute_features_deriv_single_component(
+        const vector2dc& anlmtp_d,
+        const int type1,
+        const vector1dc& prod_anlmtp_d,
+        vector2d& dn_d
+    );
+
     public:
 
     Features();

@@ -74,14 +74,17 @@ class Model {
     public:
 
     Model();
-    Model(
-        const vector3d& dis_array_all,
-        const vector4d& diff_array_all,
-        const vector3i& atom2_array_all,
-        const vector1i& types_i,
-        const struct feature_params& fp
-    );
+    Model(const struct feature_params& fp);
     ~Model();
+
+    void run(
+        const vector3d& dis_array,
+        const vector4d& diff_array,
+        const vector3i& atom2_array,
+        const vector1i& types_i
+    );
+
+    void set_force(const bool force_i);
 
     const vector1d& get_xe_sum() const;
     const vector2d& get_xf_sum() const;

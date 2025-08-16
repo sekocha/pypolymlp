@@ -22,21 +22,19 @@ PyModel::PyModel(const py::dict& params_dict,
 
     std::vector<bool> force_st;
     vector1i xf_begin, xs_begin;
-    set_index(
-        n_st_dataset, force_dataset, n_atoms_all,
-        xf_begin, xs_begin, force_st
-    );
+    set_index(n_st_dataset, force_dataset, n_atoms_all, xf_begin, xs_begin, force_st);
 
     Neighbor neigh(axis[0], positions_c[0], types[0], fp.n_type, fp.cutoff);
-    Model mod(
+    Model mod_prior(fp);
+    Model mod_base = mod_prior;
+    mod_prior.run(
         neigh.get_dis_array(),
         neigh.get_diff_array(),
         neigh.get_atom2_array(),
-        types[0],
-        fp
+        types[0]
     );
 
-    const int n_features = mod.get_xe_sum().size();
+    const int n_features = mod_prior.get_xe_sum().size();
     const int n_st = axis.size();
     const int total_n_data = n_data[0] + n_data[1] + n_data[2];
 
@@ -50,20 +48,14 @@ PyModel::PyModel(const py::dict& params_dict,
     #pragma omp parallel for schedule(guided,1)
     #endif
     for (int i = 0; i < n_st; ++i){
-        struct feature_params fp1 = fp;
-        fp1.force = force_st[i];
-
-        Neighbor neigh(axis[i],
-                       positions_c[i],
-                       types[i],
-                       fp1.n_type,
-                       fp1.cutoff);
-        Model mod(
+        Neighbor neigh(axis[i], positions_c[i], types[i], fp.n_type, fp.cutoff);
+        Model mod = mod_base;
+        mod.set_force(force_st[i]);
+        mod.run(
             neigh.get_dis_array(),
             neigh.get_diff_array(),
             neigh.get_atom2_array(),
-            types[i],
-            fp1
+            types[i]
         );
 
         const auto &xe = mod.get_xe_sum();
