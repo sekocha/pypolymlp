@@ -26,6 +26,7 @@ int PolymlpAPI::parse_polymlp_file(
     const bool legacy = check_polymlp_legacy(file);
     if (legacy == true) parse_polymlp_legacy(file, fp, pot, ele, mass);
     else parse_polymlp(file, fp, pot, ele, mass);
+    pmodel = Potential(fp, pot);
     return 0;
 }
 
