@@ -5,30 +5,28 @@
 
 ****************************************************************************/
 
-#include "py_additive_model.h"
+#include "py_hybrid_model.h"
 
-PyAdditiveModel::PyAdditiveModel(const std::vector<py::dict>& params_dict_array,
-                                 const vector3d& axis,
-                                 const vector3d& positions_c,
-                                 const vector2i& types,
-                                 const vector1i& n_st_dataset,
-                                 const std::vector<bool>& force_dataset,
-                                 const vector1i& n_atoms_all){
+PyHybridModel::PyHybridModel(
+    const std::vector<py::dict>& params_dict_array,
+    const vector3d& axis,
+    const vector3d& positions_c,
+    const vector2i& types,
+    const vector1i& n_st_dataset,
+    const std::vector<bool>& force_dataset,
+    const vector1i& n_atoms_all
+){
 
-    std::vector<struct feature_params> fp_array;
-    std::vector<FunctionFeatures> features_array;
+    std::vector<feature_params> fp_array;
     vector2i type_indices_array;
     std::vector<bool> type_full_array;
     bool element_swap, print_memory;
     for (const auto& params_dict: params_dict_array){
-        struct feature_params fp;
+        feature_params fp;
         element_swap = params_dict["element_swap"].cast<bool>();
         print_memory = params_dict["print_memory"].cast<bool>();
         convert_params_dict_to_feature_params(params_dict, fp);
-        const Features f_obj(fp);
-        const FunctionFeatures features_obj(f_obj);
         fp_array.emplace_back(fp);
-        features_array.emplace_back(features_obj);
         type_indices_array.emplace_back(params_dict["type_indices"].cast<vector1i>());
         type_full_array.emplace_back(params_dict["type_full"].cast<bool>());
     }
@@ -47,6 +45,7 @@ PyAdditiveModel::PyAdditiveModel(const std::vector<py::dict>& params_dict_array,
     const int n_st = axis.size();
     const int total_n_data = n_data[0] + n_data[1] + n_data[2];
     int n_features(0), imodel(0);
+    std::vector<Model> model_array;
     for (const auto& fp: fp_array){
         vector1i active_atoms, types_active;
         vector2d positions_c_active;
@@ -60,15 +59,21 @@ PyAdditiveModel::PyAdditiveModel(const std::vector<py::dict>& params_dict_array,
             positions_c_active
         );
         Neighbor neigh(axis[0], positions_c_active, types_active, fp.n_type, fp.cutoff);
-        ModelFast mod(
+
+        vector1d xe;
+        vector2d xf, xs;
+        Model mod(fp);
+        model_array.emplace_back(mod);
+        mod.run(
             neigh.get_dis_array(),
             neigh.get_diff_array(),
             neigh.get_atom2_array(),
             types_active,
-            fp,
-            features_array[imodel]
+            false,
+            xe, xf, xs
         );
-        n_features += mod.get_xe_sum().size();
+
+        n_features += xe.size();
         cumulative_n_features.emplace_back(n_features);
         ++imodel;
     }
@@ -85,10 +90,6 @@ PyAdditiveModel::PyAdditiveModel(const std::vector<py::dict>& params_dict_array,
     for (int i = 0; i < n_st; ++i){
         std::set<int> uniq_types(types[i].begin(), types[i].end());
         for (size_t n = 0; n < cumulative_n_features.size(); ++n){
-            struct feature_params fp1 = fp_array[n];
-            const auto& features1 = features_array[n];
-            fp1.force = force_st[i];
-
             int first_index;
             if (n == 0) first_index = 0;
             else first_index = cumulative_n_features[n-1];
@@ -109,25 +110,25 @@ PyAdditiveModel::PyAdditiveModel(const std::vector<py::dict>& params_dict_array,
                 axis[i],
                 positions_c_active,
                 types_active,
-                fp1.n_type,
-                fp1.cutoff
+                fp_array[n].n_type,
+                fp_array[n].cutoff
             );
-            ModelFast mod(
+
+            vector1d xe;
+            vector2d xf, xs;
+            model_array[n].run(
                 neigh.get_dis_array(),
                 neigh.get_diff_array(),
                 neigh.get_atom2_array(),
                 types_active,
-                fp1,
-                features1
+                force_st[i],
+                xe, xf, xs
             );
 
-            const auto &xe = mod.get_xe_sum();
             for (size_t j = 0; j < xe.size(); ++j)
                 x_all(i,first_index+j) = xe[j];
 
             if (force_st[i] == true){
-                const auto &xf = mod.get_xf_sum();
-                const auto &xs = mod.get_xs_sum();
                 for (size_t j = 0; j < xf.size(); ++j) {
                     const auto j_rev = 3 * active_atoms[j / 3] + j % 3;
                     for (size_t k = 0; k < xf[j].size(); ++k){
@@ -144,9 +145,9 @@ PyAdditiveModel::PyAdditiveModel(const std::vector<py::dict>& params_dict_array,
     }
 }
 
-PyAdditiveModel::~PyAdditiveModel(){}
+PyHybridModel::~PyHybridModel(){}
 
-void PyAdditiveModel::find_active_atoms(
+void PyHybridModel::find_active_atoms(
     const bool type_full,
     const vector1i& type_indices,
     const vector1i& types_old,
@@ -187,15 +188,9 @@ void PyAdditiveModel::find_active_atoms(
         types_active = types_old;
         positions_c_active = positions_c_old;
     }
-/*
-    for (auto t: types_active){
-        std::cout << t << " ";
-    }
-    std::cout << std::endl;
-*/
 }
 
-void PyAdditiveModel::set_index(const std::vector<int>& n_data_dataset,
+void PyHybridModel::set_index(const std::vector<int>& n_data_dataset,
                                 const std::vector<bool>& force_dataset,
                                 const std::vector<int>& n_atoms_st,
                                 std::vector<int>& xf_begin,
@@ -245,14 +240,14 @@ void PyAdditiveModel::set_index(const std::vector<int>& n_data_dataset,
     }
 }
 
-Eigen::MatrixXd& PyAdditiveModel::get_x(){ return x_all; }
+Eigen::MatrixXd& PyHybridModel::get_x(){ return x_all; }
 
-const vector1i& PyAdditiveModel::get_fbegin() const{ return xf_begin_dataset; }
+const vector1i& PyHybridModel::get_fbegin() const{ return xf_begin_dataset; }
 
-const vector1i& PyAdditiveModel::get_sbegin() const{ return xs_begin_dataset; }
+const vector1i& PyHybridModel::get_sbegin() const{ return xs_begin_dataset; }
 
-const vector1i& PyAdditiveModel::get_cumulative_n_features() const{
+const vector1i& PyHybridModel::get_cumulative_n_features() const{
     return cumulative_n_features;
 }
 
-const vector1i& PyAdditiveModel::get_n_data() const{ return n_data; }
+const vector1i& PyHybridModel::get_n_data() const{ return n_data; }

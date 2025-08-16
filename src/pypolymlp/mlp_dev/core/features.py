@@ -198,7 +198,7 @@ class FeaturesHybrid:
             params.print_memory = print_memory
             hybrid_params_dicts.append(params.as_dict())
 
-        obj = libmlpcpp.PotentialAdditiveModel(
+        obj = libmlpcpp.PotentialHybridModel(
             hybrid_params_dicts,
             axis_array,
             positions_c_array,

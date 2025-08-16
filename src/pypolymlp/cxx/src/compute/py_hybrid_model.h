@@ -5,23 +5,22 @@
 
 ****************************************************************************/
 
-#ifndef __PY_ADDITIVE_MODEL
-#define __PY_ADDITIVE_MODEL
+#ifndef __PY_HYBRID_MODEL
+#define __PY_HYBRID_MODEL
 
 #include "mlpcpp.h"
-#include "polymlp/polymlp_features.h"
 #include "compute/py_params.h"
 #include "compute/neighbor.h"
-#include "compute/model_fast.h"
-#include "compute/features.h"
+#include "compute/model.h"
 
 #include <Eigen/Core>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+
 namespace py = pybind11;
 
-class PyAdditiveModel {
+class PyHybridModel {
 
     Eigen::MatrixXd x_all;
     vector1i xf_begin_dataset, xs_begin_dataset;
@@ -46,15 +45,17 @@ class PyAdditiveModel {
 
     public:
 
-    PyAdditiveModel(const std::vector<py::dict>& params_dict_array,
-                    const vector3d& axis,
-                    const vector3d& positions_c,
-                    const vector2i& types,
-                    const vector1i& n_st_dataset,
-                    const std::vector<bool>& force_dataset,
-                    const vector1i& n_atoms_all);
+    PyHybridModel(
+        const std::vector<py::dict>& params_dict_array,
+        const vector3d& axis,
+        const vector3d& positions_c,
+        const vector2i& types,
+        const vector1i& n_st_dataset,
+        const std::vector<bool>& force_dataset,
+        const vector1i& n_atoms_all
+    );
 
-    ~PyAdditiveModel();
+    ~PyHybridModel();
 
     Eigen::MatrixXd& get_x();
     const vector1i& get_fbegin() const;
