@@ -60,16 +60,20 @@ PyHybridModel::PyHybridModel(
         );
         Neighbor neigh(axis[0], positions_c_active, types_active, fp.n_type, fp.cutoff);
 
+        vector1d xe;
+        vector2d xf, xs;
         Model mod(fp);
         model_array.emplace_back(mod);
         mod.run(
             neigh.get_dis_array(),
             neigh.get_diff_array(),
             neigh.get_atom2_array(),
-            types_active
+            types_active,
+            false,
+            xe, xf, xs
         );
 
-        n_features += mod.get_xe_sum().size();
+        n_features += xe.size();
         cumulative_n_features.emplace_back(n_features);
         ++imodel;
     }
@@ -110,22 +114,21 @@ PyHybridModel::PyHybridModel(
                 fp_array[n].cutoff
             );
 
-            Model mod = model_array[n];
-            mod.set_force(force_st[i]);
-            mod.run(
+            vector1d xe;
+            vector2d xf, xs;
+            model_array[n].run(
                 neigh.get_dis_array(),
                 neigh.get_diff_array(),
                 neigh.get_atom2_array(),
-                types_active
+                types_active,
+                force_st[i],
+                xe, xf, xs
             );
 
-            const auto &xe = mod.get_xe_sum();
             for (size_t j = 0; j < xe.size(); ++j)
                 x_all(i,first_index+j) = xe[j];
 
             if (force_st[i] == true){
-                const auto &xf = mod.get_xf_sum();
-                const auto &xs = mod.get_xs_sum();
                 for (size_t j = 0; j < xf.size(); ++j) {
                     const auto j_rev = 3 * active_atoms[j / 3] + j % 3;
                     for (size_t k = 0; k < xf[j].size(); ++k){
@@ -185,12 +188,6 @@ void PyHybridModel::find_active_atoms(
         types_active = types_old;
         positions_c_active = positions_c_old;
     }
-/*
-    for (auto t: types_active){
-        std::cout << t << " ";
-    }
-    std::cout << std::endl;
-*/
 }
 
 void PyHybridModel::set_index(const std::vector<int>& n_data_dataset,

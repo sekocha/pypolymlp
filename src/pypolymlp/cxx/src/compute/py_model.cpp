@@ -25,16 +25,19 @@ PyModel::PyModel(const py::dict& params_dict,
     set_index(n_st_dataset, force_dataset, n_atoms_all, xf_begin, xs_begin, force_st);
 
     Neighbor neigh(axis[0], positions_c[0], types[0], fp.n_type, fp.cutoff);
-    Model mod_prior(fp);
-    Model mod_base = mod_prior;
-    mod_prior.run(
+    Model mod(fp);
+    vector1d xe_pre;
+    vector2d xf_pre, xs_pre;
+    mod.run(
         neigh.get_dis_array(),
         neigh.get_diff_array(),
         neigh.get_atom2_array(),
-        types[0]
+        types[0],
+        fp.force,
+        xe_pre, xf_pre, xs_pre
     );
 
-    const int n_features = mod_prior.get_xe_sum().size();
+    const int n_features = xe_pre.size();
     const int n_st = axis.size();
     const int total_n_data = n_data[0] + n_data[1] + n_data[2];
 
@@ -52,21 +55,20 @@ PyModel::PyModel(const py::dict& params_dict,
     #endif
     for (int i = 0; i < n_st; ++i){
         Neighbor neigh(axis[i], positions_c[i], types[i], fp.n_type, fp.cutoff);
-        Model mod = mod_base;
-        mod.set_force(force_st[i]);
+        vector1d xe;
+        vector2d xf, xs;
         mod.run(
             neigh.get_dis_array(),
             neigh.get_diff_array(),
             neigh.get_atom2_array(),
-            types[i]
+            types[i],
+            force_st[i],
+            xe, xf, xs
         );
 
-        const auto &xe = mod.get_xe_sum();
         for (size_t j = 0; j < xe.size(); ++j) x_all(i,j) = xe[j];
 
         if (force_st[i] == true){
-            const auto &xf = mod.get_xf_sum();
-            const auto &xs = mod.get_xs_sum();
             for (size_t j = 0; j < xf.size(); ++j) {
                 for (size_t k = 0; k < xf[j].size(); ++k){
                     x_all(xf_begin[i]+j, k) = xf[j][k];

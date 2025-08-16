@@ -13,8 +13,6 @@ Model::Model(){}
 Model::Model(const struct feature_params& fp){
 
     polymlp.set_features(fp);
-    force = fp.force;
-
 }
 
 Model::~Model(){}
@@ -24,38 +22,41 @@ void Model::run(
     const vector3d& dis_array,
     const vector4d& diff_array,
     const vector3i& atom2_array,
-    const vector1i& types_i
+    const vector1i& types,
+    const bool force,
+    vector1d& xe_sum,
+    vector2d& xf_sum,
+    vector2d& xs_sum
 ){
 
-    auto& fp = polymlp.get_fp();
-    types = types_i;
-    n_atom = types.size();
-
+    const auto& fp = polymlp.get_fp();
     const int size = polymlp.get_n_variables();
     xe_sum = vector1d(size, 0.0);
     if (force == true){
+        const int n_atom = types.size();
         xf_sum = vector2d(3 * n_atom, vector1d(size, 0.0));
         xs_sum = vector2d(6, vector1d(size, 0.0));
     }
 
     if (fp.feature_type == "pair")
-        pair(dis_array, diff_array, atom2_array);
+        pair(dis_array, diff_array, atom2_array, types, force, xe_sum, xf_sum, xs_sum);
     else if (fp.feature_type == "gtinv")
-        gtinv(dis_array, diff_array, atom2_array);
-}
-
-
-void Model::set_force(const bool force_i){
-    force = force_i;
+        gtinv(dis_array, diff_array, atom2_array, types, force, xe_sum, xf_sum, xs_sum);
 }
 
 
 void Model::pair(
     const vector3d& dis_array,
     const vector4d& diff_array,
-    const vector3i& atom2_array
+    const vector3i& atom2_array,
+    const vector1i& types,
+    const bool force,
+    vector1d& xe_sum,
+    vector2d& xf_sum,
+    vector2d& xs_sum
 ){
 
+    const int n_atom = types.size();
     LocalPair local(n_atom);
     for (int atom1 = 0; atom1 < n_atom; ++atom1){
         const int type1 = types[atom1];
@@ -69,7 +70,7 @@ void Model::pair(
             const auto& atom2 = atom2_array[atom1];
             local.pair_d(polymlp, atom1, type1, dis, diff, atom2, de, dfx, dfy, dfz, ds);
         }
-        model_polynomial(de, dfx, dfy, dfz, ds, type1);
+        model_polynomial(de, dfx, dfy, dfz, ds, type1, force, xe_sum, xf_sum, xs_sum);
     }
 }
 
@@ -77,9 +78,15 @@ void Model::pair(
 void Model::gtinv(
     const vector3d& dis_array,
     const vector4d& diff_array,
-    const vector3i& atom2_array
+    const vector3i& atom2_array,
+    const vector1i& types,
+    const bool force,
+    vector1d& xe_sum,
+    vector2d& xf_sum,
+    vector2d& xs_sum
 ){
 
+    const int n_atom = types.size();
     Local local(n_atom);
     for (int atom1 = 0; atom1 < n_atom; ++atom1){
         const int type1 = types[atom1];
@@ -93,7 +100,7 @@ void Model::gtinv(
             const auto& atom2 = atom2_array[atom1];
             local.gtinv_d(polymlp, atom1, type1, dis, diff, atom2, de, dfx, dfy, dfz, ds);
         }
-        model_polynomial(de, dfx, dfy, dfz, ds, type1);
+        model_polynomial(de, dfx, dfy, dfz, ds, type1, force, xe_sum, xf_sum, xs_sum);
    }
 }
 
@@ -104,15 +111,22 @@ void Model::model_polynomial(
     const vector2d& dfy,
     const vector2d& dfz,
     const vector2d& ds,
-    const int type1
+    const int type1,
+    const bool force,
+    vector1d& xe_sum,
+    vector2d& xf_sum,
+    vector2d& xs_sum
 ){
 
     auto& maps = polymlp.get_maps();
     auto& maps_type = maps.maps_type[type1];
     for (const auto& term: maps_type.polynomial){
-        if (term.local_ids.size() == 1) model_order1(term, de, dfx, dfy, dfz, ds);
-        else if (term.local_ids.size() == 2) model_order2(term, de, dfx, dfy, dfz, ds);
-        else if (term.local_ids.size() == 3) model_order3(term, de, dfx, dfy, dfz, ds);
+        if (term.local_ids.size() == 1)
+            model_order1(term, de, dfx, dfy, dfz, ds, force, xe_sum, xf_sum, xs_sum);
+        else if (term.local_ids.size() == 2)
+            model_order2(term, de, dfx, dfy, dfz, ds, force, xe_sum, xf_sum, xs_sum);
+        else if (term.local_ids.size() == 3)
+            model_order3(term, de, dfx, dfy, dfz, ds, force, xe_sum, xf_sum, xs_sum);
     }
 }
 
@@ -123,13 +137,18 @@ void Model::model_order1(
     const vector2d& dfx,
     const vector2d& dfy,
     const vector2d& dfz,
-    const vector2d& ds
+    const vector2d& ds,
+    const bool force,
+    vector1d& xe_sum,
+    vector2d& xf_sum,
+    vector2d& xs_sum
 ){
     const int col = term.global_id;
     const int c1 = term.local_ids[0];
 
     xe_sum[col] += de[c1];
     if (force == true){
+        const int n_atom = dfx[0].size();
         for (int k = 0; k < n_atom; ++k){
             xf_sum[3*k][col] += dfx[c1][k];
             xf_sum[3*k+1][col] += dfy[c1][k];
@@ -147,7 +166,11 @@ void Model::model_order2(
     const vector2d& dfx,
     const vector2d& dfy,
     const vector2d& dfz,
-    const vector2d& ds
+    const vector2d& ds,
+    const bool force,
+    vector1d& xe_sum,
+    vector2d& xf_sum,
+    vector2d& xs_sum
 ){
     const int col = term.global_id;
     const int c1 = term.local_ids[0];
@@ -155,6 +178,7 @@ void Model::model_order2(
 
     xe_sum[col] += de[c1] * de[c2];
     if (force == true){
+        const int n_atom = dfx[0].size();
         const double val1 = de[c2];
         const double val2 = de[c1];
         for (int k = 0; k < n_atom; ++k){
@@ -174,7 +198,11 @@ void Model::model_order3(
     const vector2d& dfx,
     const vector2d& dfy,
     const vector2d& dfz,
-    const vector2d& ds
+    const vector2d& ds,
+    const bool force,
+    vector1d& xe_sum,
+    vector2d& xf_sum,
+    vector2d& xs_sum
 ){
     const int col = term.global_id;
     const int c1 = term.local_ids[0];
@@ -183,6 +211,7 @@ void Model::model_order3(
 
     xe_sum[col] += de[c1] * de[c2] * de[c3];
     if (force == true){
+        const int n_atom = dfx[0].size();
         const double val1 = de[c2] * de[c3];
         const double val2 = de[c1] * de[c3];
         const double val3 = de[c1] * de[c2];
@@ -203,8 +232,3 @@ void Model::model_order3(
         }
     }
 }
-
-
-const vector1d& Model::get_xe_sum() const{ return xe_sum;}
-const vector2d& Model::get_xf_sum() const{ return xf_sum;}
-const vector2d& Model::get_xs_sum() const{ return xs_sum;}

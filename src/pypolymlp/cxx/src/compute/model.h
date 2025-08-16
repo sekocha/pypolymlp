@@ -18,23 +18,26 @@ class Model {
 
     PolymlpAPI polymlp;
 
-    int n_atom;
-    bool force;
-    vector1i types;
-
-    vector1d xe_sum;
-    vector2d xf_sum, xs_sum;
-
     void pair(
         const vector3d& dis_array,
         const vector4d& diff_array,
-        const vector3i& atom2_array
+        const vector3i& atom2_array,
+        const vector1i& types,
+        const bool force,
+        vector1d& xe_sum,
+        vector2d& xf_sum,
+        vector2d& xs_sum
     );
 
     void gtinv(
         const vector3d& dis_array,
         const vector4d& diff_array,
-        const vector3i& atom2_array
+        const vector3i& atom2_array,
+        const vector1i& types,
+        const bool force,
+        vector1d& xe_sum,
+        vector2d& xf_sum,
+        vector2d& xs_sum
     );
 
     void model_polynomial(
@@ -43,7 +46,11 @@ class Model {
         const vector2d& dfy,
         const vector2d& dfz,
         const vector2d& ds,
-        const int type1
+        const int type1,
+        const bool force,
+        vector1d& xe_sum,
+        vector2d& xf_sum,
+        vector2d& xs_sum
     );
 
     void model_order1(
@@ -52,7 +59,11 @@ class Model {
         const vector2d& dfx,
         const vector2d& dfy,
         const vector2d& dfz,
-        const vector2d& ds
+        const vector2d& ds,
+        const bool force,
+        vector1d& xe_sum,
+        vector2d& xf_sum,
+        vector2d& xs_sum
     );
     void model_order2(
         const PolynomialTerm& term,
@@ -60,7 +71,11 @@ class Model {
         const vector2d& dfx,
         const vector2d& dfy,
         const vector2d& dfz,
-        const vector2d& ds
+        const vector2d& ds,
+        const bool force,
+        vector1d& xe_sum,
+        vector2d& xf_sum,
+        vector2d& xs_sum
     );
     void model_order3(
         const PolynomialTerm& term,
@@ -68,7 +83,11 @@ class Model {
         const vector2d& dfx,
         const vector2d& dfy,
         const vector2d& dfz,
-        const vector2d& ds
+        const vector2d& ds,
+        const bool force,
+        vector1d& xe_sum,
+        vector2d& xf_sum,
+        vector2d& xs_sum
     );
 
     public:
@@ -81,14 +100,12 @@ class Model {
         const vector3d& dis_array,
         const vector4d& diff_array,
         const vector3i& atom2_array,
-        const vector1i& types_i
+        const vector1i& types_i,
+        const bool force,
+        vector1d& xe_sum,
+        vector2d& xf_sum,
+        vector2d& xs_sum
     );
-
-    void set_force(const bool force_i);
-
-    const vector1d& get_xe_sum() const;
-    const vector2d& get_xf_sum() const;
-    const vector2d& get_xs_sum() const;
 
 };
 
