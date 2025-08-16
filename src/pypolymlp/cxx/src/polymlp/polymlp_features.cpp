@@ -50,11 +50,21 @@ Features::Features(const feature_params& fp, const bool set_deriv_i = false){
     poly = FeaturesPoly(modelp, maps);
 
     if (set_features_deriv == true) set_mapped_features_deriv();
+
+    for (int type1 = 0; type1 < n_type; ++type1){
+        const auto& features1 = maps.maps_type[type1].features;
+        feature_sizes.emplace_back(features1.size());
+    }
 }
 
 
 Features::~Features(){}
 
+void Features::release_memory(){
+    auto& maps = mapping.get_maps();
+    maps.clear();
+    prod_map_deriv_from_keys = {};
+}
 
 int Features::set_mappings_standard(){
 
@@ -149,11 +159,10 @@ void Features::compute_features(
 ){
     // for pair
     auto& maps = mapping.get_maps();
-    const auto& features1 = maps.maps_type[type1].features;
     const auto& prod1 = prod[type1];
     const auto& mapped_features1 = mapped_features[type1];
 
-    feature_values = vector1d(features1.size(), 0.0);
+    feature_values = vector1d(feature_sizes[type1], 0.0);
     for (size_t i = 0; i < mapped_features1.size(); ++i){
         const auto& sterm = mapped_features1[i][0];
         feature_values[i] = antp[prod1[sterm.id][0]];
@@ -168,11 +177,10 @@ void Features::compute_features(
 ){
     // for gtinv
     auto& maps = mapping.get_maps();
-    const auto& features1 = maps.maps_type[type1].features;
     const auto& prod1 = prod[type1];
     const auto& mapped_features1 = mapped_features[type1];
 
-    feature_values = vector1d(features1.size(), 0.0);
+    feature_values = vector1d(feature_sizes[type1], 0.0);
     if (prod1.size() > threshold_prod){
         for (size_t i = 0; i < mapped_features1.size(); ++i){
             double val = compute_product_real(prod1[i], anlmtp);
@@ -216,8 +224,7 @@ void Features::compute_features_deriv(
     compute_features_deriv_single_component(anlmtp_dfy, type1, prod_anlmtp_d, dn_dfy);
     compute_features_deriv_single_component(anlmtp_dfz, type1, prod_anlmtp_d, dn_dfz);
     compute_features_deriv_single_component(anlmtp_ds, type1, prod_anlmtp_d, dn_ds);
-
-    /*
+/*
     const auto& mapped_features_deriv1 = mapped_features_deriv[type1];
     const int n_atom = anlmtp_dfx[0].size();
     dc val;

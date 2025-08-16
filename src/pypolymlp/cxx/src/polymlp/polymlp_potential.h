@@ -25,6 +25,7 @@ class Potential {
     int set_mapping_prod_of_features();
     int set_terms_using_mapping(const vector1d& pot);
     void sort_potential_model();
+    void release_memory();
 
     public:
 

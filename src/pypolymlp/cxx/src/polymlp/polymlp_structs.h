@@ -139,6 +139,10 @@ struct MapsType {
     int get_feature_size(const int local_feature_id){
         return features[local_feature_id][0].nlmtp_ids.size();
     }
+
+    void clear(){
+        features = {};
+    }
 };
 
 
@@ -188,6 +192,15 @@ struct Maps {
             local_keys.emplace_back(nlmtp_global_to_iloc[key]);
         }
         return local_keys;
+    }
+
+    void clear(){
+        for (auto& mt1: maps_type) mt1.clear();
+        ntp_to_global = {};
+        ntp_global_to_iloc = {};
+        nlmtp_to_global = {};
+        nlmtp_global_to_iloc = {};
+        global_to_global_conj = {};
     }
 };
 

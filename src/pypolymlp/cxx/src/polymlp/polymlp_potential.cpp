@@ -31,11 +31,16 @@ Potential::Potential(const feature_params& fp, const vector1d& pot){
     else elim_conj = true;
 
     set_terms_using_mapping(pot);
+    release_memory();
     sort_potential_model();
 
 }
 
 Potential::~Potential(){}
+
+void Potential::release_memory(){
+    f_obj.release_memory();
+}
 
 int Potential::set_terms_using_mapping(const vector1d& pot){
 

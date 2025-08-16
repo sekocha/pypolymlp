@@ -24,6 +24,7 @@ class Features {
 
     int n_type;
     bool eliminate_conj, set_features_deriv;
+    vector1i feature_sizes;
 
     Mapping mapping;
     ModelParams modelp;
@@ -56,6 +57,8 @@ class Features {
     MapFromVec& get_prod_map_deriv(const int type1);
     MapFromVec& get_prod_features_map(const int type1);
     const int get_n_variables() const;
+
+    void release_memory();
 
     void compute_features(const vector1d& antp, const int t1, vector1d& vals);
     void compute_features(const vector1dc& anlmtp, const int t1, vector1d& vals);

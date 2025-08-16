@@ -26,6 +26,7 @@ int PolymlpAPI::parse_polymlp_file(
     const bool legacy = check_polymlp_legacy(file);
     if (legacy == true) parse_polymlp_legacy(file, fp, pot, ele, mass);
     else parse_polymlp(file, fp, pot, ele, mass);
+
     pmodel = Potential(fp, pot);
     return 0;
 }
@@ -45,6 +46,7 @@ int PolymlpAPI::set_features(const feature_params& fp_i){
     fp = fp_i;
     const bool set_deriv = true;
     features = Features(fp, set_deriv);
+    features.release_memory();
     return 0;
 }
 
