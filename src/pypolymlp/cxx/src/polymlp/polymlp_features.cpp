@@ -210,23 +210,21 @@ void Features::compute_features_deriv(
     vector2d& dn_ds
 ){
     //Calculate derivatives of gtinv features.
-    const auto& mapped_features_deriv1 = mapped_features_deriv[type1];
-    const int n_atom = anlmtp_dfx[0].size();
-
     vector1dc prod_anlmtp_d;
     compute_prod_anlmtp_deriv(anlmtp, type1, prod_anlmtp_d);
-
     compute_features_deriv_single_component(anlmtp_dfx, type1, prod_anlmtp_d, dn_dfx);
     compute_features_deriv_single_component(anlmtp_dfy, type1, prod_anlmtp_d, dn_dfy);
     compute_features_deriv_single_component(anlmtp_dfz, type1, prod_anlmtp_d, dn_dfz);
     compute_features_deriv_single_component(anlmtp_ds, type1, prod_anlmtp_d, dn_ds);
 
     /*
+    const auto& mapped_features_deriv1 = mapped_features_deriv[type1];
+    const int n_atom = anlmtp_dfx[0].size();
     dc val;
     for (const auto& mf: mapped_features_deriv1){
         vector1d dx(n_atom, 0.0), dy(n_atom, 0.0), dz(n_atom, 0.0), ds(6, 0.0);
         for (const auto& sterm: mf){
-            val = sterm.coeff * prod_anlmtp_deriv[sterm.prod_id];
+            val = sterm.coeff * prod_anlmtp_d[sterm.prod_id];
             for (int j = 0; j < n_atom; ++j)
                 dx[j] += prod_real(val, anlmtp_dfx[sterm.head_id][j]);
             for (int j = 0; j < n_atom; ++j)

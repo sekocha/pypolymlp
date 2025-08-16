@@ -17,7 +17,7 @@
 *****************************************************************************/
 
 #include "polymlp_potential.h"
-#include "time.h"
+
 
 Potential::Potential(){}
 
@@ -218,13 +218,9 @@ void Potential::compute_sum_of_prod_anlmtp(
 ){
     vector1d features, prod_features_vals;
     vector1dc prod_anlmtp_deriv;
-    clock_t t1 = clock();
     compute_features(anlmtp, type1, features);
-    clock_t t2 = clock();
     compute_prod_features(features, type1, prod_features_vals);
-    clock_t t3 = clock();
     compute_prod_anlmtp_deriv(anlmtp, type1, prod_anlmtp_deriv);
-    clock_t t4 = clock();
 
     const auto& potential_model1 = potential_model[type1];
     prod_sum_e = vector1dc(potential_model1.size());
@@ -244,15 +240,6 @@ void Potential::compute_sum_of_prod_anlmtp(
         prod_sum_f[i] = sum_f;
         ++i;
     }
-    clock_t t5 = clock();
-    /*
-    std::cout
-        << double(t2-t1)/CLOCKS_PER_SEC << " "
-        << double(t3-t2)/CLOCKS_PER_SEC << " "
-        << double(t4-t3)/CLOCKS_PER_SEC << " "
-        << double(t5-t4)/CLOCKS_PER_SEC << " "
-        << std::endl;
-    */
 }
 
 Maps& Potential::get_maps() { return f_obj.get_maps(); }
