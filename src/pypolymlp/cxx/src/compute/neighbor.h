@@ -11,6 +11,7 @@
 #include "mlpcpp.h"
 #include "neighbor_cell.h"
 
+
 class Neighbor{
 
     vector3d dis_array;
@@ -19,11 +20,13 @@ class Neighbor{
 
     public:
 
-    Neighbor(const vector2d& axis,
-             const vector2d& positions_c,
-             const vector1i& types,
-             const int& n_type,
-             const double& cutoff);
+    Neighbor(
+        const vector2d& axis,
+        const vector2d& positions_c,
+        const vector1i& types,
+        const int& n_type,
+        const double& cutoff
+    );
 
     ~Neighbor();
 
