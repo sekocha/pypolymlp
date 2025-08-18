@@ -26,7 +26,7 @@ class PolymlpDevCore:
         use_gradient: bool = False,
         verbose: bool = False,
     ):
-        """Init method.."""
+        """Init method."""
         self.params = params
         self._verbose = verbose
         self._use_gradient = use_gradient
