@@ -87,14 +87,22 @@ class Thermodynamics:
 
     def _eliminate_temperatures(self, threshold: int = 5):
         """Eliminate data for temperatures where only a small number of data exist."""
+        if self._verbose:
+            print("temperature_and_n_data:", flush=True)
         ids = []
+        id_output = 1
         for itemp, data in enumerate(self._grid.T):
             n_data = len([d for d in data if _exist_attr(d, "free_energy")])
             if n_data >= threshold:
                 ids.append(itemp)
                 if self._verbose:
-                    print("- temperature:", self._temperatures[itemp], flush=True)
-                    print("  n_data:     ", n_data, flush=True)
+                    output_data = (self._temperatures[itemp], n_data)
+                    print(output_data, end=" ", flush=True)
+                    if id_output % 5 == 0:
+                        print(flush=True)
+                    id_output += 1
+        if self._verbose:
+            print(flush=True)
 
         ids = np.array(ids)
         self._temperatures = self._temperatures[ids]
@@ -527,7 +535,9 @@ def load_sscha_yamls(filenames: tuple[str], verbose: bool = False) -> Thermodyna
             path_fc2="/".join(yamlfile.split("/")[:-1]) + "/fc2.hdf5",
         )
         if res.converge and not res.imaginary:
+            # TODO: Rev: 0827
             grid.free_energy = res.free_energy + res.static_potential
+            grid.reference_free_energy = grid.free_energy - res.anharmonic_energy
             grid.entropy = res.entropy
             grid.harmonic_heat_capacity = res.harmonic_heat_capacity * EVtoJmol
         else:
