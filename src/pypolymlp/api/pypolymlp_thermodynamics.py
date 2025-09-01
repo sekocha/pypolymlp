@@ -223,16 +223,25 @@ class PypolymlpThermodynamics:
     def save_sscha(self, filename: str = "polymlp_thermodynamics_sscha.yaml"):
         """Save fitted SSCHA properties."""
         self._sscha.save_thermodynamics_yaml(filename=filename)
+        sp = filename.split(".yaml")
+        filedata = "".join(sp[:-1]) + "_grid.yaml"
+        self._sscha.save_data(filename=filedata)
         return self
 
     def save_sscha_ele(self, filename: str = "polymlp_thermodynamics_sscha_ele.yaml"):
         """Save fitted SSCHA + electronic properties."""
         self._sscha_el.save_thermodynamics_yaml(filename=filename)
+        sp = filename.split(".yaml")
+        filedata = "".join(sp[:-1]) + "_grid.yaml"
+        self._sscha_el.save_data(filename=filedata)
         return self
 
     def save_total(self, filename: str = "polymlp_thermodynamics_total.yaml"):
         """Save fitted SSCHA properties."""
         self._total.save_thermodynamics_yaml(filename=filename)
+        sp = filename.split(".yaml")
+        filedata = "".join(sp[:-1]) + "_grid.yaml"
+        self._total.save_data(filename=filedata)
         return self
 
 

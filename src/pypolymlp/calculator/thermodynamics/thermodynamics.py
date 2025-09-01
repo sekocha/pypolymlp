@@ -504,6 +504,20 @@ class Thermodynamics:
         self._models.reshape(ix_v, ix_t)
         return self
 
+    def save_data(self, filename: str = "polymlp_thermodynamics_grid.yaml"):
+        """Save grid data to file."""
+        with open(filename, "w") as f:
+            print("grid_data:", file=f)
+            for grid, temp in zip(self._grid.T, self._temperatures):
+                print("- temperature:", temp, file=f)
+                for g2 in grid:
+                    if g2 is not None and g2.entropy is not None:
+                        print("  - volume:       ", g2.volume, file=f)
+                        print("    free_energy:  ", g2.free_energy, file=f)
+                        print("    entropy:      ", g2.entropy * EVtoJmol, file=f)
+                        print("    heat_capacity:", g2.heat_capacity, file=f)
+                        print(file=f)
+
 
 def adjust_to_common_grid(thermo1: Thermodynamics, thermo2: Thermodynamics):
     """Reshape objects with common grid."""
