@@ -87,14 +87,22 @@ class Thermodynamics:
 
     def _eliminate_temperatures(self, threshold: int = 5):
         """Eliminate data for temperatures where only a small number of data exist."""
+        if self._verbose:
+            print("temperature_and_n_data:", flush=True)
         ids = []
+        id_output = 1
         for itemp, data in enumerate(self._grid.T):
             n_data = len([d for d in data if _exist_attr(d, "free_energy")])
             if n_data >= threshold:
                 ids.append(itemp)
                 if self._verbose:
-                    print("- temperature:", self._temperatures[itemp], flush=True)
-                    print("  n_data:     ", n_data, flush=True)
+                    output_data = (self._temperatures[itemp], n_data)
+                    print(output_data, end=" ", flush=True)
+                    if id_output % 5 == 0:
+                        print(flush=True)
+                    id_output += 1
+        if self._verbose:
+            print(flush=True)
 
         ids = np.array(ids)
         self._temperatures = self._temperatures[ids]
@@ -496,6 +504,20 @@ class Thermodynamics:
         self._models.reshape(ix_v, ix_t)
         return self
 
+    def save_data(self, filename: str = "polymlp_thermodynamics_grid.yaml"):
+        """Save grid data to file."""
+        with open(filename, "w") as f:
+            print("grid_data:", file=f)
+            for grid, temp in zip(self._grid.T, self._temperatures):
+                print("- temperature:", temp, file=f)
+                for g2 in grid:
+                    if g2 is not None and g2.entropy is not None:
+                        print("  - volume:       ", g2.volume, file=f)
+                        print("    free_energy:  ", g2.free_energy, file=f)
+                        print("    entropy:      ", g2.entropy * EVtoJmol, file=f)
+                        print("    heat_capacity:", g2.heat_capacity, file=f)
+                        print(file=f)
+
 
 def adjust_to_common_grid(thermo1: Thermodynamics, thermo2: Thermodynamics):
     """Reshape objects with common grid."""
@@ -527,7 +549,9 @@ def load_sscha_yamls(filenames: tuple[str], verbose: bool = False) -> Thermodyna
             path_fc2="/".join(yamlfile.split("/")[:-1]) + "/fc2.hdf5",
         )
         if res.converge and not res.imaginary:
+            # TODO: Rev: 0827
             grid.free_energy = res.free_energy + res.static_potential
+            grid.reference_free_energy = grid.free_energy - res.anharmonic_energy
             grid.entropy = res.entropy
             grid.harmonic_heat_capacity = res.harmonic_heat_capacity * EVtoJmol
         else:

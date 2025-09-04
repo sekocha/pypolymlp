@@ -121,7 +121,7 @@ class PypolymlpThermodynamics:
 
         return self
 
-    def run(self):
+    def run_complete(self):
         """Fit results and evalulate equilibrium properties."""
         self._sscha.run_standard()
 
@@ -134,11 +134,46 @@ class PypolymlpThermodynamics:
             if self._verbose:
                 print("### Electronic contribution ###", flush=True)
             f_total, s_total = self._run_electron(f_total, s_total)
+            # f_total, s_total = self._sum_properties(self._electron, f_total, s_total)
+            # self._sscha_el = self._replace_thermodynamics(f_total, s_total)
+            # self._sscha_el.run_standard()
 
         if self._ti is not None:
             if self._verbose:
                 print("### TI contribution ###", flush=True)
             f_total, s_total = self._sum_properties(self._ti, f_total, s_total)
+            self._total = self._replace_thermodynamics(f_total, s_total)
+            self._total.run_standard()
+
+        return self
+
+    def run(self):
+        """Fit results and evalulate equilibrium properties."""
+        self._sscha.run_standard()
+
+        if self._electron is None and self._ti is None:
+            return self
+
+        f_total_ref = self._sscha.get_data(attr="reference_free_energy")
+        f_total = self._sscha.get_data(attr="free_energy")
+        s_total = self._sscha.get_data(attr="entropy")
+        if self._electron is not None:
+            if self._verbose:
+                print("### Electronic contribution ###", flush=True)
+            f_total, s_total = self._run_electron(f_total, s_total)
+
+            f_total_ref, s_total = self._sum_properties(
+                self._electron, f_total_ref, s_total
+            )
+            # f_total, s_total = self._sum_properties(self._electron, f_total, s_total)
+            # self._sscha_el = self._replace_thermodynamics(f_total, s_total)
+            # self._sscha_el.run_standard()
+
+        if self._ti is not None:
+            if self._verbose:
+                print("### TI contribution ###", flush=True)
+            # f_total, s_total = self._sum_properties(self._ti, f_total, s_total)
+            f_total, s_total = self._sum_properties(self._ti, f_total_ref, s_total)
             self._total = self._replace_thermodynamics(f_total, s_total)
             self._total.run_standard()
 
@@ -188,16 +223,25 @@ class PypolymlpThermodynamics:
     def save_sscha(self, filename: str = "polymlp_thermodynamics_sscha.yaml"):
         """Save fitted SSCHA properties."""
         self._sscha.save_thermodynamics_yaml(filename=filename)
+        sp = filename.split(".yaml")
+        filedata = "".join(sp[:-1]) + "_grid.yaml"
+        self._sscha.save_data(filename=filedata)
         return self
 
     def save_sscha_ele(self, filename: str = "polymlp_thermodynamics_sscha_ele.yaml"):
         """Save fitted SSCHA + electronic properties."""
         self._sscha_el.save_thermodynamics_yaml(filename=filename)
+        sp = filename.split(".yaml")
+        filedata = "".join(sp[:-1]) + "_grid.yaml"
+        self._sscha_el.save_data(filename=filedata)
         return self
 
     def save_total(self, filename: str = "polymlp_thermodynamics_total.yaml"):
         """Save fitted SSCHA properties."""
         self._total.save_thermodynamics_yaml(filename=filename)
+        sp = filename.split(".yaml")
+        filedata = "".join(sp[:-1]) + "_grid.yaml"
+        self._total.save_data(filename=filedata)
         return self
 
 

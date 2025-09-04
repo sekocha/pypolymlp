@@ -133,3 +133,17 @@ def print_log(
                 "{:.5f}".format(rmse2),
                 flush=True,
             )
+
+
+def smooth_alpha(alphas: np.ndarray, rmse_test: np.ndarray):
+    """Estimate optimal regularization parameter."""
+    if len(alphas) < 3:
+        return None
+
+    data = np.array(sorted([(y1, x1) for x1, y1 in zip(alphas, rmse_test)])[:3])
+    x, y = np.log10(data[:, 1]), data[:, 0]
+
+    coeffs = np.polyfit(x, y, deg=2)
+    p = np.poly1d(coeffs)
+    dp = p.deriv()
+    return dp.r[0]

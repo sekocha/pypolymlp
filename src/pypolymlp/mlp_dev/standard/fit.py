@@ -45,6 +45,9 @@ def fit(
     rmse_test = polymlp.compute_rmse(coefs, test_xy)
     test_xy.clear_data()
 
+    if verbose:
+        polymlp.print_model_selection_log(rmse_train, rmse_test)
+
     best_model = polymlp.get_best_model(
         coefs,
         train_xy.scales,
@@ -52,8 +55,6 @@ def fit(
         rmse_test,
         train_xy.cumulative_n_features,
     )
-    if verbose:
-        polymlp.print_model_selection_log(rmse_train, rmse_test)
 
     return best_model
 

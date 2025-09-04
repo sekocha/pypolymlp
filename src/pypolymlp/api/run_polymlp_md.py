@@ -100,7 +100,11 @@ def run():
 
     if args.ti:
         print("Run thermodynamic integration.", flush=True)
-        path = "/".join(os.path.abspath(args.fc2).split("/")[:-1])
+        # path = "/".join(os.path.abspath(args.fc2).split("/")[:-1])
+        path = "/".join(os.path.abspath(args.poscar).split("/")[:-1])
+        path += "/ti/" + str(args.temp)
+        os.makedirs(path, exist_ok=True)
+
         run_thermodynamic_integration(
             pot=args.pot,
             poscar=args.poscar,
