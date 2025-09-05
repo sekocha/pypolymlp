@@ -3,11 +3,13 @@
 from typing import Literal, Optional
 
 import numpy as np
-import yaml
 
-from pypolymlp.calculator.md.md_utils import load_thermodynamic_integration_yaml
-from pypolymlp.calculator.sscha.sscha_utils import Restart
 from pypolymlp.calculator.thermodynamics.fit_utils import Polyfit
+from pypolymlp.calculator.thermodynamics.initialization import (
+    load_electron_yamls,
+    load_sscha_yamls,
+    load_ti_yamls,
+)
 from pypolymlp.calculator.thermodynamics.io_utils import save_thermodynamics_yaml
 from pypolymlp.calculator.thermodynamics.thermodynamics_utils import (
     FittedModels,
@@ -17,6 +19,11 @@ from pypolymlp.calculator.thermodynamics.thermodynamics_utils import (
 )
 from pypolymlp.calculator.utils.eos_utils import EOS
 from pypolymlp.core.units import EVtoJmol
+
+# import yaml
+
+# from pypolymlp.calculator.md.md_utils import load_thermodynamic_integration_yaml
+# from pypolymlp.calculator.sscha.sscha_utils import Restart
 
 
 def _exist_attr(d: GridPointData, attr: str = "free_energy"):
@@ -532,97 +539,98 @@ def adjust_to_common_grid(thermo1: Thermodynamics, thermo2: Thermodynamics):
     return thermo1, thermo2
 
 
-def load_sscha_yamls(filenames: tuple[str], verbose: bool = False) -> Thermodynamics:
-    """Load sscha_results.yaml files."""
-    data = []
-    for yamlfile in filenames:
-        res = Restart(yamlfile, unit="eV/atom")
-        n_atom = len(res.unitcell.elements)
-        volume = np.round(res.volume, decimals=12) / n_atom
-        temp = np.round(res.temperature, decimals=3)
-        grid = GridPointData(
-            volume=volume,
-            temperature=temp,
-            data_type="sscha",
-            restart=res,
-            path_yaml=yamlfile,
-            path_fc2="/".join(yamlfile.split("/")[:-1]) + "/fc2.hdf5",
-        )
-        if res.converge and not res.imaginary:
-            # TODO: Rev: 0827
-            grid.free_energy = res.free_energy + res.static_potential
-            grid.reference_free_energy = grid.free_energy - res.anharmonic_energy
-            grid.entropy = res.entropy
-            grid.harmonic_heat_capacity = res.harmonic_heat_capacity * EVtoJmol
-        else:
-            grid.free_energy = None
-            grid.entropy = None
-            grid.harmonic_heat_capacity = None
-        data.append(grid)
-
-    return Thermodynamics(data=data, data_type="sscha", verbose=verbose)
-
-
-def _check_melting(log: np.ndarray):
-    """Check whether MD simulation converges to a melting state."""
-    if np.isclose(log[0, 2], 0.0):
-        return False
-    try:
-        displacement_ratio = log[-1, 2] / log[0, 2]
-        return displacement_ratio > 2.0
-    except:
-        return False
-
-
-def load_ti_yamls(filenames: tuple[str], verbose: bool = False) -> Thermodynamics:
-    """Load polymlp_ti.yaml files."""
-    data = []
-    for yamlfile in filenames:
-        temp, volume, free_e, ent, cv, eng, log = load_thermodynamic_integration_yaml(
-            yamlfile
-        )
-        if _check_melting(log):
-            if verbose:
-                message = yamlfile + " was eliminated (found to be in a melting state)."
-                print(message, flush=True)
-        else:
-            grid = GridPointData(
-                volume=volume,
-                temperature=temp,
-                data_type="ti",
-                free_energy=free_e,
-                entropy=ent,
-                heat_capacity=cv,
-                energy=eng,
-                path_yaml=yamlfile,
-            )
-            data.append(grid)
-    return Thermodynamics(data=data, data_type="ti", verbose=verbose)
-
-
-def load_electron_yamls(filenames: tuple[str], verbose: bool = False) -> Thermodynamics:
-    """Load electron.yaml files."""
-    data = []
-    for yamlfile in filenames:
-        yml = yaml.safe_load(open(yamlfile))
-        n_atom = len(yml["structure"]["elements"])
-        volume = float(yml["structure"]["volume"]) / n_atom
-        for prop in yml["properties"]:
-            temp = float(prop["temperature"])
-            free_e = float(prop["free_energy"]) / n_atom
-            entropy = float(prop["entropy"]) / n_atom
-            cv = float(prop["specific_heat"]) * EVtoJmol / n_atom
-            grid = GridPointData(
-                volume=volume,
-                temperature=temp,
-                data_type="electron",
-                free_energy=free_e,
-                entropy=entropy,
-                heat_capacity=cv,
-                path_yaml=yamlfile,
-            )
-            data.append(grid)
-    return Thermodynamics(data=data, data_type="electron", verbose=verbose)
+# def load_sscha_yamls(filenames: tuple[str], verbose: bool = False) -> Thermodynamics:
+#     """Load sscha_results.yaml files."""
+#     data = []
+#     for yamlfile in filenames:
+#         res = Restart(yamlfile, unit="eV/atom")
+#         n_atom = len(res.unitcell.elements)
+#         volume = np.round(res.volume, decimals=12) / n_atom
+#         temp = np.round(res.temperature, decimals=3)
+#         grid = GridPointData(
+#             volume=volume,
+#             temperature=temp,
+#             data_type="sscha",
+#             restart=res,
+#             path_yaml=yamlfile,
+#             path_fc2="/".join(yamlfile.split("/")[:-1]) + "/fc2.hdf5",
+#         )
+#         if res.converge and not res.imaginary:
+#             # TODO: Rev: 0827
+#             grid.free_energy = res.free_energy + res.static_potential
+#             grid.reference_free_energy = grid.free_energy - res.anharmonic_energy
+#             grid.entropy = res.entropy
+#             grid.harmonic_heat_capacity = res.harmonic_heat_capacity * EVtoJmol
+#         else:
+#             grid.free_energy = None
+#             grid.entropy = None
+#             grid.harmonic_heat_capacity = None
+#         data.append(grid)
+#
+#     return Thermodynamics(data=data, data_type="sscha", verbose=verbose)
+#
+#
+# def _check_melting(log: np.ndarray):
+#     """Check whether MD simulation converges to a melting state."""
+#     if np.isclose(log[0, 2], 0.0):
+#         return False
+#     try:
+#         displacement_ratio = log[-1, 2] / log[0, 2]
+#         return displacement_ratio > 2.0
+#     except:
+#         return False
+#
+#
+# def load_ti_yamls(filenames: tuple[str], verbose: bool = False) -> Thermodynamics:
+#     """Load polymlp_ti.yaml files."""
+#     data = []
+#     for yamlfile in filenames:
+#         temp, volume, free_e, ent, cv, eng, log = load_thermodynamic_integration_yaml(
+#             yamlfile
+#         )
+#         if _check_melting(log):
+#             if verbose:
+#                 message = yamlfile + " was eliminated (found to be in a melting state)."
+#                 print(message, flush=True)
+#         else:
+#             grid = GridPointData(
+#                 volume=volume,
+#                 temperature=temp,
+#                 data_type="ti",
+#                 free_energy=free_e,
+#                 entropy=ent,
+#                 heat_capacity=cv,
+#                 energy=eng,
+#                 path_yaml=yamlfile,
+#             )
+#             data.append(grid)
+#     return Thermodynamics(data=data, data_type="ti", verbose=verbose)
+#
+#
+# def load_electron_yamls(filenames: tuple[str], verbose: bool = False) -> Thermodynamics:
+#     """Load electron.yaml files."""
+#     data = []
+#     for yamlfile in filenames:
+#         yml = yaml.safe_load(open(yamlfile))
+#         n_atom = len(yml["structure"]["elements"])
+#         volume = float(yml["structure"]["volume"]) / n_atom
+#         for prop in yml["properties"]:
+#             temp = float(prop["temperature"])
+#             free_e = float(prop["free_energy"]) / n_atom
+#             entropy = float(prop["entropy"]) / n_atom
+#             cv = float(prop["specific_heat"]) * EVtoJmol / n_atom
+#             grid = GridPointData(
+#                 volume=volume,
+#                 temperature=temp,
+#                 data_type="electron",
+#                 free_energy=free_e,
+#                 entropy=entropy,
+#                 heat_capacity=cv,
+#                 path_yaml=yamlfile,
+#             )
+#             data.append(grid)
+#     return Thermodynamics(data=data, data_type="electron", verbose=verbose)
+#
 
 
 def load_yamls(

@@ -21,6 +21,7 @@ class GridPointData:
     temperature: float
     data_type: Optional[Literal["sscha", "ti", "electron"]] = None
     restart: Optional[Restart] = None
+
     free_energy: Optional[float] = None
     entropy: Optional[float] = None
     heat_capacity: Optional[float] = None
@@ -35,7 +36,7 @@ class GridPointData:
     path_fc2: Optional[float] = None
 
     def reset_reference(self):
-        """Reset data."""
+        """Reset reference data."""
         self.reference_free_energy = None
         self.reference_entropy = None
         self.reference_heat_capacity = None
