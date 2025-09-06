@@ -1,18 +1,17 @@
 """Utility functions for initializing thermodynamic property calculation."""
 
-# from dataclasses import dataclass
+from typing import Optional
 
 import numpy as np
 import yaml
+from phono3py.file_IO import read_fc2_from_hdf5
+from phonopy import Phonopy
 
 from pypolymlp.calculator.md.md_utils import load_thermodynamic_integration_yaml
 from pypolymlp.calculator.sscha.sscha_utils import Restart
 from pypolymlp.calculator.thermodynamics.thermodynamics_utils import GridPointData
-
-# from pypolymlp.core.units import EVtoJmol
-
-# from phono3py.file_IO import read_fc2_from_hdf5
-# from phonopy import Phonopy
+from pypolymlp.core.units import EVtoJmol, EVtoKJmol
+from pypolymlp.utils.phonopy_utils import structure_to_phonopy_cell
 
 
 def load_sscha_yamls(filenames: tuple[str]) -> list[GridPointData]:
@@ -102,3 +101,78 @@ def load_ti_yamls(filenames: tuple[str], verbose: bool = False) -> list[GridPoin
             )
             data.append(grid)
     return data
+
+
+def compare_conditions(array1: np.ndarray, array2: np.ndarray):
+    """Return indices with the same values in two arrays"""
+    ids1, ids2 = [], []
+    for i1, val in enumerate(array1):
+        i2 = np.where(np.isclose(array2, val))[0]
+        if len(i2) > 0:
+            ids1.append(i1)
+            ids2.append(i2[0])
+    return np.array(ids1), np.array(ids2)
+
+
+def get_common_grid(
+    volumes1: np.ndarray,
+    volumes2: np.ndarray,
+    temperatures1: np.ndarray,
+    temperatures2: np.ndarray,
+):
+    """Return common grid for two conditions."""
+    ids1_v, ids2_v = compare_conditions(volumes1, volumes2)
+    ids1_t, ids2_t = compare_conditions(temperatures1, temperatures2)
+    return (ids1_v, ids1_t), (ids2_v, ids2_t)
+
+
+def calculate_harmonic_properties(
+    res: Restart,
+    path_fc2: str,
+    temperatures: Optional[np.ndarray] = None,
+    mesh: tuple = (10, 10, 10),
+):
+    """Calculate harmonic thermodynamic properties."""
+    ph = Phonopy(structure_to_phonopy_cell(res.unitcell), res.supercell_matrix)
+    ph.force_constants = read_fc2_from_hdf5(path_fc2)
+    ph.run_mesh(mesh)
+    ph.run_thermal_properties(temperatures=temperatures)
+    tp_dict = ph.get_thermal_properties_dict()
+    return tp_dict
+
+
+def calculate_reference(grid_points: list[GridPointData], mesh: tuple = (10, 10, 10)):
+    """Return reference properties.
+
+    Harmonic phonon properties calculated with SSCHA FC2 and SSCHA frequencies
+    at the lowest temperature are used as reference free energy, reference entropy,
+    and reference heat capacity to fit properties with respect to temperature.
+    """
+    ref_id = 0
+    for i, p in enumerate(grid_points):
+        if p is not None:
+            ref_id = i
+            break
+
+    if grid_points[ref_id].path_fc2 is None:
+        raise RuntimeError("Reference state not found.")
+
+    path_fc2 = grid_points[ref_id].path_fc2
+    temperatures = np.array([p.temperature for p in grid_points])
+    res = grid_points[ref_id].restart
+    n_atom = len(res.unitcell.elements)
+
+    tp_dict = calculate_harmonic_properties(res, path_fc2, temperatures=temperatures)
+    zip1 = zip(
+        tp_dict["free_energy"],
+        tp_dict["entropy"],
+        tp_dict["heat_capacity"],
+        grid_points,
+    )
+    for f, s, cv, point in zip1:
+        if point is not None:
+            point.reference_free_energy = f / EVtoKJmol / n_atom
+            point.reference_entropy = s / EVtoJmol / n_atom
+            point.reference_heat_capacity = cv / n_atom
+
+    return grid_points
