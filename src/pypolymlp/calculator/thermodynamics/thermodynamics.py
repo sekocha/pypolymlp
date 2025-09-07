@@ -1,11 +1,13 @@
 """Functions for calculating thermodynamic properties."""
 
+import copy
 from typing import Literal, Optional
 
 import numpy as np
 
 from pypolymlp.calculator.thermodynamics.fit_utils import Polyfit
 from pypolymlp.calculator.thermodynamics.initialization import (
+    calculate_harmonic_free_energies,
     calculate_reference,
     get_common_grid,
     load_electron_yamls,
@@ -13,7 +15,7 @@ from pypolymlp.calculator.thermodynamics.initialization import (
     load_ti_yamls,
 )
 from pypolymlp.calculator.thermodynamics.io_utils import save_thermodynamics_yaml
-from pypolymlp.calculator.thermodynamics.thermodynamics_utils import (
+from pypolymlp.calculator.thermodynamics.thermodynamics_utils import (  # sum_matrix_data,
     FittedModels,
     GridPointData,
 )
@@ -107,6 +109,9 @@ class Thermodynamics:
 
     def calculate_reference(self):
         """Calculate reference properties."""
+        if self._verbose:
+            print("Calculate reference properties.", flush=True)
+
         for g in self._grid:
             g = calculate_reference(g)
         return self
@@ -115,7 +120,17 @@ class Thermodynamics:
         """Copy reference properties."""
         for g1, g2 in zip(grid, self._grid):
             for p, q in zip(g1, g2):
-                q.copy_reference(p)
+                if q is not None:
+                    q.copy_reference(p)
+        return self
+
+    def calculate_harmonic_free_energies(self):
+        """Calculate harmonic free energies."""
+        if self._verbose:
+            print("Calculate harmonic energies.", flush=True)
+
+        for g in self._grid:
+            g = calculate_harmonic_free_energies(g)
         return self
 
     def fit_free_energy_volume(self):
@@ -165,8 +180,9 @@ class Thermodynamics:
                 fits.append(polyfit)
                 if self._verbose:
                     print("- temperature:", self._temperatures[itemp], flush=True)
-                    print("  rmse:       ", polyfit.error, flush=True)
-                    print("  model:      ", polyfit.best_model, flush=True)
+                    print(
+                        "  model_rmse: ", polyfit.best_model, polyfit.error, flush=True
+                    )
             else:
                 fits.append(None)
         return fits
@@ -182,7 +198,8 @@ class Thermodynamics:
             if len(points) > max_order + 1:
                 temperatures = np.array([p.temperature for p in points])
                 free_energies = np.array([p.free_energy for p in points])
-                polyfit = Polyfit(temperatures, free_energies)
+                ref = np.array([p.reference_free_energy for p in points])
+                polyfit = Polyfit(temperatures, free_energies - ref)
                 polyfit.fit(
                     max_order=max_order,
                     intercept=False,
@@ -192,13 +209,14 @@ class Thermodynamics:
                 ft_fits.append(polyfit)
                 if self._verbose:
                     print("- volume:", np.round(self._volumes[ivol], 3), flush=True)
-                    print("  rmse:  ", polyfit.error, flush=True)
-                    print("  model: ", polyfit.best_model, flush=True)
+                    print(
+                        "  model_rmse:  ", polyfit.best_model, polyfit.error, flush=True
+                    )
 
                 # entropy calculations
                 entropies = -polyfit.eval_derivative(temperatures)
                 for p, val in zip(points, entropies):
-                    p.entropy = val
+                    p.entropy = p.reference_entropy + val
             else:
                 ft_fits.append(None)
         self._models.ft_fits = ft_fits
@@ -221,8 +239,9 @@ class Thermodynamics:
                 st_fits.append(polyfit)
                 if self._verbose:
                     print("- volume:", np.round(self._volumes[ivol], 3), flush=True)
-                    print("  rmse:  ", polyfit.error, flush=True)
-                    print("  model: ", polyfit.best_model, flush=True)
+                    print(
+                        "  model_rmse:  ", polyfit.best_model, polyfit.error, flush=True
+                    )
 
                 # Cv calculations
                 cv_from_ref = temperatures * polyfit.eval_derivative(temperatures)
@@ -250,53 +269,6 @@ class Thermodynamics:
         )
         return self._eq_cp
 
-    #     def add_cp(self, cp: np.array):
-    #         """Add  Cp ."""
-    #         if not self._is_heat_capacity:
-    #             return None
-    #         if self._eq_cp is None:
-    #             raise RuntimeError("Cp at V_eq not found.")
-    #
-    #         self._eq_cp += np.array(cp)
-    #         return self._eq_cp
-
-    #    def fit_eval_entropy(self, max_order: int = 6, from_free_energy: bool = False):
-    #        """Evaluate entropy from data."""
-    #        #if from_free_energy:
-    #        #    self.fit_free_energy_temperature(max_order=max_order)
-    #        self.fit_entropy_volume(max_order=max_order)
-    #        self.eval_entropy_equilibrium()
-    #        return self
-    #
-    #    def fit_eval_heat_capacity(
-    #        self,
-    #        max_order: int = 4,
-    #        from_entropy: bool = True,
-    #        reference: bool = True,
-    #    ):
-    #        """Evaluate Cp from entropy data."""
-    #        if from_entropy:
-    #            self.fit_entropy_temperature(max_order=max_order, reference=reference)
-    #        self.fit_cv_volume(max_order=max_order)
-    #        self.eval_cp_equilibrium()
-    #        return self
-    #
-    #    def run_standard(self):
-    #        """Calculate thermodynamic properties from SSCHA."""
-    #        self.fit_free_energy_volume()
-    #        self.fit_eval_entropy(max_order=6)
-    #        self.fit_eval_heat_capacity(max_order=4, from_entropy=True)
-    #        return self
-    #
-    #    def run_sscha_harmonic(self):
-    #        """Calculate thermodynamic properties from SSCHA."""
-    #        self.fit_free_energy_volume()
-    #        self.fit_eval_entropy(max_order=6)
-    #        self.assign_heat_capacity()
-    #        self.fit_cv_volume(max_order=4)
-    #        self.eval_cp_equilibrium()
-    #        return self
-
     def get_data(self, attr: str = "free_energy"):
         """Retrun data of given attribute."""
         props = []
@@ -308,6 +280,14 @@ class Thermodynamics:
             props.append(array)
 
         return np.array(props)
+
+    def reshape(self, ix_v: np.ndarray, ix_t: np.ndarray):
+        """Reshape using ixgrid."""
+        self._volumes = self._volumes[ix_v]
+        self._temperatures = self._temperatures[ix_t]
+        self._grid = self._grid[np.ix_(ix_v, ix_t)]
+        self._models.reshape(ix_v, ix_t)
+        return self
 
     def replace_free_energies(self, free_energies: np.ndarray, reset_fit: bool = True):
         """Replace free energies."""
@@ -461,14 +441,6 @@ class Thermodynamics:
     #                self._grid[i, j].heat_capacity = None
     #        return self
 
-    #    def reshape(self, ix_v: np.ndarray, ix_t: np.ndarray):
-    #        """Reshape using ixgrid."""
-    #        self._volumes = self._volumes[ix_v]
-    #        self._temperatures = self._temperatures[ix_t]
-    #        self._grid = self._grid[np.ix_(ix_v, ix_t)]
-    #        self._models.reshape(ix_v, ix_t)
-    #        return self
-
     def save_data(self, filename: str = "polymlp_thermodynamics_grid.yaml"):
         """Save grid data to file."""
         with open(filename, "w") as f:
@@ -504,10 +476,14 @@ def load_yamls(
     verbose: bool = False,
 ):
     """Load yaml files needed for calculating thermodynamics."""
+    if verbose:
+        print("Loading sscha.yaml files.", flush=True)
     data = load_sscha_yamls(yamls_sscha)
     sscha = Thermodynamics(data=data, data_type="sscha", verbose=verbose)
 
     if yamls_electron is not None:
+        if verbose:
+            print("Loading electron.yaml files.", flush=True)
         data2 = load_electron_yamls(yamls_electron)
         electron = Thermodynamics(data=data2, data_type="electron", verbose=verbose)
         sscha, electron = _adjust_to_common_grid(sscha, electron)
@@ -515,6 +491,8 @@ def load_yamls(
         electron = None
 
     if yamls_ti is not None:
+        if verbose:
+            print("Loading ti.yaml files.", flush=True)
         data3 = load_ti_yamls(yamls_ti, verbose=verbose)
         ti = Thermodynamics(data=data3, data_type="ti", verbose=verbose)
         sscha, ti = _adjust_to_common_grid(sscha, ti)
@@ -530,24 +508,22 @@ def load_yamls(
     if ti is not None:
         ti.copy_reference(sscha.grid)
 
-    # TODO: Change free energy from TI
+    # TODO: Set correction term for TI
+    if ti is not None:
+        ti_correction = copy.deepcopy(sscha)
+        ti_correction.calculate_harmonic_free_energies()
+        ti_correction.fit_free_energy_temperature(max_order=4)
 
-    return sscha, electron, ti
+        # f1 = ti.get_data(attr="free_energy")
+        # s1 = ti.get_data(attr="entropy")
+        # f2 = ti_correction.get_data(attr="free_energy")
+        # s2 = ti_correction.get_data(attr="entropy")
+        # f_sum = sum_matrix_data(f1, f2)
+        # s_sum = sum_matrix_data(s1, s2)
+        # ti.replace_free_energies(f_sum)
+        # ti.replace_entropies(s_sum)
 
-
-def fit_cv_temperature(temperatures: np.ndarray, cv: np.ndarray, verbose: bool = False):
-    """Fit Cv-temperature data to a polynomial."""
-    polyfit = Polyfit(temperatures, cv)
-    polyfit.fit(max_order=6, intercept=False, first_order=False, add_sqrt=True)
-    cv_pred = polyfit.eval(temperatures)
-    if verbose:
-        print("Cv-Temperature Fit", flush=True)
-        print("  rmse:  ", polyfit.error, flush=True)
-        print("  model: ", polyfit.best_model, flush=True)
-        print("  # temp., Cv(observed), Cv(fitted):", flush=True)
-        for t, cv1, cv2 in zip(temperatures, cv, cv_pred):
-            print("   ", t, np.round(cv1, 5), np.round(cv2, 5), flush=True)
-    return cv_pred
+    return sscha, electron, ti, ti_correction
 
 
 #    def fit_energy_temperature(self, max_order: int = 6):
@@ -583,4 +559,51 @@ def fit_cv_temperature(temperatures: np.ndarray, cv: np.ndarray, verbose: bool =
 #                et_fits.append(None)
 #        self._models.et_fits = et_fits
 #        self._is_heat_capacity = True
+#        return self
+
+#     def add_cp(self, cp: np.array):
+#         """Add  Cp ."""
+#         if not self._is_heat_capacity:
+#             return None
+#         if self._eq_cp is None:
+#             raise RuntimeError("Cp at V_eq not found.")
+#
+#         self._eq_cp += np.array(cp)
+#         return self._eq_cp
+
+#    def fit_eval_entropy(self, max_order: int = 6, from_free_energy: bool = False):
+#        """Evaluate entropy from data."""
+#        #if from_free_energy:
+#        #    self.fit_free_energy_temperature(max_order=max_order)
+#        self.fit_entropy_volume(max_order=max_order)
+#        self.eval_entropy_equilibrium()
+#        return self
+#
+#    def fit_eval_heat_capacity(
+#        self,
+#        max_order: int = 4,
+#        from_entropy: bool = True,
+#        reference: bool = True,
+#    ):
+#        """Evaluate Cp from entropy data."""
+#        if from_entropy:
+#            self.fit_entropy_temperature(max_order=max_order, reference=reference)
+#        self.fit_cv_volume(max_order=max_order)
+#        self.eval_cp_equilibrium()
+#        return self
+#
+#    def run_standard(self):
+#        """Calculate thermodynamic properties from SSCHA."""
+#        self.fit_free_energy_volume()
+#        self.fit_eval_entropy(max_order=6)
+#        self.fit_eval_heat_capacity(max_order=4, from_entropy=True)
+#        return self
+#
+#    def run_sscha_harmonic(self):
+#        """Calculate thermodynamic properties from SSCHA."""
+#        self.fit_free_energy_volume()
+#        self.fit_eval_entropy(max_order=6)
+#        self.assign_heat_capacity()
+#        self.fit_cv_volume(max_order=4)
+#        self.eval_cp_equilibrium()
 #        return self

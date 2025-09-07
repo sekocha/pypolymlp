@@ -126,7 +126,7 @@ def get_common_grid(
     return (ids1_v, ids1_t), (ids2_v, ids2_t)
 
 
-def calculate_harmonic_properties(
+def _calculate_harmonic_properties(
     res: Restart,
     path_fc2: str,
     temperatures: Optional[np.ndarray] = None,
@@ -162,7 +162,7 @@ def calculate_reference(grid_points: list[GridPointData], mesh: tuple = (10, 10,
     res = grid_points[ref_id].restart
     n_atom = len(res.unitcell.elements)
 
-    tp_dict = calculate_harmonic_properties(res, path_fc2, temperatures=temperatures)
+    tp_dict = _calculate_harmonic_properties(res, path_fc2, temperatures=temperatures)
     zip1 = zip(
         tp_dict["free_energy"],
         tp_dict["entropy"],
@@ -174,5 +174,23 @@ def calculate_reference(grid_points: list[GridPointData], mesh: tuple = (10, 10,
             point.reference_free_energy = f / EVtoKJmol / n_atom
             point.reference_entropy = s / EVtoJmol / n_atom
             point.reference_heat_capacity = cv / n_atom
+
+    return grid_points
+
+
+def calculate_harmonic_free_energies(
+    grid_points: list[GridPointData],
+    mesh: tuple = (10, 10, 10),
+):
+    """Return harmonic properties for grid points."""
+    for point in grid_points:
+        if point is not None:
+            res = point.restart
+            tp_dict = _calculate_harmonic_properties(res, point.path_fc2, mesh=mesh)
+            n_atom = len(res.unitcell.elements)
+            f = tp_dict["free_energy"][0]
+            point.free_energy = f / EVtoKJmol / n_atom
+            point.entropy = None
+            point.heat_capacity = None
 
     return grid_points
