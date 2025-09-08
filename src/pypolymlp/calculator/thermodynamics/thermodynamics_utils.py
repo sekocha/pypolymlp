@@ -22,7 +22,9 @@ class GridPointData:
     free_energy: Optional[float] = None
     entropy: Optional[float] = None
     heat_capacity: Optional[float] = None
+
     energy: Optional[float] = None
+    static_potential: Optional[float] = None
 
     reference_free_energy: Optional[float] = None
     reference_entropy: Optional[float] = None

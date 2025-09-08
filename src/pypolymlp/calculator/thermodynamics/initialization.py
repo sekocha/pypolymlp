@@ -34,6 +34,7 @@ def load_sscha_yamls(filenames: tuple[str]) -> list[GridPointData]:
         if res.converge and not res.imaginary:
             grid.free_energy = res.free_energy + res.static_potential
             grid.entropy = res.entropy
+            grid.static_potential = res.static_potential
         else:
             grid.free_energy = None
             grid.entropy = None
@@ -133,6 +134,8 @@ def _calculate_harmonic_properties(
     mesh: tuple = (10, 10, 10),
 ):
     """Calculate harmonic thermodynamic properties."""
+    if temperatures is None:
+        temperatures = [res.temperature]
     ph = Phonopy(structure_to_phonopy_cell(res.unitcell), res.supercell_matrix)
     ph.force_constants = read_fc2_from_hdf5(path_fc2)
     ph.run_mesh(mesh)
