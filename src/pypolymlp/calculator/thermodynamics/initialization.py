@@ -35,6 +35,7 @@ def load_sscha_yamls(filenames: tuple[str]) -> list[GridPointData]:
             grid.free_energy = res.free_energy + res.static_potential
             grid.entropy = res.entropy
             grid.static_potential = res.static_potential
+            grid.harmonic_free_energy = res.free_energy - res.anharmonic_energy
         else:
             grid.free_energy = None
             grid.entropy = None
@@ -144,7 +145,11 @@ def _calculate_harmonic_properties(
     return tp_dict
 
 
-def calculate_reference(grid_points: list[GridPointData], mesh: tuple = (10, 10, 10)):
+def calculate_reference(
+    grid_points: list[GridPointData],
+    temperatures: np.ndarray,
+    mesh: tuple = (10, 10, 10),
+):
     """Return reference properties.
 
     Harmonic phonon properties calculated with SSCHA FC2 and SSCHA frequencies
@@ -161,7 +166,7 @@ def calculate_reference(grid_points: list[GridPointData], mesh: tuple = (10, 10,
         raise RuntimeError("Reference state not found.")
 
     path_fc2 = grid_points[ref_id].path_fc2
-    temperatures = np.array([p.temperature for p in grid_points])
+    # temperatures = np.array([p.temperature for p in grid_points])
     res = grid_points[ref_id].restart
     n_atom = len(res.unitcell.elements)
 

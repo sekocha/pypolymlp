@@ -59,8 +59,8 @@ class PypolymlpThermodynamics:
         thermo.fit_entropy_volume(max_order=6)
         thermo.eval_entropy_equilibrium()
 
-        thermo.fit_entropy_temperature(max_order=5)
-        thermo.fit_cv_volume(max_order=6)
+        thermo.fit_entropy_temperature(max_order=4)
+        thermo.fit_cv_volume(max_order=4)
         thermo.eval_cp_equilibrium()
         return thermo
 
@@ -70,9 +70,6 @@ class PypolymlpThermodynamics:
             print("# ----- SSCHA contribution ----- #", flush=True)
         self._sscha = self._run_standard(self._sscha)
 
-        if self._electron is None and self._ti is None:
-            return self
-
         if self._electron is not None:
             if self._verbose:
                 print("# ----- Electronic contribution ----- #", flush=True)
@@ -81,19 +78,10 @@ class PypolymlpThermodynamics:
 
         if self._ti is not None:
             if self._verbose:
-                print(
-                    "# ----- Thermodynamic integration contribution ----- #", flush=True
-                )
+                print("# --- Thermodynamic integration contribution --- #", flush=True)
             self._total = self._get_sum_properties(self._ti, self._ti_ref)
-
-            f1 = self._sscha.get_data(attr="static_potential")
-            f2 = self._total.get_data(attr="free_energy")
-            f_sum = sum_matrix_data(f1, f2)
-            self._total.replace_free_energies(f_sum)
-
             if self._electron is not None:
                 self._total = self._get_sum_properties(self._electron, self._total)
-
             self._total = self._run_standard(self._total)
 
         return self

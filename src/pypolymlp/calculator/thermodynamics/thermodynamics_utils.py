@@ -25,6 +25,7 @@ class GridPointData:
 
     energy: Optional[float] = None
     static_potential: Optional[float] = None
+    harmonic_free_energy: Optional[float] = None
 
     reference_free_energy: Optional[float] = None
     reference_entropy: Optional[float] = None
@@ -35,9 +36,10 @@ class GridPointData:
 
     def copy_reference(self, grid_point):
         """Copy reference data."""
-        self.reference_free_energy = grid_point.reference_free_energy
-        self.reference_entropy = grid_point.reference_entropy
-        self.reference_heat_capacity = grid_point.reference_heat_capacity
+        if grid_point is not None:
+            self.reference_free_energy = grid_point.reference_free_energy
+            self.reference_entropy = grid_point.reference_entropy
+            self.reference_heat_capacity = grid_point.reference_heat_capacity
         return self
 
     def reset_reference(self):

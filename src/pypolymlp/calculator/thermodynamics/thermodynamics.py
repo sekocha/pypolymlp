@@ -114,7 +114,7 @@ class Thermodynamics:
             print("Calculate reference properties.", flush=True)
 
         for g in self._grid:
-            g = calculate_reference(g)
+            g = calculate_reference(g, self._temperatures)
         return self
 
     def copy_reference(self, grid: np.ndarray):
@@ -224,6 +224,7 @@ class Thermodynamics:
                 entropies = -polyfit.eval_derivative(temperatures)
                 for p, val in zip(points, entropies):
                     p.entropy = p.reference_entropy + val
+                    print(p.volume, p.temperature, p.entropy * EVtoJmol)
             else:
                 ft_fits.append(None)
         self._models.ft_fits = ft_fits
@@ -522,8 +523,17 @@ def load_yamls(
     # Set reference term for TI
     if ti is not None:
         ti_ref = copy.deepcopy(sscha)
-        ti_ref.calculate_harmonic_free_energies()
-        ti_ref.fit_free_energy_temperature(max_order=6)
+        # ti_ref.calculate_harmonic_free_energies()
+        # ti_ref.fit_free_energy_temperature(max_order=4, intercept=True)
+
+        # f1 = sscha.get_data(attr="static_potential")
+        # f2 = ti_ref.get_data(attr="free_energy")
+        # f_sum = sum_matrix_data(f1, f2)
+        # ti_ref.replace_free_energies(f_sum)
+
+        f1 = sscha.get_data(attr="harmonic_free_energy")
+        ti_ref.replace_free_energies(f1)
+        ti_ref.fit_free_energy_temperature(max_order=4, intercept=True)
 
         f1 = sscha.get_data(attr="static_potential")
         f2 = ti_ref.get_data(attr="free_energy")
