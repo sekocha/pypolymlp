@@ -135,6 +135,7 @@ class ParserDatasets:
         for i, dataset in enumerate(self._params.dft_train):
             if len(self._train_yml) > i:
                 yml_data = self._train_yml[i]
+                # print(yml_data)
             else:
                 if self._verbose:
                     print(" Training dataset:", i + 1, flush=True)

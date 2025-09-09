@@ -46,64 +46,6 @@ def parse_sscha_yamls(yamlfiles: list[str]):
     return structures, np.array(free_energies), forces
 
 
-# def set_dataset_from_electron_yamls(
-#     yamlfiles: list[str],
-#     temperature: float = 300.0,
-#     target: Literal[
-#         "free_energy",
-#         "energy",
-#         "entropy",
-#         "specific_heat",
-#     ] = "free_energy",
-#     element_order: Optional[bool] = None,
-# ) -> PolymlpDataDFT:
-#     """Return DFT dataset by loading electron.yaml files."""
-#     structures, free_energies = parse_electron_yamls(
-#         yamlfiles,
-#         temperature=temperature,
-#         target=target,
-#     )
-#     dft = set_dataset_from_structures(
-#         structures,
-#         free_energies,
-#         forces=None,
-#         stresses=None,
-#         element_order=element_order,
-#     )
-#     return dft
-#
-
-# def parse_electron_yamls(
-#    yamlfiles: list[str],
-#    temperature: float = 300.0,
-#    target: Literal[
-#        "free_energy",
-#        "energy",
-#        "entropy",
-#        "specific_heat",
-#    ] = "free_energy",
-# ):
-#    """Parse electron.yaml files."""
-#    import time
-#    properties, structures = [], []
-#    for yfile in yamlfiles:
-#        t1 = time.time()
-#        yml = yaml.safe_load(open(yfile))
-#        t2 = time.time()
-#        unitcell = load_cell(yaml_data=yml, tag="structure")
-#        unitcell.name = yfile
-#        structures.append(unitcell)
-#        for prop in yml["properties"]:
-#            if np.isclose(float(prop["temperature"]), temperature):
-#                properties.append(float(prop[target]))
-#                break
-#        t3 = time.time()
-#        print(t2-t1, t3-t2)
-#    return structures, np.array(properties)
-#
-#
-
-
 def parse_electron_yamls(yamlfiles: list[str]):
     """Parse electron.yaml files."""
     yaml_data = []
