@@ -46,8 +46,99 @@ def parse_sscha_yamls(yamlfiles: list[str]):
     return structures, np.array(free_energies), forces
 
 
+# def set_dataset_from_electron_yamls(
+#     yamlfiles: list[str],
+#     temperature: float = 300.0,
+#     target: Literal[
+#         "free_energy",
+#         "energy",
+#         "entropy",
+#         "specific_heat",
+#     ] = "free_energy",
+#     element_order: Optional[bool] = None,
+# ) -> PolymlpDataDFT:
+#     """Return DFT dataset by loading electron.yaml files."""
+#     structures, free_energies = parse_electron_yamls(
+#         yamlfiles,
+#         temperature=temperature,
+#         target=target,
+#     )
+#     dft = set_dataset_from_structures(
+#         structures,
+#         free_energies,
+#         forces=None,
+#         stresses=None,
+#         element_order=element_order,
+#     )
+#     return dft
+#
+
+# def parse_electron_yamls(
+#    yamlfiles: list[str],
+#    temperature: float = 300.0,
+#    target: Literal[
+#        "free_energy",
+#        "energy",
+#        "entropy",
+#        "specific_heat",
+#    ] = "free_energy",
+# ):
+#    """Parse electron.yaml files."""
+#    import time
+#    properties, structures = [], []
+#    for yfile in yamlfiles:
+#        t1 = time.time()
+#        yml = yaml.safe_load(open(yfile))
+#        t2 = time.time()
+#        unitcell = load_cell(yaml_data=yml, tag="structure")
+#        unitcell.name = yfile
+#        structures.append(unitcell)
+#        for prop in yml["properties"]:
+#            if np.isclose(float(prop["temperature"]), temperature):
+#                properties.append(float(prop[target]))
+#                break
+#        t3 = time.time()
+#        print(t2-t1, t3-t2)
+#    return structures, np.array(properties)
+#
+#
+
+
+def parse_electron_yamls(yamlfiles: list[str]):
+    """Parse electron.yaml files."""
+    yaml_data = []
+    for yfile in yamlfiles:
+        yml = yaml.safe_load(open(yfile))
+        yml["name"] = yfile
+        yaml_data.append(yml)
+    return yaml_data
+
+
+def extract_electron_properties(
+    yaml_data: list[dict],
+    temperature: float = 300.0,
+    target: Literal[
+        "free_energy",
+        "energy",
+        "entropy",
+        "specific_heat",
+    ] = "free_energy",
+):
+    """Extract property data from electron.yaml files."""
+    properties, structures = [], []
+    for yml in yaml_data:
+        unitcell = load_cell(yaml_data=yml, tag="structure")
+        unitcell.name = yml["name"]
+        structures.append(unitcell)
+        for prop in yml["properties"]:
+            if np.isclose(float(prop["temperature"]), temperature):
+                properties.append(float(prop[target]))
+                break
+    return structures, np.array(properties)
+
+
 def set_dataset_from_electron_yamls(
-    yamlfiles: list[str],
+    yaml_data: list[dict],
     temperature: float = 300.0,
     target: Literal[
         "free_energy",
@@ -58,40 +149,16 @@ def set_dataset_from_electron_yamls(
     element_order: Optional[bool] = None,
 ) -> PolymlpDataDFT:
     """Return DFT dataset by loading electron.yaml files."""
-    structures, free_energies = parse_electron_yamls(
-        yamlfiles,
+    structures, properties = extract_electron_properties(
+        yaml_data,
         temperature=temperature,
         target=target,
     )
     dft = set_dataset_from_structures(
         structures,
-        free_energies,
+        properties,
         forces=None,
         stresses=None,
         element_order=element_order,
     )
     return dft
-
-
-def parse_electron_yamls(
-    yamlfiles: list[str],
-    temperature: float = 300.0,
-    target: Literal[
-        "free_energy",
-        "energy",
-        "entropy",
-        "specific_heat",
-    ] = "free_energy",
-):
-    """Parse electron.yaml files."""
-    properties, structures = [], []
-    for yfile in yamlfiles:
-        yml = yaml.safe_load(open(yfile))
-        unitcell = load_cell(yaml_data=yml, tag="structure")
-        unitcell.name = yfile
-        structures.append(unitcell)
-        for prop in yml["properties"]:
-            if np.isclose(float(prop["temperature"]), temperature):
-                properties.append(float(prop[target]))
-                break
-    return structures, np.array(properties)

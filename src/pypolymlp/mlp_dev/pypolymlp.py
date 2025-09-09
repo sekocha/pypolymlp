@@ -35,6 +35,8 @@ class Pypolymlp:
         self._common_params = None
         self._train = None
         self._test = None
+        self._train_yml = None
+        self._test_yml = None
 
         # TODO: set_params is not available for hybrid models at this time.
         self._hybrid = False
@@ -149,11 +151,18 @@ class Pypolymlp:
             )
         return self
 
-    def load_datasets(self, train_ratio: float = 0.9):
+    def load_datasets(self, train_ratio: float = 0.9, verbose: bool = False):
         """Load datasets provided in params instance."""
         self._is_params_none()
-        parser = ParserDatasets(self._common_params, train_ratio=train_ratio)
+        parser = ParserDatasets(
+            self._common_params,
+            train_ratio=train_ratio,
+            train_yml=self._train_yml,
+            test_yml=self._test_yml,
+            verbose=verbose,
+        )
         self._train, self._test = parser.train, parser.test
+        self._train_yml, self._test_yml = parser.train_yml, parser.test_yml
         return self
 
     def _split_dataset_auto(self, files: list[str], train_ratio: float = 0.9):
@@ -186,6 +195,7 @@ class Pypolymlp:
             "specific_heat",
         ] = "free_energy",
         train_ratio: float = 0.9,
+        verbose: bool = False,
     ):
         """Set single electron dataset.
 
@@ -200,10 +210,15 @@ class Pypolymlp:
         self._params.electron_property = target
 
         self._split_dataset_auto(yamlfiles, train_ratio=train_ratio)
-        self.load_datasets()
+        self.load_datasets(verbose=verbose)
         return self
 
-    def set_datasets_sscha(self, yamlfiles: list[str], train_ratio: float = 0.9):
+    def set_datasets_sscha(
+        self,
+        yamlfiles: list[str],
+        train_ratio: float = 0.9,
+        verbose: bool = False,
+    ):
         """Set single sscha dataset.
 
         Parameters
@@ -215,7 +230,7 @@ class Pypolymlp:
         self._params.include_force = True
 
         self._split_dataset_auto(yamlfiles, train_ratio=train_ratio)
-        self.load_datasets()
+        self.load_datasets(verbose=verbose)
         return self
 
     def set_datasets_vasp(
@@ -223,6 +238,7 @@ class Pypolymlp:
         train_vaspruns: list[str],
         test_vaspruns: list[str],
         train_ratio: float = 0.9,
+        verbose: bool = False,
     ):
         """Set single DFT dataset in vasp format.
 
@@ -247,7 +263,7 @@ class Pypolymlp:
         )
         self._params.dft_train = [train]
         self._params.dft_test = [test]
-        self.load_datasets(train_ratio=train_ratio)
+        self.load_datasets(train_ratio=train_ratio, verbose=verbose)
         return self
 
     def set_multiple_datasets_vasp(
@@ -255,6 +271,7 @@ class Pypolymlp:
         train_vaspruns: list[list[str]],
         test_vaspruns: list[list[str]],
         train_ratio: float = 0.9,
+        verbose: bool = False,
     ):
         """Set multiple DFT datasets in vasp format.
 
@@ -283,7 +300,7 @@ class Pypolymlp:
                 weight=1.0,
             )
             self._params.dft_test.append(test)
-        self.load_datasets(train_ratio=train_ratio)
+        self.load_datasets(train_ratio=train_ratio, verbose=verbose)
         return self
 
     def set_datasets_phono3py(
@@ -291,6 +308,7 @@ class Pypolymlp:
         yaml: str,
         energy_dat: Optional[str] = None,
         train_ratio: float = 0.9,
+        verbose: bool = False,
     ):
         """Set single DFT dataset in phono3py format.
 
