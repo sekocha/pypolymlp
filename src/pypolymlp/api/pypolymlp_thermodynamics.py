@@ -23,14 +23,21 @@ class PypolymlpThermodynamics:
         yamls_sscha: list[str],
         yamls_electron: Optional[list[str]] = None,
         yamls_ti: Optional[list[str]] = None,
+        yamls_electron_phonon: Optional[list[str]] = None,
         verbose: bool = False,
     ):
         """Init method."""
-        self._sscha, self._electron, self._ti, self._ti_ref = load_yamls(
-            yamls_sscha=yamls_sscha,
-            yamls_electron=yamls_electron,
-            yamls_ti=yamls_ti,
-            verbose=verbose,
+        if yamls_electron is None and yamls_electron_phonon is not None:
+            raise RuntimeError("Specify path of electron.yaml files")
+
+        (self._sscha, self._electron, self._ti, self._ti_ref, self._electron_ph) = (
+            load_yamls(
+                yamls_sscha=yamls_sscha,
+                yamls_electron=yamls_electron,
+                yamls_ti=yamls_ti,
+                yamls_electron_phonon=yamls_electron_phonon,
+                verbose=verbose,
+            )
         )
         self._verbose = verbose
         self._sscha_el = None
@@ -84,30 +91,53 @@ class PypolymlpThermodynamics:
                 self._total = self._get_sum_properties(self._electron, self._total)
             self._total = self._run_standard(self._total)
 
+            if self._electron_ph is not None:
+                if self._verbose:
+                    print(
+                        "# --- Include adiabatic ele-ph contribution --- #", flush=True
+                    )
+                self._total_ele_ph = self._get_sum_properties(self._ti, self._ti_ref)
+                self._total_ele_ph = self._get_sum_properties(
+                    self._total_ele_ph,
+                    self._electron,
+                )
+                self._total_ele_ph = self._get_sum_properties(
+                    self._total_ele_ph,
+                    self._electron_ph,
+                )
+                self._total_ele_ph = self._run_standard(self._total_ele_ph)
+
         return self
 
     def save_sscha(self, filename: str = "polymlp_thermodynamics_sscha.yaml"):
         """Save fitted SSCHA properties."""
         self._sscha.save_thermodynamics_yaml(filename=filename)
-        sp = filename.split(".yaml")
-        filedata = "".join(sp[:-1]) + "_grid.yaml"
-        self._sscha.save_data(filename=filedata)
+        # sp = filename.split(".yaml")
+        # filedata = "".join(sp[:-1]) + "_grid.yaml"
+        # self._sscha.save_data(filename=filedata)
         return self
 
     def save_sscha_ele(self, filename: str = "polymlp_thermodynamics_sscha_ele.yaml"):
         """Save fitted SSCHA + electronic properties."""
         self._sscha_el.save_thermodynamics_yaml(filename=filename)
-        sp = filename.split(".yaml")
-        filedata = "".join(sp[:-1]) + "_grid.yaml"
-        self._sscha_el.save_data(filename=filedata)
+        # sp = filename.split(".yaml")
+        # filedata = "".join(sp[:-1]) + "_grid.yaml"
+        # self._sscha_el.save_data(filename=filedata)
         return self
 
     def save_total(self, filename: str = "polymlp_thermodynamics_total.yaml"):
-        """Save fitted SSCHA properties."""
+        """Save fitted SSCHA + electronic + TI properties."""
         self._total.save_thermodynamics_yaml(filename=filename)
-        sp = filename.split(".yaml")
-        filedata = "".join(sp[:-1]) + "_grid.yaml"
-        self._total.save_data(filename=filedata)
+        # sp = filename.split(".yaml")
+        # filedata = "".join(sp[:-1]) + "_grid.yaml"
+        # self._total.save_data(filename=filedata)
+        return self
+
+    def save_total_ele_ph(
+        self, filename: str = "polymlp_thermodynamics_total_ele_ph.yaml"
+    ):
+        """Save fitted SSCHA + electronic + TI + ele-ph properties."""
+        self._total_ele_ph.save_thermodynamics_yaml(filename=filename)
         return self
 
 

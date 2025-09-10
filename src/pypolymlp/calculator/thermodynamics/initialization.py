@@ -1,6 +1,6 @@
 """Utility functions for initializing thermodynamic property calculation."""
 
-from typing import Optional
+from typing import Literal, Optional
 
 import numpy as np
 import yaml
@@ -44,7 +44,10 @@ def load_sscha_yamls(filenames: tuple[str]) -> list[GridPointData]:
     return data
 
 
-def load_electron_yamls(filenames: tuple[str]) -> list[GridPointData]:
+def load_electron_yamls(
+    filenames: tuple[str],
+    data_type: Literal["electron", "electron_ph"] = "electron",
+) -> list[GridPointData]:
     """Load electron.yaml files."""
     data = []
     for yamlfile in filenames:
@@ -59,7 +62,7 @@ def load_electron_yamls(filenames: tuple[str]) -> list[GridPointData]:
             grid = GridPointData(
                 volume=volume,
                 temperature=temp,
-                data_type="electron",
+                data_type=data_type,
                 free_energy=free_e,
                 entropy=entropy,
                 # heat_capacity=cv,

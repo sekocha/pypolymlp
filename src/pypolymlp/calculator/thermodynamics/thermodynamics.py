@@ -37,7 +37,7 @@ class Thermodynamics:
     def __init__(
         self,
         data: list[GridPointData],
-        data_type: Optional[Literal["sscha", "ti", "electron"]] = None,
+        data_type: Optional[Literal["sscha", "ti", "electron", "electron_ph"]] = None,
         verbose: bool = False,
     ):
         """Init method.
@@ -224,7 +224,7 @@ class Thermodynamics:
                 entropies = -polyfit.eval_derivative(temperatures)
                 for p, val in zip(points, entropies):
                     p.entropy = p.reference_entropy + val
-                    print(p.volume, p.temperature, p.entropy * EVtoJmol)
+                    # print(p.volume, p.temperature, p.entropy * EVtoJmol)
             else:
                 ft_fits.append(None)
         self._models.ft_fits = ft_fits
@@ -484,6 +484,7 @@ def load_yamls(
     yamls_sscha: list[str],
     yamls_electron: Optional[list[str]] = None,
     yamls_ti: Optional[list[str]] = None,
+    yamls_electron_phonon: Optional[list[str]] = None,
     verbose: bool = False,
 ):
     """Load yaml files needed for calculating thermodynamics."""
@@ -523,14 +524,6 @@ def load_yamls(
     # Set reference term for TI
     if ti is not None:
         ti_ref = copy.deepcopy(sscha)
-        # ti_ref.calculate_harmonic_free_energies()
-        # ti_ref.fit_free_energy_temperature(max_order=4, intercept=True)
-
-        # f1 = sscha.get_data(attr="static_potential")
-        # f2 = ti_ref.get_data(attr="free_energy")
-        # f_sum = sum_matrix_data(f1, f2)
-        # ti_ref.replace_free_energies(f_sum)
-
         f1 = sscha.get_data(attr="harmonic_free_energy")
         ti_ref.replace_free_energies(f1)
         ti_ref.fit_free_energy_temperature(max_order=4, intercept=True)
@@ -540,4 +533,20 @@ def load_yamls(
         f_sum = sum_matrix_data(f1, f2)
         ti_ref.replace_free_energies(f_sum)
 
-    return sscha, electron, ti, ti_ref
+    if yamls_electron_phonon is not None:
+        if verbose:
+            print("Loading electron.yaml (sscha) files.", flush=True)
+        data4 = load_electron_yamls(yamls_electron_phonon, data_type="electron_ph")
+        electron_ph = Thermodynamics(
+            data=data4, data_type="electron_ph", verbose=verbose
+        )
+        sscha, electron_ph = _adjust_to_common_grid(sscha, electron_ph)
+        if yamls_electron is not None:
+            electron, electron_ph = _adjust_to_common_grid(electron, electron_ph)
+        if yamls_ti is not None:
+            ti, electron_ph = _adjust_to_common_grid(ti, electron_ph)
+            ti_ref, electron_ph = _adjust_to_common_grid(ti_ref, electron_ph)
+    else:
+        electron_ph = None
+
+    return sscha, electron, ti, ti_ref, electron_ph

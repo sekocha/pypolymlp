@@ -35,6 +35,7 @@ class SSCHADistribution:
             prop,
             n_unitcells=self._res.n_unitcells,
             fc2=self._res.force_constants,
+            verbose=verbose,
         )
 
         if self._verbose:

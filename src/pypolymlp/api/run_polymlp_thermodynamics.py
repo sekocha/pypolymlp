@@ -39,6 +39,13 @@ def run():
         help="yaml files of thermodynamic integration results",
     )
     parser.add_argument(
+        "--electron_phonon",
+        nargs="*",
+        type=str,
+        default=None,
+        help="yaml files of electron-phonon contribution",
+    )
+    parser.add_argument(
         "--boundary",
         nargs=2,
         type=str,
@@ -65,6 +72,7 @@ def run():
             args.sscha,
             args.electron,
             args.ti,
+            args.electron_phonon,
             verbose=True,
         )
         thermo.run()
@@ -73,3 +81,7 @@ def run():
             thermo.save_sscha_ele(filename="polymlp_thermodynamics_sscha_ele.yaml")
         if args.ti is not None:
             thermo.save_total(filename="polymlp_thermodynamics_total.yaml")
+        if args.electron_phonon is not None:
+            thermo.save_total_ele_ph(
+                filename="polymlp_thermodynamics_total_ele_ph.yaml"
+            )
