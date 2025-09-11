@@ -65,7 +65,6 @@ def load_electron_yamls(
                 data_type=data_type,
                 free_energy=free_e,
                 entropy=entropy,
-                # heat_capacity=cv,
                 path_yaml=yamlfile,
             )
             data.append(grid)
@@ -83,28 +82,39 @@ def _check_melting(log: np.ndarray):
         return False
 
 
+def _is_success(eng: float, threshold: float = -100):
+    """Check whether MD simulation is successfully finished."""
+    if eng < threshold:
+        return False
+    return True
+
+
 def load_ti_yamls(filenames: tuple[str], verbose: bool = False) -> list[GridPointData]:
     """Load polymlp_ti.yaml files."""
     data = []
     for yamlfile in filenames:
         res = load_thermodynamic_integration_yaml(yamlfile)
         temp, volume, free_e, ent, cv, eng, log = res
-        if _check_melting(log):
-            if verbose:
-                message = yamlfile + " was eliminated (found to be in a melting state)."
-                print(message, flush=True)
+        if _is_success(eng):
+            if _check_melting(log):
+                if verbose:
+                    message = " was eliminated (found to be in a melting state)."
+                    print(yamlfile + message, flush=True)
+            else:
+                grid = GridPointData(
+                    volume=volume,
+                    temperature=temp,
+                    data_type="ti",
+                    free_energy=free_e,
+                    entropy=ent,
+                    # energy=eng,
+                    path_yaml=yamlfile,
+                )
+                data.append(grid)
         else:
-            grid = GridPointData(
-                volume=volume,
-                temperature=temp,
-                data_type="ti",
-                free_energy=free_e,
-                entropy=ent,
-                # heat_capacity=cv,
-                # energy=eng,
-                path_yaml=yamlfile,
-            )
-            data.append(grid)
+            if verbose:
+                message = " was found to be a failed MD simulation."
+                print(yamlfile + message, flush=True)
     return data
 
 
@@ -159,18 +169,16 @@ def calculate_reference(
     at the lowest temperature are used as reference free energy, reference entropy,
     and reference heat capacity to fit properties with respect to temperature.
     """
-    ref_id = 0
-    for i, p in enumerate(grid_points):
-        if p is not None:
-            ref_id = i
+    ref = None
+    for point in grid_points:
+        if point is not None and point.path_fc2 is not None:
+            ref = point
             break
 
-    if grid_points[ref_id].path_fc2 is None:
+    if ref is None:
         raise RuntimeError("Reference state not found.")
 
-    path_fc2 = grid_points[ref_id].path_fc2
-    # temperatures = np.array([p.temperature for p in grid_points])
-    res = grid_points[ref_id].restart
+    path_fc2, res = ref.path_fc2, ref.restart
     n_atom = len(res.unitcell.elements)
 
     tp_dict = _calculate_harmonic_properties(res, path_fc2, temperatures=temperatures)

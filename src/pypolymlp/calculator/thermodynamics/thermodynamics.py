@@ -224,7 +224,6 @@ class Thermodynamics:
                 entropies = -polyfit.eval_derivative(temperatures)
                 for p, val in zip(points, entropies):
                     p.entropy = p.reference_entropy + val
-                    # print(p.volume, p.temperature, p.entropy * EVtoJmol)
             else:
                 ft_fits.append(None)
         self._models.ft_fits = ft_fits
@@ -439,18 +438,6 @@ class Thermodynamics:
     def is_heat_capacity(self):
         """Return whether heat capacity exists or not."""
         return self._is_heat_capacity
-
-    @property
-    def reference(self):
-        """Copy reference properties."""
-        ref = copy.deepcopy(self)
-        for g1 in ref.grid:
-            for g2 in g1:
-                if g2 is not None:
-                    g2.free_energy = g2.reference_free_energy
-                    g2.entropy = g2.reference_entropy
-                    g2.heat_capacity = g2.reference_heat_capacity
-        return ref
 
     def save_data(self, filename: str = "polymlp_thermodynamics_grid.yaml"):
         """Save grid data to file."""
