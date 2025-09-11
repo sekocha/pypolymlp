@@ -60,13 +60,13 @@ class PypolymlpThermodynamics:
         new.replace_entropies(s_sum)
         return new
 
-    def _run_standard(self, thermo: Thermodynamics):
+    def _run_standard(self, thermo: Thermodynamics, assign_fit_values: bool = False):
         """Use a standard fitting procedure."""
         thermo.fit_free_energy_volume()
-        thermo.fit_entropy_volume(max_order=6)
+        thermo.fit_entropy_volume(max_order=6, assign_fit_values=assign_fit_values)
         thermo.eval_entropy_equilibrium()
 
-        thermo.fit_entropy_temperature(max_order=4)
+        thermo.fit_entropy_temperature(max_order=6)
         thermo.fit_cv_volume(max_order=4)
         thermo.eval_cp_equilibrium()
         return thermo
@@ -75,13 +75,13 @@ class PypolymlpThermodynamics:
         """Fit results and evalulate equilibrium properties."""
         if self._verbose:
             print("# ----- SSCHA contribution ----- #", flush=True)
-        self._sscha = self._run_standard(self._sscha)
+        self._sscha = self._run_standard(self._sscha, assign_fit_values=True)
 
         if self._electron is not None:
             if self._verbose:
                 print("# ----- Electronic contribution ----- #", flush=True)
             self._sscha_el = self._get_sum_properties(self._sscha, self._electron)
-            self._sscha_el = self._run_standard(self._sscha_el)
+            self._sscha_el = self._run_standard(self._sscha_el, assign_fit_values=True)
 
         if self._ti is not None:
             if self._verbose:
@@ -89,7 +89,7 @@ class PypolymlpThermodynamics:
             self._total = self._get_sum_properties(self._ti, self._ti_ref)
             if self._electron is not None:
                 self._total = self._get_sum_properties(self._electron, self._total)
-            self._total = self._run_standard(self._total)
+            self._total = self._run_standard(self._total, assign_fit_values=True)
 
             if self._electron_ph is not None:
                 if self._verbose:
@@ -105,7 +105,10 @@ class PypolymlpThermodynamics:
                     self._total_ele_ph,
                     self._electron_ph,
                 )
-                self._total_ele_ph = self._run_standard(self._total_ele_ph)
+                self._total_ele_ph = self._run_standard(
+                    self._total_ele_ph,
+                    assign_fit_values=True,
+                )
 
         return self
 

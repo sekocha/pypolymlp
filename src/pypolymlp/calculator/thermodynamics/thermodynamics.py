@@ -153,31 +153,50 @@ class Thermodynamics:
         self._models.fv_fits = fv_fits
         return self
 
-    def fit_entropy_volume(self, max_order: int = 6):
+    def fit_entropy_volume(self, max_order: int = 6, assign_fit_values: bool = False):
         """Fit volume-entropy data using polynomial."""
         if self._verbose:
             print("Volume-Entropy fitting.", flush=True)
-        self._models.sv_fits = self._fit_wrt_volume(max_order=max_order, attr="entropy")
+        self._models.sv_fits = self._fit_wrt_volume(
+            max_order=max_order,
+            attr="entropy",
+            assign_fit_values=assign_fit_values,
+        )
         return self
 
     def fit_cv_volume(self, max_order: int = 4):
         """Fit volume-Cv data using polynomial."""
         if not self._is_heat_capacity:
             return self
-
         if self._verbose:
             print("Volume-Cv fitting.", flush=True)
-        attr = "heat_capacity"
-        self._models.cv_fits = self._fit_wrt_volume(max_order=max_order, attr=attr)
+        self._models.cv_fits = self._fit_wrt_volume(
+            max_order=max_order,
+            attr="heat_capacity",
+            eliminate_outliers=True,
+        )
         return self
 
-    def _fit_wrt_volume(self, max_order: int = 6, attr: str = "entropy"):
+    def _fit_wrt_volume(
+        self,
+        max_order: int = 6,
+        attr: str = "entropy",
+        assign_fit_values: bool = False,
+        eliminate_outliers: bool = False,
+    ):
         """Fit volume-property data using polynomial."""
         fits = []
         for itemp, data in enumerate(self._grid.T):
             props = np.array([getattr(d, attr) for d in data if _exist_attr(d, attr)])
             if len(props) > max_order + 1:
-                volumes = [d.volume for d in data if _exist_attr(d, attr)]
+                volumes = np.array([d.volume for d in data if _exist_attr(d, attr)])
+                if eliminate_outliers:
+                    ave = np.mean(props)
+                    if not np.isclose(ave, 0.0):
+                        cond = (props < ave * 1.1) & (props > ave * 0.9)
+                        props = props[cond]
+                        volumes = volumes[cond]
+
                 polyfit = Polyfit(volumes, props)
                 polyfit.fit(max_order=max_order, intercept=True, add_sqrt=False)
                 fits.append(polyfit)
@@ -186,6 +205,14 @@ class Thermodynamics:
                     print(
                         "  model_rmse: ", polyfit.best_model, polyfit.error, flush=True
                     )
+                # self._print_predictions(volumes, props, polyfit)
+                if assign_fit_values:
+                    pred = polyfit.eval(volumes)
+                    idx = 0
+                    for d in data:
+                        if _exist_attr(d, attr):
+                            setattr(d, attr, pred[idx])
+                            idx += 1
             else:
                 fits.append(None)
         return fits
@@ -216,10 +243,8 @@ class Thermodynamics:
                     print(
                         "  model_rmse:  ", polyfit.best_model, polyfit.error, flush=True
                     )
-                # pred = polyfit.eval(temperatures)
-                # for t, f1, f2 in zip(temperatures, free_energies - ref, pred):
-                #    print(t, f1, f2)
 
+                # self._print_predictions(temperatures, free_energies - ref, polyfit)
                 # entropy calculations
                 entropies = -polyfit.eval_derivative(temperatures)
                 for p, val in zip(points, entropies):
@@ -250,6 +275,7 @@ class Thermodynamics:
                         "  model_rmse:  ", polyfit.best_model, polyfit.error, flush=True
                     )
 
+                # self._print_predictions(temperatures, entropies - ref, polyfit)
                 # Cv calculations
                 cv_from_ref = temperatures * polyfit.eval_derivative(temperatures)
                 for p, val in zip(points, cv_from_ref):
@@ -259,6 +285,12 @@ class Thermodynamics:
         self._models.st_fits = st_fits
         self._is_heat_capacity = True
         return self
+
+    def _print_predictions(self, x: np.ndarray, y: np.ndarray, polyfit: Polyfit):
+        """Print prediction values."""
+        pred = polyfit.eval(x)
+        for x1, f1, f2 in zip(x, y, pred):
+            print(" ", np.round(x1, 3), f1, f2)
 
     def eval_entropy_equilibrium(self):
         """Evaluate entropies at equilibrium volumes."""
