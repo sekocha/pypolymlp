@@ -84,6 +84,11 @@ class FittedModels:
     st_fits: Optional[list] = None
     et_fits: Optional[list] = None
 
+    def __post_init__(self):
+        """Post init method."""
+        self.volume_threshold = max(self.volumes) * 1.2
+        self.bm_threshold = 1e-3
+
     def reshape(self, ix_v: np.ndarray, ix_t: np.ndarray):
         """Reshape objects with common grid."""
         self.volumes = self.volumes[ix_v]
@@ -118,6 +123,11 @@ class FittedModels:
         if self.fv_fits[itemp] is None or self.sv_fits[itemp] is None:
             return None
 
+        if self.fv_fits[itemp].v0 > self.volume_threshold:
+            return None
+        if self.fv_fits[itemp].b0 / EVAngstromToGPa < self.bm_threshold:
+            return None
+
         return self.sv_fits[itemp].eval(self.fv_fits[itemp].v0)
 
     def eval_eq_cv(self, itemp: int):
@@ -128,17 +138,32 @@ class FittedModels:
             raise RuntimeError("Cv-V functions not found.")
         if self.fv_fits[itemp] is None or self.cv_fits[itemp] is None:
             return None
+
+        if self.fv_fits[itemp].v0 > self.volume_threshold:
+            return None
+        if self.fv_fits[itemp].b0 / EVAngstromToGPa < self.bm_threshold:
+            return None
+
         return self.cv_fits[itemp].eval(self.fv_fits[itemp].v0)
 
     def eval_eq_cp(self, itemp: int):
         """Evaluate Cp at equilibrium volume."""
         cv_val = self.eval_eq_cv(itemp)
+        if cv_val is None:
+            return None
+
         try:
             fv, sv, _ = self.extract(itemp)
             v0, b0 = fv.v0, fv.b0
             s_deriv = sv.eval_derivative(v0)
             temp = self.temperatures[itemp]
             bm = b0 / EVAngstromToGPa
+
+            if bm < self.bm_threshold:
+                return None
+            if v0 > self.volume_threshold:
+                return None
+
             add = temp * v0 * (s_deriv**2) / bm
             add *= EVtoJmol
         except:

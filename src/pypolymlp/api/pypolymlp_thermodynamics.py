@@ -66,9 +66,14 @@ class PypolymlpThermodynamics:
         thermo.fit_entropy_volume(max_order=6, assign_fit_values=assign_fit_values)
         thermo.eval_entropy_equilibrium()
 
-        thermo.fit_entropy_temperature(max_order=6)
-        thermo.fit_cv_volume(max_order=4)
-        thermo.eval_cp_equilibrium()
+        thermo.fit_entropy_temperature(max_order=4)
+        try:
+            thermo.fit_cv_volume(max_order=4)
+            thermo.eval_cp_equilibrium()
+        except:
+            if self._verbose:
+                print("ERROR: Volume-Cv fit failed.", flush=True)
+            return None
         return thermo
 
     def run(self):
@@ -89,6 +94,7 @@ class PypolymlpThermodynamics:
             self._total = self._get_sum_properties(self._ti, self._ti_ref)
             if self._electron is not None:
                 self._total = self._get_sum_properties(self._electron, self._total)
+
             self._total = self._run_standard(self._total, assign_fit_values=True)
 
             if self._electron_ph is not None:
@@ -114,7 +120,8 @@ class PypolymlpThermodynamics:
 
     def save_sscha(self, filename: str = "polymlp_thermodynamics_sscha.yaml"):
         """Save fitted SSCHA properties."""
-        self._sscha.save_thermodynamics_yaml(filename=filename)
+        if self._sscha is not None:
+            self._sscha.save_thermodynamics_yaml(filename=filename)
         # sp = filename.split(".yaml")
         # filedata = "".join(sp[:-1]) + "_grid.yaml"
         # self._sscha.save_data(filename=filedata)
@@ -122,7 +129,8 @@ class PypolymlpThermodynamics:
 
     def save_sscha_ele(self, filename: str = "polymlp_thermodynamics_sscha_ele.yaml"):
         """Save fitted SSCHA + electronic properties."""
-        self._sscha_el.save_thermodynamics_yaml(filename=filename)
+        if self._sscha_el is not None:
+            self._sscha_el.save_thermodynamics_yaml(filename=filename)
         # sp = filename.split(".yaml")
         # filedata = "".join(sp[:-1]) + "_grid.yaml"
         # self._sscha_el.save_data(filename=filedata)
@@ -130,7 +138,8 @@ class PypolymlpThermodynamics:
 
     def save_total(self, filename: str = "polymlp_thermodynamics_total.yaml"):
         """Save fitted SSCHA + electronic + TI properties."""
-        self._total.save_thermodynamics_yaml(filename=filename)
+        if self._total is not None:
+            self._total.save_thermodynamics_yaml(filename=filename)
         # sp = filename.split(".yaml")
         # filedata = "".join(sp[:-1]) + "_grid.yaml"
         # self._total.save_data(filename=filedata)
@@ -140,7 +149,8 @@ class PypolymlpThermodynamics:
         self, filename: str = "polymlp_thermodynamics_total_ele_ph.yaml"
     ):
         """Save fitted SSCHA + electronic + TI + ele-ph properties."""
-        self._total_ele_ph.save_thermodynamics_yaml(filename=filename)
+        if self._total_ele_ph is not None:
+            self._total_ele_ph.save_thermodynamics_yaml(filename=filename)
         return self
 
 

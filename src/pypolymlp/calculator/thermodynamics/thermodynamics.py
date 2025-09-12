@@ -173,7 +173,7 @@ class Thermodynamics:
         self._models.cv_fits = self._fit_wrt_volume(
             max_order=max_order,
             attr="heat_capacity",
-            eliminate_outliers=True,
+            check_distribution=True,
         )
         return self
 
@@ -182,7 +182,7 @@ class Thermodynamics:
         max_order: int = 6,
         attr: str = "entropy",
         assign_fit_values: bool = False,
-        eliminate_outliers: bool = False,
+        check_distribution: bool = False,
     ):
         """Fit volume-property data using polynomial."""
         fits = []
@@ -190,32 +190,66 @@ class Thermodynamics:
             props = np.array([getattr(d, attr) for d in data if _exist_attr(d, attr)])
             if len(props) > max_order + 1:
                 volumes = np.array([d.volume for d in data if _exist_attr(d, attr)])
-                if eliminate_outliers:
-                    ave = np.mean(props)
-                    if not np.isclose(ave, 0.0):
-                        cond = (props < ave * 1.1) & (props > ave * 0.9)
-                        props = props[cond]
-                        volumes = volumes[cond]
+                if check_distribution and not np.allclose(props, 0.0):
+                    volumes, props = self._check_distribution(volumes, props)
 
-                polyfit = Polyfit(volumes, props)
-                polyfit.fit(max_order=max_order, intercept=True, add_sqrt=False)
-                fits.append(polyfit)
-                if self._verbose:
-                    print("- temperature:", self._temperatures[itemp], flush=True)
-                    print(
-                        "  model_rmse: ", polyfit.best_model, polyfit.error, flush=True
-                    )
-                # self._print_predictions(volumes, props, polyfit)
-                if assign_fit_values:
-                    pred = polyfit.eval(volumes)
-                    idx = 0
-                    for d in data:
-                        if _exist_attr(d, attr):
-                            setattr(d, attr, pred[idx])
-                            idx += 1
+                if volumes is None:
+                    fits.append(None)
+                else:
+                    polyfit = Polyfit(volumes, props)
+                    polyfit.fit(max_order=max_order, intercept=True, add_sqrt=False)
+                    fits.append(polyfit)
+                    if self._verbose:
+                        print("- temperature:", self._temperatures[itemp], flush=True)
+                        print(
+                            "  model_rmse: ",
+                            polyfit.best_model,
+                            polyfit.error,
+                            flush=True,
+                        )
+
+                    self._print_predictions(volumes, props, polyfit)
+                    if assign_fit_values:
+                        pred = polyfit.eval(volumes)
+                        idx = 0
+                        for d in data:
+                            if _exist_attr(d, attr):
+                                setattr(d, attr, pred[idx])
+                                idx += 1
             else:
                 fits.append(None)
         return fits
+
+    def _check_distribution(self, volumes: np.ndarray, props: np.ndarray):
+        """Check property distribution before fitting."""
+        idx = np.where(props > 0.0)[0]
+        volumes, props = volumes[idx], props[idx]
+
+        cbegin = int(len(volumes) * 0.45)
+        cend = 2 * cbegin
+
+        ave, std = np.mean(props[cbegin:cend]), np.std(props[cbegin:cend])
+        if std > ave * 0.2:
+            return None, None
+
+        cond = (props < ave + 1.5 * std) & (props > ave - 1.5 * std)
+        target = cond[cbegin:cend]
+
+        if np.count_nonzero(target) > len(target) / 5:
+            cond = (props < ave + 2.0 * std) & (props > ave - 2.0 * std)
+            target = cond[cbegin:cend]
+            if np.count_nonzero(target) > len(target) / 5:
+                cond = (props < ave + 2.5 * std) & (props > ave - 2.5 * std)
+                if self._verbose:
+                    print("Volume-Cv data is largely scattering.")
+                    print(" Average, Std:", ave, std, flush=True)
+                    print(" Cv:", flush=True)
+                    print(props, flush=True)
+                    print(" Selected Cv:", flush=True)
+                    print(props[cond], flush=True)
+
+        volumes, props = volumes[cond], props[cond]
+        return volumes, props
 
     def fit_free_energy_temperature(self, max_order: int = 6, intercept: bool = False):
         """Fit temperature-free-energy data using polynomial."""
@@ -267,7 +301,11 @@ class Thermodynamics:
                 entropies = np.array([p.entropy for p in points])
                 ref = np.array([p.reference_entropy for p in points])
                 polyfit = Polyfit(temperatures, entropies - ref)
-                polyfit.fit(max_order=max_order, intercept=False, add_sqrt=True)
+                if np.isclose(temperatures[0], 0.0):
+                    polyfit.fit(max_order=max_order, intercept=False, add_sqrt=True)
+                else:
+                    polyfit.fit(max_order=max_order, intercept=True, add_sqrt=True)
+
                 st_fits.append(polyfit)
                 if self._verbose:
                     print("- volume:", np.round(self._volumes[ivol], 3), flush=True)

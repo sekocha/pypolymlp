@@ -188,6 +188,8 @@ def calculate_reference(
         tp_dict["heat_capacity"],
         grid_points,
     )
+    # TODO: Reference entropy at the lowest temperature
+    #       is not consistent with SSCHA entropy ?
     for f, s, cv, point in zip1:
         if point is not None:
             point.reference_free_energy = f / EVtoKJmol / n_atom

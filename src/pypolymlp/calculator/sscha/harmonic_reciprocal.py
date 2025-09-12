@@ -47,7 +47,7 @@ class HarmonicReciprocal:
         energies, forces, _ = self.prop.eval_multiple(structures)
         return np.array(energies), np.array(forces)
 
-    def produce_harmonic_force_constants(self, displacements=0.01):
+    def produce_harmonic_force_constants(self, displacements: float = 0.01):
         """Produce non-effective harmonic FCs."""
 
         self.ph.generate_displacements(distance=displacements)
