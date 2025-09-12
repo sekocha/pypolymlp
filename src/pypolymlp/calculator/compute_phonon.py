@@ -210,3 +210,5 @@ class PolymlpPhononQHA:
         self._qha.write_bulk_modulus_temperature(filename=filename)
         filename = path_output + "/polymlp_phonon_qha/gruneisen-temperature.dat"
         self._qha.write_gruneisen_temperature(filename=filename)
+        filename = path_output + "/polymlp_phonon_qha/cp-temperature.dat"
+        self._qha.write_heat_capacity_P_numerical(filename=filename)
