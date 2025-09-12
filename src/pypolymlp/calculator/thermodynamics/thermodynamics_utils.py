@@ -4,13 +4,10 @@ from dataclasses import dataclass
 from typing import Literal, Optional
 
 import numpy as np
-from phono3py.file_IO import read_fc2_from_hdf5
-from phonopy import Phonopy
 from phonopy.units import EVAngstromToGPa
 
 from pypolymlp.calculator.sscha.sscha_utils import Restart
 from pypolymlp.core.units import EVtoJmol
-from pypolymlp.utils.phonopy_utils import structure_to_phonopy_cell
 
 
 @dataclass
@@ -21,11 +18,14 @@ class GridPointData:
     temperature: float
     data_type: Optional[Literal["sscha", "ti", "electron"]] = None
     restart: Optional[Restart] = None
+
     free_energy: Optional[float] = None
     entropy: Optional[float] = None
     heat_capacity: Optional[float] = None
-    harmonic_heat_capacity: Optional[float] = None
+
     energy: Optional[float] = None
+    static_potential: Optional[float] = None
+    harmonic_free_energy: Optional[float] = None
 
     reference_free_energy: Optional[float] = None
     reference_entropy: Optional[float] = None
@@ -34,8 +34,16 @@ class GridPointData:
     path_yaml: Optional[float] = None
     path_fc2: Optional[float] = None
 
+    def copy_reference(self, grid_point):
+        """Copy reference data."""
+        if grid_point is not None:
+            self.reference_free_energy = grid_point.reference_free_energy
+            self.reference_entropy = grid_point.reference_entropy
+            self.reference_heat_capacity = grid_point.reference_heat_capacity
+        return self
+
     def reset_reference(self):
-        """Reset data."""
+        """Reset reference data."""
         self.reference_free_energy = None
         self.reference_entropy = None
         self.reference_heat_capacity = None
@@ -76,6 +84,11 @@ class FittedModels:
     st_fits: Optional[list] = None
     et_fits: Optional[list] = None
 
+    def __post_init__(self):
+        """Post init method."""
+        self.volume_threshold = max(self.volumes) * 1.2
+        self.bm_threshold = 1e-3
+
     def reshape(self, ix_v: np.ndarray, ix_t: np.ndarray):
         """Reshape objects with common grid."""
         self.volumes = self.volumes[ix_v]
@@ -110,6 +123,11 @@ class FittedModels:
         if self.fv_fits[itemp] is None or self.sv_fits[itemp] is None:
             return None
 
+        if self.fv_fits[itemp].v0 > self.volume_threshold:
+            return None
+        if self.fv_fits[itemp].b0 / EVAngstromToGPa < self.bm_threshold:
+            return None
+
         return self.sv_fits[itemp].eval(self.fv_fits[itemp].v0)
 
     def eval_eq_cv(self, itemp: int):
@@ -120,17 +138,32 @@ class FittedModels:
             raise RuntimeError("Cv-V functions not found.")
         if self.fv_fits[itemp] is None or self.cv_fits[itemp] is None:
             return None
+
+        if self.fv_fits[itemp].v0 > self.volume_threshold:
+            return None
+        if self.fv_fits[itemp].b0 / EVAngstromToGPa < self.bm_threshold:
+            return None
+
         return self.cv_fits[itemp].eval(self.fv_fits[itemp].v0)
 
     def eval_eq_cp(self, itemp: int):
         """Evaluate Cp at equilibrium volume."""
         cv_val = self.eval_eq_cv(itemp)
+        if cv_val is None:
+            return None
+
         try:
             fv, sv, _ = self.extract(itemp)
             v0, b0 = fv.v0, fv.b0
             s_deriv = sv.eval_derivative(v0)
             temp = self.temperatures[itemp]
             bm = b0 / EVAngstromToGPa
+
+            if bm < self.bm_threshold:
+                return None
+            if v0 > self.volume_threshold:
+                return None
+
             add = temp * v0 * (s_deriv**2) / bm
             add *= EVtoJmol
         except:
@@ -190,29 +223,6 @@ class FittedModels:
         return np.array([fv.eval_gibbs_pressure(volumes) for fv in self.fv_fits])
 
 
-def compare_conditions(array1: np.ndarray, array2: np.ndarray):
-    """Return indices with the same values in two arrays"""
-    ids1, ids2 = [], []
-    for i1, val in enumerate(array1):
-        i2 = np.where(np.isclose(array2, val))[0]
-        if len(i2) > 0:
-            ids1.append(i1)
-            ids2.append(i2[0])
-    return np.array(ids1), np.array(ids2)
-
-
-def get_common_grid(
-    volumes1: np.ndarray,
-    volumes2: np.ndarray,
-    temperatures1: np.ndarray,
-    temperatures2: np.ndarray,
-):
-    """Return common grid for two conditions."""
-    ids1_v, ids2_v = compare_conditions(volumes1, volumes2)
-    ids1_t, ids2_t = compare_conditions(temperatures1, temperatures2)
-    return (ids1_v, ids1_t), (ids2_v, ids2_t)
-
-
 def sum_matrix_data(matrix1: np.ndarray, matrix2: np.ndarray):
     """Calculate sum of two matrices."""
     if matrix1.shape != matrix2.shape:
@@ -221,32 +231,3 @@ def sum_matrix_data(matrix1: np.ndarray, matrix2: np.ndarray):
     mask = np.equal(matrix1, None) | np.equal(matrix2, None)
     res[~mask] = matrix1[~mask] + matrix2[~mask]
     return res
-
-
-def calculate_reference(
-    grid_points: list[GridPointData],
-    mesh: np.ndarray = (10, 10, 10),
-):
-    """Return reference entropies.
-
-    Harmonic phonon entropies calculated with SSCHA FC2 and frequencies
-    is used as reference entropies to fit entropies with respect to temperature.
-    """
-    ref_id = 0
-    if grid_points[ref_id].path_fc2 is None:
-        raise RuntimeError("Reference state not found.")
-
-    temperatures = np.array([p.temperature for p in grid_points])
-    res = grid_points[ref_id].restart
-    n_atom = len(res.unitcell.elements)
-    ph = Phonopy(structure_to_phonopy_cell(res.unitcell), res.supercell_matrix)
-    ph.force_constants = read_fc2_from_hdf5(grid_points[ref_id].path_fc2)
-    ph.run_mesh(mesh)
-    ph.run_thermal_properties(temperatures=temperatures)
-    tp_dict = ph.get_thermal_properties_dict()
-
-    for s, cv, point in zip(tp_dict["entropy"], tp_dict["heat_capacity"], grid_points):
-        point.reference_entropy = s / EVtoJmol / n_atom
-        point.reference_heat_capacity = cv / n_atom
-
-    return grid_points

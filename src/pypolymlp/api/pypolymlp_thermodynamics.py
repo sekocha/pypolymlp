@@ -3,12 +3,9 @@
 import copy
 from typing import Optional
 
-import numpy as np
-
 from pypolymlp.calculator.thermodynamics.io_utils import load_thermodynamics_yaml
 from pypolymlp.calculator.thermodynamics.thermodynamics import (
     Thermodynamics,
-    fit_cv_temperature,
     load_yamls,
 )
 from pypolymlp.calculator.thermodynamics.thermodynamics_utils import sum_matrix_data
@@ -26,222 +23,134 @@ class PypolymlpThermodynamics:
         yamls_sscha: list[str],
         yamls_electron: Optional[list[str]] = None,
         yamls_ti: Optional[list[str]] = None,
+        yamls_electron_phonon: Optional[list[str]] = None,
         verbose: bool = False,
     ):
         """Init method."""
-        self._sscha, self._electron, self._ti = load_yamls(
-            yamls_sscha, yamls_electron, yamls_ti, verbose
+        if yamls_electron is None and yamls_electron_phonon is not None:
+            raise RuntimeError("Specify path of electron.yaml files")
+
+        (self._sscha, self._electron, self._ti, self._ti_ref, self._electron_ph) = (
+            load_yamls(
+                yamls_sscha=yamls_sscha,
+                yamls_electron=yamls_electron,
+                yamls_ti=yamls_ti,
+                yamls_electron_phonon=yamls_electron_phonon,
+                verbose=verbose,
+            )
         )
         self._verbose = verbose
         self._sscha_el = None
         self._total = None
 
-    def _replace_thermodynamics(self, free_energies: np.ndarray, entropies: np.ndarray):
-        """Initialize Thermodynamics instance."""
-        new = copy.deepcopy(self._sscha)
-        new.replace_free_energies(free_energies)
-        new.replace_entropies(entropies)
-        return new
-
-    def _sum_properties(
-        self, thermodynamics: Thermodynamics, f_total: np.ndarray, s_total: np.ndarray
+    def _get_sum_properties(
+        self,
+        thermodynamics1: Thermodynamics,
+        thermodynamics2: Thermodynamics,
     ):
         """Calculate sums of properties."""
-        f_contrib = thermodynamics.get_data(attr="free_energy")
-        s_contrib = thermodynamics.get_data(attr="entropy")
-        f_sum = sum_matrix_data(f_total, f_contrib)
-        s_sum = sum_matrix_data(s_total, s_contrib)
-        return f_sum, s_sum
+        f1 = thermodynamics1.get_data(attr="free_energy")
+        s1 = thermodynamics1.get_data(attr="entropy")
+        f2 = thermodynamics2.get_data(attr="free_energy")
+        s2 = thermodynamics2.get_data(attr="entropy")
+        f_sum = sum_matrix_data(f1, f2)
+        s_sum = sum_matrix_data(s1, s2)
+        new = copy.deepcopy(thermodynamics1)
+        new.replace_free_energies(f_sum)
+        new.replace_entropies(s_sum)
+        return new
 
-    def _run_electron(self, f_total: np.ndarray, s_total: np.ndarray):
-        """Include electronic contribution."""
-        f_total, s_total = self._sum_properties(self._electron, f_total, s_total)
-        self._sscha_el = self._replace_thermodynamics(f_total, s_total)
-        self._sscha_el.run_standard()
-        return f_total, s_total
+    def _run_standard(self, thermo: Thermodynamics, assign_fit_values: bool = False):
+        """Use a standard fitting procedure."""
+        thermo.fit_free_energy_volume()
+        thermo.fit_entropy_volume(max_order=6, assign_fit_values=assign_fit_values)
+        thermo.eval_entropy_equilibrium()
 
-    def _fit_ti(self, f_total: np.ndarray, s_total: np.ndarray):
-        """Fit TI contribution."""
-        self._ti.fit_free_energy_temperature(max_order=6)
-        self._ti.fit_cv_volume(max_order=4)
-        f_total_ti, s_total_ti = self._sum_properties(self._ti, f_total, s_total)
-        return f_total_ti, s_total_ti
-
-    def run_use_harmonic(self):
-        """Fit results and evalulate equilibrium properties."""
-        self._sscha.run_standard()
-
-        if self._electron is None and self._ti is None:
-            return self
-
-        f_total = self._sscha.get_data(attr="free_energy")
-        s_total = self._sscha.get_data(attr="entropy")
-        if self._electron is not None:
+        thermo.fit_entropy_temperature(max_order=4)
+        try:
+            thermo.fit_cv_volume(max_order=4)
+            thermo.eval_cp_equilibrium()
+        except:
             if self._verbose:
-                print("### Electronic contribution ###", flush=True)
-            f_total, s_total = self._run_electron(f_total, s_total)
-
-        if self._ti is not None:
-            if self._verbose:
-                print("### TI contribution ###", flush=True)
-
-            f_ti = self._ti.get_data(attr="free_energy")
-            s_ti = self._ti.get_data(attr="entropy")
-            if self._electron is not None:
-                f_ele_ti, s_ele_ti = self._sum_properties(self._electron, f_ti, s_ti)
-            else:
-                f_ele_ti, s_ele_ti = f_ti, s_ti
-
-            ele_ti = self._replace_thermodynamics(f_ele_ti, s_ele_ti)
-            ele_ti.fit_entropy_temperature(max_order=6, reference=False)
-            ele_ti.fit_cv_volume(max_order=4)
-            print(ele_ti.get_data(attr="heat_capacity"))
-            print(ele_ti.eval_heat_capacities(ele_ti.volumes))
-
-            cv_fc2 = self._sscha.get_data(attr="harmonic_heat_capacity")
-
-            if self._verbose:
-                print("### Total contribution ###", flush=True)
-
-            f_total, s_total = self._sum_properties(self._ti, f_total, s_total)
-            self._total = self._replace_thermodynamics(f_total, s_total)
-            self._total.replace_heat_capacities(cv_fc2)
-            self._total.fit_free_energy_volume()
-            self._total.fit_eval_entropy(max_order=6)
-            self._total.fit_cv_volume(max_order=4)
-            self._total.eval_cp_equilibrium()
-
-            # temperatures = self._total.temperatures
-            fv_fits = self._total.fitted_models.fv_fits
-            cv_fits_ti = ele_ti.fitted_models.cv_fits
-            cp_add = [cv.eval(fv.v0) for fv, cv in zip(fv_fits, cv_fits_ti)]
-            print(cp_add)
-            # cp_add = fit_cv_temperature(temperatures, cp_add, verbose=self._verbose)
-            self._total.add_cp(cp_add)
-
-        return self
-
-    def run_complete(self):
-        """Fit results and evalulate equilibrium properties."""
-        self._sscha.run_standard()
-
-        if self._electron is None and self._ti is None:
-            return self
-
-        f_total = self._sscha.get_data(attr="free_energy")
-        s_total = self._sscha.get_data(attr="entropy")
-        if self._electron is not None:
-            if self._verbose:
-                print("### Electronic contribution ###", flush=True)
-            f_total, s_total = self._run_electron(f_total, s_total)
-            # f_total, s_total = self._sum_properties(self._electron, f_total, s_total)
-            # self._sscha_el = self._replace_thermodynamics(f_total, s_total)
-            # self._sscha_el.run_standard()
-
-        if self._ti is not None:
-            if self._verbose:
-                print("### TI contribution ###", flush=True)
-            f_total, s_total = self._sum_properties(self._ti, f_total, s_total)
-            self._total = self._replace_thermodynamics(f_total, s_total)
-            self._total.run_standard()
-
-        return self
+                print("ERROR: Volume-Cv fit failed.", flush=True)
+            return None
+        return thermo
 
     def run(self):
         """Fit results and evalulate equilibrium properties."""
-        self._sscha.run_standard()
+        if self._verbose:
+            print("# ----- SSCHA contribution ----- #", flush=True)
+        self._sscha = self._run_standard(self._sscha, assign_fit_values=True)
 
-        if self._electron is None and self._ti is None:
-            return self
-
-        f_total_ref = self._sscha.get_data(attr="reference_free_energy")
-        f_total = self._sscha.get_data(attr="free_energy")
-        s_total = self._sscha.get_data(attr="entropy")
         if self._electron is not None:
             if self._verbose:
-                print("### Electronic contribution ###", flush=True)
-            f_total, s_total = self._run_electron(f_total, s_total)
-
-            f_total_ref, s_total = self._sum_properties(
-                self._electron, f_total_ref, s_total
-            )
-            # f_total, s_total = self._sum_properties(self._electron, f_total, s_total)
-            # self._sscha_el = self._replace_thermodynamics(f_total, s_total)
-            # self._sscha_el.run_standard()
+                print("# ----- Electronic contribution ----- #", flush=True)
+            self._sscha_el = self._get_sum_properties(self._sscha, self._electron)
+            self._sscha_el = self._run_standard(self._sscha_el, assign_fit_values=True)
 
         if self._ti is not None:
             if self._verbose:
-                print("### TI contribution ###", flush=True)
-            # f_total, s_total = self._sum_properties(self._ti, f_total, s_total)
-            f_total, s_total = self._sum_properties(self._ti, f_total_ref, s_total)
-            self._total = self._replace_thermodynamics(f_total, s_total)
-            self._total.run_standard()
+                print("# --- Thermodynamic integration contribution --- #", flush=True)
+            self._total = self._get_sum_properties(self._ti, self._ti_ref)
+            if self._electron is not None:
+                self._total = self._get_sum_properties(self._electron, self._total)
 
-        return self
+            self._total = self._run_standard(self._total, assign_fit_values=True)
 
-    def run_use_md_energy(self):
-        """Fit results and evalulate equilibrium properties."""
-        self._sscha.run_standard()
-
-        if self._electron is None and self._ti is None:
-            return self
-
-        f_total = self._sscha.get_data(attr="free_energy")
-        s_total = self._sscha.get_data(attr="entropy")
-        if self._electron is not None:
-            if self._verbose:
-                print("### Electronic contribution ###", flush=True)
-            f_total, s_total = self._run_electron(f_total, s_total)
-
-        if self._ti is not None:
-            if self._verbose:
-                print("### Total properties ###", flush=True)
-            self._ti.fit_energy_temperature(max_order=6)
-            self._ti.fit_cv_volume(max_order=4)
-
-            f_total_ti, s_total_ti = self._sum_properties(self._ti, f_total, s_total)
-            self._total = self._replace_thermodynamics(f_total_ti, s_total_ti)
-            self._total.fit_free_energy_volume()
-            self._total.fit_eval_entropy(max_order=6)
-
-            if self._ti.is_heat_capacity:
-                self._total.replace_entropies(s_total, reset_fit=False)
-                self._total.fit_eval_heat_capacity(max_order=4, from_entropy=True)
-                self._total.replace_entropies(s_total_ti, reset_fit=False)
-
-                temperatures = self._total.temperatures
-                fv_fits = self._total.fitted_models.fv_fits
-                cv_fits_ti = self._ti.fitted_models.cv_fits
-                cp_add = [cv.eval(fv.v0) for fv, cv in zip(fv_fits, cv_fits_ti)]
-                cp_add = fit_cv_temperature(temperatures, cp_add, verbose=self._verbose)
-                self._total.add_cp(cp_add)
-            else:
-                self._total.clear_heat_capacities()
+            if self._electron_ph is not None:
+                if self._verbose:
+                    print(
+                        "# --- Include adiabatic ele-ph contribution --- #", flush=True
+                    )
+                self._total_ele_ph = self._get_sum_properties(self._ti, self._ti_ref)
+                self._total_ele_ph = self._get_sum_properties(
+                    self._total_ele_ph,
+                    self._electron,
+                )
+                self._total_ele_ph = self._get_sum_properties(
+                    self._total_ele_ph,
+                    self._electron_ph,
+                )
+                self._total_ele_ph = self._run_standard(
+                    self._total_ele_ph,
+                    assign_fit_values=True,
+                )
 
         return self
 
     def save_sscha(self, filename: str = "polymlp_thermodynamics_sscha.yaml"):
         """Save fitted SSCHA properties."""
-        self._sscha.save_thermodynamics_yaml(filename=filename)
-        sp = filename.split(".yaml")
-        filedata = "".join(sp[:-1]) + "_grid.yaml"
-        self._sscha.save_data(filename=filedata)
+        if self._sscha is not None:
+            self._sscha.save_thermodynamics_yaml(filename=filename)
+        # sp = filename.split(".yaml")
+        # filedata = "".join(sp[:-1]) + "_grid.yaml"
+        # self._sscha.save_data(filename=filedata)
         return self
 
     def save_sscha_ele(self, filename: str = "polymlp_thermodynamics_sscha_ele.yaml"):
         """Save fitted SSCHA + electronic properties."""
-        self._sscha_el.save_thermodynamics_yaml(filename=filename)
-        sp = filename.split(".yaml")
-        filedata = "".join(sp[:-1]) + "_grid.yaml"
-        self._sscha_el.save_data(filename=filedata)
+        if self._sscha_el is not None:
+            self._sscha_el.save_thermodynamics_yaml(filename=filename)
+        # sp = filename.split(".yaml")
+        # filedata = "".join(sp[:-1]) + "_grid.yaml"
+        # self._sscha_el.save_data(filename=filedata)
         return self
 
     def save_total(self, filename: str = "polymlp_thermodynamics_total.yaml"):
-        """Save fitted SSCHA properties."""
-        self._total.save_thermodynamics_yaml(filename=filename)
-        sp = filename.split(".yaml")
-        filedata = "".join(sp[:-1]) + "_grid.yaml"
-        self._total.save_data(filename=filedata)
+        """Save fitted SSCHA + electronic + TI properties."""
+        if self._total is not None:
+            self._total.save_thermodynamics_yaml(filename=filename)
+        # sp = filename.split(".yaml")
+        # filedata = "".join(sp[:-1]) + "_grid.yaml"
+        # self._total.save_data(filename=filedata)
+        return self
+
+    def save_total_ele_ph(
+        self, filename: str = "polymlp_thermodynamics_total_ele_ph.yaml"
+    ):
+        """Save fitted SSCHA + electronic + TI + ele-ph properties."""
+        if self._total_ele_ph is not None:
+            self._total_ele_ph.save_thermodynamics_yaml(filename=filename)
         return self
 
 

@@ -60,7 +60,7 @@ class PypolymlpSSCHAPost:
 
         shape = (n_supercell), unit: eV/supercell.
         """
-        return self._distrib.full_potentials
+        return self._distrib.energies
 
     @property
     def static_potential(self):
@@ -74,6 +74,16 @@ class PypolymlpSSCHAPost:
     def supercells(self):
         """Return supercell structures sampled from density matrix."""
         return self._distrib.supercells
+
+    @property
+    def n_unitcells(self):
+        """Return number of unitcells."""
+        return self._distrib._res.n_unitcells
+
+    @property
+    def unitcell(self):
+        """Return unitcell."""
+        return self._distrib._res.unitcell
 
 
 #     def compute_thermodynamic_properties(

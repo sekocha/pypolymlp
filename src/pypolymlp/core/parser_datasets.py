@@ -1,9 +1,12 @@
 """Class of parsing DFT datasets."""
 
+from typing import Optional
+
 from pypolymlp.core.data_format import PolymlpDataDFT, PolymlpParams
 from pypolymlp.core.dataset import Dataset
 from pypolymlp.core.interface_vasp import set_dataset_from_vaspruns
 from pypolymlp.core.interface_yaml import (
+    parse_electron_yamls,
     set_dataset_from_electron_yamls,
     set_dataset_from_sscha_yamls,
 )
@@ -12,14 +15,25 @@ from pypolymlp.core.interface_yaml import (
 class ParserDatasets:
     """Class of parsing DFT datasets."""
 
-    def __init__(self, params: PolymlpParams, train_ratio: float = 0.9):
+    def __init__(
+        self,
+        params: PolymlpParams,
+        train_ratio: float = 0.9,
+        train_yml: Optional[list[list[dict]]] = None,
+        test_yml: Optional[list[list[dict]]] = None,
+        verbose: bool = False,
+    ):
         """Init method."""
         self._params = params
         self._dataset_type = self._params.dataset_type
         self._train_ratio = train_ratio
+        self._verbose = verbose
 
         self._train = None
         self._test = None
+
+        self._train_yml = train_yml
+        self._test_yml = test_yml
         self._parse()
 
     def _check_errors(self):
@@ -111,9 +125,24 @@ class ParserDatasets:
 
     def _parse_electron(self):
         """Parse electron results."""
-        for dataset in self._params.dft_train:
+        if self._train_yml is None:
+            self._train_yml = []
+            if self._verbose:
+                print("Loading electron.yaml files.", flush=True)
+        if self._test_yml is None:
+            self._test_yml = []
+
+        for i, dataset in enumerate(self._params.dft_train):
+            if len(self._train_yml) > i:
+                yml_data = self._train_yml[i]
+            else:
+                if self._verbose:
+                    print(" Training dataset:", i + 1, flush=True)
+                yml_data = parse_electron_yamls(dataset.files)
+                self._train_yml.append(yml_data)
+
             dft = set_dataset_from_electron_yamls(
-                dataset.files,
+                yml_data,
                 temperature=self._params.temperature,
                 target=self._params.electron_property,
                 element_order=self._params.element_order,
@@ -121,9 +150,17 @@ class ParserDatasets:
             dft = self._inherit_dataset_params(dataset, dft)
             self._train.append(dft)
 
-        for dataset in self._params.dft_test:
+        for i, dataset in enumerate(self._params.dft_test):
+            if len(self._test_yml) > i:
+                yml_data = self._test_yml[i]
+            else:
+                if self._verbose:
+                    print(" Test dataset:", i + 1, flush=True)
+                yml_data = parse_electron_yamls(dataset.files)
+                self._test_yml.append(yml_data)
+
             dft = set_dataset_from_electron_yamls(
-                dataset.files,
+                yml_data,
                 temperature=self._params.temperature,
                 target=self._params.electron_property,
                 element_order=self._params.element_order,
@@ -145,3 +182,13 @@ class ParserDatasets:
     def dataset_type(self) -> str:
         """Return dataset type."""
         return self._dataset_type
+
+    @property
+    def train_yml(self) -> list:
+        """Return parsed yaml data for training datasets."""
+        return self._train_yml
+
+    @property
+    def test_yml(self) -> list:
+        """Return parsed yaml data for test datasets."""
+        return self._test_yml

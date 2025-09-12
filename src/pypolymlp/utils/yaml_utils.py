@@ -1,5 +1,6 @@
 """Functions for saving and loading yaml files."""
 
+import copy
 import io
 from typing import Optional
 
@@ -81,7 +82,7 @@ def load_cell(
     """Parse structure in yaml data."""
     if filename is not None:
         yaml_data = yaml.safe_load(open(filename))
-    cell_dict = yaml_data[tag]
+    cell_dict = copy.deepcopy(yaml_data[tag])
     cell_dict["axis"] = np.array(cell_dict["axis"], dtype=float).T
     cell_dict["positions"] = np.array(cell_dict["positions"], dtype=float).T
     cell = PolymlpStructure(**cell_dict)
