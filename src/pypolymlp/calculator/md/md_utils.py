@@ -1,5 +1,6 @@
 """Utility functions for MD."""
 
+import os
 from typing import Optional
 
 import numpy as np
@@ -30,6 +31,7 @@ def save_thermodynamic_integration_yaml(
     integrator: IntegratorASE,
     delta_free_energy: float,
     log_ti: np.array,
+    reference_fc2file: str,
     delta_heat_capacity: Optional[float] = None,
     filename: str = "polymlp_ti.yaml",
 ):
@@ -55,6 +57,7 @@ def save_thermodynamic_integration_yaml(
         print("  time_step:  ", integrator._time_step, file=f)
         print("  n_steps_eq: ", integrator._n_eq, file=f)
         print("  n_steps:    ", integrator._n_steps, file=f)
+        print("  references: ", os.path.abspath(reference_fc2file), file=f)
         print(file=f)
 
         delta_entropy = 0.0
