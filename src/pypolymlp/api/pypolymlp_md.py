@@ -482,9 +482,9 @@ class PypolymlpMD:
         )
         return self
 
-    def find_reference(self, path_fc2: str):
+    def find_reference(self, path_fc2: str, target_temperature: float):
         """Find reference FC2 automatically."""
-        return find_reference(path_fc2)
+        return find_reference(path_fc2, target_temperature)
 
     @property
     def unitcell(self):

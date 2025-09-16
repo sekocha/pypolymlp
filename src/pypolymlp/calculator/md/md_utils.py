@@ -136,7 +136,7 @@ def load_thermodynamic_integration_yaml(filename: str = "polymlp_ti.yaml"):
     )
 
 
-def find_reference(path_fc2: str):
+def find_reference(path_fc2: str, target_temperature: float):
     """Find reference FC2 automatically."""
     reference = None
     temp_min = 1e10
@@ -156,4 +156,9 @@ def find_reference(path_fc2: str):
                 if temp < temp_min:
                     temp_min = temp
                     reference = fc2hdf5
+
+    if reference is None:
+        raise RuntimeError("No reference state found.")
+    if target_temperature + 1e-8 < temp_min:
+        raise RuntimeError("Target temperature is lower than reference temperature.")
     return reference
