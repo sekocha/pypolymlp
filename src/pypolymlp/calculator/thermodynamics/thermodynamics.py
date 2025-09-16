@@ -578,17 +578,27 @@ def load_yamls(
     if ti is not None:
         ti.copy_reference(sscha.grid)
 
-    # Set reference term for TI
+    # Set reference term for TI (multiple reference states)
+    # if ti is not None:
+    #     ti_ref = copy.deepcopy(sscha)
+    #     f1 = sscha.get_data(attr="harmonic_free_energy")
+    #     ti_ref.replace_free_energies(f1)
+    #     ti_ref.fit_free_energy_temperature(max_order=4, intercept=True)
+
+    #     f1 = sscha.get_data(attr="static_potential")
+    #     f2 = ti_ref.get_data(attr="free_energy")
+    #     f_sum = sum_matrix_data(f1, f2)
+    #     ti_ref.replace_free_energies(f_sum)
+
+    # Set reference term for TI (single reference state)
     if ti is not None:
         ti_ref = copy.deepcopy(sscha)
-        f1 = sscha.get_data(attr="harmonic_free_energy")
-        ti_ref.replace_free_energies(f1)
-        ti_ref.fit_free_energy_temperature(max_order=4, intercept=True)
-
-        f1 = sscha.get_data(attr="static_potential")
-        f2 = ti_ref.get_data(attr="free_energy")
+        f1 = sscha.get_data(attr="reference_free_energy")
+        s1 = sscha.get_data(attr="reference_entropy")
+        f2 = sscha.get_data(attr="static_potential")
         f_sum = sum_matrix_data(f1, f2)
         ti_ref.replace_free_energies(f_sum)
+        ti_ref.replace_entropies(s1)
 
     if yamls_electron_phonon is not None:
         if verbose:

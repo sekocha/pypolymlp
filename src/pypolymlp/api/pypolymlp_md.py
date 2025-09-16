@@ -10,6 +10,7 @@ from ase.calculators.calculator import Calculator
 from pypolymlp.calculator.md.ase_md import IntegratorASE
 from pypolymlp.calculator.md.md_utils import (
     calc_integral,
+    find_reference,
     get_p_roots,
     save_thermodynamic_integration_yaml,
 )
@@ -52,6 +53,7 @@ class PypolymlpMD:
         self._log_ti = None
         self._delta_free_energy = None
         self._delta_heat_capacity = None
+        self._fc2file = None
 
     def set_ase_calculator(
         self,
@@ -114,6 +116,7 @@ class PypolymlpMD:
         self._properties = properties
 
         self._check_fc2(fc2hdf5)
+        self._fc2file = fc2hdf5
         fc2 = load_fc2_hdf5(fc2hdf5, return_matrix=True)
         self._calculator = PolymlpFC2ASECalculator(
             fc2,
@@ -442,7 +445,7 @@ class PypolymlpMD:
             print("  energies:", flush=True)
             print(log_ti[:, [0, 2]])
             print("  displacements:", flush=True)
-            print(log_ti[:, [0, 3]])
+            print(log_ti[:, [0, 4]])
             print("  delta_heat_capacity:", self._delta_heat_capacity, flush=True)
 
         return self
@@ -473,10 +476,15 @@ class PypolymlpMD:
             self._integrator,
             self._delta_free_energy,
             self._log_ti,
+            self._fc2file,
             delta_heat_capacity=self._delta_heat_capacity,
             filename=filename,
         )
         return self
+
+    def find_reference(self, path_fc2: str):
+        """Find reference FC2 automatically."""
+        return find_reference(path_fc2)
 
     @property
     def unitcell(self):

@@ -1,5 +1,7 @@
 """Utility functions for MD."""
 
+import glob
+import os
 from typing import Optional
 
 import numpy as np
@@ -30,6 +32,7 @@ def save_thermodynamic_integration_yaml(
     integrator: IntegratorASE,
     delta_free_energy: float,
     log_ti: np.array,
+    reference_fc2file: str,
     delta_heat_capacity: Optional[float] = None,
     filename: str = "polymlp_ti.yaml",
 ):
@@ -55,6 +58,7 @@ def save_thermodynamic_integration_yaml(
         print("  time_step:  ", integrator._time_step, file=f)
         print("  n_steps_eq: ", integrator._n_eq, file=f)
         print("  n_steps:    ", integrator._n_steps, file=f)
+        print("  references: ", os.path.abspath(reference_fc2file), file=f)
         print(file=f)
 
         delta_entropy = 0.0
@@ -130,3 +134,26 @@ def load_thermodynamic_integration_yaml(filename: str = "polymlp_ti.yaml"):
         energy,
         np.array(log),
     )
+
+
+def find_reference(path_fc2: str):
+    """Find reference FC2 automatically."""
+    reference = None
+    temp_min = 1e10
+    for fc2hdf5 in sorted(glob.glob(path_fc2 + "/*/fc2.hdf5")):
+        path = "/".join(fc2hdf5.split("/")[:-1])
+        yamlname = path + "/sscha_results.yaml"
+        data = yaml.safe_load(open(yamlname))
+        temp = float(data["parameters"]["temperature"])
+        converge = data["status"]["converge"]
+        imaginary = data["status"]["imaginary"]
+        success = True if converge and not imaginary else False
+        if success:
+            if np.isclose(temp, 0.0):
+                reference = fc2hdf5
+                break
+            else:
+                if temp < temp_min:
+                    temp_min = temp
+                    reference = fc2hdf5
+    return reference

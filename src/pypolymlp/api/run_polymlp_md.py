@@ -77,6 +77,12 @@ def run():
         help="Force constant HDF5 file.",
     )
     parser.add_argument(
+        "--fc2_path",
+        type=str,
+        default=None,
+        help="Directory path for automatically finding reference FC2 state.",
+    )
+    parser.add_argument(
         "--alpha",
         type=float,
         default=0.0,
@@ -105,11 +111,19 @@ def run():
         path += "/ti/" + str(args.temp)
         os.makedirs(path, exist_ok=True)
 
+        if args.fc2 is not None:
+            # Deprecated option.
+            fc2 = args.fc2
+        else:
+            md = PypolymlpMD(verbose=True)
+            fc2 = md.find_reference(args.fc2_path)
+        print("Reference state:", fc2, flush=True)
+
         run_thermodynamic_integration(
             pot=args.pot,
             poscar=args.poscar,
             supercell_size=args.supercell_size,
-            fc2hdf5=args.fc2,
+            fc2hdf5=fc2,
             thermostat=args.thermostat,
             n_alphas=args.n_samples,
             max_alpha=args.max_alpha,
@@ -135,8 +149,11 @@ def run():
         else:
             print("Potential:", args.fc2, flush=True)
             md.set_ase_calculator_with_fc2(
-                pot=args.pot, fc2hdf5=args.fc2, alpha=args.alpha
+                pot=args.pot,
+                fc2hdf5=args.fc2,
+                alpha=args.alpha,
             )
+
         md.run_md_nvt(
             thermostat=args.thermostat,
             temperature=args.temp,
