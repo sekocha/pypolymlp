@@ -238,6 +238,26 @@ def multiple_random_deformation(
     return structures
 
 
+def sort_wrt_types(st: PolymlpStructure):
+    """Sort atoms with respect to types."""
+    map_elements = dict()
+    for t, e in zip(st.types, st.elements):
+        map_elements[t] = e
+
+    n_atoms, positions, types = [], [], []
+    for i in sorted(set(st.types)):
+        ids = np.array(st.types) == i
+        n_atoms.append(np.count_nonzero(ids))
+        positions.extend(st.positions.T[ids])
+        types.extend(np.array(st.types)[ids])
+
+    st.positions = np.array(positions).T
+    st.n_atoms = n_atoms
+    st.types = types
+    st.elements = [map_elements[t] for t in types]
+    return st
+
+
 if __name__ == "__main__":
 
     from pypolymlp.utils.vasp_utils import print_poscar, write_poscar_file

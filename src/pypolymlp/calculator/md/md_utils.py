@@ -1,5 +1,6 @@
 """Utility functions for MD."""
 
+import glob
 import os
 from typing import Optional
 
@@ -133,3 +134,26 @@ def load_thermodynamic_integration_yaml(filename: str = "polymlp_ti.yaml"):
         energy,
         np.array(log),
     )
+
+
+def find_reference(path_fc2: str):
+    """Find reference FC2 automatically."""
+    reference = None
+    temp_min = 1e10
+    for fc2hdf5 in sorted(glob.glob(path_fc2 + "/*/fc2.hdf5")):
+        path = "/".join(fc2hdf5.split("/")[:-1])
+        yamlname = path + "/sscha_results.yaml"
+        data = yaml.safe_load(open(yamlname))
+        temp = float(data["parameters"]["temperature"])
+        converge = data["status"]["converge"]
+        imaginary = data["status"]["imaginary"]
+        success = True if converge and not imaginary else False
+        if success:
+            if np.isclose(temp, 0.0):
+                reference = fc2hdf5
+                break
+            else:
+                if temp < temp_min:
+                    temp_min = temp
+                    reference = fc2hdf5
+    return reference

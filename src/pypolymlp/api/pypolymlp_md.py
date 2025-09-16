@@ -10,6 +10,7 @@ from ase.calculators.calculator import Calculator
 from pypolymlp.calculator.md.ase_md import IntegratorASE
 from pypolymlp.calculator.md.md_utils import (
     calc_integral,
+    find_reference,
     get_p_roots,
     save_thermodynamic_integration_yaml,
 )
@@ -480,6 +481,10 @@ class PypolymlpMD:
             filename=filename,
         )
         return self
+
+    def find_reference(self, path_fc2: str):
+        """Find reference FC2 automatically."""
+        return find_reference(path_fc2)
 
     @property
     def unitcell(self):
