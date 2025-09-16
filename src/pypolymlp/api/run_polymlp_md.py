@@ -116,7 +116,7 @@ def run():
             fc2 = args.fc2
         else:
             md = PypolymlpMD(verbose=True)
-            fc2 = md.find_reference(args.fc2_path)
+            fc2 = md.find_reference(args.fc2_path, args.temp)
         print("Reference state:", fc2, flush=True)
 
         run_thermodynamic_integration(
