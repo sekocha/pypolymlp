@@ -345,6 +345,11 @@ class IntegratorASE:
         return self._average_displacement
 
     @property
+    def static_energy(self):
+        """Return static energy."""
+        return self.calculator.static_energy
+
+    @property
     def heat_capacity(self):
         """Return heat capacity in J/K/mol."""
         return self._heat_capacity
@@ -367,7 +372,7 @@ class IntegratorASE:
         print("-------------------------------------------", flush=True)
         return self
 
-    def save_yaml(self, filename="polymlp_md.yaml"):
+    def save_yaml(self, filename: str = "polymlp_md.yaml"):
         """Save properties to yaml file."""
         with open(filename, "w") as f:
             print("system:", self._atoms.symbols, file=f)
@@ -395,9 +400,9 @@ class IntegratorASE:
             print(file=f)
 
             print("properties:", file=f)
-            print("  average_energy:      ", self._average_energy, file=f)
-            print("  average_total_energy:", self._average_total_energy, file=f)
-            print("  heat_capacity_eV:    ", self._heat_capacity_eV, file=f)
-            print("  heat_capacity:       ", self._heat_capacity, file=f)
+            print("  average_potential_energy:", self._average_energy, file=f)
+            print("  average_total_energy:    ", self._average_total_energy, file=f)
+            print("  heat_capacity_eV:        ", self._heat_capacity_eV, file=f)
+            print("  heat_capacity:           ", self._heat_capacity, file=f)
             if self._use_reference:
                 print("  average_delta_energy:", self._average_delta_energy, file=f)

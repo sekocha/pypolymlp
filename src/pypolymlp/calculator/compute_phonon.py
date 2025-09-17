@@ -4,6 +4,7 @@ import os
 from typing import Optional
 
 import numpy as np
+from phono3py.file_IO import read_fc2_from_hdf5
 from phonopy import Phonopy, PhonopyQHA
 
 from pypolymlp.calculator.properties import Properties
@@ -212,3 +213,27 @@ class PolymlpPhononQHA:
         self._qha.write_gruneisen_temperature(filename=filename)
         filename = path_output + "/polymlp_phonon_qha/cp-temperature.dat"
         self._qha.write_heat_capacity_P_numerical(filename=filename)
+
+
+def calculate_harmonic_properties_from_fc2(
+    unitcell: PolymlpStructure,
+    supercell_matrix: np.ndarray,
+    path_fc2: Optional[str] = None,
+    fc2: Optional[np.ndarray] = None,
+    mesh: tuple = (10, 10, 10),
+    temperatures: np.ndarray = np.arange(0, 1000, 10),
+):
+    """Calculate harmonic properties using FC2."""
+    if path_fc2 is None and fc2 is None:
+        raise RuntimeError("Both path_fc2 and fc2 are None.")
+
+    if path_fc2 is not None:
+        fc2 = read_fc2_from_hdf5(path_fc2)
+        # ph.force_constants = read_fc2_from_hdf5(path_fc2)
+
+    unitcell_ph = structure_to_phonopy_cell(unitcell)
+    ph = Phonopy(unitcell_ph, supercell_matrix)
+    ph.force_constants = fc2
+    ph.run_mesh(mesh)
+    ph.run_thermal_properties(temperatures=temperatures)
+    return ph.get_thermal_properties_dict()

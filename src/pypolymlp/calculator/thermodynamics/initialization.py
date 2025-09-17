@@ -4,14 +4,12 @@ from typing import Literal, Optional
 
 import numpy as np
 import yaml
-from phono3py.file_IO import read_fc2_from_hdf5
-from phonopy import Phonopy
 
+from pypolymlp.calculator.compute_phonon import calculate_harmonic_properties_from_fc2
 from pypolymlp.calculator.md.md_utils import load_thermodynamic_integration_yaml
 from pypolymlp.calculator.sscha.sscha_utils import Restart
 from pypolymlp.calculator.thermodynamics.thermodynamics_utils import GridPointData
 from pypolymlp.core.units import EVtoJmol, EVtoKJmol
-from pypolymlp.utils.phonopy_utils import structure_to_phonopy_cell
 
 
 def load_sscha_yamls(filenames: tuple[str]) -> list[GridPointData]:
@@ -144,17 +142,20 @@ def get_common_grid(
 def _calculate_harmonic_properties(
     res: Restart,
     path_fc2: str,
-    temperatures: Optional[np.ndarray] = None,
     mesh: tuple = (10, 10, 10),
+    temperatures: Optional[np.ndarray] = None,
 ):
     """Calculate harmonic thermodynamic properties."""
     if temperatures is None:
         temperatures = [res.temperature]
-    ph = Phonopy(structure_to_phonopy_cell(res.unitcell), res.supercell_matrix)
-    ph.force_constants = read_fc2_from_hdf5(path_fc2)
-    ph.run_mesh(mesh)
-    ph.run_thermal_properties(temperatures=temperatures)
-    tp_dict = ph.get_thermal_properties_dict()
+
+    tp_dict = calculate_harmonic_properties_from_fc2(
+        res.unitcell,
+        res.supercell_matrix,
+        path_fc2=path_fc2,
+        mesh=mesh,
+        temperatures=temperatures,
+    )
     return tp_dict
 
 

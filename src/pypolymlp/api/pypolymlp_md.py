@@ -47,6 +47,7 @@ class PypolymlpMD:
         self._supercell = None
         self._unitcell_ase = None
         self._supercell_ase = None
+        self._supercell_matrix = None
         self._integrator = None
 
         self._use_reference = False
@@ -154,6 +155,7 @@ class PypolymlpMD:
             raise RuntimeError("Supercell size is not equal to 3.")
         self._supercell = supercell_diagonal(self._unitcell, size)
         self._supercell_ase = structure_to_ase_atoms(self._supercell)
+        self._supercell_matrix = np.diag(size)
         return self
 
     def run_Nose_Hoover_NVT(
@@ -472,11 +474,16 @@ class PypolymlpMD:
         if not self._use_reference:
             raise RuntimeError("Reference state not found in Calculator.")
 
+        reference = {
+            "unitcell": self._unitcell,
+            "supercell_matrix": self._supercell_matrix,
+            "fc2_file": self._fc2file,
+        }
         save_thermodynamic_integration_yaml(
             self._integrator,
             self._delta_free_energy,
             self._log_ti,
-            self._fc2file,
+            reference,
             delta_heat_capacity=self._delta_heat_capacity,
             filename=filename,
         )

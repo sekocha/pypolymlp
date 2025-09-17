@@ -8,7 +8,9 @@ import numpy as np
 import yaml
 from scipy.special.orthogonal import p_roots
 
+from pypolymlp.calculator.compute_phonon import calculate_harmonic_properties_from_fc2
 from pypolymlp.calculator.md.ase_md import IntegratorASE
+from pypolymlp.core.units import EVtoKJmol
 
 
 def get_p_roots(n: int = 10, a: float = -1.0, b: float = 1.0):
@@ -32,12 +34,24 @@ def save_thermodynamic_integration_yaml(
     integrator: IntegratorASE,
     delta_free_energy: float,
     log_ti: np.array,
-    reference_fc2file: str,
+    reference: dict,
     delta_heat_capacity: Optional[float] = None,
     filename: str = "polymlp_ti.yaml",
 ):
     """Save results of thermodynamic integration."""
     np.set_printoptions(legacy="1.21")
+
+    tp_dict = calculate_harmonic_properties_from_fc2(
+        unitcell=reference["unitcell"],
+        supercell_matrix=reference["supercell_matrix"],
+        path_fc2=reference["fc2_file"],
+        mesh=(10, 10, 10),
+        temperatures=[integrator._temperature],
+    )
+    n_unitcell = np.linalg.det(reference["supercell_matrix"])
+    ref_free_energy = tp_dict["free_energy"][0] * n_unitcell / EVtoKJmol
+    total_free_energy = integrator.static_energy + ref_free_energy + delta_free_energy
+
     with open(filename, "w") as f:
         print("system:", integrator._atoms.symbols, file=f)
         print(file=f)
@@ -58,7 +72,7 @@ def save_thermodynamic_integration_yaml(
         print("  time_step:  ", integrator._time_step, file=f)
         print("  n_steps_eq: ", integrator._n_eq, file=f)
         print("  n_steps:    ", integrator._n_steps, file=f)
-        print("  references: ", os.path.abspath(reference_fc2file), file=f)
+        print("  references: ", os.path.abspath(reference["fc2_file"]), file=f)
         print(file=f)
 
         delta_entropy = 0.0
@@ -69,11 +83,16 @@ def save_thermodynamic_integration_yaml(
             delta_entropy = (de - delta_free_energy) / integrator._temperature
 
         print("properties:", file=f)
-        print("  free_energy:         ", delta_free_energy, file=f)
-        print("  entropy:             ", delta_entropy, file=f)
-        print("  average_energy:      ", integrator.average_energy, file=f)
-        print("  average_total_energy:", integrator.average_total_energy, file=f)
-        print("  delta_heat_capacity: ", delta_heat_capacity, file=f)
+        print("  free_energy:             ", delta_free_energy, file=f)
+        print("  entropy:                 ", delta_entropy, file=f)
+        print("  average_potential_energy:", integrator.average_energy, file=f)
+        print("  average_total_energy:    ", integrator.average_total_energy, file=f)
+        print("  delta_heat_capacity:     ", delta_heat_capacity, file=f)
+
+        print(file=f)
+        print("  static_potential_energy: ", integrator.static_energy, file=f)
+        print("  reference_free_energy:   ", ref_free_energy, file=f)
+        print("  total_free_energy:       ", total_free_energy, file=f)
         print(file=f)
 
         print("  delta_energies:", file=f)
