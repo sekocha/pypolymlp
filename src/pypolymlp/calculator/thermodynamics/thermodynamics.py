@@ -227,26 +227,21 @@ class Thermodynamics:
 
         cbegin = int(len(volumes) * 0.45)
         cend = 2 * cbegin
-
         ave, std = np.mean(props[cbegin:cend]), np.std(props[cbegin:cend])
         if std > ave * 0.2:
+            if self._verbose:
+                print("Volume-Cv data is largely scattering.")
             return None, None
 
-        cond = (props < ave + 1.5 * std) & (props > ave - 1.5 * std)
-        target = cond[cbegin:cend]
+        threshold = max(std * 5.0, 2.0)
+        cond = (props < ave + threshold) & (props > ave - threshold)
 
-        if np.count_nonzero(target) > len(target) / 5:
-            cond = (props < ave + 2.0 * std) & (props > ave - 2.0 * std)
-            target = cond[cbegin:cend]
-            if np.count_nonzero(target) > len(target) / 5:
-                cond = (props < ave + 2.5 * std) & (props > ave - 2.5 * std)
-                if self._verbose:
-                    print("Volume-Cv data is largely scattering.")
-                    print(" Average, Std:", ave, std, flush=True)
-                    print(" Cv:", flush=True)
-                    print(props, flush=True)
-                    print(" Selected Cv:", flush=True)
-                    print(props[cond], flush=True)
+        if self._verbose:
+            print(" Average, Std:", ave, std, flush=True)
+            print(" Cv:", flush=True)
+            print(props, flush=True)
+            print(" Selected Cv:", flush=True)
+            print(props[cond], flush=True)
 
         volumes, props = volumes[cond], props[cond]
         return volumes, props
