@@ -174,6 +174,11 @@ class PolymlpFC2ASECalculator(Calculator):
         """Return alpha."""
         return self._alpha
 
+    @property
+    def static_energy(self):
+        """Return potential energy of structure with displacements."""
+        return self._static_energy
+
     @alpha.setter
     def alpha(self, _alpha):
         """Return alpha."""
