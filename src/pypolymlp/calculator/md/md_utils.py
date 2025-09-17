@@ -150,6 +150,7 @@ def find_reference(path_fc2: str, target_temperature: float):
         success = True if converge and not imaginary else False
         if success:
             if np.isclose(temp, 0.0):
+                temp_min = 0.0
                 reference = fc2hdf5
                 break
             else:
