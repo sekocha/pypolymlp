@@ -13,15 +13,21 @@ from pypolymlp.mlp_dev.core.features_attr import get_features_attr
 
 def _check_params(params: PolymlpParams):
     """Check constraints for parameters."""
+    if not params.type_full:
+        raise RuntimeError("type_full must be True")
+    return True
 
 
 def _generate_disorder_params(params: PolymlpParams, occupancy: tuple):
     """Check occupancy format."""
+    _check_params(params)
+
     params_rand = copy.deepcopy(params)
     map_mass = dict(zip(params.elements, params.mass))
     print(map_mass)
     #   itype = 0
     elements_rand, mass_rand = [], []
+    type_group = []
     for occ in occupancy:
         if not np.isclose(sum([v for _, v in occ]), 1.0):
             raise RuntimeError("Sum of occupancy != 1.0")
@@ -30,14 +36,19 @@ def _generate_disorder_params(params: PolymlpParams, occupancy: tuple):
                 raise RuntimeError("Element", ele, "not found in polymlp.")
 
         mass = 0.0
+        types = []
         for ele, comp in occ:
             mass += map_mass[ele] * comp
+            types.append(params.elements.index(ele))
         mass_rand.append(mass)
         elements_rand.append(occ[0][0])
+        type_group.append(types)
 
     params_rand.n_type = len(occupancy)
     params_rand.elements = elements_rand
     params_rand.mass = mass_rand
+
+    print(type_group)
 
     # TODO: Modify type_pairs
     # TODO: Modify type_indices
@@ -54,15 +65,17 @@ def generate_disorder_mlp(
     params_rand = _generate_disorder_params(params, occupancy)
 
     features_attr, polynomial_attr, atomtype_pair_dict = get_features_attr(params)
-    print(features_attr)
+    #    print(features_attr)
 
     features_attr_r, polynomial_attr_r, atomtype_pair_dict_r = get_features_attr(
         params_rand
     )
-    print("____________")
-    print(features_attr_r)
 
-    # print(n_type)
+
+#    print("____________")
+#    print(features_attr_r)
+
+# print(n_type)
 
 
 params, coeffs = load_mlp("polymlp.yaml")
