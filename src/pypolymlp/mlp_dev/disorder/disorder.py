@@ -6,10 +6,8 @@ import itertools
 import numpy as np
 
 from pypolymlp.core.data_format import PolymlpParams
-from pypolymlp.core.io_polymlp import load_mlp
+from pypolymlp.core.io_polymlp import load_mlp, save_mlp
 from pypolymlp.mlp_dev.core.features_attr import get_features_attr
-
-# from typing import Optional
 
 
 def _check_params(params: PolymlpParams):
@@ -77,9 +75,9 @@ def set_mapping_original_mlp(params: PolymlpParams, coeffs: np.ndarray):
         for attr in features_attr:
             # attr: (radial_id, gtinv_id, type_pair_id)
             rad_id = attr[0]
-            lc = gtinv.l_comb[attr[1]]
-            tp = [tuple(atomtype_pair_dict[i][0]) for i in attr[2]]
-            key = tuple([rad_id, tuple(lc), tuple(tp)])
+            lc = tuple(gtinv.l_comb[attr[1]])
+            tp = tuple([tuple(atomtype_pair_dict[i][0]) for i in attr[2]])
+            key = (rad_id, lc, tp)
             features.append(key)
             map_feature[key] = coeffs[seq_id]
             seq_id += 1
@@ -107,6 +105,7 @@ def generate_disorder_mlp_pair(
     features_attr, polynomial_attr, atomtype_pair_dict = get_features_attr(params_rand)
 
     # TODO: function for pair
+    return None, None
 
 
 def find_central_types(type_pairs: list):
@@ -136,41 +135,58 @@ def generate_disorder_mlp_gtinv(
     features_attr, polynomial_attr, atomtype_pair_dict = get_features_attr(params_rand)
 
     gtinv = params_rand.model.gtinv
-    coeffs_rand = []
+    coeffs_rand, features = [], []
     for attr in features_attr:
         rad_id = attr[0]
         lc = tuple(gtinv.l_comb[attr[1]])
         tp = [tuple(atomtype_pair_dict[i][0]) for i in attr[2]]
+        features.append((rad_id, lc, tp))
+
         central = find_central_types(tp)
-        print(lc, tp)
-
         coeff = 0.0
-        weight = 1.0 / len(central)
-        print(weight)
         for ctype, neigh_types in central.items():
-            print("Neighbor types:")
-            print([occupancy_type[i] for i in neigh_types])
             occ_comb = itertools.product(*[occupancy_type[i] for i in neigh_types])
-            coeff_tmp = 0.0
             for occ in occ_comb:
-                print("Neighbor type combinations:")
-                print(occ)
-                tp = [tuple(sorted([ctype, t])) for t, p in occ]
-                print(tp)
                 prob = np.prod([p for t, p in occ])
-                print(prob)
-
+                tp = [tuple(sorted([ctype, t])) for t, p in occ]
                 lc_tp = sorted([(l, t) for l, t in zip(lc, tp)])
-                tp_key = tuple([t for l, t in lc_tp])
+                tp = tuple([t for l, t in lc_tp])
+                key = (rad_id, lc, tp)
+                coeff += prob * map_feature[key]
 
-                key = tuple([rad_id, tuple(lc), tp_key])
-                coeff_tmp += prob * map_feature[key]
-            coeff += weight * coeff_tmp
-
+        coeff /= len(central)
         coeffs_rand.append(coeff)
 
     if len(polynomial_attr) > 0:
-        pass
+        for attr in polynomial_attr:
+            print(attr)
+            rad_id_array = [features[i][0] for i in attr]
+            lc_array = [tuple([l for l in features[i][1]]) for i in attr]
+            tp = [t for i in attr for t in features[i][2]]
+            central = find_central_types(tp)
+
+            coeff = 0.0
+            for ctype, neigh_types in central.items():
+                occ_comb = itertools.product(*[occupancy_type[i] for i in neigh_types])
+                for occ in occ_comb:
+                    prob = np.prod([p for t, p in occ])
+                    tp = [tuple(sorted([ctype, t])) for t, p in occ]
+
+                    begin, key = 0, []
+                    for rad, lc in zip(rad_id_array, lc_array):
+                        end = begin + len(lc)
+                        lc_tp = sorted([(l, t) for l, t in zip(lc, tp[begin:end])])
+                        tp_key = tuple([t for l, t in lc_tp])
+                        key.append((rad, lc, tp_key))
+                        begin = end
+                    key = tuple(sorted(key))
+
+                    coeff += prob * map_polynomial[key]
+
+            coeff /= len(central)
+            coeffs_rand.append(coeff)
+
+    return params_rand, np.array(coeffs_rand)
 
 
 def generate_disorder_mlp(
@@ -180,58 +196,19 @@ def generate_disorder_mlp(
 ):
     """Generate MLP for disorder model."""
     if params.model.feature_type == "pair":
-        generate_disorder_mlp_pair(params, coeffs, occupancy)
+        return generate_disorder_mlp_pair(params, coeffs, occupancy)
     elif params.model.feature_type == "gtinv":
-        generate_disorder_mlp_gtinv(params, coeffs, occupancy)
+        return generate_disorder_mlp_gtinv(params, coeffs, occupancy)
 
 
 params, coeffs = load_mlp("polymlp.yaml")
 occupancy = [[("La", 0.75), ("Te", 0.25)], [("O", 1.0)]]
 
-generate_disorder_mlp(params, coeffs, occupancy)
+params_rand, coeffs_rand = generate_disorder_mlp(params, coeffs, occupancy)
 
-
-# def save_polymlp_params_yaml(
-#     params: PolymlpParams,
-#     filename: str = "polymlp_params.yaml",
-# ):
-#     """Save feature attributes to yaml file."""
-#     print("features:", file=f)
-#     seq_id = 0
-#     if params.model.feature_type == "pair":
-#         for i, attr in enumerate(features_attr):
-#             print("- id:               ", seq_id, file=f)
-#             print("  feature_id:       ", i, file=f)
-#             print("  radial_id:        ", attr[0], file=f)
-#             print("  atomtype_pair_ids:", attr[1], file=f)
-#             print("", file=f)
-#             seq_id += 1
-#         print("", file=f)
-#
-#     elif params.model.feature_type == "gtinv":
-#         gtinv = params.model.gtinv
-#         for i, attr in enumerate(features_attr):
-#             print("- id:               ", seq_id, file=f)
-#             print("  feature_id:       ", i, file=f)
-#             print("  radial_id:        ", attr[0], file=f)
-#             print("  gtinv_id:         ", attr[1], file=f)
-#             print(
-#                 "  l_combination:    ",
-#                 gtinv.l_comb[attr[1]],
-#                 file=f,
-#             )
-#             print("  atomtype_pair_ids:", attr[2], file=f)
-#             print("", file=f)
-#             seq_id += 1
-#         print("", file=f)
-#
-#     if len(polynomial_attr) > 0:
-#         print("polynomial_features:", file=f)
-#         for i, attr in enumerate(polynomial_attr):
-#             print("- id:          ", seq_id, file=f)
-#             print("  feature_ids: ", attr, file=f)
-#             print("", file=f)
-#             seq_id += 1
-#
-#     f.close()
-#     return seq_id
+save_mlp(
+    params_rand,
+    coeffs_rand,
+    scales=np.ones(coeffs_rand.shape),
+    filename="polymlp.yaml.random",
+)
