@@ -94,20 +94,6 @@ def set_mapping_original_mlp(params: PolymlpParams, coeffs: np.ndarray):
     return map_feature, map_polynomial
 
 
-def generate_disorder_mlp_pair(
-    params: PolymlpParams,
-    coeffs: np.ndarray,
-    occupancy: tuple,
-):
-    """Generate MLP with pair invariants for disorder model."""
-    map_feature, map_polynomial = set_mapping_original_mlp(params, coeffs)
-    params_rand, occupancy_type = _generate_disorder_params(params, occupancy)
-    features_attr, polynomial_attr, atomtype_pair_dict = get_features_attr(params_rand)
-
-    # TODO: function for pair
-    return None, None
-
-
 def find_central_types(type_pairs: list):
     """Find atom types of central atoms for a combination of type pairs."""
     common_type = set(type_pairs[0])
@@ -122,6 +108,20 @@ def find_central_types(type_pairs: list):
             neighbors.append(neigh)
         central[t1] = neighbors
     return central
+
+
+def generate_disorder_mlp_pair(
+    params: PolymlpParams,
+    coeffs: np.ndarray,
+    occupancy: tuple,
+):
+    """Generate MLP with pair invariants for disorder model."""
+    map_feature, map_polynomial = set_mapping_original_mlp(params, coeffs)
+    params_rand, occupancy_type = _generate_disorder_params(params, occupancy)
+    features_attr, polynomial_attr, atomtype_pair_dict = get_features_attr(params_rand)
+
+    # TODO: function for pair
+    return None, None
 
 
 def generate_disorder_mlp_gtinv(
@@ -145,10 +145,15 @@ def generate_disorder_mlp_gtinv(
         central = find_central_types(tp)
         coeff = 0.0
         for ctype, neigh_types in central.items():
-            occ_comb = itertools.product(*[occupancy_type[i] for i in neigh_types])
+            site_occupancies = [occupancy_type[ctype]]
+            for i in neigh_types:
+                site_occupancies.append(occupancy_type[i])
+
+            occ_comb = itertools.product(*site_occupancies)
             for occ in occ_comb:
                 prob = np.prod([p for t, p in occ])
-                tp = [tuple(sorted([ctype, t])) for t, p in occ]
+                center_type = occ[0][0]
+                tp = [tuple(sorted([center_type, t])) for t, p in occ[1:]]
                 lc_tp = sorted([(l, t) for l, t in zip(lc, tp)])
                 tp = tuple([t for l, t in lc_tp])
                 key = (rad_id, lc, tp)
@@ -159,7 +164,6 @@ def generate_disorder_mlp_gtinv(
 
     if len(polynomial_attr) > 0:
         for attr in polynomial_attr:
-            print(attr)
             rad_id_array = [features[i][0] for i in attr]
             lc_array = [tuple([l for l in features[i][1]]) for i in attr]
             tp = [t for i in attr for t in features[i][2]]
@@ -167,10 +171,14 @@ def generate_disorder_mlp_gtinv(
 
             coeff = 0.0
             for ctype, neigh_types in central.items():
-                occ_comb = itertools.product(*[occupancy_type[i] for i in neigh_types])
+                site_occupancies = [occupancy_type[ctype]]
+                for i in neigh_types:
+                    site_occupancies.append(occupancy_type[i])
+                occ_comb = itertools.product(*site_occupancies)
                 for occ in occ_comb:
                     prob = np.prod([p for t, p in occ])
-                    tp = [tuple(sorted([ctype, t])) for t, p in occ]
+                    center_type = occ[0][0]
+                    tp = [tuple(sorted([center_type, t])) for t, p in occ]
 
                     begin, key = 0, []
                     for rad, lc in zip(rad_id_array, lc_array):
@@ -197,12 +205,15 @@ def generate_disorder_mlp(
     """Generate MLP for disorder model."""
     if params.model.feature_type == "pair":
         return generate_disorder_mlp_pair(params, coeffs, occupancy)
-    elif params.model.feature_type == "gtinv":
-        return generate_disorder_mlp_gtinv(params, coeffs, occupancy)
+    return generate_disorder_mlp_gtinv(params, coeffs, occupancy)
 
+
+# params, coeffs = load_mlp("polymlp.yaml")
+# occupancy = [[("La", 0.75), ("Cu", 0.25)], [("O", 1.0)], [("Te", 1.0)]]
 
 params, coeffs = load_mlp("polymlp.yaml")
-occupancy = [[("La", 0.75), ("Te", 0.25)], [("O", 1.0)]]
+# params, coeffs = load_mlp("polymlp.lammps")
+occupancy = [[("Ag", 0.5), ("Au", 0.5)]]
 
 params_rand, coeffs_rand = generate_disorder_mlp(params, coeffs, occupancy)
 
@@ -210,5 +221,5 @@ save_mlp(
     params_rand,
     coeffs_rand,
     scales=np.ones(coeffs_rand.shape),
-    filename="polymlp.yaml.random",
+    filename="polymlp.yaml.disorder",
 )
