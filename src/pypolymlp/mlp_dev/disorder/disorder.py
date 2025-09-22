@@ -1,6 +1,7 @@
 """Generator of polymlp for disordered model."""
 
 import copy
+import itertools
 
 import numpy as np
 
@@ -134,27 +135,39 @@ def generate_disorder_mlp_gtinv(
     params_rand, occupancy_type = _generate_disorder_params(params, occupancy)
     features_attr, polynomial_attr, atomtype_pair_dict = get_features_attr(params_rand)
 
-    seq_id = 0
     gtinv = params_rand.model.gtinv
     coeffs_rand = []
     for attr in features_attr:
-        coeff = 0.0
         rad_id = attr[0]
-        lc = gtinv.l_comb[attr[1]]
+        lc = tuple(gtinv.l_comb[attr[1]])
         tp = [tuple(atomtype_pair_dict[i][0]) for i in attr[2]]
-        print(lc, tp)
-        # 1. check: type1, 2, 3
         central = find_central_types(tp)
-        # weight = 1.0 / len(central)
+        print(lc, tp)
+
+        coeff = 0.0
+        weight = 1.0 / len(central)
+        print(weight)
         for ctype, neigh_types in central.items():
+            print("Neighbor types:")
             print([occupancy_type[i] for i in neigh_types])
+            occ_comb = itertools.product(*[occupancy_type[i] for i in neigh_types])
+            coeff_tmp = 0.0
+            for occ in occ_comb:
+                print("Neighbor type combinations:")
+                print(occ)
+                tp = [tuple(sorted([ctype, t])) for t, p in occ]
+                print(tp)
+                prob = np.prod([p for t, p in occ])
+                print(prob)
 
-        key = tuple([rad_id, tuple(lc), tuple(tp)])
+                lc_tp = sorted([(l, t) for l, t in zip(lc, tp)])
+                tp_key = tuple([t for l, t in lc_tp])
 
-        map_feature[key] = coeffs[seq_id]
+                key = tuple([rad_id, tuple(lc), tp_key])
+                coeff_tmp += prob * map_feature[key]
+            coeff += weight * coeff_tmp
 
         coeffs_rand.append(coeff)
-        seq_id += 1
 
     if len(polynomial_attr) > 0:
         pass
