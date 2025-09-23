@@ -140,9 +140,12 @@ def generate_disorder_mlp_gtinv(
         rad_id = attr[0]
         lc = tuple(gtinv.l_comb[attr[1]])
         tp = [tuple(atomtype_pair_dict[i][0]) for i in attr[2]]
+        print("--------------")
+        print(rad_id, lc, tp)
         features.append((rad_id, lc, tp))
 
         central = find_central_types(tp)
+        print(central)
         coeff = 0.0
         for ctype, neigh_types in central.items():
             site_occupancies = [occupancy_type[ctype]]
@@ -152,12 +155,16 @@ def generate_disorder_mlp_gtinv(
             occ_comb = itertools.product(*site_occupancies)
             for occ in occ_comb:
                 prob = np.prod([p for t, p in occ])
+                print(prob, occ)
                 center_type = occ[0][0]
                 tp = [tuple(sorted([center_type, t])) for t, p in occ[1:]]
                 lc_tp = sorted([(l, t) for l, t in zip(lc, tp)])
                 tp = tuple([t for l, t in lc_tp])
                 key = (rad_id, lc, tp)
+                print(key)
                 coeff += prob * map_feature[key]
+                print(map_feature[key])
+            print("ave:", coeff)
 
         coeff /= len(central)
         coeffs_rand.append(coeff)
@@ -212,8 +219,7 @@ def generate_disorder_mlp(
 # occupancy = [[("La", 0.75), ("Cu", 0.25)], [("O", 1.0)], [("Te", 1.0)]]
 
 params, coeffs = load_mlp("polymlp.yaml")
-# params, coeffs = load_mlp("polymlp.lammps")
-occupancy = [[("Ag", 0.5), ("Au", 0.5)]]
+occupancy = [[("Ag", 3 / 4), ("Au", 1 / 4)]]
 
 params_rand, coeffs_rand = generate_disorder_mlp(params, coeffs, occupancy)
 
