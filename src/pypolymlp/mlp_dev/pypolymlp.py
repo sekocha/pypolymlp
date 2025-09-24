@@ -13,7 +13,7 @@ from pypolymlp.core.io_polymlp import convert_to_yaml, load_mlp
 from pypolymlp.core.parser_datasets import ParserDatasets
 from pypolymlp.core.parser_polymlp_params import parse_parameter_files
 from pypolymlp.core.polymlp_params import print_params, set_all_params
-from pypolymlp.core.utils import split_train_test
+from pypolymlp.core.utils import split_ids_train_test, split_train_test
 from pypolymlp.mlp_dev.core.accuracy import PolymlpEvalAccuracy, write_error_yaml
 from pypolymlp.mlp_dev.core.dataclass import PolymlpDataMLP
 from pypolymlp.mlp_dev.core.features_attr import (
@@ -377,6 +377,58 @@ class Pypolymlp:
         )
         return self
 
+    def set_datasets_structures_autodiv(
+        self,
+        structures: list[PolymlpStructure],
+        energies: np.ndarray,
+        forces: Optional[list[np.ndarray]] = None,
+        stresses: Optional[np.ndarray] = None,
+        train_ratio: float = 0.9,
+    ):
+        """Set datasets from structures-(energies, forces, stresses) sets.
+
+        Given dataset is automatically divided into training and test datasets.
+
+        Parameters
+        ----------
+        structures: Structures in PolymlpStructure format (training and test).
+        energies: Energies (training and test), shape=(n_data) in eV/cell.
+        forces: Forces (training and test), shape = n_data x (3, n_atoms_i) in eV/ang.
+        stresses: Stress tensors (training and test), shape=(n_data, 3, 3), in eV/cell.
+        train_ratio: Dataset size ratio for training dataset.
+        """
+        n_data = len(structures)
+        train_ids, test_ids = split_ids_train_test(n_data, train_ratio=train_ratio)
+
+        train_structures = [structures[i] for i in train_ids]
+        test_structures = [structures[i] for i in test_ids]
+        train_energies = [energies[i] for i in train_ids]
+        test_energies = [energies[i] for i in test_ids]
+
+        if forces is None:
+            train_forces, test_forces = None, None
+        else:
+            train_forces = [forces[i] for i in train_ids]
+            test_forces = [forces[i] for i in test_ids]
+
+        if stresses is None:
+            train_stresses, test_stresses = None, None
+        else:
+            train_stresses = [stresses[i] for i in train_ids]
+            test_stresses = [stresses[i] for i in test_ids]
+
+        self.set_datasets_structures(
+            train_structures=train_structures,
+            test_structures=test_structures,
+            train_energies=train_energies,
+            test_energies=test_energies,
+            train_forces=train_forces,
+            test_forces=test_forces,
+            train_stresses=train_stresses,
+            test_stresses=test_stresses,
+        )
+        return self
+
     def set_datasets_structures(
         self,
         train_structures: list[PolymlpStructure],
@@ -610,6 +662,10 @@ class Pypolymlp:
         write_error_yaml(self._mlp_model.error_train, filename=filename, mode="w")
         write_error_yaml(self._mlp_model.error_test, filename=filename, mode="a")
         return self
+
+    def split_train_test(self, list_obj: list, train_ratio: float = 0.9):
+        """Split list into training and test datasets."""
+        return split_train_test(list_obj, train_ratio=train_ratio)
 
     @property
     def summary(self):

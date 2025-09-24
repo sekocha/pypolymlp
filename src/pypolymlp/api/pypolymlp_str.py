@@ -281,6 +281,11 @@ class PypolymlpStructureGenerator:
         max_distance: Maximum distance of displacement distributions.
 
         """
+        if len(self._strgen_instances) == 0:
+            raise RuntimeError(
+                "Structure generator not found. Use build_supercells_auto."
+            )
+
         for gen in self._strgen_instances:
             structures = gen.random_structure(
                 n_str=n_samples,
@@ -309,6 +314,11 @@ class PypolymlpStructureGenerator:
         max_distance: Distance of displacement distributions.
 
         """
+        if len(self._strgen_instances) == 0:
+            raise RuntimeError(
+                "Structure generator not found. Use build_supercells_auto."
+            )
+
         if vol_algorithm == "low_auto":
             vol_lb, vol_ub = 1.1, 4.0
             mode = "low density"

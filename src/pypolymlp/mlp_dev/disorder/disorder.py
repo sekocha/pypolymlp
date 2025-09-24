@@ -6,7 +6,6 @@ import itertools
 import numpy as np
 
 from pypolymlp.core.data_format import PolymlpParams
-from pypolymlp.core.io_polymlp import load_mlp, save_mlp
 from pypolymlp.mlp_dev.core.features_attr import get_features_attr
 
 
@@ -52,10 +51,13 @@ def _generate_disorder_params(params: PolymlpParams, occupancy: tuple):
 
     params_rand.n_type = len(occupancy)
     params_rand.elements = elements_rand
+    params_rand.element_order = elements_rand
     params_rand.mass = mass_rand
 
     # TODO: Modify type_pairs and type_indices
-    # Use type_group
+    #       Use type_group
+    params_rand.type_full = True
+    params_rand.type_indices = list(range(params_rand.n_type))
 
     occupancy_type = [
         [(params.elements.index(ele), comp) for ele, comp in occ] for occ in occupancy
@@ -215,17 +217,17 @@ def generate_disorder_mlp(
     return generate_disorder_mlp_gtinv(params, coeffs, occupancy)
 
 
+# # params, coeffs = load_mlp("polymlp.yaml")
+# # occupancy = [[("La", 0.75), ("Cu", 0.25)], [("O", 1.0)], [("Te", 1.0)]]
+#
 # params, coeffs = load_mlp("polymlp.yaml")
-# occupancy = [[("La", 0.75), ("Cu", 0.25)], [("O", 1.0)], [("Te", 1.0)]]
-
-params, coeffs = load_mlp("polymlp.yaml")
-occupancy = [[("Ag", 3 / 4), ("Au", 1 / 4)]]
-
-params_rand, coeffs_rand = generate_disorder_mlp(params, coeffs, occupancy)
-
-save_mlp(
-    params_rand,
-    coeffs_rand,
-    scales=np.ones(coeffs_rand.shape),
-    filename="polymlp.yaml.disorder",
-)
+# occupancy = [[("Ag", 0.75), ("Au", 0.25)]]
+#
+# params_rand, coeffs_rand = generate_disorder_mlp(params, coeffs, occupancy)
+#
+# save_mlp(
+#     params_rand,
+#     coeffs_rand,
+#     scales=np.ones(coeffs_rand.shape),
+#     filename="polymlp.yaml.disorder",
+# )
