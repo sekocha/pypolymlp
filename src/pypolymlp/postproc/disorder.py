@@ -10,9 +10,64 @@ from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
 from pypolymlp.api.pypolymlp_str import PypolymlpStructureGenerator
 from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
 from pypolymlp.core.interface_vasp import Poscar
-from pypolymlp.mlp_dev.disorder.disorder import _generate_disorder_params
 from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
 from pypolymlp.utils.structure_utils import sort_wrt_types, supercell_diagonal
+
+
+def _check_params(params: PolymlpParams):
+    """Check constraints for parameters."""
+    if not params.type_full:
+        raise RuntimeError("type_full must be True")
+
+    uniq_ids = set()
+    for ids in params.model.pair_params_conditional.values():
+        uniq_ids.add(tuple(ids))
+
+    if len(uniq_ids) != 1:
+        raise RuntimeError("All pair_params_conditional must be the same.")
+
+    return True
+
+
+def _generate_disorder_params(params: PolymlpParams, occupancy: tuple):
+    """Check occupancy format."""
+    _check_params(params)
+
+    params_rand = copy.deepcopy(params)
+    map_mass = dict(zip(params.elements, params.mass))
+
+    elements_rand, mass_rand = [], []
+    type_group = []
+    for occ in occupancy:
+        if not np.isclose(sum([v for _, v in occ]), 1.0):
+            raise RuntimeError("Sum of occupancy != 1.0")
+
+        mass, type_tmp = 0.0, []
+        for ele, comp in occ:
+            if ele not in params.elements:
+                raise RuntimeError("Element", ele, "not found in polymlp.")
+
+            mass += map_mass[ele] * comp
+            type_tmp.append(params.elements.index(ele))
+
+        elements_rand.append(occ[0][0])
+        mass_rand.append(mass)
+        type_group.append(type_tmp)
+
+    params_rand.n_type = len(occupancy)
+    params_rand.elements = elements_rand
+    params_rand.element_order = elements_rand
+    params_rand.mass = mass_rand
+
+    # TODO: Modify type_pairs and type_indices
+    #       Use type_group
+    params_rand.type_full = True
+    params_rand.type_indices = list(range(params_rand.n_type))
+
+    occupancy_type = [
+        [(params.elements.index(ele), comp) for ele, comp in occ] for occ in occupancy
+    ]
+    return params_rand, occupancy_type
 
 
 def check_occupancy(params: PolymlpParams, occupancy: tuple):
@@ -102,7 +157,7 @@ class PolymlpDisorder:
         stgen = PypolymlpStructureGenerator(base_structures=self._lattice_supercell)
         stgen.build_supercells_auto()
         stgen.run_standard_algorithm(n_samples=n_samples, max_distance=max_distance)
-        self._displaced_lattices = stgen.sample_structures
+        self._displaced_lattices = [self._lattice_supercell] + stgen.sample_structures
         return self
 
     def _set_replacements(self):
@@ -140,7 +195,6 @@ class PolymlpDisorder:
                 st.elements[replace_ids] = ele
                 st.types[replace_ids] = itype
 
-            # TODO: sorted positions must be resorted to original order.
             st, ids = sort_wrt_types(st, return_ids=True)
             structures.append(st)
             atom_orders.append(ids)
@@ -159,7 +213,7 @@ class PolymlpDisorder:
         for i, lat in enumerate(self._displaced_lattices):
             if self._verbose:
                 n_disps = len(self._displaced_lattices)
-                print("Displacement:", i + 1, "/", n_disps, flush=True)
+                print("Displacement:", i, "/", n_disps, flush=True)
 
             subs, atom_orders = self._generate_substitutional_structures(lat, replaces)
             energies, forces_sorted_order, stresses = self._calc.eval(subs)
@@ -169,16 +223,21 @@ class PolymlpDisorder:
                 f_reordered = np.zeros(f.shape)
                 f_reordered[:, ids] = f
                 forces.append(f_reordered)
+            np.set_printoptions(suppress=True)
 
             self._energies.append(np.mean(energies))
             self._forces.append(np.mean(forces, axis=0))
             self._stresses.append(np.mean(stresses, axis=0))
         return self
 
-    def develop_mlp(self, filename: str = "polymlp.yaml.disorder"):
+    def develop_mlp(
+        self,
+        reg_alpha_params: tuple = (-3, 5, 30),
+        filename: str = "polymlp.yaml.disorder",
+    ):
         """Develop polymlp."""
         params_disorder, _ = _generate_disorder_params(self._params, self._occupancy)
-        params_disorder.set_alphas((-3, 5, 30))
+        params_disorder.set_alphas(reg_alpha_params)
 
         self._polymlp.set_params(params=params_disorder)
         self._polymlp.set_datasets_structures_autodiv(
@@ -191,3 +250,18 @@ class PolymlpDisorder:
         self._polymlp.save_mlp(filename=filename)
         self._polymlp.estimate_error(log_energy=True, verbose=self._verbose)
         return self
+
+    @property
+    def polymlp(self):
+        """Return Pypolymlp instance."""
+        return self._polymlp
+
+    @property
+    def structures(self):
+        """Return structures for regression."""
+        return self._displaced_lattices
+
+    @property
+    def properties(self):
+        """Return properties for regression."""
+        return self._energies, self._forces, self._stresses
