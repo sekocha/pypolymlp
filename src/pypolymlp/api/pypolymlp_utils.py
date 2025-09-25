@@ -25,6 +25,9 @@ class PypolymlpUtils:
         self._structure = None
         self._sym = None
 
+        if self._verbose:
+            np.set_printoptions(legacy="1.21")
+
     def compress_vaspruns(self, vaspruns: list[str], n_jobs: int = 1):
         """Compress vasprun.xml files.
 

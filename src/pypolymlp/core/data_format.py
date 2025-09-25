@@ -233,6 +233,15 @@ class PolymlpParams:
         if self.atomic_energy is not None:
             assert len(self.atomic_energy) == self.n_type
 
+    def set_alphas(self, reg_alpha_params: tuple):
+        """Set alpha values."""
+        self.regression_alpha = np.linspace(
+            reg_alpha_params[0],
+            reg_alpha_params[1],
+            reg_alpha_params[2],
+        )
+        self.alphas = np.array([pow(10, a) for a in self.regression_alpha])
+
 
 @dataclass
 class PolymlpDataDFT:

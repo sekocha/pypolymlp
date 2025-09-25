@@ -37,6 +37,9 @@ class PypolymlpStructureGenerator:
         if base_structures is not None:
             self.structures = base_structures
 
+        if self._verbose:
+            np.set_printoptions(legacy="1.21")
+
     def load_poscars(self, poscars: Union[str, list[str]]) -> list[PolymlpStructure]:
         """Parse POSCAR files.
 

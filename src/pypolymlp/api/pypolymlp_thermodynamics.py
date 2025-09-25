@@ -3,6 +3,8 @@
 import copy
 from typing import Optional
 
+import numpy as np
+
 from pypolymlp.calculator.thermodynamics.io_utils import load_thermodynamics_yaml
 from pypolymlp.calculator.thermodynamics.thermodynamics import (
     Thermodynamics,
@@ -42,6 +44,9 @@ class PypolymlpThermodynamics:
         self._verbose = verbose
         self._sscha_el = None
         self._total = None
+
+        if self._verbose:
+            np.set_printoptions(legacy="1.21")
 
     def _get_sum_properties(
         self,
