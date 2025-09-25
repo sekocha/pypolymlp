@@ -1,68 +1,12 @@
-"""Generator of polymlp for disordered model."""
+"""Generator of polymlp for analytical disordered model."""
 
-import copy
 import itertools
 
 import numpy as np
 
 from pypolymlp.core.data_format import PolymlpParams
 from pypolymlp.mlp_dev.core.features_attr import get_features_attr
-
-
-def _check_params(params: PolymlpParams):
-    """Check constraints for parameters."""
-    if not params.type_full:
-        raise RuntimeError("type_full must be True")
-
-    uniq_ids = set()
-    for ids in params.model.pair_params_conditional.values():
-        uniq_ids.add(tuple(ids))
-
-    if len(uniq_ids) != 1:
-        raise RuntimeError("All pair_params_conditional must be the same.")
-
-    return True
-
-
-def _generate_disorder_params(params: PolymlpParams, occupancy: tuple):
-    """Check occupancy format."""
-    _check_params(params)
-
-    params_rand = copy.deepcopy(params)
-    map_mass = dict(zip(params.elements, params.mass))
-
-    elements_rand, mass_rand = [], []
-    type_group = []
-    for occ in occupancy:
-        if not np.isclose(sum([v for _, v in occ]), 1.0):
-            raise RuntimeError("Sum of occupancy != 1.0")
-
-        mass, type_tmp = 0.0, []
-        for ele, comp in occ:
-            if ele not in params.elements:
-                raise RuntimeError("Element", ele, "not found in polymlp.")
-
-            mass += map_mass[ele] * comp
-            type_tmp.append(params.elements.index(ele))
-
-        elements_rand.append(occ[0][0])
-        mass_rand.append(mass)
-        type_group.append(type_tmp)
-
-    params_rand.n_type = len(occupancy)
-    params_rand.elements = elements_rand
-    params_rand.element_order = elements_rand
-    params_rand.mass = mass_rand
-
-    # TODO: Modify type_pairs and type_indices
-    #       Use type_group
-    params_rand.type_full = True
-    params_rand.type_indices = list(range(params_rand.n_type))
-
-    occupancy_type = [
-        [(params.elements.index(ele), comp) for ele, comp in occ] for occ in occupancy
-    ]
-    return params_rand, occupancy_type
+from pypolymlp.postproc.disorder import _generate_disorder_params
 
 
 def set_mapping_original_mlp(params: PolymlpParams, coeffs: np.ndarray):
@@ -110,20 +54,6 @@ def find_central_types(type_pairs: list):
             neighbors.append(neigh)
         central[t1] = neighbors
     return central
-
-
-def generate_disorder_mlp_pair(
-    params: PolymlpParams,
-    coeffs: np.ndarray,
-    occupancy: tuple,
-):
-    """Generate MLP with pair invariants for disorder model."""
-    map_feature, map_polynomial = set_mapping_original_mlp(params, coeffs)
-    params_rand, occupancy_type = _generate_disorder_params(params, occupancy)
-    features_attr, polynomial_attr, atomtype_pair_dict = get_features_attr(params_rand)
-
-    # TODO: function for pair
-    return None, None
 
 
 def generate_disorder_mlp_gtinv(
@@ -212,22 +142,6 @@ def generate_disorder_mlp(
     occupancy: tuple,
 ):
     """Generate MLP for disorder model."""
-    if params.model.feature_type == "pair":
-        return generate_disorder_mlp_pair(params, coeffs, occupancy)
+    # if params.model.feature_type == "pair":
+    #     return generate_disorder_mlp_pair(params, coeffs, occupancy)
     return generate_disorder_mlp_gtinv(params, coeffs, occupancy)
-
-
-# # params, coeffs = load_mlp("polymlp.yaml")
-# # occupancy = [[("La", 0.75), ("Cu", 0.25)], [("O", 1.0)], [("Te", 1.0)]]
-#
-# params, coeffs = load_mlp("polymlp.yaml")
-# occupancy = [[("Ag", 0.75), ("Au", 0.25)]]
-#
-# params_rand, coeffs_rand = generate_disorder_mlp(params, coeffs, occupancy)
-#
-# save_mlp(
-#     params_rand,
-#     coeffs_rand,
-#     scales=np.ones(coeffs_rand.shape),
-#     filename="polymlp.yaml.disorder",
-# )

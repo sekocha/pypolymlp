@@ -202,6 +202,9 @@ class Pypolymlp:
         Parameters
         ----------
         yamlfiles: electron.yaml files (list)
+        temperature: Temperature (K).
+        target: Target electronic property.
+        train_ratio: Ratio between training and entire data sizes.
         """
         self._is_params_none()
         self._params.dataset_type = "electron"
@@ -224,6 +227,7 @@ class Pypolymlp:
         Parameters
         ----------
         yamlfiles: sscha_results.yaml files (list)
+        train_ratio: Ratio between training and entire data sizes.
         """
         self._is_params_none()
         self._params.dataset_type = "sscha"
@@ -315,6 +319,7 @@ class Pypolymlp:
         Parameters
         ----------
         yaml: Phono3py yaml file.
+        train_ratio: Ratio between training and entire data sizes.
         """
         from pypolymlp.core.interface_phono3py import parse_phono3py_yaml
 
@@ -395,7 +400,7 @@ class Pypolymlp:
         energies: Energies (training and test), shape=(n_data) in eV/cell.
         forces: Forces (training and test), shape = n_data x (3, n_atoms_i) in eV/ang.
         stresses: Stress tensors (training and test), shape=(n_data, 3, 3), in eV/cell.
-        train_ratio: Dataset size ratio for training dataset.
+        train_ratio: Ratio between training and entire data sizes.
         """
         n_data = len(structures)
         train_ids, test_ids = split_ids_train_test(n_data, train_ratio=train_ratio)
@@ -530,7 +535,13 @@ class Pypolymlp:
         max_iter: Optional[int] = None,
         verbose: bool = False,
     ):
-        """Estimate MLP coefficients using conjugate gradient."""
+        """Estimate MLP coefficients using conjugate gradient.
+
+        Parameters
+        ----------
+        gtol: Gradient tolerance for CG.
+        max_iter: Number of maximum iterations in CG.
+        """
         self._mlp_model = fit_cg(
             self._params,
             self._train,
@@ -590,6 +601,9 @@ class Pypolymlp:
         batch_size: Batch size for sequential regression.
                     If None, the batch size is automatically determined
                     depending on the memory size and number of features.
+        use_cg: CG algorithm is used or not.
+        gtol: Gradient tolerance for CG.
+        max_iter: Number of maximum iterations in CG.
         """
         if not use_cg:
             self.fit(batch_size=batch_size, verbose=verbose)

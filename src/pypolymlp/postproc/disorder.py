@@ -110,7 +110,22 @@ class PolymlpDisorder:
         supercell_size: Optional[tuple] = None,
         verbose: bool = False,
     ):
-        """Init method."""
+        """Init method.
+
+        Parameters
+        ----------
+        occupancy: Element occupancy in list of list. The first index corresponds
+                   to the sublattice index. For each sublattice, the occupancy is
+                   given by a pair of element and probability. The sum of
+                   probabilities must be equal to one for each sublattice.
+        pot: Potential file name.
+        lattice: POSCAR file name for lattice.
+        supercell_size: Diagonal elements of supercell matrix.
+
+        Example
+        -------
+        occupancy = [[("Ag", 0.5), ("Au", 0.5)], [("Cu", 1.0)]]
+        """
         self._polymlp = Pypolymlp()
         self._calc = PypolymlpCalc(pot=pot)
         self._params = self._calc.params
