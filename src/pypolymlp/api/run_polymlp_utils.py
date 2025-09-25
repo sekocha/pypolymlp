@@ -7,6 +7,7 @@ import numpy as np
 
 from pypolymlp.api.pypolymlp_utils import PypolymlpUtils
 from pypolymlp.core.utils import print_credit
+from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
 from pypolymlp.utils.atomic_energies.atomic_energies import (
     get_atomic_energies_polymlp_in,
 )
@@ -18,6 +19,12 @@ def run():
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
+        "--yaml_converter",
+        type=str,
+        default=None,
+        help="Convert polymlp.lammps to polymlp.yaml.",
+    )
+    parser.add_argument(
         "--vasprun_compress",
         nargs="*",
         type=str,
@@ -25,7 +32,6 @@ def run():
         help="Compression of vasprun.xml files",
     )
     parser.add_argument("--n_jobs", type=int, default=1, help="Number of parallel jobs")
-
     parser.add_argument(
         "--electron_vasprun",
         nargs="*",
@@ -137,7 +143,14 @@ def run():
     np.set_printoptions(legacy="1.21")
     polymlp = PypolymlpUtils(verbose=True)
 
-    if args.electron_vasprun is not None:
+    if args.yaml_converter is not None:
+        print("Converting", args.yaml_converter, "to polymlp.yaml.", flush=True)
+        obj = Pypolymlp()
+        obj.convert_to_yaml(
+            filename_txt=args.yaml_converter,
+            filename_yaml="polymlp.yaml",
+        )
+    elif args.electron_vasprun is not None:
         polymlp.compute_electron_properties_from_vaspruns(
             args.electron_vasprun,
             temp_max=args.temp_max,
