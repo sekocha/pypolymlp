@@ -34,16 +34,6 @@ def split_train_test(files: list, train_ratio: float = 0.9):
     return [files[i] for i in train_ids], [files[i] for i in test_ids]
 
 
-# def check_memory_size_in_regression(n_features: int):
-#     """Estimate memory size in regression."""
-#     mem_req = np.round(n_features**2 * 8e-9 * 2, 1)
-#     mem_bytes = os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES") * 1e-9
-#     if mem_req > mem_bytes:
-#         print("Minimum memory required for solver in GB:", mem_req, flush=True)
-#         raise RuntimeError("Larger size of memory required.")
-#     return mem_req
-
-
 def rmse(y_true: np.ndarray, y_pred: np.ndarray):
     """Compute root mean square errors."""
     return np.sqrt(np.mean(np.square(y_true - y_pred)))

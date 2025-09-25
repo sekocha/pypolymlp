@@ -30,6 +30,9 @@ class PypolymlpSSCHA:
         self._sscha_params = None
         self._sscha = None
 
+        if self._verbose:
+            np.set_printoptions(legacy="1.21")
+
     def load_poscar(self, poscar: str, supercell_matrix: np.ndarray):
         """Parse POSCAR file and supercell matrix."""
         self._unitcell = Poscar(poscar).structure

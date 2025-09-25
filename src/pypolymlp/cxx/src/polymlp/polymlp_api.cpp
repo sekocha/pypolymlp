@@ -185,6 +185,7 @@ const ModelParams& PolymlpAPI::get_model_params() const { return modelp; }
 
 Maps& PolymlpAPI::get_maps() {
     if (use_potential) return pmodel.get_maps();
+    else if (use_model_params) return mapping.get_maps();
     return features.get_maps();
 }
 

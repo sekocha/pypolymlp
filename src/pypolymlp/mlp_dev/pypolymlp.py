@@ -13,7 +13,7 @@ from pypolymlp.core.io_polymlp import convert_to_yaml, load_mlp
 from pypolymlp.core.parser_datasets import ParserDatasets
 from pypolymlp.core.parser_polymlp_params import parse_parameter_files
 from pypolymlp.core.polymlp_params import print_params, set_all_params
-from pypolymlp.core.utils import split_train_test
+from pypolymlp.core.utils import split_ids_train_test, split_train_test
 from pypolymlp.mlp_dev.core.accuracy import PolymlpEvalAccuracy, write_error_yaml
 from pypolymlp.mlp_dev.core.dataclass import PolymlpDataMLP
 from pypolymlp.mlp_dev.core.features_attr import (
@@ -202,6 +202,9 @@ class Pypolymlp:
         Parameters
         ----------
         yamlfiles: electron.yaml files (list)
+        temperature: Temperature (K).
+        target: Target electronic property.
+        train_ratio: Ratio between training and entire data sizes.
         """
         self._is_params_none()
         self._params.dataset_type = "electron"
@@ -224,6 +227,7 @@ class Pypolymlp:
         Parameters
         ----------
         yamlfiles: sscha_results.yaml files (list)
+        train_ratio: Ratio between training and entire data sizes.
         """
         self._is_params_none()
         self._params.dataset_type = "sscha"
@@ -315,6 +319,7 @@ class Pypolymlp:
         Parameters
         ----------
         yaml: Phono3py yaml file.
+        train_ratio: Ratio between training and entire data sizes.
         """
         from pypolymlp.core.interface_phono3py import parse_phono3py_yaml
 
@@ -374,6 +379,58 @@ class Pypolymlp:
             test_forces,
             train_stresses=None,
             test_stresses=None,
+        )
+        return self
+
+    def set_datasets_structures_autodiv(
+        self,
+        structures: list[PolymlpStructure],
+        energies: np.ndarray,
+        forces: Optional[list[np.ndarray]] = None,
+        stresses: Optional[np.ndarray] = None,
+        train_ratio: float = 0.9,
+    ):
+        """Set datasets from structures-(energies, forces, stresses) sets.
+
+        Given dataset is automatically divided into training and test datasets.
+
+        Parameters
+        ----------
+        structures: Structures in PolymlpStructure format (training and test).
+        energies: Energies (training and test), shape=(n_data) in eV/cell.
+        forces: Forces (training and test), shape = n_data x (3, n_atoms_i) in eV/ang.
+        stresses: Stress tensors (training and test), shape=(n_data, 3, 3), in eV/cell.
+        train_ratio: Ratio between training and entire data sizes.
+        """
+        n_data = len(structures)
+        train_ids, test_ids = split_ids_train_test(n_data, train_ratio=train_ratio)
+
+        train_structures = [structures[i] for i in train_ids]
+        test_structures = [structures[i] for i in test_ids]
+        train_energies = [energies[i] for i in train_ids]
+        test_energies = [energies[i] for i in test_ids]
+
+        if forces is None:
+            train_forces, test_forces = None, None
+        else:
+            train_forces = [forces[i] for i in train_ids]
+            test_forces = [forces[i] for i in test_ids]
+
+        if stresses is None:
+            train_stresses, test_stresses = None, None
+        else:
+            train_stresses = [stresses[i] for i in train_ids]
+            test_stresses = [stresses[i] for i in test_ids]
+
+        self.set_datasets_structures(
+            train_structures=train_structures,
+            test_structures=test_structures,
+            train_energies=train_energies,
+            test_energies=test_energies,
+            train_forces=train_forces,
+            test_forces=test_forces,
+            train_stresses=train_stresses,
+            test_stresses=test_stresses,
         )
         return self
 
@@ -478,7 +535,13 @@ class Pypolymlp:
         max_iter: Optional[int] = None,
         verbose: bool = False,
     ):
-        """Estimate MLP coefficients using conjugate gradient."""
+        """Estimate MLP coefficients using conjugate gradient.
+
+        Parameters
+        ----------
+        gtol: Gradient tolerance for CG.
+        max_iter: Number of maximum iterations in CG.
+        """
         self._mlp_model = fit_cg(
             self._params,
             self._train,
@@ -538,6 +601,9 @@ class Pypolymlp:
         batch_size: Batch size for sequential regression.
                     If None, the batch size is automatically determined
                     depending on the memory size and number of features.
+        use_cg: CG algorithm is used or not.
+        gtol: Gradient tolerance for CG.
+        max_iter: Number of maximum iterations in CG.
         """
         if not use_cg:
             self.fit(batch_size=batch_size, verbose=verbose)
@@ -610,6 +676,10 @@ class Pypolymlp:
         write_error_yaml(self._mlp_model.error_train, filename=filename, mode="w")
         write_error_yaml(self._mlp_model.error_test, filename=filename, mode="a")
         return self
+
+    def split_train_test(self, list_obj: list, train_ratio: float = 0.9):
+        """Split list into training and test datasets."""
+        return split_train_test(list_obj, train_ratio=train_ratio)
 
     @property
     def summary(self):

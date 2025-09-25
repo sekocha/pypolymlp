@@ -56,6 +56,9 @@ class PypolymlpMD:
         self._delta_heat_capacity = None
         self._fc2file = None
 
+        if self._verbose:
+            np.set_printoptions(legacy="1.21")
+
     def set_ase_calculator(
         self,
         pot: Union[str, list[str]] = None,

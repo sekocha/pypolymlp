@@ -35,6 +35,9 @@ class PypolymlpSSCHAStructureGenerator:
         self._strgen = None
         self._structure_samples = None
 
+        if self._verbose:
+            np.set_printoptions(legacy="1.21")
+
     def load_poscar(self, poscar: str) -> PolymlpStructure:
         """Parse POSCAR file.
 

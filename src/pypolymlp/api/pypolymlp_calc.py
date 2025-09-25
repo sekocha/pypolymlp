@@ -62,6 +62,9 @@ class PypolymlpCalc:
         self._go = None
         self._fc = None
 
+        if self._verbose:
+            np.set_printoptions(legacy="1.21")
+
     def load_poscars(self, poscars: Union[str, list[str]]) -> list[PolymlpStructure]:
         """Parse POSCAR files.
 

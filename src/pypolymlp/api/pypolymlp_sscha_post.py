@@ -2,6 +2,8 @@
 
 from typing import Optional
 
+import numpy as np
+
 from pypolymlp.calculator.sscha.utils.distribution import SSCHADistribution
 
 
@@ -12,6 +14,9 @@ class PypolymlpSSCHAPost:
         """Init method."""
         self._verbose = verbose
         self._distrib = None
+
+        if self._verbose:
+            np.set_printoptions(legacy="1.21")
 
     def init_structure_distribution(
         self,

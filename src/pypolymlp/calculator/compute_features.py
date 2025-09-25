@@ -51,6 +51,8 @@ def compute_from_polymlp_lammps(
         if len(pot) > 1:
             raise NotImplementedError("Only single polymlp file is available.")
         params, coeffs = load_mlp(filename=pot[0])
+    else:
+        return_mlp_dict = False
 
     params.include_force = force
     params.include_stress = stress

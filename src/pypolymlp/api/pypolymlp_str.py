@@ -37,6 +37,9 @@ class PypolymlpStructureGenerator:
         if base_structures is not None:
             self.structures = base_structures
 
+        if self._verbose:
+            np.set_printoptions(legacy="1.21")
+
     def load_poscars(self, poscars: Union[str, list[str]]) -> list[PolymlpStructure]:
         """Parse POSCAR files.
 
@@ -281,6 +284,11 @@ class PypolymlpStructureGenerator:
         max_distance: Maximum distance of displacement distributions.
 
         """
+        if len(self._strgen_instances) == 0:
+            raise RuntimeError(
+                "Structure generator not found. Use build_supercells_auto."
+            )
+
         for gen in self._strgen_instances:
             structures = gen.random_structure(
                 n_str=n_samples,
@@ -309,6 +317,11 @@ class PypolymlpStructureGenerator:
         max_distance: Distance of displacement distributions.
 
         """
+        if len(self._strgen_instances) == 0:
+            raise RuntimeError(
+                "Structure generator not found. Use build_supercells_auto."
+            )
+
         if vol_algorithm == "low_auto":
             vol_lb, vol_ub = 1.1, 4.0
             mode = "low density"

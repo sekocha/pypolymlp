@@ -137,3 +137,8 @@ In this case, optimal MLPs on the convex hull can be found as follows.
 ```shell
 > pypolymlp-utils --find_optimal Ag-Au/* --key test-disp1
 ```
+
+## Converter for potential files from older formats to current formats
+```shell
+> pypolymlp-utils --yaml_converter polymlp.lammps
+```

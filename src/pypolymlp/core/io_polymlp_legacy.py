@@ -86,7 +86,7 @@ def load_mlp_lammps(filename="polymlp.lammps"):
         pair_params.append(params)
         idx += 1
 
-    _ = _read_var(lines[idx], float, return_list=True)  # mass
+    mass = _read_var(lines[idx], float, return_list=True)  # mass
     idx += 1
 
     _ = _read_var(lines[idx], strtobool)  # electrostatic
@@ -157,6 +157,7 @@ def load_mlp_lammps(filename="polymlp.lammps"):
         element_order=element_order,
         type_full=type_full,
         type_indices=type_indices,
+        mass=mass,
     )
     coeffs_ = coeffs / scales
     return params, coeffs_

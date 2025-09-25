@@ -219,7 +219,7 @@ class GeometryOptimization:
             axis = self._basis_axis @ x_cells
             axis = axis.reshape((3, 3))
         else:
-            scale = (x_cells[0] / self._structure.volume)**(1 / 3)
+            scale = (x_cells[0] / self._structure.volume) ** (1 / 3)
             axis = self._structure.axis * scale
         self._change_axis(axis)
 
@@ -286,7 +286,7 @@ class GeometryOptimization:
             print("Using", method, "method", flush=True)
             print("Relax cell shape:       ", self._relax_cell, flush=True)
             print("Relax volume:           ", self._relax_volume, flush=True)
-            print("Relax atomic positionss:", self._relax_positions, flush=True)
+            print("Relax atomic positions:", self._relax_positions, flush=True)
 
         if method == "SLSQP":
             options = {"ftol": gtol, "disp": True}

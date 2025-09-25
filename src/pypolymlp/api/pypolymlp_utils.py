@@ -5,7 +5,7 @@ from typing import Optional, Union
 import numpy as np
 
 from pypolymlp.core.data_format import PolymlpStructure
-from pypolymlp.utils.count_time import PolymlpCost
+from pypolymlp.postproc.count_time import PolymlpCost
 from pypolymlp.utils.dataset.auto_divide import auto_divide
 from pypolymlp.utils.grid_search.optimal import find_optimal_mlps
 from pypolymlp.utils.vasp_utils import (
@@ -24,6 +24,9 @@ class PypolymlpUtils:
         self._verbose = verbose
         self._structure = None
         self._sym = None
+
+        if self._verbose:
+            np.set_printoptions(legacy="1.21")
 
     def compress_vaspruns(self, vaspruns: list[str], n_jobs: int = 1):
         """Compress vasprun.xml files.
