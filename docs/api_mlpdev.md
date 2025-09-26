@@ -1,4 +1,4 @@
-# Python API (MLP development)
+# Polynomial MLP development using Python API
 
 ## MLP development using polymlp.in
 ```python
@@ -297,7 +297,28 @@ polymlp.run(verbose=True)
 polymlp.save_mlp(filename="polymlp.yaml")
 ```
 
-If force or stress tensor data are not available, the corresponding input lines may be omitted.
+When a dataset is automatically divided into training and test datasets, use ``set_datasets_structures_autodiv``.
+
+```python
+'''
+Parameters in polymlp.set_datasets_structures
+-------------------------------------------------
+structures: shape=(n_entire_data), list of PolymlpStructure.
+energies: shape=(n_entire_data), unit: eV/cell.
+forces: shape=(n_entire_data, (3, n_atom)), unit: eV/ang.
+stresses: shape=(n_entire_data, 3, 3), unit: eV/cell.
+'''
+
+polymlp.set_datasets_structures_autodiv(
+    structures=structures,
+    energies=energies,
+    forces=forces,
+    stresses=stresses,
+    train_ratio=0.9,
+)
+```
+
+If stress tensor data is not available, the corresponding input lines can be omitted.
 ```python
 polymlp.set_datasets_structures(
     train_structures = train_structures,

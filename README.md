@@ -78,7 +78,7 @@ Building C++ codes in pypolymlp may require a significant amount of time.
 ## How to use pypolymlp
 
 ### Polynomial MLP development
-- [Command lines](docs/mlpdev.md)
+- [Command line](docs/mlpdev.md)
 - [Python API](docs/api_mlpdev.md)
 - [Utilities](docs/utilities.md)
   - [DFT structure generator](docs/strgen.md)
@@ -92,7 +92,7 @@ Building C++ codes in pypolymlp may require a significant amount of time.
   - Estimation of computational costs
 
 ### Calculations using polynomial MLP
-- [Command lines](docs/calc.md)
+- [Command line](docs/calc.md)
   - Energy, forces on atoms, and stress tensor
   - Force constants
   - Elastic constants

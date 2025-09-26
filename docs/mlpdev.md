@@ -1,4 +1,4 @@
-# MLP development
+# Polynomial MLP development using command line
 
 If version <= 0.8.0 is used, polymlp files are generated in a text format as `polymlp.lammps`.
 If a newer version (>= 0.9.0) is used, polymlp files are generated in a yaml format as `polymlp.yaml`.
