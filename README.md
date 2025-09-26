@@ -77,8 +77,22 @@ Building C++ codes in pypolymlp may require a significant amount of time.
 
 ## How to use pypolymlp
 
-- [Polynomial MLP development](docs/mlpdev.md)
-- [Property calculators](docs/calc.md)
+### Polynomial MLP development
+- [Command lines](docs/mlpdev.md)
+- [Python API](docs/api_mlpdev.md)
+- [Utilities](docs/utilities.md)
+  - [DFT structure generator](docs/strgen.md)
+    - Random atomic displacements with constant magnitude
+    - Random atomic displacements with sequential magnitudes and volume changes
+    - Random atomic displacements, cell expansion, and distortion
+  - Compression of vasprun.xml files
+  - Automatic division of DFT dataset
+  - Atomic energies
+  - Enumeration of optimal MLPs
+  - Estimation of computational costs
+
+### Calculations using polynomial MLP
+- [Command lines](docs/calc.md)
   - Energy, forces on atoms, and stress tensor
   - Force constants
   - Elastic constants
@@ -88,18 +102,7 @@ Building C++ codes in pypolymlp may require a significant amount of time.
   - Local geometry optimization
   - Molecular dynamics
   - Thermodynamic integration using MD
-- [DFT structure generator](docs/strgen.md)
-  - Random atomic displacements with constant magnitude
-  - Random atomic displacements with sequential magnitudes and volume changes
-  - Random atomic displacements, cell expansion, and distortion
-- [Utilities](docs/utilities.md)
-  - Compression of vasprun.xml files
-  - Automatic division of DFT dataset
-  - Atomic energies
-  - Enumeration of optimal MLPs
-  - Estimation of computational costs
-- [Python API (MLP development)](docs/api_mlpdev.md)
-- [Python API (Property calculations)](docs/api_calc.md)
+- [Python API](docs/api_calc.md)
   - Energy, forces on atoms, and stress tensor
   - Force constants
   - Elastic constants
