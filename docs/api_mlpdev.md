@@ -297,7 +297,20 @@ polymlp.run(verbose=True)
 polymlp.save_mlp(filename="polymlp.yaml")
 ```
 
-When a dataset is automatically divided into training and test datasets, use ``set_datasets_structures_autodiv``.
+If stress tensor data is not available, the corresponding input lines can be omitted.
+```python
+polymlp.set_datasets_structures(
+    train_structures = train_structures,
+    test_structures = test_structures,
+    train_energies = train_energies,
+    test_energies = test_energies,
+    train_forces = train_forces,
+    test_forces = test_forces,
+)
+polymlp.run(verbose=True)
+```
+
+When a dataset is automatically divided into training and test datasets, ``set_datasets_structures_autodiv`` can be used as follows.
 
 ```python
 '''
@@ -316,19 +329,6 @@ polymlp.set_datasets_structures_autodiv(
     stresses=stresses,
     train_ratio=0.9,
 )
-```
-
-If stress tensor data is not available, the corresponding input lines can be omitted.
-```python
-polymlp.set_datasets_structures(
-    train_structures = train_structures,
-    test_structures = test_structures,
-    train_energies = train_energies,
-    test_energies = test_energies,
-    train_forces = train_forces,
-    test_forces = test_forces,
-)
-polymlp.run(verbose=True)
 ```
 
 ## From multiple sets of vasprun.xml files

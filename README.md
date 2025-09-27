@@ -79,7 +79,9 @@ Building C++ codes in pypolymlp may require a significant amount of time.
 
 ### Polynomial MLP development
 - [Command line](docs/mlpdev.md)
+
 - [Python API](docs/api_mlpdev.md)
+
 - [Utilities](docs/utilities.md)
   - [DFT structure generator](docs/strgen.md)
     - Random atomic displacements with constant magnitude
@@ -91,6 +93,10 @@ Building C++ codes in pypolymlp may require a significant amount of time.
   - Enumeration of optimal MLPs
   - Estimation of computational costs
 
+- Experimental features
+  - [Finite-temperature MLP development](docs/experimental/temperature.md)
+  - MLP development for substitutional disordered states
+
 ### Calculations using polynomial MLP
 - [Command line](docs/calc.md)
   - Energy, forces on atoms, and stress tensor
@@ -100,8 +106,7 @@ Building C++ codes in pypolymlp may require a significant amount of time.
   - Structural features (Polynomial invariants)
   - Phonon properties, Quasi-harmonic approximation
   - Local geometry optimization
-  - Molecular dynamics
-  - Thermodynamic integration using MD
+
 - [Python API](docs/api_calc.md)
   - Energy, forces on atoms, and stress tensor
   - Force constants
@@ -110,10 +115,13 @@ Building C++ codes in pypolymlp may require a significant amount of time.
   - Structural features (Polynomial invariants)
   - Phonon properties, Quasi-harmonic approximation
   - Local geometry optimization
-  - Molecular dynamics
-  - Thermodynamic integration using MD
-  - Self-consistent phonon calculations
+
 - [How to use polymlp in other calculator tools](docs/api_other_calc.md)
   - LAMMPS
-  - Phonopy
+  - phonopy and phonon3py
   - ASE
+
+- Experimental features
+  - [Self-consistent phonon calculations](docs/experimental/sscha.md)
+  - Thermodynamic integration using molecular dynamics
+  - Configuration-dependent electronic free energy

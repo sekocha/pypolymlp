@@ -92,23 +92,3 @@ polymlp.set_datasets_sscha(yamlfiles)
 polymlp.run(verbose=True)
 polymlp.save_mlp(filename="polymlp.lammps.300")
 ```
-
-### Property calculations using SSCHA calculations on a volume-temperature grid
-```
-> pypolymlp-sscha-post --properties --yaml ./*/sscha/*/sscha_results.yaml
-```
-
-### Phase boundary determination from SSCHA thermodynamic properties for two phases
-```
-# Transition temperature
-> pypolymlp-sscha-post --transition hcp/sscha_properties.yaml bcc/sscha_properties.yaml
-
-# Pressure-temperature phase boundary
-> pypolymlp-sscha-post --boundary hcp/sscha_properties.yaml bcc/sscha_properties.yaml
-```
-
-### Generation of random structures and their properties from SSCHA result
-Random structures are generated based on the density matrix determined by the given effective force constants. The energy and force values for these structures are then calculated using the provided MLP.
-```
-pypolymlp-sscha-post --distribution --yaml sscha_results.yaml --fc2 fc2.hdf5 --n_samples 20 --pot polymlp.lammps
-```
