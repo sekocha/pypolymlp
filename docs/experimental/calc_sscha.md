@@ -49,9 +49,9 @@ sscha.set_polymlp("polymlp.yaml")
 sscha.set_nac_params("vasprun.xml")
 
 sscha.run(
-    temp_min=100,
+    temp_min=0,
     temp_max=1000,
-    temp_step=1000,
+    temp_step=100,
     ascending_temp=False,
     n_samples_init=None,
     n_samples_final=None,
