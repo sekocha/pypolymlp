@@ -120,12 +120,14 @@ atomic_energy: Atomic energies (in eV).
 rearrange_by_elements: Set True if not developing special MLPs.
 """
 ```
-
-## Dataset settings
+If the conjugate gradient algorithm is used to optimize the regression coefficients, `--cg` option is available as follows.
+```shell
+> pypolymlp -i polymlp1.in polymlp2.in --cg --gtol 1e-3 --max_iter 1000
+```
 
 When both the training and test datasets are explicitly provided, they can be included in the input file as follows:
 
-```
+```shell
 train_data vaspruns/train1/vasprun-*.xml.polymlp
 train_data vaspruns/train2/vasprun-*.xml.polymlp
 test_data vaspruns/test1/vasprun-*.xml.polymlp
@@ -134,14 +136,14 @@ test_data vaspruns/test2/vasprun-*.xml.polymlp
 
 In cases where the datasets are automatically divided into training and test sets, they can be included in the input file as follows:
 
-```
+```shell
 data vaspruns1/vasprun-*.xml.polymlp
 data vaspruns2/vasprun-*.xml.polymlp
 ```
 
 When the datasets contain property entries for multiple structures, such as those derived from molecular dynamics (MD) simulations, they can be specified in the input file as follows:
 
-```
+```shell
 data_md vasprun-md1.xml
 data_md vasprun-md2.xml
 data_md vasprun-md-*.xml
