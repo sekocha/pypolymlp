@@ -1,26 +1,29 @@
 # SSCHA calculations
 `symfc` and `phonopy` are required for performing SSCHA calculations.
 
-## Single SSCHA calculation
+## Using command line interface
+### Single SSCHA calculation
 ```shell
 > pypolymlp-sscha --poscar POSCAR --pot polymlp.yaml --supercell 3 3 2 --temp_min 100 --temp_max 700 --temp_step 100 --mixing 0.5 --ascending_temp --n_samples 3000 6000
+
+# Number of sample structures are automatically determined.
+> pypolymlp-sscha --poscar POSCAR --pot polymlp.yaml --supercell 3 3 2 --temp_min 100 --temp_max 700 --temp_step 100 --mixing 0.5 --ascending_temp
 ```
 
-## Generation of random structures and their properties from SSCHA force constants
+### Generation of random structures from SSCHA force constants
 Random structures are generated based on the density matrix determined by the given effective force constants. The energy and force values for these structures are then calculated using the provided MLP.
 ```shell
 pypolymlp-sscha-post --distribution --yaml sscha_results.yaml --fc2 fc2.hdf5 --n_samples 20 --pot polymlp.yaml
 ```
 
-## SSCHA calculations at multiple volumes
+### Thermodynamic properties from SSCHA results at various volumes and temperatures
 
-Thermodynamic properties and phase boundary can be calculated as follows.
-### Property calculations using SSCHA calculations on a volume-temperature grid
+Thermodynamic properties can be calculated from SSCHA results on a volume-temperature grid.
 ```shell
 > pypolymlp-sscha-post --properties --yaml ./*/sscha/*/sscha_results.yaml
 ```
-
-### Phase boundary determination from SSCHA thermodynamic properties for two phases
+<!--
+Phase boundary determination from SSCHA thermodynamic properties for two phases
 ```shell
 # Transition temperature
 > pypolymlp-sscha-post --transition hcp/sscha_properties.yaml bcc/sscha_properties.yaml
@@ -28,8 +31,10 @@ Thermodynamic properties and phase boundary can be calculated as follows.
 # Pressure-temperature phase boundary
 > pypolymlp-sscha-post --boundary hcp/sscha_properties.yaml bcc/sscha_properties.yaml
 ```
+-->
 
-## Python API
+## Using Python API
+### Single SSCHA calculation
 ```python
 import numpy as np
 from pypolymlp.api.pypolymlp_sscha import PypolymlpSSCHA

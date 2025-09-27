@@ -1,5 +1,14 @@
-## Thermodynamic integration using MD
-(Requirement: ASE, phonopy)
+# Thermodynamic integration using MD
+`ASE` and `phonopy` are required.
+
+## Using command line interface
+
+```shell
+pypolymlp-md --ti --poscar POSCAR --pot polymlp.yamls --supercell_size 3 3 3 --temp 500 --n_eq 5000 --n_steps 40000 --n_samples 20 --fc2_path ./sscha --max_alpha 0.98
+```
+
+## Using Python API
+
 ```python
 from pypolymlp.api.pypolymlp_md import PypolymlpMD
 
@@ -34,25 +43,24 @@ md.run_thermodynamic_integration(
     time_step=1.0,
     friction=0.01,
     n_eq=5000,
-    n_steps=20000,
+    n_steps=40000,
     heat_capacity=False,
 )
 md.save_thermodynamic_integration_yaml(filename="polymlp_ti.yaml")
 ```
-
 or
 ```python
 from pypolymlp.api.pypolymlp_md import run_thermodynamic_integration
 
 md = run_thermodynamic_integration(
-    pot="polymlp.lammps",
+    pot="polymlp.yaml",
     poscar="POSCAR",
     supercell_size=(5, 5, 3),
     fc2hdf5="fc2.hdf5",
     temperature=300.0,
     n_alphas=15,
     n_eq=5000,
-    n_steps=20000,
+    n_steps=40000,
     heat_capacity=False,
     filename="polymlp_ti.yaml",
 )

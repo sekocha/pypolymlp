@@ -1,11 +1,11 @@
 # Local geometry optimization
 ## Using command line interface
 ```shell
-> pypolymlp-calc --geometry_optimization --poscar POSCAR --pot polymlp.lammps
-> pypolymlp-calc --geometry_optimization --poscar POSCAR --pot polymlp.lammps --no_symmetry
-> pypolymlp-calc --geometry_optimization --poscar POSCAR --pot polymlp.lammps --fix_cell
-> pypolymlp-calc --geometry_optimization --poscar POSCAR --pot polymlp.lammps --fix_atom
-> pypolymlp-calc --geometry_optimization --poscar POSCAR --pot polymlp.lammps --method CG
+> pypolymlp-calc --geometry_optimization --poscar POSCAR --pot polymlp.yaml
+> pypolymlp-calc --geometry_optimization --poscar POSCAR --pot polymlp.yaml --no_symmetry
+> pypolymlp-calc --geometry_optimization --poscar POSCAR --pot polymlp.yaml --fix_cell
+> pypolymlp-calc --geometry_optimization --poscar POSCAR --pot polymlp.yaml --fix_atom
+> pypolymlp-calc --geometry_optimization --poscar POSCAR --pot polymlp.yaml --method CG
 ```
 ## Using Python API
 ```python

@@ -3,11 +3,11 @@
 
 ## Using command line interface
 ```shell
-> pypolymlp-calc --force_constants --pot polymlp.lammps --poscar POSCAR --supercell 3 3 2 --fc_n_samples 100 --disp 0.001 --fc_orders 2 3
+> pypolymlp-calc --force_constants --pot polymlp.yaml --poscar POSCAR --supercell 3 3 2 --fc_n_samples 100 --disp 0.001 --fc_orders 2 3
 ```
 If a cutoff radius is introduced to evaluate FC3s, use "--cutoff" option as follows.
 ```shell
-> pypolymlp-calc --force_constants --pot polymlp.lammps --poscar POSCAR --geometry_optimization --fc_n_samples 300 --fc_orders 2 3 --disp 0.001 --batch_size 100 --supercell 3 3 2 --cutoff 6
+> pypolymlp-calc --force_constants --pot polymlp.yaml --poscar POSCAR --geometry_optimization --fc_n_samples 300 --fc_orders 2 3 --disp 0.001 --batch_size 100 --supercell 3 3 2 --cutoff 6
 ```
 
 ## Using Python API
@@ -50,7 +50,7 @@ from pypolymlp.calculator.fc import PolymlpFC
 polyfc = PolymlpFC(
     phono3py_yaml='phono3py_params_wurtzite_AgI.yaml.xz',
     use_phonon_dataset=False,
-    pot='polymlp.lammps',
+    pot='polymlp.yaml',
 )
 
 """optional"""

@@ -94,8 +94,10 @@ Building C++ codes in pypolymlp may require a significant amount of time.
   - Estimation of computational costs
 
 - Experimental features
-  - [Finite-temperature MLP development](docs/experimental/temperature.md)
-  - MLP development for substitutional disordered states
+  - Finite-temperature MLP development
+    - [SSCHA free energy model](docs/experimental/mlpdev_sscha.md)
+    - [Electronic free energy model](docs/experimental/mlpdev_electron.md)
+  - [MLP development for substitutional disordered states](docs/experimental/mlpdev_disorder.md)
 
 ### Calculations using polynomial MLP
 In version 0.8.0 or earlier, polymlp files are generated in a plain text format as `polymlp.lammps`.
@@ -110,10 +112,12 @@ Both formats are supported by the following command-line interface and the Pytho
 - [Force constants](docs/calc_fc.md)
 - [Polynomial invariants](docs/calc_features.md)
 - Experimental features
-  - [Self-consistent phonon calculations](docs/experimental/sscha.md)
-  - [Molecular dynamics](docs/experimental/moldyn.md)
-  - Thermodynamic integration using molecular dynamics
-  - Configuration-dependent electronic free energy
+  - [Self-consistent phonon calculations](docs/experimental/calc_sscha.md)
+  - [Molecular dynamics](docs/experimental/calc_md.md)
+  - [Thermodynamic integration using molecular dynamics](docs/experimental/calc_ti.md)
+  - [Thermodynamic property calculation](docs/experimental/calc_thermodynamics.md)
+  - Evaluation of atomic-configuration-dependent electronic free energy
+  - Structure optimization at finite temperatures
 
 - [How to use polymlp in other calculator tools](docs/api_other_calc.md)
   - LAMMPS
