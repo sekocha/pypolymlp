@@ -44,5 +44,5 @@ polymlp.set_params(
 )
 polymlp.set_datasets_sscha(yamlfiles)
 polymlp.run(verbose=True)
-polymlp.save_mlp(filename="polymlp.lammps.300")
+polymlp.save_mlp(filename="polymlp.yaml.300")
 ```
