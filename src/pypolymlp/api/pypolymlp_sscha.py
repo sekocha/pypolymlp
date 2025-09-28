@@ -144,6 +144,8 @@ class PypolymlpSSCHA:
         mesh: q-point mesh for computing harmonic properties using effective FC2.
         init_fc_algorithm: Algorithm for generating initial FCs.
         init_fc_file: If algorithm = "file", coefficients are read from init_fc_file.
+        fc2: FC2 used for initial force constants if it is not None.
+        cutoff_radius: Cutoff radius used for estimating FC2.
         """
         if self._prop is None:
             raise RuntimeError("Set polymlp.")

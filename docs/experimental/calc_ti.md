@@ -30,6 +30,8 @@ n_eq : int
     Number of equilibration steps.
 n_steps : int
     Number of production steps.
+heat_capacity: bool
+    Calculate heat capacity.
 """
 
 md = PypolymlpMD(verbose=True)

@@ -17,6 +17,27 @@ If a cutoff radius is introduced to evaluate FC3s, use "--cutoff" option as foll
 import numpy as np
 from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
 
+"""Force constant calculations.
+
+symfc and phonopy is required.
+
+Parameters
+----------
+unitcell: Unit cell of equilibrium structure.
+supercell_matrix: Supercell matrix. (Only diagonal elements are valid.)
+cutoff: Cutoff distance for force constant calculation.
+
+disps: Displacements. shape=(n_str, 3, n_atom).
+forces: Forces. shape=(n_str, 3, n_atom).
+n_samples: Number of supercells sampled.
+distance: Displacement magnitude in angstroms.
+is_plusminus: Consider plus and minus displacements.
+orders: Force constant orders.
+batch_size: Batch size for force constant regression.
+is_compact_fc: Generate compact forms of force constants.
+use_mkl: Use MKL in symfc.
+"""
+
 polymlp = PypolymlpCalc(pot="polymlp.yaml")
 polymlp.load_poscars("POSCAR")
 

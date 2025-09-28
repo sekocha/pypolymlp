@@ -48,6 +48,28 @@ sscha.set_polymlp("polymlp.yaml")
 # Optional function if NAC parameters are needed.
 sscha.set_nac_params("vasprun.xml")
 
+"""
+Parameters
+----------
+temp: Single simulation temperature.
+temp_min: Minimum temperature.
+temp_max: Maximum temperature.
+temp_step: Temperature interval.
+ascending_temp: Set simulation temperatures in ascending order.
+n_samples_init: Number of samples in first loop of SSCHA iterations.
+                If None, the number of samples is automatically determined.
+n_samples_final: Number of samples in second loop of SSCHA iterations.
+                If None, the number of samples is automatically determined.
+tol: Convergence tolerance for FCs.
+max_iter: Maximum number of iterations.
+mixing: Mixing parameter.
+        FCs are updated by FC2 = FC2(new) * mixing + FC2(old) * (1-mixing).
+mesh: q-point mesh for computing harmonic properties using effective FC2.
+init_fc_algorithm: Algorithm for generating initial FCs.
+init_fc_file: If algorithm = "file", coefficients are read from init_fc_file.
+fc2: FC2 used for initial force constants if it is not None.
+cutoff_radius: Cutoff radius used for estimating FC2.
+"""
 sscha.run(
     temp_min=0,
     temp_max=1000,
@@ -60,5 +82,50 @@ sscha.run(
     mixing=0.5,
     mesh=(10, 10, 10),
     init_fc_algorithm="harmonic",
+    fc2=None,
+    cutoff_radius=None,
 )
+
+"""
+Attributes
+----------
+force_constants: FC2 at the final temperature.
+                shape=(n_atom, n_atom, 3, 3).
+"""
+fc2 = sscha.force_constants
+```
+
+### Generation of random structures from SSCHA force constants
+
+Random stuctures can be sampled from a converged force constants as follows.
+The energy and force values of these random structures are also evaluated using a given polynomial MLP.
+
+```python
+from pypolymlp.api.pypolymlp_sscha_post import PypolymlpSSCHAPost
+
+sscha = PypolymlpSSCHAPost(verbose=True)
+sscha.init_structure_distribution(
+    yamlfile="./sscha/1000/sscha.yaml",
+    fc2file="./sscha/1000/fc2.hdf5",
+    pot="polymlp.yaml",
+)
+sscha.run_structure_distribution(n_samples=1000)
+sscha.save_structure_distribution(path=".", save_poscars=False)
+
+"""
+Attributes
+----------
+displacements: Displacements in structures sampled from density matrix.
+               shape = (n_supercell, 3, n_atom), in Angstroms.
+forces: Forces of structures sampled from density matrix.
+        shape = (n_supercell, 3, n_atom), in eV/Angstroms.
+energies: Energies of structures sampled from density matrix.
+        shape = (n_supercell), in eV/supercell.
+static_potential: Static potential of equilibrium supercell structure in eV/supercell.
+
+supercells: Supercell structures sampled from density matrix.
+unitcell: Unitcell structure.
+"""
+energies = sscha.energies
+supercells = sscha.supercells
 ```

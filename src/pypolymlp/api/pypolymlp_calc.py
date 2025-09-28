@@ -246,7 +246,7 @@ class PypolymlpCalc:
     ):
         """Run EOS calculations.
 
-        pymatgen is required if eos_fit = True.
+        phonopy is required if eos_fit = True.
 
         Parameters
         ----------
@@ -637,6 +637,11 @@ class PypolymlpCalc:
     def first_structure(self) -> PolymlpStructure:
         """Return the first structure for the final calculation."""
         return self._structures[0]
+
+    @property
+    def converged_structure(self) -> PolymlpStructure:
+        """Return the converged structure for the final calculation."""
+        return self.first_structure
 
     @structures.setter
     def structures(

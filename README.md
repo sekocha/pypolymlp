@@ -117,6 +117,7 @@ Both formats are supported by the following command-line interface and the Pytho
   - [Thermodynamic integration using molecular dynamics](docs/experimental/calc_ti.md)
   - [Thermodynamic property calculation](docs/experimental/calc_thermodynamics.md)
   - Evaluation of atomic-configuration-dependent electronic free energy
+  - Global structure optimization
   - Structure optimization at finite temperatures
 
 - [How to use polymlp in other calculator tools](docs/api_other_calc.md)
