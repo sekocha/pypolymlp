@@ -35,10 +35,10 @@ A polynomial MLP represents the potential energy as a polynomial function of lin
 - openmp (recommended)
 
 [Optional]
-- phonopy (if using phonon datasets and/or computing force constants)
-- phono3py (if using phonon datasets and/or computing force constants)
-- symfc (if computing force constants)
-- sparse_dot_mkl (if computing force constants)
+- phonopy
+- phono3py
+- symfc
+- sparse_dot_mkl
 - spglib
 - pymatgen
 - ase
@@ -94,10 +94,9 @@ Building C++ codes in pypolymlp may require a significant amount of time.
   - Estimation of computational costs
 
 - Experimental features
-  - Finite-temperature MLP development
-    - [SSCHA free energy model](docs/experimental/mlpdev_sscha.md)
-    - [Electronic free energy model](docs/experimental/mlpdev_electron.md)
-  - [MLP development for substitutional disordered states](docs/experimental/mlpdev_disorder.md)
+  - [SSCHA free energy model](docs/experimental/mlpdev_sscha.md)
+  - [Electronic free energy model](docs/experimental/mlpdev_electron.md)
+  - [Substitutional disordered model](docs/experimental/mlpdev_disorder.md)
 
 ### Calculations using polynomial MLP
 In version 0.8.0 or earlier, polymlp files are generated in a plain text format as `polymlp.lammps`.
