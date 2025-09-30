@@ -110,6 +110,7 @@ class PypolymlpSSCHA:
         temp_min: float = 0,
         temp_max: float = 2000,
         temp_step: float = 50,
+        n_temp: Optional[int] = None,
         ascending_temp: bool = False,
         n_samples_init: Optional[int] = None,
         n_samples_final: Optional[int] = None,
@@ -132,6 +133,9 @@ class PypolymlpSSCHA:
         temp_min: Minimum temperature.
         temp_max: Maximum temperature.
         temp_step: Temperature interval.
+        n_temp: Number of temperatures.
+                This option is active if n_temp is not None.
+                Temperatures are given using Chebyshev nodes.
         ascending_temp: Set simulation temperatures in ascending order.
         n_samples_init: Number of samples in first loop of SSCHA iterations.
                         If None, the number of samples is automatically determined.
@@ -160,6 +164,7 @@ class PypolymlpSSCHA:
             temp_min=temp_min,
             temp_max=temp_max,
             temp_step=temp_step,
+            n_temp=n_temp,
             ascending_temp=ascending_temp,
             n_samples_init=n_samples_init,
             n_samples_final=n_samples_final,

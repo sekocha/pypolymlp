@@ -58,6 +58,8 @@ class Polyfit:
         intercept: bool = True,
         first_order: bool = True,
         add_sqrt: bool = False,
+        weight_begin: bool = False,
+        weight_end: bool = False,
     ):
         """Fit data to polynomial functions.
 
@@ -77,6 +79,8 @@ class Polyfit:
                     intercept=intercept,
                     first_order=first_order,
                     add_sqrt=add_sqrt,
+                    weight_begin=weight_begin,
+                    weight_end=weight_end,
                 )
                 (_, y_pred, y_rmse), X = res
                 if X is not None:
@@ -90,6 +94,8 @@ class Polyfit:
             intercept=intercept,
             first_order=first_order,
             add_sqrt=best_add_sqrt,
+            weight_begin=weight_begin,
+            weight_end=weight_end,
         )
         self._coeffs = self._adjust_coeffs(coeffs, intercept, first_order)
         self._error = y_rmse
@@ -120,6 +126,8 @@ class Polyfit:
         intercept: bool = True,
         first_order: bool = True,
         add_sqrt: bool = False,
+        weight_begin: bool = False,
+        weight_end: bool = False,
     ):
         """Fit data to a single polynomial with a given order."""
         x, y = self._x, self._y
@@ -133,10 +141,29 @@ class Polyfit:
             X.append(np.ones(x.shape))
         X = np.array(X).T
 
-        try:
-            coeffs = np.linalg.solve(X.T @ X, X.T @ y)
-        except:
-            return (None, None, None), None
+        if weight_begin or weight_end:
+            weight_vals = np.ones(X.shape[0])
+            if weight_begin:
+                weight_vals[0] = 5.0
+                weight_vals[1] = 4.0
+                weight_vals[2] = 3.0
+                weight_vals[3] = 2.0
+            if weight_end:
+                weight_vals[-1] = 5.0
+                weight_vals[-2] = 4.0
+                weight_vals[-3] = 3.0
+                weight_vals[-4] = 2.0
+
+            W = np.diag(weight_vals)
+            try:
+                coeffs = np.linalg.solve(X.T @ W @ X, X.T @ W @ y)
+            except:
+                return (None, None, None), None
+        else:
+            try:
+                coeffs = np.linalg.solve(X.T @ X, X.T @ y)
+            except:
+                return (None, None, None), None
 
         y_pred = X @ coeffs
         y_rmse = rmse(y, y_pred)

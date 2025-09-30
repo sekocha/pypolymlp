@@ -265,12 +265,22 @@ class Thermodynamics:
                 ref = np.array([p.reference_free_energy for p in points])
 
                 polyfit = Polyfit(temperatures, free_energies - ref)
-                polyfit.fit(
-                    max_order=max_order,
-                    intercept=intercept,
-                    first_order=False,
-                    add_sqrt=False,
-                )
+                if np.isclose(temperatures[0], 0.0):
+                    polyfit.fit(
+                        max_order=max_order,
+                        intercept=intercept,
+                        add_sqrt=False,
+                        weight_begin=False,
+                        weight_end=True,
+                    )
+                else:
+                    polyfit.fit(
+                        max_order=max_order,
+                        intercept=intercept,
+                        add_sqrt=False,
+                        weight_begin=True,
+                        weight_end=True,
+                    )
                 ft_fits.append(polyfit)
                 if self._verbose:
                     print("- volume:", np.round(self._volumes[ivol], 3), flush=True)
@@ -302,9 +312,21 @@ class Thermodynamics:
                 ref = np.array([p.reference_entropy for p in points])
                 polyfit = Polyfit(temperatures, entropies - ref)
                 if np.isclose(temperatures[0], 0.0):
-                    polyfit.fit(max_order=max_order, intercept=False, add_sqrt=True)
+                    polyfit.fit(
+                        max_order=max_order,
+                        intercept=False,
+                        add_sqrt=True,
+                        weight_begin=False,
+                        weight_end=True,
+                    )
                 else:
-                    polyfit.fit(max_order=max_order, intercept=True, add_sqrt=True)
+                    polyfit.fit(
+                        max_order=max_order,
+                        intercept=True,
+                        add_sqrt=True,
+                        weight_begin=True,
+                        weight_end=True,
+                    )
 
                 st_fits.append(polyfit)
                 if self._verbose:
@@ -321,6 +343,43 @@ class Thermodynamics:
             else:
                 st_fits.append(None)
         self._models.st_fits = st_fits
+        self._is_heat_capacity = True
+        return self
+
+    def fit_energy_temperature(self, max_order: int = 4):
+        """Fit temperature-enenergy data using polynomial."""
+        if self._data_type != "ti":
+            raise RuntimeError("fit_energy_temperature is available for TI.")
+
+        if self._verbose:
+            print("Temperature-Energy fitting.", flush=True)
+
+        et_fits = []
+        for ivol, data in enumerate(self._grid):
+            points = np.array([d for d in data if _exist_attr(d, "energy")])
+            if len(points) > max_order + 1:
+                temperatures = np.array([p.temperature for p in points])
+                energies = np.array([p.energy for p in points])
+                polyfit = Polyfit(temperatures, energies)
+                if np.isclose(temperatures[0], 0.0):
+                    polyfit.fit(max_order=max_order, intercept=False, add_sqrt=False)
+                else:
+                    polyfit.fit(max_order=max_order, intercept=True, add_sqrt=False)
+
+                et_fits.append(polyfit)
+                if self._verbose:
+                    print("- volume:", np.round(self._volumes[ivol], 3), flush=True)
+                    print(
+                        "  model_rmse:  ", polyfit.best_model, polyfit.error, flush=True
+                    )
+
+                self._print_predictions(temperatures, energies, polyfit)
+                cv = polyfit.eval_derivative(temperatures)
+                for p, cv in zip(points, cv):
+                    p.heat_capacity = cv
+            else:
+                et_fits.append(None)
+        self._models.et_fits = et_fits
         self._is_heat_capacity = True
         return self
 

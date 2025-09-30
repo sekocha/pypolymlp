@@ -73,6 +73,12 @@ def run():
         help="Temperature interval (K)",
     )
     parser.add_argument(
+        "--n_temp",
+        type=int,
+        default=None,
+        help="Number of temperatures",
+    )
+    parser.add_argument(
         "--tol",
         type=float,
         default=0.01,
@@ -152,6 +158,7 @@ def run():
         temp_min=args.temp_min,
         temp_max=args.temp_max,
         temp_step=args.temp_step,
+        n_temp=args.n_temp,
         ascending_temp=args.ascending_temp,
         n_samples_init=n_samples_init,
         n_samples_final=n_samples_final,
