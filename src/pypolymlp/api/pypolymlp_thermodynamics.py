@@ -68,7 +68,7 @@ class PypolymlpThermodynamics:
     def _run_standard(self, thermo: Thermodynamics, assign_fit_values: bool = False):
         """Use a standard fitting procedure."""
         thermo.fit_free_energy_volume()
-        thermo.fit_entropy_volume(max_order=6, assign_fit_values=assign_fit_values)
+        thermo.fit_entropy_volume(max_order=4, assign_fit_values=assign_fit_values)
         thermo.eval_entropy_equilibrium()
 
         thermo.fit_entropy_temperature(max_order=4)

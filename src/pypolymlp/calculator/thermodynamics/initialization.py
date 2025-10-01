@@ -71,43 +71,18 @@ def load_electron_yamls(
     return data
 
 
-def _check_melting(log: np.ndarray):
-    """Check whether MD simulation converges to a melting state."""
-    if np.isclose(log[0, 2], 0.0):
-        return False
-    try:
-        displacement_ratio = log[-1, 2] / log[0, 2]
-        if displacement_ratio > 2.0:
-            return True
-    except:
-        pass
-
-    displacements = log[:, 2]
-    diff = np.diff(displacements)
-    threshold = 0.05
-    if np.count_nonzero(np.abs(diff) > threshold):
-        print(displacements)
-        return True
-    return False
-
-
-def _is_success(eng: float, threshold: float = -100):
-    """Check whether MD simulation is successfully finished."""
-    if eng < threshold:
-        return False
-    return True
+def _check_reference_fc2():
+    """Check whether a single FC2 is used as reference for the same volume."""
+    pass
 
 
 def load_ti_yamls(filenames: tuple[str], verbose: bool = False) -> list[GridPointData]:
     """Load polymlp_ti.yaml files."""
     data = []
     for yamlfile in filenames:
-        res = load_thermodynamic_integration_yaml(yamlfile)
+        res = load_thermodynamic_integration_yaml(yamlfile, verbose)
         if res is not None:
             temp, volume, free_e, ent, cv, eng = res
-            # if verbose:
-            #    message = " was eliminated (found to be in a melting state)."
-            #    print(yamlfile + message, flush=True)
             grid = GridPointData(
                 volume=volume,
                 temperature=temp,
@@ -120,7 +95,7 @@ def load_ti_yamls(filenames: tuple[str], verbose: bool = False) -> list[GridPoin
             data.append(grid)
         else:
             if verbose:
-                message = " was found to be a failed MD simulation."
+                message = " was eliminated (failed or in a melting state)."
                 print(yamlfile + message, flush=True)
     return data
 
