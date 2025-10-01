@@ -144,16 +144,15 @@ class Polyfit:
         if weight_begin or weight_end:
             weight_vals = np.ones(X.shape[0])
             if weight_begin:
-                weight_vals[0] = 5.0
-                weight_vals[1] = 4.0
-                weight_vals[2] = 3.0
-                weight_vals[3] = 2.0
+                weight_vals[0] = 5.0**2
+                weight_vals[1] = 4.0**2
+                weight_vals[2] = 3.0**2
+                weight_vals[3] = 2.0**2
             if weight_end:
-                weight_vals[-1] = 5.0
-                weight_vals[-2] = 4.0
-                weight_vals[-3] = 3.0
-                weight_vals[-4] = 2.0
-
+                weight_vals[-1] = 5.0**2
+                weight_vals[-2] = 4.0**2
+                weight_vals[-3] = 3.0**2
+                weight_vals[-4] = 2.0**2
             W = np.diag(weight_vals)
             try:
                 coeffs = np.linalg.solve(X.T @ W @ X, X.T @ W @ y)
