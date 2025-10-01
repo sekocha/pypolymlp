@@ -75,7 +75,7 @@ def save_thermodynamic_integration_yaml(
         print("  references: ", os.path.abspath(reference["fc2_file"]), file=f)
         print(file=f)
 
-        delta_entropy = 0.0
+        delta_entropy, de = 0.0, 0.0
         if not np.isclose(integrator._temperature, 0.0):
             e_final = float(log_ti[-1][2])
             e_ref = float(log_ti[0][2])
@@ -85,14 +85,17 @@ def save_thermodynamic_integration_yaml(
         print("properties:", file=f)
         print("  free_energy:             ", delta_free_energy, file=f)
         print("  entropy:                 ", delta_entropy, file=f)
-        print("  average_potential_energy:", integrator.average_energy, file=f)
-        print("  average_total_energy:    ", integrator.average_total_energy, file=f)
+        print("  energy:                  ", de, file=f)
         print("  delta_heat_capacity:     ", delta_heat_capacity, file=f)
-
         print(file=f)
+
         print("  static_potential_energy: ", integrator.static_energy, file=f)
         print("  reference_free_energy:   ", ref_free_energy, file=f)
         print("  total_free_energy:       ", total_free_energy, file=f)
+        print(file=f)
+
+        print("  average_potential_energy:", integrator.average_energy, file=f)
+        print("  average_total_energy:    ", integrator.average_total_energy, file=f)
         print(file=f)
 
         print("  delta_energies:", file=f)

@@ -2,6 +2,7 @@
 
 import copy
 import random
+from collections import defaultdict
 from typing import Optional
 
 import numpy as np
@@ -72,6 +73,8 @@ def _generate_disorder_params(params: PolymlpParams, occupancy: tuple):
 
 def check_occupancy(params: PolymlpParams, occupancy: tuple):
     """Check occupancy format."""
+    map_element_to_type = dict()
+    itype = 0
     for occ in occupancy:
         if not np.isclose(sum([v for _, v in occ]), 1.0):
             raise RuntimeError("Sum of occupancy != 1.0")
@@ -79,24 +82,10 @@ def check_occupancy(params: PolymlpParams, occupancy: tuple):
         for ele, comp in occ:
             if ele not in params.elements:
                 raise RuntimeError("Element", ele, "not found in polymlp.")
-
-
-def initialize_lattice(lattice: PolymlpStructure, occupancy: tuple):
-    """Initialize lattice using occupancy."""
-    if len(lattice.n_atoms) != len(occupancy):
-        raise RuntimeError("Sizes of lattice and occupancy are inconsistent.")
-
-    lattice_types, lattice_elements = [], []
-    i = 0
-    for occ in occupancy:
-        lattice_types.append(i)
-        lattice_elements.append(occ[0][0])
-        i += len(occ)
-
-    n_atoms = lattice.n_atoms
-    lattice.types = [t for n, t in zip(n_atoms, lattice_types) for _ in range(n)]
-    lattice.elements = [e for n, e in zip(n_atoms, lattice_elements) for _ in range(n)]
-    return lattice
+            if ele not in map_element_to_type:
+                map_element_to_type[ele] = itype
+                itype += 1
+    return map_element_to_type
 
 
 class PolymlpDisorder:
@@ -140,8 +129,18 @@ class PolymlpDisorder:
         self._forces = None
         self._stresses = None
 
-        check_occupancy(self._params, self._occupancy)
+        self._map_element_to_type = check_occupancy(self._params, self._occupancy)
         self.load_lattice(filename=lattice, supercell_size=supercell_size)
+
+        if self._verbose:
+            print("Generating MLP for disordered model.", flush=True)
+            idx = 0
+            elements = self._lattice.elements
+            for i, (n, occ) in enumerate(zip(self._lattice.n_atoms, self._occupancy)):
+                print("Sublattice", str(i + 1) + ":", flush=True)
+                print("  Representation:", elements[idx], flush=True)
+                print("  Occupancy:     ", occ, flush=True)
+                idx += n
 
     def load_lattice(
         self,
@@ -150,7 +149,10 @@ class PolymlpDisorder:
     ):
         """Load lattice POSCAR file."""
         self._lattice = Poscar(filename).structure
-        self._lattice = initialize_lattice(self._lattice, self._occupancy)
+
+        if len(self._lattice.n_atoms) != len(self._occupancy):
+            raise RuntimeError("Sizes of lattice and occupancy are inconsistent.")
+
         if supercell_size is not None:
             self._lattice_supercell = supercell_diagonal(
                 self._lattice,
@@ -180,20 +182,19 @@ class PolymlpDisorder:
         if self._lattice_supercell is None:
             raise RuntimeError("Supercell lattice not found.")
 
-        replace_ids = dict()
-        atom_begin, itype = 0, 0
+        replace_ids = defaultdict(list)
+        atom_begin = 0
         for occ, n in zip(self._occupancy, self._lattice_supercell.n_atoms):
             atom_end = atom_begin + n
-            if len(occ) > 1:
-                itype += 1
-                cand = range(atom_begin, atom_end)
-                for ele, prob in occ[1:]:
-                    n_replace = int(round(n * prob))
-                    replace_ids[(ele, itype)] = random.sample(cand, n_replace)
+            cand = range(atom_begin, atom_end)
+            for ele, prob in occ:
+                n_replace = int(round(n * prob))
+                itype = self._map_element_to_type[ele]
+                if len(cand) == n_replace:
+                    replace_ids[(ele, itype)].extend(cand)
+                else:
+                    replace_ids[(ele, itype)].extend(random.sample(cand, n_replace))
                     cand = list(set(cand) - set(replace_ids[(ele, itype)]))
-                    itype += 1
-            else:
-                itype += 1
             atom_begin = atom_end
         return replace_ids
 

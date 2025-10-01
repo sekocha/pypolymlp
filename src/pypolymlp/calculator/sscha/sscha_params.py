@@ -23,6 +23,7 @@ class SSCHAParameters:
     temp_min: Minimum temperature.
     temp_max: Maximum temperature.
     temp_step: Temperature interval.
+    n_temp: Number of temperatures.
     ascending_temp: Set simulation temperatures in ascending order.
     n_samples_init: Number of samples in first loop of SSCHA iterations.
     n_samples_final: Number of samples in second loop of SSCHA iterations.
@@ -45,6 +46,7 @@ class SSCHAParameters:
     temp_min: float = 0
     temp_max: float = 2000
     temp_step: float = 50
+    n_temp: Optional[int] = None
     ascending_temp: bool = (False,)
     n_samples_init: Optional[int] = None
     n_samples_final: Optional[int] = None
@@ -64,7 +66,6 @@ class SSCHAParameters:
         )
         if self.temperatures is None:
             self.set_temperatures()
-        # self.set_n_samples()
 
     def _round_temperature(self, temp: float):
         """Round a single temperature if possible."""
@@ -76,6 +77,17 @@ class SSCHAParameters:
         """Set simulation temperatures."""
         if self.temp is not None:
             self.temperatures = [self._round_temperature(self.temp)]
+            return self.temperatures
+
+        if self.n_temp is not None:
+            if np.isclose(self.temp_max, self.temp_min):
+                self.temperatures = [self._round_temperature(self.temp_max)]
+                return self.temperatures
+            chebyshev_nodes = np.cos(np.linspace(np.pi, 0, self.n_temp))
+            dt = self.temp_max - self.temp_min
+            self.temperatures = dt * (chebyshev_nodes + 1) / 2 + self.temp_min
+            self.temperatures = np.round(self.temperatures)
+            self.temperatures = [self._round_temperature(t) for t in self.temperatures]
             return self.temperatures
 
         self.temp_min = self._round_temperature(self.temp_min)

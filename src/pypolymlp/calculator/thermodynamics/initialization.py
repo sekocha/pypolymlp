@@ -6,9 +6,11 @@ import numpy as np
 import yaml
 
 from pypolymlp.calculator.compute_phonon import calculate_harmonic_properties_from_fc2
-from pypolymlp.calculator.md.md_utils import load_thermodynamic_integration_yaml
 from pypolymlp.calculator.sscha.sscha_utils import Restart
 from pypolymlp.calculator.thermodynamics.thermodynamics_utils import GridPointData
+from pypolymlp.calculator.thermodynamics.ti_utils import (
+    load_thermodynamic_integration_yaml,
+)
 from pypolymlp.core.units import EVtoJmol, EVtoKJmol
 
 
@@ -69,49 +71,31 @@ def load_electron_yamls(
     return data
 
 
-def _check_melting(log: np.ndarray):
-    """Check whether MD simulation converges to a melting state."""
-    if np.isclose(log[0, 2], 0.0):
-        return False
-    try:
-        displacement_ratio = log[-1, 2] / log[0, 2]
-        return displacement_ratio > 2.0
-    except:
-        return False
-
-
-def _is_success(eng: float, threshold: float = -100):
-    """Check whether MD simulation is successfully finished."""
-    if eng < threshold:
-        return False
-    return True
+def _check_reference_fc2():
+    """Check whether a single FC2 is used as reference for the same volume."""
+    pass
 
 
 def load_ti_yamls(filenames: tuple[str], verbose: bool = False) -> list[GridPointData]:
     """Load polymlp_ti.yaml files."""
     data = []
     for yamlfile in filenames:
-        res = load_thermodynamic_integration_yaml(yamlfile)
-        temp, volume, free_e, ent, cv, eng, log = res
-        if _is_success(eng):
-            if _check_melting(log):
-                if verbose:
-                    message = " was eliminated (found to be in a melting state)."
-                    print(yamlfile + message, flush=True)
-            else:
-                grid = GridPointData(
-                    volume=volume,
-                    temperature=temp,
-                    data_type="ti",
-                    free_energy=free_e,
-                    entropy=ent,
-                    # energy=eng,
-                    path_yaml=yamlfile,
-                )
-                data.append(grid)
+        res = load_thermodynamic_integration_yaml(yamlfile, verbose)
+        if res is not None:
+            temp, volume, free_e, ent, cv, eng = res
+            grid = GridPointData(
+                volume=volume,
+                temperature=temp,
+                data_type="ti",
+                free_energy=free_e,
+                entropy=ent,
+                energy=eng,
+                path_yaml=yamlfile,
+            )
+            data.append(grid)
         else:
             if verbose:
-                message = " was found to be a failed MD simulation."
+                message = " was eliminated (failed or in a melting state)."
                 print(yamlfile + message, flush=True)
     return data
 

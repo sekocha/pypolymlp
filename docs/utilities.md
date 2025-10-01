@@ -1,5 +1,8 @@
 # Pypolymlp utilities
 
+## Structure generator for DFT calculations
+See [DFT structure generator](strgen.md).
+
 ## Compression of vasprun.xml files
 
 ```shell

@@ -1,4 +1,4 @@
-# Thermodynamics calculations using polynomial MLP
+# Thermodynamic property calculations
 
 1. MLP development
 

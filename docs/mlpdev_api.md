@@ -1,6 +1,6 @@
-# Python API (MLP development)
+# Polynomial MLP development using Python API
 
-## MLP development using polymlp.in
+## MLP development using `polymlp.in`
 ```python
 import numpy as np
 from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
@@ -16,7 +16,7 @@ params = polymlp.parameters
 mlp_info = polymlp.summary
 ```
 
-## MLP development from vasprun.xml files without using polymlp.in
+## MLP development from vasprun.xml files without using `polymlp.in`
 ```python
 import numpy as np
 import glob
@@ -70,7 +70,7 @@ polymlp.run(verbose=True)
 polymlp.save_mlp(filename="polymlp.yaml")
 ```
 
-## MLP development from phono3py.yaml.xz without using polymlp.in
+## MLP development from phono3py.yaml.xz without using `polymlp.in`
 
 ```python
 from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
@@ -105,7 +105,7 @@ polymlp.run(verbose=True)
 polymlp.save_mlp(filename="polymlp.yaml")
 ```
 
-When energy values are read from phono3py.yaml.xz, train_energy_dat and test_energy dat are not required as follows.
+When energy values are read from `phono3py.yaml.xz`, `train_energy_dat` and `test_energy_dat` are not required as follows.
 ```python
 train_yaml = 'phono3py_params_wurtzite_AgI.yaml.xz'
 test_yaml = 'phono3py_params_wurtzite_AgI.yaml.xz'
@@ -297,7 +297,7 @@ polymlp.run(verbose=True)
 polymlp.save_mlp(filename="polymlp.yaml")
 ```
 
-If force or stress tensor data are not available, the corresponding input lines may be omitted.
+If stress tensor data is not available, the corresponding input lines can be omitted.
 ```python
 polymlp.set_datasets_structures(
     train_structures = train_structures,
@@ -310,7 +310,28 @@ polymlp.set_datasets_structures(
 polymlp.run(verbose=True)
 ```
 
-## From multiple sets of vasprun.xml files
+When a dataset is automatically divided into training and test datasets, ``set_datasets_structures_autodiv`` can be used as follows.
+
+```python
+'''
+Parameters in polymlp.set_datasets_structures
+-------------------------------------------------
+structures: shape=(n_entire_data), list of PolymlpStructure.
+energies: shape=(n_entire_data), unit: eV/cell.
+forces: shape=(n_entire_data, (3, n_atom)), unit: eV/ang.
+stresses: shape=(n_entire_data, 3, 3), unit: eV/cell.
+'''
+
+polymlp.set_datasets_structures_autodiv(
+    structures=structures,
+    energies=energies,
+    forces=forces,
+    stresses=stresses,
+    train_ratio=0.9,
+)
+```
+
+## How to set multiple sets of vasprun.xml files
 
 ```python
 train_vaspruns1 = glob.glob('vaspruns/train1/vasprun-*.xml.polymlp')

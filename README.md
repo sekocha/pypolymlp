@@ -1,8 +1,10 @@
 # A generator of polynomial machine learning potentials
 
-## Polynomial machine learning potentials
+`pypolymlp` is a Python code designed for the development of polynomial machine learning potentials (MLPs) based on datasets generated from density functional theory (DFT) calculations. The code provides functionalities for fitting polynomial models to energy, force, and stress data, enabling the construction of accurate and computationally efficient interatomic potentials.
+In addition to potential development, `pypolymlp` allows users to compute various physical properties and perform atomistic simulations using the trained MLPs.
 
-- [Polynomial machine learning potential repository](http://cms.mtl.kyoto-u.ac.jp/seko/mlp-repository/index.html)
+## Polynomial machine learning potentials
+A polynomial MLP represents the potential energy as a polynomial function of linearly independent polynomial invariants of the O(3) group. Developed polynomial MLPs are available in [Polynomial Machine Learning Potential Repository](http://cms.mtl.kyoto-u.ac.jp/seko/mlp-repository/index.html).
 
 ## Citation of pypolymlp
 
@@ -32,13 +34,14 @@
 - openmp (recommended)
 
 [Optional]
-- phonopy (if using phonon datasets and/or computing force constants)
-- phono3py (if using phonon datasets and/or computing force constants)
-- symfc (if computing force constants)
-- sparse_dot_mkl (if computing force constants)
+- phonopy
+- phono3py
+- symfc
+- sparse_dot_mkl
 - spglib
 - pymatgen
 - ase
+- joblib
 
 ## How to install pypolymlp
 
@@ -76,40 +79,47 @@ Building C++ codes in pypolymlp may require a significant amount of time.
 
 ## How to use pypolymlp
 
-- [Polynomial MLP development](docs/mlpdev.md)
-- [Property calculators](docs/calc.md)
-  - Energy, forces on atoms, and stress tensor
-  - Force constants
-  - Elastic constants
-  - Equation of states
-  - Structural features (Polynomial invariants)
-  - Phonon properties, Quasi-harmonic approximation
-  - Local geometry optimization
-  - Molecular dynamics
-  - Thermodynamic integration using MD
-- [DFT structure generator](docs/strgen.md)
-  - Random atomic displacements with constant magnitude
-  - Random atomic displacements with sequential magnitudes and volume changes
-  - Random atomic displacements, cell expansion, and distortion
+### Polynomial MLP development
+- [Command line](docs/mlpdev_command.md)
+- [Python API](docs/mlpdev_api.md)
 - [Utilities](docs/utilities.md)
+  - [DFT structure generator](docs/strgen.md)
+    - Random atomic displacements with constant magnitude
+    - Random atomic displacements with sequential magnitudes and volume changes
+    - Random atomic displacements, cell expansion, and distortion
   - Compression of vasprun.xml files
   - Automatic division of DFT dataset
   - Atomic energies
   - Enumeration of optimal MLPs
   - Estimation of computational costs
-- [Python API (MLP development)](docs/api_mlpdev.md)
-- [Python API (Property calculations)](docs/api_calc.md)
-  - Energy, forces on atoms, and stress tensor
-  - Force constants
-  - Elastic constants
-  - Equation of states
-  - Structural features (Polynomial invariants)
-  - Phonon properties, Quasi-harmonic approximation
-  - Local geometry optimization
-  - Molecular dynamics
-  - Thermodynamic integration using MD
-  - Self-consistent phonon calculations
+
+- Experimental features
+  - [SSCHA free energy model](docs/experimental/mlpdev_sscha.md)
+  - [Electronic free energy model](docs/experimental/mlpdev_electron.md)
+  - [Substitutional disordered model](docs/experimental/mlpdev_disorder.md)
+
+### Calculations using polynomial MLP
+In version 0.8.0 or earlier, polymlp files are generated in a plain text format as `polymlp.lammps`.
+Starting from version 0.9.0, the files are generated in YAML format as `polymlp.yaml`.
+Both formats are supported by the following command-line interface and the Python API.
+
+- [Energy, forces, stress tensor](docs/calc_property.md)
+- [Equation of states](docs/calc_eos.md)
+- [Local geometry optimization](docs/calc_geometry.md)
+- [Elastic constants](docs/calc_elastic.md)
+- [Phonon properties, Quasi-harmonic approximation](docs/calc_phonon.md)
+- [Force constants](docs/calc_fc.md)
+- [Polynomial invariants](docs/calc_features.md)
+- Experimental features
+  - [Self-consistent phonon calculations](docs/experimental/calc_sscha.md)
+  - [Molecular dynamics](docs/experimental/calc_md.md)
+  - [Thermodynamic integration using molecular dynamics](docs/experimental/calc_ti.md)
+  - [Thermodynamic property calculation](docs/experimental/calc_thermodynamics.md)
+  - Evaluation of atomic-configuration-dependent electronic free energy
+  - Global structure optimization
+  - Structure optimization at finite temperatures
+
 - [How to use polymlp in other calculator tools](docs/api_other_calc.md)
   - LAMMPS
-  - Phonopy
+  - phonopy and phonon3py
   - ASE
