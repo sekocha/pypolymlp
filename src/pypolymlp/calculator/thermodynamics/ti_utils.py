@@ -74,7 +74,7 @@ def load_thermodynamic_integration_yaml(
     Returns
     -------
     temperature: Temperature in K.
-    volume: Volume in ang^3/atom.
+    volume: Volume in Angstroms^3/atom.
     free_energy: Free energy difference in eV/atom.
     entropy: Entropy difference in eV/K/atom.
     heat_capacity: Cv in J/K/mol (/Avogadro's number of atoms).
