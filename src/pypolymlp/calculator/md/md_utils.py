@@ -110,7 +110,9 @@ def save_thermodynamic_integration_yaml(
 
         print("properties_perturbation:", file=f)
         de_perturb = log_ti[-1][5]
-        print("  free_energy: ", delta_free_energy + de_perturb, file=f)
+        total_free_energy_perturb = total_free_energy + de_perturb
+        print("  free_energy:       ", delta_free_energy + de_perturb, file=f)
+        print("  total_free_energy: ", total_free_energy_perturb, file=f)
 
 
 def load_thermodynamic_integration_yaml(filename: str = "polymlp_ti.yaml"):
