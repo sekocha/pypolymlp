@@ -228,7 +228,7 @@ def _func_spline(x, *args):
     return sp1(x) - sp2(x)
 
 
-def fit_solve_spline(f1: np.ndarray, f2: np.ndarray, f0: float = 0.0, k: int = 3):
+def fit_solve(f1: np.ndarray, f2: np.ndarray, f0: float = 0.0, k: int = 3):
     """Fit and solve delta f = 0."""
     sp1 = scipy.interpolate.make_interp_spline(f1[:, 0], f1[:, 1], k=k)
     sp2 = scipy.interpolate.make_interp_spline(f2[:, 0], f2[:, 1], k=k)

@@ -171,12 +171,26 @@ class PypolymlpTransition:
         tc = find_transition(self._prop1.get_T_F(), self._prop2.get_T_F())
         return tc
 
-    def compute_phase_boundary(self):
-        """Compute phase boundary between two structures."""
+    def compute_phase_boundary(
+        self,
+        pressure_interval: float = 0.25,
+        fit_gibbs_max_order: int = 4,
+    ):
+        """Compute phase boundary between two structures.
+
+        Upper bound of pressure is automatically determined.
+
+        Parameters
+        ----------
+        pressure_interval: Pressure interval (GPa).
+        fit_gibbs_max_order: Maximum order of pressure-G polynomial fitting.
+        """
         boundary = compute_phase_boundary(
             self._prop1.gibbs,
             self._prop1.temperatures,
             self._prop2.gibbs,
             self._prop2.temperatures,
+            pressure_interval=pressure_interval,
+            fit_gibbs_max_order=fit_gibbs_max_order,
         )
         return boundary

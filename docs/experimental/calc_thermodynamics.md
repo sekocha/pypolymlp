@@ -1,5 +1,6 @@
-# Thermodynamic property calculations
+# Thermodynamic calculations
 
+## Thermodynamic property calculation
 1. MLP development
 
 2. Generate structures with various volumes.
@@ -52,4 +53,29 @@ Log file `polymlp_ti.yaml` will be generated in the directory where fc2.hdf5 is 
 
 # Include electronic contribution or thermodynamic integration contribution
 > pypolymlp-thermodynamics --sscha ./runs/*/sscha/*/sscha_results.yaml --electron electrons/*/electron.yaml --ti runs/*/sscha/*/polymlp_ti.yaml
+```
+
+## Phase boundary estimation
+### Command line interface
+Files of thermodynamic properties for two phases is required for arguments of `--boundary` option.
+```shell
+pypolymlp-thermodynamics --boundary polymlp_thermodynamics_total1.yaml polymlp_thermodynamics_total2.yaml
+```
+
+### Python API
+```python
+from pypolymlp.api.pypolymlp_thermodynamics import PypolymlpTransition
+
+"""
+Parameters
+----------
+pressure_interval: Pressure interval (GPa).
+fit_gibbs_max_order: Maximum order of pressure-G polynomial fitting.
+"""
+
+transition = PypolymlpTransition(
+    "polymlp_thermodynamics_total1.yaml", "polymlp_thermodynamics_total2.yaml"
+)
+tc = transition.find_phase_transition()
+pd = transition.compute_phase_boundary(pressure_interval=0.25, fit_gibbs_max_order=4)
 ```
