@@ -2,6 +2,7 @@
 `ASE` and `phonopy` are required.
 
 ## Using command line interface
+Molecular dynamics calculations are performed for structure `POSCAR` using polymomial MLP `polymlp.yaml`. If `--fc2_path` option is provided, a reference state is automatically searched in `--fc2_path` directory. In pypolymlp, the effective force constants at the lowest temperature in `--fc2_path` directory is used as the reference.
 
 ```shell
 pypolymlp-md --ti --poscar POSCAR --pot polymlp.yamls --supercell_size 3 3 3 --temp 500 --n_eq 5000 --n_steps 40000 --n_samples 20 --fc2_path ./sscha --max_alpha 0.98
