@@ -166,6 +166,25 @@ class PypolymlpTransition:
         self._prop1 = load_thermodynamics_yaml(yaml1)
         self._prop2 = load_thermodynamics_yaml(yaml2)
 
+        if self._verbose:
+            self._print_logs()
+
+    def _print_logs(self):
+        """Print logs."""
+        temp1 = self._prop1.temperatures
+        temp2 = self._prop2.temperatures
+        min_temp = max(min(temp1), min(temp2))
+        max_temp = min(max(temp1), max(temp2))
+        print("Common temperature range (K):", min_temp, "--", max_temp, flush=True)
+        p1 = max([np.min(g[:, 0]) for g in self._prop1.gibbs])
+        p2 = max([np.min(g[:, 0]) for g in self._prop2.gibbs])
+        min_p = np.round(max(p1, p2), 1)
+        p1 = min([np.max(g[:, 0]) for g in self._prop1.gibbs])
+        p2 = min([np.max(g[:, 0]) for g in self._prop2.gibbs])
+        max_p = np.round(min(p1, p2), 1)
+        print("Common pressure range (GPa): ", min_p, "--", max_p, flush=True)
+        return self
+
     def find_phase_transition(self):
         """Find phase transition and its temperature."""
         tc = find_transition(self._prop1.get_T_F(), self._prop2.get_T_F())
