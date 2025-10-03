@@ -16,7 +16,7 @@ def run():
     --------
     # Calculation of energies and forces for structures generated from a converged FC2
     pypolymlp-sscha-post --distribution --yaml sscha/300/sscha_results.yaml
-                         --fc2 sscha/300/fc2.hdf5 --n_samples 20 --pot polymlp.lammps
+                         --fc2 sscha/300/fc2.hdf5 --n_samples 20 --pot polymlp.yaml
 
     """
     signal.signal(signal.SIGINT, signal.SIG_DFL)
