@@ -99,13 +99,18 @@ def save_thermodynamic_integration_yaml(
         print(file=f)
 
         print("  delta_energies:", file=f)
-        for alpha, de, e, total_e, dis in log_ti:
-            print("  - alpha:       ", alpha, file=f)
-            print("    delta_e:     ", de, file=f)
-            print("    energy:      ", e, file=f)
-            print("    total_energy:", total_e, file=f)
-            print("    displacement:", np.round(dis, 5), file=f)
+        for alpha, de, e, total_e, dis, de_alpha in log_ti:
+            print("  - alpha:             ", alpha, file=f)
+            print("    delta_e:           ", de, file=f)
+            print("    energy:            ", e, file=f)
+            print("    total_energy:      ", total_e, file=f)
+            print("    displacement:      ", np.round(dis, 5), file=f)
+            print("    delta_e_from_alpha:", de_alpha, file=f)
             print(file=f)
+
+        print("properties_perturbation:", file=f)
+        de_perturb = log_ti[-1][5]
+        print("  free_energy: ", delta_free_energy + de_perturb, file=f)
 
 
 def load_thermodynamic_integration_yaml(filename: str = "polymlp_ti.yaml"):

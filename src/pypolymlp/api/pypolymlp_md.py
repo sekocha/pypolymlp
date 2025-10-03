@@ -359,13 +359,7 @@ class PypolymlpMD:
                 interval_log=None,
                 logfile=None,
             )
-            log_append = [
-                alpha,
-                self.average_delta_energy,
-                self.average_energy,
-                self.average_total_energy,
-                self.average_displacement,
-            ]
+            log_append = self._set_log(alpha)
             log_ti.append(log_append)
 
         self._log_ti = log_ti = np.array(log_ti)
@@ -385,13 +379,7 @@ class PypolymlpMD:
             interval_log=None,
             logfile=None,
         )
-        log_prepend = [
-            self._calculator.alpha,
-            self.average_delta_energy,
-            self.average_energy,
-            self.average_total_energy,
-            self.average_displacement,
-        ]
+        log_prepend = self._set_log(self._calculator.alpha)
 
         self._calculator.alpha = max_alpha
         self.run_md_nvt(
@@ -405,13 +393,7 @@ class PypolymlpMD:
             interval_log=None,
             logfile=None,
         )
-        log_append = [
-            max_alpha,
-            self.average_delta_energy,
-            self.average_energy,
-            self.average_total_energy,
-            self.average_displacement,
-        ]
+        log_append = self._set_log(max_alpha)
         self._log_ti = np.vstack([log_prepend, self._log_ti, log_append])
 
         if heat_capacity:
@@ -432,13 +414,7 @@ class PypolymlpMD:
             else:
                 self._delta_heat_capacity = self.heat_capacity - 1.5 * Kb * Avogadro
 
-            log_append = [
-                max_alpha,
-                self.average_delta_energy,
-                self.average_energy,
-                self.average_total_energy,
-                self.average_displacement,
-            ]
+            log_append = self._set_log(max_alpha)
             self._log_ti = np.vstack([self._log_ti, log_append])
 
         if self._verbose:
@@ -454,6 +430,18 @@ class PypolymlpMD:
             print("  delta_heat_capacity:", self._delta_heat_capacity, flush=True)
 
         return self
+
+    def _set_log(self, alpha: float):
+        """Set log array."""
+        log_alpha = [
+            alpha,
+            self.average_delta_energy,
+            self.average_energy,
+            self.average_total_energy,
+            self.average_displacement,
+            self.average_delta_energy_alpha,
+        ]
+        return log_alpha
 
     def _check_requisites(self):
         """Check requisites for MD simulations."""
@@ -565,8 +553,13 @@ class PypolymlpMD:
 
     @property
     def average_delta_energy(self):
-        """Return avarage energy."""
+        """Return avarage delta energy."""
         return self._integrator.average_delta_energy
+
+    @property
+    def average_delta_energy_alpha(self):
+        """Return avarage delta energy from state alpha."""
+        return self._integrator.average_delta_energy_alpha
 
     @property
     def average_displacement(self):

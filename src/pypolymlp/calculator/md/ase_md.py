@@ -44,8 +44,10 @@ class IntegratorASE:
             self._use_reference = True
         # Required if reference state is given.
         self._delta_energies = None
+        self._delta_energies_alpha = None
         self._displacements = None
         self._average_delta_energy = None
+        self._average_delta_energy_alpha = None
         self._average_displacement = None
 
         self._temperature = None
@@ -148,10 +150,11 @@ class IntegratorASE:
             raise RuntimeError("Reference state not defined in Calculator.")
 
         self._delta_energies = []
+        self._delta_energies_alpha = []
 
         def store_de_in_memory():
-            e = self.calculator.delta_energy
-            self._delta_energies.append(e)
+            self._delta_energies.append(self.calculator.delta_energy)
+            self._delta_energies_alpha.append(self.calculator.delta_energy_alpha)
 
         self._dyn.attach(store_de_in_memory, interval=interval)
         return self
@@ -279,6 +282,8 @@ class IntegratorASE:
 
         if self._delta_energies is not None:
             self._average_delta_energy = np.average(self._delta_energies[n_eq:])
+            ave_e_alpha = np.average(self._delta_energies_alpha[n_eq:])
+            self._average_delta_energy_alpha = ave_e_alpha
         if self._displacements is not None:
             self._average_displacement = np.average(self._displacements[n_eq:])
         return self
@@ -325,6 +330,11 @@ class IntegratorASE:
         return np.array(self._delta_energies)
 
     @property
+    def delta_energies_alpha(self):
+        """Return energy differences from state alpha in eV/supercell."""
+        return np.array(self._delta_energies_alpha)
+
+    @property
     def average_energy(self):
         """Return average energy in eV/supercell."""
         return self._average_energy
@@ -338,6 +348,11 @@ class IntegratorASE:
     def average_delta_energy(self):
         """Return average energy difference from reference in eV/supercell."""
         return self._average_delta_energy
+
+    @property
+    def average_delta_energy_alpha(self):
+        """Return average energy difference from state alpha in eV/supercell."""
+        return self._average_delta_energy_alpha
 
     @property
     def average_displacement(self):
@@ -406,3 +421,5 @@ class IntegratorASE:
             print("  heat_capacity:           ", self._heat_capacity, file=f)
             if self._use_reference:
                 print("  average_delta_energy:", self._average_delta_energy, file=f)
+                de_alpha = self._average_delta_energy_alpha
+                print("  average_delta_energy_alpha:", de_alpha, file=f)

@@ -116,7 +116,8 @@ class PolymlpFC2ASECalculator(Calculator):
         self._ignore_polymlp = np.isclose(alpha, 0.0)
 
         self._use_reference = True
-        self._delta_energy = None
+        self._delta_energy_0 = None
+        self._delta_energy_alpha = None
         self._average_displacement = None
 
     def _check_errors(self):
@@ -138,7 +139,12 @@ class PolymlpFC2ASECalculator(Calculator):
         properties: tuple = ("energy", "forces"),
         system_changes: tuple = ALL_CHANGES,
     ):
-        """Calculate energy, force, and stress using `pypolymlp`."""
+        """Calculate energy, force, and stress using `pypolymlp`.
+
+        energy: E(alpha).
+        delta_energy_0: E - E_ref. Its average is <E - E_ref>_alpha.
+        delta_energy_alpha: E - E(alpha). Its average is <E - E(alpha)>_alpha.
+        """
         super().calculate(atoms, properties, system_changes)
         structure = ase_atoms_to_structure(atoms)
         disps = convert_positions_to_disps(structure, self._structure_without_disp)
@@ -147,22 +153,34 @@ class PolymlpFC2ASECalculator(Calculator):
 
         if self._ignore_polymlp:
             energy, forces = self._eval_fc2_model(disps)
-            self._delta_energy = 0.0
+            self._delta_energy_0 = 0.0
+            self._delta_energy_alpha = 0.0
         else:
             energy1, forces1 = self._eval_fc2_model(disps)
             energy2, forces2, _ = self._prop.eval(structure)
-            self._delta_energy = energy2 - energy1
-
             energy = energy2 * self._alpha + energy1 * (1 - self._alpha)
             forces = forces2 * self._alpha + forces1 * (1 - self._alpha)
+            self._delta_energy_0 = energy2 - energy1
+            self._delta_energy_alpha = energy2 - energy
 
         self.results["energy"] = energy
         self.results["forces"] = forces.T
 
     @property
     def delta_energy(self):
-        """Return energy difference from reference state."""
-        return self._delta_energy
+        """Return energy difference from reference state.
+
+        delta_energy_0: E - E_ref. Its average is <E - E_ref>_alpha.
+        """
+        return self._delta_energy_0
+
+    @property
+    def delta_energy_alpha(self):
+        """Return energy difference from state at alpha.
+
+        delta_energy_alpha: E - E(alpha). Its average is <E - E(alpha)>_alpha.
+        """
+        return self._delta_energy_alpha
 
     @property
     def average_displacement(self):
