@@ -42,6 +42,11 @@ class IntegratorASE:
             self._use_reference = False
         else:
             self._use_reference = True
+        if not hasattr(calc, "_use_fc2") or not calc._use_fc2:
+            self._use_fc2 = False
+        else:
+            self._use_fc2 = True
+
         # Required if reference state is given.
         self._delta_energies = None
         self._delta_energies_alpha = None
@@ -164,8 +169,8 @@ class IntegratorASE:
         if self._dyn is None:
             raise RuntimeError("Integrator not found.")
 
-        if not self._use_reference:
-            raise RuntimeError("Reference state not defined in Calculator.")
+        if not self._use_fc2:
+            raise RuntimeError("Displacements not defined in Calculator.")
 
         self._displacements = []
 
@@ -186,6 +191,7 @@ class IntegratorASE:
         self.activate_save_energies(interval=1)
         if self._use_reference:
             self.activate_save_energy_differences(interval=1)
+        if self._use_fc2:
             self.activate_save_displacement(interval=1)
 
         if logfile is not None:
@@ -383,7 +389,7 @@ class IntegratorASE:
         print("Temperature (K):   ", self._temperature, flush=True)
         print("Time step (fs):    ", self._time_step, flush=True)
         if hasattr(self.calculator, "_alpha"):
-            print("alpha_fc2:         ", self.calculator._alpha, flush=True)
+            print("alpha_ref:         ", self.calculator._alpha, flush=True)
         print("-------------------------------------------", flush=True)
         return self
 

@@ -116,6 +116,7 @@ class PolymlpFC2ASECalculator(Calculator):
         self._ignore_polymlp = np.isclose(alpha, 0.0)
 
         self._use_reference = True
+        self._use_fc2 = True
         self._delta_energy_0 = None
         self._delta_energy_alpha = None
         self._average_displacement = None
@@ -199,6 +200,118 @@ class PolymlpFC2ASECalculator(Calculator):
 
     @alpha.setter
     def alpha(self, _alpha):
-        """Return alpha."""
+        """Set alpha."""
         self._alpha = _alpha
         self._ignore_polymlp = np.isclose(_alpha, 0.0)
+
+
+class PolymlpRefASECalculator(Calculator):
+    """ASE calculator class using difference between two pypolymlps."""
+
+    implemented_properties = ("energy", "forces", "stress")
+
+    def __init__(
+        self,
+        pot: Optional[Union[str, list]] = None,
+        params: Optional[PolymlpParams] = None,
+        coeffs: Optional[np.ndarray] = None,
+        properties: Optional[Properties] = None,
+        pot_ref: Optional[Union[str, list]] = None,
+        params_ref: Optional[PolymlpParams] = None,
+        coeffs_ref: Optional[np.ndarray] = None,
+        properties_ref: Optional[Properties] = None,
+        alpha: float = 0.0,
+        **kwargs,
+    ):
+        """Initialize PolymlpFC2ASECalculator.
+
+        Parameters
+        ----------
+        pot: polymlp file.
+        params: Parameters for polymlp.
+        coeffs: Polymlp coefficients.
+        properties: Properties object.
+        pot_ref: polymlp file for reference state.
+        params_ref: Parameters for polymlp for reference state.
+        coeffs_ref: Polymlp coefficients for reference state.
+        properties_ref: Properties object for reference state.
+        alpha: Mixing parameter. E = alpha * E_polymlp + (1 - alpha) * E_polymlp_ref
+        """
+        super().__init__(**kwargs)
+        self._prop = set_instance_properties(
+            pot=pot,
+            params=params,
+            coeffs=coeffs,
+            properties=properties,
+        )
+        self._prop_ref = set_instance_properties(
+            pot=pot_ref,
+            params=params_ref,
+            coeffs=coeffs_ref,
+            properties=properties_ref,
+        )
+        self._alpha = alpha
+        self._check_errors()
+
+        self._use_reference = True
+        self._use_fc2 = False
+        self._delta_energy_0 = None
+        self._delta_energy_alpha = None
+
+    def _check_errors(self):
+        """Check errors in input parameters."""
+        assert self._alpha >= 0.0
+        assert self._alpha <= 1.0
+
+    def calculate(
+        self,
+        atoms: Optional[Atoms] = None,
+        properties: tuple = ("energy", "forces"),
+        system_changes: tuple = ALL_CHANGES,
+    ):
+        """Calculate energy, force, and stress using `pypolymlp`.
+
+        energy: E(alpha).
+        delta_energy_0: E - E_ref. Its average is <E - E_ref>_alpha.
+        delta_energy_alpha: E - E(alpha). Its average is <E - E(alpha)>_alpha.
+        """
+        super().calculate(atoms, properties, system_changes)
+        structure = ase_atoms_to_structure(atoms)
+
+        energy1, forces1, stress1 = self._prop_ref.eval(structure)
+        energy2, forces2, stress2 = self._prop.eval(structure)
+        energy = energy2 * self._alpha + energy1 * (1 - self._alpha)
+        forces = forces2 * self._alpha + forces1 * (1 - self._alpha)
+        stress = stress2 * self._alpha + stress1 * (1 - self._alpha)
+        self._delta_energy_0 = energy2 - energy1
+        self._delta_energy_alpha = energy2 - energy
+
+        self.results["energy"] = energy
+        self.results["forces"] = forces.T
+        self.results["stress"] = stress
+
+    @property
+    def delta_energy(self):
+        """Return energy difference from reference state.
+
+        delta_energy_0: E - E_ref. Its average is <E - E_ref>_alpha.
+        """
+        return self._delta_energy_0
+
+    @property
+    def delta_energy_alpha(self):
+        """Return energy difference from state at alpha.
+
+        delta_energy_alpha: E - E(alpha). Its average is <E - E(alpha)>_alpha.
+        """
+        return self._delta_energy_alpha
+
+    @property
+    def alpha(self):
+        """Return alpha."""
+        return self._alpha
+
+    @alpha.setter
+    def alpha(self, _alpha):
+        """Set alpha."""
+        self._alpha = _alpha
