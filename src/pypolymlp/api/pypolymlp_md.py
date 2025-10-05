@@ -18,6 +18,7 @@ from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.utils.ase_calculator import (
     PolymlpASECalculator,
     PolymlpFC2ASECalculator,
+    PolymlpGeneralRefASECalculator,
     PolymlpRefASECalculator,
 )
 from pypolymlp.calculator.utils.ase_utils import (
@@ -187,6 +188,73 @@ class PypolymlpMD:
             params_ref=params_ref,
             coeffs_ref=coeffs_ref,
             properties_ref=properties_ref,
+            alpha=alpha,
+        )
+        return self._calculator
+
+    def set_ase_calculator_with_general_reference(
+        self,
+        pot_final: Union[str, list[str]] = None,
+        params_final: Union[PolymlpParams, list[PolymlpParams]] = None,
+        coeffs_final: Union[np.ndarray, list[np.ndarray]] = None,
+        properties_final: Optional[Properties] = None,
+        pot_ref: Union[str, list[str]] = None,
+        params_ref: Union[PolymlpParams, list[PolymlpParams]] = None,
+        coeffs_ref: Union[np.ndarray, list[np.ndarray]] = None,
+        properties_ref: Optional[Properties] = None,
+        fc2hdf5: str = "fc2.hdf5",
+        alpha_final: float = 0.0,
+        alpha_ref: float = 0.0,
+        alpha: float = 0.0,
+    ):
+        """Set ASE calculator using difference between two pypolymlps.
+
+        Parameters
+        ----------
+        pot_final: polymlp file for final state.
+        params_final: Parameters for polymlp for final state.
+        coeffs_final: Polymlp coefficients for final state.
+        properties_final: Properties object for final state.
+
+        pot_ref: polymlp file for reference state.
+        params_ref: Parameters for polymlp for reference state.
+        coeffs_ref: Polymlp coefficients for reference state.
+        properties_ref: Properties object for reference state.
+
+        fc2hdf5: FC2 HDF file.
+        alpha_ref: Mixing parameter for defining reference state.
+            E = alpha * E_polymlp_ref + (1 - alpha) * E_fc2
+        alpha_final: Mixing parameter for defining final state.
+            E = alpha * E_polymlp_final + (1 - alpha) * E_fc2
+        alpha: Mixing parameter.
+            E = alpha * E_final + (1 - alpha) * E_ref
+        """
+        if self._supercell is None:
+            raise RuntimeError("Supercell not found.")
+
+        self._use_reference = True
+        self._pot = pot_final
+        self._params = params_final
+        self._coeffs = coeffs_final
+        self._properties = properties_final
+
+        self._check_fc2(fc2hdf5)
+        self._fc2file = fc2hdf5
+        fc2 = load_fc2_hdf5(fc2hdf5, return_matrix=True)
+
+        self._calculator = PolymlpGeneralRefASECalculator(
+            fc2,
+            self._supercell,
+            pot_final=pot_final,
+            params_final=params_final,
+            coeffs_final=coeffs_final,
+            properties_final=properties_final,
+            pot_ref=pot_ref,
+            params_ref=params_ref,
+            coeffs_ref=coeffs_ref,
+            properties_ref=properties_ref,
+            alpha_final=alpha_final,
+            alpha_ref=alpha_ref,
             alpha=alpha,
         )
         return self._calculator
@@ -516,7 +584,6 @@ class PypolymlpMD:
         if self._verbose:
             print("Run free energy perturbation.", flush=True)
 
-        self._calculator.alpha = 0.0
         self.run_md_nvt(
             thermostat=thermostat,
             temperature=temperature,
@@ -766,8 +833,19 @@ def run_thermodynamic_integration(
     md.save_thermodynamic_integration_yaml(filename=filename)
 
     if pot_ref is not None:
-        total_free_energy = md.total_free_energy_perturb
-        md.set_ase_calculator_with_reference(pot=pot, pot_ref=pot_ref)
+        # Path: polymlp_fast (max_alpha)
+        # -> polymlp_slow (max_alpha)
+        # -> polymlp_slow (1.0)
+        total_free_energy = md.total_free_energy
+        # TODO: Check which MLP is used. pot_ref must be used.
+        md.set_ase_calculator_with_general_reference(
+            pot_final=pot,
+            pot_ref=pot_ref,
+            fc2hdf5=fc2hdf5,
+            alpha_final=max_alpha,
+            alpha_ref=max_alpha,
+            alpha=0.0,
+        )
         md.run_free_energy_perturbation(
             thermostat=thermostat,
             temperature=temperature,
@@ -779,6 +857,22 @@ def run_thermodynamic_integration(
         )
         delta_free_energy_fep = md.delta_free_energy
         total_free_energy += delta_free_energy_fep
+        print(delta_free_energy_fep, total_free_energy)
+
+        md.set_ase_calculator_with_fc2(pot=pot, fc2hdf5=fc2hdf5, alpha=max_alpha)
+        md.run_free_energy_perturbation(
+            thermostat=thermostat,
+            temperature=temperature,
+            time_step=time_step,
+            ttime=ttime,
+            friction=friction,
+            n_eq=n_eq,
+            n_steps=n_steps,
+        )
+        delta_free_energy_fep = md.delta_free_energy
+        total_free_energy += delta_free_energy_fep
+        print(delta_free_energy_fep, total_free_energy)
+
         with open(filename, "a") as f:
             print(file=f)
             print("free_energy_perturbation:", file=f)
@@ -788,5 +882,32 @@ def run_thermodynamic_integration(
             print("  alpha:             ", 1.0, file=f)
             print("  free_energy:       ", delta_free_energy_fep, file=f)
             print("  total_free_energy: ", total_free_energy, file=f)
+
+    #    if pot_ref is not None:
+    # Path: polymlp_fast (max_alpha)
+    # -> polymlp_fast (1.0)
+    # -> polymlp_slow (1.0)
+    #        total_free_energy = md.total_free_energy_perturb
+    #        md.set_ase_calculator_with_reference(pot=pot, pot_ref=pot_ref, alpha=0.0)
+    #        md.run_free_energy_perturbation(
+    #            thermostat=thermostat,
+    #            temperature=temperature,
+    #            time_step=time_step,
+    #            ttime=ttime,
+    #            friction=friction,
+    #            n_eq=n_eq,
+    #            n_steps=n_steps,
+    #        )
+    #        delta_free_energy_fep = md.delta_free_energy
+    #        total_free_energy += delta_free_energy_fep
+    #        with open(filename, "a") as f:
+    #            print(file=f)
+    #            print("free_energy_perturbation:", file=f)
+    #            print("  polymlp:", file=f)
+    #            for p in pot:
+    #                print("  -", os.path.abspath(p), file=f)
+    #            print("  alpha:             ", 1.0, file=f)
+    #            print("  free_energy:       ", delta_free_energy_fep, file=f)
+    #            print("  total_free_energy: ", total_free_energy, file=f)
 
     return md
