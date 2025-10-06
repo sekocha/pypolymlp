@@ -595,7 +595,6 @@ class PypolymlpMD:
             interval_log=None,
             logfile=None,
         )
-        # log_append = self._set_log(self._calculator.alpha)
         self._delta_free_energy = self.average_delta_energy_alpha
 
         if self._verbose:
