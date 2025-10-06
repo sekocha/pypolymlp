@@ -121,7 +121,6 @@ class PolymlpFC2ASECalculator(Calculator):
         self._check_errors()
 
         self._static_energy, _, _ = self._prop.eval(structure_without_disp)
-        self._ignore_polymlp = np.isclose(alpha, 0.0)
 
         self._use_reference = True
         self._use_fc2 = True
@@ -131,8 +130,9 @@ class PolymlpFC2ASECalculator(Calculator):
 
     def _check_errors(self):
         """Check errors in input parameters."""
-        assert self._fc2.shape[0] == self._structure_without_disp.positions.shape[1] * 3
-        assert self._fc2.shape[1] == self._structure_without_disp.positions.shape[1] * 3
+        n_atom = self._structure_without_disp.positions.shape[1]
+        assert self._fc2.shape[0] == n_atom * 3
+        assert self._fc2.shape[1] == n_atom * 3
         assert self._alpha >= 0.0
         assert self._alpha <= 1.0
 
@@ -158,18 +158,12 @@ class PolymlpFC2ASECalculator(Calculator):
         disps, structure = convert_atoms_to_str(atoms, self._structure_without_disp)
         self._average_displacement = np.sqrt(np.average(np.square(disps)))
 
-        if self._ignore_polymlp:
-            energy, forces = self._eval_fc2_model(disps)
-            self._delta_energy_0 = 0.0
-            self._delta_energy_alpha = 0.0
-        else:
-            energy0, forces0 = self._eval_fc2_model(disps)
-            energy1, forces1, _ = self._prop.eval(structure)
-            energy = energy1 * self._alpha + energy0 * (1 - self._alpha)
-            forces = forces1 * self._alpha + forces0 * (1 - self._alpha)
-            self._delta_energy_0 = energy1 - energy0
-            self._delta_energy_alpha = energy1 - energy
-            print(self._delta_energy_alpha)
+        energy0, forces0 = self._eval_fc2_model(disps)
+        energy1, forces1, _ = self._prop.eval(structure)
+        energy = energy1 * self._alpha + energy0 * (1 - self._alpha)
+        forces = forces1 * self._alpha + forces0 * (1 - self._alpha)
+        self._delta_energy_0 = energy1 - energy0
+        self._delta_energy_alpha = energy1 - energy
 
         self.results["energy"] = energy
         self.results["forces"] = forces.T
@@ -209,7 +203,6 @@ class PolymlpFC2ASECalculator(Calculator):
     def alpha(self, _alpha):
         """Set alpha."""
         self._alpha = _alpha
-        self._ignore_polymlp = np.isclose(_alpha, 0.0)
 
 
 class PolymlpRefASECalculator(Calculator):
@@ -402,8 +395,9 @@ class PolymlpGeneralRefASECalculator(Calculator):
 
     def _check_errors(self):
         """Check errors in input parameters."""
-        assert self._fc2.shape[0] == self._structure_without_disp.positions.shape[1] * 3
-        assert self._fc2.shape[1] == self._structure_without_disp.positions.shape[1] * 3
+        n_atom = self._structure_without_disp.positions.shape[1] 
+        assert self._fc2.shape[0] == n_atom * 3
+        assert self._fc2.shape[1] == n_atom * 3
         assert self._alpha_final >= 0.0
         assert self._alpha_final <= 1.0
         assert self._alpha_ref >= 0.0

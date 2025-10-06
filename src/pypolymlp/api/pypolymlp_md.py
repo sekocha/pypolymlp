@@ -596,7 +596,7 @@ class PypolymlpMD:
             logfile=None,
         )
         # log_append = self._set_log(self._calculator.alpha)
-        self._delta_free_energy = self.average_delta_energy
+        self._delta_free_energy = self.average_delta_energy_alpha
 
         if self._verbose:
             print("Results (Free energy perturbation):", flush=True)
@@ -833,11 +833,9 @@ def run_thermodynamic_integration(
     md.save_thermodynamic_integration_yaml(filename=filename)
 
     if pot_ref is not None:
-        # Path: polymlp_fast (max_alpha)
-        # -> polymlp_slow (max_alpha)
-        # -> polymlp_slow (1.0)
+        # Path: mlp_fast (max_alpha) -> mlp_slow (max_alpha) -> mlp_slow (1.0)
         total_free_energy = md.total_free_energy
-        # TODO: Check which MLP is used. pot_ref must be used.
+        delta_free_energy_fep = 0.0
         md.set_ase_calculator_with_general_reference(
             pot_final=pot,
             pot_ref=pot_ref,
@@ -855,9 +853,7 @@ def run_thermodynamic_integration(
             n_eq=n_eq,
             n_steps=n_steps,
         )
-        delta_free_energy_fep = md.delta_free_energy
-        total_free_energy += delta_free_energy_fep
-        print(delta_free_energy_fep, total_free_energy)
+        delta_free_energy_fep += md.delta_free_energy
 
         md.set_ase_calculator_with_fc2(pot=pot, fc2hdf5=fc2hdf5, alpha=max_alpha)
         md.run_free_energy_perturbation(
@@ -869,45 +865,17 @@ def run_thermodynamic_integration(
             n_eq=n_eq,
             n_steps=n_steps,
         )
-        delta_free_energy_fep = md.delta_free_energy
+        delta_free_energy_fep += md.delta_free_energy
         total_free_energy += delta_free_energy_fep
-        print(delta_free_energy_fep, total_free_energy)
 
         with open(filename, "a") as f:
             print(file=f)
-            print("free_energy_perturbation:", file=f)
+            print("free_energy_perturbation_target:", file=f)
             print("  polymlp:", file=f)
             for p in pot:
                 print("  -", os.path.abspath(p), file=f)
             print("  alpha:             ", 1.0, file=f)
             print("  free_energy:       ", delta_free_energy_fep, file=f)
             print("  total_free_energy: ", total_free_energy, file=f)
-
-    #    if pot_ref is not None:
-    # Path: polymlp_fast (max_alpha)
-    # -> polymlp_fast (1.0)
-    # -> polymlp_slow (1.0)
-    #        total_free_energy = md.total_free_energy_perturb
-    #        md.set_ase_calculator_with_reference(pot=pot, pot_ref=pot_ref, alpha=0.0)
-    #        md.run_free_energy_perturbation(
-    #            thermostat=thermostat,
-    #            temperature=temperature,
-    #            time_step=time_step,
-    #            ttime=ttime,
-    #            friction=friction,
-    #            n_eq=n_eq,
-    #            n_steps=n_steps,
-    #        )
-    #        delta_free_energy_fep = md.delta_free_energy
-    #        total_free_energy += delta_free_energy_fep
-    #        with open(filename, "a") as f:
-    #            print(file=f)
-    #            print("free_energy_perturbation:", file=f)
-    #            print("  polymlp:", file=f)
-    #            for p in pot:
-    #                print("  -", os.path.abspath(p), file=f)
-    #            print("  alpha:             ", 1.0, file=f)
-    #            print("  free_energy:       ", delta_free_energy_fep, file=f)
-    #            print("  total_free_energy: ", total_free_energy, file=f)
 
     return md

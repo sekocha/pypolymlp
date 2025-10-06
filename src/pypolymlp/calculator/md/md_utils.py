@@ -113,7 +113,7 @@ def save_thermodynamic_integration_yaml(
             print("    delta_e_from_alpha:", de_alpha, file=f)
             print(file=f)
 
-        print("properties_perturbation:", file=f)
+        print("free_energy_perturbation:", file=f)
         de_perturb = log_ti[-1][5]
         total_free_energy_perturb = total_free_energy + de_perturb
         print("  alpha:             ", 1.0, file=f)
