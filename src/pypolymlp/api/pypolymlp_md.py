@@ -784,7 +784,7 @@ def run_thermodynamic_integration(
     n_steps: int = 20000,
     filename: str = "polymlp_ti.yaml",
     heat_capacity: bool = False,
-    verbose: bool = True,
+    verbose: bool = False,
 ):
     """Run thermodynamic integration.
 
@@ -853,6 +853,10 @@ def run_thermodynamic_integration(
             n_steps=n_steps,
         )
         delta_free_energy_fep += md.delta_free_energy
+        print(verbose)
+        if verbose:
+            print("Path: pot_ref (max_alpha) -- pot_final (max_alpha)", flush=True)
+            print(" Free_energy:", md.delta_free_energy, flush=True)
 
         md.set_ase_calculator_with_fc2(pot=pot, fc2hdf5=fc2hdf5, alpha=max_alpha)
         md.run_free_energy_perturbation(
@@ -866,6 +870,10 @@ def run_thermodynamic_integration(
         )
         delta_free_energy_fep += md.delta_free_energy
         total_free_energy += delta_free_energy_fep
+        if verbose:
+            print("Path: pot_ref (max_alpha) -- pot_final (max_alpha)", flush=True)
+            print(" Free_energy:", md.delta_free_energy, flush=True)
+            print("Total delta free energy (FEP):", delta_free_energy_fep, flush=True)
 
         with open(filename, "a") as f:
             print(file=f)
