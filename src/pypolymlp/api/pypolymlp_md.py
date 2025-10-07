@@ -833,6 +833,8 @@ def run_thermodynamic_integration(
 
     if pot_ref is not None:
         # Path: mlp_fast (max_alpha) -> mlp_slow (max_alpha) -> mlp_slow (1.0)
+        if verbose:
+            print("Path: pot_ref (max_alpha) -- pot_final (max_alpha)", flush=True)
         total_free_energy = md.total_free_energy
         delta_free_energy_fep = 0.0
         md.set_ase_calculator_with_general_reference(
@@ -853,11 +855,9 @@ def run_thermodynamic_integration(
             n_steps=n_steps,
         )
         delta_free_energy_fep += md.delta_free_energy
-        print(verbose)
+
         if verbose:
             print("Path: pot_ref (max_alpha) -- pot_final (max_alpha)", flush=True)
-            print(" Free_energy:", md.delta_free_energy, flush=True)
-
         md.set_ase_calculator_with_fc2(pot=pot, fc2hdf5=fc2hdf5, alpha=max_alpha)
         md.run_free_energy_perturbation(
             thermostat=thermostat,
@@ -871,8 +871,6 @@ def run_thermodynamic_integration(
         delta_free_energy_fep += md.delta_free_energy
         total_free_energy += delta_free_energy_fep
         if verbose:
-            print("Path: pot_ref (max_alpha) -- pot_final (max_alpha)", flush=True)
-            print(" Free_energy:", md.delta_free_energy, flush=True)
             print("Total delta free energy (FEP):", delta_free_energy_fep, flush=True)
 
         with open(filename, "a") as f:
