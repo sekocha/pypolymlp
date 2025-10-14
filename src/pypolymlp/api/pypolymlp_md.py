@@ -857,7 +857,7 @@ def run_thermodynamic_integration(
         delta_free_energy_fep += md.delta_free_energy
 
         if verbose:
-            print("Path: pot_ref (max_alpha) -- pot_final (max_alpha)", flush=True)
+            print("Path: pot_final (max_alpha) -- pot_final (1.0)", flush=True)
         md.set_ase_calculator_with_fc2(pot=pot, fc2hdf5=fc2hdf5, alpha=max_alpha)
         md.run_free_energy_perturbation(
             thermostat=thermostat,

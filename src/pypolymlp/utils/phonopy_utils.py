@@ -102,12 +102,14 @@ def get_nac_params(
         borns = vasprun.born
         unitcell = vasprun.cell
 
+    assert unitcell.scaled_positions.shape[0] == borns.shape[0]
+
     borns_, epsilon_ = symmetrize_borns_and_epsilon(
         borns,
         epsilon,
         unitcell,
         supercell_matrix=supercell_matrix,
-        symprec=1e-5,
+        symprec=1e-4,
     )
     nac_params = {
         "born": borns_,
