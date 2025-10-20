@@ -1,37 +1,25 @@
 # SSCHA calculations
 `symfc` and `phonopy` are required for performing SSCHA calculations.
+Pypolymlp adopts an iterative procedure for SSCHA calculations, in which property calculations using polynomial MLP and force constant esimation using linear regression are repeated until the force constants converge.
 
 ## Using command line interface
 ### Single SSCHA calculation
+
+SSCHA calculations for a structure specified by `POSCAR` using polynomial MLP `polymlp.yaml` can be performed as follows. If `--n_samples` option is not provided, the number of sample structures is automatically determined.
+
 ```shell
 > pypolymlp-sscha --poscar POSCAR --pot polymlp.yaml --supercell 3 3 2 --temp_min 100 --temp_max 700 --temp_step 100 --mixing 0.5 --ascending_temp --n_samples 3000 6000
 
-# Number of sample structures are automatically determined.
-> pypolymlp-sscha --poscar POSCAR --pot polymlp.yaml --supercell 3 3 2 --temp_min 100 --temp_max 700 --temp_step 100 --mixing 0.5 --ascending_temp
+# Number of sample structures is automatically determined.
+> pypolymlp-sscha --poscar POSCAR --pot polymlp.yaml --supercell 3 3 2 --temp_min 100 --temp_max 700 --temp_step 100 --mixing 0.5
 ```
+If SSCHA calculations are successfully finished, `sscha_results.yaml` and effective force constants `fc2.hdf5` are generated for each temperature.
 
 ### Generation of random structures from SSCHA force constants
 Random structures are generated based on the density matrix determined by the given effective force constants. The energy and force values for these structures are then calculated using the provided MLP.
 ```shell
 pypolymlp-sscha-post --distribution --yaml sscha_results.yaml --fc2 fc2.hdf5 --n_samples 20 --pot polymlp.yaml
 ```
-
-### Thermodynamic properties from SSCHA results at various volumes and temperatures
-
-Thermodynamic properties can be calculated from SSCHA results on a volume-temperature grid.
-```shell
-> pypolymlp-sscha-post --properties --yaml ./*/sscha/*/sscha_results.yaml
-```
-<!--
-Phase boundary determination from SSCHA thermodynamic properties for two phases
-```shell
-# Transition temperature
-> pypolymlp-sscha-post --transition hcp/sscha_properties.yaml bcc/sscha_properties.yaml
-
-# Pressure-temperature phase boundary
-> pypolymlp-sscha-post --boundary hcp/sscha_properties.yaml bcc/sscha_properties.yaml
-```
--->
 
 ## Using Python API
 ### Single SSCHA calculation

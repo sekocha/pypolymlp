@@ -57,7 +57,11 @@ def run():
     print_credit()
 
     if args.boundary:
-        transition = PypolymlpTransition(args.boundary[0], args.boundary[1])
+        transition = PypolymlpTransition(
+            args.boundary[0],
+            args.boundary[1],
+            verbose=True,
+        )
         tc = transition.find_phase_transition()
         pd = transition.compute_phase_boundary()
         np.set_printoptions(suppress=True)

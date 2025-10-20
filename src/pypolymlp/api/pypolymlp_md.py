@@ -18,6 +18,8 @@ from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.utils.ase_calculator import (
     PolymlpASECalculator,
     PolymlpFC2ASECalculator,
+    PolymlpGeneralRefASECalculator,
+    PolymlpRefASECalculator,
 )
 from pypolymlp.calculator.utils.ase_utils import (
     ase_atoms_to_structure,
@@ -55,6 +57,9 @@ class PypolymlpMD:
         self._delta_free_energy = None
         self._delta_heat_capacity = None
         self._fc2file = None
+
+        self._total_free_energy = None
+        self._total_free_energy_perturb = None
 
         if self._verbose:
             np.set_printoptions(legacy="1.21")
@@ -141,6 +146,118 @@ class PypolymlpMD:
             yaml_data = yaml.safe_load(open(sscha_yaml))
             if yaml_data["status"]["imaginary"]:
                 raise RuntimeError("Given FC2 shows imaginary frequencies.")
+
+    def set_ase_calculator_with_reference(
+        self,
+        pot: Union[str, list[str]] = None,
+        params: Union[PolymlpParams, list[PolymlpParams]] = None,
+        coeffs: Union[np.ndarray, list[np.ndarray]] = None,
+        properties: Optional[Properties] = None,
+        pot_ref: Union[str, list[str]] = None,
+        params_ref: Union[PolymlpParams, list[PolymlpParams]] = None,
+        coeffs_ref: Union[np.ndarray, list[np.ndarray]] = None,
+        properties_ref: Optional[Properties] = None,
+        alpha: float = 0.0,
+    ):
+        """Set ASE calculator using difference between two pypolymlps.
+
+        Parameters
+        ----------
+        pot: polymlp file.
+        params: Parameters for polymlp.
+        coeffs: Polymlp coefficients.
+        properties: Properties object.
+        pot_ref: polymlp file for reference state.
+        params_ref: Parameters for polymlp for reference state.
+        coeffs_ref: Polymlp coefficients for reference state.
+        properties_ref: Properties object for reference state.
+        alpha: Mixing parameter. E = alpha * E_polymlp + (1 - alpha) * E_polymlp_ref
+        """
+        self._use_reference = True
+        self._pot = pot
+        self._params = params
+        self._coeffs = coeffs
+        self._properties = properties
+
+        self._calculator = PolymlpRefASECalculator(
+            pot=pot,
+            params=params,
+            coeffs=coeffs,
+            properties=properties,
+            pot_ref=pot_ref,
+            params_ref=params_ref,
+            coeffs_ref=coeffs_ref,
+            properties_ref=properties_ref,
+            alpha=alpha,
+        )
+        return self._calculator
+
+    def set_ase_calculator_with_general_reference(
+        self,
+        pot_final: Union[str, list[str]] = None,
+        params_final: Union[PolymlpParams, list[PolymlpParams]] = None,
+        coeffs_final: Union[np.ndarray, list[np.ndarray]] = None,
+        properties_final: Optional[Properties] = None,
+        pot_ref: Union[str, list[str]] = None,
+        params_ref: Union[PolymlpParams, list[PolymlpParams]] = None,
+        coeffs_ref: Union[np.ndarray, list[np.ndarray]] = None,
+        properties_ref: Optional[Properties] = None,
+        fc2hdf5: str = "fc2.hdf5",
+        alpha_final: float = 0.0,
+        alpha_ref: float = 0.0,
+        alpha: float = 0.0,
+    ):
+        """Set ASE calculator using difference between two pypolymlps.
+
+        Parameters
+        ----------
+        pot_final: polymlp file for final state.
+        params_final: Parameters for polymlp for final state.
+        coeffs_final: Polymlp coefficients for final state.
+        properties_final: Properties object for final state.
+
+        pot_ref: polymlp file for reference state.
+        params_ref: Parameters for polymlp for reference state.
+        coeffs_ref: Polymlp coefficients for reference state.
+        properties_ref: Properties object for reference state.
+
+        fc2hdf5: FC2 HDF file.
+        alpha_ref: Mixing parameter for defining reference state.
+            E = alpha * E_polymlp_ref + (1 - alpha) * E_fc2
+        alpha_final: Mixing parameter for defining final state.
+            E = alpha * E_polymlp_final + (1 - alpha) * E_fc2
+        alpha: Mixing parameter.
+            E = alpha * E_final + (1 - alpha) * E_ref
+        """
+        if self._supercell is None:
+            raise RuntimeError("Supercell not found.")
+
+        self._use_reference = True
+        self._pot = pot_final
+        self._params = params_final
+        self._coeffs = coeffs_final
+        self._properties = properties_final
+
+        self._check_fc2(fc2hdf5)
+        self._fc2file = fc2hdf5
+        fc2 = load_fc2_hdf5(fc2hdf5, return_matrix=True)
+
+        self._calculator = PolymlpGeneralRefASECalculator(
+            fc2,
+            self._supercell,
+            pot_final=pot_final,
+            params_final=params_final,
+            coeffs_final=coeffs_final,
+            properties_final=properties_final,
+            pot_ref=pot_ref,
+            params_ref=params_ref,
+            coeffs_ref=coeffs_ref,
+            properties_ref=properties_ref,
+            alpha_final=alpha_final,
+            alpha_ref=alpha_ref,
+            alpha=alpha,
+        )
+        return self._calculator
 
     def load_poscar(self, poscar: str):
         """Parse POSCAR file and supercell matrix."""
@@ -359,13 +476,7 @@ class PypolymlpMD:
                 interval_log=None,
                 logfile=None,
             )
-            log_append = [
-                alpha,
-                self.average_delta_energy,
-                self.average_energy,
-                self.average_total_energy,
-                self.average_displacement,
-            ]
+            log_append = self._set_log(alpha)
             log_ti.append(log_append)
 
         self._log_ti = log_ti = np.array(log_ti)
@@ -385,13 +496,7 @@ class PypolymlpMD:
             interval_log=None,
             logfile=None,
         )
-        log_prepend = [
-            self._calculator.alpha,
-            self.average_delta_energy,
-            self.average_energy,
-            self.average_total_energy,
-            self.average_displacement,
-        ]
+        log_prepend = self._set_log(self._calculator.alpha)
 
         self._calculator.alpha = max_alpha
         self.run_md_nvt(
@@ -405,13 +510,7 @@ class PypolymlpMD:
             interval_log=None,
             logfile=None,
         )
-        log_append = [
-            max_alpha,
-            self.average_delta_energy,
-            self.average_energy,
-            self.average_total_energy,
-            self.average_displacement,
-        ]
+        log_append = self._set_log(max_alpha)
         self._log_ti = np.vstack([log_prepend, self._log_ti, log_append])
 
         if heat_capacity:
@@ -432,13 +531,7 @@ class PypolymlpMD:
             else:
                 self._delta_heat_capacity = self.heat_capacity - 1.5 * Kb * Avogadro
 
-            log_append = [
-                max_alpha,
-                self.average_delta_energy,
-                self.average_energy,
-                self.average_total_energy,
-                self.average_displacement,
-            ]
+            log_append = self._set_log(max_alpha)
             self._log_ti = np.vstack([self._log_ti, log_append])
 
         if self._verbose:
@@ -454,6 +547,74 @@ class PypolymlpMD:
             print("  delta_heat_capacity:", self._delta_heat_capacity, flush=True)
 
         return self
+
+    def run_free_energy_perturbation(
+        self,
+        thermostat: Literal["Nose-Hoover", "Langevin"] = "Langevin",
+        temperature: int = 300,
+        time_step: float = 1.0,
+        ttime: float = 20.0,
+        friction: float = 0.01,
+        n_eq: int = 5000,
+        n_steps: int = 20000,
+    ):
+        """Run thermodynamic integration.
+
+        Parameters
+        ----------
+        thermostat: Thermostat.
+        temperature : int
+            Target temperature (K).
+        time_step : float
+            Time step for MD (fs).
+        ttime : float
+            Timescale of the Nose-Hoover thermostat (fs).
+        friction : float
+            Friction coefficient for Langevin thermostat (1/fs).
+        n_eq : int
+            Number of equilibration steps.
+        n_steps : int
+            Number of production steps.
+        heat_capacity: bool
+            Calculate heat capacity.
+        """
+        if not self._use_reference:
+            raise RuntimeError("Reference state not found in Calculator.")
+
+        if self._verbose:
+            print("Run free energy perturbation.", flush=True)
+
+        self.run_md_nvt(
+            thermostat=thermostat,
+            temperature=temperature,
+            time_step=time_step,
+            ttime=ttime,
+            friction=friction,
+            n_eq=n_eq,
+            n_steps=n_steps,
+            interval_log=None,
+            logfile=None,
+        )
+        self._delta_free_energy = self.average_delta_energy_alpha
+
+        if self._verbose:
+            print("Results (Free energy perturbation):", flush=True)
+            np.set_printoptions(suppress=True)
+            print("  delta_free_energy:", self._delta_free_energy, flush=True)
+
+        return self
+
+    def _set_log(self, alpha: float):
+        """Set log array."""
+        log_alpha = [
+            alpha,
+            self.average_delta_energy,
+            self.average_energy,
+            self.average_total_energy,
+            self.average_displacement,
+            self.average_delta_energy_alpha,
+        ]
+        return log_alpha
 
     def _check_requisites(self):
         """Check requisites for MD simulations."""
@@ -480,9 +641,10 @@ class PypolymlpMD:
         reference = {
             "unitcell": self._unitcell,
             "supercell_matrix": self._supercell_matrix,
+            "polymlp": self._pot,
             "fc2_file": self._fc2file,
         }
-        save_thermodynamic_integration_yaml(
+        total = save_thermodynamic_integration_yaml(
             self._integrator,
             self._delta_free_energy,
             self._log_ti,
@@ -490,6 +652,7 @@ class PypolymlpMD:
             delta_heat_capacity=self._delta_heat_capacity,
             filename=filename,
         )
+        self._total_free_energy, self._total_free_energy_perturb = total
         return self
 
     def find_reference(self, path_fc2: str, target_temperature: float):
@@ -565,8 +728,23 @@ class PypolymlpMD:
 
     @property
     def average_delta_energy(self):
-        """Return avarage energy."""
+        """Return avarage delta energy."""
         return self._integrator.average_delta_energy
+
+    @property
+    def average_delta_energy_alpha(self):
+        """Return avarage delta energy from state alpha."""
+        return self._integrator.average_delta_energy_alpha
+
+    @property
+    def total_free_energy(self):
+        """Return total free energy (static + reference + TI)."""
+        return self._total_free_energy
+
+    @property
+    def total_free_energy_perturb(self):
+        """Return total free energy (static + reference + TI + perturbation)."""
+        return self._total_free_energy_perturb
 
     @property
     def average_displacement(self):
@@ -591,6 +769,7 @@ class PypolymlpMD:
 
 def run_thermodynamic_integration(
     pot: str = "polymlp.yaml",
+    pot_ref: Optional[str] = None,
     poscar: str = "POSCAR",
     supercell_size: tuple = (1, 1, 1),
     thermostat: Literal["Nose-Hoover", "Langevin"] = "Langevin",
@@ -605,13 +784,14 @@ def run_thermodynamic_integration(
     n_steps: int = 20000,
     filename: str = "polymlp_ti.yaml",
     heat_capacity: bool = False,
-    verbose: bool = True,
+    verbose: bool = False,
 ):
     """Run thermodynamic integration.
 
     Parameters
     ----------
     pot: polymlp file.
+    pot_ref: polymlp file for intermediate reference state.
     poscar: Structure in POSCAR format.
     supercell_size: Diagonal supercell size.
     thermostat: Thermostat.
@@ -631,11 +811,12 @@ def run_thermodynamic_integration(
     n_steps : int
         Number of production steps.
     """
+    pot1 = pot if pot_ref is None else pot_ref
 
     md = PypolymlpMD(verbose=verbose)
     md.load_poscar(poscar)
     md.set_supercell(supercell_size)
-    md.set_ase_calculator_with_fc2(pot=pot, fc2hdf5=fc2hdf5, alpha=0.0)
+    md.set_ase_calculator_with_fc2(pot=pot1, fc2hdf5=fc2hdf5, alpha=0.0)
     md.run_thermodynamic_integration(
         thermostat=thermostat,
         n_alphas=n_alphas,
@@ -649,4 +830,57 @@ def run_thermodynamic_integration(
         heat_capacity=heat_capacity,
     )
     md.save_thermodynamic_integration_yaml(filename=filename)
+
+    if pot_ref is not None:
+        # Path: mlp_fast (max_alpha) -> mlp_slow (max_alpha) -> mlp_slow (1.0)
+        if verbose:
+            print("Path: pot_ref (max_alpha) -- pot_final (max_alpha)", flush=True)
+        total_free_energy = md.total_free_energy
+        delta_free_energy_fep = 0.0
+        md.set_ase_calculator_with_general_reference(
+            pot_final=pot,
+            pot_ref=pot_ref,
+            fc2hdf5=fc2hdf5,
+            alpha_final=max_alpha,
+            alpha_ref=max_alpha,
+            alpha=0.0,
+        )
+        md.run_free_energy_perturbation(
+            thermostat=thermostat,
+            temperature=temperature,
+            time_step=time_step,
+            ttime=ttime,
+            friction=friction,
+            n_eq=n_eq,
+            n_steps=n_steps,
+        )
+        delta_free_energy_fep += md.delta_free_energy
+
+        if verbose:
+            print("Path: pot_final (max_alpha) -- pot_final (1.0)", flush=True)
+        md.set_ase_calculator_with_fc2(pot=pot, fc2hdf5=fc2hdf5, alpha=max_alpha)
+        md.run_free_energy_perturbation(
+            thermostat=thermostat,
+            temperature=temperature,
+            time_step=time_step,
+            ttime=ttime,
+            friction=friction,
+            n_eq=n_eq,
+            n_steps=n_steps,
+        )
+        delta_free_energy_fep += md.delta_free_energy
+        total_free_energy += delta_free_energy_fep
+        if verbose:
+            print("Total delta free energy (FEP):", delta_free_energy_fep, flush=True)
+
+        with open(filename, "a") as f:
+            print(file=f)
+            print("free_energy_perturbation_target:", file=f)
+            print("  polymlp:", file=f)
+            for p in pot:
+                print("  -", os.path.abspath(p), file=f)
+            print("  alpha:             ", 1.0, file=f)
+            print("  free_energy:       ", delta_free_energy_fep, file=f)
+            print("  total_free_energy: ", total_free_energy, file=f)
+
     return md

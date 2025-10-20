@@ -73,6 +73,9 @@ def save_thermodynamic_integration_yaml(
         print("  n_steps_eq: ", integrator._n_eq, file=f)
         print("  n_steps:    ", integrator._n_steps, file=f)
         print("  references: ", os.path.abspath(reference["fc2_file"]), file=f)
+        print("  polymlp:    ", file=f)
+        for pot in reference["polymlp"]:
+            print("  - ", os.path.abspath(pot), file=f)
         print(file=f)
 
         delta_entropy, de = 0.0, 0.0
@@ -83,6 +86,8 @@ def save_thermodynamic_integration_yaml(
             delta_entropy = (de - delta_free_energy) / integrator._temperature
 
         print("properties:", file=f)
+        max_alpha = log_ti[-1][0]
+        print("  alpha:                   ", max_alpha, file=f)
         print("  free_energy:             ", delta_free_energy, file=f)
         print("  entropy:                 ", delta_entropy, file=f)
         print("  energy:                  ", de, file=f)
@@ -99,13 +104,23 @@ def save_thermodynamic_integration_yaml(
         print(file=f)
 
         print("  delta_energies:", file=f)
-        for alpha, de, e, total_e, dis in log_ti:
-            print("  - alpha:       ", alpha, file=f)
-            print("    delta_e:     ", de, file=f)
-            print("    energy:      ", e, file=f)
-            print("    total_energy:", total_e, file=f)
-            print("    displacement:", np.round(dis, 5), file=f)
+        for alpha, de, e, total_e, dis, de_alpha in log_ti:
+            print("  - alpha:             ", alpha, file=f)
+            print("    delta_e:           ", de, file=f)
+            print("    energy:            ", e, file=f)
+            print("    total_energy:      ", total_e, file=f)
+            print("    displacement:      ", np.round(dis, 5), file=f)
+            print("    delta_e_from_alpha:", de_alpha, file=f)
             print(file=f)
+
+        print("free_energy_perturbation:", file=f)
+        de_perturb = log_ti[-1][5]
+        total_free_energy_perturb = total_free_energy + de_perturb
+        print("  alpha:             ", 1.0, file=f)
+        print("  free_energy:       ", delta_free_energy + de_perturb, file=f)
+        print("  total_free_energy: ", total_free_energy_perturb, file=f)
+
+    return total_free_energy, total_free_energy_perturb
 
 
 def load_thermodynamic_integration_yaml(filename: str = "polymlp_ti.yaml"):

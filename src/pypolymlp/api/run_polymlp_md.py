@@ -24,6 +24,13 @@ def run():
         "--pot", nargs="*", type=str, default="polymlp.yaml", help="polymlp file."
     )
     parser.add_argument(
+        "--pot_ref",
+        nargs="*",
+        type=str,
+        default=None,
+        help="polymlp file for intermediate reference.",
+    )
+    parser.add_argument(
         "-p",
         "--poscar",
         type=str,
@@ -106,7 +113,6 @@ def run():
 
     if args.ti:
         print("Run thermodynamic integration.", flush=True)
-        # path = "/".join(os.path.abspath(args.fc2).split("/")[:-1])
         path = "/".join(os.path.abspath(args.poscar).split("/")[:-1])
         path += "/ti/" + str(args.temp)
         os.makedirs(path, exist_ok=True)
@@ -121,6 +127,7 @@ def run():
 
         run_thermodynamic_integration(
             pot=args.pot,
+            pot_ref=args.pot_ref,
             poscar=args.poscar,
             supercell_size=args.supercell_size,
             fc2hdf5=fc2,
