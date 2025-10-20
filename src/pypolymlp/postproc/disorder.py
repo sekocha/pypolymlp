@@ -13,6 +13,7 @@ from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
 from pypolymlp.core.interface_vasp import Poscar
 from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
 from pypolymlp.utils.structure_utils import sort_wrt_types, supercell_diagonal
+from pypolymlp.utils.yaml_utils import save_data
 
 
 def _check_params(params: PolymlpParams):
@@ -166,6 +167,7 @@ class PolymlpDisorder:
         self,
         n_samples: int = 100,
         max_distance: float = 1.0,
+        include_base_structure: bool = False,
     ):
         """Set structures with atomic displacements."""
         if self._lattice_supercell is None:
@@ -174,7 +176,18 @@ class PolymlpDisorder:
         stgen = PypolymlpStructureGenerator(base_structures=self._lattice_supercell)
         stgen.build_supercells_auto()
         stgen.run_standard_algorithm(n_samples=n_samples, max_distance=max_distance)
-        self._displaced_lattices = [self._lattice_supercell] + stgen.sample_structures
+
+        if include_base_structure:
+            self._displaced_lattices = [self._lattice_supercell]
+            self._displaced_lattices.extend(stgen.sample_structures)
+        else:
+            self._displaced_lattices = stgen.sample_structures
+
+        return self
+
+    def set_displaced_lattice_from_poscar(self, filename: str = "POSCAR"):
+        """Set structure with atomic displacements from POSCAR."""
+        self._displaced_lattices = [Poscar(filename).structure]
         return self
 
     def _set_replacements(self):
@@ -207,6 +220,8 @@ class PolymlpDisorder:
         structures, atom_orders = [], []
         for replace_dict in replaces:
             st = copy.deepcopy(lattice)
+            st.elements = np.array(st.elements)
+            st.types = np.array(st.types)
             for (ele, itype), replace_ids in replace_dict.items():
                 st.elements[replace_ids] = ele
                 st.types[replace_ids] = itype
@@ -216,22 +231,28 @@ class PolymlpDisorder:
             atom_orders.append(ids)
         return structures, atom_orders
 
-    def eval_random_properties(self, n_samples: int = 100):
-        """Evaluate average properties for substitutional structures."""
-        if self._displaced_lattices is None:
-            raise RuntimeError("Lattices with atomic displacements not found.")
+    def eval_random_properties_single_structure(
+        self,
+        lattice: Optional[PolymlpStructure] = None,
+        tol: float = 1e-5,
+        n_samples: Optional[int] = 500,
+        max_iter: int = 50,
+    ):
+        """Evaluate average properties over substitutional structures."""
+        if lattice is None:
+            lattice = self._displaced_lattices[0]
 
-        replaces = [self._set_replacements() for i in range(n_samples)]
-
-        self._energies = []
-        self._forces = []
-        self._stresses = []
-        for i, lat in enumerate(self._displaced_lattices):
+        energies_all, forces_all, stresses_all = [], [], []
+        diff = tol + 1.0
+        ave_energy_prev = None
+        iter1 = 1
+        while diff > tol and iter1 <= max_iter:
             if self._verbose:
-                n_disps = len(self._displaced_lattices)
-                print("Displacement:", i, "/", n_disps, flush=True)
-
-            subs, atom_orders = self._generate_substitutional_structures(lat, replaces)
+                print("Iteration", iter1, flush=True)
+            replaces = [self._set_replacements() for i in range(n_samples)]
+            subs, atom_orders = self._generate_substitutional_structures(
+                lattice, replaces
+            )
             energies, forces_sorted_order, stresses = self._calc.eval(subs)
 
             forces = []
@@ -239,11 +260,61 @@ class PolymlpDisorder:
                 f_reordered = np.zeros(f.shape)
                 f_reordered[:, ids] = f
                 forces.append(f_reordered)
-            np.set_printoptions(suppress=True)
 
-            self._energies.append(np.mean(energies))
-            self._forces.append(np.mean(forces, axis=0))
-            self._stresses.append(np.mean(stresses, axis=0))
+            energies_all.extend(energies)
+            forces_all.extend(forces)
+            stresses_all.extend(stresses)
+
+            ave_energy = np.mean(energies_all)
+            ave_forces = np.mean(forces_all, axis=0)
+            ave_stress = np.mean(stresses_all, axis=0)
+
+            if self._verbose:
+                print(" Number of samples:", len(energies_all), flush=True)
+                print(" Average energy:   ", ave_energy, "[eV/cell]", flush=True)
+
+            if ave_energy_prev is not None:
+                diff = abs(ave_energy - ave_energy_prev) / sum(lattice.n_atoms)
+                if self._verbose:
+                    print(" Convergence score:", diff, "[eV/atom]", flush=True)
+
+            ave_energy_prev = ave_energy
+            iter1 += 1
+
+        self._energies = [ave_energy]
+        self._forces = [ave_forces]
+        self._stresses = [ave_stress]
+        return ave_energy, ave_forces, ave_stress
+
+    def eval_random_properties(
+        self,
+        tol: float = 1e-4,
+        n_samples: Optional[int] = 500,
+        max_iter: int = 20,
+    ):
+        """Evaluate average properties for substitutional structures."""
+        if self._displaced_lattices is None:
+            raise RuntimeError("Lattices with atomic displacements not found.")
+
+        energies, forces, stresses = [], [], []
+        for i, lat in enumerate(self._displaced_lattices):
+            if self._verbose:
+                n_disps = len(self._displaced_lattices)
+                print("## Displacement:", i + 1, "/", n_disps, flush=True)
+
+            e, f, s = self.eval_random_properties_single_structure(
+                lat,
+                tol=tol,
+                n_samples=n_samples,
+                max_iter=max_iter,
+            )
+            energies.append(e)
+            forces.append(f)
+            stresses.append(s)
+
+        self._energies = energies
+        self._forces = forces
+        self._stresses = stresses
         return self
 
     def develop_mlp(
@@ -267,6 +338,22 @@ class PolymlpDisorder:
         self._polymlp.estimate_error(log_energy=True, verbose=self._verbose)
         return self
 
+    def save_properties(self, filename: str = "polymlp_prediction.yaml"):
+        """Save structure and properties."""
+        zip_data = zip(
+            self._displaced_lattices,
+            self._energies,
+            self._forces,
+            self._stresses,
+        )
+        for i, (st, e, f, s) in enumerate(zip_data):
+            if len(self._energies) > 1:
+                name = filename + "." + str(i + 1).zfill(5)
+            else:
+                name = filename
+            save_data(st, e, forces=f, stress=s, file=name)
+        return self
+
     @property
     def polymlp(self):
         """Return Pypolymlp instance."""
@@ -279,5 +366,13 @@ class PolymlpDisorder:
 
     @property
     def properties(self):
-        """Return properties for regression."""
+        """Return properties for regression.
+
+        Returns
+        -------
+        energy: Energy. shape=(n_str) in eV/supercell.
+        forces: Forces. shape=(n_str, 3, n_atom) in eV/angstroms.
+        stress: Stress tensor. shape=(n_str, 6), unit: eV/supercell
+                in the order of xx, yy, zz, xy, yz, zx.
+        """
         return self._energies, self._forces, self._stresses

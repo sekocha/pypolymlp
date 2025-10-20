@@ -68,6 +68,10 @@ def save_cells(
     """Save unitcell and supercell in yaml file."""
     if isinstance(file, str):
         f = open(file, "w")
+    elif isinstance(file, io.IOBase):
+        f = file
+    else:
+        raise RuntimeError("file is not str or io.IOBase")
 
     save_cell(unitcell, tag="unitcell", file=f)
     save_cell(supercell, tag="supercell", file=f)
@@ -100,3 +104,56 @@ def load_cells(
     supercell = load_cell(yaml_data=yaml_data, tag="supercell")
     supercell.supercell_matrix = np.array(yaml_data["supercell"]["supercell_matrix"])
     return unitcell, supercell
+
+
+def save_data(
+    structure: list[PolymlpStructure],
+    energy: float,
+    forces: Optional[np.ndarray] = None,
+    stress: Optional[np.ndarray] = None,
+    file: str = "polymlp_data.yaml",
+):
+    """Save structure and property data.
+
+    Parameters
+    ----------
+    energy: Energy in eV/supercell.
+    forces: Forces. shape=(3, n_atom) in eV/angstroms.
+    stress: Stress tensor.
+            shape=(6), unit: eV/supercell in the order of xx, yy, zz, xy, yz, zx.
+    """
+    if isinstance(file, str):
+        f = open(file, "w")
+    elif isinstance(file, io.IOBase):
+        f = file
+    else:
+        raise RuntimeError("file is not str or io.IOBase")
+
+    save_cell(structure, tag="structure", file=f)
+    print("energy:", energy, file=f)
+    if forces is not None:
+        print("forces:", file=f)
+        for vec in forces.T:
+            print(" -", list(vec), file=f)
+    if stress is not None:
+        print("stress:", list(stress), file=f)
+
+    f.close()
+
+
+def load_data(filename="polymlp_data.yaml"):
+    """Load structure and property data.
+
+    Parameters
+    ----------
+    energy: Energy in eV/supercell.
+    forces: Forces. shape=(3, n_atom) in eV/angstroms.
+    stress: Stress tensor.
+            shape=(6), unit: eV/supercell in the order of xx, yy, zz, xy, yz, zx.
+    """
+    yaml_data = yaml.safe_load(open(filename))
+    structure = load_cell(yaml_data=yaml_data, tag="structure")
+    energy = float(yaml_data["energy"])
+    forces = np.array(yaml_data["forces"]).T
+    stress = np.array(yaml_data["stress"])
+    return structure, (energy, forces, stress)
