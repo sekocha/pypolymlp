@@ -163,8 +163,6 @@ def precision(x, alpha=0.0001):
         prod[i, i] += alpha
 
     var = np.linalg.inv(prod)
-    # ave = np.average(x, axis=0)
-    # dx = x - ave
     prec = np.mean([x1.T @ var @ x1 for x1 in x])
     return prec
 
