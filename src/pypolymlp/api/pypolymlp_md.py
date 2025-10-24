@@ -60,6 +60,7 @@ class PypolymlpMD:
 
         self._total_free_energy = None
         self._total_free_energy_perturb = None
+        self._total_free_energy_perturb_order1 = None
 
         if self._verbose:
             np.set_printoptions(legacy="1.21")
@@ -595,12 +596,15 @@ class PypolymlpMD:
             interval_log=None,
             logfile=None,
         )
-        self._delta_free_energy = self.average_delta_energy_alpha
+        self._delta_free_energy_order1 = self.average_delta_energy_alpha
+        self._delta_free_energy = self.free_energy_perturb
 
         if self._verbose:
             print("Results (Free energy perturbation):", flush=True)
             np.set_printoptions(suppress=True)
-            print("  delta_free_energy:", self._delta_free_energy, flush=True)
+            print("  delta_free_energy:       ", self._delta_free_energy, flush=True)
+            val = self._delta_free_energy_order1
+            print("  delta_free_energy_order1:", val, flush=True)
 
         return self
 
@@ -613,6 +617,7 @@ class PypolymlpMD:
             self.average_total_energy,
             self.average_displacement,
             self.average_delta_energy_alpha,
+            self.free_energy_perturb,
         ]
         return log_alpha
 
@@ -652,7 +657,11 @@ class PypolymlpMD:
             delta_heat_capacity=self._delta_heat_capacity,
             filename=filename,
         )
-        self._total_free_energy, self._total_free_energy_perturb = total
+        (
+            self._total_free_energy,
+            self._total_free_energy_perturb,
+            self._total_free_energy_perturb_order1,
+        ) = total
         return self
 
     def find_reference(self, path_fc2: str, target_temperature: float):
@@ -737,6 +746,11 @@ class PypolymlpMD:
         return self._integrator.average_delta_energy_alpha
 
     @property
+    def free_energy_perturb(self):
+        """Return delta free energy from FE perturbation."""
+        return self._integrator.free_energy_perturb
+
+    @property
     def total_free_energy(self):
         """Return total free energy (static + reference + TI)."""
         return self._total_free_energy
@@ -747,6 +761,11 @@ class PypolymlpMD:
         return self._total_free_energy_perturb
 
     @property
+    def total_free_energy_perturb_order1(self):
+        """Return total free energy (static + ref. + TI + 1st-order perturbation)."""
+        return self._total_free_energy_perturb_order1
+
+    @property
     def average_displacement(self):
         """Return avarage energy."""
         return self._integrator.average_displacement
@@ -755,6 +774,11 @@ class PypolymlpMD:
     def delta_free_energy(self):
         """Return difference of free energy from reference state."""
         return self._delta_free_energy
+
+    @property
+    def delta_free_energy_order1(self):
+        """Return 1st order difference of free energy from reference state."""
+        return self._delta_free_energy_order1
 
     @property
     def delta_heat_capacity(self):
@@ -836,7 +860,9 @@ def run_thermodynamic_integration(
         if verbose:
             print("Path: pot_ref (max_alpha) -- pot_final (max_alpha)", flush=True)
         total_free_energy = md.total_free_energy
+        total_free_energy1 = md.total_free_energy
         delta_free_energy_fep = 0.0
+        delta_free_energy_fep1 = 0.0
         md.set_ase_calculator_with_general_reference(
             pot_final=pot,
             pot_ref=pot_ref,
@@ -855,6 +881,7 @@ def run_thermodynamic_integration(
             n_steps=n_steps,
         )
         delta_free_energy_fep += md.delta_free_energy
+        delta_free_energy_fep1 += md.delta_free_energy_order1
 
         if verbose:
             print("Path: pot_final (max_alpha) -- pot_final (1.0)", flush=True)
@@ -869,7 +896,9 @@ def run_thermodynamic_integration(
             n_steps=n_steps,
         )
         delta_free_energy_fep += md.delta_free_energy
+        delta_free_energy_fep1 += md.delta_free_energy_order1
         total_free_energy += delta_free_energy_fep
+        total_free_energy1 += delta_free_energy_fep1
         if verbose:
             print("Total delta free energy (FEP):", delta_free_energy_fep, flush=True)
 
@@ -879,8 +908,11 @@ def run_thermodynamic_integration(
             print("  polymlp:", file=f)
             for p in pot:
                 print("  -", os.path.abspath(p), file=f)
-            print("  alpha:             ", 1.0, file=f)
-            print("  free_energy:       ", delta_free_energy_fep, file=f)
-            print("  total_free_energy: ", total_free_energy, file=f)
+            print("  alpha:              ", 1.0, file=f)
+            print("  free_energy_perturb:", delta_free_energy_fep, file=f)
+            print("  total_free_energy:  ", total_free_energy, file=f)
+            print("  first_order:", file=f)
+            print("    free_energy_perturb:", delta_free_energy_fep1, file=f)
+            print("    total_free_energy:  ", total_free_energy1, file=f)
 
     return md

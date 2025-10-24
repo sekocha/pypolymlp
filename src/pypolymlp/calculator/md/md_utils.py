@@ -104,23 +104,33 @@ def save_thermodynamic_integration_yaml(
         print(file=f)
 
         print("  delta_energies:", file=f)
-        for alpha, de, e, total_e, dis, de_alpha in log_ti:
+        for alpha, de, e, total_e, dis, de_alpha1, df_fep in log_ti:
             print("  - alpha:             ", alpha, file=f)
             print("    delta_e:           ", de, file=f)
             print("    energy:            ", e, file=f)
             print("    total_energy:      ", total_e, file=f)
             print("    displacement:      ", np.round(dis, 5), file=f)
-            print("    delta_e_from_alpha:", de_alpha, file=f)
+            print("    delta_e_from_alpha:", de_alpha1, file=f)
+            print("    delta_f_from_alpha:", df_fep, file=f)
             print(file=f)
 
         print("free_energy_perturbation:", file=f)
-        de_perturb = log_ti[-1][5]
+        de_perturb = log_ti[-1][6]
+        de_perturb1 = log_ti[-1][5]
         total_free_energy_perturb = total_free_energy + de_perturb
-        print("  alpha:             ", 1.0, file=f)
-        print("  free_energy:       ", delta_free_energy + de_perturb, file=f)
-        print("  total_free_energy: ", total_free_energy_perturb, file=f)
+        total_free_energy_perturb1 = total_free_energy + de_perturb1
+        print("  alpha:               ", 1.0, file=f)
+        print("  free_energy_perturb: ", de_perturb, file=f)
+        print("  free_energy_from_ref:", delta_free_energy + de_perturb, file=f)
+        print("  total_free_energy:   ", total_free_energy_perturb, file=f)
 
-    return total_free_energy, total_free_energy_perturb
+        val1 = delta_free_energy + de_perturb1
+        print("  first order:", file=f)
+        print("    free_energy_perturb: ", de_perturb1, file=f)
+        print("    free_energy_from_ref:", val1, file=f)
+        print("    total_free_energy:   ", total_free_energy_perturb1, file=f)
+
+    return total_free_energy, total_free_energy_perturb, total_free_energy_perturb1
 
 
 def load_thermodynamic_integration_yaml(filename: str = "polymlp_ti.yaml"):

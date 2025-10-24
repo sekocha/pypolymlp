@@ -48,12 +48,14 @@ class IntegratorASE:
             self._use_fc2 = True
 
         # Required if reference state is given.
+        self._displacements = None
         self._delta_energies = None
         self._delta_energies_alpha = None
-        self._displacements = None
+
+        self._average_displacement = None
         self._average_delta_energy = None
         self._average_delta_energy_alpha = None
-        self._average_displacement = None
+        self._free_energy_perturb = None
 
         self._temperature = None
         self._time_step = None
@@ -282,16 +284,25 @@ class IntegratorASE:
             else:
                 var = np.average(np.square(energies_slice)) - self._average_energy**2
                 self._heat_capacity_eV = var / KbEV / self._temperature**2
-                self._heat_capacity = (
-                    self._heat_capacity_eV * EVtoJ * Avogadro / len(self._atoms.numbers)
-                )
+                prod = EVtoJ * Avogadro / len(self._atoms.numbers)
+                self._heat_capacity = self._heat_capacity_eV * prod
 
-        if self._delta_energies is not None:
-            self._average_delta_energy = np.average(self._delta_energies[n_eq:])
-            ave_e_alpha = np.average(self._delta_energies_alpha[n_eq:])
-            self._average_delta_energy_alpha = ave_e_alpha
         if self._displacements is not None:
             self._average_displacement = np.average(self._displacements[n_eq:])
+
+        # For thermodynamic integration
+        if self._delta_energies is not None:
+            self._average_delta_energy = np.average(self._delta_energies[n_eq:])
+
+        # For free energy perturbation
+        if self._delta_energies_alpha is not None:
+            energy_slice = np.array(self._delta_energies_alpha[n_eq:])
+            self._average_delta_energy_alpha = np.average(energy_slice)
+
+            beta = KbEV * self._temperature
+            exp_delta_e = np.average(np.exp(-beta * energy_slice))
+            self._free_energy_perturb = -np.log(exp_delta_e) / beta
+
         return self
 
     @property
@@ -359,6 +370,11 @@ class IntegratorASE:
     def average_delta_energy_alpha(self):
         """Return average energy difference from state alpha in eV/supercell."""
         return self._average_delta_energy_alpha
+
+    @property
+    def free_energy_perturb(self):
+        """Return free energy (FE) difference from FE perturbation in eV/supercell."""
+        return self._free_energy_perturb
 
     @property
     def average_displacement(self):
