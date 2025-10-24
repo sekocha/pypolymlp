@@ -26,7 +26,7 @@ class PypolymlpThermodynamics:
         yamls_electron: Optional[list[str]] = None,
         yamls_ti: Optional[list[str]] = None,
         yamls_electron_phonon: Optional[list[str]] = None,
-        extrapolation_ti: bool = False,
+        extrapolation_ti: bool = True,
         verbose: bool = False,
     ):
         """Init method."""
