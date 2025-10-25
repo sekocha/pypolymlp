@@ -1,4 +1,9 @@
-#!/usr/bin/env python
+"""Functions for saving and loading yaml files."""
+
+import copy
+import io
+from typing import Optional
+
 import numpy as np
 import yaml
 
@@ -19,10 +24,19 @@ def print_array2d(array, tag, fstream, indent_l=0):
         print(prefix + " -", list(d), file=fstream)
 
 
-def save_cell(cell: PolymlpStructure, tag="unitcell", fstream=None, filename=None):
-
-    if fstream is None:
-        fstream = open(filename, "w")
+def save_cell(
+    cell: PolymlpStructure,
+    tag: str = "unitcell",
+    file: Optional[str] = None,
+):
+    """Save a structure to a yaml file."""
+    np.set_printoptions(legacy="1.21")
+    if isinstance(file, str):
+        fstream = open(file, "w")
+    elif isinstance(file, io.IOBase):
+        fstream = file
+    else:
+        raise RuntimeError("file is not str or io.IOBase")
 
     print(tag + ":", file=fstream)
     print_array2d(cell.axis.T, "axis", fstream, indent_l=2)
@@ -30,7 +44,8 @@ def save_cell(cell: PolymlpStructure, tag="unitcell", fstream=None, filename=Non
     print("  n_atoms:  ", list(cell.n_atoms), file=fstream)
     print("  types:    ", list(cell.types), file=fstream)
     print("  elements: ", list(cell.elements), file=fstream)
-    print("  volume:   ", cell.volume, file=fstream)
+    if cell.volume is not None:
+        print("  volume:   ", cell.volume, file=fstream)
 
     if tag == "supercell":
         if cell.n_unitcells is not None:
@@ -46,25 +61,99 @@ def save_cell(cell: PolymlpStructure, tag="unitcell", fstream=None, filename=Non
 
 
 def save_cells(
-    unitcell: PolymlpStructure, supercell: PolymlpStructure, filename="cells.yaml"
+    unitcell: PolymlpStructure,
+    supercell: PolymlpStructure,
+    file: str = "cells.yaml",
 ):
+    """Save unitcell and supercell in yaml file."""
+    if isinstance(file, str):
+        f = open(file, "w")
+    elif isinstance(file, io.IOBase):
+        f = file
+    else:
+        raise RuntimeError("file is not str or io.IOBase")
 
-    f = open(filename, "w")
-    save_cell(unitcell, tag="unitcell", fstream=f)
-    save_cell(supercell, tag="supercell", fstream=f)
+    save_cell(unitcell, tag="unitcell", file=f)
+    save_cell(supercell, tag="supercell", file=f)
     f.close()
 
 
-def load_cells(filename="cells.yaml"):
+def load_cell(
+    filename: Optional[str] = None,
+    yaml_data: Optional[dict] = None,
+    tag: str = "unitcell",
+):
+    """Parse structure in yaml data."""
+    if filename is not None:
+        yaml_data = yaml.safe_load(open(filename))
+    cell_dict = copy.deepcopy(yaml_data[tag])
+    cell_dict["axis"] = np.array(cell_dict["axis"], dtype=float).T
+    cell_dict["positions"] = np.array(cell_dict["positions"], dtype=float).T
+    cell = PolymlpStructure(**cell_dict)
+    return cell
 
-    yml_data = yaml.safe_load(open(filename))
-    unitcell = PolymlpStructure(**yml_data["unitcell"])
-    unitcell.axis = np.array(unitcell.axis).T
-    unitcell.positions = np.array(unitcell.positions).T
 
-    supercell = PolymlpStructure(**yml_data["supercell"])
-    supercell.axis = np.array(supercell.axis).T
-    supercell.positions = np.array(supercell.positions).T
-    supercell.supercell_matrix = np.array(supercell.supercell_matrix)
-
+def load_cells(
+    filename: Optional[str] = None,
+    yaml_data: Optional[dict] = None,
+):
+    """Parse unitcell and supercell in yaml data."""
+    if filename is not None:
+        yaml_data = yaml.safe_load(open(filename))
+    unitcell = load_cell(yaml_data=yaml_data, tag="unitcell")
+    supercell = load_cell(yaml_data=yaml_data, tag="supercell")
+    supercell.supercell_matrix = np.array(yaml_data["supercell"]["supercell_matrix"])
     return unitcell, supercell
+
+
+def save_data(
+    structure: list[PolymlpStructure],
+    energy: float,
+    forces: Optional[np.ndarray] = None,
+    stress: Optional[np.ndarray] = None,
+    file: str = "polymlp_data.yaml",
+):
+    """Save structure and property data.
+
+    Parameters
+    ----------
+    energy: Energy in eV/supercell.
+    forces: Forces. shape=(3, n_atom) in eV/angstroms.
+    stress: Stress tensor.
+            shape=(6), unit: eV/supercell in the order of xx, yy, zz, xy, yz, zx.
+    """
+    if isinstance(file, str):
+        f = open(file, "w")
+    elif isinstance(file, io.IOBase):
+        f = file
+    else:
+        raise RuntimeError("file is not str or io.IOBase")
+
+    save_cell(structure, tag="structure", file=f)
+    print("energy:", energy, file=f)
+    if forces is not None:
+        print("forces:", file=f)
+        for vec in forces.T:
+            print(" -", list(vec), file=f)
+    if stress is not None:
+        print("stress:", list(stress), file=f)
+
+    f.close()
+
+
+def load_data(filename="polymlp_data.yaml"):
+    """Load structure and property data.
+
+    Parameters
+    ----------
+    energy: Energy in eV/supercell.
+    forces: Forces. shape=(3, n_atom) in eV/angstroms.
+    stress: Stress tensor.
+            shape=(6), unit: eV/supercell in the order of xx, yy, zz, xy, yz, zx.
+    """
+    yaml_data = yaml.safe_load(open(filename))
+    structure = load_cell(yaml_data=yaml_data, tag="structure")
+    energy = float(yaml_data["energy"])
+    forces = np.array(yaml_data["forces"]).T
+    stress = np.array(yaml_data["stress"])
+    return structure, (energy, forces, stress)

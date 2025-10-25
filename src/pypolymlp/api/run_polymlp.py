@@ -1,16 +1,13 @@
-#!/usr/bin/env python
+"""Command lines for developing polynomial MLP from file."""
+
 import argparse
 import signal
 import time
 
-from pypolymlp.mlp_dev.core.accuracy import PolymlpDevAccuracy
-from pypolymlp.mlp_dev.core.mlpdev_data import PolymlpDevData
-from pypolymlp.mlp_dev.standard.learning_curve import learning_curve
-from pypolymlp.mlp_dev.standard.mlpdev_dataxy import (
-    PolymlpDevDataXY,
-    PolymlpDevDataXYSequential,
-)
-from pypolymlp.mlp_dev.standard.regression import Regression
+import numpy as np
+
+from pypolymlp.core.utils import print_credit
+from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
 
 
 def run():
@@ -26,11 +23,6 @@ def run():
         help="Input file name",
     )
     parser.add_argument(
-        "--no_sequential",
-        action="store_true",
-        help="Use normal feature calculations",
-    )
-    parser.add_argument(
         "--learning_curve",
         action="store_true",
         help="Learning curve calculations",
@@ -41,68 +33,72 @@ def run():
         default=None,
         help="Batch size of feature calculations",
     )
+    parser.add_argument(
+        "--cg",
+        action="store_true",
+        help="Use conjugate gradient",
+    )
+    parser.add_argument(
+        "--gtol",
+        type=float,
+        default=1e-2,
+        help="Tolerance for gradient in CG",
+    )
+    parser.add_argument(
+        "--max_iter",
+        type=int,
+        default=None,
+        help="Maximum number of iterations in CG",
+    )
+
+    # parser.add_argument(
+    #     "--sgd",
+    #     action="store_true",
+    #     help="Use stochastic gradient descent",
+    # )
+
     args = parser.parse_args()
+    np.set_printoptions(legacy="1.21")
+    print_credit()
 
     verbose = True
-    polymlp_in = PolymlpDevData()
-    polymlp_in.parse_infiles(args.infile, verbose=verbose)
-    polymlp_in.parse_datasets()
-    polymlp_in.write_polymlp_params_yaml(filename="polymlp_params.yaml")
-    n_features = polymlp_in.n_features
+    polymlp = Pypolymlp()
+    polymlp.load_parameter_file(args.infile)
+    polymlp.load_datasets(train_ratio=0.9)
+    if verbose:
+        polymlp.print_params()
+    polymlp.save_params(filename="polymlp_params.yaml")
 
     if args.learning_curve:
-        t1 = time.time()
-        if len(polymlp_in.train_dict) == 1:
-            args.no_sequential = True
-            polymlp = PolymlpDevDataXY(polymlp_in).run()
-            learning_curve(polymlp)
-        else:
-            raise ValueError(
-                "A single dataset is required " "for learning curve option"
-            )
-        polymlp.print_data_shape()
-        t2 = time.time()
+        tlearn1 = time.time()
+        polymlp.fit_learning_curve(verbose=verbose)
+        polymlp.save_learning_curve(filename="polymlp_learning_curve.dat")
+        tlearn2 = time.time()
+
+    t1 = time.time()
+    if args.cg:
+        polymlp.fit_cg(gtol=args.gtol, max_iter=args.max_iter, verbose=verbose)
+    # elif args.sgd:
+    #     polymlp.fit_sgd(verbose=verbose)
     else:
-        batch_size = None
-        if not args.no_sequential:
-            if args.batch_size is None:
-                batch_size = max((10000000 // n_features), 128)
-            else:
-                batch_size = args.batch_size
-            if verbose:
-                print("Batch size:", batch_size, flush=True)
+        polymlp.fit(batch_size=args.batch_size, verbose=verbose)
 
-        t1 = time.time()
-        if args.no_sequential:
-            polymlp = PolymlpDevDataXY(polymlp_in, verbose=verbose).run()
-            if verbose:
-                polymlp.print_data_shape()
-        else:
-            polymlp = PolymlpDevDataXYSequential(polymlp_in, verbose=verbose).run_train(
-                batch_size=batch_size
-            )
-        t2 = time.time()
-
-    reg = Regression(polymlp).fit(
-        seq=not args.no_sequential,
-        clear_data=True,
-        batch_size=batch_size,
-    )
-    reg.save_mlp_lammps(filename="polymlp.lammps")
+    polymlp.save_mlp(filename="polymlp.yaml", yaml=True)
+    t2 = time.time()
+    polymlp.estimate_error(log_energy=True, verbose=verbose)
     t3 = time.time()
+    polymlp.save_errors(filename="polymlp_error.yaml")
 
     if verbose:
-        mlp = reg.best_model
-        print("  Regression: best model", flush=True)
-        print("    alpha: ", mlp.alpha, flush=True)
-
-    acc = PolymlpDevAccuracy(reg)
-    acc.compute_error()
-    acc.write_error_yaml(filename="polymlp_error.yaml")
-    t4 = time.time()
-
-    if verbose:
-        print("  elapsed_time:", flush=True)
-        print("    features:          ", "{:.3f}".format(t2 - t1), "(s)", flush=True)
-        print("    regression:        ", "{:.3f}".format(t3 - t2), "(s)", flush=True)
-        print("    error:             ", "{:.3f}".format(t4 - t3), "(s)", flush=True)
+        print("Regression: best model", flush=True)
+        print("  alpha: ", polymlp.summary.alpha, flush=True)
+        print("elapsed_time:", flush=True)
+        if args.learning_curve:
+            print(
+                "  learning curve:     ",
+                "{:.3f}".format(tlearn2 - tlearn1),
+                "(s)",
+                flush=True,
+            )
+        print("  features, fit:      ", "{:.3f}".format(t2 - t1), "(s)", flush=True)
+        print("  error:              ", "{:.3f}".format(t3 - t2), "(s)", flush=True)

@@ -5,7 +5,8 @@ import signal
 
 import numpy as np
 
-from pypolymlp.api.pypolymlp_str import PolymlpStructureGenerator
+from pypolymlp.api.pypolymlp_str import PypolymlpStructureGenerator
+from pypolymlp.core.utils import print_credit
 
 
 def run():
@@ -41,6 +42,12 @@ def run():
         default=None,
         help="Number of structures sampled using isotropic volume changes.",
     )
+    parser.add_argument(
+        "--dense_equilibrium",
+        action="store_true",
+        help="Use dense grid around equilibrium volume.",
+    )
+
     parser.add_argument(
         "--standard",
         type=int,
@@ -101,8 +108,9 @@ def run():
 
     args = parser.parse_args()
 
-    np.set_printoptions(legacy="1.25")
-    polymlp = PolymlpStructureGenerator(verbose=True)
+    np.set_printoptions(legacy="1.21")
+    print_credit()
+    polymlp = PypolymlpStructureGenerator(verbose=True)
     polymlp.load_structures_from_files(poscars=args.poscars)
 
     if args.displacements is not None:
@@ -132,6 +140,7 @@ def run():
             n_samples=args.isotropic,
             eps_min=args.min_volume,
             eps_max=args.max_volume,
+            dense_equilibrium=args.dense_equilibrium,
         )
     else:
         print("Pypolymlp structure generator: Standard algorithms", flush=True)

@@ -1,7 +1,0 @@
-python3 ~/git/pypolymlp/src/pypolymlp/mlp_opt/optimal.py -d ../4-grid/* --key test_vasprun_low
-
-python3 ~/git/pypolymlp/src/pypolymlp/mlp_opt/optimal.py -d ../4-grid/* ../6-grid-hybrid/* --key test_vasprun_low
-
-
-
-python3 ~/git/pypolymlp/src/pypolymlp/mlp_opt/grid_search_hybrid.py --yaml ../5-opt/polymlp_summary_convex.yaml

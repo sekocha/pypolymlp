@@ -9,17 +9,20 @@
 #define __PYFEATURESATTR
 
 #include "mlpcpp.h"
-#include "polymlp/polymlp_mapping.h"
-#include "polymlp/polymlp_model_params.h"
+#include "polymlp/polymlp_api.h"
+//#include "polymlp/polymlp_mapping.h"
+//#include "polymlp/polymlp_model_params.h"
 #include "compute/py_params.h"
 
 #include <Eigen/Core>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+
 namespace py = pybind11;
 
 class PyFeaturesAttr {
+
 
     vector1i radial_ids, gtinv_ids;
     vector2i tcomb_ids, polynomial_ids;

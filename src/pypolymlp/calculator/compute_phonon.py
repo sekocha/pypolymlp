@@ -4,6 +4,7 @@ import os
 from typing import Optional
 
 import numpy as np
+from phono3py.file_IO import read_fc2_from_hdf5
 from phonopy import Phonopy, PhonopyQHA
 
 from pypolymlp.calculator.properties import Properties
@@ -210,73 +211,29 @@ class PolymlpPhononQHA:
         self._qha.write_bulk_modulus_temperature(filename=filename)
         filename = path_output + "/polymlp_phonon_qha/gruneisen-temperature.dat"
         self._qha.write_gruneisen_temperature(filename=filename)
+        filename = path_output + "/polymlp_phonon_qha/cp-temperature.dat"
+        self._qha.write_heat_capacity_P_numerical(filename=filename)
 
 
-if __name__ == "__main__":
+def calculate_harmonic_properties_from_fc2(
+    unitcell: PolymlpStructure,
+    supercell_matrix: np.ndarray,
+    path_fc2: Optional[str] = None,
+    fc2: Optional[np.ndarray] = None,
+    mesh: tuple = (10, 10, 10),
+    temperatures: np.ndarray = np.arange(0, 1000, 10),
+):
+    """Calculate harmonic properties using FC2."""
+    if path_fc2 is None and fc2 is None:
+        raise RuntimeError("Both path_fc2 and fc2 are None.")
 
-    import argparse
-    import signal
+    if path_fc2 is not None:
+        fc2 = read_fc2_from_hdf5(path_fc2)
+        # ph.force_constants = read_fc2_from_hdf5(path_fc2)
 
-    from pypolymlp.core.interface_vasp import Poscar
-    from pypolymlp.utils.yaml_utils import load_cells
-
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--pot",
-        nargs="*",
-        type=str,
-        default="polymlp.lammps",
-        help="polymlp file",
-    )
-    parser.add_argument("--yaml", type=str, default=None, help="polymlp_str.yaml file")
-    parser.add_argument("--poscar", type=str, default=None, help="poscar")
-    parser.add_argument(
-        "--supercell",
-        nargs=3,
-        type=int,
-        default=None,
-        help="Supercell size (diagonal components)",
-    )
-    parser.add_argument(
-        "--disp",
-        type=float,
-        default=0.01,
-        help="random displacement (in Angstrom)",
-    )
-
-    parser.add_argument(
-        "--ph_mesh",
-        type=int,
-        nargs=3,
-        default=[10, 10, 10],
-        help="k-mesh used for phonon calculation",
-    )
-    parser.add_argument("--ph_tmin", type=float, default=100, help="Temperature (min)")
-    parser.add_argument("--ph_tmax", type=float, default=1000, help="Temperature (max)")
-    parser.add_argument(
-        "--ph_tstep", type=float, default=100, help="Temperature (step)"
-    )
-    parser.add_argument("--ph_pdos", action="store_true", help="Compute phonon PDOS")
-    args = parser.parse_args()
-
-    if args.yaml is not None:
-        unitcell, supercell = load_cells(filename=args.yaml)
-        supercell_matrix = supercell.supercell_matrix
-    elif args.poscar is not None:
-        unitcell = Poscar(args.poscar).structure
-        supercell_matrix = np.diag(args.supercell)
-
-    ph = PolymlpPhonon(unitcell, supercell_matrix, pot=args.pot)
-    ph.produce_force_constants(displacements=args.disp)
-    ph.compute_properties(
-        mesh=args.ph_mesh,
-        t_min=args.ph_tmin,
-        t_max=args.ph_tmax,
-        t_step=args.ph_tstep,
-        pdos=args.ph_pdos,
-    )
-
-    qha = PolymlpPhononQHA(unitcell, supercell_matrix, pot=args.pot)
-    qha.run()
-    qha.write_qha()
+    unitcell_ph = structure_to_phonopy_cell(unitcell)
+    ph = Phonopy(unitcell_ph, supercell_matrix)
+    ph.force_constants = fc2
+    ph.run_mesh(mesh)
+    ph.run_thermal_properties(temperatures=temperatures)
+    return ph.get_thermal_properties_dict()

@@ -1,19 +1,12 @@
-"""Function for performing SSCHA calculations by command line."""
+"""Command lines for performing SSCHA calculations by command line."""
 
 import argparse
 import signal
 
 import numpy as np
 
-from pypolymlp.calculator.sscha.run_sscha import run_sscha
-from pypolymlp.calculator.sscha.sscha_utils import (
-    Restart,
-    n_samples_setting,
-    print_parameters,
-    print_structure,
-    temperature_setting,
-)
-from pypolymlp.core.interface_vasp import Poscar
+from pypolymlp.api.pypolymlp_sscha import PypolymlpSSCHA
+from pypolymlp.core.utils import print_credit
 
 
 def run():
@@ -39,7 +32,7 @@ def run():
         nargs="*",
         type=str,
         default=None,
-        help="polymlp.lammps file",
+        help="polymlp files",
     )
     parser.add_argument(
         "--supercell",
@@ -80,6 +73,12 @@ def run():
         help="Temperature interval (K)",
     )
     parser.add_argument(
+        "--n_temp",
+        type=int,
+        default=None,
+        help="Number of temperatures",
+    )
+    parser.add_argument(
         "--tol",
         type=float,
         default=0.01,
@@ -98,6 +97,7 @@ def run():
         default=30,
         help="Maximum number of iterations",
     )
+    parser.add_argument("--mixing", type=float, default=0.5, help="Mixing parameter")
     parser.add_argument(
         "--ascending_temp",
         action="store_true",
@@ -114,24 +114,60 @@ def run():
         default=None,
         help="Location of fc2.hdf5 for initial FCs",
     )
-    parser.add_argument("--mixing", type=float, default=0.5, help="Mixing parameter")
+    parser.add_argument(
+        "--born_vasprun",
+        type=str,
+        default=None,
+        help="vasprun.xml file for parsing born effective charges",
+    )
+    parser.add_argument(
+        "--cutoff_fc2",
+        type=float,
+        default=None,
+        help="Cutoff radius for effective force constants.",
+    )
+    parser.add_argument(
+        "--use_temporal_cutoff",
+        action="store_true",
+        help="Use an algorithm temporarily using cutoff radius.",
+    )
+
     args = parser.parse_args()
 
+    np.set_printoptions(legacy="1.21")
+    print_credit()
+    sscha = PypolymlpSSCHA(verbose=True)
     if args.poscar is not None:
-        unitcell = Poscar(args.poscar).structure
-        supercell_matrix = np.diag(args.supercell)
+        sscha.load_poscar(args.poscar, np.diag(args.supercell))
     elif args.yaml is not None:
-        res = Restart(args.yaml)
-        unitcell = res.unitcell
-        supercell_matrix = res.supercell_matrix
-        if args.pot is None:
-            args.pot = res.mlp
+        sscha.load_restart(yaml=args.yaml, parse_fc2=True)
 
-    n_atom = len(unitcell.elements) * np.linalg.det(supercell_matrix)
-    args = temperature_setting(args)
-    args = n_samples_setting(args, n_atom)
+    if args.pot is not None:
+        sscha.set_polymlp(args.pot)
+    if args.born_vasprun is not None:
+        sscha.set_nac_params(args.born_vasprun)
 
-    print_parameters(supercell_matrix, args)
-    print_structure(unitcell)
+    if args.n_samples is None:
+        n_samples_init = None
+        n_samples_final = None
+    else:
+        n_samples_init, n_samples_final = args.n_samples
 
-    run_sscha(unitcell, supercell_matrix, args, pot=args.pot)
+    sscha.run(
+        temp=args.temp,
+        temp_min=args.temp_min,
+        temp_max=args.temp_max,
+        temp_step=args.temp_step,
+        n_temp=args.n_temp,
+        ascending_temp=args.ascending_temp,
+        n_samples_init=n_samples_init,
+        n_samples_final=n_samples_final,
+        tol=args.tol,
+        max_iter=args.max_iter,
+        mixing=args.mixing,
+        mesh=args.mesh,
+        init_fc_algorithm=args.init,
+        init_fc_file=args.init_file,
+        cutoff_radius=args.cutoff_fc2,
+        use_temporal_cutoff=args.use_temporal_cutoff,
+    )

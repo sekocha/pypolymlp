@@ -17,7 +17,7 @@ from pypolymlp.core.interface_vasp import (
 from pypolymlp.utils.vasp_utils import write_poscar_file
 
 
-class PolymlpCalc:
+class PypolymlpCalc:
     """API Class for calculating properties."""
 
     def __init__(
@@ -50,8 +50,10 @@ class PolymlpCalc:
                 self._prop = properties
 
         self._verbose = verbose
-        self._unitcell = None
         self._structures = None
+
+        self._unitcell = None
+        self._poscar = None
 
         self._elastic = None
         self._eos = None
@@ -59,6 +61,9 @@ class PolymlpCalc:
         self._qha = None
         self._go = None
         self._fc = None
+
+        if self._verbose:
+            np.set_printoptions(legacy="1.21")
 
     def load_poscars(self, poscars: Union[str, list[str]]) -> list[PolymlpStructure]:
         """Parse POSCAR files.
@@ -68,6 +73,7 @@ class PolymlpCalc:
         structures: list[PolymlpStructure], Structures.
         """
         if isinstance(poscars, str):
+            self._poscar = poscars
             poscars = [poscars]
         self.structures = parse_structures_from_poscars(poscars)
         return self.structures
@@ -199,11 +205,7 @@ class PolymlpCalc:
         """Save features."""
         np.save("features.npy", self._features)
 
-    def run_elastic_constants(
-        self,
-        structure: PolymlpStructure,
-        poscar: str,
-    ):
+    def run_elastic_constants(self, poscar: Optional[str] = None):
         """Run elastic constant calculations.
 
         pymatgen is required.
@@ -214,11 +216,15 @@ class PolymlpCalc:
         """
         from pypolymlp.calculator.compute_elastic import PolymlpElastic
 
-        self.unitcell = structure
+        if poscar is not None:
+            self.load_poscars(poscar)
+            self._poscar = poscar
+
+        self.unitcell = self.first_structure
 
         self._elastic = PolymlpElastic(
             unitcell=self.unitcell,
-            unitcell_poscar=poscar,
+            unitcell_poscar=self._poscar,
             properties=self._prop,
             verbose=self._verbose,
         )
@@ -240,7 +246,7 @@ class PolymlpCalc:
     ):
         """Run EOS calculations.
 
-        pymatgen is required if eos_fit = True.
+        phonopy is required if eos_fit = True.
 
         Parameters
         ----------
@@ -419,7 +425,9 @@ class PolymlpCalc:
         init_str: Optional[PolymlpStructure] = None,
         with_sym: bool = True,
         relax_cell: bool = False,
+        relax_volume: bool = False,
         relax_positions: bool = True,
+        pressure: float = 0.0,
     ):
         """Initialize geometry optimization.
 
@@ -430,48 +438,51 @@ class PolymlpCalc:
         init_str: Initial structure.
         with_sym: Consider symmetry.
         relax_cell: Relax cell.
+        relax_volume: Relax volume.
         relax_positions: Relax atomic positions.
+        pressure: Pressure in GPa.
         """
-        from pypolymlp.calculator.str_opt.optimization_simple import Minimize
-        from pypolymlp.calculator.str_opt.optimization_sym import MinimizeSym
+        from pypolymlp.calculator.str_opt.optimization import GeometryOptimization
 
         if init_str is not None:
             self.structures = init_str
         init_str = self.first_structure
 
-        if with_sym:
-            try:
-                self._go = MinimizeSym(
-                    init_str,
-                    properties=self._prop,
-                    relax_cell=relax_cell,
-                    relax_positions=relax_positions,
-                    verbose=self._verbose,
-                )
-            except ValueError:
-                self._go = None
-                if self._verbose:
-                    print("Warning: No degrees of freedom in structure.", flush=True)
-        else:
-            self._go = Minimize(
+        try:
+            self._go = GeometryOptimization(
                 init_str,
                 properties=self._prop,
                 relax_cell=relax_cell,
+                relax_volume=relax_volume,
+                relax_positions=relax_positions,
+                with_sym=with_sym,
+                pressure=pressure,
                 verbose=self._verbose,
             )
+        except ValueError:
+            self._go = None
+            if self._verbose:
+                print("Warning: No degrees of freedom in structure.", flush=True)
         return self
 
     def run_geometry_optimization(
         self,
-        gtol: float = 1e-5,
-        method: Literal["BFGS", "CG", "L-BFGS-B"] = "BFGS",
+        method: Literal["BFGS", "CG", "L-BFGS-B", "SLSQP"] = "BFGS",
+        gtol: float = 1e-4,
+        maxiter: int = 1000,
+        c1: Optional[float] = None,
+        c2: Optional[float] = None,
     ):
         """Run geometry optimization.
 
         Parameters
         ----------
+        method: Optimization method, CG, BFGS, L-BFGS-B, or SLSQP.
+                If relax_volume = False, SLSQP is automatically used.
         gtol: Tolerance for gradients.
-        method: Optimization method, CG, BFGS, or L-BFGS-B.
+        maxiter: Maximum iteration in scipy optimization.
+        c1: c1 parameter in scipy optimization.
+        c2: c2 parameter in scipy optimization.
 
         Returns
         -------
@@ -486,7 +497,7 @@ class PolymlpCalc:
             print("Initial structure", flush=True)
             self._go.print_structure()
 
-        self._go.run(gtol=gtol)
+        self._go.run(method=method, gtol=gtol, maxiter=maxiter, c1=c1, c2=c2)
         self.structures = self._go.structure
         if self._verbose:
             if not self._go._relax_cell:
@@ -626,6 +637,11 @@ class PolymlpCalc:
     def first_structure(self) -> PolymlpStructure:
         """Return the first structure for the final calculation."""
         return self._structures[0]
+
+    @property
+    def converged_structure(self) -> PolymlpStructure:
+        """Return the converged structure for the final calculation."""
+        return self.first_structure
 
     @structures.setter
     def structures(

@@ -1,15 +1,27 @@
 # Pypolymlp utilities
 
+## Structure generator for DFT calculations
+See [DFT structure generator](strgen.md).
+
 ## Compression of vasprun.xml files
 
-```
+```shell
 > pypolymlp-utils --vasprun_compress vaspruns/vasprun-*.xml
 ```
-Compressed vasprun.xml is generated as vasprun.xml.polymlp.
+The compressed vasprun.xml files will be generated as `vasprun.xml.polymlp`.
+
+
+## Calculation of electronic properties at finite temperatures from vasprun.xml files
+(phonopy required.)
+```shell
+> pypolymlp-utils --electron_vasprun */vasprun.xml
+```
+The output files will be generated as `electron.yaml`.
+
 
 ## Automatic division of DFT dataset
 
-```
+```shell
 > pypolymlp-utils --auto_dataset dataset1/*/vasprun.xml dataset2/*/vasprun.xml
 > cat polymlp.in.append >> polymlp.in
 ```
@@ -21,7 +33,7 @@ The predictive power for them is more important than the other structures for th
 ## Atomic energies
 (Experimental: Only for VASP calculations using PBE and PBEsol functionals)
 
-```
+```shell
 > pypolymlp-utils --atomic_energy_elements Mg O --atomic_energy_functional PBE
 > pypolymlp-utils --atomic_energy_formula MgO --atomic_energy_functional PBE
 > pypolymlp-utils --atomic_energy_formula Al2O3 --atomic_energy_functional PBEsol
@@ -37,23 +49,99 @@ calc_cost option generates a file 'polymlp_cost.yaml', which is required for fin
 
 1. Single polynomial MLP
 
-```
-> pypolymlp-utils --calc_cost --pot polymlp.lammps
+```shell
+> pypolymlp-utils --calc_cost --pot polymlp.yaml
 
 # hybrid polynomial MLP
-> pypolymlp-utils --calc_cost --pot polymlp.lammps*
+> pypolymlp-utils --calc_cost --pot polymlp.yaml*
 ```
 
 2. Multiple polynomial MLPs
 
+Consider the following file and directory structures, which can be found in `examples/utils/mlp_opt`.
+
+```shell
+> ls Ag-Au
+polymlp-00001/  polymlp-00003/  polymlp-00005/  polymlp-00007/  polymlp-00009/
+polymlp-00002/  polymlp-00004/  polymlp-00006/  polymlp-00008/
+
+> ls Ag-Au/polymlp-00*
+test/polymlp-00001:
+polymlp.yaml
+
+test/polymlp-00002:
+polymlp.yaml
+
+test/polymlp-00003:
+polymlp.yaml
+
+test/polymlp-00004:
+polymlp.yaml
+
+test/polymlp-00005:
+polymlp.yaml
+
+test/polymlp-00006:
+polymlp.yaml
+
+test/polymlp-00007:
+polymlp.yaml
+
+test/polymlp-00008:
+polymlp.yaml
+
+test/polymlp-00009:
+polymlp.yaml
 ```
-> pypolymlp-utils --calc_cost -d $(path_mlps)/polymlp-00*
+
+In this case, computational costs for multiple polynomial MLPs can be estimated as follows.
+```shell
+> pypolymlp-utils --calc_cost -d Ag-Au/polymlp-00*
 ```
 
 ## Enumeration of optimal MLPs on convex hull
+Consider the following file and directory structures, which can be found in `examples/utils/mlp_opt`.
 
+```shell
+> ls Ag-Au
+polymlp-00001/  polymlp-00003/  polymlp-00005/  polymlp-00007/  polymlp-00009/
+polymlp-00002/  polymlp-00004/  polymlp-00006/  polymlp-00008/
+
+Ag-Au/polymlp-00001:
+polymlp.yaml  polymlp_cost.yaml  polymlp_error.yaml
+
+Ag-Au/polymlp-00002:
+polymlp.yaml  polymlp_cost.yaml  polymlp_error.yaml
+
+Ag-Au/polymlp-00003:
+polymlp.yaml  polymlp_cost.yaml  polymlp_error.yaml
+
+Ag-Au/polymlp-00004:
+polymlp.yaml  polymlp_cost.yaml  polymlp_error.yaml
+
+Ag-Au/polymlp-00005:
+polymlp.yaml  polymlp_cost.yaml  polymlp_error.yaml
+
+Ag-Au/polymlp-00006:
+polymlp.yaml  polymlp_cost.yaml  polymlp_error.yaml
+
+Ag-Au/polymlp-00007:
+polymlp.yaml  polymlp_cost.yaml  polymlp_error.yaml
+
+Ag-Au/polymlp-00008:
+polymlp.yaml  polymlp_cost.yaml  polymlp_error.yaml
+
+Ag-Au/polymlp-00009:
+polymlp.yaml  polymlp_cost.yaml  polymlp_error.yaml
 ```
-> pypolymlp-utils --find_optimal Ti-Pb/* --key test-disp1
+Files `polymlp_error.yaml` and `polymlp_cost.yaml` are needed for each MLP.
+
+In this case, optimal MLPs on the convex hull can be found as follows.
+```shell
+> pypolymlp-utils --find_optimal Ag-Au/* --key test-disp1
 ```
 
-Files 'polymlp_error.yaml' and 'polymlp_cost.yaml' are needed for each MLP.
+## Converter for potential files from older formats to current formats
+```shell
+> pypolymlp-utils --yaml_converter polymlp.lammps
+```

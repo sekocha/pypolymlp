@@ -20,34 +20,33 @@ PyModel::PyModel(const py::dict& params_dict,
     const bool& print_memory = params_dict["print_memory"].cast<bool>();
     convert_params_dict_to_feature_params(params_dict, fp);
 
-    const Features f_obj(fp);
-    const FunctionFeatures features_obj(f_obj);
-
     std::vector<bool> force_st;
     vector1i xf_begin, xs_begin;
-    set_index(
-        n_st_dataset, force_dataset, n_atoms_all,
-        xf_begin, xs_begin, force_st
-    );
+    set_index(n_st_dataset, force_dataset, n_atoms_all, xf_begin, xs_begin, force_st);
 
     Neighbor neigh(axis[0], positions_c[0], types[0], fp.n_type, fp.cutoff);
-    ModelFast mod(
-        neigh.get_dis_array(), neigh.get_diff_array(), neigh.get_atom2_array(),
-        types[0], fp, features_obj
+    Model mod(fp);
+    vector1d xe_pre;
+    vector2d xf_pre, xs_pre;
+    mod.run(
+        neigh.get_dis_array(),
+        neigh.get_diff_array(),
+        neigh.get_atom2_array(),
+        types[0],
+        fp.force,
+        xe_pre, xf_pre, xs_pre
     );
 
-    const int n_features = mod.get_xe_sum().size();
+    const int n_features = xe_pre.size();
     const int n_st = axis.size();
     const int total_n_data = n_data[0] + n_data[1] + n_data[2];
 
     if (print_memory == true){
-        std::cout << " matrix shape (X) = ("
+        std::cout << " Matrix shape (X): ("
             << total_n_data << "," << n_features << ")" << std::endl;
-        std::cout << std::fixed << std::setprecision(2);
-        std::cout << " Estimated memory allocation = "
-            << double(total_n_data) * double(n_features) * 8e-9
-            << " (GB)" << std::endl;
-        std::cout << std::fixed << std::setprecision(10);
+        double mem = double(total_n_data) * double(n_features) * 8 * 1e-9;
+        std::cout << " Required memory for X: " << std::setprecision(5)
+            << mem << " (GB)" << std::endl;
     }
 
     x_all = Eigen::MatrixXd(total_n_data, n_features);
@@ -55,25 +54,21 @@ PyModel::PyModel(const py::dict& params_dict,
     #pragma omp parallel for schedule(guided,1)
     #endif
     for (int i = 0; i < n_st; ++i){
-        struct feature_params fp1 = fp;
-        fp1.force = force_st[i];
+        Neighbor neigh(axis[i], positions_c[i], types[i], fp.n_type, fp.cutoff);
+        vector1d xe;
+        vector2d xf, xs;
+        mod.run(
+            neigh.get_dis_array(),
+            neigh.get_diff_array(),
+            neigh.get_atom2_array(),
+            types[i],
+            force_st[i],
+            xe, xf, xs
+        );
 
-        Neighbor neigh(axis[i],
-                       positions_c[i],
-                       types[i],
-                       fp1.n_type,
-                       fp1.cutoff);
-        ModelFast mod(neigh.get_dis_array(),
-                      neigh.get_diff_array(),
-                      neigh.get_atom2_array(),
-                      types[i], fp1, features_obj);
-
-        const auto &xe = mod.get_xe_sum();
         for (size_t j = 0; j < xe.size(); ++j) x_all(i,j) = xe[j];
 
         if (force_st[i] == true){
-            const auto &xf = mod.get_xf_sum();
-            const auto &xs = mod.get_xs_sum();
             for (size_t j = 0; j < xf.size(); ++j) {
                 for (size_t k = 0; k < xf[j].size(); ++k){
                     x_all(xf_begin[i]+j, k) = xf[j][k];

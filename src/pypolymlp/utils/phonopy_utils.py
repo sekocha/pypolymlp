@@ -1,9 +1,16 @@
-#!/usr/bin/env python
+"""Utility functions for phonopy."""
+
+import io
 from collections import Counter
+from typing import Optional
 
 import numpy as np
+import yaml
 from phonopy import Phonopy
+from phonopy.interface.vasp import VasprunxmlExpat
 from phonopy.structure.atoms import PhonopyAtoms
+from phonopy.structure.symmetry import symmetrize_borns_and_epsilon
+from phonopy.units import Bohr, Hartree
 
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.core.data_format import PolymlpStructure
@@ -60,7 +67,7 @@ def phonopy_supercell(
 
 def compute_forces_phonopy_displacements(
     ph: Phonopy,
-    pot: str = "polymlp.lammps",
+    pot: str = "polymlp.yaml",
     distance: float = 0.01,
 ) -> np.ndarray:
     """Compute forces using phonopy object and polymlp.
@@ -78,3 +85,51 @@ def compute_forces_phonopy_displacements(
     _, forces, _ = prop.eval_multiple(structures)
     forces = np.array(forces).transpose((0, 2, 1))
     return forces
+
+
+def get_nac_params(
+    vasprun: Optional[str] = None,
+    supercell_matrix: Optional[np.ndarray] = None,
+):
+    """Get NAC parameters."""
+    if vasprun is None:
+        return None
+
+    with io.open(vasprun, "rb") as f:
+        vasprun = VasprunxmlExpat(f)
+        vasprun.parse()
+        epsilon = vasprun.epsilon
+        borns = vasprun.born
+        unitcell = vasprun.cell
+
+    assert unitcell.scaled_positions.shape[0] == borns.shape[0]
+
+    borns_, epsilon_ = symmetrize_borns_and_epsilon(
+        borns,
+        epsilon,
+        unitcell,
+        supercell_matrix=supercell_matrix,
+        symprec=1e-4,
+    )
+    nac_params = {
+        "born": borns_,
+        "factor": Hartree * Bohr,
+        "dielectric": epsilon_,
+    }
+    return nac_params
+
+
+def get_frequency(yamlname):
+    """Return phonon frequency from phonopy yaml."""
+    data = yaml.load(open(yamlname))
+    freq = [b["frequency"] for d in data["phonon"] for b in d["band"]]
+    weight = [d["weight"] for d in data["phonon"] for b in d["band"]]
+    return np.array(freq), np.array(weight)
+
+
+def get_band_frequency(yamlname):
+    """Return band frequency from phonopy yaml."""
+    data = yaml.load(open(yamlname))
+    dist = [d["distance"] for d in data["phonon"]]
+    freq = [[b["frequency"] for b in d["band"]] for d in data["phonon"]]
+    return dist, freq

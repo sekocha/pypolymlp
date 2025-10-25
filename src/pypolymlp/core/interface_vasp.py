@@ -7,123 +7,52 @@ from typing import Optional
 import numpy as np
 
 from pypolymlp.core.data_format import PolymlpDataDFT, PolymlpStructure
-from pypolymlp.core.utils import permute_atoms
+from pypolymlp.core.interface_datasets import set_dataset_from_structures
+from pypolymlp.core.units import EVtoKbar
 
 
-def set_data_from_structures(
-    structures: list[PolymlpStructure],
-    energies: np.ndarray,
-    forces: Optional[list[np.ndarray]] = None,
-    stresses: Optional[np.ndarray] = None,
-    element_order: bool = None,
+def set_dataset_from_vaspruns(
+    vaspruns: list[str],
+    element_order: Optional[bool] = None,
 ) -> PolymlpDataDFT:
-    """Return DFT dataset in PolymlpDataDFT."""
-
-    assert len(structures) == len(energies)
-    if forces is None:
-        forces = [np.zeros((3, len(st.elements))) for st in structures]
-    if stresses is None:
-        stresses = [np.zeros((3, 3)) for _ in energies]
-
-    forces_data, stresses_data, volumes_data = [], [], []
-    for st, force_st, sigma in zip(structures, forces, stresses):
-        if element_order is not None:
-            st, force_st = permute_atoms(st, force_st, element_order)
-        force_ravel = np.ravel(force_st, order="F")
-        forces_data.extend(force_ravel)
-        if sigma is not None:
-            s = [
-                sigma[0][0],
-                sigma[1][1],
-                sigma[2][2],
-                sigma[0][1],
-                sigma[1][2],
-                sigma[2][0],
-            ]
-            stresses_data.extend(s)
-        volumes_data.append(st.volume)
-
-    total_n_atoms = np.array([sum(st.n_atoms) for st in structures])
-    files = [st.name for st in structures]
-    include_force = True if forces is not None else False
-
-    if element_order is None:
-        """This part must be tested. In general, element_order is not None."""
-        elements_size = [len(st.n_atoms) for st in structures]
-        elements = structures[np.argmax(elements_size)].elements
-        elements = sorted(set(elements), key=elements.index)
-    else:
-        elements = element_order
-
-    dft = PolymlpDataDFT(
-        energies=np.array(energies),
-        forces=np.array(forces_data),
-        stresses=np.array(stresses_data),
-        volumes=np.array(volumes_data),
-        structures=structures,
-        total_n_atoms=total_n_atoms,
-        files=files,
-        elements=elements,
-        include_force=include_force,
+    """Return DFT dataset by loading vasprun.xml files."""
+    structures, (energies, forces, stresses) = parse_properties_from_vaspruns(vaspruns)
+    dft = set_dataset_from_structures(
+        structures,
+        energies,
+        forces=forces,
+        stresses=stresses,
+        element_order=element_order,
     )
     return dft
 
 
-def parse_vaspruns(vaspruns: list[str], element_order: bool = None) -> PolymlpDataDFT:
-    """Parse vasprun.xml files and return DFT dataset in PolymlpDataDFT."""
-    kbar_to_eV = 1 / 1602.1766208
-    energies, forces, stresses, volumes, structures = [], [], [], [], []
+def parse_properties_from_vaspruns(vaspruns: list[str]) -> tuple:
+    """Parse vasprun.xml files and return structures and properties."""
+    energies, forces, stresses, structures = [], [], [], []
     for vasp in vaspruns:
-        v = Vasprun(vasp)
-        property_dict = v.get_properties()
-        st = v.get_structure()
-
-        if element_order is not None:
-            st, property_dict["force"] = permute_atoms(
-                st, property_dict["force"], element_order
-            )
-        energies.append(property_dict["energy"])
-        force_ravel = np.ravel(property_dict["force"], order="F")
-        forces.extend(force_ravel)
-
-        sigma = property_dict["stress"] * st.volume * kbar_to_eV
-        s = [
-            sigma[0][0],
-            sigma[1][1],
-            sigma[2][2],
-            sigma[0][1],
-            sigma[1][2],
-            sigma[2][0],
-        ]
-        stresses.extend(s)
-        structures.append(st)
-        volumes.append(st.volume)
-
-    total_n_atoms = np.array([sum(st.n_atoms) for st in structures])
-
-    if element_order is None:
-        elements_size = [len(st.n_atoms) for st in structures]
-        elements = structures[np.argmax(elements_size)].elements
-        elements = sorted(set(elements), key=elements.index)
-    else:
-        elements = element_order
-
-    dft = PolymlpDataDFT(
-        energies=np.array(energies),
-        forces=np.array(forces),
-        stresses=np.array(stresses),
-        volumes=np.array(volumes),
-        structures=structures,
-        total_n_atoms=total_n_atoms,
-        files=vaspruns,
-        elements=elements,
-    )
-    return dft
+        md, root = check_vasprun_type(vasp)
+        if md:
+            v = VasprunMD(vasp)
+            structures.extend(v.structures)
+            energies.extend(v.energies)
+            forces.extend(v.forces)
+            for stress, st in zip(v.stresses, v.structures):
+                sigma = stress * st.volume / EVtoKbar
+                stresses.append(sigma)
+        else:
+            v = Vasprun(vasp)
+            structures.append(v.structure)
+            energies.append(v.energy)
+            forces.append(v.forces)
+            sigma = v.stress * v.structure.volume / EVtoKbar
+            stresses.append(sigma)
+    return structures, (np.array(energies), forces, np.array(stresses))
 
 
 def parse_structures_from_vaspruns(vaspruns: list[str]) -> list[PolymlpStructure]:
     """Parse vasprun.xml files and return structures."""
-    return [Vasprun(f).get_structure() for f in vaspruns]
+    return [Vasprun(f).structure for f in vaspruns]
 
 
 def parse_structures_from_poscars(poscars: list[str]):
@@ -131,43 +60,92 @@ def parse_structures_from_poscars(poscars: list[str]):
     return [Poscar(f).structure for f in poscars]
 
 
-class Vasprun:
-    """Class for parsing vasprun.xml"""
+def check_vasprun_type(name: str = None, root=None):
+    """Check whether md type calculation is done in vasprun.xml."""
+    if name is not None:
+        root = ET.parse(name).getroot()
 
-    def __init__(self, name):
-        self._root = ET.parse(name).getroot()
+    tag = root.find(".//*[@name='IBRION']")
+    try:
+        tagint = int(tag.text)
+        if tagint == 0:
+            return True, root
+        return False, root
+    except:
+        return False, root
+
+
+class Vasprun:
+    """Class for parsing vasprun.xml from single-point calculation."""
+
+    def __init__(self, name: str, root=None):
+        """Init method."""
+        if root is None:
+            self._root = ET.parse(name).getroot()
+        else:
+            self._root = root
+        self._calc = self._root.find("calculation")
+
+        self._energy = None
+        self._forces = None
+        self._stress = None
         self._structure = None
         self._name = name
 
-    def get_energy(self) -> float:
-        """Parse vasprun and return energy."""
-        e = self._root.find("calculation").find("energy")
-        return float(e[1].text)
-
     def get_energy_smearing_delta(self) -> float:
         """Parse vasprun and return smearing delta F."""
-        e = self._root.find("calculation").find("energy")
+        e = self._calc.find("energy")
         return float(e[2].text)
 
-    def get_forces(self) -> np.ndarray:
-        """Parse vasprun and return forces."""
+    @property
+    def energy(self) -> float:
+        """Parse vasprun and return energy.
+
+        Return
+        ------
+        energy: float.
+        """
+        if self._energy is not None:
+            return self._energy
+        e = self._calc.find("energy")
+        self._energy = float(e[1].text)
+        return self._energy
+
+    @property
+    def forces(self) -> np.ndarray:
+        """Parse vasprun and return forces.
+
+        Return
+        ------
+        forces: shape=(3, n_atom)
+        """
+        if self._forces is not None:
+            return self._forces
         f = self._root.find(".//*[@name='forces']")
-        return self._varray_to_nparray(f).T
+        self._forces = self._varray_to_nparray(f).T
+        return self._forces
 
-    def get_stress(self) -> np.ndarray:
-        """Parse vasprun and return stress tensor in kbar."""
+    @property
+    def stress(self) -> np.ndarray:
+        """Parse vasprun and return stress tensor in kbar.
+
+        Return
+        ------
+        stress: shape=(3, 3) in kbar.
+        """
+        if self._stress is not None:
+            return self._stress
         f = self._root.find(".//*[@name='stress']")
-        return self._varray_to_nparray(f)
+        self._stress = self._varray_to_nparray(f)
+        return self._stress
 
-    def get_properties(self) -> dict:
-        property_dict = {
-            "energy": self.get_energy(),
-            "force": self.get_forces(),
-            "stress": self.get_stress(),
-        }
-        return property_dict
+    @property
+    def properties(self) -> tuple:
+        """Return properties."""
+        return (self.energy, self.forces, self.stress)
 
-    def get_structure(self, valence: bool = False) -> PolymlpStructure:
+    @property
+    def structure(self) -> PolymlpStructure:
         """Parse vasprun and return structure."""
         if self._structure is not None:
             return self._structure
@@ -191,13 +169,13 @@ class Vasprun:
         elements = ["Zr" if e == "r" else e for e in elements]
         types = [int(x) - 1 for x in list(np.array(tmp2)[:, 1])]
 
-        if valence:
-            valence_dict = dict()
-            for d in tmp1:
-                valence_dict[d[1]] = float(d[3])
-            valence = [valence_dict[e] for e in self.elements]
-        else:
-            valence = None
+        # if valence:
+        #     valence_dict = dict()
+        #     for d in tmp1:
+        #         valence_dict[d[1]] = float(d[3])
+        #     valence = [valence_dict[e] for e in self.elements]
+        # else:
+        #     valence = None
 
         self._structure = PolymlpStructure(
             axis,
@@ -206,12 +184,12 @@ class Vasprun:
             elements,
             types,
             volume,
-            valence=valence,
             name=self._name,
         )
         return self._structure
 
     def get_scstep(self) -> np.ndarray:
+        """Return SC step."""
         scsteps = self._root.find("calculation").findall("scstep")
         e_history = []
         for sc in scsteps:
@@ -220,31 +198,155 @@ class Vasprun:
         return np.array(e_history)
 
     def _varray_to_nparray(self, varray):
+        """Convert varray to numpy array."""
         nparray = [[float(x) for x in v1.text.split()] for v1 in varray]
-        nparray = np.array(nparray)
-        return nparray
+        return np.array(nparray)
 
     def _read_rc_set(self, obj):
-        rc_set = []
-        for rc in obj:
-            c_set = [c.text.replace(" ", "") for c in rc.findall("c")]
-            rc_set.append(c_set)
-        return rc_set
+        """Read rc_set."""
+        return [[c.text.replace(" ", "") for c in rc.findall("c")] for rc in obj]
+
+
+class VasprunMD:
+    """Class for parsing vasprun.xml from MD."""
+
+    def __init__(self, name: str, root=None):
+        """Init method."""
+        if root is None:
+            self._root = ET.parse(name).getroot()
+        else:
+            self._root = root
+        self._calcs = self._root.findall("calculation")
+
+        self._energies = None
+        self._forces = None
+        self._stresses = None
+        self._structures = None
+        self._name = name
 
     @property
-    def structure(self) -> PolymlpStructure:
-        """Return structure"""
-        return self._structure
+    def energies(self):
+        """Return energies.
+
+        Return
+        ------
+        energies: shape = (n_str)
+        """
+        if self._energies is not None:
+            return self._energies
+
+        tag = "energy"
+        self._energies = [float(cal.find(tag)[1].text) for cal in self._calcs]
+        self._energies = np.array(self._energies)
+        return self._energies
+
+    @property
+    def forces(self):
+        """Return forces.
+
+        Return
+        ------
+        forces: shape = (n_str, 3, n_atom).
+        """
+        if self._forces is not None:
+            return self._forces
+
+        self._forces = []
+        tag = ".//*[@name='forces']"
+        for cal in self._calcs:
+            f = self._varray_to_nparray(cal.find(tag)).T
+            self._forces.append(f)
+        return self._forces
+
+    @property
+    def stresses(self):
+        """Return stress tensors.
+
+        Return
+        ------
+        stresses: shape = (n_str, 3, 3)
+        """
+        if self._stresses is not None:
+            return self._stresses
+
+        self._stresses = []
+        tag = ".//*[@name='stress']"
+        for cal in self._calcs:
+            s = self._varray_to_nparray(cal.find(tag))
+            self._stresses.append(s)
+        self._stresses = np.array(self._stresses)
+        return self._stresses
+
+    @property
+    def structures(self):
+        """Return structures.
+
+        Return
+        ------
+        structures: list[PolymlpStrucuture]
+        """
+        if self._structures is not None:
+            return self._structures
+
+        rc = self._root.findall(".//*[@name='atomtypes']/set/rc")
+        rc_set = self._read_rc_set(rc)
+        n_atoms = [int(x) for x in list(np.array(rc_set)[:, 0])]
+
+        # if valence:
+        #     valence_dict = dict()
+        #     for d in rc_set:
+        #         valence_dict[d[1]] = float(d[3])
+        #     valence = [valence_dict[e] for e in self.elements]
+        # else:
+        #     valence = None
+
+        rc = self._root.findall(".//*[@name='atoms']/set/rc")
+        rc_set = self._read_rc_set(rc)
+        elements = list(np.array(rc_set)[:, 0])
+        elements = ["Zr" if e == "r" else e for e in elements]
+        types = [int(x) - 1 for x in list(np.array(rc_set)[:, 1])]
+
+        self._structures = []
+        for cal in self._calcs:
+            st1 = cal.find(".//*[@name='basis']")
+            st2 = cal.find(".//*[@name='positions']")
+            st3 = cal.find(".//*[@name='volume']")
+            axis = self._varray_to_nparray(st1).T
+            positions = self._varray_to_nparray(st2).T
+            volume = float(st3.text)
+
+            st = PolymlpStructure(
+                axis,
+                positions,
+                n_atoms,
+                elements,
+                types,
+                volume,
+                name=self._name,
+            )
+            self._structures.append(st)
+
+        return self._structures
+
+    def _varray_to_nparray(self, varray):
+        """Convert varray to numpy array."""
+        nparray = [[float(x) for x in v1.text.split()] for v1 in varray]
+        return np.array(nparray)
+
+    def _read_rc_set(self, obj):
+        """Read rc_set."""
+        return [[c.text.replace(" ", "") for c in rc.findall("c")] for rc in obj]
 
 
 class Poscar:
     """Class for parsing POSCAR."""
 
     def __init__(self, filename: str, selective_dynamics: bool = False):
+        """Init method."""
         self._parse(filename, selective_dynamics=selective_dynamics)
 
     def _parse(self, filename: str, selective_dynamics: bool = False):
-
+        """Parse POSCAR file."""
         f = open(filename, "r")
         lines = f.readlines()
         f.close()
@@ -328,6 +430,7 @@ class Outcar:
 
 
 def read_doscar(name):
+    """Parse DOSCAR file."""
     f = open(name)
     lines = f.readlines()
     f.close()
@@ -342,75 +445,73 @@ def read_doscar(name):
 
 
 def parse_energy_volume(vaspruns):
-
+    """Parse energy-volume data from vaspruns."""
     ev_data = []
     for vasprun_file in vaspruns:
         vasp = Vasprun(vasprun_file)
-        energy = vasp.get_energy()
-        vol = vasp.get_structure()["volume"]
+        energy = vasp.energy
+        vol = vasp.structure.volume
         ev_data.append([vol, energy])
     return np.array(ev_data)
 
 
-"""
-class Chg:
-
-    def __init__(self, fname="CHG"):
-        p = Poscar(fname)
-        self.axis, self.positions, n_atoms, elements, types = p.get_structure()
-        st = Structure(self.axis, self.positions, n_atoms, elements, types)
-        self.vol = st.calc_volume()
-
-        f = open(fname)
-        lines2 = f.readlines()
-        f.close()
-
-        start = sum(n_atoms) + 9
-        self.grid = [int(i) for i in lines2[start].split()]
-        self.ngrid = np.prod(self.grid)
-
-        chg = [float(s) for line in lines2[start + 1 :] for s in line.split()]
-        self.chg = np.array(chg) / self.ngrid
-        self.chgd = np.array(chg) / self.vol
-
-        grid_fracs = np.array(
-            [
-                np.array([x[2], x[1], x[0]])
-                for x in itertools.product(
-                    range(self.grid[2]), range(self.grid[1]), range(self.grid[0])
-                )
-            ]
-        ).T
-
-        self.grid_fracs = [
-            grid_fracs[0, :] / self.grid[0],
-            grid_fracs[1, :] / self.grid[1],
-            grid_fracs[2, :] / self.grid[2],
-        ]
-
-    def get_grid(self):
-        return self.grid
-
-    def get_grid_coordinates(self):
-        self.grid_coordinates = np.dot(self.axis, self.grid_fracs)
-        return self.grid_coordinates
-
-    def get_grid_coordinates_atomcenter(self, atom):
-        pos1 = self.positions[:, atom]
-        frac_new = self.grid_fracs - np.tile(pos1, (self.grid_fracs.shape[1], 1)).T
-        frac_new[np.where(frac_new > 0.5)] -= 1.0
-        frac_new[np.where(frac_new < -0.5)] += 1.0
-        return np.dot(self.axis, frac_new)
-
-    def get_ngrid(self):
-        return self.ngrid
-
-    def get_chg(self):
-        return self.chg
-
-    def get_chg_density(self):
-        return self.chgd
-
-    def get_volume(self):
-        return self.vol
-"""
+# class Chg:
+#
+#     def __init__(self, fname="CHG"):
+#         p = Poscar(fname)
+#         self.axis, self.positions, n_atoms, elements, types = p.get_structure()
+#         st = Structure(self.axis, self.positions, n_atoms, elements, types)
+#         self.vol = st.calc_volume()
+#
+#         f = open(fname)
+#         lines2 = f.readlines()
+#         f.close()
+#
+#         start = sum(n_atoms) + 9
+#         self.grid = [int(i) for i in lines2[start].split()]
+#         self.ngrid = np.prod(self.grid)
+#
+#         chg = [float(s) for line in lines2[start + 1 :] for s in line.split()]
+#         self.chg = np.array(chg) / self.ngrid
+#         self.chgd = np.array(chg) / self.vol
+#
+#         grid_fracs = np.array(
+#             [
+#                 np.array([x[2], x[1], x[0]])
+#                 for x in itertools.product(
+#                     range(self.grid[2]), range(self.grid[1]), range(self.grid[0])
+#                 )
+#             ]
+#         ).T
+#
+#         self.grid_fracs = [
+#             grid_fracs[0, :] / self.grid[0],
+#             grid_fracs[1, :] / self.grid[1],
+#             grid_fracs[2, :] / self.grid[2],
+#         ]
+#
+#     def get_grid(self):
+#         return self.grid
+#
+#     def get_grid_coordinates(self):
+#         self.grid_coordinates = np.dot(self.axis, self.grid_fracs)
+#         return self.grid_coordinates
+#
+#     def get_grid_coordinates_atomcenter(self, atom):
+#         pos1 = self.positions[:, atom]
+#         frac_new = self.grid_fracs - np.tile(pos1, (self.grid_fracs.shape[1], 1)).T
+#         frac_new[np.where(frac_new > 0.5)] -= 1.0
+#         frac_new[np.where(frac_new < -0.5)] += 1.0
+#         return np.dot(self.axis, frac_new)
+#
+#     def get_ngrid(self):
+#         return self.ngrid
+#
+#     def get_chg(self):
+#         return self.chg
+#
+#     def get_chg_density(self):
+#         return self.chgd
+#
+#     def get_volume(self):
+#         return self.vol

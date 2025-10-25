@@ -6,10 +6,17 @@ import time
 
 import numpy as np
 
-from pypolymlp.api.pypolymlp_calc import PolymlpCalc
-from pypolymlp.core.utils import precision
+from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
+from pypolymlp.core.utils import precision, print_credit
 
-# from pypolymlp.utils.yaml_utils import load_cells
+
+def check_variables(args):
+    """Check variables."""
+    if args.poscar is None and args.poscars is not None:
+        args.poscar = args.poscars
+    if args.poscars is None and args.poscar is not None:
+        args.poscars = args.poscar
+    return args
 
 
 def run():
@@ -37,6 +44,10 @@ def run():
         "--precision",
         action="store_true",
         help="Mode: MLP precision calculation. This uses only features",
+    )
+    parser.add_argument("--eos", action="store_true", help="Mode: EOS calculation")
+    parser.add_argument(
+        "--elastic", action="store_true", help="Mode: Elastic constant calculation"
     )
 
     parser.add_argument("--pot", nargs="*", type=str, default=None, help="polymlp file")
@@ -93,8 +104,43 @@ def run():
     parser.add_argument(
         "--geometry_optimization",
         action="store_true",
-        help="Geometry optimization is performed " "for initial structure.",
+        help="Geometry optimization is performed for initial structure.",
     )
+    parser.add_argument(
+        "--pressure",
+        type=float,
+        default=0.0,
+        help="Pressure (in GPa)",
+    )
+
+    parser.add_argument(
+        "--no_symmetry",
+        action="store_true",
+        help="Ignore symmetric properties in geometry optimization",
+    )
+    parser.add_argument(
+        "--fix_cell",
+        action="store_true",
+        help="Fix cell shape and volume in geometry optimization",
+    )
+    parser.add_argument(
+        "--fix_volume",
+        action="store_true",
+        help="Fix cell volume in geometry optimization",
+    )
+    parser.add_argument(
+        "--fix_atom",
+        action="store_true",
+        help="Fix atomic positions in geometry optimization",
+    )
+    parser.add_argument(
+        "--method",
+        type=str,
+        choices=["BFGS", "CG", "L-BFGS-B", "SLSQP"],
+        default="BFGS",
+        help="Algorithm for geometry optimization",
+    )
+
     parser.add_argument(
         "--batch_size",
         type=int,
@@ -144,14 +190,16 @@ def run():
         help="Input file name",
     )
     args = parser.parse_args()
+    np.set_printoptions(legacy="1.21")
+    print_credit()
+    args = check_variables(args)
 
     if args.pot is None and args.infile is None:
         raise RuntimeError("Input parameters not found.")
 
     require_mlp = True if args.pot is not None else False
-    polymlp = PolymlpCalc(pot=args.pot, verbose=True, require_mlp=require_mlp)
+    polymlp = PypolymlpCalc(pot=args.pot, verbose=True, require_mlp=require_mlp)
 
-    np.set_printoptions(legacy="1.25")
     if args.properties:
         print("Mode: Property calculations", flush=True)
         polymlp.load_structures_from_files(
@@ -174,6 +222,7 @@ def run():
             polymlp.init_geometry_optimization(
                 with_sym=True,
                 relax_cell=False,
+                relax_volume=False,
                 relax_positions=True,
             )
             polymlp.run_geometry_optimization()
@@ -205,6 +254,25 @@ def run():
                 temperatures=range(0, 1001, 10),
                 write_kappa=True,
             )
+
+    elif args.geometry_optimization:
+        print("Mode: Geometry optimization", flush=True)
+        polymlp.load_poscars(args.poscar)
+        relax_cell, relax_volume = True, True
+        if args.fix_cell:
+            relax_cell = False
+            relax_volume = False
+        if args.fix_volume:
+            relax_volume = False
+        polymlp.init_geometry_optimization(
+            with_sym=not args.no_symmetry,
+            relax_cell=relax_cell,
+            relax_volume=relax_volume,
+            relax_positions=not args.fix_atom,
+            pressure=args.pressure,
+        )
+        polymlp.run_geometry_optimization(method=args.method)
+        polymlp.save_poscars(filename="POSCAR_eqm")
 
     elif args.phonon:
         print("Mode: Phonon calculations", flush=True)
@@ -263,3 +331,23 @@ def run():
                 polymlp.features.shape,
                 flush=True,
             )
+
+    elif args.eos:
+        if args.poscar is None and args.poscars is not None:
+            args.poscar = args.poscars
+        print("Mode: EOS calculation", flush=True)
+        polymlp.load_poscars(args.poscar)
+        polymlp.run_eos(
+            eps_min=0.7,
+            eps_max=2.0,
+            eps_step=0.03,
+            fine_grid=True,
+            eos_fit=True,
+        )
+        polymlp.write_eos(filename="polymlp_eos.yaml")
+
+    elif args.elastic:
+        print("Mode: Elastic constant calculation", flush=True)
+        polymlp.load_poscars(args.poscar)
+        polymlp.run_elastic_constants()
+        polymlp.write_elastic_constants(filename="polymlp_elastic.yaml")

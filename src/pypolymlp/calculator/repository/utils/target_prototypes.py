@@ -40,7 +40,7 @@ def get_icsd_data1(elements, path_vasp):
     icsd_data = dict()
     for file1 in files:
         v = Vasprun(file1)
-        e, structure = v.get_energy(), v.get_structure()
+        e, structure = v.energy, v.structure
         e -= sum([float(atom_e[ele]) for ele in structure.elements])
         e /= sum(structure.n_atoms)
 

@@ -6,7 +6,6 @@
 *****************************************************************************/
 
 #include "compute/neighbor_half.h"
-//#include <chrono>
 
 
 NeighborHalf::NeighborHalf(const vector2d& axis,
@@ -14,27 +13,18 @@ NeighborHalf::NeighborHalf(const vector2d& axis,
                            const vector1i& types,
                            const double& cutoff){
 
-//    auto t1 = std::chrono::system_clock::now();
-
     NeighborCell neigh_cell(axis, positions_c, cutoff);
     const auto& trans = neigh_cell.get_translations();
     const auto& positions_c_rev = neigh_cell.get_positions_cartesian();
-/*
-    auto t2 = std::chrono::system_clock::now();
-    auto dur = t2 - t1;
-    auto msec = std::chrono::duration_cast
-                <std::chrono::microseconds>(dur).count();
-    std::cout << msec << std::endl;
-    auto t3 = std::chrono::system_clock::now();
-*/
-    double dx, dy, dz, dx_ij, dy_ij, dz_ij, dis;
-    bool bool_half;
+
     const double tol = 1e-12;
     const size_t n_total_atom = types.size();
     half_list = vector2i(n_total_atom);
     diff_list = vector3d(n_total_atom);
 
     for (int i = 0; i < n_total_atom; ++i){
+        double dx, dy, dz, dx_ij, dy_ij, dz_ij, dis;
+        bool bool_half;
         for (int j = 0; j < i; ++j){
             dx_ij = positions_c_rev[0][j] - positions_c_rev[0][i];
             dy_ij = positions_c_rev[1][j] - positions_c_rev[1][i];
@@ -65,27 +55,6 @@ NeighborHalf::NeighborHalf(const vector2d& axis,
             }
         }
     }
-
-/*
-    vector1i count(n_total_atom, 0);
-    for (int i = 0; i < n_total_atom; ++i){
-        for (auto& j: half_list[i]){
-            count[j] += 1;
-            count[i] += 1;
-        }
-    }
-    for (int i = 0; i < n_total_atom; ++i){
-        std::cout << i << " " << count[i] << std::endl;
-    }
-*/
-
-/*
-    auto t4 = std::chrono::system_clock::now();
-    dur = t4 - t3;
-    msec = std::chrono::duration_cast
-                <std::chrono::microseconds>(dur).count();
-    std::cout << msec << std::endl;
-*/
 }
 
 NeighborHalf::~NeighborHalf(){}

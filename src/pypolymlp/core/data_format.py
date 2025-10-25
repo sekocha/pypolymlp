@@ -5,6 +5,7 @@ from typing import Literal, Optional, Union
 
 import numpy as np
 
+from pypolymlp.core.utils import split_ids_train_test
 from pypolymlp.cxx.lib import libmlpcpp
 
 
@@ -35,7 +36,10 @@ class PolymlpStructure:
     axis_inv: Optional[np.ndarray] = None
     comment: Optional[str] = None
     name: Optional[str] = None
-    masses: Optional[int] = None
+
+    masses: Optional[float] = None
+    velocities: Optional[np.ndarray] = None
+    momenta: Optional[np.ndarray] = None
 
     def __post_init__(self):
         if self.volume is None:
@@ -52,6 +56,10 @@ class PolymlpStructure:
         assert self.positions.shape[1] == len(self.elements)
         assert len(self.elements) == len(self.types)
         assert len(self.elements) == sum(self.n_atoms)
+
+    def set_positions_cartesian(self):
+        """Calculate positions_cartesian."""
+        self.positions_cartesian = self.axis @ self.positions
 
 
 @dataclass
@@ -140,6 +148,8 @@ class PolymlpModelParams:
     pair_conditional: bool = False
     pair_params: Optional[list[list[float]]] = None
     pair_params_conditional: Optional[dict] = None
+    pair_params_in1: Optional[tuple] = None
+    pair_params_in2: Optional[tuple] = None
 
     def __post_init__(self):
         self.check_errors()
@@ -152,10 +162,11 @@ class PolymlpModelParams:
         return model_dict
 
     def check_errors(self):
-        if self.pair_params is None and self.pair_params_conditional is None:
-            raise KeyError(
-                "Either of pair_params or pair_params_conditional is required."
-            )
+        if self.pair_params_in1 is None:
+            if self.pair_params is None and self.pair_params_conditional is None:
+                raise KeyError(
+                    "Either of pair_params or pair_params_conditional is required."
+                )
 
 
 @dataclass
@@ -174,6 +185,8 @@ class PolymlpParams:
                       alphas = np.linspace(p[0], p[1], p[2]).
     include_force: Consider force entries.
     include_stress: Consider stress entries.
+    temperature: Temperature (active if dataset = "electron")
+    electron_property: Target electronic property
     """
 
     n_type: int
@@ -192,9 +205,21 @@ class PolymlpParams:
     print_memory: bool = False
     type_indices: Optional[list] = None
     type_full: Optional[bool] = None
+    temperature: float = 300
+    electron_property: Literal[
+        "free_energy",
+        "energy",
+        "entropy",
+        "specific_heat",
+    ] = "free_energy"
+    name: Optional[str] = None
+    mass: Optional[float] = None
+    priority_infile: Optional[str] = None
+    alphas: Optional[np.ndarray] = None
 
     def __post_init__(self):
         self.check_errors()
+        self.alphas = np.array([pow(10, a) for a in self.regression_alpha])
 
     def as_dict(self) -> dict:
         """Convert the dataclass to dict."""
@@ -207,6 +232,15 @@ class PolymlpParams:
         assert len(self.elements) == self.n_type
         if self.atomic_energy is not None:
             assert len(self.atomic_energy) == self.n_type
+
+    def set_alphas(self, reg_alpha_params: tuple):
+        """Set alpha values."""
+        self.regression_alpha = np.linspace(
+            reg_alpha_params[0],
+            reg_alpha_params[1],
+            reg_alpha_params[2],
+        )
+        self.alphas = np.array([pow(10, a) for a in self.regression_alpha])
 
 
 @dataclass
@@ -235,8 +269,11 @@ class PolymlpDataDFT:
     include_force: bool = True
     weight: float = 1.0
     name: str = "dataset"
+    exist_force: bool = True
+    exist_stress: bool = True
 
     def __post_init__(self):
+        """Post init method."""
         self.check_errors()
 
     def check_errors(self):
@@ -275,15 +312,20 @@ class PolymlpDataDFT:
         )
         return dft_dict_sliced
 
-    def sort(self):
-        """Sort DFT data in terms of the number of atoms."""
-        ids = np.argsort(self.total_n_atoms)
-        ids_stress = ((ids * 6)[:, None] + np.arange(6)[None, :]).reshape(-1)
+    def _force_stress_ids(self, ids: np.ndarray):
+        """Return IDs for force and stress corresponding to IDs for energy."""
         force_end = np.cumsum(self.total_n_atoms * 3)
         force_begin = np.insert(force_end[:-1], 0, 0)
         ids_force = np.array(
             [i for b, e in zip(force_begin[ids], force_end[ids]) for i in range(b, e)]
         )
+        ids_stress = ((ids * 6)[:, None] + np.arange(6)[None, :]).reshape(-1)
+        return ids_force, ids_stress
+
+    def sort(self):
+        """Sort DFT data in terms of the number of atoms."""
+        ids = np.argsort(self.total_n_atoms)
+        ids_force, ids_stress = self._force_stress_ids(ids)
 
         self.energies = self.energies[ids]
         self.forces = self.forces[ids_force]
@@ -294,53 +336,35 @@ class PolymlpDataDFT:
         self.files = [self.files[i] for i in ids]
         return self
 
-
-@dataclass
-class PolymlpDataXY:
-    """Dataclass of X, y, and related properties used for regression.
-
-    Parameters
-    ----------
-    x: Predictor matrix, shape=(total_n_data, n_features)
-    y: Observation vector, shape=(total_n_data)
-    xtx: x.T @ x
-    xty: x.T @ y
-    scales: Scales of x, shape=(n_features)
-    weights: Weights for data, shape=(total_n_data)
-    n_data: Number of data (energy, force, stress)
-    """
-
-    x: Optional[np.ndarray] = None
-    y: Optional[np.ndarray] = None
-    xtx: Optional[np.ndarray] = None
-    xty: Optional[np.ndarray] = None
-    scales: Optional[np.ndarray] = None
-    weights: Optional[np.ndarray] = None
-    n_data: Optional[tuple[int, int, int]] = None
-    first_indices: Optional[list[tuple[int, int, int]]] = None
-    cumulative_n_features: Optional[int] = None
-    xe_sum: Optional[np.ndarray] = None
-    xe_sq_sum: Optional[np.ndarray] = None
-    y_sq_norm: float = 0.0
-    total_n_data: int = 0
-
-
-@dataclass
-class PolymlpDataMLP:
-    """Dataclass of regression results.
-
-    Parameters
-    ----------
-    coeffs: MLP coefficients, shape=(n_features).
-    scales: Scales of x, shape=(n_features).
-    """
-
-    coeffs: Optional[np.ndarray] = None
-    scales: Optional[np.ndarray] = None
-    rmse: Optional[float] = None
-    alpha: Optional[float] = None
-    beta: Optional[float] = None
-    predictions_train: Optional[np.ndarray] = None
-    predictions_test: Optional[np.ndarray] = None
-    error_train: Optional[dict] = None
-    error_test: Optional[dict] = None
+    def split(self, train_ratio: float = 0.9):
+        """Split dataset into training and test datasets."""
+        train_ids, test_ids = split_ids_train_test(len(self.energies))
+        ids_force, ids_stress = self._force_stress_ids(train_ids)
+        train = PolymlpDataDFT(
+            energies=self.energies[train_ids],
+            forces=self.forces[ids_force],
+            stresses=self.stresses[ids_stress],
+            volumes=self.volumes[train_ids],
+            structures=[self.structures[i] for i in train_ids],
+            total_n_atoms=self.total_n_atoms[train_ids],
+            files=[self.files[i] for i in train_ids],
+            elements=self.elements,
+            include_force=self.include_force,
+            weight=self.weight,
+            name=self.name,
+        )
+        ids_force, ids_stress = self._force_stress_ids(test_ids)
+        test = PolymlpDataDFT(
+            energies=self.energies[test_ids],
+            forces=self.forces[ids_force],
+            stresses=self.stresses[ids_stress],
+            volumes=self.volumes[test_ids],
+            structures=[self.structures[i] for i in test_ids],
+            total_n_atoms=self.total_n_atoms[test_ids],
+            files=[self.files[i] for i in test_ids],
+            elements=self.elements,
+            include_force=self.include_force,
+            weight=self.weight,
+            name=self.name,
+        )
+        return train, test

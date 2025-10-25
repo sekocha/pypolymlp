@@ -2,41 +2,41 @@
 
 import numpy as np
 
-from pypolymlp.core.data_format import PolymlpStructure
+from pypolymlp._version import __version__
+
+
+def strtobool(val):
+    """Convert a string to bool, True or False."""
+    val = val.lower()
+    if val in ("t", "true", "1"):
+        return True
+    elif val in ("f", "false", "0"):
+        return False
+    raise RuntimeError("Invalid string.")
+
+
+def split_ids_train_test(n_data: int, train_ratio: float = 0.9):
+    """Split dataset into training and test datasets."""
+    n_train = round(n_data * train_ratio)
+    n_test = n_data - n_train
+    test_ids = np.round(np.linspace(0, n_data - 1, num=n_test)).astype(int)
+
+    train_bools = np.ones(n_data, dtype=bool)
+    train_bools[test_ids] = False
+    train_ids = np.where(train_bools)[0]
+    return train_ids, test_ids
+
+
+def split_train_test(files: list, train_ratio: float = 0.9):
+    """Split dataset into training and test datasets."""
+    n_data = len(files)
+    train_ids, test_ids = split_ids_train_test(n_data, train_ratio=train_ratio)
+    return [files[i] for i in train_ids], [files[i] for i in test_ids]
 
 
 def rmse(y_true: np.ndarray, y_pred: np.ndarray):
     """Compute root mean square errors."""
     return np.sqrt(np.mean(np.square(y_true - y_pred)))
-
-
-def permute_atoms(
-    st: PolymlpStructure,
-    force: np.ndarray,
-    element_order: list[str],
-) -> tuple[PolymlpStructure, np.ndarray]:
-    """Permute atoms in structure and forces.
-
-    The orders of atoms and forces are compatible with the element order.
-    """
-    positions, n_atoms, elements, types = [], [], [], []
-    force_permute = []
-    for atomtype, ele in enumerate(element_order):
-        ids = np.where(np.array(st.elements) == ele)[0]
-        n_match = len(ids)
-        positions.extend(st.positions[:, ids].T)
-        n_atoms.append(n_match)
-        elements.extend([ele for _ in range(n_match)])
-        types.extend([atomtype for _ in range(n_match)])
-        force_permute.extend(force[:, ids].T)
-    positions = np.array(positions).T
-    force_permute = np.array(force_permute).T
-
-    st.positions = positions
-    st.n_atoms = n_atoms
-    st.elements = elements
-    st.types = types
-    return st, force_permute
 
 
 def mass_table():
@@ -151,14 +151,6 @@ def mass_table():
     return mass_table
 
 
-def kjmol_to_ev(e):
-    return e / 96.48533212331002
-
-
-def ev_to_kjmol(e):
-    return e * 96.48533212331002
-
-
 def precision(x, alpha=0.0001):
 
     # std = np.std(x[:50], axis=0)
@@ -171,7 +163,12 @@ def precision(x, alpha=0.0001):
         prod[i, i] += alpha
 
     var = np.linalg.inv(prod)
-    # ave = np.average(x, axis=0)
-    # dx = x - ave
     prec = np.mean([x1.T @ var @ x1 for x1 in x])
     return prec
+
+
+def print_credit():
+    """Print credit of pypolymlp."""
+    print("Pypolymlp", "version", __version__, flush=True)
+    print("  polynomial machine learning potential:", flush=True)
+    print("  A. Seko, J. Appl. Phys. 133, 011101 (2023)", flush=True)

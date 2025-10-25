@@ -1,6 +1,9 @@
 """Utilities for vasp files"""
 
+from typing import Optional
+
 from pypolymlp.core.data_format import PolymlpStructure
+from pypolymlp.utils.yaml_utils import save_cell
 
 
 def print_poscar(st: PolymlpStructure):
@@ -40,8 +43,8 @@ def print_poscar(st: PolymlpStructure):
 
 def write_poscar_file(
     st: PolymlpStructure,
-    filename="poscar_pypolymlp",
-    header=None,
+    filename: str = "poscar_pypolymlp",
+    header: Optional[str] = None,
 ):
     """Write structure in POSCAR file."""
     f = open(filename, "w")
@@ -87,3 +90,55 @@ def write_poscar_file(
         )
 
     f.close()
+
+
+def load_electronic_properties_from_vasprun(
+    input_filename: str = "vasprun.xml",
+    output_filename: Optional[str] = None,
+    temp_max: float = 1000.0,
+    temp_step: float = 10.0,
+):
+    """Load electronic properties from vasprun.xml.
+
+    phonopy is required.
+    """
+    from phonopy.interface.vasp import parse_vasprunxml
+
+    from pypolymlp.utils.electron import ElectronProperties
+    from pypolymlp.utils.phonopy_utils import phonopy_cell_to_structure
+
+    vxml = parse_vasprunxml(input_filename)
+    st = phonopy_cell_to_structure(vxml.cell)
+
+    weights = vxml.k_weights
+    eigenvalues = vxml.eigenvalues[:, :, :, 0]
+    n_electrons = vxml.NELECT
+    el = ElectronProperties(eigenvalues, weights, n_electrons)
+    el.run(temp_max, temp_step)
+
+    if output_filename is not None:
+        with open(output_filename, mode="w") as f:
+            save_cell(st, tag="structure", file=f)
+            print("unit:", file=f)
+            print("  free_energy   : eV/cell", file=f)
+            print("  energy        : eV/cell", file=f)
+            print("  entropy       : eV/K/cell", file=f)
+            print("  specific_heat : eV/K/cell", file=f)
+            print("", file=f)
+
+            print("properties:", file=f)
+            for t, e, s, helm, sh in zip(
+                el.temperatures,
+                el.energy,
+                el.entropy,
+                el.free_energy,
+                el.cv,
+            ):
+                print("- temperature:  ", t, file=f)
+                print("  free_energy:  ", helm, file=f)
+                print("  energy:       ", e, file=f)
+                print("  entropy:      ", s, file=f)
+                print("  specific_heat:", sh, file=f)
+                print("", file=f)
+
+    return (st, el)

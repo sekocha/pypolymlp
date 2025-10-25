@@ -4,14 +4,13 @@ import time
 from typing import Literal, Optional, Union
 
 import numpy as np
-import phono3py
 import phonopy
 from phono3py.file_IO import write_fc2_to_hdf5, write_fc3_to_hdf5
 from symfc import Symfc
 from symfc.utils.cutoff_tools import FCCutoff
 
 from pypolymlp.calculator.properties import Properties
-from pypolymlp.calculator.str_opt.optimization_sym import MinimizeSym
+from pypolymlp.calculator.str_opt.optimization import GeometryOptimization
 from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
 from pypolymlp.core.displacements import (
     generate_random_const_displacements,
@@ -20,7 +19,6 @@ from pypolymlp.core.displacements import (
 from pypolymlp.core.interface_phono3py import parse_phono3py_yaml_fcs
 from pypolymlp.utils.phonopy_utils import (
     phonopy_cell_to_structure,
-    phonopy_supercell,
     structure_to_phonopy_cell,
 )
 
@@ -165,7 +163,15 @@ class PolymlpFC:
             print("Running geometry optimization", flush=True)
 
         try:
-            minobj = MinimizeSym(self._supercell, properties=self.prop)
+            minobj = GeometryOptimization(
+                self._supercell,
+                relax_cell=False,
+                relax_volume=False,
+                relax_positions=True,
+                with_sym=True,
+                properties=self.prop,
+                verbose=self._verbose,
+            )
         except ValueError:
             print("Warning: No geomerty optimization is performed.")
             return self
@@ -190,7 +196,11 @@ class PolymlpFC:
         return self
 
     def run_fc(
-        self, orders: tuple = (2, 3), use_mkl: bool = True, is_compact_fc: bool = True
+        self,
+        orders: tuple = (2, 3),
+        batch_size: int = 100,
+        use_mkl: bool = True,
+        is_compact_fc: bool = True,
     ):
         """Construct fc basis and solve FCs."""
 
@@ -209,7 +219,9 @@ class PolymlpFC:
             use_mkl=use_mkl,
             log_level=self._verbose,
         )
-        self._symfc.run(orders=orders, is_compact_fc=is_compact_fc)
+        self._symfc.run(
+            orders=orders, batch_size=batch_size, is_compact_fc=is_compact_fc
+        )
         for order in orders:
             if order == 2:
                 self._fc2 = self._symfc.force_constants[2]
@@ -246,7 +258,12 @@ class PolymlpFC:
             self.forces = forces
 
         t1 = time.time()
-        self.run_fc(orders=orders, is_compact_fc=is_compact_fc, use_mkl=use_mkl)
+        self.run_fc(
+            orders=orders,
+            batch_size=batch_size,
+            is_compact_fc=is_compact_fc,
+            use_mkl=use_mkl,
+        )
         t2 = time.time()
         if self._verbose:
             print("Time (Symfc basis and solver)", t2 - t1, flush=True)
@@ -254,19 +271,22 @@ class PolymlpFC:
                 if order == 2:
                     print(
                         "Basis size (FC2):",
-                        self._symfc.basis_set[2].basis_set.shape,
+                        # self._symfc.basis_set[2].basis_set.shape,
+                        self._symfc.basis_set[2].blocked_basis_set.shape,
                         flush=True,
                     )
                 elif order == 3:
                     print(
                         "Basis size (FC3):",
-                        self._symfc.basis_set[3].basis_set.shape,
+                        # self._symfc.basis_set[3].basis_set.shape,
+                        self._symfc.basis_set[3].blocked_basis_set.shape,
                         flush=True,
                     )
                 elif order == 4:
                     print(
                         "Basis size (FC4):",
-                        self._symfc.basis_set[4].basis_set.shape,
+                        # self._symfc.basis_set[3].basis_set.shape,
+                        self._symfc.basis_set[4].blocked_basis_set.shape,
                         flush=True,
                     )
 
@@ -353,97 +373,3 @@ class PolymlpFC:
         self._cutoff = value
         self._fc_cutoff = FCCutoff(self._supercell_ph, cutoff=value)
         return self
-
-
-if __name__ == "__main__":
-
-    import argparse
-    import signal
-
-    from pypolymlp.core.interface_vasp import Poscar
-
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--poscar", type=str, default=None, help="poscar")
-    parser.add_argument(
-        "--supercell",
-        nargs=3,
-        type=int,
-        default=None,
-        help="Supercell size (diagonal components)",
-    )
-
-    parser.add_argument("--pot", type=str, default=None, help="polymlp file")
-    parser.add_argument(
-        "--fc_n_samples",
-        type=int,
-        default=None,
-        help="Number of random displacement samples",
-    )
-    parser.add_argument(
-        "--disp",
-        type=float,
-        default=0.03,
-        help="Displacement (in Angstrom)",
-    )
-    parser.add_argument(
-        "--is_plusminus",
-        action="store_true",
-        help="Plus-minus displacements will be generated.",
-    )
-    parser.add_argument(
-        "--geometry_optimization",
-        action="store_true",
-        help="Geometry optimization is performed " "for initial structure.",
-    )
-    parser.add_argument(
-        "--batch_size",
-        type=int,
-        default=100,
-        help="Batch size for FC solver.",
-    )
-    parser.add_argument(
-        "--cutoff",
-        type=float,
-        default=None,
-        help="Cutoff radius for setting zero elements.",
-    )
-    parser.add_argument("--run_ltc", action="store_true", help="Run LTC calculations")
-    parser.add_argument(
-        "--ltc_mesh",
-        type=int,
-        nargs=3,
-        default=[19, 19, 19],
-        help="k-mesh used for phono3py calculation",
-    )
-    args = parser.parse_args()
-
-    unitcell_dict = Poscar(args.poscar).get_structure()
-    supercell_matrix = np.diag(args.supercell)
-    supercell = phonopy_supercell(unitcell_dict, supercell_matrix)
-
-    polyfc = PolymlpFC(supercell=supercell, pot=args.pot, cutoff=args.cutoff)
-
-    if args.fc_n_samples is not None:
-        polyfc.sample(
-            n_samples=args.fc_n_samples,
-            displacements=args.disp,
-            is_plusminus=args.is_plusminus,
-        )
-
-    if args.geometry_optimization:
-        polyfc.run_geometry_optimization()
-
-    polyfc.run(write_fc=True, batch_size=args.batch_size)
-
-    if args.run_ltc:
-        ph3 = phono3py.load(
-            unitcell_filename=args.poscar,
-            supercell_matrix=supercell_matrix,
-            primitive_matrix="auto",
-            log_level=1,
-        )
-        ph3.mesh_numbers = args.ltc_mesh
-        ph3.init_phph_interaction()
-        ph3.run_thermal_conductivity(temperatures=range(0, 1001, 10), write_kappa=True)

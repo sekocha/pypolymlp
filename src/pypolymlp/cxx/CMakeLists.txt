@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.15)
 
 project(polymlplib_cmake CXX)
 
@@ -39,27 +39,35 @@ message(STATUS "Eigen3 include dir: ${EIGEN3_INCLUDE_DIR}")
 find_package(OpenMP)
 
 set(SRC_FILES
-    src/polymlp/polymlp_mapping.cpp
-    src/polymlp/polymlp_model_params.cpp
-    src/polymlp/polymlp_features.cpp
-    src/polymlp/polymlp_read_gtinv.cpp
+    src/polymlp/polymlp_api.cpp
     src/polymlp/polymlp_basis_function.cpp
+    src/polymlp/polymlp_features.cpp
+    src/polymlp/polymlp_features_polynomial.cpp
+    src/polymlp/polymlp_features_mapping_utils.cpp
+    src/polymlp/polymlp_features_utils.cpp
     src/polymlp/polymlp_functions_interface.cpp
+    src/polymlp/polymlp_mapping.cpp
     src/polymlp/polymlp_mlipkk_spherical_harmonics.cpp
+    src/polymlp/polymlp_model_params.cpp
+    src/polymlp/polymlp_model_params_gtinv.cpp
+    src/polymlp/polymlp_model_params_polynomial.cpp
     src/polymlp/polymlp_potential.cpp
     src/polymlp/polymlp_products.cpp
+    src/polymlp/polymlp_read_gtinv.cpp
     src/compute/neighbor.cpp
     src/compute/neighbor_half.cpp
+    src/compute/neighbor_half_openmp.cpp
     src/compute/neighbor_cell.cpp
     src/compute/py_params.cpp
     src/compute/py_model.cpp
     src/compute/py_properties_fast.cpp
-    src/compute/py_additive_model.cpp
+    src/compute/py_hybrid_model.cpp
     src/compute/py_features_attr.cpp
     src/compute/polymlp_eval.cpp
-    src/compute/features.cpp
-    src/compute/local_fast.cpp
-    src/compute/model_fast.cpp
+    src/compute/polymlp_eval_openmp.cpp
+    src/compute/local.cpp
+    src/compute/local_pair.cpp
+    src/compute/model.cpp
     src/python/pybind11_mlp.cpp
     src/polymlp/polymlp_gtinv_data.cpp
     src/polymlp/polymlp_gtinv_data_order1.cpp

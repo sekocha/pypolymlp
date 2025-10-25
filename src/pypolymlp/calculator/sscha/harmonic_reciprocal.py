@@ -47,7 +47,7 @@ class HarmonicReciprocal:
         energies, forces, _ = self.prop.eval_multiple(structures)
         return np.array(energies), np.array(forces)
 
-    def produce_harmonic_force_constants(self, displacements=0.01):
+    def produce_harmonic_force_constants(self, displacements: float = 0.01):
         """Produce non-effective harmonic FCs."""
 
         self.ph.generate_displacements(distance=displacements)
@@ -95,6 +95,16 @@ class HarmonicReciprocal:
     def free_energy(self):
         """Return harmonic free energy."""
         return self._tp_dict["free_energy"][0]
+
+    @property
+    def entropy(self):
+        """Return entropy."""
+        return self._tp_dict["entropy"][0]
+
+    @property
+    def heat_capacity(self):
+        """Return heat capacity."""
+        return self._tp_dict["heat_capacity"][0]
 
     @property
     def frequencies(self):

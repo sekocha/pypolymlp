@@ -4,35 +4,47 @@ import warnings
 from typing import Any, Optional
 
 import numpy as np
-from setuptools._distutils.util import strtobool
+
+from pypolymlp.core.dataset import Dataset
+from pypolymlp.core.utils import strtobool
 
 
 class InputParser:
     """Class of input parser."""
 
-    def __init__(self, fname: str):
-
+    def __init__(self, fname: str, prefix: Optional[str] = None):
+        """Init method."""
+        self._prefix = prefix
         self._parse_infile(fname)
 
     def _parse_infile(self, fname: str):
-
+        """Parse parameters from input file."""
         f = open(fname)
         lines = f.readlines()
         f.close()
 
-        self._train, self._test = [], []
-        self._distance = []
         self._data = dict()
+        self._distance = []
+        self._train, self._test = [], []
+        self._train_test_data = []
+        self._md = []
         for line in lines:
             d = line.split()
             if len(d) > 1:
                 self._data[d[0]] = d[1:]
                 if "distance" == d[0]:
                     self._distance.append(d[1:])
-                elif "train_data" == d[0]:
-                    self._train.append(d[1:])
-                elif "test_data" == d[0]:
-                    self._test.append(d[1:])
+                elif d[0] in ["train_data", "test_data", "data", "data_md"]:
+                    dataset = Dataset(string_list=d[1:], prefix=self._prefix)
+                    if d[0] == "train_data":
+                        self._train.append(dataset)
+                    elif d[0] == "test_data":
+                        self._test.append(dataset)
+                    elif d[0] == "data":
+                        self._train_test_data.append(dataset)
+                    elif d[0] == "data_md":
+                        self._md.append(dataset)
+        return self
 
     def get_params(
         self,
@@ -42,6 +54,7 @@ class InputParser:
         required: bool = False,
         dtype: Any = str,
         return_array: bool = False,
+        use_warnings: bool = True,
     ):
         """Get parameters specified by tag."""
         if tag not in self._data:
@@ -50,7 +63,7 @@ class InputParser:
             return default
 
         params = list(self._data[tag])
-        if len(params) != size:
+        if use_warnings and len(params) != size:
             sentence = "Length " + tag + " is not compatible with its required size."
             warnings.warn(sentence)
 
@@ -70,12 +83,14 @@ class InputParser:
             return params[0]
         return params
 
-    def get_sequence(self, tag, default=None):
+    def get_sequence(self, tag: str, default: Optional[tuple] = None):
+        """Return linspace sequence for tag."""
         params = self.get_params(tag, size=3, default=default, dtype=str)
         return np.linspace(float(params[0]), float(params[1]), int(params[2]))
 
     @property
     def distance(self):
+        """Return distances activating atomic pairs."""
         elements = self._data["elements"]
         distance_dict = dict()
         for data in self._distance:
@@ -85,56 +100,20 @@ class InputParser:
 
     @property
     def train(self):
+        """Return training datasets."""
         return self._train
 
     @property
     def test(self):
+        """Return test datasets."""
         return self._test
 
-    def get_train(self):
-        return self._train
+    @property
+    def train_test(self):
+        """Return datasets including training and test data."""
+        return self._train_test_data
 
-    def get_test(self):
-        return self._test
-
-    # # deprecated
-    # def _get_gaussian_params(self, tag, gauss, default):
-
-    #     if tag in self._data:
-    #         params = self._data[tag]
-    #     else:
-    #         params = default
-    #     if len(params) != 3:
-    #         sentence = "Length " + tag + " is not compatible with its required size."
-    #         warnings.warn(sentence)
-    #     params = np.linspace(float(params[0]), float(params[1]), int(params[2]))
-
-    #     bool_conditional = False if len(gauss) == 0 else True
-    #     elements = self._data["elements"]
-    #     conditional_params = dict()
-    #     for g in gauss:
-    #         pair = tuple(sorted([g[3], g[4]], key=lambda x: elements.index(x)))
-    #         conditional_params[pair] = np.linspace(float(g[0]), float(g[1]), int(g[2]))
-    #         if len(g) != 5:
-    #             sentence = (
-    #                 "Length gaussian_params (conditional) is not compatible "
-    #                 "with its required size."
-    #             )
-    #             warnings.warn(sentence)
-
-    #     element_pairs = itertools.combinations_with_replacement(elements, 2)
-    #     for pair in element_pairs:
-    #         pair = tuple(sorted(pair, key=lambda x: elements.index(x)))
-    #         if pair not in conditional_params:
-    #             conditional_params[pair] = params
-
-    #     return params, conditional_params, bool_conditional
-
-    # # deprecated
-    # def get_gaussian_params(self, tag: str, default: Optional[Any] = None):
-    #     """Get Gaussian parameters specified by tag."""
-    #     if tag == "gaussian_params1":
-    #         gauss = self._gauss1
-    #     elif tag == "gaussian_params2":
-    #         gauss = self._gauss2
-    #     return self._get_gaussian_params(tag, gauss, default)
+    @property
+    def md(self):
+        """Return MD datasets."""
+        return self._md

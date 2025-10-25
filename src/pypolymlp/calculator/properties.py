@@ -1,12 +1,12 @@
 """Class for calculating properties."""
 
-from typing import Union
+from typing import Optional, Union
 
 import numpy as np
 
 from pypolymlp.calculator.compute_features import update_types
 from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
-from pypolymlp.core.io_polymlp import load_mlp_lammps
+from pypolymlp.core.io_polymlp import load_mlp
 from pypolymlp.cxx.lib import libmlpcpp
 
 
@@ -67,8 +67,7 @@ class PropertiesSingle:
         """
 
         if pot is not None:
-            self._params, mlp_dict = load_mlp_lammps(filename=pot)
-            self._coeffs = mlp_dict["coeffs"] / mlp_dict["scales"]
+            self._params, self._coeffs = load_mlp(filename=pot)
         else:
             self._params = params
             self._coeffs = coeffs
@@ -78,7 +77,7 @@ class PropertiesSingle:
             self._params.as_dict(), self._coeffs
         )
 
-    def eval(self, st: PolymlpStructure):
+    def eval(self, st: PolymlpStructure, use_openmp: bool = True):
         """Evaluate properties for a single structure.
 
         Return
@@ -101,7 +100,7 @@ class PropertiesSingle:
 
         if st_calc is not None:
             positions_c = st_calc.axis @ st_calc.positions
-            self.obj.eval(st_calc.axis, positions_c, st_calc.types)
+            self.obj.eval(st_calc.axis, positions_c, st_calc.types, use_openmp)
 
             energy = self.obj.get_e()
             force = np.array(self.obj.get_f()).T
@@ -146,14 +145,12 @@ class PropertiesSingle:
             types_array = [st.types for st in structures_calc]
             positions_c_array = [st.axis @ st.positions for st in structures_calc]
 
-            """
-            PotentialProperties.eval_multiple: Return
-            ------------------------------------------
-            energies = obj.get_e(), (n_str)
-            forces = obj.get_f(), (n_str, n_atom, 3)
-            stresses = obj.get_s(), (n_str, 6)
-                        in the order of xx, yy, zz, xy, yz, zx
-            """
+            # PotentialProperties.eval_multiple: Return
+            # ------------------------------------------
+            # energies = obj.get_e(), (n_str)
+            # forces = obj.get_f(), (n_str, n_atom, 3)
+            # stresses = obj.get_s(), (n_str, 6)
+            #             in the order of xx, yy, zz, xy, yz, zx
             self.obj.eval_multiple(axis_array, positions_c_array, types_array)
 
             energies = np.array(self.obj.get_e_array())
@@ -220,11 +217,11 @@ class PropertiesHybrid:
                 PropertiesSingle(params=p, coeffs=c) for p, c in zip(params, coeffs)
             ]
 
-    def eval(self, st: PolymlpStructure):
+    def eval(self, st: PolymlpStructure, use_openmp: bool = True):
         """Evaluate properties for a single structure."""
-        energy, force, stress = self.props[0].eval(st)
+        energy, force, stress = self.props[0].eval(st, use_openmp=use_openmp)
         for prop in self.props[1:]:
-            e_single, f_single, s_single = prop.eval(st)
+            e_single, f_single, s_single = prop.eval(st, use_openmp=use_openmp)
             energy += e_single
             force += f_single
             stress += s_single
@@ -285,9 +282,9 @@ class Properties:
             else:
                 self.prop = PropertiesSingle(params=params, coeffs=coeffs)
 
-    def eval(self, st: PolymlpStructure):
+    def eval(self, st: PolymlpStructure, use_openmp: bool = True):
         """Evaluate properties for a single structure."""
-        e, f, s = self.prop.eval(st)
+        e, f, s = self.prop.eval(st, use_openmp=use_openmp)
         self._e, self._f, self._s = [e], [f], [s]
         self._structures = [st]
         return e, f, s
@@ -298,12 +295,12 @@ class Properties:
         self._structures = structures
         return self._e, self._f, self._s
 
-    def eval_phonopy(self, str_ph):
+    def eval_phonopy(self, str_ph, use_openmp: bool = True):
         """Evaluate properties for a single structure in phonopy format."""
         from pypolymlp.utils.phonopy_utils import phonopy_cell_to_structure
 
         st = phonopy_cell_to_structure(str_ph)
-        e, f, s = self.prop.eval(st)
+        e, f, s = self.prop.eval(st, use_openmp=use_openmp)
         self._e, self._f, self._s = [e], [f], [s]
         self._structures = [st]
         return e, f, s
@@ -365,80 +362,30 @@ class Properties:
         return convert_stresses_in_gpa(self._s, self._structures)
 
 
-if __name__ == "__main__":
+def set_instance_properties(
+    pot: Union[str, list[str]] = None,
+    params: Union[PolymlpParams, list[PolymlpParams]] = None,
+    coeffs: Union[np.ndarray, list[np.ndarray]] = None,
+    properties: Optional[Properties] = None,
+    require_mlp: bool = True,
+):
+    """Set instance of Properties class.
 
-    import argparse
+    Parameters
+    ----------
+    pot: polymlp file.
+    params: Parameters for polymlp.
+    coeffs: Polymlp coefficients.
+    properties: Properties instance.
 
-    from pypolymlp.core.interface_vasp import (
-        parse_structures_from_poscars,
-        parse_structures_from_vaspruns,
-    )
+    Any one of pot, (params, coeffs), and properties is needed.
+    """
+    if require_mlp:
+        if pot is None and params is None and properties is None:
+            raise RuntimeError("polymlp not defined.")
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "-p",
-        "--poscars",
-        nargs="*",
-        type=str,
-        default=None,
-        help="poscar files",
-    )
-    parser.add_argument(
-        "--vaspruns",
-        nargs="*",
-        type=str,
-        default=None,
-        help="vasprun files",
-    )
-    parser.add_argument(
-        "--phono3py_yaml", type=str, default=None, help="phono3py.yaml file"
-    )
-    parser.add_argument(
-        "--pot",
-        nargs="*",
-        type=str,
-        default="polymlp.lammps",
-        help="polymlp file",
-    )
-    args = parser.parse_args()
-
-    if args.poscars is not None:
-        structures = parse_structures_from_poscars(args.poscars)
-    elif args.vaspruns is not None:
-        structures = parse_structures_from_vaspruns(args.vaspruns)
-    elif args.phono3py_yaml is not None:
-        from pypolymlp.core.interface_phono3py_ver3 import (
-            parse_structures_from_phono3py_yaml,
-        )
-
-        structures = parse_structures_from_phono3py_yaml(args.phono3py_yaml)
-
-    prop = Properties(pot=args.pot)
-    energies, forces, stresses = prop.eval_multiple(structures)
-    stresses_gpa = convert_stresses_in_gpa(stresses, structures)
-
-    np.set_printoptions(suppress=True)
-    np.save("polymlp_energies.npy", energies)
-    np.save("polymlp_forces.npy", forces)
-    np.save("polymlp_stress_tensors.npy", stresses_gpa)
-
-    if len(forces) == 1:
-        np.savetxt("polymlp_energies.dat", energies, fmt="%f")
-        print(" energy =", energies[0], "(eV/cell)")
-        print(" forces =")
-        for i, f in enumerate(forces[0].T):
-            print("  - atom", i, ":", f)
-        stress = stresses_gpa[0]
-        print(" stress tensors =")
-        print("  - xx, yy, zz:", stress[0:3])
-        print("  - xy, yz, zx:", stress[3:6])
-        print("---------")
-        print(
-            " polymlp_energies.npy, polymlp_forces.npy,",
-            "and polymlp_stress_tensors.npy are generated.",
-        )
-    else:
-        print(
-            " polymlp_energies.npy, polymlp_forces.npy,",
-            "and polymlp_stress_tensors.npy are generated.",
-        )
+    if properties is not None:
+        return properties
+    elif pot is not None or params is not None:
+        return Properties(pot=pot, params=params, coeffs=coeffs)
+    return None

@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+"""Functions for neighboring atoms."""
+
 import argparse
 import signal
 from collections import defaultdict
