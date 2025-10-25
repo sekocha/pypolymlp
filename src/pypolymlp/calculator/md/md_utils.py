@@ -10,6 +10,7 @@ from scipy.special.orthogonal import p_roots
 
 from pypolymlp.calculator.compute_phonon import calculate_harmonic_properties_from_fc2
 from pypolymlp.calculator.md.ase_md import IntegratorASE
+from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.units import EVtoKJmol
 
 
@@ -30,8 +31,34 @@ def calc_integral(
     return (0.5 * (b - a)) * w @ np.array(f)
 
 
+def calculate_fc2_free_energy(
+    unitcell: PolymlpStructure,
+    supercell_matrix: np.ndarray,
+    fc2file: str,
+    temperature: float,
+    mesh: tuple = (10, 10, 10),
+):
+    """Calculate reference free energy using FC2.
+
+    Return
+    ------
+    free_energy: Reference free energy in eV/supercell.
+    """
+    tp_dict = calculate_harmonic_properties_from_fc2(
+        unitcell=unitcell,
+        supercell_matrix=supercell_matrix,
+        path_fc2=fc2file,
+        mesh=mesh,
+        temperatures=temperature,
+    )
+    n_unitcell = np.linalg.det(supercell_matrix)
+    ref_free_energy = tp_dict["free_energy"][0] * n_unitcell / EVtoKJmol
+    return ref_free_energy
+
+
 def save_thermodynamic_integration_yaml(
     integrator: IntegratorASE,
+    total_free_energy: float,
     delta_free_energy: float,
     log_ti: np.array,
     reference: dict,
@@ -41,16 +68,16 @@ def save_thermodynamic_integration_yaml(
     """Save results of thermodynamic integration."""
     np.set_printoptions(legacy="1.21")
 
-    tp_dict = calculate_harmonic_properties_from_fc2(
-        unitcell=reference["unitcell"],
-        supercell_matrix=reference["supercell_matrix"],
-        path_fc2=reference["fc2_file"],
-        mesh=(10, 10, 10),
-        temperatures=[integrator._temperature],
-    )
-    n_unitcell = np.linalg.det(reference["supercell_matrix"])
-    ref_free_energy = tp_dict["free_energy"][0] * n_unitcell / EVtoKJmol
-    total_free_energy = integrator.static_energy + ref_free_energy + delta_free_energy
+    # tp_dict = calculate_harmonic_properties_from_fc2(
+    #     unitcell=reference["unitcell"],
+    #     supercell_matrix=reference["supercell_matrix"],
+    #     path_fc2=reference["fc2_file"],
+    #     mesh=(10, 10, 10),
+    #     temperatures=[integrator._temperature],
+    # )
+    # n_unitcell = np.linalg.det(reference["supercell_matrix"])
+    # ref_free_energy = tp_dict["free_energy"][0] * n_unitcell / EVtoKJmol
+    # total_free_energy = integrator.static_energy + ref_free_energy + delta_free_energy
 
     with open(filename, "w") as f:
         print("system:", integrator._atoms.symbols, file=f)
@@ -95,7 +122,7 @@ def save_thermodynamic_integration_yaml(
         print(file=f)
 
         print("  static_potential_energy: ", integrator.static_energy, file=f)
-        print("  reference_free_energy:   ", ref_free_energy, file=f)
+        print("  reference_free_energy:   ", reference["free_energy"], file=f)
         print("  total_free_energy:       ", total_free_energy, file=f)
         print(file=f)
 
@@ -117,20 +144,16 @@ def save_thermodynamic_integration_yaml(
         print("free_energy_perturbation:", file=f)
         de_perturb = log_ti[-1][6]
         de_perturb1 = log_ti[-1][5]
-        total_free_energy_perturb = total_free_energy + de_perturb
-        total_free_energy_perturb1 = total_free_energy + de_perturb1
         print("  alpha:               ", 1.0, file=f)
         print("  free_energy_perturb: ", de_perturb, file=f)
-        print("  free_energy_from_ref:", delta_free_energy + de_perturb, file=f)
-        print("  total_free_energy:   ", total_free_energy_perturb, file=f)
-
-        val1 = delta_free_energy + de_perturb1
+        print("  free_energy:         ", delta_free_energy + de_perturb, file=f)
+        print("  total_free_energy:   ", total_free_energy + de_perturb, file=f)
         print("  first order:", file=f)
         print("    free_energy_perturb: ", de_perturb1, file=f)
-        print("    free_energy_from_ref:", val1, file=f)
-        print("    total_free_energy:   ", total_free_energy_perturb1, file=f)
+        print("    free_energy:         ", delta_free_energy + de_perturb1, file=f)
+        print("    total_free_energy:   ", total_free_energy + de_perturb1, file=f)
 
-    return total_free_energy, total_free_energy_perturb, total_free_energy_perturb1
+    return 0
 
 
 def load_thermodynamic_integration_yaml(filename: str = "polymlp_ti.yaml"):
@@ -184,7 +207,11 @@ def load_thermodynamic_integration_yaml(filename: str = "polymlp_ti.yaml"):
 
 
 def find_reference(path_fc2: str, target_temperature: float):
-    """Find reference FC2 automatically."""
+    """Find reference FC2 automatically.
+
+    The FC2 state at the lowest temperature is searched for.
+    This state will be used as reference state for free energy calculations.
+    """
     reference = None
     temp_min = 1e10
     for fc2hdf5 in sorted(glob.glob(path_fc2 + "/*/fc2.hdf5")):

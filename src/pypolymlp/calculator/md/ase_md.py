@@ -47,21 +47,27 @@ class IntegratorASE:
         else:
             self._use_fc2 = True
 
-        # Required if reference state is given.
-        self._displacements = None
-        self._delta_energies = None
-        self._delta_energies_alpha = None
-
-        self._average_displacement = None
-        self._average_delta_energy = None
-        self._average_delta_energy_alpha = None
-        self._free_energy_perturb = None
-
         self._temperature = None
         self._time_step = None
         self._n_eq = None
         self._n_steps = None
         self._thermostat = None
+
+        if self._use_fc2:
+            self._displacements = None
+            self._average_displacement = None
+
+        if self._use_reference:
+            # Required for TI.
+            # delta_energies_10: U - U_ref
+            self._delta_energies_10 = None
+            self._average_delta_energy_10 = None
+
+            # Required for free energy perturbation.
+            # delta_energies_1a: U - U_alpha
+            self._delta_energies_1a = None
+            self._average_delta_energy_1a = None
+            self._free_energy_perturb = None
 
     def activate_MDLogger(
         self,
@@ -156,12 +162,12 @@ class IntegratorASE:
         if not self._use_reference:
             raise RuntimeError("Reference state not defined in Calculator.")
 
-        self._delta_energies = []
-        self._delta_energies_alpha = []
+        self._delta_energies_10 = []
+        self._delta_energies_1a = []
 
         def store_de_in_memory():
-            self._delta_energies.append(self.calculator.delta_energy)
-            self._delta_energies_alpha.append(self.calculator.delta_energy_alpha)
+            self._delta_energies_10.append(self.calculator.delta_energy_10)
+            self._delta_energies_1a.append(self.calculator.delta_energy_1a)
 
         self._dyn.attach(store_de_in_memory, interval=interval)
         return self
@@ -291,13 +297,13 @@ class IntegratorASE:
             self._average_displacement = np.average(self._displacements[n_eq:])
 
         # For thermodynamic integration
-        if self._delta_energies is not None:
-            self._average_delta_energy = np.average(self._delta_energies[n_eq:])
+        if self._delta_energies_10 is not None:
+            self._average_delta_energy_10 = np.average(self._delta_energies_10[n_eq:])
 
         # For free energy perturbation
-        if self._delta_energies_alpha is not None:
-            energy_slice = np.array(self._delta_energies_alpha[n_eq:])
-            self._average_delta_energy_alpha = np.average(energy_slice)
+        if self._delta_energies_1a is not None:
+            energy_slice = np.array(self._delta_energies_1a[n_eq:])
+            self._average_delta_energy_1a = np.average(energy_slice)
 
             beta = KbEV * self._temperature
             exp_delta_e = np.average(np.exp(-beta * energy_slice))
@@ -342,46 +348,6 @@ class IntegratorASE:
         return self._trajectory
 
     @property
-    def delta_energies(self):
-        """Return energy differences from reference state in eV/supercell."""
-        return np.array(self._delta_energies)
-
-    @property
-    def delta_energies_alpha(self):
-        """Return energy differences from state alpha in eV/supercell."""
-        return np.array(self._delta_energies_alpha)
-
-    @property
-    def average_energy(self):
-        """Return average energy in eV/supercell."""
-        return self._average_energy
-
-    @property
-    def average_total_energy(self):
-        """Return average total energy in eV/supercell."""
-        return self._average_total_energy
-
-    @property
-    def average_delta_energy(self):
-        """Return average energy difference from reference in eV/supercell."""
-        return self._average_delta_energy
-
-    @property
-    def average_delta_energy_alpha(self):
-        """Return average energy difference from state alpha in eV/supercell."""
-        return self._average_delta_energy_alpha
-
-    @property
-    def free_energy_perturb(self):
-        """Return free energy (FE) difference from FE perturbation in eV/supercell."""
-        return self._free_energy_perturb
-
-    @property
-    def average_displacement(self):
-        """Return average displacement in angstrom."""
-        return self._average_displacement
-
-    @property
     def static_energy(self):
         """Return static energy."""
         return self.calculator.static_energy
@@ -395,6 +361,46 @@ class IntegratorASE:
     def heat_capacity_eV(self):
         """Return heat capacity in eV."""
         return self._heat_capacity_eV
+
+    @property
+    def average_energy(self):
+        """Return average energy in eV/supercell."""
+        return self._average_energy
+
+    @property
+    def average_total_energy(self):
+        """Return average total energy in eV/supercell."""
+        return self._average_total_energy
+
+    @property
+    def average_displacement(self):
+        """Return average displacement in angstrom."""
+        return self._average_displacement
+
+    @property
+    def delta_energies_10(self):
+        """Return U(alpha) - U(ref) in eV/supercell."""
+        return np.array(self._delta_energies_10)
+
+    @property
+    def delta_energies_1a(self):
+        """Return U - U(alpha) in eV/supercell."""
+        return np.array(self._delta_energies_1a)
+
+    @property
+    def average_delta_energy_10(self):
+        """Return average U_alpha - U_ref in eV/supercell."""
+        return self._average_delta_energy_10
+
+    @property
+    def average_delta_energy_1a(self):
+        """Return average U - U_alpha in eV/supercell."""
+        return self._average_delta_energy_1a
+
+    @property
+    def free_energy_perturb(self):
+        """Return free energy (FE) difference from FE perturbation in eV/supercell."""
+        return self._free_energy_perturb
 
     def write_conditions(self):
         """Write input conditions as standard output."""
@@ -442,6 +448,10 @@ class IntegratorASE:
             print("  heat_capacity_eV:        ", self._heat_capacity_eV, file=f)
             print("  heat_capacity:           ", self._heat_capacity, file=f)
             if self._use_reference:
-                print("  average_delta_energy:", self._average_delta_energy, file=f)
-                de_alpha = self._average_delta_energy_alpha
-                print("  average_delta_energy_alpha:", de_alpha, file=f)
+                delta_e = self._average_delta_energy_10
+                print("  energy1_from_ref:        ", delta_e, file=f)
+                print("  perturbation:", file=f)
+                delta_e = self._average_delta_energy_1a
+                print("    energy_from_alpha:       ", delta_e, file=f)
+                delta_f = self._free_energy_perturb
+                print("    free_energy_from_alpha:  ", delta_f, file=f)
