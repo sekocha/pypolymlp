@@ -54,8 +54,15 @@ Additional details are provided in [Utilities](utilities.md).
 ## 3. Estimate coefficients in polynomial MLP
 Using a DFT-based dataset, a polynomial MLP is developed.
 Let us now consider the case where the dataset located in the dataset in `examples/MgO` directory is constructed from DFT calculations.
-The polynomial MLP model is defined by an input file named `polymlp.in`.
 
+Coefficients in the polynomial MLP model can be estimated using the following command:
+```shell
+> polymlp -i polymlp.in
+```
+In this case, the polynomial MLP model is defined in the input file named `polymlp.in`.
+After running the command, a polynomial MLP file named `polymlp.yaml` will be generated.
+
+The polynomial MLP model in this example contains several parameters, as shown below:
 ```shell
 > cat $(pypolymlp)/examples/MgO/polymlp.in
 
@@ -81,7 +88,7 @@ train_data train/vasprun-*.xml.polymlp
 test_data test/vasprun-*.xml.polymlp
 ```
 
-The meaning of parameters is as follows.
+The parameters are defined as follows.
 ```
 elements: Element species, (e.g., ['Mg','O'])
 include_force: Considering force entries
