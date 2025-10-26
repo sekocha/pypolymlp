@@ -124,3 +124,7 @@ Both formats are supported by the following command-line interface and the Pytho
   - LAMMPS
   - phonopy and phonon3py
   - ASE
+
+## Tutorials
+1. [Development of on-the-fly MLP](docs/tutorial_onthefly.md)
+2. Development of general-purpose MLP
