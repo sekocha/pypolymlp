@@ -229,17 +229,17 @@ class Thermodynamics:
         cend = 2 * cbegin
 
         ave, std = np.mean(props[cbegin:cend]), np.std(props[cbegin:cend])
-        if std > ave * 0.2:
+        if std > ave * 0.5:
             return None, None
 
-        cond = (props < ave + 1.5 * std) & (props > ave - 1.5 * std)
+        cond = (props < ave + 2.0 * std) & (props > ave - 2.0 * std)
         target = cond[cbegin:cend]
 
-        if np.count_nonzero(target) > len(target) / 5:
-            cond = (props < ave + 2.0 * std) & (props > ave - 2.0 * std)
+        if np.count_nonzero(target) < len(target) * 0.8:
+            cond = (props < ave + 3.0 * std) & (props > ave - 3.0 * std)
             target = cond[cbegin:cend]
-            if np.count_nonzero(target) > len(target) / 5:
-                cond = (props < ave + 2.5 * std) & (props > ave - 2.5 * std)
+            if np.count_nonzero(target) < len(target) * 0.8:
+                cond = (props < ave + 4.0 * std) & (props > ave - 4.0 * std)
                 if self._verbose:
                     print("Volume-Cv data is largely scattering.")
                     print(" Average, Std:", ave, std, flush=True)
@@ -335,7 +335,7 @@ class Thermodynamics:
                         "  model_rmse:  ", polyfit.best_model, polyfit.error, flush=True
                     )
 
-                # self._print_predictions(temperatures, entropies - ref, polyfit)
+                self._print_predictions(temperatures, entropies - ref, polyfit)
                 # Cv calculations
                 cv_from_ref = temperatures * polyfit.eval_derivative(temperatures)
                 for p, val in zip(points, cv_from_ref):
@@ -601,6 +601,7 @@ def load_yamls(
     yamls_electron: Optional[list[str]] = None,
     yamls_ti: Optional[list[str]] = None,
     yamls_electron_phonon: Optional[list[str]] = None,
+    extrapolation_ti: bool = False,
     verbose: bool = False,
 ):
     """Load yaml files needed for calculating thermodynamics."""
@@ -621,7 +622,11 @@ def load_yamls(
     if yamls_ti is not None:
         if verbose:
             print("Loading ti.yaml files.", flush=True)
-        data3 = load_ti_yamls(yamls_ti, verbose=verbose)
+        data3 = load_ti_yamls(
+            yamls_ti,
+            extrapolation=extrapolation_ti,
+            verbose=verbose,
+        )
         ti = Thermodynamics(data=data3, data_type="ti", verbose=verbose)
         sscha, ti = _adjust_to_common_grid(sscha, ti)
         if yamls_electron is not None:

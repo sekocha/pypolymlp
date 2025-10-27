@@ -88,6 +88,25 @@ def _check_errors_pair_single_dataset_MgO(error_train1, error_test1):
     assert error_train1["stress"] == pytest.approx(0.008789528675929179, abs=1e-5)
 
 
+def test_mlp_devel_single_dataset_autodiv():
+
+    file = str(cwd) + "/polymlp.in.single.MgO.auto"
+    tag = "data-MgO/combined_vaspruns/vasprun-*.xml.polymlp"
+
+    pypolymlp = _run_fit(file)
+    assert pypolymlp.n_features == 1899
+    error_train1 = pypolymlp.summary.error_train[tag]
+    error_test1 = pypolymlp.summary.error_test[tag]
+
+    assert error_test1["energy"] == pytest.approx(4.004397915813554e-05, abs=1e-7)
+    assert error_test1["force"] == pytest.approx(0.0046229699982903265, abs=1e-6)
+    assert error_test1["stress"] == pytest.approx(0.01430278596979826, abs=1e-5)
+
+    assert error_train1["energy"] == pytest.approx(3.3335520987797234e-05, abs=1e-7)
+    assert error_train1["force"] == pytest.approx(0.003843503181386285, abs=1e-6)
+    assert error_train1["stress"] == pytest.approx(0.015201642733227095, abs=1e-5)
+
+
 def test_mlp_devel_pair_single_dataset():
 
     file = str(cwd) + "/polymlp.in.pair.single.MgO"
