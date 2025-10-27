@@ -40,7 +40,8 @@ class Dataset:
             raise RuntimeError("All of string_list, location and files not given.")
         if self.string_list is not None:
             self._initialize_from_string()
-        self._set_files_from_location()
+        if self.files is None:
+            self._set_files_from_location()
 
     def _initialize_from_string(self):
         """Initialize from string input."""
