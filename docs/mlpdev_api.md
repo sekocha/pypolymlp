@@ -1,6 +1,6 @@
 # Polynomial MLP development using Python API
 
-## MLP development using `polymlp.in`
+## MLP development using a parameter input file
 ```python
 import numpy as np
 from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
@@ -16,7 +16,7 @@ params = polymlp.parameters
 mlp_info = polymlp.summary
 ```
 
-## MLP development from vasprun.xml files without using `polymlp.in`
+## MLP development from vasprun.xml files without using a parameter file
 ```python
 import numpy as np
 import glob
@@ -70,7 +70,7 @@ polymlp.run(verbose=True)
 polymlp.save_mlp(filename="polymlp.yaml")
 ```
 
-## MLP development from phono3py.yaml.xz without using `polymlp.in`
+## MLP development from phono3py.yaml.xz without using a parameter file
 
 ```python
 from pypolymlp.mlp_dev.pypolymlp import Pypolymlp

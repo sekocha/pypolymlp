@@ -25,24 +25,24 @@ or
 
 After the property calculations are completed, the results are saved as NumPy objects:
 
-- `polymlp_energies.npy` with shape `(n_structure)` for the energies, in units of eV per supercell.
-- `polymlp_forces.npy` with shape `(n_structure, 3, n_atom)` (if all structures have the same number of atoms) for the atomic forces, in units of eV/angstroms.
-- `polymlp_stress_tensor.npy` with shape `(n_structure, 6)` for the stress tensor, in the order xx, yy, zz, xy, yz, zx, and in units of eV per cell.
+- `polymlp_energies.npy` with shape `(n_structure)` for the energies, in units of eV/supercell.
+- `polymlp_forces.npy` with shape `(n_structure, 3, n_atom)` for the atomic forces, in units of eV/angstroms, if all structures have the same number of atoms.
+  If the structures contain different numbers of atoms, multiple files such as `polymlp_forces_00001.npy` are generated for each structure.
+- `polymlp_stress_tensor.npy` with shape `(n_structure, 6)` for the stress tensor, in the order xx, yy, zz, xy, yz, zx, and in units of eV/cell.
 
 ## Using Python API
 
-Polynomial MLP file can be given as follows.
+Python API for calculating properties can be initialized as follows.
 ```python
 from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
 polymlp = PypolymlpCalc(pot="polymlp.yaml")
-```
-or
-```python
-from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
+
+# For legacy polymlp.lammps
 polymlp = PypolymlpCalc(pot="polymlp.lammps")
 ```
 
 ### For single structure
+Given a polynomial MLP file `polymlp.yaml` and a structure specified by `POSCAR`, the energy, atomic forces, and stress tensor can be calculated as follows.
 ```python
 import numpy as np
 from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
@@ -55,7 +55,8 @@ polymlp = PypolymlpCalc(pot="polymlp.yaml")
 polymlp.load_structures_from_files(poscars='POSCAR')
 energies, forces, stresses = polymlp.eval()
 ```
-or
+
+If a structure is provided without using a `POSCAR` file, it should be supplied as a `PolymlpStructure` instance.
 ```python
 import numpy as np
 from pypolymlp.core.interface_vasp import Poscar
@@ -69,12 +70,15 @@ Attributes:
 - elements: Element list (e.g.) ['Mg','Mg','Mg','Mg','O','O','O','O']
 - types: Atomic type integers (e.g.) [0, 0, 0, 0, 1, 1, 1, 1]
 """
-structure = Poscar('POSCAR').structure
+# structure = Poscar('POSCAR').structure
 polymlp = PypolymlpCalc(pot="polymlp.yaml")
 energies, forces, stresses = polymlp.eval(structure)
 ```
 
 ### For multiple structures (Compatible with OPENMP support)
+If multiple structure files are provided as input, property calculations are compatible with OpenMP support.
+The properties for these structures can be calculated by specifying either `POSCAR` files or `PolymlpStructure` instances.
+
 ```python
 import numpy as np
 from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
