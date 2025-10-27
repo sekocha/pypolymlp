@@ -316,14 +316,19 @@ class Properties:
 
     def save(self, verbose=False):
         np.save("polymlp_energies.npy", self.energies)
-        np.save("polymlp_forces.npy", self.forces)
         np.save("polymlp_stress_tensors.npy", self.stresses_gpa)
+        try:
+            np.save("polymlp_forces.npy", self.forces)
+        except:
+            for i, force in enumerate(self.forces):
+                np.save("polymlp_forces_" + str(i + 1).zfill(5) + ".npy", force)
+
         if len(self.forces) == 1:
             np.savetxt("polymlp_energies.dat", self.energies, fmt="%f")
 
         if verbose:
             print(
-                "polymlp_energies.npy, polymlp_forces.npy,",
+                "polymlp_energies.npy, polymlp_forces*.npy,",
                 "and polymlp_stress_tensors.npy are generated.",
             )
         return self
