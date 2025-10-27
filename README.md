@@ -81,6 +81,13 @@ Building C++ codes in pypolymlp may require a significant amount of time.
 ## How to use pypolymlp
 
 ### Polynomial MLP development
+To develop polynomial MLPs from datasets obtained from DFT calculations, both the command-line interface and the Python API are available.
+Several procedures for generating structures used in DFT calculations are also supported.
+
+- Tutorials
+  1. [Development of a single on-the-fly MLP](docs/tutorial_onthefly.md)
+  2. Development of a single general-purpose MLP
+  3. Development of Pareto-optimal MLPs
 - [Command line](docs/mlpdev_command.md)
 - [Python API](docs/mlpdev_api.md)
 - [Utilities](docs/utilities.md)
@@ -102,7 +109,8 @@ Building C++ codes in pypolymlp may require a significant amount of time.
 ### Calculations using polynomial MLP
 In version 0.8.0 or earlier, polymlp files are generated in a plain text format as `polymlp.lammps`.
 Starting from version 0.9.0, the files are generated in YAML format as `polymlp.yaml`.
-Both formats are supported by the following command-line interface and the Python API.
+Both formats are supported by the command-line interface and the Python API.
+The following calculations can be performed using **pypolymlp** with the polynomial MLP files `polymlp.yaml` or `polymlp.lammps`.
 
 - [Energy, forces, stress tensor](docs/calc_property.md)
 - [Equation of states](docs/calc_eos.md)
@@ -124,7 +132,3 @@ Both formats are supported by the following command-line interface and the Pytho
   - LAMMPS
   - phonopy and phonon3py
   - ASE
-
-## Tutorials
-1. [Development of on-the-fly MLP](docs/tutorial_onthefly.md)
-2. Development of general-purpose MLP

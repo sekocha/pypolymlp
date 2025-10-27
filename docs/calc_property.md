@@ -1,16 +1,33 @@
 # Property calculations using polynomial MLP
+
+The energy, atomic forces, and stress tensor can be calculated through the command-line interface or the Python API.
+If multiple structure files are provided as input, property calculations are compatible with OpenMP support.
+If a single structure is provided, OpenMP support is still available, but the computation may be slower for small systems.
+
 ## Using command line interface
+Given a polynomial MLP file `polymlp.yaml` and a structure specified by `POSCAR`, the energy, atomic forces, and stress tensor can be calculated using the following command.
 
 ```shell
+(For single structure)
+> pypolymlp-calc --properties --pot polymlp.yaml --poscars POSCAR
+
+(For multiple structures)
 > pypolymlp-calc --properties --pot polymlp.yaml --poscars */POSCAR
 > pypolymlp-calc --properties --pot polymlp.yaml --vaspruns vaspruns/vasprun.xml.polymlp.*
 ```
-When using a hybrid polynomial MLP, multiple MLP files should be given for --pot option.
+
+When using a hybrid polynomial MLP, multiple MLP files should be given for `--pot` option.
 ```shell
 --pot polymlp.yaml*
 or
 --pot polymlp.yaml.1 polymlp.yaml.2
 ```
+
+After the property calculations are completed, the results are saved as NumPy objects:
+
+- `polymlp_energies.npy` with shape `(n_structure)` for the energies, in units of eV per supercell.
+- `polymlp_forces.npy` with shape `(n_structure, 3, n_atom)` (if all structures have the same number of atoms) for the atomic forces, in units of eV/angstroms.
+- `polymlp_stress_tensor.npy` with shape `(n_structure, 6)` for the stress tensor, in the order xx, yy, zz, xy, yz, zx, and in units of eV per cell.
 
 ## Using Python API
 
