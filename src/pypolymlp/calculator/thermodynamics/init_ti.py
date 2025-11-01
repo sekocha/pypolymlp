@@ -78,6 +78,7 @@ def _extrapolate_data(
 def _get_free_energy(
     log_active: list,
     extrapolation: bool = False,
+    method: Literal["trapezoid", "simpson", "romb"] = "trapezoid",
     verbose: bool = False,
 ):
     """Calculate free energy from log."""
@@ -85,16 +86,10 @@ def _get_free_energy(
     if extrapolation:
         de1 = _extrapolate_data(data_de, threshold=0.8, max_order=3, verbose=verbose)
         data_de = np.vstack((data_de, [1.0, de1]))
-
-    # free_energy = integrate(data_de, method="trapezoid")
-    return integrate(data_de, method="simpson")
+    return integrate(data_de, method=method)
 
 
-def _get_energy(
-    log_active: list,
-    extrapolation: bool = False,
-    verbose: bool = False,
-):
+def _get_energy(log_active: list, extrapolation: bool = False, verbose: bool = False):
     """Calculate potential energy from log."""
     data_e = np.array([[float(l["alpha"]), float(l["energy"])] for l in log_active])
     energy0 = data_e[0, 1]
@@ -142,10 +137,10 @@ def load_ti_yaml(
         return None
 
     log_active = [l1 for l1, bool1 in zip(log, is_melt) if not bool1]
-    # free_energy = float(data["properties"]["free_energy"])
     free_energy = _get_free_energy(
         log_active,
         extrapolation=extrapolation,
+        method="simpson",
         verbose=verbose,
     )
     free_energy /= n_atom
@@ -174,36 +169,3 @@ def load_ti_yaml(
                 print(" alpha:", l1["alpha"], "was eliminated.", flush=True)
 
     return (temperature, volume, free_energy, energy, entropy, heat_capacity)
-
-
-# def load_ti_yamls_fit(
-#    filenames: tuple[str],
-#    extrapolation: bool = False,
-#    verbose: bool = False,
-# ) -> list[GridPointData]:
-#    """Load polymlp_ti.yaml files."""
-#    data = []
-#    for yamlfile in filenames:
-#        res = load_thermodynamic_integration_yaml(
-#            yamlfile,
-#            extrapolation=extrapolation,
-#            verbose=verbose,
-#        )
-#        if res is not None:
-#            temp, volume, free_e, energy, entropy, cv = res
-#            grid = GridPointData(
-#                volume=volume,
-#                temperature=temp,
-#                data_type="ti",
-#                free_energy=free_e,
-#                entropy=entropy,
-#                energy=energy,
-#                heat_capacity=cv,
-#                path_yaml=yamlfile,
-#            )
-#            data.append(grid)
-#        else:
-#            if verbose:
-#                message = " was eliminated (failed or in a melting state)."
-#                print(yamlfile + message, flush=True)
-#    return data
