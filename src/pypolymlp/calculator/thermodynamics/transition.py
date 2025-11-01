@@ -2,11 +2,7 @@
 
 import numpy as np
 
-from pypolymlp.calculator.thermodynamics.fit_utils import (
-    Polyfit,
-    fit_solve,
-    fit_solve_poly,
-)
+from pypolymlp.calculator.utils.fit_utils import Polyfit, fit_solve, fit_solve_poly
 
 
 def find_transition(f1: np.ndarray, f2: np.ndarray):

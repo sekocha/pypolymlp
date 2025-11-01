@@ -46,7 +46,7 @@ A polynomial MLP represents the potential energy as a polynomial function of lin
 
 ## How to install pypolymlp
 
-- Install from conda-forge
+- Install from conda-forge (Recommended)
 
 | Version | Last Update | Downloads | Platform | License |
 | ---- | ---- | ---- | ---- | ---- |
