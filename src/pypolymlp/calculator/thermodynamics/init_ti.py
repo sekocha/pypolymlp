@@ -101,7 +101,7 @@ def _get_energy(
 ):
     """Calculate potential energy from log."""
     data_e = np.array([[float(l["alpha"]), float(l["energy"])] for l in log_active])
-    energy0 = data_e[1, 0]
+    energy0 = data_e[0, 1]
     if extrapolation:
         energy = _extrapolate_data(
             data_e,
@@ -110,7 +110,7 @@ def _get_energy(
             verbose=verbose,
         )
     else:
-        energy = data_e[1, -1]
+        energy = data_e[-1, 1]
     energy = (energy - energy0) / n_atom
     return energy
 
