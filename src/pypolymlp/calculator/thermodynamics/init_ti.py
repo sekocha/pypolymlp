@@ -99,12 +99,7 @@ def _get_energy(
     data_e = np.array([[float(l["alpha"]), float(l["energy"])] for l in log_active])
     energy0 = data_e[0, 1]
     if extrapolation:
-        energy = _extrapolate_data(
-            data_e,
-            max_order=2,
-            threshold=0.9,
-            verbose=verbose,
-        )
+        energy = _extrapolate_data(data_e, threshold=0.8, max_order=3, verbose=verbose)
     else:
         energy = data_e[-1, 1]
     return energy - energy0
