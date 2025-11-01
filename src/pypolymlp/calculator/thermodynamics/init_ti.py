@@ -77,25 +77,21 @@ def _extrapolate_data(
 
 def _get_free_energy(
     log_active: list,
-    n_atom: int,
     extrapolation: bool = False,
     verbose: bool = False,
 ):
     """Calculate free energy from log."""
     data_de = np.array([[float(l["alpha"]), float(l["delta_e"])] for l in log_active])
     if extrapolation:
-        de1 = _extrapolate_data(data_de, threshold=0.9, max_order=2, verbose=verbose)
+        de1 = _extrapolate_data(data_de, threshold=0.8, max_order=3, verbose=verbose)
         data_de = np.vstack((data_de, [1.0, de1]))
 
     # free_energy = integrate(data_de, method="trapezoid")
-    free_energy = integrate(data_de, method="simpson")
-    free_energy /= n_atom
-    return free_energy
+    return integrate(data_de, method="simpson")
 
 
 def _get_energy(
     log_active: list,
-    n_atom: int,
     extrapolation: bool = False,
     verbose: bool = False,
 ):
@@ -111,8 +107,7 @@ def _get_energy(
         )
     else:
         energy = data_e[-1, 1]
-    energy = (energy - energy0) / n_atom
-    return energy
+    return energy - energy0
 
 
 def load_ti_yaml(
@@ -155,38 +150,16 @@ def load_ti_yaml(
     # free_energy = float(data["properties"]["free_energy"])
     free_energy = _get_free_energy(
         log_active,
-        n_atom,
         extrapolation=extrapolation,
         verbose=verbose,
     )
+    free_energy /= n_atom
     energy = _get_energy(
         log_active,
-        n_atom,
         extrapolation=extrapolation,
         verbose=verbose,
     )
-
-    # data_de = np.array([[float(l["alpha"]), float(l["delta_e"])] for l in log_active])
-    # if extrapolation:
-    #     de1 = _extrapolate_data(data_de, threshold=0.9, max_order=2, verbose=verbose)
-    #     data_de = np.vstack((data_de, [1.0, de1]))
-
-    # # free_energy = integrate(data_de, method="trapezoid")
-    # free_energy = integrate(data_de, method="simpson")
-    # free_energy /= n_atom
-
-    # data_e = np.array([[float(l["alpha"]), float(l["energy"])] for l in log_active])
-    # energy0 = log_active[0]
-    # if extrapolation:
-    #     energy1 = _extrapolate_data(
-    #         data_e,
-    #         max_order=2,
-    #         threshold=0.9,
-    #         verbose=verbose,
-    #     )
-    # else:
-    #     energy = data_e[-1]
-    # energy = (energy - energy0) / n_atom
+    energy /= n_atom
 
     if np.isclose(temperature, 0.0):
         entropy = 0.0
