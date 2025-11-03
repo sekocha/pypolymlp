@@ -200,7 +200,7 @@ def construct_basis_cell(
 
 
 class ReducedCell:
-    """Class for Niggli reduced cell."""
+    """Class for calculating reduced cell."""
 
     def __init__(
         self,
