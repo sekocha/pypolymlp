@@ -1,10 +1,13 @@
 """Utilities to use spglib."""
 
+from typing import Literal
+
 import numpy as np
 import spglib
 
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.interface_vasp import Poscar
+from pypolymlp.utils.structure_utils import refine_positions
 
 
 class SymCell:
@@ -194,3 +197,71 @@ def construct_basis_cell(
             print("Crystal system: Triclinic", flush=True)
         basis = np.eye(9)
     return basis, cell_copy
+
+
+class ReducedCell:
+    """Class for Niggli reduced cell."""
+
+    def __init__(
+        self,
+        axis: np.ndarray,
+        method: Literal["niggli", "delaunay"] = "delaunay",
+    ):
+        """Init method."""
+        self._axis = axis
+        self._method = method
+
+        self._reduced_axis = None
+        self._tmat = None
+        self._reduced_metric = None
+
+        self._reduce()
+
+    def _reduce(self):
+        """Calculate Niggli reduced cell.
+        Definition
+        ----------
+        """
+        if self._method == "niggli":
+            self._reduced_axis = spglib.niggli_reduce(self._axis.T, eps=1e-10).T
+        elif self._method == "delaunay":
+            self._reduced_axis = spglib.delaunay_reduce(self._axis.T, eps=1e-10).T
+
+        self._tmat = self.transformation_matrix
+        self._reduced_metric = self._reduced_axis.T @ self._reduced_axis
+        return (self._reduced_axis, self._tmat, self._reduced_metric)
+
+    def transform_fr_coords(self, positions: np.ndarray):
+        """Transform fractional coordinates to those in Niggli reduced cell.
+
+        Definition
+        ----------
+        reduced_axis @ frac' = axis @ frac
+        (axis @ tmat) @ frac' = axis @ frac
+        frac' = tmat^{-1} @ frac
+        """
+        pos = np.linalg.inv(self._tmat) @ positions
+        return refine_positions(positions=pos)
+
+    @property
+    def transformation_matrix(self):
+        """Return transformation matrix.
+
+        Definition
+        ----------
+        reduced_axis = axis @ tmat
+        tmat = axis^{-1} @ reduced_axis
+        """
+        if self._tmat is None:
+            return np.linalg.inv(self._axis) @ self._reduced_axis
+        return self._tmat
+
+    @property
+    def reduced_axis(self):
+        """Return axis of reduced cell."""
+        return self._reduced_axis
+
+    @property
+    def reduced_metric(self):
+        """Return metric tensor of reduced cell."""
+        return self._reduced_metric
