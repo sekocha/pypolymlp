@@ -1,5 +1,6 @@
 """Utilities to use spglib."""
 
+import copy
 from typing import Literal
 
 import numpy as np
@@ -242,6 +243,16 @@ class ReducedCell:
         """
         pos = np.linalg.inv(self._tmat) @ positions
         return refine_positions(positions=pos)
+
+    def reduce_structure(self, st: PolymlpStructure):
+        """Return structure with reduced cell."""
+        if not np.allclose(st.axis, self._axis):
+            raise RuntimeError("Axis in structure is inconsistent with original axis.")
+
+        reduced = copy.deepcopy(st)
+        reduced.axis = self._reduced_axis
+        reduced.positions = self.transform_fr_coords(st.positions)
+        return reduced
 
     @property
     def transformation_matrix(self):

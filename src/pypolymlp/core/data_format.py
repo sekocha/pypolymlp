@@ -1,5 +1,6 @@
 """Dataclasses used for developing polymlp."""
 
+import copy
 from dataclasses import asdict, dataclass
 from typing import Literal, Optional, Union
 
@@ -60,6 +61,26 @@ class PolymlpStructure:
     def set_positions_cartesian(self):
         """Calculate positions_cartesian."""
         self.positions_cartesian = self.axis @ self.positions
+
+    def reorder(self):
+        """Reorder positions, types, and elements according to types."""
+        map_elements = dict()
+        for t, e in zip(self.types, self.elements):
+            map_elements[t] = e
+
+        n_atoms, positions_reorder, types_reorder = [], [], []
+        for i in sorted(set(self.types)):
+            ids = np.array(self.types) == i
+            n_atoms.append(np.count_nonzero(ids))
+            positions_reorder.extend(self.positions.T[ids])
+            types_reorder.extend(np.array(self.types)[ids])
+
+        st = copy.deepcopy(self)
+        st.positions = np.array(positions_reorder).T
+        st.n_atoms = n_atoms
+        st.types = types_reorder
+        st.elements = [map_elements[t] for t in types_reorder]
+        return st
 
 
 @dataclass
