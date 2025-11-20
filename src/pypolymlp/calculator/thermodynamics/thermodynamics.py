@@ -5,8 +5,7 @@ from typing import Literal, Optional
 
 import numpy as np
 
-from pypolymlp.calculator.thermodynamics.fit_utils import Polyfit
-from pypolymlp.calculator.thermodynamics.initialization import (
+from pypolymlp.calculator.thermodynamics.init import (
     calculate_harmonic_free_energies,
     calculate_reference,
     get_common_grid,
@@ -21,6 +20,7 @@ from pypolymlp.calculator.thermodynamics.thermodynamics_utils import (
     sum_matrix_data,
 )
 from pypolymlp.calculator.utils.eos_utils import EOS
+from pypolymlp.calculator.utils.fit_utils import Polyfit
 from pypolymlp.core.units import EVtoJmol
 
 

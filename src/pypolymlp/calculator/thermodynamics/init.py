@@ -7,8 +7,8 @@ import yaml
 
 from pypolymlp.calculator.compute_phonon import calculate_harmonic_properties_from_fc2
 from pypolymlp.calculator.sscha.sscha_utils import Restart
+from pypolymlp.calculator.thermodynamics.init_ti import load_ti_yaml
 from pypolymlp.calculator.thermodynamics.thermodynamics_utils import GridPointData
-from pypolymlp.calculator.thermodynamics.ti_precondition import load_ti_yamls_fit
 from pypolymlp.core.units import EVtoJmol, EVtoKJmol
 
 
@@ -69,18 +69,37 @@ def load_electron_yamls(
     return data
 
 
-def _check_reference_fc2():
-    """Check whether a single FC2 is used as reference for the same volume."""
-    pass
-
-
 def load_ti_yamls(
     filenames: tuple[str],
     extrapolation: bool = False,
     verbose: bool = False,
 ) -> list[GridPointData]:
     """Load polymlp_ti.yaml files."""
-    return load_ti_yamls_fit(filenames, extrapolation=extrapolation, verbose=verbose)
+    data = []
+    for yamlfile in filenames:
+        res = load_ti_yaml(
+            yamlfile,
+            extrapolation=extrapolation,
+            verbose=verbose,
+        )
+        if res is not None:
+            temp, volume, free_e, energy, entropy, cv = res
+            grid = GridPointData(
+                volume=volume,
+                temperature=temp,
+                data_type="ti",
+                free_energy=free_e,
+                entropy=entropy,
+                energy=energy,
+                heat_capacity=cv,
+                path_yaml=yamlfile,
+            )
+            data.append(grid)
+        else:
+            if verbose:
+                message = " was eliminated (failed or in a melting state)."
+                print(yamlfile + message, flush=True)
+    return data
 
 
 def compare_conditions(array1: np.ndarray, array2: np.ndarray):

@@ -12,11 +12,23 @@ from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.interface_vasp import Poscar
 
 
-def refine_positions(st: PolymlpStructure, tol=1e-13):
-    positions = st.positions
+def _refine_positions(positions: np.ndarray, tol: float = 1e-13):
+    """Refine fractional coordinates."""
     positions -= np.floor(positions)
     positions[np.where(positions > 1 - tol)] -= 1.0
-    st.positions = positions
+    return positions
+
+
+def refine_positions(
+    st: Optional[PolymlpStructure] = None,
+    positions: Optional[np.ndarray] = None,
+    tol: float = 1e-13,
+):
+    """Refine fractional coordinates."""
+    if positions is not None:
+        return _refine_positions(positions, tol=tol)
+
+    st.positions = _refine_positions(st.positions, tol=tol)
     return st
 
 
@@ -26,6 +38,7 @@ def reset_types(st: PolymlpStructure):
 
 
 def calc_positions_cartesian(st: PolymlpStructure):
+    """Calculate Cartesian coordinates."""
     return st.axis @ st.positions
 
 
