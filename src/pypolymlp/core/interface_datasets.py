@@ -1,5 +1,6 @@
 """Interfaces for setting DFT datasets."""
 
+import copy
 from typing import Optional
 
 import numpy as np
@@ -29,11 +30,12 @@ def permute_atoms(
     positions = np.array(positions).T
     force_permute = np.array(force_permute).T
 
-    st.positions = positions
-    st.n_atoms = n_atoms
-    st.elements = elements
-    st.types = types
-    return st, force_permute
+    st_new = copy.deepcopy(st)
+    st_new.positions = positions
+    st_new.n_atoms = n_atoms
+    st_new.elements = elements
+    st_new.types = types
+    return st_new, force_permute
 
 
 def set_dataset_from_structures(

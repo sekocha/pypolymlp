@@ -7,15 +7,13 @@ import numpy as np
 import pytest
 
 from pypolymlp.core.data_format import PolymlpStructure
-from pypolymlp.core.interface_vasp import Poscar
 
 cwd = Path(__file__).parent
 
 
-def test_polymlp_structure():
+def test_polymlp_structure(structure_rocksalt):
     """Test for PolymlpStructure class."""
-    filename = cwd / "./../files/POSCAR-rocksalt"
-    st = Poscar(filename).structure
+    st = structure_rocksalt
     assert st.axis.shape == (3, 3)
     assert st.positions.shape == (3, 8)
     np.testing.assert_equal(st.n_atoms, [4, 4])
