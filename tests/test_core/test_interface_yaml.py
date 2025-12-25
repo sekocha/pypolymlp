@@ -1,10 +1,12 @@
-"""Tests of openmx parser."""
+"""Tests of yaml parser."""
 
 from pathlib import Path
 
 import numpy as np
 
-from pypolymlp.core.interface_yaml import (  # extract_electron_properties,; parse_electron_yamls,
+from pypolymlp.core.interface_yaml import (
+    extract_electron_properties,
+    parse_electron_yamls,
     parse_sscha_yamls,
 )
 
@@ -24,3 +26,19 @@ def test_parse_sscha_yamls():
     assert len(forces) == 2
     assert forces[0].shape == (3, 40)
     assert forces[1].shape == (3, 40)
+
+
+def test_electron_yamls():
+    """Test for parsing electron.yaml."""
+    yamls = [
+        cwd / "./../files/electron-0.yaml",
+        cwd / "./../files/electron-1.yaml",
+        cwd / "./../files/electron-2.yaml",
+    ]
+    data = parse_electron_yamls(yamls)
+    strs, props = extract_electron_properties(
+        data, temperature=500.0, target="free_energy"
+    )
+    np.testing.assert_allclose(
+        props, [-0.00537118, -0.00520776, -0.00521567], atol=1e-6
+    )

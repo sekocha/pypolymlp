@@ -1,4 +1,4 @@
-"""Tests of openmx parser."""
+"""Tests of vasp parser."""
 
 from pathlib import Path
 
