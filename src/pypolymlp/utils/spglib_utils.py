@@ -42,7 +42,7 @@ class SymCell:
 
         self.symprec = symprec
 
-    def refine_cell(self, standardize_cell=False) -> PolymlpStructure:
+    def refine_cell(self, standardize_cell: bool = False) -> PolymlpStructure:
         """Refine cell."""
         if standardize_cell == False:
             try:
@@ -87,7 +87,7 @@ class SymCell:
         """Return space group."""
         return spglib.get_spacegroup(self.cell, symprec=self.symprec)
 
-    def get_spacegroup_multiple_prec(self, symprecs=[1e-2, 1e-3, 1e-4, 1e-5]):
+    def get_spacegroup_multiple_prec(self, symprecs: tuple = (1e-2, 1e-3, 1e-4, 1e-5)):
         """Return list of space groups using multiple precisions."""
         return [spglib.get_spacegroup(self.cell, symprec=p) for p in symprecs]
 
@@ -103,23 +103,34 @@ def standardize_cell(cell: PolymlpStructure) -> PolymlpStructure:
         to_primitive=False,
     )
 
-    n_atoms, scaled_positions_reorder, types_reorder = [], [], []
-    for i in sorted(set(types)):
-        ids = np.array(types) == i
-        n_atoms.append(np.count_nonzero(ids))
-        scaled_positions_reorder.extend(scaled_positions[ids])
-        types_reorder.extend(np.array(types)[ids])
-    scaled_positions_reorder = np.array(scaled_positions_reorder)
-    elements = [map_elements[t] for t in types_reorder]
-
+    elements = [map_elements[t] for t in types]
     cell_standardized = PolymlpStructure(
         axis=lattice.T,
-        positions=scaled_positions_reorder.T,
-        n_atoms=n_atoms,
+        positions=scaled_positions.T,
+        n_atoms=[scaled_positions.shape[0]],
         elements=elements,
-        types=types_reorder,
+        types=types,
     )
-    return cell_standardized
+    return cell_standardized.reorder()
+
+
+#    n_atoms, scaled_positions_reorder, types_reorder = [], [], []
+#    for i in sorted(set(types)):
+#        ids = np.array(types) == i
+#        n_atoms.append(np.count_nonzero(ids))
+#        scaled_positions_reorder.extend(scaled_positions[ids])
+#        types_reorder.extend(np.array(types)[ids])
+#    scaled_positions_reorder = np.array(scaled_positions_reorder)
+#    elements = [map_elements[t] for t in types_reorder]
+#
+#    cell_standardized = PolymlpStructure(
+#        axis=lattice.T,
+#        positions=scaled_positions_reorder.T,
+#        n_atoms=n_atoms,
+#        elements=elements,
+#        types=types_reorder,
+#    )
+#    return cell_standardized
 
 
 def get_symmetry_dataset(cell: PolymlpStructure):

@@ -6,12 +6,15 @@ from collections import defaultdict
 
 import numpy as np
 
+from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.interface_vasp import Poscar, Vasprun
 from pypolymlp.cxx.lib import libmlpcpp
 
 
-def find_active_distances(structure, cutoff, decimals=1):
-
+def find_active_distances(
+    structure: PolymlpStructure, cutoff: float, decimals: int = 1
+):
+    """Find active distances."""
     distances = compute_neighbor_list(structure, cutoff)
     element_map = dict(
         set([(t, ele) for ele, t in zip(structure.elements, structure.types)])
@@ -30,14 +33,11 @@ def find_active_distances(structure, cutoff, decimals=1):
         new_dict[key] = np.unique(np.round(v, decimals=decimals))
 
     distances_dict = new_dict
-    # for k, v in distances_dict.items():
-    #     print(k, v)
-
     return distances_dict
 
 
-def compute_neighbor_list(structure, cutoff):
-
+def compute_neighbor_list(structure: PolymlpStructure, cutoff: float):
+    """Compute neighbor list."""
     if structure.positions_cartesian is None:
         structure.positions_cartesian = structure.axis @ structure.positions
 
@@ -53,8 +53,8 @@ def compute_neighbor_list(structure, cutoff):
     return distances
 
 
-def find_minimum_distance(structure, each_atom=False):
-
+def find_minimum_distance(structure: PolymlpStructure, each_atom: bool = False):
+    """Find minimum distance."""
     if structure.positions_cartesian is None:
         structure.positions_cartesian = structure.axis @ structure.positions
 
@@ -76,6 +76,7 @@ def find_minimum_distance(structure, each_atom=False):
 
 
 def get_coordination_numbers(distances):
+    """Return coordination numbers."""
     return [len(d2) for d1 in distances for d2 in d1]
 
 

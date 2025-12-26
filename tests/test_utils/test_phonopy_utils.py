@@ -42,3 +42,6 @@ def test_supercell(structure_rocksalt):
     np.testing.assert_equal(supercell.n_atoms, [8, 8])
     np.testing.assert_equal(supercell.types, np.repeat([0, 1], 8))
     np.testing.assert_equal(supercell.elements, np.repeat(["Mg", "O"], 8))
+
+
+# TODO: get_nac_params
