@@ -137,11 +137,12 @@ class PolymlpCost:
 
         return cost1, cost2
 
-    def run(self, n_calc: int = 20):
+    def run(self, n_calc: int = 20, write_yaml: bool = True):
         """Estimate computational costs for polymlps."""
         if self._path_pot is None:
             cost1, cost2 = self._run_single(self._pot, n_calc=n_calc)
-            self._write_single_yaml(cost1, cost2, filename="polymlp_cost.yaml")
+            if write_yaml:
+                self._write_single_yaml(cost1, cost2, filename="polymlp_cost.yaml")
         else:
             pot_dirs = sorted(self._path_pot)
             for dir1 in pot_dirs:
@@ -152,11 +153,12 @@ class PolymlpCost:
 
                 if pot is not None:
                     cost1, cost2 = self._run_single(pot, n_calc=n_calc)
-                    self._write_single_yaml(
-                        cost1,
-                        cost2,
-                        filename=dir1 + "/polymlp_cost.yaml",
-                    )
+                    if write_yaml:
+                        self._write_single_yaml(
+                            cost1,
+                            cost2,
+                            filename=dir1 + "/polymlp_cost.yaml",
+                        )
 
     def _write_single_yaml(
         self, cost1: float, cost2: float, filename: str = "polymlp_cost.yaml"
