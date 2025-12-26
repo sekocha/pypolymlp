@@ -11,6 +11,7 @@ from pypolymlp.core.data_format import PolymlpStructure
 
 
 def print_array1d(array, tag, fstream, indent_l=0):
+    """Print one-dimensional array."""
     prefix = "".join([" " for n in range(indent_l)])
     print(prefix + tag + ":", file=fstream)
     for i, d in enumerate(array):
@@ -18,6 +19,7 @@ def print_array1d(array, tag, fstream, indent_l=0):
 
 
 def print_array2d(array, tag, fstream, indent_l=0):
+    """Print two-dimensional array."""
     prefix = "".join([" " for n in range(indent_l)])
     print(prefix + tag + ":", file=fstream)
     for i, d in enumerate(array):
@@ -141,7 +143,7 @@ def save_data(
     f.close()
 
 
-def load_data(filename="polymlp_data.yaml"):
+def load_data(filename: str = "polymlp_data.yaml"):
     """Load structure and property data.
 
     Parameters
