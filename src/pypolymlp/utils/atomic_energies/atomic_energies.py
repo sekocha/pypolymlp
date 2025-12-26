@@ -1,12 +1,13 @@
-"""Functions for atomic energy."""
+"""Utility functions for atomic energy."""
 
 import re
+from typing import Literal, Optional
 
 import numpy as np
 
 
-def get_elements(system):
-
+def get_elements(system: str):
+    """Return elements from system."""
     system = re.sub(r"[0-9]", "", system)
     begin = [iter1.span()[0] for iter1 in re.finditer(r"[A-Z]", system)]
     end = begin[1:] + [len(system)]
@@ -14,8 +15,13 @@ def get_elements(system):
     return elements
 
 
-def get_atomic_energies(elements=None, formula=None, functional="PBE", code="vasp"):
-
+def get_atomic_energies(
+    elements: Optional[tuple] = None,
+    formula: Optional[str] = None,
+    functional: Literal["PBE", "PBEsol"] = "PBE",
+    code: Literal["vasp"] = "vasp",
+):
+    """Return atomic energies."""
     pwd = __file__.replace("atomic_energies.py", "")
     if functional == "PBE" and code == "vasp":
         data = dict(np.loadtxt(pwd + "/energies_vasp_PBE.dat", dtype=str))
@@ -32,9 +38,12 @@ def get_atomic_energies(elements=None, formula=None, functional="PBE", code="vas
 
 
 def get_atomic_energies_polymlp_in(
-    elements=None, formula=None, functional="PBE", code="vasp"
+    elements: Optional[tuple] = None,
+    formula: Optional[str] = None,
+    functional: Literal["PBE", "PBEsol"] = "PBE",
+    code: Literal["vasp"] = "vasp",
 ):
-
+    """Return atomic energies in input file format."""
     atom_e, elements = get_atomic_energies(
         elements=elements, formula=formula, functional=functional, code=code
     )
