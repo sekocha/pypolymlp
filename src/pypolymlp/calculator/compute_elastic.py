@@ -8,7 +8,6 @@ import pymatgen as pmg
 from pymatgen.analysis.elasticity import DeformedStructureSet, diff_fit
 
 from pypolymlp.calculator.properties import Properties, convert_stresses_in_gpa
-from pypolymlp.calculator.str_opt.optimization_sym import MinimizeSym
 from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
 
 
@@ -49,7 +48,6 @@ class PolymlpElastic:
         fposcar = open(unitcell_poscar)
         self.st_pmg = pmg.core.Structure.from_str(fposcar.read(), fmt="POSCAR")
         fposcar.close()
-        # self._run_initial_geometry_optimization()
 
         self._compute_initial_properties()
 
@@ -66,46 +64,8 @@ class PolymlpElastic:
             ]
         )
 
-    def _run_initial_geometry_optimization(self):
-
-        if self._verbose:
-            print("-------------------------------")
-            print("Running geometry optimization")
-        minobj = MinimizeSym(self._unitcell, properties=self.prop, relax_cell=True)
-        minobj.run(gtol=1e-6)
-        res_f, res_s = minobj.residual_forces
-
-        if self._verbose:
-            print("Residuals (force):")
-            print(res_f.T)
-            print("Residuals (stress):")
-            print(res_s)
-            print("E0:", minobj.energy)
-            print("n_iter:", minobj.n_iter)
-            print("Success:", minobj.success)
-            print("-------------------------------")
-
-        if minobj.success:
-            self._unitcell = minobj.structure
-
-    def _run_geometry_optimization(self, structure):
-
-        if self._verbose:
-            print("Running geometry optimization")
-        try:
-            minobj = MinimizeSym(structure, properties=self.prop, relax_cell=False)
-            minobj.run(gtol=1e-6)
-            if self._verbose:
-                print("Success:", minobj.success)
-            if minobj.success:
-                structure = minobj.structure
-        except ValueError:
-            print("No degrees of freedom in geometry optimization")
-
-        return structure
-
     def run(self):
-
+        """Run elastic constant calculation."""
         deform = DeformedStructureSet(self.st_pmg)
         strains = [d.green_lagrange_strain for d in deform.deformations]
 
@@ -114,8 +74,6 @@ class PolymlpElastic:
             structure = copy.deepcopy(self._unitcell)
             lattice = np.array(deform[i].as_dict()["lattice"]["matrix"])
             structure.axis = lattice.T
-
-            # st_dict = self._run_geometry_optimization(st_dict)
             structure_deform.append(structure)
 
         _, _, stresses = self.prop.eval_multiple(structure_deform)
@@ -136,8 +94,8 @@ class PolymlpElastic:
 
         return self
 
-    def write_elastic_constants(self, filename="polymlp_elastic.yaml"):
-
+    def write_elastic_constants(self, filename: str = "polymlp_elastic.yaml"):
+        """Save elastic constants."""
         f = open(filename, "w")
 
         print("elastic_constants:", file=f)
@@ -180,22 +138,3 @@ class PolymlpElastic:
     @property
     def elastic_constants(self):
         return self._elastic_constants
-
-
-# def get_structures_elastic(unitcell_poscar):
-#     """Return structures for calculating elastic constants."""
-#     fposcar = open(unitcell_poscar)
-#     st_pmg = pmg.core.Structure.from_str(fposcar.read(), fmt="POSCAR")
-#     fposcar.close()
-#
-#     deform = DeformedStructureSet(st_pmg)
-#     strains = [d.green_lagrange_strain for d in deform.deformations]
-#
-#     structure_deform = []
-#     for i in range(len(deform)):
-#         structure = copy.deepcopy(self._unitcell)
-#         lattice = np.array(deform[i].as_dict()["lattice"]["matrix"])
-#         structure.axis = lattice.T
-#         structure_deform.append(structure)
-#
-#     return structure_deform, strains

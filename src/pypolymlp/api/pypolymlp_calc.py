@@ -118,7 +118,7 @@ class PypolymlpCalc:
 
         self.structures = [phonopy_cell_to_structure(s) for s in structures_ph]
 
-    def save_poscars(self, filename="POSCAR_pypolymlp", prefix="POSCAR"):
+    def save_poscars(self, filename: str = "POSCAR_pypolymlp", prefix: str = "POSCAR"):
         """Save structures to POSCAR files."""
         if len(self.structures) == 1:
             write_poscar_file(self.first_structure, filename=filename)
@@ -231,7 +231,7 @@ class PypolymlpCalc:
         self._elastic.run()
         return self._elastic.elastic_constants
 
-    def write_elastic_constants(self, filename="polymlp_elastic.yaml"):
+    def write_elastic_constants(self, filename: str = "polymlp_elastic.yaml"):
         """Save elastic constants to a file."""
         self._elastic.write_elastic_constants(filename=filename)
 
@@ -283,7 +283,7 @@ class PypolymlpCalc:
         )
         return self
 
-    def write_eos(self, filename="polymlp_eos.yaml"):
+    def write_eos(self, filename: str = "polymlp_eos.yaml"):
         """Save EOS to a file."""
         self._eos.write_eos_yaml(filename=filename)
 
