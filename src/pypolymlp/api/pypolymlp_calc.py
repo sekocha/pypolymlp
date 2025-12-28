@@ -700,25 +700,3 @@ class PypolymlpCalc:
     @property
     def instance_phonopy(self):
         return self._phonon.phonopy
-
-
-# def set_structures(args):
-#
-#     if args.phono3py_yaml is not None:
-#         from pypolymlp.core.interface_phono3py import (
-#             parse_structures_from_phono3py_yaml,
-#         )
-#
-#         print("Loading", args.phono3py_yaml)
-#         if args.phono3py_yaml_structure_ids is not None:
-#             r1, r2 = args.phono3py_yaml_structure_ids
-#             select_ids = np.arange(r1, r2)
-#         else:
-#             select_ids = None
-#
-#         structures = parse_structures_from_phono3py_yaml(
-#             args.phono3py_yaml, select_ids=select_ids
-#         )
-#
-#     return structures
-#

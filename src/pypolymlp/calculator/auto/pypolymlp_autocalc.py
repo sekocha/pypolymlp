@@ -5,10 +5,10 @@ from typing import Optional, Union
 import numpy as np
 
 from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
+from pypolymlp.calculator.auto.dataclass import Prototype
 from pypolymlp.calculator.auto.structures_element import get_structure_list_element
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.core.data_format import PolymlpParams
-from pypolymlp.utils.structure_utils import get_lattice_constants
 
 
 class PypolymlpAutoCalc:
@@ -68,29 +68,36 @@ class PypolymlpAutoCalc:
         for prot in self._prototypes:
             if self._verbose:
                 print("---- Structure", prot.name, "----", flush=True)
+            poscar_name = "POSCAR-eq-" + prot.name
 
-            self._calc.structures = prot.structure
-            self._calc.init_geometry_optimization(
-                with_sym=True,
-                relax_cell=True,
-                relax_volume=True,
-                relax_positions=True,
-            )
-            energy, _, success = self._calc.run_geometry_optimization()
+            energy, success = self._run_geometry_optimization(prot)
             if not success:
                 if self._verbose:
                     print("Geometry optimization failed.", flush=True)
                 continue
 
-            lattice_consts = get_lattice_constants(self._calc.converged_structure)
-            poscar_name = "POSCAR-eq-" + prot.name
+            prot.structure_eq = self._calc.converged_structure
+            prot.energy = energy / prot.n_atom
             self._calc.save_poscars(filename=poscar_name)
 
-            self._calc.run_eos(eos_fit=True)
-            self._calc.write_eos(filename="polymlp_eos_" + prot.name + ".yaml")
+            self._run_eos(prot)
+            prot.elastic_constants = self._calc.run_elastic_constants(
+                poscar=poscar_name
+            )
 
-            elas = self._calc.run_elastic_constants(poscar=poscar_name)
+            print(prot.energy)
+            print(prot.lattice_constants)
+            print(prot.elastic_constants)
 
-            print(energy / prot.n_atom)
-            print(lattice_consts)
-            print(elas)
+    def _run_geometry_optimization(self, prototype: Prototype):
+        """Run geometry optimization for single prototype."""
+        self._calc.structures = prototype.structure
+        self._calc.init_geometry_optimization(relax_cell=True, relax_volume=True)
+        energy, _, success = self._calc.run_geometry_optimization()
+        return energy, success
+
+    def _run_eos(self, prototype: Prototype):
+        """Run EOS calculation for single prototype."""
+        self._calc.run_eos(eos_fit=True)
+        self._calc.write_eos(filename="polymlp_eos_" + prototype.name + ".yaml")
+        return self
