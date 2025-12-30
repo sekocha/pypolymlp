@@ -91,21 +91,19 @@ class PolymlpPhonon:
 
     def write_properties(self, path_output: str = "./"):
         """Save properties."""
-        os.makedirs(path_output + "/polymlp_phonon", exist_ok=True)
+        os.makedirs(path_output, exist_ok=True)
         np.savetxt(
-            path_output + "/polymlp_phonon/mesh-qpoints.txt",
+            path_output + "/phonon_mesh_qpoints.txt",
             self.mesh_dict["qpoints"],
             fmt="%f",
         )
-        self.ph.write_total_dos(filename=path_output + "/polymlp_phonon/total_dos.dat")
+        self.ph.write_total_dos(filename=path_output + "/phonon_total_dos.dat")
         self.ph.write_yaml_thermal_properties(
-            filename=path_output + "/polymlp_phonon/thermal_properties.yaml"
+            filename=path_output + "/phonon_thermal_properties.yaml"
         )
 
         if self._with_pdos:
-            self.ph.write_projected_dos(
-                filename=path_output + "/polymlp_phonon/proj_dos.dat"
-            )
+            self.ph.write_projected_dos(filename=path_output + "phonon_proj_dos.dat")
 
     def is_imaginary(self, threshold: float = -0.01) -> bool:
         """Check if imaginary phonon frequencies exist."""

@@ -20,6 +20,7 @@ def get_atomic_energies(
     formula: Optional[str] = None,
     functional: Literal["PBE", "PBEsol"] = "PBE",
     code: Literal["vasp"] = "vasp",
+    return_dict: bool = False,
 ):
     """Return atomic energies."""
     pwd = __file__.replace("atomic_energies.py", "")
@@ -34,7 +35,10 @@ def get_atomic_energies(
         elements = get_elements(formula)
 
     atom_e = [float(data[ele]) for ele in elements]
-    return atom_e, elements
+    if not return_dict:
+        return atom_e, elements
+
+    return dict(zip(elements, atom_e))
 
 
 def get_atomic_energies_polymlp_in(

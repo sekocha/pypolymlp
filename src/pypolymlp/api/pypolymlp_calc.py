@@ -354,7 +354,7 @@ class PypolymlpCalc:
         )
         return self
 
-    def write_phonon(self, path="./"):
+    def write_phonon(self, path: str = "./"):
         """Save results from phonon calculations."""
         self._phonon.write_properties(path_output=path)
         return self
@@ -684,6 +684,17 @@ class PypolymlpCalc:
         equilibrium energy, equilibrium volume, bulk modulus
         """
         return (self._eos._e0, self._eos._v0, self._eos._b0)
+
+    @property
+    def eos_curve_data(self):
+        """Return EOS curves and fitted one.
+
+        Returns
+        -------
+
+        equilibrium energy, equilibrium volume, bulk modulus
+        """
+        return (self._eos._eos_data, self._eos._eos_fit_data)
 
     @property
     def go_data(self):
