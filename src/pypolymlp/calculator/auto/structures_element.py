@@ -14,11 +14,32 @@ def _get_structure_attrs(n_atom: int, element_strings: tuple):
     return (n_atoms, types, elements)
 
 
+def set_structure(axis: np.ndarray, positions: np.ndarray, element_strings: tuple):
+    """Set PolymlpStructure instance."""
+    n_atoms, types, elements = _get_structure_attrs(positions.shape[1], element_strings)
+    st = PolymlpStructure(
+        axis=axis,
+        positions=positions,
+        n_atoms=n_atoms,
+        types=types,
+        elements=elements,
+    )
+    return st
+
+
 def get_structure_list_element(element_strings: tuple):
     """Return structure list for elemental systems."""
     fcc = structure_fcc(element_strings, a=5.0)
     bcc = structure_bcc(element_strings, a=4.0)
-    return [fcc, bcc]
+    hcp = structure_hcp(element_strings, a=3.5)
+    sn_t = structure_Sn_tI2(element_strings, a=4.0)
+    sn = structure_Sn(element_strings, a=5.5)
+    bi = structure_Bi(element_strings, a=4.0)
+    sm = structure_Sm(element_strings, a=4.0)
+    la = structure_La(element_strings, a=3.5)
+    dia = structure_diamond(element_strings, a=6.0)
+    sc = structure_sc(element_strings, a=4.0)
+    return [fcc, bcc, hcp, sn_t, sn, bi, sm, la, dia, sc]
 
 
 def structure_fcc(element_strings: tuple, a: float = 5.0):
@@ -27,32 +48,134 @@ def structure_fcc(element_strings: tuple, a: float = 5.0):
     positions = np.array(
         [[0.0, 0.0, 0.0], [0.0, 0.5, 0.5], [0.5, 0.0, 0.5], [0.5, 0.5, 0.0]]
     ).T
-    n_atoms, types, elements = _get_structure_attrs(positions.shape[1], element_strings)
-
-    fcc = PolymlpStructure(
-        axis=axis,
-        positions=positions,
-        n_atoms=n_atoms,
-        types=types,
-        elements=elements,
-    )
-    return Prototype(fcc, "fcc", 52914, 4, (4, 4, 4))
+    st = set_structure(axis, positions, element_strings)
+    return Prototype(st, "fcc", 52914, 4, (4, 4, 4))
 
 
 def structure_bcc(element_strings: tuple, a: float = 4.0):
     """Return BCC structure."""
     axis = np.eye(3) * a
     positions = np.array([[0.0, 0.0, 0.0], [0.5, 0.5, 0.5]]).T
-    n_atoms, types, elements = _get_structure_attrs(positions.shape[1], element_strings)
+    st = set_structure(axis, positions, element_strings)
+    return Prototype(st, "bcc", 76156, 2, (4, 4, 4))
 
-    fcc = PolymlpStructure(
-        axis=axis,
-        positions=positions,
-        n_atoms=n_atoms,
-        types=types,
-        elements=elements,
-    )
-    return Prototype(fcc, "bcc", 76156, 2, (4, 4, 4))
+
+def structure_hcp(element_strings: tuple, a: float = 3.5):
+    """Return HCP structure."""
+    axis = np.zeros((3, 3))
+    axis[0, 0] = a
+    axis[0, 1] = -a / 2.0
+    axis[1, 1] = a * np.sqrt(3) / 2.0
+    axis[2, 2] = a * np.sqrt(8.0 / 3.0)
+    positions = np.array([[2 / 3, 1 / 3, 0.25], [1 / 3, 2 / 3, 0.75]]).T
+    st = set_structure(axis, positions, element_strings)
+    return Prototype(st, "hcp", 652876, 2, (4, 4, 4))
+
+
+def structure_Sn_tI2(element_strings: tuple, a: float = 4.0):
+    """Return Sn(tI2) structure."""
+    axis = np.eye(3) * a
+    axis[2, 2] = a * 0.9
+    positions = np.array([[0.0, 0.0, 0.0], [0.5, 0.5, 0.5]]).T
+    st = set_structure(axis, positions, element_strings)
+    return Prototype(st, "Sn(tI2)", 43216, 2, (4, 4, 4))
+
+
+def structure_Sn(element_strings: tuple, a: float = 5.5):
+    """Return Sn structure."""
+    axis = np.eye(3) * a
+    axis[2, 2] = a * 0.6
+    positions = np.array(
+        [[0.0, 0.0, 0.00], [0.0, 0.5, 0.25], [0.5, 0.5, 0.50], [0.5, 0.0, 0.75]]
+    ).T
+    st = set_structure(axis, positions, element_strings)
+    return Prototype(st, "Sn", 236662, 4, (4, 4, 4))
+
+
+def structure_Bi(element_strings: tuple, a: float = 4.0):
+    """Return Bi structure."""
+    axis = np.array(
+        [
+            [5.2857382131102684, 0.0000000000000000, -0.2974632175834797],
+            [0.0000000000000000, 5.1179310158220206, 0.0000000000000000],
+            [-1.0452934833151939, 0.0000000000000000, 2.6029704616435523],
+        ]
+    ).T
+    positions = np.array(
+        [
+            [0.2384740361686681, 0.5, 0.8920306915057310],
+            [0.7615259638313319, 0.5, 0.1079693084942690],
+            [0.7384740361686681, 0.0, 0.8920306915057310],
+            [0.2615259638313319, 0.0, 0.1079693084942690],
+        ]
+    ).T
+    st = set_structure(axis, positions, element_strings)
+    return Prototype(st, "Bi", 653719, 4, (4, 4, 4))
+
+
+def structure_Sm(element_strings: tuple, a: float = 4.0):
+    """Return Sm structure."""
+    axis = np.zeros((3, 3))
+    axis[0, 0] = a
+    axis[0, 1] = -a / 2.0
+    axis[1, 1] = a * np.sqrt(3) / 2.0
+    axis[2, 2] = a * np.sqrt(8.0 / 3.0) * 4.5
+    positions = np.array(
+        [
+            [0.0, 0.0, 0.0000000000000000],
+            [2 / 3, 1 / 3, 0.1104635482669423],
+            [0.0, 0.0, 0.2228697850663934],
+            [2 / 3, 1 / 3, 0.3333333333333357],
+            [1 / 3, 2 / 3, 0.4437968816002780],
+            [2 / 3, 1 / 3, 0.5562031183997220],
+            [1 / 3, 2 / 3, 0.6666666666666643],
+            [0.0, 0.0, 0.7771302149336066],
+            [1 / 3, 2 / 3, 0.8895364517330577],
+        ]
+    ).T
+    st = set_structure(axis, positions, element_strings)
+    return Prototype(st, "Sm", 652633, 9, (6, 6, 1))
+
+
+def structure_La(element_strings: tuple, a: float = 5.0):
+    """Return La structure."""
+    axis = np.zeros((3, 3))
+    axis[0, 0] = a
+    axis[0, 1] = -a / 2.0
+    axis[1, 1] = a * np.sqrt(3) / 2.0
+    axis[2, 2] = a * np.sqrt(8.0 / 3.0) * 2
+    positions = np.array(
+        [[0.0, 0.0, 0.0], [0.0, 0.0, 0.5], [2 / 3, 1 / 3, 0.25], [1 / 3, 2 / 3, 0.75]]
+    ).T
+    st = set_structure(axis, positions, element_strings)
+    return Prototype(st, "La", 52916, 4, (6, 6, 2))
+
+
+def structure_diamond(element_strings: tuple, a: float = 6.0):
+    """Return diamond structure."""
+    axis = np.eye(3) * a
+    positions = np.array(
+        [
+            [0.25, 0.25, 0.25],
+            [0.00, 0.00, 0.00],
+            [0.25, 0.75, 0.75],
+            [0.00, 0.50, 0.50],
+            [0.75, 0.25, 0.75],
+            [0.50, 0.00, 0.50],
+            [0.75, 0.75, 0.25],
+            [0.50, 0.50, 0.00],
+        ]
+    ).T
+    st = set_structure(axis, positions, element_strings)
+    return Prototype(st, "diamond", 41979, 8, (4, 4, 4))
+
+
+def structure_sc(element_strings: tuple, a: float = 4.0):
+    """Return SC structure."""
+    axis = np.eye(3) * a
+    positions = np.zeros((3, 1))
+    st = set_structure(axis, positions, element_strings)
+    return Prototype(st, "sc", 43211, 1, (4, 4, 4))
 
 
 def get_structure_type_element():

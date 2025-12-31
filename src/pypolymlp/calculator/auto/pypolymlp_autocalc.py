@@ -76,9 +76,11 @@ class PypolymlpAutoCalc:
             self._print_targets()
 
         for prot in self._prototypes:
+            path = "polymlp_" + prot.name + "/"
+            os.makedirs(path, exist_ok=True)
             if self._verbose:
                 print("---- Structure", prot.name, "----", flush=True)
-            poscar = "POSCAR_eq_" + prot.name
+            poscar = path + "POSCAR_eq"
 
             energy, success = self._run_geometry_optimization(prot)
             if not success:
@@ -91,7 +93,7 @@ class PypolymlpAutoCalc:
             self._run_eos(prot)
             self._run_elastic(prot, poscar)
             self._run_phonon(prot)
-            prot.save_properties(filename="polymlp_predictions_" + prot.name + ".yaml")
+            prot.save_properties(filename=path + "polymlp_predictions.yaml")
 
     def _print_targets(self):
         """Print target structures and polymlp."""
@@ -107,7 +109,10 @@ class PypolymlpAutoCalc:
         """Run geometry optimization for single prototype."""
         self._calc.structures = prototype.structure
         self._calc.init_geometry_optimization(relax_cell=True, relax_volume=True)
-        energy, _, success = self._calc.run_geometry_optimization()
+        try:
+            energy, _, success = self._calc.run_geometry_optimization(method="CG")
+        except:
+            energy, success = None, False
         return energy, success
 
     def _run_eos(self, prototype: Prototype):
@@ -141,7 +146,7 @@ class PypolymlpAutoCalc:
             is_mesh_symmetry=True,
             with_pdos=False,
         )
-        self._calc.write_phonon(path="phonon_" + prototype.name)
+        self._calc.write_phonon(path="polymlp_" + prototype.name)
         return prototype
 
     def compare_with_dft(
@@ -179,7 +184,9 @@ class PypolymlpAutoCalc:
                 structure_type = get_structure_type_element()
             elif self._n_types == 2:
                 pass
-            names = [structure_type[i] for i in icsd_ids]
+            names = [
+                "ICSD-" + str(i) + "-[" + structure_type[i] + "]" for i in icsd_ids
+            ]
         else:
             names = vaspruns
         names = np.array(names)

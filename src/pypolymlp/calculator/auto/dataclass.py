@@ -45,6 +45,19 @@ class Prototype:
             print("  bulk_modulus:", self.bulk_modulus, file=f)
             print(file=f)
 
+            print("lattice_constants:", file=f)
+            a, b, c, calpha, cbeta, cgamma = self.lattice_constants
+            alpha = np.degrees(np.arccos(calpha))
+            beta = np.degrees(np.arccos(cbeta))
+            gamma = np.degrees(np.arccos(cgamma))
+            print("  a:    ", np.round(a, 5), file=f)
+            print("  b:    ", np.round(b, 5), file=f)
+            print("  c:    ", np.round(c, 5), file=f)
+            print("  alpha:", np.round(alpha, 5), file=f)
+            print("  beta: ", np.round(beta, 5), file=f)
+            print("  gamma:", np.round(gamma, 5), file=f)
+            print(file=f)
+
             print("eos_data_mlp:", file=f)
             yaml.dump(self.eos_mlp.tolist(), f, default_flow_style=False)
             print(file=f)
