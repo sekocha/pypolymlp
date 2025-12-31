@@ -2,6 +2,7 @@
 
 import numpy as np
 
+from pypolymlp.calculator.auto.autocalc_utils import get_atomic_size_scales
 from pypolymlp.calculator.auto.dataclass import Prototype
 from pypolymlp.core.data_format import PolymlpStructure
 
@@ -29,21 +30,53 @@ def set_structure(axis: np.ndarray, positions: np.ndarray, element_strings: tupl
 
 def get_structure_list_element(element_strings: tuple):
     """Return structure list for elemental systems."""
-    fcc = structure_fcc(element_strings, a=5.0)
-    bcc = structure_bcc(element_strings, a=4.0)
-    hcp = structure_hcp(element_strings, a=3.5)
-    sn_t = structure_Sn_tI2(element_strings, a=4.0)
-    sn = structure_Sn(element_strings, a=5.5)
-    bi = structure_Bi(element_strings, a=4.0)
-    sm = structure_Sm(element_strings, a=4.0)
-    la = structure_La(element_strings, a=3.5)
-    dia = structure_diamond(element_strings, a=6.0)
-    sc = structure_sc(element_strings, a=4.0)
-    return [fcc, bcc, hcp, sn_t, sn, bi, sm, la, dia, sc]
+    scales = get_atomic_size_scales()
+    scale = scales[element_strings[0]] * 1.1
+    fcc = structure_fcc(element_strings, scale=scale)
+    bcc = structure_bcc(element_strings, scale=scale)
+    hcp = structure_hcp(element_strings, scale=scale)
+    sn_t = structure_Sn_tI2(element_strings, scale=scale)
+    sn = structure_Sn(element_strings, scale=scale)
+    bi = structure_Bi(element_strings, scale=scale)
+    sm = structure_Sm(element_strings, scale=scale)
+    la = structure_La(element_strings, scale=scale)
+    dia = structure_diamond(element_strings, scale=scale)
+    sc = structure_sc(element_strings, scale=scale)
+    black_p = structure_black_P(element_strings, scale=scale)
+    As = structure_As(element_strings, scale=scale)
+    Sb_m = structure_Sb_mP4(element_strings, scale=scale)
+    Se = structure_gamma_Se(element_strings, scale=scale)
+    Ga = structure_Ga(element_strings, scale=scale)
+    Ga_cmcm = structure_Ga_Cmcm(element_strings, scale=scale)
+    In = structure_In(element_strings, scale=scale)
+    Si_i4 = structure_Si_I4mmm(element_strings, scale=scale)
+    # Te = structure_Te(element_strings: tuple, scale: float = 1.3):
+    # return [fcc, bcc, hcp, sn_t, sn, bi, sm, la, dia, sc]
+    return [
+        fcc,
+        bcc,
+        hcp,
+        sn_t,
+        sn,
+        bi,
+        sm,
+        la,
+        dia,
+        sc,
+        black_p,
+        As,
+        Sb_m,
+        Se,
+        Ga,
+        Ga_cmcm,
+        In,
+        Si_i4,
+    ]
 
 
-def structure_fcc(element_strings: tuple, a: float = 5.0):
+def structure_fcc(element_strings: tuple, scale: float = 1.3):
     """Return FCC structure."""
+    a = 4.0 * scale
     axis = np.eye(3) * a
     positions = np.array(
         [[0.0, 0.0, 0.0], [0.0, 0.5, 0.5], [0.5, 0.0, 0.5], [0.5, 0.5, 0.0]]
@@ -52,17 +85,19 @@ def structure_fcc(element_strings: tuple, a: float = 5.0):
     return Prototype(st, "fcc", 52914, 4, (4, 4, 4))
 
 
-def structure_bcc(element_strings: tuple, a: float = 4.0):
+def structure_bcc(element_strings: tuple, scale: float = 1.3):
     """Return BCC structure."""
+    a = 3.2 * scale
     axis = np.eye(3) * a
     positions = np.array([[0.0, 0.0, 0.0], [0.5, 0.5, 0.5]]).T
     st = set_structure(axis, positions, element_strings)
     return Prototype(st, "bcc", 76156, 2, (4, 4, 4))
 
 
-def structure_hcp(element_strings: tuple, a: float = 3.5):
+def structure_hcp(element_strings: tuple, scale: float = 1.3):
     """Return HCP structure."""
     axis = np.zeros((3, 3))
+    a = 3.0 * scale
     axis[0, 0] = a
     axis[0, 1] = -a / 2.0
     axis[1, 1] = a * np.sqrt(3) / 2.0
@@ -72,8 +107,9 @@ def structure_hcp(element_strings: tuple, a: float = 3.5):
     return Prototype(st, "hcp", 652876, 2, (4, 4, 4))
 
 
-def structure_Sn_tI2(element_strings: tuple, a: float = 4.0):
+def structure_Sn_tI2(element_strings: tuple, scale: float = 1.3):
     """Return Sn(tI2) structure."""
+    a = 3.4 * scale
     axis = np.eye(3) * a
     axis[2, 2] = a * 0.9
     positions = np.array([[0.0, 0.0, 0.0], [0.5, 0.5, 0.5]]).T
@@ -81,8 +117,9 @@ def structure_Sn_tI2(element_strings: tuple, a: float = 4.0):
     return Prototype(st, "Sn(tI2)", 43216, 2, (4, 4, 4))
 
 
-def structure_Sn(element_strings: tuple, a: float = 5.5):
+def structure_Sn(element_strings: tuple, scale: float = 1.3):
     """Return Sn structure."""
+    a = 5.0 * scale
     axis = np.eye(3) * a
     axis[2, 2] = a * 0.6
     positions = np.array(
@@ -92,15 +129,18 @@ def structure_Sn(element_strings: tuple, a: float = 5.5):
     return Prototype(st, "Sn", 236662, 4, (4, 4, 4))
 
 
-def structure_Bi(element_strings: tuple, a: float = 4.0):
+def structure_Bi(element_strings: tuple, scale: float = 1.3):
     """Return Bi structure."""
-    axis = np.array(
-        [
-            [5.2857382131102684, 0.0000000000000000, -0.2974632175834797],
-            [0.0000000000000000, 5.1179310158220206, 0.0000000000000000],
-            [-1.0452934833151939, 0.0000000000000000, 2.6029704616435523],
-        ]
-    ).T
+    axis = (
+        scale
+        * np.array(
+            [
+                [5.2857382131102684, 0.0000000000000000, -0.2974632175834797],
+                [0.0000000000000000, 5.1179310158220206, 0.0000000000000000],
+                [-1.0452934833151939, 0.0000000000000000, 2.6029704616435523],
+            ]
+        ).T
+    )
     positions = np.array(
         [
             [0.2384740361686681, 0.5, 0.8920306915057310],
@@ -113,8 +153,9 @@ def structure_Bi(element_strings: tuple, a: float = 4.0):
     return Prototype(st, "Bi", 653719, 4, (4, 4, 4))
 
 
-def structure_Sm(element_strings: tuple, a: float = 4.0):
+def structure_Sm(element_strings: tuple, scale: float = 1.3):
     """Return Sm structure."""
+    a = 3.0 * scale
     axis = np.zeros((3, 3))
     axis[0, 0] = a
     axis[0, 1] = -a / 2.0
@@ -137,8 +178,9 @@ def structure_Sm(element_strings: tuple, a: float = 4.0):
     return Prototype(st, "Sm", 652633, 9, (6, 6, 1))
 
 
-def structure_La(element_strings: tuple, a: float = 5.0):
+def structure_La(element_strings: tuple, scale: float = 1.3):
     """Return La structure."""
+    a = 3.0 * scale
     axis = np.zeros((3, 3))
     axis[0, 0] = a
     axis[0, 1] = -a / 2.0
@@ -151,8 +193,9 @@ def structure_La(element_strings: tuple, a: float = 5.0):
     return Prototype(st, "La", 52916, 4, (6, 6, 2))
 
 
-def structure_diamond(element_strings: tuple, a: float = 6.0):
+def structure_diamond(element_strings: tuple, scale: float = 1.3):
     """Return diamond structure."""
+    a = 5.5 * scale
     axis = np.eye(3) * a
     positions = np.array(
         [
@@ -170,12 +213,221 @@ def structure_diamond(element_strings: tuple, a: float = 6.0):
     return Prototype(st, "diamond", 41979, 8, (4, 4, 4))
 
 
-def structure_sc(element_strings: tuple, a: float = 4.0):
+def structure_sc(element_strings: tuple, scale: float = 1.3):
     """Return SC structure."""
+    a = 2.6 * scale
     axis = np.eye(3) * a
     positions = np.zeros((3, 1))
     st = set_structure(axis, positions, element_strings)
     return Prototype(st, "sc", 43211, 1, (4, 4, 4))
+
+
+def structure_black_P(element_strings: tuple, scale: float = 1.3):
+    """Return black-P structure."""
+    axis = (
+        scale
+        * np.array(
+            [
+                [2.9375570911275237, 0.0, 0.0],
+                [0.0, 9.5992513689171890, 0.0],
+                [0.0, 0.0, 4.8915941941104810],
+            ]
+        ).T
+    )
+    positions = np.array(
+        [
+            [0.0000000000000000, 0.6354685850174135, 0.4997888348867647],
+            [0.5000000000000000, 0.8645314149825865, 0.5002111651132353],
+            [0.0000000000000000, 0.8645314149825865, 0.9997888348867647],
+            [0.5000000000000000, 0.6354685850174135, 0.0002111651132353],
+            [0.5000000000000000, 0.1354685850174135, 0.4997888348867647],
+            [0.0000000000000000, 0.3645314149825865, 0.5002111651132353],
+            [0.5000000000000000, 0.3645314149825865, 0.9997888348867647],
+            [0.0000000000000000, 0.1354685850174135, 0.0002111651132353],
+        ]
+    ).T
+    st = set_structure(axis, positions, element_strings)
+    return Prototype(st, "P(black)", 609832, 8, (6, 2, 4))
+
+
+def structure_As(element_strings: tuple, scale: float = 1.3):
+    """Return As structure."""
+    axis = (
+        scale
+        * np.array(
+            [
+                [3.7042870595376334, 0.0000000000000001, 0.0000000000000000],
+                [-1.8521435297688169, 3.2080066964695488, 0.0000000000000000],
+                [0.0000000000000000, 0.0000000000000000, 4.5299704829004872],
+            ]
+        ).T
+    )
+    positions = np.array(
+        [
+            [0.0000000000000000, 0.0000000000000000, 0.5000000000000000],
+            [0.6666666666666643, 0.3333333333333357, 0.8333333333333357],
+            [0.3333333333333357, 0.6666666666666643, 0.1666666666666643],
+        ]
+    ).T
+    st = set_structure(axis, positions, element_strings)
+    return Prototype(st, "As", 616526, 3, (4, 4, 4))
+
+
+def structure_Sb_mP4(element_strings: tuple, scale: float = 1.3):
+    """Return Sb(mP4) structure."""
+    axis = (
+        scale
+        * np.array(
+            [
+                [4.1229444681990444, 0.0000000000000000, 0.1797161542114127],
+                [0.0000000000000000, 3.2746724677068730, 0.0000000000000000],
+                [-0.1938952339603432, 0.0000000000000000, 5.2759819615741010],
+            ]
+        ).T
+    )
+    positions = np.array(
+        [
+            [0.8535843302085411, 0.2500000000000000, 0.8277373769685283],
+            [0.1464156697914873, 0.7500000000000000, 0.1722626230315143],
+            [0.6456138768536945, 0.2500000000000000, 0.3278813991459302],
+            [0.3543861231462486, 0.7500000000000000, 0.6721186008540982],
+        ]
+    ).T
+    st = set_structure(axis, positions, element_strings)
+    return Prototype(st, "Sb(mP4)", 42679, 4, (4, 4, 4))
+
+
+def structure_gamma_Se(element_strings: tuple, scale: float = 1.3):
+    """Return gamma-Se structure."""
+    axis = (
+        scale
+        * np.array(
+            [
+                [3.7027281480378562, -0.0000000000000001, 0.0000000000000000],
+                [-1.8513640740189274, 3.2066566395084877, 0.0000000000000001],
+                [0.0000000000000000, 0.0000000000000000, 4.5310395675849477],
+            ]
+        ).T
+    )
+    positions = np.array(
+        [
+            [0.6675558007424769, 0.6675558007424769, 0.5000000000000000],
+            [0.3324441992575231, 0.0000000000000000, 0.8333333333333357],
+            [0.0000000000000000, 0.3324441992575231, 0.1666666666666643],
+        ]
+    ).T
+    st = set_structure(axis, positions, element_strings)
+    return Prototype(st, "Se(gamma)", 653045, 3, (4, 4, 4))
+
+
+def structure_Te(element_strings: tuple, scale: float = 1.3):
+    """Return Te structure."""
+    pass
+    # TODO: Structure.
+    # st = set_structure(axis, positions, element_strings)
+    # return Prototype(st, "Te", 653048, 3, (4, 4, 4))
+
+
+def structure_Ga(element_strings: tuple, scale: float = 1.3):
+    """Return Ga structure."""
+    axis = (
+        scale
+        * np.array(
+            [
+                [5.1605085524343917, 0.0000000000000000, 0.0000000000000000],
+                [0.0000000000000000, 5.4114708370994267, 0.0000000000000000],
+                [0.0000000000000000, 0.0000000000000000, 4.9973441371133402],
+            ]
+        ).T
+    )
+    positions = np.array(
+        [
+            [0.5000000000000000, 0.1473333539957338, 0.6990358352147297],
+            [0.5000000000000000, 0.8526666460042662, 0.3009641647852703],
+            [0.5000000000000000, 0.3526666460042662, 0.1990358352147297],
+            [0.5000000000000000, 0.6473333539957338, 0.8009641647852703],
+            [0.0000000000000000, 0.6473333539957338, 0.6990358352147297],
+            [0.0000000000000000, 0.3526666460042662, 0.3009641647852703],
+            [0.0000000000000000, 0.8526666460042662, 0.1990358352147297],
+            [0.0000000000000000, 0.1473333539957338, 0.8009641647852703],
+        ]
+    ).T
+    st = set_structure(axis, positions, element_strings)
+    return Prototype(st, "Ga", 162256, 8, (4, 4, 4))
+
+
+def structure_Ga_Cmcm(element_strings: tuple, scale: float = 1.3):
+    """Return Ga(Cmcm) structure."""
+    axis = (
+        scale
+        * np.array(
+            [
+                [2.8228159836356812, 0.0000000000000000, 0.0000000000000000],
+                [0.0000000000000000, 7.7042453365737842, 0.0000000000000000],
+                [0.0000000000000000, 0.0000000000000000, 3.2833198240463739],
+            ]
+        ).T
+    )
+    positions = np.array(
+        [
+            [0.5000000000000000, 0.3579044935327715, 0.2500000000000000],
+            [0.0000000000000000, 0.1420955064672285, 0.7500000000000000],
+            [0.0000000000000000, 0.8579044935327715, 0.2500000000000000],
+            [0.5000000000000000, 0.6420955064672285, 0.7500000000000000],
+        ]
+    ).T
+    st = set_structure(axis, positions, element_strings)
+    return Prototype(st, "Ga(Cmcm)", 43539, 4, (6, 2, 6))
+
+
+def structure_In(element_strings: tuple, scale: float = 1.3):
+    """Return In structure."""
+    axis = (
+        scale
+        * np.array(
+            [
+                [2.8870441679037220, 0.0000000000000000, 0.0000000000000000],
+                [0.0000000000000000, 2.8870441679037220, 0.0000000000000000],
+                [0.0000000000000000, 0.0000000000000000, 4.1016577357079225],
+            ]
+        ).T
+    )
+    positions = np.array(
+        [
+            [0.0000000000000000, 0.0000000000000000, 0.0000000000000000],
+            [0.5000000000000000, 0.5000000000000000, 0.5000000000000000],
+        ]
+    ).T
+    st = set_structure(axis, positions, element_strings)
+    return Prototype(st, "In", 639810, 2, (4, 4, 4))
+
+
+def structure_Si_I4mmm(element_strings: tuple, scale: float = 1.3):
+    """Return Si(I4mm) structure."""
+    axis = (
+        scale
+        * np.array(
+            [
+                [6.7683690936373777, 0.0000000000000000, 0.0000000000000000],
+                [0.0000000000000000, 6.7683690936373777, 0.0000000000000000],
+                [0.0000000000000000, 0.0000000000000000, 4.0195736763805785],
+            ]
+        ).T
+    )
+    positions = np.array(
+        [
+            [0.8274296477599776, 0.1725703522400224, 0.0000000000000000],
+            [0.6725703522400224, 0.3274296477599776, 0.5000000000000000],
+            [0.3274296477599776, 0.3274296477599776, 0.5000000000000000],
+            [0.1725703522400224, 0.1725703522400224, 0.0000000000000000],
+            [0.3274296477599776, 0.6725703522400224, 0.5000000000000000],
+            [0.1725703522400224, 0.8274296477599776, 0.0000000000000000],
+            [0.8274296477599776, 0.8274296477599776, 0.0000000000000000],
+            [0.6725703522400224, 0.6725703522400224, 0.5000000000000000],
+        ]
+    ).T
+    st = set_structure(axis, positions, element_strings)
+    return Prototype(st, "Si(I4mm)", 181908, 8, (4, 4, 4))
 
 
 def get_structure_type_element():

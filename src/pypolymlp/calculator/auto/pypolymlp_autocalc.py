@@ -7,6 +7,9 @@ import numpy as np
 
 from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
 from pypolymlp.calculator.auto.dataclass import Prototype
+from pypolymlp.calculator.auto.structures_binary import (  # get_structure_type_element,
+    get_structure_list_binary,
+)
 from pypolymlp.calculator.auto.structures_element import (
     get_structure_list_element,
     get_structure_type_element,
@@ -64,7 +67,7 @@ class PypolymlpAutoCalc:
         if self._n_types == 1:
             self._prototypes = get_structure_list_element(self._element_strings)
         elif self._n_types == 2:
-            pass
+            self._prototypes = get_structure_list_binary(self._element_strings)
         return self._prototypes
 
     def run(self):
@@ -161,14 +164,7 @@ class PypolymlpAutoCalc:
             print("Compute energies for structures.")
 
         structures, (energies_dft, _, _) = parse_properties_from_vaspruns(vaspruns)
-        atom_e = get_atomic_energies(
-            elements=self._element_strings,
-            functional=functional,
-            return_dict=True,
-        )
-        atomic_energies = np.array(
-            [np.sum([atom_e[ele] for ele in st.elements]) for st in structures]
-        )
+        atomic_energies = self._calc_atomic_energies(structures, functional=functional)
         energies_dft -= atomic_energies
 
         self._calc.structures = structures
@@ -179,6 +175,25 @@ class PypolymlpAutoCalc:
         energies_mlp /= n_atom
         sorted_indices = energies_dft.argsort()
 
+        names = self._set_structure_names(vaspruns, icsd_ids=icsd_ids)
+        data = np.stack([np.round(energies_dft, 6), np.round(energies_mlp, 6), names]).T
+        header = "DFT (eV/atom), MLP (eV/atom), ID"
+        np.savetxt(filename, data[sorted_indices], fmt="%s", header=header)
+
+    def _calc_atomic_energies(self, structures: list, functional: str = "PBE"):
+        """Calculate atomic energies for structures."""
+        atom_e = get_atomic_energies(
+            elements=self._element_strings,
+            functional=functional,
+            return_dict=True,
+        )
+        atomic_energies = np.array(
+            [np.sum([atom_e[ele] for ele in st.elements]) for st in structures]
+        )
+        return atomic_energies
+
+    def _set_structure_names(self, vaspruns: list, icsd_ids: Optional[list] = None):
+        """Set structure names."""
         if icsd_ids is not None:
             if self._n_types == 1:
                 structure_type = get_structure_type_element()
@@ -189,14 +204,7 @@ class PypolymlpAutoCalc:
             ]
         else:
             names = vaspruns
-        names = np.array(names)
-
-        decimals = 6
-        data = np.stack(
-            [np.round(energies_dft, decimals), np.round(energies_mlp, decimals), names]
-        ).T
-        header = "DFT (eV/atom), MLP (eV/atom), ID"
-        np.savetxt(filename, data[sorted_indices], fmt="%s", header=header)
+        return np.array(names)
 
     @property
     def prototypes(self):
