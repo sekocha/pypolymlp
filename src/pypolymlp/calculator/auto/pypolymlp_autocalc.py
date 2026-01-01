@@ -7,8 +7,9 @@ import numpy as np
 
 from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
 from pypolymlp.calculator.auto.dataclass import Prototype
-from pypolymlp.calculator.auto.structures_binary import (  # get_structure_type_element,
+from pypolymlp.calculator.auto.structures_binary import (
     get_structure_list_binary,
+    get_structure_type_binary,
 )
 from pypolymlp.calculator.auto.structures_element import (
     get_structure_list_element,
@@ -103,6 +104,7 @@ class PypolymlpAutoCalc:
         print("##### Systematic calculations #####", flush=True)
         if self._pot is not None:
             print("Polymlp:", os.path.abspath(self._pot), flush=True)
+
         print("Target structures:", flush=True)
         for prot in self._prototypes:
             print("-", prot.name, flush=True)
@@ -198,7 +200,7 @@ class PypolymlpAutoCalc:
             if self._n_types == 1:
                 structure_type = get_structure_type_element()
             elif self._n_types == 2:
-                pass
+                structure_type = get_structure_type_binary()
             names = [
                 "ICSD-" + str(i) + "-[" + structure_type[i] + "]" for i in icsd_ids
             ]

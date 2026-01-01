@@ -32,17 +32,18 @@ def get_structure_list_element(element_strings: tuple):
     """Return structure list for elemental systems."""
     scales = get_atomic_size_scales()
     scale = scales[element_strings[0]] * 1.1
+
     fcc = structure_fcc(element_strings, scale=scale)
     bcc = structure_bcc(element_strings, scale=scale)
     hcp = structure_hcp(element_strings, scale=scale)
-    sn_t = structure_Sn_tI2(element_strings, scale=scale)
-    sn = structure_Sn(element_strings, scale=scale)
-    bi = structure_Bi(element_strings, scale=scale)
-    sm = structure_Sm(element_strings, scale=scale)
-    la = structure_La(element_strings, scale=scale)
+    Sn_t = structure_Sn_tI2(element_strings, scale=scale)
+    Sn = structure_Sn(element_strings, scale=scale)
+    Bi = structure_Bi(element_strings, scale=scale)
+    Sm = structure_Sm(element_strings, scale=scale)
+    La = structure_La(element_strings, scale=scale)
     dia = structure_diamond(element_strings, scale=scale)
     sc = structure_sc(element_strings, scale=scale)
-    black_p = structure_black_P(element_strings, scale=scale)
+    black_P = structure_black_P(element_strings, scale=scale)
     As = structure_As(element_strings, scale=scale)
     Sb_m = structure_Sb_mP4(element_strings, scale=scale)
     Se = structure_gamma_Se(element_strings, scale=scale)
@@ -51,19 +52,18 @@ def get_structure_list_element(element_strings: tuple):
     In = structure_In(element_strings, scale=scale)
     Si_i4 = structure_Si_I4mmm(element_strings, scale=scale)
     # Te = structure_Te(element_strings: tuple, scale: float = 1.3):
-    # return [fcc, bcc, hcp, sn_t, sn, bi, sm, la, dia, sc]
     return [
         fcc,
         bcc,
         hcp,
-        sn_t,
-        sn,
-        bi,
-        sm,
-        la,
+        Sn_t,
+        Sn,
+        Bi,
+        Sm,
+        La,
         dia,
         sc,
-        black_p,
+        black_P,
         As,
         Sb_m,
         Se,
