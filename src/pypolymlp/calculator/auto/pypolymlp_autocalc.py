@@ -6,7 +6,7 @@ from typing import Optional, Union
 import numpy as np
 
 from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
-from pypolymlp.calculator.auto.dataclass import Prototype
+from pypolymlp.calculator.auto.autocalc_utils import Prototype
 from pypolymlp.calculator.auto.structures_binary import (
     get_structure_list_binary,
     get_structure_type_binary,

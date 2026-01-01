@@ -2,8 +2,7 @@
 
 import numpy as np
 
-from pypolymlp.calculator.auto.autocalc_utils import get_atomic_size_scales
-from pypolymlp.calculator.auto.dataclass import Prototype
+from pypolymlp.calculator.auto.autocalc_utils import Prototype, get_atomic_size_scales
 from pypolymlp.core.data_format import PolymlpStructure
 
 

@@ -2,8 +2,7 @@
 
 import numpy as np
 
-from pypolymlp.calculator.auto.autocalc_utils import get_atomic_size_scales
-from pypolymlp.calculator.auto.dataclass import Prototype
+from pypolymlp.calculator.auto.autocalc_utils import Prototype, get_atomic_size_scales
 from pypolymlp.core.data_format import PolymlpStructure
 
 
@@ -32,6 +31,12 @@ def get_structure_list_binary(element_strings: tuple):
     const = (scales["Ag"] + scales["Au"]) / 2
     scale = np.average([scales[ele] for ele in element_strings]) * 1.1 / const
     return [
+        structure_fcc_x0(element_strings, scale),
+        structure_fcc_x1(element_strings, scale),
+        structure_bcc_x0(element_strings, scale),
+        structure_bcc_x1(element_strings, scale),
+        structure_hcp_x0(element_strings, scale),
+        structure_hcp_x1(element_strings, scale),
         structure_MoNi4_D1a_x020(element_strings, scale),
         structure_MoNi4_D1a_x080(element_strings, scale),
         structure_Ni3Sn_D019_x025(element_strings, scale),
@@ -66,6 +71,78 @@ def get_structure_list_binary(element_strings: tuple):
         structure_FeSi_B20_x050(element_strings, scale),
         structure_NaTl_B32_x050(element_strings, scale),
     ]
+
+
+def structure_fcc_x0(element_strings: tuple, scale: float = 1.0):
+    """Return FCC structure."""
+    a = 4.0 * scale
+    axis = np.eye(3) * a
+    positions = np.array(
+        [[0.0, 0.0, 0.0], [0.0, 0.5, 0.5], [0.5, 0.0, 0.5], [0.5, 0.5, 0.0]]
+    ).T
+    n_atoms = [4, 0]
+    st = set_structure(axis, positions, n_atoms, element_strings)
+    return Prototype(st, "fcc(x=0)", "52914", 4, (4, 4, 4))
+
+
+def structure_fcc_x1(element_strings: tuple, scale: float = 1.0):
+    """Return FCC structure."""
+    a = 4.0 * scale
+    axis = np.eye(3) * a
+    positions = np.array(
+        [[0.0, 0.0, 0.0], [0.0, 0.5, 0.5], [0.5, 0.0, 0.5], [0.5, 0.5, 0.0]]
+    ).T
+    n_atoms = [0, 4]
+    st = set_structure(axis, positions, n_atoms, element_strings)
+    return Prototype(st, "fcc(x=1)", "52914", 4, (4, 4, 4))
+
+
+def structure_bcc_x0(element_strings: tuple, scale: float = 1.0):
+    """Return BCC structure."""
+    a = 3.2 * scale
+    axis = np.eye(3) * a
+    positions = np.array([[0.0, 0.0, 0.0], [0.5, 0.5, 0.5]]).T
+    n_atoms = [2, 0]
+    st = set_structure(axis, positions, n_atoms, element_strings)
+    return Prototype(st, "bcc(x=0)", "76156", 2, (4, 4, 4))
+
+
+def structure_bcc_x1(element_strings: tuple, scale: float = 1.0):
+    """Return BCC structure."""
+    a = 3.2 * scale
+    axis = np.eye(3) * a
+    positions = np.array([[0.0, 0.0, 0.0], [0.5, 0.5, 0.5]]).T
+    n_atoms = [0, 2]
+    st = set_structure(axis, positions, n_atoms, element_strings)
+    return Prototype(st, "bcc(x=1)", "76156", 2, (4, 4, 4))
+
+
+def structure_hcp_x0(element_strings: tuple, scale: float = 1.0):
+    """Return HCP structure."""
+    axis = np.zeros((3, 3))
+    a = 3.0 * scale
+    axis[0, 0] = a
+    axis[0, 1] = -a / 2.0
+    axis[1, 1] = a * np.sqrt(3) / 2.0
+    axis[2, 2] = a * np.sqrt(8.0 / 3.0)
+    positions = np.array([[2 / 3, 1 / 3, 0.25], [1 / 3, 2 / 3, 0.75]]).T
+    n_atoms = [2, 0]
+    st = set_structure(axis, positions, n_atoms, element_strings)
+    return Prototype(st, "hcp(x=0)", "652876", 2, (4, 4, 4))
+
+
+def structure_hcp_x1(element_strings: tuple, scale: float = 1.0):
+    """Return HCP structure."""
+    axis = np.zeros((3, 3))
+    a = 3.0 * scale
+    axis[0, 0] = a
+    axis[0, 1] = -a / 2.0
+    axis[1, 1] = a * np.sqrt(3) / 2.0
+    axis[2, 2] = a * np.sqrt(8.0 / 3.0)
+    positions = np.array([[2 / 3, 1 / 3, 0.25], [1 / 3, 2 / 3, 0.75]]).T
+    n_atoms = [0, 2]
+    st = set_structure(axis, positions, n_atoms, element_strings)
+    return Prototype(st, "hcp(x=1)", "652876", 2, (4, 4, 4))
 
 
 def structure_MoNi4_D1a_x020(element_strings: tuple, scale: float = 1.0):
