@@ -35,6 +35,26 @@ class Prototype:
         """Return lattice constants."""
         return get_lattice_constants(self.structure_eq)
 
+    def set_eos_data(
+        self,
+        e0: float,
+        v0: float,
+        b0: float,
+        eos_mlp: np.ndarray,
+        eos_fit: np.ndarray,
+    ):
+        """Set EOS properties.
+
+        Parameters must be given using the unit of per cell.
+        Properties per atom are assigned to attributes.
+        """
+        self.energy = e0 / self.n_atom
+        self.volume = v0 / self.n_atom
+        self.bulk_modulus = b0
+        self.eos_mlp = eos_mlp / self.n_atom
+        self.eos_fit = eos_fit / self.n_atom
+        return self
+
     def save_properties(self, filename: str = "polymlp_prototype.yaml"):
         """Save properties for prototype."""
         with open(filename, "w") as f:

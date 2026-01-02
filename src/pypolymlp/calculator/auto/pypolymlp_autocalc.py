@@ -30,6 +30,7 @@ class PypolymlpAutoCalc:
         params: Union[PolymlpParams, list[PolymlpParams]] = None,
         coeffs: Union[np.ndarray, list[np.ndarray]] = None,
         properties: Optional[Properties] = None,
+        path_output: str = ".",
         verbose: bool = False,
     ):
         """Init method.
@@ -60,7 +61,8 @@ class PypolymlpAutoCalc:
             raise RuntimeError("Structure list not found for systems beyond ternary.")
 
         self._prototypes = None
-        self._path_output = None
+        self._path_output = path_output
+        self._path_header = self._path_output + "/" + "polymlp_"
 
         np.set_printoptions(legacy="1.21")
 
@@ -72,17 +74,16 @@ class PypolymlpAutoCalc:
             self._prototypes = get_structure_list_binary(self._element_strings)
         return self._prototypes
 
-    def run(self, path_output: str = "."):
+    def run(self):
         """Calculate properties systematically for prototype structures."""
         if self._prototypes is None:
             raise RuntimeError("Prototype structures not found.")
 
-        self._path_output = path_output
         if self._verbose:
             self._print_targets()
 
         for prot in self._prototypes:
-            path = self._path_output + "/" + "polymlp_" + prot.name + "/"
+            path = self._path_header + prot.name + "/"
             os.makedirs(path, exist_ok=True)
             if self._verbose:
                 print("---- Structure", prot.name, "----", flush=True)
@@ -132,11 +133,7 @@ class PypolymlpAutoCalc:
         self._calc.run_eos(eos_fit=True)
         e0, v0, b0 = self._calc.eos_fit_data
         eos_mlp, eos_fit = self._calc.eos_curve_data
-        prototype.energy = e0 / prototype.n_atom
-        prototype.volume = v0 / prototype.n_atom
-        prototype.bulk_modulus = b0
-        prototype.eos_mlp = eos_mlp / prototype.n_atom
-        prototype.eos_fit = eos_fit / prototype.n_atom
+        prototype.set_eos_data(e0, v0, b0, eos_mlp, eos_fit)
         return prototype
 
     def _run_elastic(self, prototype: Prototype, poscar: str):
@@ -148,17 +145,8 @@ class PypolymlpAutoCalc:
         """Run phonon calculations for single prototype."""
         supercell_matrix = np.diag(prototype.phonon_supercell)
         self._calc.init_phonon(supercell_matrix=supercell_matrix)
-        self._calc.run_phonon(
-            distance=0.01,
-            mesh=(10, 10, 10),
-            t_min=0,
-            t_max=1000,
-            t_step=10,
-            with_eigenvectors=False,
-            is_mesh_symmetry=True,
-            with_pdos=False,
-        )
-        self._calc.write_phonon(path=self._path_output + "/polymlp_" + prototype.name)
+        self._calc.run_phonon(distance=0.01)
+        self._calc.write_phonon(path=self._path_header + prototype.name)
         return prototype
 
     def compare_with_dft(
@@ -166,7 +154,7 @@ class PypolymlpAutoCalc:
         vaspruns: list,
         icsd_ids: Optional[list] = None,
         functional: str = "PBE",
-        filename: str = "polymlp_comparison.dat",
+        filename: Optional[str] = None,
     ):
         """Calculate properties for DFT structures."""
         if self._verbose:
@@ -187,6 +175,8 @@ class PypolymlpAutoCalc:
         names = self._set_structure_names(vaspruns, icsd_ids=icsd_ids)
         data = np.stack([np.round(energies_dft, 6), np.round(energies_mlp, 6), names]).T
         header = "DFT (eV/atom), MLP (eV/atom), ID"
+        if filename is None:
+            filename = self._path_header + "comparison.yaml"
         np.savetxt(filename, data[sorted_indices], fmt="%s", header=header)
 
     def _calc_atomic_energies(self, structures: list, functional: str = "PBE"):

@@ -3,6 +3,7 @@
 import os
 import shutil
 from datetime import datetime
+from typing import Optional
 
 import numpy as np
 
@@ -15,11 +16,7 @@ from pypolymlp.utils.grid_search.optimal import find_optimal_mlps
 class PypolymlpRepository:
     """API Class for constructing repository entry."""
 
-    def __init__(
-        self,
-        mlp_paths: list[str],
-        verbose: bool = False,
-    ):
+    def __init__(self, mlp_paths: list[str], verbose: bool = False):
         """Init method.
 
         Parameters
@@ -65,6 +62,7 @@ class PypolymlpRepository:
             verbose=self._verbose,
         )
         self._copy_convex_mlp_files(system, abspaths)
+        return self
 
     def _copy_convex_mlp_files(self, system: str, abspaths: list):
         """Copy files for convex MLPs."""
@@ -83,21 +81,31 @@ class PypolymlpRepository:
         self._convex_mlp_paths = []
         for path in abspaths:
             name = path.split("/")[-1]
-            path_target = self._entry_path + "/polymlps/" + name
-            shutil.copytree(path, path_target)
-            self._convex_mlp_paths.append(path_target)
+            target = self._entry_path + "/polymlps/" + name
+            shutil.copytree(path, target)
+            self._convex_mlp_paths.append(target)
         return self
 
-    def calc_properties(self):
+    def calc_properties(
+        self,
+        vaspruns: Optional[list] = None,
+        icsd_ids: Optional[list] = None,
+    ):
         """Calculate properties."""
         if self._entry_path is None:
             raise RuntimeError("Run extract_convex_polymlps first.")
 
-        prediction_path = self._entry_path + "/predictions/"
         for path in self._convex_mlp_paths:
             name = path.split("/")[-1]
-            target = prediction_path + "/" + name + "/"
+            target = self._entry_path + "/predictions/" + name
             os.makedirs(target, exist_ok=True)
-            calc = PypolymlpAutoCalc(pot=find_mlps(path), verbose=self._verbose)
+            calc = PypolymlpAutoCalc(
+                pot=find_mlps(path),
+                path_output=target,
+                verbose=self._verbose,
+            )
             calc.load_structures()
-            calc.run(path_output=target)
+            calc.run()
+            if vaspruns is not None:
+                calc.compare_with_dft(vaspruns=vaspruns, icsd_ids=icsd_ids)
+        return self
