@@ -139,7 +139,13 @@ class PypolymlpUtils:
         use_force: Use errors for forces to define MLP accuracy.
         use_logscale_time: Use time in log scale to define MLP efficiency.
         """
-        find_optimal_mlps(dirs, key)
+        find_optimal_mlps(
+            dirs,
+            key,
+            use_force=use_force,
+            use_logscale_time=use_logscale_time,
+            verbose=self._verbose,
+        )
 
     def divide_dataset(self, vaspruns: list[str]):
         """Divide a dataset into training and test datasets automatically.

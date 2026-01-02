@@ -60,6 +60,7 @@ class PypolymlpAutoCalc:
             raise RuntimeError("Structure list not found for systems beyond ternary.")
 
         self._prototypes = None
+        self._path_output = None
 
         np.set_printoptions(legacy="1.21")
 
@@ -71,16 +72,17 @@ class PypolymlpAutoCalc:
             self._prototypes = get_structure_list_binary(self._element_strings)
         return self._prototypes
 
-    def run(self):
+    def run(self, path_output: str = "."):
         """Calculate properties systematically for prototype structures."""
         if self._prototypes is None:
             raise RuntimeError("Prototype structures not found.")
 
+        self._path_output = path_output
         if self._verbose:
             self._print_targets()
 
         for prot in self._prototypes:
-            path = "polymlp_" + prot.name + "/"
+            path = self._path_output + "/" + "polymlp_" + prot.name + "/"
             os.makedirs(path, exist_ok=True)
             if self._verbose:
                 print("---- Structure", prot.name, "----", flush=True)
@@ -103,7 +105,12 @@ class PypolymlpAutoCalc:
         """Print target structures and polymlp."""
         print("##### Systematic calculations #####", flush=True)
         if self._pot is not None:
-            print("Polymlp:", os.path.abspath(self._pot), flush=True)
+            if isinstance(self._pot, str):
+                print("Polymlp:", os.path.abspath(self._pot), flush=True)
+            else:
+                print("Polymlp:", flush=True)
+                for p in self._pot:
+                    print("- ", os.path.abspath(p), flush=True)
 
         print("Target structures:", flush=True)
         for prot in self._prototypes:
@@ -151,7 +158,7 @@ class PypolymlpAutoCalc:
             is_mesh_symmetry=True,
             with_pdos=False,
         )
-        self._calc.write_phonon(path="polymlp_" + prototype.name)
+        self._calc.write_phonon(path=self._path_output + "/polymlp_" + prototype.name)
         return prototype
 
     def compare_with_dft(
