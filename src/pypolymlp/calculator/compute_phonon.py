@@ -101,18 +101,24 @@ class PolymlpPhonon:
         self.ph.write_yaml_thermal_properties(
             filename=path_output + "/phonon_thermal_properties.yaml"
         )
-
         if self._with_pdos:
             self.ph.write_projected_dos(filename=path_output + "phonon_proj_dos.dat")
-
-    def is_imaginary(self, threshold: float = -0.01) -> bool:
-        """Check if imaginary phonon frequencies exist."""
-        return np.min(self.mesh_dict["frequencies"]) < threshold
 
     @property
     def phonopy(self) -> Phonopy:
         """Return phonopy instance."""
         return self.ph
+
+    @property
+    def total_dos(self):
+        """Return total phonon DOS."""
+        return np.stack([self.ph.total_dos.frequency_points, self.ph.total_dos.dos]).T
+
+    @property
+    def is_imaginary(self):
+        """Check if phonon DOS exhibits imaginary frequencies."""
+        imag = self.ph.total_dos.frequency_points < -0.01
+        return np.sum(self.ph.total_dos.dos[imag]) > 1e-6
 
 
 class PolymlpPhononQHA:

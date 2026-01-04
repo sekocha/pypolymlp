@@ -62,9 +62,9 @@ class PypolymlpAutoCalc:
             raise RuntimeError("Structure list not found for systems beyond ternary.")
 
         self._path_output = path_output
+        os.makedirs(path_output, exist_ok=True)
         self._path_header = self._path_output + "/" + "polymlp_"
         self._prototypes = None
-
         self._comparison = None
 
         np.set_printoptions(legacy="1.21")
@@ -100,9 +100,22 @@ class PypolymlpAutoCalc:
             prot.structure_eq = self._calc.converged_structure
             self._calc.save_poscars(filename=poscar)
 
+            if self._verbose:
+                print("Run EOS calculations.", flush=True)
             self._run_eos(prot)
+            if self._verbose:
+                print("Run elastic constant calculations.", flush=True)
             self._run_elastic(prot, poscar)
+
+            if self._verbose:
+                print("Run phonon calculations.", flush=True)
             self._run_phonon(prot)
+
+            if not self._calc.is_imaginary:
+                if self._verbose:
+                    print("Run QHA calculations.", flush=True)
+                self._run_qha(prot)
+
             prot.save_properties(filename=path + "polymlp_predictions.yaml")
 
     def _print_targets(self):
@@ -150,6 +163,14 @@ class PypolymlpAutoCalc:
         self._calc.init_phonon(supercell_matrix=supercell_matrix)
         self._calc.run_phonon(distance=0.01)
         self._calc.write_phonon(path=self._path_header + prototype.name)
+        prototype.phonon_dos = self._calc.phonon_dos
+        return prototype
+
+    def _run_qha(self, prototype: Prototype):
+        """Run QHA calculations for single prototype."""
+        supercell_matrix = np.diag(prototype.phonon_supercell)
+        self._calc.run_qha(distance=0.01, supercell_matrix=supercell_matrix)
+        self._calc.write_qha(path=self._path_header + prototype.name)
         return prototype
 
     def compare_with_dft(

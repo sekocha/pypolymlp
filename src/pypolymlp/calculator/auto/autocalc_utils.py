@@ -30,6 +30,8 @@ class Prototype:
     eos_mlp: Optional[np.ndarray] = None
     eos_fit: Optional[np.ndarray] = None
 
+    phonon_dos: Optional[np.ndarray] = None
+
     @property
     def lattice_constants(self):
         """Return lattice constants."""

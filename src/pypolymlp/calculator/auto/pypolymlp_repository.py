@@ -7,7 +7,11 @@ from typing import Optional
 
 import numpy as np
 
-from pypolymlp.calculator.auto.figures_properties import plot_eos
+from pypolymlp.calculator.auto.figures_properties import (
+    plot_eos,
+    plot_eos_separate,
+    plot_phonon,
+)
 from pypolymlp.calculator.auto.figures_summary import (
     plot_eqm_properties,
     plot_mlp_distribution,
@@ -113,12 +117,10 @@ class PypolymlpRepository:
         if self._entry_path is None:
             raise RuntimeError("Run extract_convex_polymlps first.")
 
-        prototypes_all, pot_ids = [], []
-        # for path in self._convex_mlp_paths:
-        for path in self._convex_mlp_paths[0:3]:
+        prototypes_all = []
+        for path in self._convex_mlp_paths:
             name = path.split("/")[-1]
             target = self._entry_path + "/predictions/" + name
-            os.makedirs(target, exist_ok=True)
             calc = PypolymlpAutoCalc(
                 pot=find_mlps(path),
                 path_output=target,
@@ -127,12 +129,13 @@ class PypolymlpRepository:
             calc.load_structures()
             calc.run()
             prototypes_all.append(calc.prototypes)
-            pot_ids.append(name)
             if vaspruns is not None:
                 calc.compare_with_dft(vaspruns=vaspruns, icsd_ids=icsd_ids)
                 calc.plot_comparison_with_dft(self._system, name)
 
             plot_eos(calc.prototypes, self._system, name, path_output=target)
+            plot_eos_separate(calc.prototypes, self._system, name, path_output=target)
+            plot_phonon(calc.prototypes, self._system, name, path_output=target)
 
         plot_eqm_properties(
             prototypes_all,

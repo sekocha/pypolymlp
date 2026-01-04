@@ -415,7 +415,7 @@ class PypolymlpCalc:
         )
         return self
 
-    def write_qha(self, path="./"):
+    def write_qha(self, path: str = "./"):
         """Save results from QHA phonon calculations."""
         self._qha.write_qha(path_output=path)
         return self
@@ -710,4 +710,15 @@ class PypolymlpCalc:
 
     @property
     def instance_phonopy(self):
+        """Return phonopy instance."""
         return self._phonon.phonopy
+
+    @property
+    def phonon_dos(self):
+        """Return phonon DOS."""
+        return self._phonon.total_dos
+
+    @property
+    def is_imaginary(self):
+        """Return if phonon modes exhibit imaginary frequencies."""
+        return self._phonon.is_imaginary
