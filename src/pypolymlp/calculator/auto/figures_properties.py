@@ -144,42 +144,13 @@ def plot_eos(
                 linewidths=0.1,
                 edgecolors="k",
             )
-        # ax[1].scatter(
-        #    ev[:, 0],
-        #    ev[:, 1],
-        #    s=8,
-        #    label=st,
-        #    marker=marker_candidates[i//12],
-        #    linewidths=0.1,
-        #    edgecolors="k",
-        # )
-        # ax[2].scatter(
-        #    ev[:, 0],
-        #    ev[:, 1],
-        #    s=10,
-        #    label=st,
-        #    marker=marker_candidates[i//12],
-        #    linewidths=0.1,
-        #    edgecolors="k",
-        # )
-
     ax[0].set_ylabel("Energy (eV/atom)", fontsize=10)
     ax[0].legend(fontsize=7)
     for i in range(3):
-        ax[i].set_xlabel("Volume ($\mathrm{\AA}^3$/atom)", fontsize=10)
+        ax[i].set_xlabel(r"Volume ($\mathrm{\AA}^3$/atom)", fontsize=10)
         ax[i].set_xlim(limmin_x[i], limmax_x[i])
         ax[i].set_ylim(limmin_y[i], limmax_y[i])
         ax[i].tick_params(axis="both", labelsize=8)
-
-    #    ax[1].set_xlabel("Volume ($\mathrm{\AA}^3$/atom)", fontsize=10)
-    #    ax[1].set_xlim(limmin_x[1], limmax_x[1])
-    #    ax[1].set_ylim(limmin_y[1], limmax_y[1])
-    #    ax[1].tick_params(axis="both", labelsize=8)
-    #
-    #    ax[2].set_xlabel("Volume ($\mathrm{\AA}^3$/atom)", fontsize=10)
-    #    ax[2].set_xlim(limmin_x[2], limmax_x[2])
-    #    ax[2].set_ylim(limmin_y[2], limmax_y[2])
-    #    ax[2].tick_params(axis="both", labelsize=8)
 
     plt.tight_layout()
     if use_eps:
@@ -188,15 +159,6 @@ def plot_eos(
         plt.savefig(path_output + "/polymlp_eos.png", format="png", dpi=dpi)
     plt.clf()
     plt.close()
-
-
-#
-#
-# class PlotProperties:
-#     """Class for plotting properties."""
-#
-#     def __init__(self, prototype_data: list[Prototype]):
-#         """Init method."""
 
 
 # def plot_energy(data_train, data_test, system, pot_id, path_output="./", dpi=300):

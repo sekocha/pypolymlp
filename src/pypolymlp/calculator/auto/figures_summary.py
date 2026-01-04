@@ -137,7 +137,7 @@ def plot_eqm_properties(
 
     ax[1].set_title("Equilibrium volume (" + system + ", Optimal MLPs)", fontsize=7)
     ax[1].set_xlabel(xlabel, fontsize=6)
-    ax[1].set_ylabel("Volume [$\mathrm{\AA}^3$/atom]", fontsize=6)
+    ax[1].set_ylabel(r"Volume [$\mathrm{\AA}^3$/atom]", fontsize=6)
 
     ax[2].set_title("Bulk modulus (" + system + ", Optimal MLPs)", fontsize=7)
     ax[2].set_xlabel(xlabel, fontsize=6)
