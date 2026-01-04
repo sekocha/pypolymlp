@@ -7,6 +7,7 @@ import numpy as np
 
 from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
 from pypolymlp.calculator.auto.autocalc_utils import Prototype
+from pypolymlp.calculator.auto.figures_properties import plot_prototype_prediction
 from pypolymlp.calculator.auto.structures_binary import (
     get_structure_list_binary,
     get_structure_type_binary,
@@ -60,9 +61,11 @@ class PypolymlpAutoCalc:
         if self._n_types not in {1, 2}:
             raise RuntimeError("Structure list not found for systems beyond ternary.")
 
-        self._prototypes = None
         self._path_output = path_output
         self._path_header = self._path_output + "/" + "polymlp_"
+        self._prototypes = None
+
+        self._comparison = None
 
         np.set_printoptions(legacy="1.21")
 
@@ -174,10 +177,31 @@ class PypolymlpAutoCalc:
 
         names = self._set_structure_names(vaspruns, icsd_ids=icsd_ids)
         data = np.stack([np.round(energies_dft, 6), np.round(energies_mlp, 6), names]).T
+
+        self._comparison = data[sorted_indices]
+
         header = "DFT (eV/atom), MLP (eV/atom), ID"
         if filename is None:
-            filename = self._path_header + "comparison.yaml"
-        np.savetxt(filename, data[sorted_indices], fmt="%s", header=header)
+            filename = self._path_header + "comparison.dat"
+        np.savetxt(filename, self._comparison, fmt="%s", header=header)
+        return self
+
+    def plot_comparison_with_dft(
+        self,
+        system: str,
+        pot_id: str,
+    ):
+        """Plot comparison of mlp predictions with dft."""
+        if self._comparison is None:
+            raise RuntimeError("Comparison data not found.")
+
+        plot_prototype_prediction(
+            self._comparison,
+            system,
+            pot_id,
+            path_output=self._path_output,
+        )
+        return self
 
     def _calc_atomic_energies(self, structures: list, functional: str = "PBE"):
         """Calculate atomic energies for structures."""

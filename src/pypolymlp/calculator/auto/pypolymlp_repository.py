@@ -7,6 +7,11 @@ from typing import Optional
 
 import numpy as np
 
+from pypolymlp.calculator.auto.figures_properties import plot_eos
+from pypolymlp.calculator.auto.figures_summary import (
+    plot_eqm_properties,
+    plot_mlp_distribution,
+)
 from pypolymlp.calculator.auto.pypolymlp_autocalc import PypolymlpAutoCalc
 from pypolymlp.core.io_polymlp import find_mlps
 from pypolymlp.postproc.count_time import PolymlpCost
@@ -30,7 +35,10 @@ class PypolymlpRepository:
         self._verbose = verbose
 
         self._entry_path = None
+        self._system = None
         self._convex_mlp_paths = None
+        self._times = None
+
         np.set_printoptions(legacy="1.21")
 
     def calc_costs(self, n_calc: int = 20):
@@ -54,14 +62,24 @@ class PypolymlpRepository:
         use_force: Use errors for forces to define MLP accuracy.
         use_logscale_time: Use time in log scale to define MLP efficiency.
         """
-        system, abspaths = find_optimal_mlps(
+        summary_all, summary_convex, self._system = find_optimal_mlps(
             self._mlp_paths,
             key,
             use_force=use_force,
             use_logscale_time=use_logscale_time,
             verbose=self._verbose,
         )
-        self._copy_convex_mlp_files(system, abspaths)
+        self._times = summary_convex[:, 0].astype(float)
+        abspaths = summary_convex[:, -1]
+        self._copy_convex_mlp_files(self._system, abspaths)
+
+        target = self._entry_path + "/summary"
+        plot_mlp_distribution(
+            summary_all,
+            summary_convex,
+            self._system,
+            path_output=target,
+        )
         return self
 
     def _copy_convex_mlp_files(self, system: str, abspaths: list):
@@ -95,7 +113,9 @@ class PypolymlpRepository:
         if self._entry_path is None:
             raise RuntimeError("Run extract_convex_polymlps first.")
 
-        for path in self._convex_mlp_paths:
+        prototypes_all, pot_ids = [], []
+        # for path in self._convex_mlp_paths:
+        for path in self._convex_mlp_paths[0:3]:
             name = path.split("/")[-1]
             target = self._entry_path + "/predictions/" + name
             os.makedirs(target, exist_ok=True)
@@ -106,6 +126,18 @@ class PypolymlpRepository:
             )
             calc.load_structures()
             calc.run()
+            prototypes_all.append(calc.prototypes)
+            pot_ids.append(name)
             if vaspruns is not None:
                 calc.compare_with_dft(vaspruns=vaspruns, icsd_ids=icsd_ids)
+                calc.plot_comparison_with_dft(self._system, name)
+
+            plot_eos(calc.prototypes, self._system, name, path_output=target)
+
+        plot_eqm_properties(
+            prototypes_all,
+            self._times,
+            self._system,
+            path_output=self._entry_path + "/predictions",
+        )
         return self

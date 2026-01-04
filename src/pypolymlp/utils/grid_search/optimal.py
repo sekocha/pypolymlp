@@ -136,5 +136,4 @@ def find_optimal_mlps(
         use_logscale_time=use_logscale_time,
     )
     write_yaml(d_convex, system, filename=filename_convex)
-    abspaths = d_convex[:, -1]
-    return system, abspaths
+    return d_array, d_convex, system
