@@ -51,6 +51,9 @@ class PolymlpPhonon:
         self.ph = Phonopy(unitcell, supercell_matrix)
         self._with_pdos = False
 
+        self._qha = None
+        self._temperatures = None
+
     def produce_force_constants(self, distance: float = 0.001):
         """Produce force constants by evaluating forces for random structures."""
         self.ph.generate_displacements(distance=distance)
@@ -199,6 +202,7 @@ class PolymlpPhononQHA:
             entropy=entropies,
             cv=heat_capacities,
         )
+        self._temperatures = temperatures
 
     def write_qha(self, path_output: str = "./"):
         """Save results."""
@@ -217,6 +221,21 @@ class PolymlpPhononQHA:
         self._qha.write_gruneisen_temperature(filename=filename)
         filename = path_output + "/polymlp_phonon_qha/cp-temperature.dat"
         self._qha.write_heat_capacity_P_numerical(filename=filename)
+
+    @property
+    def temperatures(self):
+        """Return tempeartures."""
+        return self._temperatures
+
+    @property
+    def bulk_modulus_temperature(self):
+        """Return bulk modulus with respect to temperature."""
+        return self._qha.bulk_modulus_temperature
+
+    @property
+    def thermal_expansion(self):
+        """Return thermal_expansion with respect to temperature."""
+        return self._qha.thermal_expansion
 
 
 def calculate_harmonic_properties_from_fc2(

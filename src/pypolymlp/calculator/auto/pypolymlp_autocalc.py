@@ -100,22 +100,10 @@ class PypolymlpAutoCalc:
             prot.structure_eq = self._calc.converged_structure
             self._calc.save_poscars(filename=poscar)
 
-            if self._verbose:
-                print("Run EOS calculations.", flush=True)
             self._run_eos(prot)
-            if self._verbose:
-                print("Run elastic constant calculations.", flush=True)
             self._run_elastic(prot, poscar)
-
-            if self._verbose:
-                print("Run phonon calculations.", flush=True)
             self._run_phonon(prot)
-
-            if not self._calc.is_imaginary:
-                if self._verbose:
-                    print("Run QHA calculations.", flush=True)
-                self._run_qha(prot)
-
+            self._run_qha(prot)
             prot.save_properties(filename=path + "polymlp_predictions.yaml")
 
     def _print_targets(self):
@@ -146,6 +134,8 @@ class PypolymlpAutoCalc:
 
     def _run_eos(self, prototype: Prototype):
         """Run EOS calculation and fit for single prototype."""
+        if self._verbose:
+            print("Run EOS calculations.", flush=True)
         self._calc.run_eos(eos_fit=True)
         e0, v0, b0 = self._calc.eos_fit_data
         eos_mlp, eos_fit = self._calc.eos_curve_data
@@ -154,11 +144,15 @@ class PypolymlpAutoCalc:
 
     def _run_elastic(self, prototype: Prototype, poscar: str):
         """Run elastic constant calculations."""
+        if self._verbose:
+            print("Run elastic constant calculations.", flush=True)
         prototype.elastic_constants = self._calc.run_elastic_constants(poscar=poscar)
         return prototype
 
     def _run_phonon(self, prototype: Prototype):
         """Run phonon calculations for single prototype."""
+        if self._verbose:
+            print("Run phonon calculations.", flush=True)
         supercell_matrix = np.diag(prototype.phonon_supercell)
         self._calc.init_phonon(supercell_matrix=supercell_matrix)
         self._calc.run_phonon(distance=0.01)
@@ -168,9 +162,17 @@ class PypolymlpAutoCalc:
 
     def _run_qha(self, prototype: Prototype):
         """Run QHA calculations for single prototype."""
+        if self._calc.is_imaginary:
+            return prototype
+
+        if self._verbose:
+            print("Run QHA calculations.", flush=True)
         supercell_matrix = np.diag(prototype.phonon_supercell)
         self._calc.run_qha(distance=0.01, supercell_matrix=supercell_matrix)
         self._calc.write_qha(path=self._path_header + prototype.name)
+        prototype.temperatures = self._calc.temperatures
+        prototype.qha_thermal_expansion = self._calc.thermal_expansion
+        prototype.qha_bulk_modulus = self._calc.bulk_modulus_temperature
         return prototype
 
     def compare_with_dft(

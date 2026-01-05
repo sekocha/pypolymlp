@@ -402,7 +402,6 @@ class PypolymlpCalc:
             supercell_matrix=supercell_matrix,
             properties=self._prop,
         )
-
         self._qha.run(
             distance=distance,
             mesh=mesh,
@@ -722,3 +721,18 @@ class PypolymlpCalc:
     def is_imaginary(self):
         """Return if phonon modes exhibit imaginary frequencies."""
         return self._phonon.is_imaginary
+
+    @property
+    def temperatures(self):
+        """Return tempeartures."""
+        return self._qha._temperatures[:-1]
+
+    @property
+    def bulk_modulus_temperature(self):
+        """Return bulk modulus with respect to temperature."""
+        return self._qha.bulk_modulus_temperature
+
+    @property
+    def thermal_expansion(self):
+        """Return thermal_expansion with respect to temperature."""
+        return self._qha.thermal_expansion

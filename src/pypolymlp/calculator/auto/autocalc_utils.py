@@ -31,6 +31,9 @@ class Prototype:
     eos_fit: Optional[np.ndarray] = None
 
     phonon_dos: Optional[np.ndarray] = None
+    temperatures: Optional[np.ndarray] = None
+    qha_thermal_expansion: Optional[np.ndarray] = None
+    qha_bulk_modulus: Optional[np.ndarray] = None
 
     @property
     def lattice_constants(self):

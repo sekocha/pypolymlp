@@ -11,6 +11,7 @@ from pypolymlp.calculator.auto.figures_properties import (
     plot_eos,
     plot_eos_separate,
     plot_phonon,
+    plot_qha,
 )
 from pypolymlp.calculator.auto.figures_summary import (
     plot_eqm_properties,
@@ -136,6 +137,20 @@ class PypolymlpRepository:
             plot_eos(calc.prototypes, self._system, name, path_output=target)
             plot_eos_separate(calc.prototypes, self._system, name, path_output=target)
             plot_phonon(calc.prototypes, self._system, name, path_output=target)
+            plot_qha(
+                calc.prototypes,
+                self._system,
+                name,
+                target="thermal_expansion",
+                path_output=target,
+            )
+            plot_qha(
+                calc.prototypes,
+                self._system,
+                name,
+                target="bulk_modulus",
+                path_output=target,
+            )
 
         plot_eqm_properties(
             prototypes_all,
