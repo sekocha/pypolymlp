@@ -9,7 +9,12 @@ import yaml
 from pypolymlp.calculator.auto.web_sphinx_utils import array_to_csv_table, include_image
 
 
-def generate_summary_txt(path_web: str, polymlps_id: str, polymlps: list):
+def generate_summary_txt(
+    path_web: str,
+    path_prediction: str,
+    polymlps_id: str,
+    polymlps: list,
+):
     """Generate text for summary."""
     f = open(path_web + "/info.rst", "w")
     print(":orphan:", file=f)
@@ -20,8 +25,12 @@ def generate_summary_txt(path_web: str, polymlps_id: str, polymlps: list):
 
     include_image("summary/polymlp_convex.png", title=None, height=350, file=f)
 
-    # n_st = self.__get_num_structures()
-    n_st = 10000
+    id1 = polymlps[0]["id"]
+    path_parse = path_prediction + "/predictions/" + id1 + "/"
+    f1 = open(path_parse + "polymlp_size.dat")
+    n_st = int(str(f1.readline()))
+    f1.close()
+
     print(
         "The current structure dataset comprises " + str(n_st) + " structures."
         " Procedures to generate structures and estimate MLPs are found in"

@@ -207,6 +207,11 @@ class PypolymlpAutoCalc:
         self._distribution_test = np.stack(
             [np.round(energies_dft, 6), np.round(energies_mlp, 6)]
         ).T
+        size = self._distribution_train.shape[0] + self._distribution_test.shape[0]
+        filename = self._path_header + "size.dat"
+        with open(filename, "w") as f:
+            print(size, file=f)
+
         return self
 
     def compare_with_dft(
@@ -233,7 +238,7 @@ class PypolymlpAutoCalc:
 
         if icsd_ids is not None:
             self._set_dft_structures(self._calc.structures, icsd_ids)
-        return self
+        return self._comparison
 
     def _eval_energies(self, vaspruns: list, functional: str = "PBE"):
         """Evaluate MLP energies and DFT cohesive energies"""
