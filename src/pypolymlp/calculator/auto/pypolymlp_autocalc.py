@@ -110,7 +110,7 @@ class PypolymlpAutoCalc:
             self._run_eos(prot)
             self._run_elastic(prot, poscar)
             self._run_phonon(prot)
-            self._run_qha(prot)
+            # self._run_qha(prot)
         return self
 
     def save_properties(self):

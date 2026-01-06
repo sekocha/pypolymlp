@@ -126,7 +126,7 @@ def plot_eos(
     fig, ax = plt.subplots(1, 3, figsize=(9, 4))
     fig.suptitle("Equation of state (" + system + ", " + pot_id + ")", fontsize=10)
 
-    marker_candidates = ["o", "^", "d"]
+    marker_candidates = ["o", "^", "d", "P", "X"]
     marker_sizes = [5, 8, 10]
     for i, prot in enumerate(prototypes):
         st, ev = prot.name, prot.eos_mlp
@@ -165,11 +165,12 @@ def _sns_init(
     prototypes: list[Prototype],
     suptitle: str,
     n_cols: int = 3,
-    figsize: tuple = (8, 4),
+    figsize: tuple = (8, 8),
     fontsize: int = 10,
 ):
     """Initialize seaborn subplot environment."""
     n_rows = int(np.ceil(len(prototypes) / n_cols - 1e-10))
+    figsize = (figsize[0], figsize[1] * n_rows / 6)
 
     sns.set_context("paper", 1.0, {"lines.linewidth": 2})
     sns.set_style("whitegrid", {"grid.linestyle": "--"})
@@ -187,8 +188,8 @@ def plot_eos_separate(
     use_eps: bool = False,
     dpi: int = 300,
     n_cols: int = 3,
-    figsize: tuple = (8, 12),
-    fontsize: int = 10,
+    figsize: tuple = (8, 8),
+    fontsize: int = 8,
 ):
     """Plot EOS functions for prototype structures separately."""
     os.makedirs(path_output, exist_ok=True)
@@ -199,7 +200,7 @@ def plot_eos_separate(
 
     suptitle = "Equation of state (" + system + ", " + pot_id + ")"
     fig, ax, n_rows = _sns_init(
-        prototypes, suptitle, n_cols=n_cols, figsize=figsize, fontsize=12
+        prototypes, suptitle, n_cols=n_cols, figsize=figsize, fontsize=8
     )
     for i, prot in enumerate(prototypes):
         st, ev = prot.name, prot.eos_mlp
@@ -260,7 +261,7 @@ def plot_phonon(
     dpi: int = 300,
     n_cols: int = 3,
     figsize: tuple = (8, 8),
-    fontsize: int = 10,
+    fontsize: int = 8,
 ):
     """Plot phonon DOS for prototype structures separately."""
     os.makedirs(path_output, exist_ok=True)
@@ -268,7 +269,7 @@ def plot_phonon(
 
     suptitle = "Phonon DOS (" + system + ", " + pot_id + ")"
     fig, ax, n_rows = _sns_init(
-        prototypes, suptitle, n_cols=n_cols, figsize=figsize, fontsize=10
+        prototypes, suptitle, n_cols=n_cols, figsize=figsize, fontsize=8
     )
     for i, prot in enumerate(prototypes):
         st, dos = prot.name, prot.phonon_dos
@@ -325,7 +326,7 @@ def plot_qha(
     dpi: int = 300,
     n_cols: int = 3,
     figsize: tuple = (8, 6),
-    fontsize: int = 10,
+    fontsize: int = 8,
 ):
     """Plot thermal expansion for prototype structures separately."""
     if target == "thermal_expansion":

@@ -107,8 +107,8 @@ def plot_eqm_properties(
     plt.style.use("bmh")
     sns.set_context("paper", 1.0, {"lines.linewidth": 4})
     sns.set_palette("Paired", len(eqm_props_dict[0]), 1)
-    marker_candidates = [".", "^", "d"]
-    marker_sizes = [6, 3, 3]
+    marker_candidates = [".", "^", "d", "P", "X"]
+    marker_sizes = [6, 3, 3, 3, 3]
 
     fig, ax = plt.subplots(1, 3, figsize=(7, 3))
 

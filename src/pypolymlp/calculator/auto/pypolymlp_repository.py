@@ -161,7 +161,10 @@ class PypolymlpRepository:
 
     def _plot_properties(self, prototypes: list, name: str, path_output: str):
         """Plot properties from single MLP."""
-        plot_eos(prototypes, self._system, name, path_output=path_output)
+        n_type = len(self._system.split("-"))
+        if n_type == 1:
+            plot_eos(prototypes, self._system, name, path_output=path_output)
+
         plot_eos_separate(prototypes, self._system, name, path_output=path_output)
         plot_phonon(prototypes, self._system, name, path_output=path_output)
         plot_qha(
