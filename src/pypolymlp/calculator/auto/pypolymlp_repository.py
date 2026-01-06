@@ -27,7 +27,7 @@ from pypolymlp.utils.grid_search.optimal import find_optimal_mlps
 class PypolymlpRepository:
     """API Class for constructing repository entry."""
 
-    def __init__(self, mlp_paths: list[str], verbose: bool = False):
+    def __init__(self, mlp_paths: Optional[list[str]] = None, verbose: bool = False):
         """Init method.
 
         Parameters
@@ -35,8 +35,9 @@ class PypolymlpRepository:
         mlp_paths: Path of directory that contains MLPs from grid search.
         """
         self._mlp_paths = mlp_paths
-        if not isinstance(mlp_paths, (list, tuple, np.ndarray)):
-            raise RuntimeError("mlp_paths must be array-like.")
+        if self._mlp_paths is not None:
+            if not isinstance(mlp_paths, (list, tuple, np.ndarray)):
+                raise RuntimeError("mlp_paths must be array-like.")
 
         self._verbose = verbose
 
@@ -49,6 +50,9 @@ class PypolymlpRepository:
 
     def calc_costs(self, n_calc: int = 20):
         """Calculate computational costs of MLPs."""
+        if self._mlp_paths is None:
+            raise RuntimeError("MLP paths are required.")
+
         pycost = PolymlpCost(path_pot=self._mlp_paths, verbose=self._verbose)
         pycost.run(n_calc=n_calc)
         return self
@@ -68,6 +72,9 @@ class PypolymlpRepository:
         use_force: Use errors for forces to define MLP accuracy.
         use_logscale_time: Use time in log scale to define MLP efficiency.
         """
+        if self._mlp_paths is None:
+            raise RuntimeError("MLP paths are required.")
+
         summary_all, summary_convex, self._system = find_optimal_mlps(
             self._mlp_paths,
             key,
@@ -130,10 +137,15 @@ class PypolymlpRepository:
             )
             calc.load_structures()
             calc.run()
-            prototypes_all.append(calc.prototypes)
             if vaspruns is not None:
                 calc.compare_with_dft(vaspruns=vaspruns, icsd_ids=icsd_ids)
                 calc.plot_comparison_with_dft(self._system, name)
+
+                # TODO: Temporarily written
+                calc.calc_energy_distribution(vaspruns, vaspruns)
+                calc.plot_energy_distribution(self._system, name)
+            calc.save_properties()
+            prototypes_all.append(calc.prototypes)
 
             plot_eos(calc.prototypes, self._system, name, path_output=target)
             plot_eos_separate(calc.prototypes, self._system, name, path_output=target)

@@ -130,6 +130,9 @@ def plot_eos(
     marker_sizes = [5, 8, 10]
     for i, prot in enumerate(prototypes):
         st, ev = prot.name, prot.eos_mlp
+        if ev is None:
+            continue
+
         marker = marker_candidates[i // 12]
         for j in range(3):
             ax[j].scatter(
@@ -200,6 +203,9 @@ def plot_eos_separate(
     )
     for i, prot in enumerate(prototypes):
         st, ev = prot.name, prot.eos_mlp
+        if ev is None:
+            continue
+
         row = i // n_cols
         col = i % n_cols
         ax[row][col].scatter(
@@ -266,6 +272,9 @@ def plot_phonon(
     )
     for i, prot in enumerate(prototypes):
         st, dos = prot.name, prot.phonon_dos
+        if dos is None:
+            continue
+
         row = i // n_cols
         col = i % n_cols
         ax[row][col].plot(
@@ -332,6 +341,9 @@ def plot_qha(
 
     os.makedirs(path_output, exist_ok=True)
     prototypes_active = [p for p in prototypes if getattr(p, attr) is not None]
+    if len(prototypes_active) == 0:
+        return None
+
     (limmin_x, limmax_x), (limmin_y, limmax_y) = _set_qha_minmax(
         prototypes_active, attr
     )
@@ -341,6 +353,9 @@ def plot_qha(
     )
     for i, prot in enumerate(prototypes_active):
         st, temp, val = prot.name, prot.temperatures, getattr(prot, attr)
+        if val is None:
+            continue
+
         row = i // n_cols
         col = i % n_cols
         ax_obj = ax[col] if n_rows == 1 else ax[row][col]
@@ -370,64 +385,72 @@ def plot_qha(
     plt.close()
 
 
-# def plot_energy(data_train, data_test, system, pot_id, path_output="./", dpi=300):
-#
-#     os.makedirs(path_output, exist_ok=True)
-#
-#     limmin = min(min(data_train[:, 0]), min(data_test[:, 0]))
-#     # limmax = max(max(data_train[:, 0]), max(data_test[:, 0]))
-#     limmin_int = floor(min(min(data_train[:, 0]), min(data_test[:, 0])))
-#     limmax_int = ceil(min(max(max(data_train[:, 0]), max(data_test[:, 0])), 20))
-#     x = np.arange(limmin_int, limmax_int + 1)
-#     y = x
-#
-#     sns.set_context("paper", 1.0, {"lines.linewidth": 1})
-#     sns.set_style("whitegrid", {"grid.linestyle": "--"})
-#
-#     fig, ax = plt.subplots(2, 2, figsize=(5, 5))
-#     fig.suptitle("Energy distribution (" + system + ", " + pot_id + ")", fontsize=10)
-#
-#     for i in range(2):
-#         for j in range(2):
-#             ax[i][j].set_aspect("equal")
-#             ax[i][j].plot(x, y, color="gray", linestyle="dashed", linewidth=0.25)
-#         ax[i][0].scatter(
-#             data_train[:, 0],
-#             data_train[:, 1],
-#             s=0.25,
-#             c="black",
-#             alpha=1.0,
-#             marker=".",
-#             label="training",
-#         )
-#         ax[i][1].scatter(
-#             data_test[:, 0],
-#             data_test[:, 1],
-#             s=0.25,
-#             c="orangered",
-#             alpha=1.0,
-#             marker=".",
-#             label="test",
-#         )
-#         for j in range(2):
-#             ax[i][j].set_xlabel("DFT energy (eV/atom)", fontsize=8)
-#             ax[i][j].set_ylabel("MLP energy (eV/atom)", fontsize=8)
-#             ax[i][j].tick_params(axis="both", labelsize=6)
-#             ax[i][j].legend()
-#
-#     interval = max(int((limmax_int - limmin_int) / 10), 1)
-#     for j in range(2):
-#         ax[0][j].set_xlim(limmin_int, limmax_int)
-#         ax[0][j].set_ylim(limmin_int, limmax_int)
-#         ax[0][j].set_xticks(np.arange(limmin_int, limmax_int + 1, interval))
-#         ax[0][j].set_yticks(np.arange(limmin_int, limmax_int + 1, interval))
-#         ax[1][j].set_xlim(limmin - 0.05, limmin + 1.05)
-#         ax[1][j].set_ylim(limmin - 0.05, limmin + 1.05)
-#
-#     plt.tight_layout()
-#     plt.savefig(path_output + "/distribution.png", format="png", dpi=dpi)
-#     plt.savefig(path_output + "/distribution.eps", format="eps")
-#     plt.clf()
-#     plt.close()
-#
-#
+def plot_energy_distribution(
+    data_train: np.ndarray,
+    data_test: np.ndarray,
+    system: str,
+    pot_id: str,
+    path_output: str = "./",
+    use_eps: bool = False,
+    dpi: int = 300,
+):
+    """Plot energy distribution."""
+
+    os.makedirs(path_output, exist_ok=True)
+
+    limmin = min(min(data_train[:, 0]), min(data_test[:, 0]))
+    limmin_int = np.floor(min(min(data_train[:, 0]), min(data_test[:, 0])))
+    limmax_int = np.ceil(min(max(max(data_train[:, 0]), max(data_test[:, 0])), 20))
+    x = np.arange(limmin_int, limmax_int + 1)
+    y = x
+
+    sns.set_context("paper", 1.0, {"lines.linewidth": 1})
+    sns.set_style("whitegrid", {"grid.linestyle": "--"})
+
+    fig, ax = plt.subplots(2, 2, figsize=(5, 5))
+    fig.suptitle("Energy distribution (" + system + ", " + pot_id + ")", fontsize=10)
+
+    for i in range(2):
+        for j in range(2):
+            ax[i][j].set_aspect("equal")
+            ax[i][j].plot(x, y, color="gray", linestyle="dashed", linewidth=0.25)
+        ax[i][0].scatter(
+            data_train[:, 0],
+            data_train[:, 1],
+            s=0.25,
+            c="black",
+            alpha=1.0,
+            marker=".",
+            label="training",
+        )
+        ax[i][1].scatter(
+            data_test[:, 0],
+            data_test[:, 1],
+            s=0.25,
+            c="orangered",
+            alpha=1.0,
+            marker=".",
+            label="test",
+        )
+        for j in range(2):
+            ax[i][j].set_xlabel("DFT energy (eV/atom)", fontsize=8)
+            ax[i][j].set_ylabel("MLP energy (eV/atom)", fontsize=8)
+            ax[i][j].tick_params(axis="both", labelsize=6)
+            ax[i][j].legend()
+
+    interval = max(int((limmax_int - limmin_int) / 10), 1)
+    for j in range(2):
+        ax[0][j].set_xlim(limmin_int, limmax_int)
+        ax[0][j].set_ylim(limmin_int, limmax_int)
+        ax[0][j].set_xticks(np.arange(limmin_int, limmax_int + 1, interval))
+        ax[0][j].set_yticks(np.arange(limmin_int, limmax_int + 1, interval))
+        ax[1][j].set_xlim(limmin - 0.05, limmin + 1.05)
+        ax[1][j].set_ylim(limmin - 0.05, limmin + 1.05)
+
+    plt.tight_layout()
+    if use_eps:
+        plt.savefig(path_output + "/polymlp_distribution.eps", format="eps")
+    else:
+        plt.savefig(path_output + "/polymlp_distribution.png", format="png", dpi=dpi)
+    plt.clf()
+    plt.close()

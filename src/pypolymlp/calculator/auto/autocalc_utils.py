@@ -27,6 +27,8 @@ class Prototype:
     bulk_modulus: Optional[float] = None
     elastic_constants: Optional[np.ndarray] = None
 
+    structure_dft: Optional[PolymlpStructure] = None
+
     eos_mlp: Optional[np.ndarray] = None
     eos_fit: Optional[np.ndarray] = None
 
@@ -38,7 +40,23 @@ class Prototype:
     @property
     def lattice_constants(self):
         """Return lattice constants."""
+        if self.structure_eq is None:
+            return None
         return get_lattice_constants(self.structure_eq)
+
+    @property
+    def lattice_constants_dft(self):
+        """Return lattice constants from DFT."""
+        if self.structure_dft is None:
+            return None
+        return get_lattice_constants(self.structure_dft)
+
+    @property
+    def volume_dft(self):
+        """Return lattice constants from DFT."""
+        if self.structure_dft is None:
+            return None
+        return self.structure_dft.volume
 
     def set_eos_data(
         self,
@@ -73,31 +91,49 @@ class Prototype:
             print("  bulk_modulus:", self.bulk_modulus, file=f)
             print(file=f)
 
-            print("lattice_constants:", file=f)
-            a, b, c, calpha, cbeta, cgamma = self.lattice_constants
-            alpha = np.degrees(np.arccos(calpha))
-            beta = np.degrees(np.arccos(cbeta))
-            gamma = np.degrees(np.arccos(cgamma))
-            print("  a:    ", np.round(a, 5), file=f)
-            print("  b:    ", np.round(b, 5), file=f)
-            print("  c:    ", np.round(c, 5), file=f)
-            print("  alpha:", np.round(alpha, 5), file=f)
-            print("  beta: ", np.round(beta, 5), file=f)
-            print("  gamma:", np.round(gamma, 5), file=f)
-            print(file=f)
+            lattice_constants = self.lattice_constants
+            if lattice_constants is not None:
+                print("lattice_constants:", file=f)
+                a, b, c, calpha, cbeta, cgamma = lattice_constants
+                alpha = np.degrees(np.arccos(calpha))
+                beta = np.degrees(np.arccos(cbeta))
+                gamma = np.degrees(np.arccos(cgamma))
+                print("  a:    ", np.round(a, 5), file=f)
+                print("  b:    ", np.round(b, 5), file=f)
+                print("  c:    ", np.round(c, 5), file=f)
+                print("  alpha:", np.round(alpha, 5), file=f)
+                print("  beta: ", np.round(beta, 5), file=f)
+                print("  gamma:", np.round(gamma, 5), file=f)
+                print(file=f)
 
-            print("elastic_constants:", file=f)
-            elastic_constants = np.round(self.elastic_constants, 3)
-            elastic_constants[np.isclose(elastic_constants, 0.0)] = 0.0
-            yaml.dump(elastic_constants.tolist(), f, default_flow_style=False)
-            # for i, e1 in enumerate(self.elastic_constants):
-            #     for j, e2 in enumerate(e1):
-            #         txt = "  c" + str(i + 1) + str(j + 1) + ":"
-            #         print(txt, np.round(e2, 3), file=f)
-            print(file=f)
+            lattice_constants_dft = self.lattice_constants_dft
+            if lattice_constants_dft is not None:
+                print("lattice_constants_dft:", file=f)
+                a, b, c, calpha, cbeta, cgamma = lattice_constants_dft
+                alpha = np.degrees(np.arccos(calpha))
+                beta = np.degrees(np.arccos(cbeta))
+                gamma = np.degrees(np.arccos(cgamma))
+                print("  a:    ", np.round(a, 5), file=f)
+                print("  b:    ", np.round(b, 5), file=f)
+                print("  c:    ", np.round(c, 5), file=f)
+                print("  alpha:", np.round(alpha, 5), file=f)
+                print("  beta: ", np.round(beta, 5), file=f)
+                print("  gamma:", np.round(gamma, 5), file=f)
+                print(file=f)
 
-            print("eos_data_mlp:", file=f)
-            yaml.dump(self.eos_mlp.tolist(), f, default_flow_style=False)
+                print("volume_dft:", self.volume_dft, file=f)
+                print(file=f)
+
+            if self.elastic_constants is not None:
+                print("elastic_constants:", file=f)
+                elastic_constants = np.round(self.elastic_constants, 2)
+                elastic_constants[np.isclose(elastic_constants, 0.0)] = 0.0
+                yaml.dump(elastic_constants.tolist(), f, default_flow_style=False)
+                print(file=f)
+
+            if self.eos_mlp is not None:
+                print("eos_data_mlp:", file=f)
+                yaml.dump(self.eos_mlp.tolist(), f, default_flow_style=False)
 
 
 def get_atomic_size_scales():

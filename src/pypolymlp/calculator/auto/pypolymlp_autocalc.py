@@ -7,7 +7,10 @@ import numpy as np
 
 from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
 from pypolymlp.calculator.auto.autocalc_utils import Prototype
-from pypolymlp.calculator.auto.figures_properties import plot_prototype_prediction
+from pypolymlp.calculator.auto.figures_properties import (
+    plot_energy_distribution,
+    plot_prototype_prediction,
+)
 from pypolymlp.calculator.auto.structures_binary import (
     get_structure_list_binary,
     get_structure_type_binary,
@@ -20,6 +23,7 @@ from pypolymlp.calculator.properties import Properties
 from pypolymlp.core.data_format import PolymlpParams
 from pypolymlp.core.interface_vasp import parse_properties_from_vaspruns
 from pypolymlp.utils.atomic_energies.atomic_energies import get_atomic_energies
+from pypolymlp.utils.spglib_utils import SymCell
 
 
 class PypolymlpAutoCalc:
@@ -65,7 +69,10 @@ class PypolymlpAutoCalc:
         os.makedirs(path_output, exist_ok=True)
         self._path_header = self._path_output + "/" + "polymlp_"
         self._prototypes = None
+
         self._comparison = None
+        self._distribution_train = None
+        self._distribution_test = None
 
         np.set_printoptions(legacy="1.21")
 
@@ -103,8 +110,15 @@ class PypolymlpAutoCalc:
             self._run_eos(prot)
             self._run_elastic(prot, poscar)
             self._run_phonon(prot)
-            self._run_qha(prot)
+            # self._run_qha(prot)
+        return self
+
+    def save_properties(self):
+        """Save properties."""
+        for prot in self._prototypes:
+            path = self._path_header + prot.name + "/"
             prot.save_properties(filename=path + "polymlp_predictions.yaml")
+        return self
 
     def _print_targets(self):
         """Print target structures and polymlp."""
@@ -175,6 +189,26 @@ class PypolymlpAutoCalc:
         prototype.qha_bulk_modulus = self._calc.bulk_modulus_temperature
         return prototype
 
+    def calc_energy_distribution(
+        self,
+        vaspruns_train: list,
+        vaspruns_test: list,
+        functional: str = "PBE",
+    ):
+        """Calculate properties for DFT structures."""
+        if self._verbose:
+            print("Compute energies for training and test data.")
+
+        energies_dft, energies_mlp = self._eval_energies(vaspruns_train, functional)
+        self._distribution_train = np.stack(
+            [np.round(energies_dft, 6), np.round(energies_mlp, 6)]
+        ).T
+        energies_dft, energies_mlp = self._eval_energies(vaspruns_test, functional)
+        self._distribution_test = np.stack(
+            [np.round(energies_dft, 6), np.round(energies_mlp, 6)]
+        ).T
+        return self
+
     def compare_with_dft(
         self,
         vaspruns: list,
@@ -186,6 +220,23 @@ class PypolymlpAutoCalc:
         if self._verbose:
             print("Compute energies for structures.")
 
+        energies_dft, energies_mlp = self._eval_energies(vaspruns, functional)
+        sorted_indices = energies_dft.argsort()
+        names = self._set_structure_names(vaspruns, icsd_ids=icsd_ids)
+        data = np.stack([np.round(energies_dft, 6), np.round(energies_mlp, 6), names]).T
+        self._comparison = data[sorted_indices]
+
+        if filename is None:
+            filename = self._path_header + "comparison.dat"
+        header = "DFT (eV/atom), MLP (eV/atom), ID"
+        np.savetxt(filename, self._comparison, fmt="%s", header=header)
+
+        if icsd_ids is not None:
+            self._set_dft_structures(self._calc.structures, icsd_ids)
+        return self
+
+    def _eval_energies(self, vaspruns: list, functional: str = "PBE"):
+        """Evaluate MLP energies and DFT cohesive energies"""
         structures, (energies_dft, _, _) = parse_properties_from_vaspruns(vaspruns)
         atomic_energies = self._calc_atomic_energies(structures, functional=functional)
         energies_dft -= atomic_energies
@@ -196,35 +247,7 @@ class PypolymlpAutoCalc:
         n_atom = np.array([np.sum(st.n_atoms) for st in structures])
         energies_dft /= n_atom
         energies_mlp /= n_atom
-        sorted_indices = energies_dft.argsort()
-
-        names = self._set_structure_names(vaspruns, icsd_ids=icsd_ids)
-        data = np.stack([np.round(energies_dft, 6), np.round(energies_mlp, 6), names]).T
-
-        self._comparison = data[sorted_indices]
-
-        header = "DFT (eV/atom), MLP (eV/atom), ID"
-        if filename is None:
-            filename = self._path_header + "comparison.dat"
-        np.savetxt(filename, self._comparison, fmt="%s", header=header)
-        return self
-
-    def plot_comparison_with_dft(
-        self,
-        system: str,
-        pot_id: str,
-    ):
-        """Plot comparison of mlp predictions with dft."""
-        if self._comparison is None:
-            raise RuntimeError("Comparison data not found.")
-
-        plot_prototype_prediction(
-            self._comparison,
-            system,
-            pot_id,
-            path_output=self._path_output,
-        )
-        return self
+        return (energies_dft, energies_mlp)
 
     def _calc_atomic_energies(self, structures: list, functional: str = "PBE"):
         """Calculate atomic energies for structures."""
@@ -251,6 +274,44 @@ class PypolymlpAutoCalc:
         else:
             names = vaspruns
         return np.array(names)
+
+    def _set_dft_structures(self, structures: list, icsd_ids: list):
+        """Set DFT structures to prototypes."""
+        structure_dict = dict(zip(icsd_ids, structures))
+        for prot in self._prototypes:
+            try:
+                sym = SymCell(st=structure_dict[prot.icsd_id], symprec=1e-3)
+                prot.structure_dft = sym.refine_cell()
+            except:
+                pass
+        return self
+
+    def plot_energy_distribution(self, system: str, pot_id: str):
+        """Plot comparison of mlp predictions with dft."""
+        if self._distribution_train is None or self._distribution_test is None:
+            raise RuntimeError("Distribution data not found.")
+
+        plot_energy_distribution(
+            self._distribution_train,
+            self._distribution_test,
+            system,
+            pot_id,
+            path_output=self._path_output,
+        )
+        return self
+
+    def plot_comparison_with_dft(self, system: str, pot_id: str):
+        """Plot comparison of mlp predictions with dft."""
+        if self._comparison is None:
+            raise RuntimeError("Comparison data not found.")
+
+        plot_prototype_prediction(
+            self._comparison,
+            system,
+            pot_id,
+            path_output=self._path_output,
+        )
+        return self
 
     @property
     def prototypes(self):
