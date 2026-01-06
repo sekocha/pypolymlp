@@ -78,6 +78,18 @@ class Prototype:
         self.eos_fit = eos_fit / self.n_atom
         return self
 
+    def set_qha_data(
+        self,
+        temperatures: np.ndarray,
+        thermal_expansion: np.ndarray,
+        bulk_modulus: np.ndarray,
+    ):
+        """Set QHA properties."""
+        self.temperatures = temperatures
+        self.qha_thermal_expansion = thermal_expansion
+        self.qha_bulk_modulus = bulk_modulus
+        return self
+
     def save_properties(self, filename: str = "polymlp_prototype.yaml"):
         """Save properties for prototype."""
         with open(filename, "w") as f:

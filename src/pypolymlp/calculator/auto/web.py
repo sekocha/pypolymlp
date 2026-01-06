@@ -71,25 +71,6 @@ class WebContents:
         self.generate_predictions()
         return self
 
-    def generate_summary(self):
-        """Generate contents for summary."""
-        path = self._path_web + "/summary/"
-        os.makedirs(path, exist_ok=True)
-        files = [
-            self._path_prediction + "/summary/polymlp_convex.png",
-            self._path_prediction + "/predictions/polymlp_eqm_properties.png",
-        ]
-        for f in files:
-            shutil.copy(f, path)
-
-        generate_summary_txt(
-            self._path_web,
-            self._path_prediction,
-            self._polymlps_id,
-            self._polymlps,
-        )
-        return self
-
     def compress_mlps(self):
         """Compress MLP files."""
         path = self._path_web + "/polymlps/"
@@ -111,9 +92,27 @@ class WebContents:
         tar_all.close()
         return self
 
+    def generate_summary(self):
+        """Generate contents for summary."""
+        path = self._path_web + "/summary/"
+        os.makedirs(path, exist_ok=True)
+        files = [
+            self._path_prediction + "/summary/polymlp_convex.png",
+            self._path_prediction + "/predictions/polymlp_eqm_properties.png",
+        ]
+        for f in files:
+            shutil.copy(f, path)
+
+        generate_summary_txt(
+            self._path_web,
+            self._path_prediction,
+            self._polymlps_id,
+            self._polymlps,
+        )
+        return self
+
     def generate_predictions(self):
         """Generate contents for predictions."""
-
         for d in self._polymlps:
             if not d["active"]:
                 continue

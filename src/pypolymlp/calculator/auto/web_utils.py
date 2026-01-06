@@ -291,14 +291,3 @@ def generate_predictions_txt(
                 )
 
         f.close()
-
-
-#     def __get_num_structures(self):
-#
-#         file1 = "/".join([self.__polymlps[0]["id"], "energy_dist", "energy-train.dat"])
-#         cmd = "wc -l " + file1
-#         c1 = subprocess.check_output(cmd.split()).decode().split()[0]
-#         file2 = "/".join([self.__polymlps[0]["id"], "energy_dist", "energy-test.dat"])
-#         cmd = "wc -l " + file2
-#         c2 = subprocess.check_output(cmd.split()).decode().split()[0]
-#         return int(c1) + int(c2) - 2

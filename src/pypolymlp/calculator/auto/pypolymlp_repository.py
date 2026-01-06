@@ -119,7 +119,9 @@ class PypolymlpRepository:
 
     def calc_properties(
         self,
-        vaspruns: Optional[list] = None,
+        vaspruns_prototypes: Optional[list] = None,
+        vaspruns_train: Optional[list] = None,
+        vaspruns_test: Optional[list] = None,
         icsd_ids: Optional[list] = None,
     ):
         """Calculate properties."""
@@ -137,39 +139,44 @@ class PypolymlpRepository:
             )
             calc.load_structures()
             calc.run()
-            if vaspruns is not None:
-                calc.compare_with_dft(vaspruns=vaspruns, icsd_ids=icsd_ids)
+            if vaspruns_prototypes is not None:
+                calc.compare_with_dft(vaspruns=vaspruns_prototypes, icsd_ids=icsd_ids)
                 calc.plot_comparison_with_dft(self._system, name)
 
-                # TODO: Temporarily written
-                calc.calc_energy_distribution(vaspruns, vaspruns)
+            if vaspruns_train is not None and vaspruns_test is not None:
+                calc.calc_energy_distribution(vaspruns_train, vaspruns_test)
                 calc.plot_energy_distribution(self._system, name)
+
             calc.save_properties()
             prototypes_all.append(calc.prototypes)
-
-            plot_eos(calc.prototypes, self._system, name, path_output=target)
-            plot_eos_separate(calc.prototypes, self._system, name, path_output=target)
-            plot_phonon(calc.prototypes, self._system, name, path_output=target)
-            plot_qha(
-                calc.prototypes,
-                self._system,
-                name,
-                target="thermal_expansion",
-                path_output=target,
-            )
-            plot_qha(
-                calc.prototypes,
-                self._system,
-                name,
-                target="bulk_modulus",
-                path_output=target,
-            )
+            self._plot_properties(calc.prototypes, name, target)
 
         plot_eqm_properties(
             prototypes_all,
             self._times,
             self._system,
             path_output=self._entry_path + "/predictions",
+        )
+        return self
+
+    def _plot_properties(self, prototypes: list, name: str, path_output: str):
+        """Plot properties from single MLP."""
+        plot_eos(prototypes, self._system, name, path_output=path_output)
+        plot_eos_separate(prototypes, self._system, name, path_output=path_output)
+        plot_phonon(prototypes, self._system, name, path_output=path_output)
+        plot_qha(
+            prototypes,
+            self._system,
+            name,
+            target="thermal_expansion",
+            path_output=path_output,
+        )
+        plot_qha(
+            prototypes,
+            self._system,
+            name,
+            target="bulk_modulus",
+            path_output=path_output,
         )
         return self
 

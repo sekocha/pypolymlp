@@ -184,9 +184,11 @@ class PypolymlpAutoCalc:
         supercell_matrix = np.diag(prototype.phonon_supercell)
         self._calc.run_qha(distance=0.01, supercell_matrix=supercell_matrix)
         self._calc.write_qha(path=self._path_header + prototype.name)
-        prototype.temperatures = self._calc.temperatures
-        prototype.qha_thermal_expansion = self._calc.thermal_expansion
-        prototype.qha_bulk_modulus = self._calc.bulk_modulus_temperature
+        prototype.set_qha_data(
+            self._calc.temperatures,
+            self._calc.thermal_expansion,
+            self._calc.bulk_modulus_temperature,
+        )
         return prototype
 
     def calc_energy_distribution(
@@ -195,7 +197,7 @@ class PypolymlpAutoCalc:
         vaspruns_test: list,
         functional: str = "PBE",
     ):
-        """Calculate properties for DFT structures."""
+        """Calculate properties for structures in training and test datasets."""
         if self._verbose:
             print("Compute energies for training and test data.")
 
