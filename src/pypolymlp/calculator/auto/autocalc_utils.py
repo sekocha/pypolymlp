@@ -64,6 +64,9 @@ class Prototype:
         """Save properties for prototype."""
         with open(filename, "w") as f:
             save_cell(self.structure_eq, tag="unitcell", file=f)
+            print("structure_type:", self.name, file=f)
+            print("icsd_id:       ", self.icsd_id, file=f)
+            print(file=f)
             print("equilibrium_properties:", file=f)
             print("  energy:      ", self.energy, file=f)
             print("  volume:      ", self.volume, file=f)
@@ -83,11 +86,18 @@ class Prototype:
             print("  gamma:", np.round(gamma, 5), file=f)
             print(file=f)
 
+            print("elastic_constants:", file=f)
+            elastic_constants = np.round(self.elastic_constants, 3)
+            elastic_constants[np.isclose(elastic_constants, 0.0)] = 0.0
+            yaml.dump(elastic_constants.tolist(), f, default_flow_style=False)
+            # for i, e1 in enumerate(self.elastic_constants):
+            #     for j, e2 in enumerate(e1):
+            #         txt = "  c" + str(i + 1) + str(j + 1) + ":"
+            #         print(txt, np.round(e2, 3), file=f)
+            print(file=f)
+
             print("eos_data_mlp:", file=f)
             yaml.dump(self.eos_mlp.tolist(), f, default_flow_style=False)
-            print(file=f)
-            print("eos_data_fit:", file=f)
-            yaml.dump(self.eos_fit.tolist(), f, default_flow_style=False)
 
 
 def get_atomic_size_scales():

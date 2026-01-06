@@ -18,6 +18,7 @@ from pypolymlp.calculator.auto.figures_summary import (
     plot_mlp_distribution,
 )
 from pypolymlp.calculator.auto.pypolymlp_autocalc import PypolymlpAutoCalc
+from pypolymlp.calculator.auto.web import WebContents
 from pypolymlp.core.io_polymlp import find_mlps
 from pypolymlp.postproc.count_time import PolymlpCost
 from pypolymlp.utils.grid_search.optimal import find_optimal_mlps
@@ -159,3 +160,8 @@ class PypolymlpRepository:
             path_output=self._entry_path + "/predictions",
         )
         return self
+
+    def generate_web_contents(self, path_prediction: str = "./"):
+        """Generate web contents."""
+        web = WebContents(path_prediction=path_prediction)
+        web.run()
