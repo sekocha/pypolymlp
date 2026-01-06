@@ -110,7 +110,7 @@ class PypolymlpAutoCalc:
             self._run_eos(prot)
             self._run_elastic(prot, poscar)
             self._run_phonon(prot)
-            # self._run_qha(prot)
+            self._run_qha(prot)
         return self
 
     def save_properties(self):
@@ -200,16 +200,12 @@ class PypolymlpAutoCalc:
             print("Compute energies for training and test data.")
 
         energies_dft, energies_mlp = self._eval_energies(vaspruns_train, functional)
-        self._distribution_train = np.stack(
-            [np.round(energies_dft, 6), np.round(energies_mlp, 6)]
-        ).T
+        self._distribution_train = np.stack([energies_dft, energies_mlp]).T
         energies_dft, energies_mlp = self._eval_energies(vaspruns_test, functional)
-        self._distribution_test = np.stack(
-            [np.round(energies_dft, 6), np.round(energies_mlp, 6)]
-        ).T
+        self._distribution_test = np.stack([energies_dft, energies_mlp]).T
+
         size = self._distribution_train.shape[0] + self._distribution_test.shape[0]
-        filename = self._path_header + "size.dat"
-        with open(filename, "w") as f:
+        with open(self._path_header + "size.dat", "w") as f:
             print(size, file=f)
 
         return self
@@ -226,10 +222,9 @@ class PypolymlpAutoCalc:
             print("Compute energies for structures.")
 
         energies_dft, energies_mlp = self._eval_energies(vaspruns, functional)
-        sorted_indices = energies_dft.argsort()
         names = self._set_structure_names(vaspruns, icsd_ids=icsd_ids)
-        data = np.stack([np.round(energies_dft, 6), np.round(energies_mlp, 6), names]).T
-        self._comparison = data[sorted_indices]
+        data = np.stack([energies_dft, energies_mlp, names]).T
+        self._comparison = data[energies_dft.argsort()]
 
         if filename is None:
             filename = self._path_header + "comparison.dat"
@@ -240,7 +235,12 @@ class PypolymlpAutoCalc:
             self._set_dft_structures(self._calc.structures, icsd_ids)
         return self._comparison
 
-    def _eval_energies(self, vaspruns: list, functional: str = "PBE"):
+    def _eval_energies(
+        self,
+        vaspruns: list,
+        functional: str = "PBE",
+        decimals: int = 6,
+    ):
         """Evaluate MLP energies and DFT cohesive energies"""
         structures, (energies_dft, _, _) = parse_properties_from_vaspruns(vaspruns)
         atomic_energies = self._calc_atomic_energies(structures, functional=functional)
@@ -252,7 +252,7 @@ class PypolymlpAutoCalc:
         n_atom = np.array([np.sum(st.n_atoms) for st in structures])
         energies_dft /= n_atom
         energies_mlp /= n_atom
-        return (energies_dft, energies_mlp)
+        return (np.round(energies_dft, decimals), np.round(energies_mlp, decimals))
 
     def _calc_atomic_energies(self, structures: list, functional: str = "PBE"):
         """Calculate atomic energies for structures."""
