@@ -226,7 +226,8 @@ void parse_polymlp(
 ){
 
     fp.force = true;
-    auto yaml = ParsePolymlpYaml("polymlp.yaml");
+    // auto yaml = ParsePolymlpYaml("polymlp.yaml");
+    auto yaml = ParsePolymlpYaml(file);
 
     ele = yaml.get_elements();
     fp.n_type = int(ele.size());
