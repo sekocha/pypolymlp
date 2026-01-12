@@ -8,6 +8,7 @@ from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.postproc.count_time import PolymlpCost
 from pypolymlp.utils.dataset.auto_divide import auto_divide
 from pypolymlp.utils.grid_search.optimal import find_optimal_mlps
+from pypolymlp.utils.kim_utils import convert_polymlp_to_kim_model
 from pypolymlp.utils.vasp_utils import (
     load_electronic_properties_from_vasprun,
     print_poscar,
@@ -190,3 +191,26 @@ class PypolymlpUtils:
     ):
         """Save structure in poscar format."""
         write_poscar_file(structure, filename=filename)
+
+    def generate_kim_model(
+        self,
+        polymlp_file: str,
+        project_id: int = 0,
+        project_version: int = 0,
+        model_driver: str = "Polymlp__MD_000000123456_000",
+    ):
+        """Generate potential model for KIM-API.
+
+        Parameters
+        ----------
+        polymlp_file: File of polynomial MLP.
+        project_id: Identifier for KIM-API potential model.
+        project_version: Version for KIM-API potential model.
+        model_driver: Name of KIM-API model driver for polynomial MLP.
+        """
+        convert_polymlp_to_kim_model(
+            polymlp_file,
+            project_id=project_id,
+            project_version=project_version,
+            model_driver=model_driver,
+        )
