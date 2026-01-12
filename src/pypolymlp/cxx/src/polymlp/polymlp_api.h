@@ -102,6 +102,11 @@ class PolymlpAPI {
     Maps& get_maps();
     const ModelParams& get_model_params() const;
     int get_n_variables();
+
+    int convert_unit(
+        const double energy_conv,
+        const double length_conv,
+        const double inv_length_conv);
 };
 
 #endif

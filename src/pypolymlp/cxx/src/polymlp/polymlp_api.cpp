@@ -195,3 +195,15 @@ int PolymlpAPI::get_n_variables() {
         std::cerr << "No method is found for getting n_variables." << std::endl;
         exit(8);
 }
+
+int PolymlpAPI::convert_unit(
+    const double energy_conv,
+    const double length_conv,
+    const double inv_length_conv){
+    for (auto& p: fp.params){
+        p[0] *= inv_length_conv * inv_length_conv;
+        p[1] *= length_conv;
+    }
+    pmodel.convert_unit(energy_conv);
+    return 0;
+}

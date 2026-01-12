@@ -79,6 +79,8 @@ class Potential {
         vector1dc& prod_sum_f
     );
 
+    int convert_unit(const double energy_conv);
+
 };
 
 #endif
