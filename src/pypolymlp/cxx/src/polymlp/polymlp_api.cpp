@@ -191,9 +191,10 @@ Maps& PolymlpAPI::get_maps() {
 
 int PolymlpAPI::get_n_variables() {
     if (use_features) return features.get_n_variables();
-    else
+    else {
         std::cerr << "No method is found for getting n_variables." << std::endl;
         exit(8);
+    }
 }
 
 int PolymlpAPI::convert_unit(
@@ -204,6 +205,8 @@ int PolymlpAPI::convert_unit(
         p[0] *= inv_length_conv * inv_length_conv;
         p[1] *= length_conv;
     }
+    fp.cutoff *= length_conv;
+    pmodel = Potential(fp, pot);
     pmodel.convert_unit(energy_conv);
     return 0;
 }
