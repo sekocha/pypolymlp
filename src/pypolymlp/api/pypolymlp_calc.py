@@ -118,7 +118,7 @@ class PypolymlpCalc:
 
         self.structures = [phonopy_cell_to_structure(s) for s in structures_ph]
 
-    def save_poscars(self, filename="POSCAR_pypolymlp", prefix="POSCAR"):
+    def save_poscars(self, filename: str = "POSCAR_pypolymlp", prefix: str = "POSCAR"):
         """Save structures to POSCAR files."""
         if len(self.structures) == 1:
             write_poscar_file(self.first_structure, filename=filename)
@@ -231,7 +231,7 @@ class PypolymlpCalc:
         self._elastic.run()
         return self._elastic.elastic_constants
 
-    def write_elastic_constants(self, filename="polymlp_elastic.yaml"):
+    def write_elastic_constants(self, filename: str = "polymlp_elastic.yaml"):
         """Save elastic constants to a file."""
         self._elastic.write_elastic_constants(filename=filename)
 
@@ -283,7 +283,7 @@ class PypolymlpCalc:
         )
         return self
 
-    def write_eos(self, filename="polymlp_eos.yaml"):
+    def write_eos(self, filename: str = "polymlp_eos.yaml"):
         """Save EOS to a file."""
         self._eos.write_eos_yaml(filename=filename)
 
@@ -354,7 +354,7 @@ class PypolymlpCalc:
         )
         return self
 
-    def write_phonon(self, path="./"):
+    def write_phonon(self, path: str = "./"):
         """Save results from phonon calculations."""
         self._phonon.write_properties(path_output=path)
         return self
@@ -402,7 +402,6 @@ class PypolymlpCalc:
             supercell_matrix=supercell_matrix,
             properties=self._prop,
         )
-
         self._qha.run(
             distance=distance,
             mesh=mesh,
@@ -415,7 +414,7 @@ class PypolymlpCalc:
         )
         return self
 
-    def write_qha(self, path="./"):
+    def write_qha(self, path: str = "./"):
         """Save results from QHA phonon calculations."""
         self._qha.write_qha(path_output=path)
         return self
@@ -686,6 +685,17 @@ class PypolymlpCalc:
         return (self._eos._e0, self._eos._v0, self._eos._b0)
 
     @property
+    def eos_curve_data(self):
+        """Return EOS curves and fitted one.
+
+        Returns
+        -------
+
+        equilibrium energy, equilibrium volume, bulk modulus
+        """
+        return (self._eos._eos_data, self._eos._eos_fit_data)
+
+    @property
     def go_data(self):
         """Return results of geometry optimization.
 
@@ -699,26 +709,30 @@ class PypolymlpCalc:
 
     @property
     def instance_phonopy(self):
+        """Return phonopy instance."""
         return self._phonon.phonopy
 
+    @property
+    def phonon_dos(self):
+        """Return phonon DOS."""
+        return self._phonon.total_dos
 
-# def set_structures(args):
-#
-#     if args.phono3py_yaml is not None:
-#         from pypolymlp.core.interface_phono3py import (
-#             parse_structures_from_phono3py_yaml,
-#         )
-#
-#         print("Loading", args.phono3py_yaml)
-#         if args.phono3py_yaml_structure_ids is not None:
-#             r1, r2 = args.phono3py_yaml_structure_ids
-#             select_ids = np.arange(r1, r2)
-#         else:
-#             select_ids = None
-#
-#         structures = parse_structures_from_phono3py_yaml(
-#             args.phono3py_yaml, select_ids=select_ids
-#         )
-#
-#     return structures
-#
+    @property
+    def is_imaginary(self):
+        """Return if phonon modes exhibit imaginary frequencies."""
+        return self._phonon.is_imaginary
+
+    @property
+    def temperatures(self):
+        """Return tempeartures."""
+        return self._qha._temperatures[:-1]
+
+    @property
+    def bulk_modulus_temperature(self):
+        """Return bulk modulus with respect to temperature."""
+        return self._qha.bulk_modulus_temperature
+
+    @property
+    def thermal_expansion(self):
+        """Return thermal_expansion with respect to temperature."""
+        return self._qha.thermal_expansion

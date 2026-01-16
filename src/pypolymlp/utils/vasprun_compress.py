@@ -15,7 +15,7 @@ def prettify(elem):
     return reparsed.toprettyxml(indent="", newl="")
 
 
-def compress_vaspruns(vasprun):
+def compress_vaspruns(vasprun: str, write_file: bool = True):
     """Compress vasprun.xml for single point calculation to a file."""
     try:
         root = ET.parse(vasprun).getroot()
@@ -38,13 +38,14 @@ def compress_vaspruns(vasprun):
     c1.extend([e, f, s, st, st2, st3])
     m1.append(c1)
 
-    with open(vasprun + ".polymlp", "w") as f:
-        print(prettify(m1), file=f)
+    if write_file:
+        with open(vasprun + ".polymlp", "w") as f:
+            print(prettify(m1), file=f)
 
     return True
 
 
-def compress_vaspruns_md(vasprun):
+def compress_vaspruns_md(vasprun: str, write_file: bool = True):
     """Compress vasprun.xml for MD calculation to a file."""
     try:
         root = ET.parse(vasprun).getroot()
@@ -68,7 +69,8 @@ def compress_vaspruns_md(vasprun):
         c1.extend([e, f, s, st])
         m1.append(c1)
 
-    with open(vasprun + ".polymlp", "w") as f:
-        print(prettify(m1), file=f)
+    if write_file:
+        with open(vasprun + ".polymlp", "w") as f:
+            print(prettify(m1), file=f)
 
     return True
