@@ -117,3 +117,19 @@ def convert_to_yaml(
     """Convert text format to yaml format."""
     params, coeffs = load_mlp(txt)
     save_mlp(params, coeffs, np.ones(len(coeffs)), filename=yaml)
+
+
+def is_legacy(filename: Union[str, io.IOBase] = "polymlp.yaml"):
+    """Check if MLP is a legacy one.
+
+    Return
+    ------
+    legacy: If MLP is a legacy one, return True.
+    """
+    if not isinstance(filename, io.IOBase):
+        filename = open(filename)
+
+    line = filename.readline()
+    legacy = True if "# ele" in line else False
+    filename.seek(0)
+    return legacy

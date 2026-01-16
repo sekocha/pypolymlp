@@ -195,6 +195,7 @@ class PypolymlpUtils:
     def generate_kim_model(
         self,
         polymlp_file: str,
+        performance_level: int = 1,
         project_id: int = 0,
         project_version: int = 0,
         model_driver: str = "Polymlp__MD_000000123456_000",
@@ -210,6 +211,7 @@ class PypolymlpUtils:
         """
         convert_polymlp_to_kim_model(
             polymlp_file,
+            performance_level=performance_level,
             project_id=project_id,
             project_version=project_version,
             model_driver=model_driver,
