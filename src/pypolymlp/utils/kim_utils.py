@@ -1,13 +1,14 @@
 """Utility functions for KIM-API."""
 
 import datetime
+import glob
 import os
 import shutil
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 
-from pypolymlp.core.io_polymlp import convert_to_yaml, is_legacy, load_mlp
+from pypolymlp.core.io_polymlp import convert_to_yaml, is_hybrid, is_legacy, load_mlp
 
 
 def generate_kim_files(
@@ -35,6 +36,8 @@ def generate_kim_files(
         print(" ".join(elements), file=f)
         print(file=f)
 
+    mlp_files = sorted(glob.glob(path + "polymlp.yaml*"))
+    mlp_files = [mlp.split("/")[-1] for mlp in mlp_files]
     np.set_printoptions(formatter={"str_kind": lambda x: f'"{x}"'})
     with open(path + "CMakeLists.txt", "w") as f:
         print("#", file=f)
@@ -54,7 +57,8 @@ def generate_kim_files(
         print("  NAME            ${PROJECT_NAME}", file=f)
         print('  DRIVER_NAME     "' + model_driver + '"', file=f)
         print('  PARAMETER_FILES "polymlp.settings"', file=f)
-        print('                  "polymlp.yaml"', file=f)
+        for mlp in mlp_files:
+            print('                  "' + mlp + '"', file=f)
         print("  )", file=f)
 
     title = (
@@ -82,7 +86,7 @@ def generate_kim_files(
 
 
 def convert_polymlp_to_kim_model(
-    polymlp_file: str,
+    polymlp_files: Union[str, list[str]],
     performance_level: int = 1,
     project_id: int = 0,
     project_version: int = 0,
@@ -90,16 +94,20 @@ def convert_polymlp_to_kim_model(
 ):
     """Convert polymlp to KIM-API model."""
     tmp_path = "./Polymlp__MO_tmp/"
-    polymlp_yaml = tmp_path + "polymlp.yaml"
     os.makedirs(tmp_path, exist_ok=True)
 
-    if is_legacy(polymlp_file):
-        convert_to_yaml(polymlp_file, yaml=polymlp_yaml)
-    else:
-        shutil.copy(polymlp_file, polymlp_yaml)
+    files = sorted(polymlp_files) if is_hybrid(polymlp_files) else [polymlp_files]
+    for i, poly_file in enumerate(sorted(files)):
+        polymlp_yaml = tmp_path + "polymlp.yaml" + "." + str(i + 1)
+        if is_legacy(poly_file):
+            convert_to_yaml(poly_file, yaml=polymlp_yaml)
+        else:
+            shutil.copy(poly_file, polymlp_yaml)
 
-    params, _ = load_mlp(polymlp_yaml)
-    elements = params.elements
+        if i == 0:
+            params, _ = load_mlp(polymlp_yaml)
+            elements = params.elements
+
     dt = datetime.datetime.now()
     polymlp_year = dt.year
 

@@ -62,16 +62,10 @@ def load_mlp(filename: Union[str, io.IOBase] = "polymlp.yaml"):
     if not isinstance(filename, io.IOBase):
         filename = open(filename)
 
-    line = filename.readline()
-    legacy = True if "# ele" in line else False
-
-    filename.seek(0)
+    legacy = is_legacy(filename)
     if legacy:
-        params, coeffs = load_mlp_lammps(filename)
-    else:
-        params, coeffs = load_mlp_yaml(filename)
-
-    return params, coeffs
+        return load_mlp_lammps(filename)
+    return load_mlp_yaml(filename)
 
 
 def load_mlps(file_list_or_file):
@@ -133,3 +127,22 @@ def is_legacy(filename: Union[str, io.IOBase] = "polymlp.yaml"):
     legacy = True if "# ele" in line else False
     filename.seek(0)
     return legacy
+
+
+def is_hybrid(filename: Union[str, io.IOBase, list] = "polymlp.yaml"):
+    """Check if MLP is a hybrid one.
+
+    Return
+    ------
+    legacy: If MLP is a hybrid-type one, return True.
+    """
+    if isinstance(filename, io.IOBase):
+        return False
+    if isinstance(filename, str):
+        return False
+    if isinstance(filename, (list, tuple, np.ndarray)):
+        if len(filename) == 1:
+            return False
+        return True
+    else:
+        raise RuntimeError("filename must be strings or array-type.")
