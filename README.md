@@ -112,6 +112,7 @@ Starting from version 0.9.0, the files are generated in YAML format as `polymlp.
 Both formats are supported by the command-line interface and the Python API.
 The following calculations can be performed using **pypolymlp** with the polynomial MLP files `polymlp.yaml` or `polymlp.lammps`.
 
+- [Notes on hybrid polynomial MLPs](docs/calc_hybrid.md)
 - [Energy, forces, stress tensor](docs/calc_property.md)
 - [Equation of states](docs/calc_eos.md)
 - [Local geometry optimization](docs/calc_geometry.md)
