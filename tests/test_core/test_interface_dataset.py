@@ -41,6 +41,8 @@ def test_set_dataset_from_structures(structure_rocksalt):
     )
     forces1 = dft1.forces.reshape((2, 8, 3))
     positions1 = [st.positions for st in dft1.structures]
+    elements1 = [st.elements for st in dft1.structures]
+    types1 = [st.types for st in dft1.structures]
 
     element_order = ("O", "Mg")
     dft2 = set_dataset_from_structures(
@@ -52,6 +54,10 @@ def test_set_dataset_from_structures(structure_rocksalt):
     order = [4, 5, 6, 7, 0, 1, 2, 3]
     forces2 = dft2.forces.reshape((2, 8, 3))[:, order, :]
     positions2 = [st.positions[:, order] for st in dft2.structures]
+    elements2 = [np.array(st.elements)[order] for st in dft2.structures]
+    types2 = [np.array(st.types) for st in dft2.structures]
 
     np.testing.assert_allclose(forces1, forces2)
     np.testing.assert_allclose(positions1, positions2)
+    np.testing.assert_equal(elements1, elements2)
+    np.testing.assert_equal(types1, types2)
