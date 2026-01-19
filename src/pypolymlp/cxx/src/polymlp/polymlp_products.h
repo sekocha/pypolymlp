@@ -11,7 +11,7 @@
 #include "polymlp_mlpcpp.h"
 
 template<typename T>
-T compute_product(const vector1i& prod, const std::vector<T>& element){
+inline T compute_product(const vector1i& prod, const std::vector<T>& element){
 
     const size_t n = prod.size();
     if (n == 0) return 1.0;
@@ -26,14 +26,15 @@ template<typename T>
 void compute_products(
     const vector2i& map, const std::vector<T>& element, std::vector<T>& prod_vals
 ){
-    prod_vals = std::vector<T>(map.size());
+    const size_t m = map.size();
+    prod_vals.resize(m);
+
     int idx(0);
     for (const auto& prod: map){
         prod_vals[idx] = compute_product<T>(prod, element);
         ++idx;
     }
 }
-
 
 double compute_product_real(const vector1i& prod, const vector1dc& element);
 void compute_products_real(
@@ -42,8 +43,10 @@ void compute_products_real(
     vector1d& prod_vals
 );
 
+inline double prod_real(const dc val1, const dc val2){
+    return val1.real() * val2.real() - val1.imag() * val2.imag();
+}
 
-double prod_real(const dc& val1, const dc& val2);
-dc prod_real_and_complex(const double val1, const dc& val2);
+// dc prod_real_and_complex(const double val1, const dc& val2);
 
 #endif

@@ -32,10 +32,6 @@ double compute_product_real(const vector1i& prod, const vector1dc& element){
     return prod_real(val_p, element[prod[0]]);
 }
 
-double prod_real(const dc& val1, const dc& val2){
-    return val1.real() * val2.real() - val1.imag() * val2.imag();
-}
-
-dc prod_real_and_complex(const double val1, const dc& val2){
-    return dc(val1 * val2.real(), val1 * val2.imag());
-}
+// dc prod_real_and_complex(const double val1, const dc& val2){
+//     return dc(val1 * val2.real(), val1 * val2.imag());
+// }
