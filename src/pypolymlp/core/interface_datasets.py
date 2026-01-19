@@ -27,6 +27,7 @@ def permute_atoms(
         elements.extend([ele for _ in range(n_match)])
         types.extend([atomtype for _ in range(n_match)])
         force_permute.extend(force[:, ids].T)
+
     positions = np.array(positions).T
     force_permute = np.array(force_permute).T
 
@@ -57,11 +58,15 @@ def set_dataset_from_structures(
     if stresses is None:
         stresses = [np.zeros((3, 3)) for _ in energies]
 
+    structures_data = []
     forces_data, stresses_data, volumes_data = [], [], []
     for st, force_st, sigma in zip(structures, forces, stresses):
         if element_order is not None:
-            st, force_st = permute_atoms(st, force_st, element_order)
-        force_ravel = np.ravel(force_st, order="F")
+            st1, force_st1 = permute_atoms(st, force_st, element_order)
+        else:
+            st1, force_st1 = st, force_st
+        structures_data.append(st1)
+        force_ravel = np.ravel(force_st1, order="F")
         forces_data.extend(force_ravel)
         if sigma is not None:
             s = [
@@ -91,7 +96,7 @@ def set_dataset_from_structures(
         forces=np.array(forces_data),
         stresses=np.array(stresses_data),
         volumes=np.array(volumes_data),
-        structures=structures,
+        structures=structures_data,
         total_n_atoms=total_n_atoms,
         files=files,
         elements=elements,

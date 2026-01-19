@@ -4,16 +4,18 @@ import datetime
 import glob
 import os
 import shutil
+import tarfile
 from typing import Optional, Union
 
 import numpy as np
 
-from pypolymlp.core.io_polymlp import convert_to_yaml, is_hybrid, is_legacy, load_mlp
+from pypolymlp.core.io_polymlp import convert_to_yaml, is_legacy, load_mlp
 
 
 def generate_kim_files(
     path: str,
     elements: list,
+    author: str = "Seko",
     polymlp_year: int = 2026,
     performance_level: int = 1,
     project_id: int = 0,
@@ -22,10 +24,15 @@ def generate_kim_files(
     model_driver: str = "Polymlp__MD_000000123456_000",
 ):
     """Generate potential model files required for KIM model."""
+    mlp_files = sorted(glob.glob(path + "polymlp.yaml*"))
+    mlp_files = [mlp.split("/")[-1] for mlp in mlp_files]
+
+    hybrid = "hybrid" if len(mlp_files) > 1 else ""
+
     system = "-".join(elements)
     project = (
-        "Polymlp_Seko",
-        str(polymlp_year) + "p" + str(performance_level),
+        "Polymlp_" + author,
+        str(polymlp_year) + "p" + str(performance_level) + hybrid,
         "".join(elements) + "__MO",
         str(project_id).zfill(12),
         str(project_version).zfill(3),
@@ -36,8 +43,6 @@ def generate_kim_files(
         print(" ".join(elements), file=f)
         print(file=f)
 
-    mlp_files = sorted(glob.glob(path + "polymlp.yaml*"))
-    mlp_files = [mlp.split("/")[-1] for mlp in mlp_files]
     np.set_printoptions(formatter={"str_kind": lambda x: f'"{x}"'})
     with open(path + "CMakeLists.txt", "w") as f:
         print("#", file=f)
@@ -85,20 +90,34 @@ def generate_kim_files(
     return project
 
 
-def convert_polymlp_to_kim_model(
+def copy_mlps(
     polymlp_files: Union[str, list[str]],
-    performance_level: int = 1,
-    project_id: int = 0,
-    project_version: int = 0,
-    model_driver: str = "Polymlp__MD_000000123456_000",
+    path: str = "./Polymlp__MO_tmp/",
 ):
-    """Convert polymlp to KIM-API model."""
-    tmp_path = "./Polymlp__MO_tmp/"
-    os.makedirs(tmp_path, exist_ok=True)
+    """Copy mlp files to a directory."""
+    os.makedirs(path, exist_ok=True)
 
-    files = sorted(polymlp_files) if is_hybrid(polymlp_files) else [polymlp_files]
+    files = [polymlp_files] if isinstance(polymlp_files, str) else polymlp_files
+
+    use_tar = False
+    for file1 in files:
+        if ".lammps.tar.gz" in file1:
+            use_tar = True
+            file_tar_gz = file1
+            break
+
+    if use_tar:
+        tarpath = "/".join(file_tar_gz.split("/")[:-1])
+        with tarfile.open(file_tar_gz) as tar:
+            tar.extractall(path=tarpath)
+
+        files = glob.glob(file_tar_gz.replace(".tar.gz", "") + "*")
+        files = [file1 for file1 in files if ".lammps.tar.gz" not in file1]
+
     for i, poly_file in enumerate(sorted(files)):
-        polymlp_yaml = tmp_path + "polymlp.yaml" + "." + str(i + 1)
+        polymlp_yaml = path + "polymlp.yaml"
+        if len(files) > 1:
+            polymlp_yaml += "." + str(i + 1)
         if is_legacy(poly_file):
             convert_to_yaml(poly_file, yaml=polymlp_yaml)
         else:
@@ -108,6 +127,20 @@ def convert_polymlp_to_kim_model(
             params, _ = load_mlp(polymlp_yaml)
             elements = params.elements
 
+    return elements
+
+
+def convert_polymlp_to_kim_model(
+    polymlp_files: Union[str, list[str]],
+    author: str = "Seko",
+    performance_level: int = 1,
+    project_id: int = 0,
+    project_version: int = 0,
+    model_driver: str = "Polymlp__MD_000000123456_000",
+):
+    """Convert polymlp to KIM-API model."""
+    tmp_path = "./Polymlp__MO_tmp/"
+    elements = copy_mlps(polymlp_files, path=tmp_path)
     dt = datetime.datetime.now()
     polymlp_year = dt.year
 
@@ -121,6 +154,7 @@ def convert_polymlp_to_kim_model(
     project = generate_kim_files(
         tmp_path,
         elements,
+        author=author,
         polymlp_year=polymlp_year,
         performance_level=performance_level,
         project_id=project_id,

@@ -195,6 +195,7 @@ class PypolymlpUtils:
     def generate_kim_model(
         self,
         polymlp_file: str,
+        author: str = "Seko",
         performance_level: int = 1,
         project_id: int = 0,
         project_version: int = 0,
@@ -205,12 +206,14 @@ class PypolymlpUtils:
         Parameters
         ----------
         polymlp_file: File of polynomial MLP.
+        author: Developer of polynomial MLP.
         project_id: Identifier for KIM-API potential model.
         project_version: Version for KIM-API potential model.
         model_driver: Name of KIM-API model driver for polynomial MLP.
         """
         convert_polymlp_to_kim_model(
             polymlp_file,
+            author=author,
             performance_level=performance_level,
             project_id=project_id,
             project_version=project_version,

@@ -77,6 +77,40 @@ def test_mlp_devel_api_single_dataset():
     assert error_train1["stress"] == pytest.approx(0.015299231964527185, abs=1e-5)
 
 
+def test_mlp_devel_api_single_dataset2():
+    polymlp = Pypolymlp()
+    polymlp.set_params(
+        elements=["O", "Mg"],
+        cutoff=8.0,
+        model_type=3,
+        max_p=2,
+        gtinv_order=3,
+        gtinv_maxl=[4, 4],
+        gaussian_params2=[0.0, 7.0, 8],
+        atomic_energy=[-1.85321219, -0.00040000],
+    )
+
+    train_vaspruns1 = glob.glob(
+        str(cwd) + "/data-MgO/vaspruns/train1/vasprun-*.xml.polymlp"
+    )
+    test_vaspruns1 = glob.glob(
+        str(cwd) + "/data-MgO/vaspruns/test1/vasprun-*.xml.polymlp"
+    )
+    polymlp.set_datasets_vasp(train_vaspruns1, test_vaspruns1)
+
+    polymlp.run(verbose=True)
+    error_train1 = polymlp.summary.error_train["data1"]
+    error_test1 = polymlp.summary.error_test["data2"]
+
+    assert error_test1["energy"] == pytest.approx(5.7907010720826916e-05, abs=1e-8)
+    assert error_test1["force"] == pytest.approx(0.0048161516715470466, abs=1e-6)
+    assert error_test1["stress"] == pytest.approx(0.015092685843715342, abs=1e-5)
+
+    assert error_train1["energy"] == pytest.approx(3.149610950737406e-05, abs=1e-8)
+    assert error_train1["force"] == pytest.approx(0.003828784221661806, abs=1e-6)
+    assert error_train1["stress"] == pytest.approx(0.015299231964527185, abs=1e-5)
+
+
 def test_mlp_devel_api_multidatasets():
     polymlp = Pypolymlp()
     polymlp.set_params(
