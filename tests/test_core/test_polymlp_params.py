@@ -125,7 +125,7 @@ def test_set_all_params():
     )
 
     assert params.n_type == 2
-    assert params.elements == ("Ag", "Au")
+    np.testing.assert_equal(params.elements, ["Ag", "Au"])
     model = params.model
     assert model.cutoff == pytest.approx(6.0)
     assert model.model_type == 4
@@ -134,11 +134,12 @@ def test_set_all_params():
     assert model.feature_type == "gtinv"
     gtinv = params.model.gtinv
     assert gtinv.order == 3
-    assert gtinv.max_l == (4, 4)
+    np.testing.assert_equal(gtinv.max_l, (4, 4))
     assert len(gtinv.lm_seq) == 20
     assert len(gtinv.l_comb) == 20
     assert len(gtinv.lm_coeffs) == 20
     assert model.pair_type == "gaussian"
+
     np.testing.assert_allclose(
         model.pair_params,
         [
