@@ -83,7 +83,7 @@ def set_active_gaussian_params(
         for ele_pair, dis_array in distance.items():
             if len(ele_pair) != 2:
                 raise RuntimeError("Keys of distance must be element pair.")
-            if isinstance(dis_array, (list, tuple, np.ndarray)):
+            if not isinstance(dis_array, (list, tuple, np.ndarray)):
                 raise RuntimeError("Values of distance must be array-type.")
 
         cond = True
