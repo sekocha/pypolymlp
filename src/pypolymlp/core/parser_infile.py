@@ -5,51 +5,28 @@ from typing import Any, Optional
 
 import numpy as np
 
-from pypolymlp.core.dataset import Dataset
 from pypolymlp.core.utils import strtobool
 
 
 class InputParser:
     """Class of input parser."""
 
-    def __init__(self, filename: str, prefix: Optional[str] = None):
+    def __init__(self, filename: str):
         """Init method."""
-        self._prefix = prefix
-        self._data = None
-        self._distance = None
-        self._train = None
-        self._test = None
-        self._train_test_data = None
-        self._md = None
-
-        self._parse_infile(filename)
-
-    def _parse_infile(self, filename: str):
-        """Parse parameters from input file."""
-        f = open(filename)
-        lines = f.readlines()
-        f.close()
+        with open(filename) as f:
+            lines = f.readlines()
 
         self._data = dict()
-        self._distance = []
-        self._train, self._test, self._train_test_data = [], [], []
-        self._md = []
+        self._distance, self._dataset_strings = [], []
         for line in lines:
             d = line.split()
             if len(d) > 1:
-                self._data[d[0]] = d[1:]
                 if "distance" == d[0]:
                     self._distance.append(d[1:])
-                elif d[0] in ["train_data", "test_data", "data", "data_md"]:
-                    dataset = Dataset(string_list=d[1:], prefix=self._prefix)
-                    if d[0] == "train_data":
-                        self._train.append(dataset)
-                    elif d[0] == "test_data":
-                        self._test.append(dataset)
-                    elif d[0] == "data":
-                        self._train_test_data.append(dataset)
-                    elif d[0] == "data_md":
-                        self._md.append(dataset)
+                elif "data" in d[0]:
+                    self._dataset_strings.append(d)
+                else:
+                    self._data[d[0]] = d[1:]
         return self
 
     def get_params(
@@ -105,21 +82,25 @@ class InputParser:
         return distance_dict
 
     @property
-    def train(self):
-        """Return training datasets."""
-        return self._train
+    def dataset_strings(self):
+        """Return dataset strings from file."""
+        return self._dataset_strings
 
-    @property
-    def test(self):
-        """Return test datasets."""
-        return self._test
-
-    @property
-    def train_test(self):
-        """Return datasets including training and test data."""
-        return self._train_test_data
-
-    @property
-    def md(self):
-        """Return MD datasets."""
-        return self._md
+        # self._train, self._test, self._train_test_data = [], [], []
+        # self._md = []
+        # for line in lines:
+        #     d = line.split()
+        #     if len(d) > 1:
+        #         self._data[d[0]] = d[1:]
+        #         if "distance" == d[0]:
+        #             self._distance.append(d[1:])
+        #         elif d[0] in ["train_data", "test_data", "data", "data_md"]:
+        #             dataset = Dataset(string_list=d[1:], prefix_location=self._prefix)
+        #             if d[0] == "train_data":
+        #                 self._train.append(dataset)
+        #             elif d[0] == "test_data":
+        #                 self._test.append(dataset)
+        #             elif d[0] == "data":
+        #                 self._train_test_data.append(dataset)
+        #             elif d[0] == "data_md":
+        #                 self._md.append(dataset)

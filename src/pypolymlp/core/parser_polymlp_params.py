@@ -6,7 +6,7 @@ from typing import Literal, Optional, Union
 import numpy as np
 
 from pypolymlp.core.data_format import PolymlpModelParams, PolymlpParams
-from pypolymlp.core.dataset import Dataset
+from pypolymlp.core.dataset import Dataset, DatasetList
 from pypolymlp.core.parser_infile import InputParser
 from pypolymlp.core.polymlp_params import (
     set_active_gaussian_params,
@@ -16,85 +16,45 @@ from pypolymlp.core.polymlp_params import (
 )
 
 
-def set_data_locations(
-    parser: InputParser,
-    include_force: bool = True,
-    train_ratio: float = 0.9,
-):
-    """Set locations of data for multiple datasets."""
-    dft_train, dft_test = [], []
-    for dataset in parser.train:
-        if not include_force:
-            dataset.include_force = False
-        dft_train.append(dataset)
-
-    for dataset in parser.test:
-        if not include_force:
-            dataset.include_force = False
-        dft_test.append(dataset)
-
-    for dataset in parser.train_test:
-        if not include_force:
-            dataset.include_force = False
-        train, test = dataset.split_train_test(train_ratio=train_ratio)
-        dft_train.append(train)
-        dft_test.append(test)
-
-    for dataset in parser.md:
-        if not include_force:
-            dataset.include_force = False
-        dataset.split = False
-        dft_train.append(dataset)
-
-    return dft_train, dft_test
-
-
 class ParamsParser:
     """Class of input parameter parser."""
 
-    def __init__(
-        self,
-        filename: str,
-        parse_vasprun_locations: bool = True,
-        prefix: Optional[str] = None,
-        train_ratio: float = 0.9,
-    ):
-        """Init class.
+    def __init__(self, filename: str, verbose: bool = False):
+        """Init method.
 
         Parameters
         ----------
         filename: File of input parameters for single polymlp (e.g., polymlp.in).
         """
-        self.parser = InputParser(filename, prefix=prefix)
-        include_force, include_stress = self._set_force_tags()
-        self.include_force = include_force
-        self._train_ratio = train_ratio
+        self._parser = InputParser(filename, verbose=verbose)
+        self._verbose = verbose
 
-        elements, n_type, atomic_energy = self._set_element_properties()
-        self._elements = elements
+        self._include_force = None
+        self._elements = None
+        self._params = None
+
+        self._train = None
+        self._test = None
+
+    def set_params(self):
+        """Get parameters from file and set them."""
+        include_force, include_stress = self._get_force_tags()
+        elements, n_type, atom_e = self._get_element_properties()
+
         rearrange = self.parser.get_params(
-            "rearrange_by_elements",
-            default=True,
-            dtype=bool,
+            "rearrange_by_elements", default=True, dtype=bool
         )
         element_order = elements if rearrange else None
+        dataset_type = self._parser.get_params("dataset_type", default="vasp")
+
         alphas = self._get_regression_params()
         model = self._get_potential_model_params(n_type)
-
-        if parse_vasprun_locations:
-            dataset_type = self.parser.get_params("dataset_type", default="vasp")
-            dft_train, dft_test = self._get_dataset(dataset_type)
-        else:
-            dataset_type = "vasp"
-            dft_train, dft_test = None, None
 
         self._params = PolymlpParams(
             n_type=n_type,
             elements=elements,
             model=model,
-            atomic_energy=atomic_energy,
-            dft_train=dft_train,
-            dft_test=dft_test,
+            atomic_energy=atom_e,
             regression_alpha=alphas,
             include_force=include_force,
             include_stress=include_stress,
@@ -103,32 +63,33 @@ class ParamsParser:
         )
 
         if dataset_type == "electron":
-            self._params.temperature = self.parser.get_params(
+            self._params.temperature = self._parser.get_params(
                 "temperature", default=300, dtype=float
             )
-            self._params.electron_property = self.parser.get_params(
+            self._params.electron_property = self._parser.get_params(
                 "electron_property", default="free_energy", dtype=str
             )
+        return self
 
-    def _set_force_tags(self):
-        """Set include_force and include_stress."""
-        include_force = self.parser.get_params(
-            "include_force",
-            default=True,
-            dtype=bool,
+    def _get_force_tags(self):
+        """Return include_force and include_stress."""
+        include_force = self._parser.get_params(
+            "include_force", default=True, dtype=bool
         )
         if include_force:
-            include_stress = self.parser.get_params(
+            include_stress = self._parser.get_params(
                 "include_stress", default=True, dtype=bool
             )
         else:
             include_stress = False
+
+        self._include_force = include_force
         return include_force, include_stress
 
-    def _set_element_properties(self):
-        """Set properties for identifying elements."""
-        n_type = self.parser.get_params("n_type", default=1, dtype=int)
-        elements = self.parser.get_params(
+    def _get_element_properties(self):
+        """Return properties for identifying elements."""
+        n_type = self._parser.get_params("n_type", default=1, dtype=int)
+        elements = self._parser.get_params(
             "elements",
             size=n_type,
             default=None,
@@ -137,18 +98,19 @@ class ParamsParser:
             return_array=True,
         )
         d_atom_e = [0.0 for i in range(n_type)]
-        atom_e = self.parser.get_params(
+        atom_e = self._parser.get_params(
             "atomic_energy",
             size=n_type,
             default=d_atom_e,
             dtype=float,
             return_array=True,
         )
+        self._elements = elements
         return elements, n_type, tuple(atom_e)
 
     def _get_regression_params(self):
         """Set regularization parameters in regression."""
-        alpha_params = self.parser.get_params(
+        alpha_params = self._parser.get_params(
             "reg_alpha_params",
             size=3,
             default=(-3.0, 1.0, 5),
@@ -158,12 +120,36 @@ class ParamsParser:
         alphas = set_regression_alphas(alpha_params)
         return alphas
 
+    def _get_potential_model_params(self, n_type: int):
+        """Set parameters for identifying potential model."""
+        cutoff = self._parser.get_params("cutoff", default=6.0, dtype=float)
+        model_type = self._parser.get_params("model_type", default=1, dtype=int)
+        max_p = self._parser.get_params("max_p", default=1, dtype=int)
+        feature_type = self._parser.get_params("feature_type", default="gtinv")
+
+        gtinv_params, max_l = self._get_gtinv_params(n_type, feature_type)
+        pair_params, pair_params_active, pair_cond = self._get_pair_params(cutoff)
+
+        model = PolymlpModelParams(
+            cutoff,
+            model_type,
+            max_p,
+            max_l,
+            feature_type=feature_type,
+            gtinv=gtinv_params,
+            pair_type="gaussian",
+            pair_conditional=pair_cond,
+            pair_params=pair_params,
+            pair_params_conditional=pair_params_active,
+        )
+        return model
+
     def _get_gtinv_params(self, n_type: int, feature_type: Literal["gtinv", "pair"]):
         """Set parameters for group-theoretical invariants."""
-        version = self.parser.get_params("gtinv_version", default=1, dtype=int)
-        order = self.parser.get_params("gtinv_order", default=3, dtype=int)
+        version = self._parser.get_params("gtinv_version", default=1, dtype=int)
+        order = self._parser.get_params("gtinv_order", default=3, dtype=int)
         size = order - 1
-        gtinv_maxl = self.parser.get_params(
+        gtinv_maxl = self._parser.get_params(
             "gtinv_maxl",
             size=size,
             default=[2 for i in range(size)],
@@ -183,47 +169,23 @@ class ParamsParser:
         )
         return gtinv_params, max_l
 
-    def _get_potential_model_params(self, n_type: int):
-        """Set parameters for identifying potential model."""
-        cutoff = self.parser.get_params("cutoff", default=6.0, dtype=float)
-        model_type = self.parser.get_params("model_type", default=1, dtype=int)
-        max_p = self.parser.get_params("max_p", default=1, dtype=int)
-        feature_type = self.parser.get_params("feature_type", default="gtinv")
-
-        gtinv_params, max_l = self._get_gtinv_params(n_type, feature_type)
-        pair_params, pair_params_active, pair_cond = self._get_pair_params(cutoff)
-
-        model = PolymlpModelParams(
-            cutoff,
-            model_type,
-            max_p,
-            max_l,
-            feature_type=feature_type,
-            gtinv=gtinv_params,
-            pair_type="gaussian",
-            pair_conditional=pair_cond,
-            pair_params=pair_params,
-            pair_params_conditional=pair_params_active,
-        )
-        return model
-
     def _get_pair_params(self, cutoff: float):
         """Set parameters for Gaussian radial functions."""
-        params1 = self.parser.get_params(
+        params1 = self._parser.get_params(
             "gaussian_params1",
             size=3,
             default=(1.0, 1.0, 1),
             dtype=float,
             return_array=True,
         )
-        params2 = self.parser.get_params(
+        params2 = self._parser.get_params(
             "gaussian_params2",
             size=3,
             default=(0.0, cutoff - 1.0, 7),
             dtype=float,
             return_array=True,
         )
-        distance = self.parser.distance
+        distance = self._parser.distance
         pair_params = set_gaussian_params(params1, params2)
         pair_params_active, cond = set_active_gaussian_params(
             pair_params,
@@ -232,52 +194,72 @@ class ParamsParser:
         )
         return pair_params, pair_params_active, cond
 
-    def _get_dataset(
+    def set_datasets(
         self,
-        dataset_type: Literal["vasp", "phono3py", "sscha", "electron"],
+        train_ratio: float = 0.9,
+        prefix_data_location: Optional[str] = None,
     ):
-        """Set files in datasets."""
-        self._multiple_datasets = True
-        if dataset_type in ["vasp", "sscha", "electron"]:
-            if len(self.parser.train) == 0 and len(self.parser.train_test) == 0:
-                raise RuntimeError("Training data not found.")
-            if len(self.parser.test) == 0 and len(self.parser.train_test) == 0:
-                raise RuntimeError("Test data not found.")
+        """Set datasets."""
+        if self._params is None:
+            raise RuntimeError("Use set_params at first.")
 
-            dft_train, dft_test = set_data_locations(
-                self.parser,
-                include_force=self.include_force,
-                train_ratio=self._train_ratio,
+        dataset_type = self._params.dataset_type
+        train_set, test_set, not_split_set = [], [], []
+        for strings_all in self._parser.dataset_strings:
+            tag, strings = strings_all[0], strings_all[1:]
+            dataset = Dataset(
+                strings=strings,
+                dataset_type=dataset_type,
+                prefix_location=prefix_data_location,
+                verbose=self._verbose,
             )
-            return dft_train, dft_test
-        elif dataset_type == "phono3py":
-            return self._get_phono3py_set()
+            if not self._include_force:
+                dataset.include_force = False
 
-        raise KeyError("Given dataset_type is unavailable.")
+            if tag == "train_data":
+                train_set.append(dataset)
+            elif tag == "test_data":
+                test_set.append(dataset)
+            elif tag == "data":
+                try:
+                    train, test = dataset.split_files(train_ratio=train_ratio)
+                    train_set.append(train)
+                    test_set.append(test)
+                except:
+                    not_split_set.append(dataset)
+            elif tag == "data_md":
+                dataset.split = False
+                train_set.append(dataset)
 
-    def _get_phono3py_set(self):
-        """Set dataset for input in phono3py format."""
-        yml = self.parser.get_params(
-            "data_phono3py", size=2, default=None, use_warnings=False
-        )
-        location = yml[0]
-        energy_dat = yml[1] if len(yml) > 1 else None
+        self._train = DatasetList(train_set)
+        self._test = DatasetList(test_set)
+        not_split_data = DatasetList(not_split_set)
 
-        dft_train = Dataset(
-            dataset_type="phono3py",
-            name=location,
-            location=location,
-            include_force=self.include_force,
-            split=False,
-            energy_dat=energy_dat,
-        )
-        dft_train, dft_test = [dft_train], []
-        return dft_train, dft_test
+        self._train.parse_files(self._params)
+        self._test.parse_files(self._params)
+        not_split_data.parse_files(self._params)
+
+        for dataset in not_split_data:
+            train, test = dataset.split_dft(train_ratio=train_ratio)
+            self._train.append(train)
+            self._test.append(test)
+
+        return self
 
     @property
     def params(self) -> PolymlpModelParams:
         """Return parameters for developing polymlp."""
         return self._params
+
+    @property
+    def train(self) -> DatasetList:
+        """Return training datasets."""
+        return self._train
+
+    @property
+    def test(self) -> DatasetList:
+        """Return test datasets."""
+        return self._test
 
 
 def _get_variable_with_max_length(
