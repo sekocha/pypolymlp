@@ -6,7 +6,6 @@ from typing import Literal, Optional, Union
 
 import numpy as np
 
-# from pypolymlp.core.utils import split_ids_train_test
 from pypolymlp.cxx.lib import libmlpcpp
 
 

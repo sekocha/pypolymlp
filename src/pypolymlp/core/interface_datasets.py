@@ -5,7 +5,8 @@ from typing import Optional
 
 import numpy as np
 
-from pypolymlp.core.data_format import PolymlpDataDFT, PolymlpStructure
+from pypolymlp.core.data_format import PolymlpStructure
+from pypolymlp.core.dataset_utils import DatasetDFT
 
 
 def permute_atoms(
@@ -45,8 +46,8 @@ def set_dataset_from_structures(
     forces: Optional[list[np.ndarray]] = None,
     stresses: Optional[np.ndarray] = None,
     element_order: bool = None,
-) -> PolymlpDataDFT:
-    """Return DFT dataset in PolymlpDataDFT."""
+) -> DatasetDFT:
+    """Return DFT dataset."""
 
     assert len(structures) == len(energies)
     exist_force = True if forces is not None else False
@@ -91,7 +92,7 @@ def set_dataset_from_structures(
     else:
         elements = element_order
 
-    dft = PolymlpDataDFT(
+    dft = DatasetDFT(
         energies=np.array(energies),
         forces=np.array(forces_data),
         stresses=np.array(stresses_data),

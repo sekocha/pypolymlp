@@ -5,7 +5,8 @@ from typing import Optional
 import numpy as np
 import phono3py
 
-from pypolymlp.core.data_format import PolymlpDataDFT, PolymlpStructure
+from pypolymlp.core.data_format import PolymlpStructure
+from pypolymlp.core.dataset_utils import DatasetDFT
 from pypolymlp.core.displacements import (
     convert_disps_to_positions,
     get_structures_from_multiple_positions,
@@ -21,7 +22,7 @@ def parse_phono3py_yaml(
     select_ids: Optional[list[int]] = None,
     return_displacements: bool = False,
     use_phonon_dataset: bool = False,
-) -> PolymlpDataDFT:
+) -> DatasetDFT:
     """Read phono3py.yaml and return DFT dataclass.
 
     Parameters

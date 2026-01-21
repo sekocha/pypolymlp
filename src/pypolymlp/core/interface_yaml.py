@@ -5,7 +5,7 @@ from typing import Literal, Optional
 import numpy as np
 import yaml
 
-from pypolymlp.core.data_format import PolymlpDataDFT
+from pypolymlp.core.dataset_utils import DatasetDFT
 from pypolymlp.core.interface_datasets import set_dataset_from_structures
 from pypolymlp.core.units import EVtoKJmol
 from pypolymlp.utils.yaml_utils import load_cell
@@ -14,7 +14,7 @@ from pypolymlp.utils.yaml_utils import load_cell
 def set_dataset_from_sscha_yamls(
     yamlfiles: list[str],
     element_order: Optional[bool] = None,
-) -> PolymlpDataDFT:
+) -> DatasetDFT:
     """Return DFT dataset by loading sscha_results.yaml files."""
     structures, free_energies, forces = parse_sscha_yamls(yamlfiles)
     dft = set_dataset_from_structures(
@@ -89,7 +89,7 @@ def set_dataset_from_electron_yamls(
         "specific_heat",
     ] = "free_energy",
     element_order: Optional[bool] = None,
-) -> PolymlpDataDFT:
+) -> DatasetDFT:
     """Return DFT dataset by loading electron.yaml files."""
     structures, properties = extract_electron_properties(
         yaml_data,
