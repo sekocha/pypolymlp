@@ -88,10 +88,10 @@ Several procedures for generating structures used in DFT calculations are also s
   1. [Development of a single on-the-fly MLP](docs/tutorial_onthefly.md)
   2. Development of a single general-purpose MLP
   3. Development of Pareto-optimal MLPs
-- [Command line](docs/mlpdev_command.md)
-- [Python API](docs/mlpdev_api.md)
-- [Utilities](docs/utilities.md)
-  - [DFT structure generator](docs/strgen.md)
+- [MLP development using command line interface](docs/mlpdev_command.md)
+- [MLP development using Python API](docs/mlpdev_api.md)
+- [Utilities for MLP development](docs/utilities.md)
+  - [Generator of structures used for DFT calculations](docs/strgen.md)
     - Random atomic displacements with constant magnitude
     - Random atomic displacements with sequential magnitudes and volume changes
     - Random atomic displacements, cell expansion, and distortion

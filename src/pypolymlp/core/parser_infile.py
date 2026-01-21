@@ -12,21 +12,27 @@ from pypolymlp.core.utils import strtobool
 class InputParser:
     """Class of input parser."""
 
-    def __init__(self, fname: str, prefix: Optional[str] = None):
+    def __init__(self, filename: str, prefix: Optional[str] = None):
         """Init method."""
         self._prefix = prefix
-        self._parse_infile(fname)
+        self._data = None
+        self._distance = None
+        self._train = None
+        self._test = None
+        self._train_test_data = None
+        self._md = None
 
-    def _parse_infile(self, fname: str):
+        self._parse_infile(filename)
+
+    def _parse_infile(self, filename: str):
         """Parse parameters from input file."""
-        f = open(fname)
+        f = open(filename)
         lines = f.readlines()
         f.close()
 
         self._data = dict()
         self._distance = []
-        self._train, self._test = [], []
-        self._train_test_data = []
+        self._train, self._test, self._train_test_data = [], [], []
         self._md = []
         for line in lines:
             d = line.split()
