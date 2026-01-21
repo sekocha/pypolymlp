@@ -30,9 +30,8 @@ class ParamsParser:
         self._verbose = verbose
 
         self._include_force = None
-        self._elements = None
-        self._params = None
 
+        self._params = None
         self._train = None
         self._test = None
 
@@ -48,7 +47,7 @@ class ParamsParser:
         dataset_type = self._parser.get_params("dataset_type", default="vasp")
 
         alphas = self._get_regression_params()
-        model = self._get_potential_model_params(n_type)
+        model = self._get_potential_model_params(n_type, elements)
 
         self._params = PolymlpParams(
             n_type=n_type,
@@ -105,7 +104,6 @@ class ParamsParser:
             dtype=float,
             return_array=True,
         )
-        self._elements = elements
         return elements, n_type, tuple(atom_e)
 
     def _get_regression_params(self):
@@ -120,7 +118,7 @@ class ParamsParser:
         alphas = set_regression_alphas(alpha_params)
         return alphas
 
-    def _get_potential_model_params(self, n_type: int):
+    def _get_potential_model_params(self, n_type: int, elements: tuple):
         """Set parameters for identifying potential model."""
         cutoff = self._parser.get_params("cutoff", default=6.0, dtype=float)
         model_type = self._parser.get_params("model_type", default=1, dtype=int)
@@ -128,7 +126,9 @@ class ParamsParser:
         feature_type = self._parser.get_params("feature_type", default="gtinv")
 
         gtinv_params, max_l = self._get_gtinv_params(n_type, feature_type)
-        pair_params, pair_params_active, pair_cond = self._get_pair_params(cutoff)
+        (pair_params, pair_params_active, pair_cond) = self._get_pair_params(
+            cutoff, elements
+        )
 
         model = PolymlpModelParams(
             cutoff,
@@ -169,7 +169,7 @@ class ParamsParser:
         )
         return gtinv_params, max_l
 
-    def _get_pair_params(self, cutoff: float):
+    def _get_pair_params(self, cutoff: float, elements: tuple):
         """Set parameters for Gaussian radial functions."""
         params1 = self._parser.get_params(
             "gaussian_params1",
@@ -189,7 +189,7 @@ class ParamsParser:
         pair_params = set_gaussian_params(params1, params2)
         pair_params_active, cond = set_active_gaussian_params(
             pair_params,
-            self._elements,
+            elements,
             distance,
         )
         return pair_params, pair_params_active, cond
