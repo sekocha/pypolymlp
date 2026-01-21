@@ -317,6 +317,8 @@ class Dataset:
             self._parse_electron(params)
         else:
             raise KeyError("Given dataset_type is unavailable.")
+
+        self.subtract_atomic_energy(params)
         return self
 
     def _parse_vasp(self):
@@ -424,7 +426,6 @@ class DatasetList:
         """Parse files in datasets."""
         for ds in self._datasets:
             ds.parse_files(params)
-            ds.subtract_atomic_energy(params.atomic_energy)
         return self
 
     @property

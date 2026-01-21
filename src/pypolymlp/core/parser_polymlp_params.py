@@ -29,25 +29,35 @@ class ParamsParser:
         self._parser = InputParser(filename, verbose=verbose)
         self._verbose = verbose
 
-        self._include_force = None
-
         self._params = None
         self._train = None
         self._test = None
+
+    def run(
+        self,
+        train_ratio: float = 0.9,
+        prefix_data_location: Optional[str] = None,
+    ):
+        """Parse all required files."""
+        self.set_params()
+        self.set_datasets(
+            train_ratio=train_ratio,
+            prefix_data_location=prefix_data_location,
+        )
+        return self
 
     def set_params(self):
         """Get parameters from file and set them."""
         include_force, include_stress = self._get_force_tags()
         elements, n_type, atom_e = self._get_element_properties()
+        alphas = self._get_regression_params()
+        model = self._get_potential_model_params(n_type, elements)
 
-        rearrange = self.parser.get_params(
+        dataset_type = self._parser.get_params("dataset_type", default="vasp")
+        rearrange = self._parser.get_params(
             "rearrange_by_elements", default=True, dtype=bool
         )
         element_order = elements if rearrange else None
-        dataset_type = self._parser.get_params("dataset_type", default="vasp")
-
-        alphas = self._get_regression_params()
-        model = self._get_potential_model_params(n_type, elements)
 
         self._params = PolymlpParams(
             n_type=n_type,
@@ -68,7 +78,7 @@ class ParamsParser:
             self._params.electron_property = self._parser.get_params(
                 "electron_property", default="free_energy", dtype=str
             )
-        return self
+        return self._params
 
     def _get_force_tags(self):
         """Return include_force and include_stress."""
@@ -126,7 +136,7 @@ class ParamsParser:
         feature_type = self._parser.get_params("feature_type", default="gtinv")
 
         gtinv_params, max_l = self._get_gtinv_params(n_type, feature_type)
-        (pair_params, pair_params_active, pair_cond) = self._get_pair_params(
+        pair_params, pair_params_active, pair_cond = self._get_pair_params(
             cutoff, elements
         )
 
@@ -213,7 +223,7 @@ class ParamsParser:
                 prefix_location=prefix_data_location,
                 verbose=self._verbose,
             )
-            if not self._include_force:
+            if not self._params.include_force:
                 dataset.include_force = False
 
             if tag == "train_data":
@@ -276,8 +286,6 @@ def _get_variable_with_max_length(
 
 def set_common_params(multiple_params: list[PolymlpParams]) -> PolymlpParams:
     """Set common parameters of multiple PolymlpParams."""
-    # TODO: DFT datasets should be automatically found
-    # if they are not included in the first file.
     keys = set()
     for single in multiple_params:
         for k in single.as_dict().keys():
@@ -320,30 +328,32 @@ def _set_unique_types(
     return multiple_params
 
 
-def parse_parameter_files(infiles: Union[str, list[str]], prefix: str = None):
+def parse_parameter_files(
+    infiles: Union[str, list[str]],
+    train_ratio: float = 0.9,
+    prefix_data_location: str = None,
+):
     """Parse input files for developing polymlp."""
     if isinstance(infiles, (list, tuple, np.ndarray)):
         priority_infile = infiles[0]
         if len(infiles) == 1:
-            p = ParamsParser(priority_infile, prefix=prefix)
+            p = ParamsParser(infiles[0]).run(prefix_data_location=prefix_data_location)
             params = common_params = p.params
             hybrid_params = None
         else:
-            hybrid_params = []
-            for i, infile in enumerate(infiles):
-                if i == 0:
-                    params = ParamsParser(infile, prefix=prefix).params
-                else:
-                    params = ParamsParser(
-                        infile, parse_vasprun_locations=False, prefix=prefix
-                    ).params
+            # TODO: DFT datasets should be automatically found
+            #       if they are not included in the first file.
+            p = ParamsParser(infiles[0]).run(prefix_data_location=prefix_data_location)
+            hybrid_params = [p.params]
+            for infile in infiles[1:]:
+                params = ParamsParser(infile).set_params()
                 hybrid_params.append(params)
             common_params = set_common_params(hybrid_params)
             hybrid_params = _set_unique_types(hybrid_params, common_params)
             params = hybrid_params
     else:
         priority_infile = infiles
-        p = ParamsParser(infiles, prefix=prefix)
+        p = ParamsParser(infile).run(prefix_data_location=prefix_data_location)
         params = common_params = p.params
         hybrid_params = None
 
