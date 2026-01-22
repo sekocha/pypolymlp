@@ -234,9 +234,7 @@ class Dataset:
         if self._dft is None:
             raise RuntimeError("DFT data not found.")
 
-        print(self._dft.energies)
         self._dft.apply_atomic_energy(atomic_energy)
-        print(self._dft.energies[0])
         return self
 
     @property

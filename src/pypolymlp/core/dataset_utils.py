@@ -20,7 +20,6 @@ class DatasetDFT:
     volumes: Volumes, shape=(n_str).
     structures: Structures, list[PolymlpStructure]
     total_n_atoms: Numbers of atoms in structures.
-    files: File names of structures.
     """
 
     energies: np.ndarray
@@ -29,11 +28,9 @@ class DatasetDFT:
     volumes: np.ndarray
     structures: list[PolymlpStructure]
     total_n_atoms: np.ndarray
-    files: list[str]
+
     elements: list[str]
-    include_force: bool = True
-    weight: float = 1.0
-    name: str = "dataset"
+
     exist_force: bool = True
     exist_stress: bool = True
 
@@ -47,7 +44,6 @@ class DatasetDFT:
         assert self.energies.shape[0] == self.volumes.shape[0]
         assert self.energies.shape[0] == len(self.structures)
         assert self.energies.shape[0] == self.total_n_atoms.shape[0]
-        assert self.energies.shape[0] == len(self.files)
         assert self.forces.shape[0] == np.sum(self.total_n_atoms) * 3
 
     def apply_atomic_energy(self, atom_e: tuple[float]):
@@ -58,7 +54,7 @@ class DatasetDFT:
         )
         return self
 
-    def slice(self, begin: int, end: int, name: str = "sliced"):
+    def slice(self, begin: int, end: int):
         """Slice DFT data in DatasetDFT."""
         begin_f = sum(self.total_n_atoms[:begin]) * 3
         end_f = sum(self.total_n_atoms[:end]) * 3
@@ -69,11 +65,7 @@ class DatasetDFT:
             volumes=self.volumes[begin:end],
             structures=self.structures[begin:end],
             total_n_atoms=self.total_n_atoms[begin:end],
-            files=self.files[begin:end],
             elements=self.elements,
-            include_force=self.include_force,
-            weight=self.weight,
-            name=name,
         )
         return dft_dict_sliced
 
@@ -98,12 +90,15 @@ class DatasetDFT:
         self.volumes = self.volumes[ids]
         self.total_n_atoms = self.total_n_atoms[ids]
         self.structures = [self.structures[i] for i in ids]
-        self.files = [self.files[i] for i in ids]
+        # self.files = [self.files[i] for i in ids]
         return self
 
     def split(self, train_ratio: float = 0.9):
         """Split dataset into training and test datasets."""
-        train_ids, test_ids = split_ids_train_test(len(self.energies))
+        train_ids, test_ids = split_ids_train_test(
+            len(self.energies),
+            train_ratio=train_ratio,
+        )
         train, test = None, None
         if len(train_ids) > 0:
             ids_force, ids_stress = self._force_stress_ids(train_ids)
@@ -114,11 +109,7 @@ class DatasetDFT:
                 volumes=self.volumes[train_ids],
                 structures=[self.structures[i] for i in train_ids],
                 total_n_atoms=self.total_n_atoms[train_ids],
-                files=[self.files[i] for i in train_ids],
                 elements=self.elements,
-                include_force=self.include_force,
-                weight=self.weight,
-                name=self.name,
             )
         if len(test_ids) > 0:
             ids_force, ids_stress = self._force_stress_ids(test_ids)
@@ -129,10 +120,6 @@ class DatasetDFT:
                 volumes=self.volumes[test_ids],
                 structures=[self.structures[i] for i in test_ids],
                 total_n_atoms=self.total_n_atoms[test_ids],
-                files=[self.files[i] for i in test_ids],
                 elements=self.elements,
-                include_force=self.include_force,
-                weight=self.weight,
-                name=self.name,
             )
         return train, test
