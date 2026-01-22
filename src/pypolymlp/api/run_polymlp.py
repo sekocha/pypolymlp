@@ -64,7 +64,7 @@ def run():
     verbose = True
     polymlp = Pypolymlp()
     polymlp.load_parameter_file(args.infile)
-    polymlp.load_datasets(train_ratio=0.9)
+    # polymlp.load_datasets(train_ratio=0.9)
     if verbose:
         polymlp.print_params()
     polymlp.save_params(filename="polymlp_params.yaml")

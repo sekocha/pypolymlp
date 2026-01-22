@@ -4,17 +4,19 @@ from typing import Optional, Union
 
 import numpy as np
 
-from pypolymlp.core.data_format import PolymlpDataDFT, PolymlpParams, PolymlpStructure
+from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
+from pypolymlp.core.dataset import DatasetList
 from pypolymlp.cxx.lib import libmlpcpp
 
 
-def _multiple_dft_to_mlpcpp_obj(multiple_dft: list[PolymlpDataDFT]):
-    """Extract structures from multiple DFT datasets."""
+def _multiple_dft_to_mlpcpp_obj(datasets: DatasetList):
+    """Extract structures from multiple datasets."""
 
     n_st_dataset, force_dataset = [], []
     axis_array, positions_c_array = [], []
     types_array, n_atoms_sum_array = [], []
-    for dft in multiple_dft:
+    for data in datasets:
+        dft = data.dft
         n_st_dataset.append(len(dft.structures))
         force_dataset.append(dft.include_force)
         res = _structures_to_mlpcpp_obj(dft.structures)
@@ -33,7 +35,7 @@ def _multiple_dft_to_mlpcpp_obj(multiple_dft: list[PolymlpDataDFT]):
     )
 
 
-def _structures_to_mlpcpp_obj(structures: PolymlpStructure):
+def _structures_to_mlpcpp_obj(structures: list[PolymlpStructure]):
     """Set structures to apply mlpcpp format."""
     axis_array = [st.axis for st in structures]
     positions_c_array = [st.axis @ st.positions for st in structures]
@@ -43,30 +45,20 @@ def _structures_to_mlpcpp_obj(structures: PolymlpStructure):
 
 
 def _init_features(
-    dft: Union[PolymlpDataDFT, list[PolymlpDataDFT]],
+    datasets: DatasetList,
     structures: list[PolymlpStructure],
     params: PolymlpParams,
 ):
     """Initialize structure attributes for passing them to mlpcpp."""
-    if dft is not None:
-        if isinstance(dft, PolymlpDataDFT):
-            n_st_dataset = [len(dft.structures)]
-            force_dataset = [dft.include_force]
-            (
-                axis_array,
-                positions_c_array,
-                types_array,
-                n_atoms_sum_array,
-            ) = _structures_to_mlpcpp_obj(dft.structures)
-        else:
-            (
-                axis_array,
-                positions_c_array,
-                types_array,
-                n_atoms_sum_array,
-                n_st_dataset,
-                force_dataset,
-            ) = _multiple_dft_to_mlpcpp_obj(dft)
+    if datasets is not None:
+        (
+            axis_array,
+            positions_c_array,
+            types_array,
+            n_atoms_sum_array,
+            n_st_dataset,
+            force_dataset,
+        ) = _multiple_dft_to_mlpcpp_obj(datasets)
     else:
         n_st_dataset = [len(structures)]
         force_dataset = [params.include_force]
@@ -87,7 +79,7 @@ def _init_features(
     )
 
 
-def _set_ebegin(n_st_dataset):
+def _set_ebegin(n_st_dataset: list):
     """Return first indices of datasets for energy entries."""
     ebegin, ei = [], 0
     for n in n_st_dataset:
@@ -102,7 +94,7 @@ class Features:
     def __init__(
         self,
         params: PolymlpParams,
-        dft: Optional[Union[PolymlpDataDFT, list[PolymlpDataDFT]]] = None,
+        datasets: Optional[DatasetList] = None,
         structures: Optional[list[PolymlpStructure]] = None,
         print_memory: bool = True,
         element_swap: bool = False,
@@ -115,7 +107,7 @@ class Features:
             n_atoms_sum_array,
             n_st_dataset,
             force_dataset,
-        ) = _init_features(dft, structures, params)
+        ) = _init_features(datasets, structures, params)
 
         params.element_swap = element_swap
         params.print_memory = print_memory
@@ -177,7 +169,7 @@ class FeaturesHybrid:
     def __init__(
         self,
         hybrid_params: list[PolymlpParams],
-        dft: Optional[Union[PolymlpDataDFT, list[PolymlpDataDFT]]] = None,
+        datasets: Optional[DatasetList] = None,
         structures: Optional[list[PolymlpStructure]] = None,
         print_memory: bool = True,
         element_swap: bool = False,
@@ -190,7 +182,7 @@ class FeaturesHybrid:
             n_atoms_sum_array,
             n_st_dataset,
             force_dataset,
-        ) = _init_features(dft, structures, hybrid_params[0])
+        ) = _init_features(datasets, structures, hybrid_params[0])
 
         hybrid_params_dicts = []
         for params in hybrid_params:
@@ -253,7 +245,7 @@ class FeaturesHybrid:
 
 def compute_features(
     params: Union[PolymlpParams, list[PolymlpParams]],
-    dft: Optional[Union[PolymlpDataDFT, list[PolymlpDataDFT]]] = None,
+    datasets: Optional[DatasetList] = None,
     structures: Optional[list[PolymlpStructure]] = None,
     element_swap: bool = False,
     verbose: bool = True,
@@ -266,7 +258,7 @@ def compute_features(
 
     features = features_class(
         params,
-        dft=dft,
+        datasets=datasets,
         structures=structures,
         print_memory=verbose,
         element_swap=element_swap,

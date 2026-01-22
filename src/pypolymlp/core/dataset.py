@@ -188,7 +188,7 @@ class Dataset:
         else:
             raise KeyError("Given dataset_type is unavailable.")
 
-        self.subtract_atomic_energy(params)
+        self.subtract_atomic_energy(params.atomic_energy)
         return self
 
     def _parse_vasp(self):
@@ -234,13 +234,20 @@ class Dataset:
         if self._dft is None:
             raise RuntimeError("DFT data not found.")
 
+        print(self._dft.energies)
         self._dft.apply_atomic_energy(atomic_energy)
+        print(self._dft.energies[0])
         return self
 
     @property
     def dft(self):
         """Return DFT data."""
         return self._dft
+
+    @dft.setter
+    def dft(self, dft: DatasetDFT):
+        """Setter of DFT data."""
+        self._dft = dft
 
     @property
     def include_force(self):
@@ -257,23 +264,43 @@ class Dataset:
         """Return weight."""
         return self._weight
 
+    @weight.setter
+    def weight(self, w: float):
+        """Setter of weight."""
+        self._weight = w
+
     @property
     def name(self):
         """Return dataset name."""
         return self._name
+
+    @name.setter
+    def name(self, n: str):
+        """Setter of dataset name."""
+        self._name = n
 
     @property
     def files(self):
         """Return file names."""
         return self._files
 
+    @files.setter
+    def files(self, f: list):
+        """Setter of file names."""
+        self._files = f
+
 
 class DatasetList:
     """Class for keeping multiple datasets for training or test data."""
 
-    def __init__(self, datasets: Optional[list[Dataset]] = None):
+    def __init__(self, datasets: Optional[Union[list[Dataset], Dataset]] = None):
         """Init method."""
-        self._datasets = [] if datasets is None else datasets
+        if datasets is None:
+            self._datasets = []
+        elif isinstance(datasets, Dataset):
+            self._datasets = [datasets]
+        else:
+            self._datasets = datasets
 
     def __iter__(self):
         """Iter method."""
@@ -307,3 +334,21 @@ class DatasetList:
     def datasets(self):
         """Return datasets."""
         return self._datasets
+
+
+def set_datasets(files: list[str], params: PolymlpParams, train_ratio: float = 0.9):
+    """Set datasets from files and params."""
+    data = Dataset(
+        name="data",
+        dataset_type=params.dataset_type,
+        files=files,
+        include_force=params.include_force,
+        weight=1.0,
+    )
+    train, test = data.split_files(train_ratio=train_ratio)
+    train.name, test.name = "data1", "data2"
+    train = DatasetList(train)
+    test = DatasetList(test)
+    train.parse_files(params)
+    test.parse_files(params)
+    return train, test

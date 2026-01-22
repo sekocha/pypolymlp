@@ -2,7 +2,8 @@
 
 from typing import Optional, Union
 
-from pypolymlp.core.data_format import PolymlpDataDFT, PolymlpParams
+from pypolymlp.core.data_format import PolymlpParams
+from pypolymlp.core.dataset import DatasetList
 from pypolymlp.mlp_dev.core.mlpdev import PolymlpDevCore, eval_accuracy
 from pypolymlp.mlp_dev.standard.solvers import solver_ridge
 from pypolymlp.mlp_dev.standard.utils_learning_curve import print_learning_curve_log
@@ -10,8 +11,8 @@ from pypolymlp.mlp_dev.standard.utils_learning_curve import print_learning_curve
 
 def fit(
     params: Union[PolymlpParams, list[PolymlpParams]],
-    train: list[PolymlpDataDFT],
-    test: list[PolymlpDataDFT],
+    train: DatasetList,
+    test: DatasetList,
     batch_size: Optional[int] = None,
     verbose: bool = False,
 ):
@@ -61,8 +62,8 @@ def fit(
 
 def fit_standard(
     params: Union[PolymlpParams, list[PolymlpParams]],
-    train: list[PolymlpDataDFT],
-    test: list[PolymlpDataDFT],
+    train: DatasetList,
+    test: DatasetList,
     verbose: bool = False,
 ):
     """Estimate MLP coefficients with direct evaluation of X."""
@@ -103,8 +104,8 @@ def fit_standard(
 
 def fit_learning_curve(
     params: Union[PolymlpParams, list[PolymlpParams]],
-    train: list[PolymlpDataDFT],
-    test: list[PolymlpDataDFT],
+    train: DatasetList,
+    test: DatasetList,
     verbose: bool = False,
 ):
     """Calculate learning curve."""

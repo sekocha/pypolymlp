@@ -4,7 +4,8 @@ from typing import Optional, Union
 
 import numpy as np
 
-from pypolymlp.core.data_format import PolymlpDataDFT, PolymlpParams
+from pypolymlp.core.data_format import PolymlpParams
+from pypolymlp.core.dataset import DatasetList
 from pypolymlp.mlp_dev.core.mlpdev import PolymlpDevCore
 from pypolymlp.mlp_dev.gradient.solvers_cg import solver_cg
 
@@ -20,8 +21,8 @@ def _check_use_xy(polymlp: PolymlpDevCore):
 
 def fit_cg(
     params: Union[PolymlpParams, list[PolymlpParams]],
-    train: list[PolymlpDataDFT],
-    test: list[PolymlpDataDFT],
+    train: DatasetList,
+    test: DatasetList,
     gtol: float = 1e-2,
     max_iter: Optional[int] = None,
     verbose: bool = False,

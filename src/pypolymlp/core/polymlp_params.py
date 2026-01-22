@@ -228,16 +228,6 @@ def print_params(
     print("  include_force: ", bool(common_params.include_force), flush=True)
     print("  include_stress:", bool(common_params.include_stress), flush=True)
 
-    if not isinstance(common_params.dft_train, list):
-        raise RuntimeError("DFT files are not kept in list format")
-
-    print("  train_data:", flush=True)
-    for v in common_params.dft_train:
-        print("  -", v.location, flush=True)
-    print("  test_data:", flush=True)
-    for v in common_params.dft_test:
-        print("  -", v.location, flush=True)
-
     params_print = [params] if isinstance(params, PolymlpParams) else params
     for i, p in enumerate(params_print):
         print("model_" + str(i + 1) + ":", flush=True)

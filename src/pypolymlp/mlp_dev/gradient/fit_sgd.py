@@ -4,15 +4,16 @@ from typing import Union
 
 import numpy as np
 
-from pypolymlp.core.data_format import PolymlpDataDFT, PolymlpParams
+from pypolymlp.core.data_format import PolymlpParams
+from pypolymlp.core.dataset import DatasetList
 from pypolymlp.mlp_dev.core.mlpdev import PolymlpDevCore
 from pypolymlp.mlp_dev.gradient.solvers_sgd import solver_sgd
 
 
 def fit_sgd(
     params: Union[PolymlpParams, list[PolymlpParams]],
-    train: list[PolymlpDataDFT],
-    test: list[PolymlpDataDFT],
+    train: DatasetList,
+    test: DatasetList,
     verbose: bool = False,
 ):
     """Estimate MLP coefficients without computing entire X."""

@@ -5,7 +5,8 @@ from typing import Union
 
 import numpy as np
 
-from pypolymlp.core.data_format import PolymlpDataDFT, PolymlpParams
+from pypolymlp.core.data_format import PolymlpParams
+from pypolymlp.core.dataset import DatasetList
 from pypolymlp.core.parser_polymlp_params import set_common_params
 
 
@@ -24,10 +25,11 @@ def set_params(params_in: Union[PolymlpParams, list[PolymlpParams]]):
     return (params, common_params, hybrid_params)
 
 
-def get_min_energy(dft_all: list[PolymlpDataDFT]) -> float:
+def get_min_energy(datasets: DatasetList) -> float:
     """Calculate minimum of DFT energies."""
     min_e = 1e10
-    for dft in dft_all:
+    for data in datasets:
+        dft = data.dft
         e_per_atom = dft.energies / dft.total_n_atoms
         min_e_trial = np.min(e_per_atom)
         if min_e_trial < min_e:

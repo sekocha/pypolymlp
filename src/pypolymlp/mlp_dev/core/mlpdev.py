@@ -4,7 +4,8 @@ from typing import Literal, Optional, Union
 
 import numpy as np
 
-from pypolymlp.core.data_format import PolymlpDataDFT, PolymlpParams
+from pypolymlp.core.data_format import PolymlpParams
+from pypolymlp.core.dataset import DatasetList
 from pypolymlp.mlp_dev.core.accuracy import PolymlpEvalAccuracy
 from pypolymlp.mlp_dev.core.data import PolymlpDataXY, calc_xtx_xty, calc_xy
 from pypolymlp.mlp_dev.core.dataclass import PolymlpDataMLP
@@ -34,18 +35,17 @@ class PolymlpDevCore:
 
     def calc_xy(
         self,
-        dft: list[PolymlpDataDFT],
+        datasets: DatasetList,
         element_swap: bool = False,
         scales: Optional[np.ndarray] = None,
         min_energy: Optional[float] = None,
         weight_stress: float = 0.1,
     ) -> PolymlpDataXY:
         """Calculate X and y data."""
-        self._is_list(dft)
         data_xy = calc_xy(
             self.params,
             self.common_params,
-            dft,
+            datasets,
             element_swap=element_swap,
             scales=scales,
             min_energy=min_energy,
@@ -56,7 +56,7 @@ class PolymlpDevCore:
 
     def calc_xtx_xty(
         self,
-        dft: list[PolymlpDataDFT],
+        datasets: DatasetList,
         element_swap: bool = False,
         scales: Optional[np.ndarray] = None,
         min_energy: Optional[float] = None,
@@ -64,11 +64,10 @@ class PolymlpDevCore:
         batch_size: Optional[int] = None,
     ) -> PolymlpDataXY:
         """Calculate X.T @ X and X.T @ y data."""
-        self._is_list(dft)
         data_xy = calc_xtx_xty(
             self.params,
             self.common_params,
-            dft,
+            datasets,
             element_swap=element_swap,
             scales=scales,
             min_energy=min_energy,
@@ -163,15 +162,10 @@ class PolymlpDevCore:
         """Return whether hybrid model is used."""
         return self._hybrid
 
-    def _is_list(self, dft: list[PolymlpDataDFT]):
-        """Return whether DFT data is given by list or not."""
-        if not isinstance(dft, (list, tuple, np.ndarray)):
-            raise RuntimeError("DFT data must be given in list.")
-
 
 def eval_accuracy(
     mlp_model: PolymlpDataMLP,
-    dft: list[PolymlpDataDFT],
+    datasets: DatasetList,
     stress_unit: Literal["eV", "GPa"] = "eV",
     log_energy: bool = True,
     log_force: bool = False,
@@ -183,7 +177,7 @@ def eval_accuracy(
     """Evaluate accuracy."""
     acc = PolymlpEvalAccuracy(mlp_model, verbose=verbose)
     error = acc.compute_error(
-        dft,
+        datasets,
         stress_unit=stress_unit,
         log_energy=log_energy,
         log_force=log_force,

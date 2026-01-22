@@ -5,7 +5,9 @@ from typing import Optional, Union
 
 import numpy as np
 
-from pypolymlp.core.data_format import PolymlpDataDFT, PolymlpParams
+from pypolymlp.core.data_format import PolymlpParams
+from pypolymlp.core.dataset import DatasetList
+from pypolymlp.core.dataset_utils import DatasetDFT
 from pypolymlp.mlp_dev.core.features import compute_features
 from pypolymlp.mlp_dev.core.features_attr import get_num_features
 from pypolymlp.mlp_dev.core.utils import get_min_energy
@@ -80,7 +82,7 @@ class PolymlpDataXY:
     def apply_weights(
         self,
         common_params: PolymlpParams,
-        dft_all: list[PolymlpDataDFT],
+        datasets: DatasetList,
         min_energy: Optional[float] = None,
         weight_stress: float = 0.1,
     ):
@@ -93,15 +95,15 @@ class PolymlpDataXY:
         w = np.ones(n_data)
 
         if min_energy is None:
-            min_energy = get_min_energy(dft_all)
+            min_energy = get_min_energy(datasets)
         self.min_energy = min_energy
 
-        for dft, indices in zip(dft_all, self.first_indices):
+        for data, indices in zip(datasets, self.first_indices):
             x, y, w = apply_weights(
                 x,
                 y,
                 w,
-                dft,
+                data.dft,
                 common_params,
                 indices,
                 weight_stress=weight_stress,
@@ -134,14 +136,14 @@ class PolymlpDataXY:
 
 def _get_features(
     params: Union[PolymlpParams, list[PolymlpParams]],
-    dft: Optional[Union[PolymlpDataDFT, list[PolymlpDataDFT]]] = None,
+    datasets: Optional[DatasetList] = None,
     element_swap: bool = False,
     verbose: bool = True,
 ):
     """Calculate features and return features in DataXY format."""
     features = compute_features(
         params,
-        dft,
+        datasets=datasets,
         element_swap=element_swap,
         verbose=verbose,
     )
@@ -157,7 +159,7 @@ def _get_features(
 def calc_xy(
     params: Union[PolymlpParams, list[PolymlpParams]],
     common_params: PolymlpParams,
-    dft_all: list[PolymlpDataDFT],
+    datasets: DatasetList,
     element_swap: bool = False,
     scales: Optional[np.ndarray] = None,
     min_energy: Optional[float] = None,
@@ -167,7 +169,7 @@ def calc_xy(
     """Calculate X and y data."""
     data_xy = _get_features(
         params,
-        dft_all,
+        datasets,
         element_swap=element_swap,
         verbose=verbose,
     )
@@ -179,14 +181,14 @@ def calc_xy(
         print("- n (stress) =", ns, flush=True)
 
     data_xy.apply_scales(scales=scales, include_force=common_params.include_force)
-    data_xy.apply_weights(common_params, dft_all, min_energy=min_energy)
+    data_xy.apply_weights(common_params, datasets, min_energy=min_energy)
     return data_xy
 
 
 def calc_xtx_xty(
     params: Union[PolymlpParams, list[PolymlpParams]],
     common_params: PolymlpParams,
-    dft_all: list[PolymlpDataDFT],
+    datasets: DatasetList,
     element_swap: bool = False,
     scales: Optional[np.ndarray] = None,
     min_energy: Optional[float] = None,
@@ -206,10 +208,11 @@ def calc_xtx_xty(
         )
 
     if min_energy is None:
-        min_energy = get_min_energy(dft_all)
+        min_energy = get_min_energy(datasets)
 
     data_xy = PolymlpDataXY()
-    for dft in dft_all:
+    for data in datasets:
+        dft = data.dft
         if verbose:
             print("----- Dataset:", dft.name, "-----", flush=True)
         n_str = len(dft.structures)
@@ -235,7 +238,7 @@ def calc_xtx_xty(
     if n_features > n_features_threshold:
         data_xy.xtx = symmetrize_xtx(data_xy.xtx)
 
-    n_data = sum([len(d.energies) for d in dft_all])
+    n_data = sum([len(d.dft.energies) for d in datasets])
     scales, zero_ids = compute_scales(
         scales,
         data_xy.xe_sum,
@@ -259,7 +262,7 @@ def calc_xtx_xty(
 def _compute_products_single_batch(
     params: Union[PolymlpParams, list[PolymlpParams]],
     common_params: PolymlpParams,
-    dft_sliced: PolymlpDataDFT,
+    dft_sliced: DatasetDFT,
     data_xy: PolymlpDataXY,
     element_swap: bool = False,
     scales: Optional[np.ndarray] = None,
@@ -272,7 +275,7 @@ def _compute_products_single_batch(
     """Compute X.T @ X and X.T @ y for a single batch."""
     features = compute_features(
         params,
-        dft_sliced,
+        structures=dft_sliced.structures,
         element_swap=element_swap,
         verbose=verbose,
     )

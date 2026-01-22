@@ -8,7 +8,8 @@ from typing import Literal, Optional
 import numpy as np
 
 from pypolymlp.calculator.properties import Properties
-from pypolymlp.core.data_format import PolymlpDataDFT
+from pypolymlp.core.dataset import DatasetList
+from pypolymlp.core.dataset_utils import DatasetDFT
 from pypolymlp.core.utils import rmse
 from pypolymlp.mlp_dev.core.dataclass import PolymlpDataMLP
 
@@ -23,7 +24,7 @@ class PolymlpEvalAccuracy:
 
     def compute_error(
         self,
-        dft_all: list[PolymlpDataDFT],
+        datasets: DatasetList,
         stress_unit: Literal["eV", "GPa"] = "eV",
         log_energy: bool = True,
         log_force: bool = False,
@@ -33,7 +34,8 @@ class PolymlpEvalAccuracy:
     ):
         """Compute errors and predicted values for all datasets."""
         errors = dict()
-        for dft in dft_all:
+        for data in datasets:
+            dft = data.dft
             output_key = self._generate_output_key(dft.name, tag=tag)
             errors[dft.name] = self.compute_error_single(
                 dft,
@@ -48,7 +50,7 @@ class PolymlpEvalAccuracy:
 
     def compute_error_single(
         self,
-        dft: PolymlpDataDFT,
+        dft: DatasetDFT,
         output_key: str = "train",
         stress_unit: Literal["eV", "GPa"] = "eV",
         log_energy: bool = True,
@@ -167,7 +169,7 @@ class PolymlpEvalAccuracy:
         tag: str = Literal["train", "test"],
     ):
         """Generate key used for identify datasets."""
-        output_key = dataset_name.replace("*", "-").replace("..", "")
+        output_key = dataset_name.replace("*", "-").replace("." + ".", "")
         output_key = output_key.replace(".", "-").replace("/", "-")
         output_key = tag + "-" + output_key
         output_key = output_key.replace("---", "-").replace("--", "-")
@@ -175,7 +177,7 @@ class PolymlpEvalAccuracy:
 
     def _write_energies(
         self,
-        dft: PolymlpDataDFT,
+        dft: DatasetDFT,
         true_e: np.ndarray,
         pred_e: np.ndarray,
         path_output: str,
@@ -191,7 +193,7 @@ class PolymlpEvalAccuracy:
 
     def _write_forces(
         self,
-        dft: PolymlpDataDFT,
+        dft: DatasetDFT,
         true_f: np.ndarray,
         pred_f: np.ndarray,
         path_output: str,
@@ -208,7 +210,7 @@ class PolymlpEvalAccuracy:
 
     def _write_stresses(
         self,
-        dft: PolymlpDataDFT,
+        dft: DatasetDFT,
         true_s: np.ndarray,
         pred_s: np.ndarray,
         path_output: str,

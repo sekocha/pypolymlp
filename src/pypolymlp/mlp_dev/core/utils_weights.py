@@ -4,7 +4,8 @@ from typing import Optional
 
 import numpy as np
 
-from pypolymlp.core.data_format import PolymlpDataDFT, PolymlpParams
+from pypolymlp.core.data_format import PolymlpParams
+from pypolymlp.core.dataset_utils import DatasetDFT
 
 
 def _set_weight_energy_data(energy, total_n_atoms, min_e: Optional[float] = None):
@@ -51,7 +52,7 @@ def apply_weight_percentage(
     x: np.ndarray,
     y: np.ndarray,
     w: np.ndarray,
-    dft: PolymlpDataDFT,
+    dft: DatasetDFT,
     params: PolymlpParams,
     first_indices: list,
     weight_stress: float = 0.1,
@@ -102,7 +103,7 @@ def apply_weights(
     x: np.ndarray,
     y: np.ndarray,
     w: np.ndarray,
-    dft: PolymlpDataDFT,
+    dft: DatasetDFT,
     params: PolymlpParams,
     first_indices: list,
     weight_stress: float = 0.1,
