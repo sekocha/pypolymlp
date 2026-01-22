@@ -104,32 +104,35 @@ class DatasetDFT:
     def split(self, train_ratio: float = 0.9):
         """Split dataset into training and test datasets."""
         train_ids, test_ids = split_ids_train_test(len(self.energies))
-        ids_force, ids_stress = self._force_stress_ids(train_ids)
-        train = DatasetDFT(
-            energies=self.energies[train_ids],
-            forces=self.forces[ids_force],
-            stresses=self.stresses[ids_stress],
-            volumes=self.volumes[train_ids],
-            structures=[self.structures[i] for i in train_ids],
-            total_n_atoms=self.total_n_atoms[train_ids],
-            files=[self.files[i] for i in train_ids],
-            elements=self.elements,
-            include_force=self.include_force,
-            weight=self.weight,
-            name=self.name,
-        )
-        ids_force, ids_stress = self._force_stress_ids(test_ids)
-        test = DatasetDFT(
-            energies=self.energies[test_ids],
-            forces=self.forces[ids_force],
-            stresses=self.stresses[ids_stress],
-            volumes=self.volumes[test_ids],
-            structures=[self.structures[i] for i in test_ids],
-            total_n_atoms=self.total_n_atoms[test_ids],
-            files=[self.files[i] for i in test_ids],
-            elements=self.elements,
-            include_force=self.include_force,
-            weight=self.weight,
-            name=self.name,
-        )
+        train, test = None, None
+        if len(train_ids) > 0:
+            ids_force, ids_stress = self._force_stress_ids(train_ids)
+            train = DatasetDFT(
+                energies=self.energies[train_ids],
+                forces=self.forces[ids_force],
+                stresses=self.stresses[ids_stress],
+                volumes=self.volumes[train_ids],
+                structures=[self.structures[i] for i in train_ids],
+                total_n_atoms=self.total_n_atoms[train_ids],
+                files=[self.files[i] for i in train_ids],
+                elements=self.elements,
+                include_force=self.include_force,
+                weight=self.weight,
+                name=self.name,
+            )
+        if len(test_ids) > 0:
+            ids_force, ids_stress = self._force_stress_ids(test_ids)
+            test = DatasetDFT(
+                energies=self.energies[test_ids],
+                forces=self.forces[ids_force],
+                stresses=self.stresses[ids_stress],
+                volumes=self.volumes[test_ids],
+                structures=[self.structures[i] for i in test_ids],
+                total_n_atoms=self.total_n_atoms[test_ids],
+                files=[self.files[i] for i in test_ids],
+                elements=self.elements,
+                include_force=self.include_force,
+                weight=self.weight,
+                name=self.name,
+            )
         return train, test

@@ -64,16 +64,15 @@ class Dataset:
             if not isinstance(files, str):
                 raise RuntimeError("Files must be string for dataset_type phono3py.")
 
-        if self._dft is None:
-            self._set_dataset_attrs(
-                files=files,
-                location=location,
-                include_force=include_force,
-                weight=weight,
-                strings=strings,
-                name=name,
-                prefix_location=prefix_location,
-            )
+        self._set_dataset_attrs(
+            files=files,
+            location=location,
+            include_force=include_force,
+            weight=weight,
+            strings=strings,
+            name=name,
+            prefix_location=prefix_location,
+        )
 
         self._element_order = None
 
@@ -98,7 +97,7 @@ class Dataset:
             if prefix_location is not None:
                 location = prefix_location + location
 
-            files = sorted(glob.glob(location))
+            self._files = sorted(glob.glob(location))
             self._include_force = include_force
             self._weight = weight
         elif strings is not None:
@@ -106,7 +105,7 @@ class Dataset:
             if prefix_location is not None:
                 location = prefix_location + location
 
-            files = sorted(glob.glob(location))
+            self._files = sorted(glob.glob(location))
             if len(strings) > 1:
                 self._include_force = strtobool(strings[1])
             else:
@@ -262,6 +261,11 @@ class Dataset:
     def name(self):
         """Return dataset name."""
         return self._name
+
+    @property
+    def files(self):
+        """Return file names."""
+        return self._files
 
 
 class DatasetList:

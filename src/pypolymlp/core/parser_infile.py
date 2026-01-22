@@ -23,11 +23,10 @@ class InputParser:
             if len(d) > 1:
                 if "distance" == d[0]:
                     self._distance.append(d[1:])
-                elif "data" in d[0]:
+                elif "data" in d[0] and "dataset_type" not in d[0]:
                     self._dataset_strings.append(d)
                 else:
                     self._data[d[0]] = d[1:]
-        return self
 
     def get_params(
         self,
@@ -77,7 +76,13 @@ class InputParser:
         elements = self._data["elements"]
         distance_dict = dict()
         for data in self._distance:
-            pair = tuple(sorted(data[:2], key=lambda x: elements.index(x)))
+            pair = data[:2]
+            for p in pair:
+                if p not in elements:
+                    raise RuntimeError(
+                        "Elements in distance not found in potential model."
+                    )
+            pair = tuple(sorted(pair, key=lambda x: elements.index(x)))
             distance_dict[pair] = [float(dis) for dis in data[2:]]
         return distance_dict
 
@@ -85,22 +90,3 @@ class InputParser:
     def dataset_strings(self):
         """Return dataset strings from file."""
         return self._dataset_strings
-
-        # self._train, self._test, self._train_test_data = [], [], []
-        # self._md = []
-        # for line in lines:
-        #     d = line.split()
-        #     if len(d) > 1:
-        #         self._data[d[0]] = d[1:]
-        #         if "distance" == d[0]:
-        #             self._distance.append(d[1:])
-        #         elif d[0] in ["train_data", "test_data", "data", "data_md"]:
-        #             dataset = Dataset(string_list=d[1:], prefix_location=self._prefix)
-        #             if d[0] == "train_data":
-        #                 self._train.append(dataset)
-        #             elif d[0] == "test_data":
-        #                 self._test.append(dataset)
-        #             elif d[0] == "data":
-        #                 self._train_test_data.append(dataset)
-        #             elif d[0] == "data_md":
-        #                 self._md.append(dataset)

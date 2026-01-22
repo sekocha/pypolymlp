@@ -16,7 +16,7 @@ from pypolymlp.core.polymlp_params import (
 )
 
 
-class ParamsParser:
+class ParamsParserSingle:
     """Class of input parameter parser."""
 
     def __init__(self, filename: str, verbose: bool = False):
@@ -26,7 +26,7 @@ class ParamsParser:
         ----------
         filename: File of input parameters for single polymlp (e.g., polymlp.in).
         """
-        self._parser = InputParser(filename, verbose=verbose)
+        self._parser = InputParser(filename)
         self._verbose = verbose
 
         self._params = None
@@ -238,8 +238,7 @@ class ParamsParser:
                 except:
                     not_split_set.append(dataset)
             elif tag == "data_md":
-                dataset.split = False
-                train_set.append(dataset)
+                not_split_set.append(dataset)
 
         self._train = DatasetList(train_set)
         self._test = DatasetList(test_set)
@@ -328,34 +327,105 @@ def _set_unique_types(
     return multiple_params
 
 
-def parse_parameter_files(
-    infiles: Union[str, list[str]],
-    train_ratio: float = 0.9,
-    prefix_data_location: str = None,
-):
-    """Parse input files for developing polymlp."""
-    if isinstance(infiles, (list, tuple, np.ndarray)):
-        priority_infile = infiles[0]
-        if len(infiles) == 1:
-            p = ParamsParser(infiles[0]).run(prefix_data_location=prefix_data_location)
-            params = common_params = p.params
-            hybrid_params = None
-        else:
-            # TODO: DFT datasets should be automatically found
-            #       if they are not included in the first file.
-            p = ParamsParser(infiles[0]).run(prefix_data_location=prefix_data_location)
-            hybrid_params = [p.params]
-            for infile in infiles[1:]:
-                params = ParamsParser(infile).set_params()
-                hybrid_params.append(params)
-            common_params = set_common_params(hybrid_params)
-            hybrid_params = _set_unique_types(hybrid_params, common_params)
-            params = hybrid_params
-    else:
-        priority_infile = infiles
-        p = ParamsParser(infile).run(prefix_data_location=prefix_data_location)
-        params = common_params = p.params
-        hybrid_params = None
+class ParamsParser:
+    """Class of input parameter parser."""
 
-    common_params.priority_infile = priority_infile
-    return (params, common_params, hybrid_params)
+    def __init__(
+        self,
+        infiles: Union[str, list[str]],
+        train_ratio: float = 0.9,
+        prefix_data_location: Optional[str] = None,
+        parse_dft: bool = True,
+    ):
+        """Init method."""
+        self._train_ratio = train_ratio
+        self._prefix_data_location = prefix_data_location
+        self._parse_dft = parse_dft
+
+        self._params = None
+        self._common_params = None
+        self._hybrid_params = None
+        self._train = None
+        self._test = None
+
+        if isinstance(infiles, str):
+            self._set_from_single_file(infiles)
+        elif isinstance(infiles, (list, tuple, np.ndarray)):
+            if len(infiles) == 1:
+                self._set_from_single_file(infiles[0])
+            else:
+                self._set_from_multiple_files(infiles)
+        else:
+            raise RuntimeError("Inappropriate format for input files.")
+
+    def _set_from_single_file(self, infile: str):
+        """Set parameters from single input file."""
+        self._priority_file = infile
+        parser = ParamsParserSingle(infile)
+        parser.set_params()
+        if self._parse_dft:
+            parser.set_datasets(
+                train_ratio=self._train_ratio,
+                prefix_data_location=self._prefix_data_location,
+            )
+            self._train = parser.train
+            self._test = parser.test
+
+        self._params = self._common_params = parser.params
+        self._hybrid_params = None
+        return self
+
+    def _set_from_multiple_files(self, infiles: list):
+        """Set parameters from multiple input files."""
+        self._priority_file = infiles[0]
+        parser = ParamsParserSingle(infiles[0])
+        parser.set_params()
+        if self._parse_dft:
+            parser.set_datasets(
+                train_ratio=self._train_ratio,
+                prefix_data_location=self._prefix_data_location,
+            )
+            self._train = parser.train
+            self._test = parser.test
+
+        self._hybrid_params = [parser.params]
+        for infile in infiles[1:]:
+            params = ParamsParserSingle(infile).set_params()
+            self._hybrid_params.append(params)
+
+        self._common_params = set_common_params(self._hybrid_params)
+        self._hybrid_params = _set_unique_types(
+            self._hybrid_params, self._common_params
+        )
+        self._params = self._hybrid_params
+        return self
+
+    @property
+    def priority_file(self):
+        """Return priority input file."""
+        return self._priority_file
+
+    @property
+    def params(self):
+        """Return parameters."""
+        return self._params
+
+    @property
+    def common_params(self):
+        """Return common parameters."""
+        return self._common_params
+
+    @property
+    def hybrid_params(self):
+        """Return parameters for hybrid models."""
+        return self._hybrid_params
+
+    @property
+    def train(self):
+        """Return training dataset in DatasetList."""
+        return self._train
+
+    @property
+    def test(self):
+        """Return test dataset in DatasetList."""
+        return self._test
