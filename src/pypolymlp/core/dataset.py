@@ -376,6 +376,10 @@ class DatasetList:
         """Setitem method."""
         self._datasets[index] = value
 
+    def __len__(self):
+        """Len method."""
+        return len(self._datasets)
+
     def append(self, datasets: Union[list, tuple, Dataset]):
         """Append dataset."""
         if isinstance(datasets, Dataset):
