@@ -1,7 +1,7 @@
 """Class for datasets."""
 
 import glob
-from typing import Literal, Optional, Union
+from typing import List, Literal, Optional, Union
 
 import numpy as np
 
@@ -307,6 +307,48 @@ class Dataset:
     def files(self, f: list):
         """Setter of file names."""
         self._files = f
+
+    @property
+    def energies(self) -> np.ndarray:
+        """Get energies."""
+        if self._dft is None:
+            return None
+        return self._dft.energies
+
+    @property
+    def forces(self) -> np.ndarray:
+        """Get forces."""
+        if self._dft is None:
+            return None
+        return self._dft.forces
+
+    @property
+    def stresses(self) -> np.ndarray:
+        """Get stresses."""
+        if self._dft is None:
+            return None
+        return self._dft.stresses
+
+    @property
+    def volumes(self) -> np.ndarray:
+        """Get volumes."""
+        if self._dft is None:
+            return None
+        return self._dft.volumes
+
+    @property
+    def structures(self) -> List[PolymlpStructure]:
+        """Get structures."""
+        if self._dft is None:
+            return None
+        return self._dft.structures
+
+    @property
+    def total_n_atoms(self) -> np.ndarray:
+        """Get total number of atoms."""
+        if self._dft is None:
+            return None
+        return self._dft.total_n_atoms
 
 
 class DatasetList:
