@@ -6,7 +6,6 @@ import numpy as np
 import yaml
 
 from pypolymlp.core.dataset_utils import DatasetDFT
-from pypolymlp.core.interface_datasets import set_dataset_from_structures
 from pypolymlp.core.units import EVtoKJmol
 from pypolymlp.utils.yaml_utils import load_cell
 
@@ -17,7 +16,7 @@ def set_dataset_from_sscha_yamls(
 ) -> DatasetDFT:
     """Return DFT dataset by loading sscha_results.yaml files."""
     structures, free_energies, forces = parse_sscha_yamls(yamlfiles)
-    dft = set_dataset_from_structures(
+    dft = DatasetDFT(
         structures,
         free_energies,
         forces=forces,
@@ -96,7 +95,7 @@ def set_dataset_from_electron_yamls(
         temperature=temperature,
         target=target,
     )
-    dft = set_dataset_from_structures(
+    dft = DatasetDFT(
         structures,
         properties,
         forces=None,

@@ -11,7 +11,6 @@ from pypolymlp.core.displacements import (
     convert_disps_to_positions,
     get_structures_from_multiple_positions,
 )
-from pypolymlp.core.interface_datasets import set_dataset_from_structures
 from pypolymlp.utils.phonopy_utils import phonopy_cell_to_structure
 
 
@@ -56,7 +55,7 @@ def parse_phono3py_yaml(
         disps = disps[select_ids]
 
     supercells = get_structures_from_multiple_positions(positions_all, supercell)
-    dft = set_dataset_from_structures(
+    dft = DatasetDFT(
         supercells,
         energies,
         forces=forces,

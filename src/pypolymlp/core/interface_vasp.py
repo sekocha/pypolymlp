@@ -8,7 +8,6 @@ import numpy as np
 
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.dataset_utils import DatasetDFT
-from pypolymlp.core.interface_datasets import set_dataset_from_structures
 from pypolymlp.core.units import EVtoKbar
 
 
@@ -18,7 +17,7 @@ def set_dataset_from_vaspruns(
 ) -> DatasetDFT:
     """Return DFT dataset by loading vasprun.xml files."""
     structures, (energies, forces, stresses) = parse_properties_from_vaspruns(vaspruns)
-    dft = set_dataset_from_structures(
+    dft = DatasetDFT(
         structures,
         energies,
         forces=forces,

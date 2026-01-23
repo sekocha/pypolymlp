@@ -5,7 +5,7 @@ from typing import Optional
 import numpy as np
 
 from pypolymlp.core.data_format import PolymlpParams
-from pypolymlp.core.dataset_utils import DatasetDFT
+from pypolymlp.core.dataset import Dataset
 
 
 def _set_weight_energy_data(energy, total_n_atoms, min_e: Optional[float] = None):
@@ -52,14 +52,15 @@ def apply_weight_percentage(
     x: np.ndarray,
     y: np.ndarray,
     w: np.ndarray,
-    dft: DatasetDFT,
+    dataset: Dataset,
     params: PolymlpParams,
     first_indices: list,
     weight_stress: float = 0.1,
     min_e: Optional[float] = None,
 ):
     """Apply weights to data."""
-    include_force = dft.include_force
+    dft = dataset.dft
+    include_force = dataset.include_force
     if include_force == False:
         include_stress = False
     else:
@@ -72,7 +73,7 @@ def apply_weight_percentage(
         send = sbegin + len(dft.stresses)
 
     weight_e = _set_weight_energy_data(dft.energies, dft.total_n_atoms, min_e=min_e)
-    weight_e *= dft.weight
+    weight_e *= dataset.weight
 
     w[ebegin:eend] = weight_e
     y[ebegin:eend] = weight_e * dft.energies
@@ -81,13 +82,13 @@ def apply_weight_percentage(
 
     if include_force:
         weight_f = _set_weight_force_data(dft.forces)
-        weight_f *= dft.weight
+        weight_f *= dataset.weight
         w[fbegin:fend] = weight_f
         y[fbegin:fend] = weight_f * dft.forces
         x[fbegin:fend] *= weight_f[:, np.newaxis]
 
         if include_stress:
-            weight_const = weight_stress * dft.weight
+            weight_const = weight_stress * dataset.weight
             weight_s = _set_weight_stress_data(dft.stresses, weight_const)
             w[sbegin:send] = weight_s
             y[sbegin:send] = weight_s * dft.stresses
@@ -103,7 +104,7 @@ def apply_weights(
     x: np.ndarray,
     y: np.ndarray,
     w: np.ndarray,
-    dft: DatasetDFT,
+    dataset: Dataset,
     params: PolymlpParams,
     first_indices: list,
     weight_stress: float = 0.1,
@@ -114,7 +115,7 @@ def apply_weights(
         x,
         y,
         w,
-        dft,
+        dataset,
         params,
         first_indices,
         weight_stress=weight_stress,

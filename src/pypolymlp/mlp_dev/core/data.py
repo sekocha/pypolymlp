@@ -6,8 +6,7 @@ from typing import Optional, Union
 import numpy as np
 
 from pypolymlp.core.data_format import PolymlpParams
-from pypolymlp.core.dataset import DatasetList
-from pypolymlp.core.dataset_utils import DatasetDFT
+from pypolymlp.core.dataset import Dataset, DatasetList
 from pypolymlp.mlp_dev.core.features import compute_features
 from pypolymlp.mlp_dev.core.features_attr import get_num_features
 from pypolymlp.mlp_dev.core.utils import get_min_energy
@@ -103,7 +102,7 @@ class PolymlpDataXY:
                 x,
                 y,
                 w,
-                data.dft,
+                data,
                 common_params,
                 indices,
                 weight_stress=weight_stress,
@@ -212,11 +211,11 @@ def calc_xtx_xty(
 
     data_xy = PolymlpDataXY()
     for data in datasets:
-        dft = data.dft
         if verbose:
-            print("----- Dataset:", dft.name, "-----", flush=True)
+            print("----- Dataset:", data.name, "-----", flush=True)
+        data.sort_dft()
+        dft = data.dft
         n_str = len(dft.structures)
-        dft = dft.sort()
         begin_ids, end_ids = get_batch_slice(n_str, batch_size)
         for begin, end in zip(begin_ids, end_ids):
             if verbose:
@@ -224,7 +223,7 @@ def calc_xtx_xty(
             data_xy = _compute_products_single_batch(
                 params,
                 common_params,
-                dft.slice(begin, end),
+                data.slice_dft(begin, end),
                 data_xy,
                 element_swap=element_swap,
                 scales=scales,
@@ -262,7 +261,7 @@ def calc_xtx_xty(
 def _compute_products_single_batch(
     params: Union[PolymlpParams, list[PolymlpParams]],
     common_params: PolymlpParams,
-    dft_sliced: DatasetDFT,
+    dataset_sliced: Dataset,
     data_xy: PolymlpDataXY,
     element_swap: bool = False,
     scales: Optional[np.ndarray] = None,
@@ -273,9 +272,10 @@ def _compute_products_single_batch(
     verbose: bool = False,
 ):
     """Compute X.T @ X and X.T @ y for a single batch."""
+    dft = dataset_sliced.dft
     features = compute_features(
         params,
-        structures=dft_sliced.structures,
+        structures=dft.structures,
         element_swap=element_swap,
         verbose=verbose,
     )
@@ -305,7 +305,7 @@ def _compute_products_single_batch(
         x,
         y,
         w,
-        dft_sliced,
+        dataset_sliced,
         common_params,
         first_indices,
         weight_stress=weight_stress,

@@ -3,7 +3,9 @@
 import glob
 from typing import Literal, Optional, Union
 
-from pypolymlp.core.data_format import PolymlpParams
+import numpy as np
+
+from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
 from pypolymlp.core.dataset_utils import DatasetDFT
 from pypolymlp.core.interface_vasp import set_dataset_from_vaspruns
 from pypolymlp.core.interface_yaml import (
@@ -174,6 +176,25 @@ class Dataset:
         )
         return train, test
 
+    def slice_dft(self, begin: int, end: int):
+        """Slice DFT data in dataset."""
+        dft = self._dft.slice(begin, end)
+        name = "Sliced_" + self._name
+        data = Dataset(
+            dataset_type=self._dataset_type,
+            files=name,
+            include_force=self._include_force,
+            weight=self._weight,
+            name=name,
+            dft=dft,
+        )
+        return data
+
+    def sort_dft(self):
+        """Sort DFT data in terms of the number of atoms."""
+        self._dft.sort()
+        return self
+
     def parse_files(self, params: PolymlpParams):
         """Parse data from files."""
         self._element_order = params.element_order
@@ -188,7 +209,7 @@ class Dataset:
         else:
             raise KeyError("Given dataset_type is unavailable.")
 
-        self.subtract_atomic_energy(params.atomic_energy)
+        self._subtract_atomic_energy(params.atomic_energy)
         return self
 
     def _parse_vasp(self):
@@ -229,7 +250,7 @@ class Dataset:
         )
         return self
 
-    def subtract_atomic_energy(self, atomic_energy: tuple):
+    def _subtract_atomic_energy(self, atomic_energy: tuple):
         """Subtract atomic energy."""
         if self._dft is None:
             raise RuntimeError("DFT data not found.")
@@ -334,19 +355,161 @@ class DatasetList:
         return self._datasets
 
 
-def set_datasets(files: list[str], params: PolymlpParams, train_ratio: float = 0.9):
+def set_datasets_from_multiple_filesets(
+    params: PolymlpParams,
+    train_files: Optional[list[list[str]]] = None,
+    test_files: Optional[list[list[str]]] = None,
+):
     """Set datasets from files and params."""
-    data = Dataset(
-        name="data",
-        dataset_type=params.dataset_type,
-        files=files,
-        include_force=params.include_force,
-        weight=1.0,
-    )
-    train, test = data.split_files(train_ratio=train_ratio)
-    train.name, test.name = "data1", "data2"
+    train, test = [], []
+    for i, files in enumerate(train_files):
+        train.append(
+            Dataset(
+                name="data" + str(i + 1),
+                dataset_type=params.dataset_type,
+                files=sorted(files),
+                include_force=params.include_force,
+                weight=1.0,
+            )
+        )
+    for i, files in enumerate(test_files):
+        test.append(
+            Dataset(
+                name="data" + str(i + 1),
+                dataset_type=params.dataset_type,
+                files=sorted(files),
+                include_force=params.include_force,
+                weight=1.0,
+            )
+        )
     train = DatasetList(train)
     test = DatasetList(test)
     train.parse_files(params)
     test.parse_files(params)
+    return train, test
+
+
+def set_datasets_from_single_fileset(
+    params: PolymlpParams,
+    files: Optional[Union[list[str], str]] = None,
+    train_files: Optional[list[str]] = None,
+    test_files: Optional[list[str]] = None,
+    train_ratio: float = 0.9,
+):
+    """Set datasets from files and params."""
+    parse_end = True
+    if files is not None:
+        if isinstance(files, str):
+            parse_end = False
+            data = Dataset(
+                name="data",
+                dataset_type=params.dataset_type,
+                files=files,
+                include_force=params.include_force,
+                weight=1.0,
+            )
+            data.parse_files(params)
+            train, test = data.split_dft(train_ratio=train_ratio)
+            train.name, test.name = "data1", "data2"
+        else:
+            data = Dataset(
+                name="data",
+                dataset_type=params.dataset_type,
+                files=sorted(files),
+                include_force=params.include_force,
+                weight=1.0,
+            )
+            train, test = data.split_files(train_ratio=train_ratio)
+            train.name, test.name = "data1", "data2"
+    else:
+        train = Dataset(
+            name="data1",
+            dataset_type=params.dataset_type,
+            files=sorted(train_files),
+            include_force=params.include_force,
+            weight=1.0,
+        )
+        test = Dataset(
+            name="data2",
+            dataset_type=params.dataset_type,
+            files=sorted(test_files),
+            include_force=params.include_force,
+            weight=1.0,
+        )
+    train = DatasetList(train)
+    test = DatasetList(test)
+    if parse_end:
+        train.parse_files(params)
+        test.parse_files(params)
+    return train, test
+
+
+def set_datasets_from_structures(
+    params: PolymlpParams,
+    structures: Optional[list[PolymlpStructure]] = None,
+    energies: Optional[np.ndarray] = None,
+    forces: Optional[list[np.ndarray]] = None,
+    stresses: Optional[np.ndarray] = None,
+    train_ratio: float = 0.9,
+    train_structures: Optional[list[PolymlpStructure]] = None,
+    test_structures: Optional[list[PolymlpStructure]] = None,
+    train_energies: Optional[np.ndarray] = None,
+    test_energies: Optional[np.ndarray] = None,
+    train_forces: Optional[list[np.ndarray]] = None,
+    test_forces: Optional[list[np.ndarray]] = None,
+    train_stresses: Optional[np.ndarray] = None,
+    test_stresses: Optional[np.ndarray] = None,
+):
+    """Set datasets from files and params."""
+    if structures is not None and energies is not None:
+        dft = DatasetDFT(
+            structures,
+            energies,
+            forces=forces,
+            stresses=stresses,
+            element_order=params.element_order,
+        )
+        data = Dataset(
+            name="data",
+            dataset_type=params.dataset_type,
+            files="data",
+            include_force=params.include_force,
+            weight=1.0,
+            dft=dft,
+        )
+        train, test = data.split_dft(train_ratio=train_ratio)
+        train.name, test.name = "data1", "data2"
+    else:
+        train_dft = DatasetDFT(
+            train_structures,
+            train_energies,
+            forces=train_forces,
+            stresses=train_stresses,
+            element_order=params.element_order,
+        )
+        test_dft = DatasetDFT(
+            test_structures,
+            test_energies,
+            forces=test_forces,
+            stresses=test_stresses,
+            element_order=params.element_order,
+        )
+        train = Dataset(
+            name="data1",
+            dataset_type=params.dataset_type,
+            files="data1",
+            include_force=params.include_force,
+            weight=1.0,
+            dft=train_dft,
+        )
+        test = Dataset(
+            name="data2",
+            dataset_type=params.dataset_type,
+            files="data2",
+            include_force=params.include_force,
+            weight=1.0,
+            dft=test_dft,
+        )
+    train = DatasetList(train)
+    test = DatasetList(test)
     return train, test
