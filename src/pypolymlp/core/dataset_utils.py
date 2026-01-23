@@ -97,11 +97,8 @@ class DatasetDFT:
         assert len(structures) == len(energies)
         if forces is not None:
             assert len(structures) == len(forces)
-            assert forces[0].shape[0] == 3
         if stresses is not None:
             assert len(structures) == len(stresses)
-            assert stresses[0].shape[0] == 3
-            assert stresses[0].shape[1] == 3
 
         self._exist_force = True if forces is not None else False
         self._exist_stress = True if stresses is not None else False

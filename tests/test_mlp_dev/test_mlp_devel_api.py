@@ -141,10 +141,11 @@ def test_mlp_devel_api_multidatasets():
     )
 
     polymlp.run(verbose=True)
-    error_train1 = polymlp.summary.error_train["dataset1"]
-    error_train2 = polymlp.summary.error_train["dataset2"]
-    error_test1 = polymlp.summary.error_test["dataset1"]
-    error_test2 = polymlp.summary.error_test["dataset2"]
+    print(polymlp.summary.error_train)
+    error_train1 = polymlp.summary.error_train["data1"]
+    error_train2 = polymlp.summary.error_train["data2"]
+    error_test1 = polymlp.summary.error_test["data1"]
+    error_test2 = polymlp.summary.error_test["data2"]
 
     assert error_test1["energy"] == pytest.approx(2.2913988829580454e-4, abs=1e-8)
     assert error_test1["force"] == pytest.approx(0.01565802222609203, abs=1e-6)

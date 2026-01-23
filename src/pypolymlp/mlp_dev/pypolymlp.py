@@ -321,6 +321,7 @@ class Pypolymlp:
         """
         self._is_params_none()
         self._train, self._test = set_datasets_from_structures(
+            self._params,
             structures=structures,
             energies=energies,
             forces=forces,
@@ -355,6 +356,7 @@ class Pypolymlp:
         """
         self._is_params_none()
         self._train, self._test = set_datasets_from_structures(
+            self._params,
             train_structures=train_structures,
             test_structures=test_structures,
             train_energies=train_energies,

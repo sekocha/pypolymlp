@@ -16,10 +16,9 @@ def _multiple_dft_to_mlpcpp_obj(datasets: DatasetList):
     axis_array, positions_c_array = [], []
     types_array, n_atoms_sum_array = [], []
     for data in datasets:
-        dft = data.dft
-        n_st_dataset.append(len(dft.structures))
-        force_dataset.append(dft.include_force)
-        res = _structures_to_mlpcpp_obj(dft.structures)
+        n_st_dataset.append(len(data.structures))
+        force_dataset.append(data.include_force)
+        res = _structures_to_mlpcpp_obj(data.structures)
         axis_array.extend(res[0])
         positions_c_array.extend(res[1])
         types_array.extend(res[2])

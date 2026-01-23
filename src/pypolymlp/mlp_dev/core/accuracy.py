@@ -36,8 +36,8 @@ class PolymlpEvalAccuracy:
         errors = dict()
         for data in datasets:
             dft = data.dft
-            output_key = self._generate_output_key(dft.name, tag=tag)
-            errors[dft.name] = self.compute_error_single(
+            output_key = self._generate_output_key(data.name, tag=tag)
+            errors[data.name] = self.compute_error_single(
                 dft,
                 output_key=output_key,
                 stress_unit=stress_unit,

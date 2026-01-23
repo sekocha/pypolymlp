@@ -97,7 +97,7 @@ class Dataset:
         elif location is not None:
             self._name = location if name is None else name
             if prefix_location is not None:
-                location = prefix_location + location
+                location = prefix_location + "/" + location
 
             self._files = sorted(glob.glob(location))
             self._include_force = include_force
@@ -105,7 +105,7 @@ class Dataset:
         elif strings is not None:
             self._name = location = strings[0]
             if prefix_location is not None:
-                location = prefix_location + location
+                location = prefix_location + "/" + location
 
             self._files = sorted(glob.glob(location))
             if len(strings) > 1:
@@ -341,6 +341,7 @@ class Dataset:
         """Get structures."""
         if self._dft is None:
             return None
+        print(self._dft.structures)
         return self._dft.structures
 
     @property

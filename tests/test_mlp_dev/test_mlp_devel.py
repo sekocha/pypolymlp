@@ -13,8 +13,7 @@ cwd = Path(__file__).parent
 def _parse_data(files: str):
     """Parse input files and DFT data."""
     pypolymlp = Pypolymlp()
-    pypolymlp.load_parameter_file(files, prefix=str(cwd))
-    pypolymlp.load_datasets(train_ratio=0.9)
+    pypolymlp.load_parameter_file(files, train_ratio=0.9, prefix=str(cwd))
     return pypolymlp
 
 
@@ -91,12 +90,13 @@ def _check_errors_pair_single_dataset_MgO(error_train1, error_test1):
 def test_mlp_devel_single_dataset_autodiv():
 
     file = str(cwd) + "/polymlp.in.single.MgO.auto"
-    tag = "data-MgO/combined_vaspruns/vasprun-*.xml.polymlp"
+    tag_train = "Train_data-MgO/combined_vaspruns/vasprun-*.xml.polymlp"
+    tag_test = "Test_data-MgO/combined_vaspruns/vasprun-*.xml.polymlp"
 
     pypolymlp = _run_fit(file)
     assert pypolymlp.n_features == 1899
-    error_train1 = pypolymlp.summary.error_train[tag]
-    error_test1 = pypolymlp.summary.error_test[tag]
+    error_train1 = pypolymlp.summary.error_train[tag_train]
+    error_test1 = pypolymlp.summary.error_test[tag_test]
 
     assert error_test1["energy"] == pytest.approx(4.004397915813554e-05, abs=1e-7)
     assert error_test1["force"] == pytest.approx(0.0046229699982903265, abs=1e-6)

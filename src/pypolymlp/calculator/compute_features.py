@@ -101,7 +101,7 @@ def compute_from_infile(
         gaussian_params1 1.0 1.0 1
         gaussian_params2 0.0 7.0 8
     """
-    params = ParamsParser(infile, parse_vasprun_locations=False).params
+    params = ParamsParser(infile, parse_dft=False).params
     if force is not None:
         params.include_force = force
     if stress is not None:
