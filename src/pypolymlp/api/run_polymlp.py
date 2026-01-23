@@ -62,30 +62,29 @@ def run():
     print_credit()
 
     verbose = True
-    polymlp = Pypolymlp()
+    polymlp = Pypolymlp(verbose=verbose)
     polymlp.load_parameter_file(args.infile)
-    # polymlp.load_datasets(train_ratio=0.9)
     if verbose:
         polymlp.print_params()
     polymlp.save_params(filename="polymlp_params.yaml")
 
     if args.learning_curve:
         tlearn1 = time.time()
-        polymlp.fit_learning_curve(verbose=verbose)
+        polymlp.fit_learning_curve()
         polymlp.save_learning_curve(filename="polymlp_learning_curve.dat")
         tlearn2 = time.time()
 
     t1 = time.time()
     if args.cg:
-        polymlp.fit_cg(gtol=args.gtol, max_iter=args.max_iter, verbose=verbose)
+        polymlp.fit_cg(gtol=args.gtol, max_iter=args.max_iter)
     # elif args.sgd:
     #     polymlp.fit_sgd(verbose=verbose)
     else:
-        polymlp.fit(batch_size=args.batch_size, verbose=verbose)
+        polymlp.fit(batch_size=args.batch_size)
 
-    polymlp.save_mlp(filename="polymlp.yaml", yaml=True)
+    polymlp.save_mlp(filename="polymlp.yaml")
     t2 = time.time()
-    polymlp.estimate_error(log_energy=True, verbose=verbose)
+    polymlp.estimate_error(log_energy=True)
     t3 = time.time()
     polymlp.save_errors(filename="polymlp_error.yaml")
 

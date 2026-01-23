@@ -80,7 +80,6 @@ class PolymlpDataXY:
 
     def apply_weights(
         self,
-        common_params: PolymlpParams,
         datasets: DatasetList,
         min_energy: Optional[float] = None,
         weight_stress: float = 0.1,
@@ -103,7 +102,6 @@ class PolymlpDataXY:
                 y,
                 w,
                 data,
-                common_params,
                 indices,
                 weight_stress=weight_stress,
                 min_e=min_energy,
@@ -157,7 +155,6 @@ def _get_features(
 
 def calc_xy(
     params: Union[PolymlpParams, list[PolymlpParams]],
-    common_params: PolymlpParams,
     datasets: DatasetList,
     element_swap: bool = False,
     scales: Optional[np.ndarray] = None,
@@ -179,14 +176,13 @@ def calc_xy(
         print("- n (force)  =", nf, flush=True)
         print("- n (stress) =", ns, flush=True)
 
-    data_xy.apply_scales(scales=scales, include_force=common_params.include_force)
-    data_xy.apply_weights(common_params, datasets, min_energy=min_energy)
+    data_xy.apply_scales(scales=scales, include_force=datasets.include_force)
+    data_xy.apply_weights(datasets, min_energy=min_energy)
     return data_xy
 
 
 def calc_xtx_xty(
     params: Union[PolymlpParams, list[PolymlpParams]],
-    common_params: PolymlpParams,
     datasets: DatasetList,
     element_swap: bool = False,
     scales: Optional[np.ndarray] = None,
@@ -205,7 +201,6 @@ def calc_xtx_xty(
             use_gradient=use_gradient,
             verbose=verbose,
         )
-
     if min_energy is None:
         min_energy = get_min_energy(datasets)
 
@@ -214,15 +209,13 @@ def calc_xtx_xty(
         if verbose:
             print("----- Dataset:", data.name, "-----", flush=True)
         data.sort_dft()
-        dft = data.dft
-        n_str = len(dft.structures)
+        n_str = len(data.structures)
         begin_ids, end_ids = get_batch_slice(n_str, batch_size)
         for begin, end in zip(begin_ids, end_ids):
             if verbose:
                 print("Structures:", end, "/", n_str, flush=True)
             data_xy = _compute_products_single_batch(
                 params,
-                common_params,
                 data.slice_dft(begin, end),
                 data_xy,
                 element_swap=element_swap,
@@ -237,13 +230,13 @@ def calc_xtx_xty(
     if n_features > n_features_threshold:
         data_xy.xtx = symmetrize_xtx(data_xy.xtx)
 
-    n_data = sum([len(d.dft.energies) for d in datasets])
+    n_data = sum([len(d.energies) for d in datasets])
     scales, zero_ids = compute_scales(
         scales,
         data_xy.xe_sum,
         data_xy.xe_sq_sum,
         n_data,
-        include_force=common_params.include_force,
+        include_force=datasets.include_force,
     )
     data_xy.xtx[zero_ids] = 0.0
     data_xy.xtx[:, zero_ids] = 0.0
@@ -260,7 +253,6 @@ def calc_xtx_xty(
 
 def _compute_products_single_batch(
     params: Union[PolymlpParams, list[PolymlpParams]],
-    common_params: PolymlpParams,
     dataset_sliced: Dataset,
     data_xy: PolymlpDataXY,
     element_swap: bool = False,
@@ -272,10 +264,9 @@ def _compute_products_single_batch(
     verbose: bool = False,
 ):
     """Compute X.T @ X and X.T @ y for a single batch."""
-    dft = dataset_sliced.dft
     features = compute_features(
         params,
-        structures=dft.structures,
+        structures=dataset_sliced.structures,
         element_swap=element_swap,
         verbose=verbose,
     )
@@ -306,7 +297,6 @@ def _compute_products_single_batch(
         y,
         w,
         dataset_sliced,
-        common_params,
         first_indices,
         weight_stress=weight_stress,
         min_e=min_energy,

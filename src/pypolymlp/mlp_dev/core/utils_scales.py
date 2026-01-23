@@ -4,7 +4,9 @@ import numpy as np
 
 
 def round_scales(
-    scales: np.ndarray, include_force: bool = True, threshold: float = 1e-10
+    scales: np.ndarray,
+    include_force: bool = True,
+    threshold: float = 1e-10,
 ):
     """Set scales so that they are not used for zero features."""
     if include_force:

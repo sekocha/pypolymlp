@@ -16,8 +16,8 @@ from pypolymlp.core.io_polymlp import convert_to_yaml, load_mlp
 from pypolymlp.core.parser_polymlp_params import ParamsParser
 from pypolymlp.core.polymlp_params import print_params, set_all_params
 from pypolymlp.core.utils import split_train_test
-from pypolymlp.mlp_dev.core.accuracy import PolymlpEvalAccuracy, write_error_yaml
 from pypolymlp.mlp_dev.core.dataclass import PolymlpDataMLP
+from pypolymlp.mlp_dev.core.eval_accuracy import PolymlpEvalAccuracy, write_error_yaml
 from pypolymlp.mlp_dev.core.features_attr import (
     get_num_features,
     write_polymlp_params_yaml,
@@ -154,13 +154,11 @@ class Pypolymlp:
         if self._train is not None:
             print("datasets:", flush=True)
             print("  train_data:", flush=True)
-            for v in self._train:
-                print("  -", v.name, flush=True)
-
+            for dataset in self._train:
+                print("  -", dataset.name, flush=True)
             print("  test_data:", flush=True)
-            for v in self._test:
-                print("  -", v.name, flush=True)
-
+            for dataset in self._test:
+                print("  -", dataset.name, flush=True)
         return self
 
     def _is_params_none(self):
@@ -270,8 +268,8 @@ class Pypolymlp:
 
         Parameters
         ----------
-        train_vaspruns: list of list containing vasprun files (training)
-        test_vaspruns: list of list containing vasprun files (test)
+        train_vaspruns: List of list containing vasprun files (training)
+        test_vaspruns: List of list containing vasprun files (test)
         """
         self._is_params_none()
         self._params.dataset_type = "vasp"
@@ -416,7 +414,7 @@ class Pypolymlp:
         )
         return self
 
-    def fit(self, batch_size: Optional[int] = None, verbose: bool = False):
+    def fit(self, batch_size: Optional[int] = None):
         """Estimate MLP coefficients without computing entire X.
 
         Parameters
@@ -431,27 +429,22 @@ class Pypolymlp:
             self._train,
             self._test,
             batch_size=batch_size,
-            verbose=verbose,
+            verbose=self._verbose,
         )
         return self
 
-    def fit_standard(self, verbose: bool = False):
+    def fit_standard(self):
         """Estimate MLP coefficients with direct evaluation of X."""
         self._is_data_none()
         self._mlp_model = fit_standard(
             self._params,
             self._train,
             self._test,
-            verbose=verbose,
+            verbose=self._verbose,
         )
         return self
 
-    def fit_cg(
-        self,
-        gtol: float = 1e-2,
-        max_iter: Optional[int] = None,
-        verbose: bool = False,
-    ):
+    def fit_cg(self, gtol: float = 1e-2, max_iter: Optional[int] = None):
         """Estimate MLP coefficients using conjugate gradient.
 
         Parameters
@@ -466,32 +459,27 @@ class Pypolymlp:
             self._test,
             gtol=gtol,
             max_iter=max_iter,
-            verbose=verbose,
+            verbose=self._verbose,
         )
         return self
 
-    def fit_sgd(self, verbose: bool = False):
+    def fit_sgd(self):
         """Estimate MLP coefficients using stochastic gradient descent."""
         self._is_data_none()
         self._mlp_model = fit_sgd(
             self._params,
             self._train,
             self._test,
-            verbose=verbose,
+            verbose=self._verbose,
         )
         return self
 
-    def estimate_error(
-        self,
-        log_energy: bool = False,
-        file_path: str = "./",
-        verbose: bool = False,
-    ):
+    def estimate_error(self, log_energy: bool = False, file_path: str = "./"):
         """Estimate prediction errors."""
         if self._mlp_model is None:
             raise RuntimeError("Regression must be performed before estimating errors.")
 
-        acc = PolymlpEvalAccuracy(self._mlp_model, verbose=verbose)
+        acc = PolymlpEvalAccuracy(self._mlp_model, verbose=self._verbose)
         self._mlp_model.error_train = acc.compute_error(
             self._train,
             log_energy=log_energy,
@@ -511,7 +499,6 @@ class Pypolymlp:
         use_cg: bool = False,
         gtol: float = 1e-2,
         max_iter: Optional[int] = None,
-        verbose: bool = False,
     ):
         """Estimate MLP coefficients and prediction errors.
 
@@ -525,22 +512,22 @@ class Pypolymlp:
         max_iter: Number of maximum iterations in CG.
         """
         if not use_cg:
-            self.fit(batch_size=batch_size, verbose=verbose)
+            self.fit(batch_size=batch_size)
         else:
             # TODO: batch size must be active.
-            self.fit_cg(gtol=gtol, max_iter=max_iter, verbose=verbose)
+            self.fit_cg(gtol=gtol, max_iter=max_iter)
 
-        self.estimate_error(verbose=verbose)
+        self.estimate_error()
         return self
 
-    def fit_learning_curve(self, verbose: bool = False):
+    def fit_learning_curve(self):
         """Compute learing curve."""
         self._is_data_none()
         self._learning_log = fit_learning_curve(
             self._params,
             self._train,
             self._test,
-            verbose=verbose,
+            verbose=self._verbose,
         )
         return self
 
@@ -553,7 +540,7 @@ class Pypolymlp:
         """Load poscar files and convert them to structure instances."""
         return parse_structures_from_poscars(poscars)
 
-    def save_mlp(self, filename: str = "polymlp.yaml", yaml: bool = True):
+    def save_mlp(self, filename: str = "polymlp.yaml"):
         """Save polynomial MLP as file.
 
         When hybrid models are used, mlp files will be generated as
@@ -561,10 +548,7 @@ class Pypolymlp:
         """
         if self._mlp_model is None:
             raise RuntimeError("No polymlp has been developed.")
-        if yaml:
-            self._mlp_model.save_mlp(filename=filename)
-        else:
-            self._mlp_model.save_mlp_lammps(filename=filename)
+        self._mlp_model.save_mlp(filename=filename)
         return self
 
     def load_mlp(self, filename: str = "polymlp.yaml"):
@@ -580,17 +564,33 @@ class Pypolymlp:
         filename_txt: str = "polymlp.lammps",
         filename_yaml: str = "polymlp.yaml",
     ):
-        """Convert polymlp.lammps to polymlp.yaml."""
+        """Convert polymlp.lammps to polymlp.yaml.
+
+        Parameters
+        ----------
+        filename_txt: File name of legacy polymlp file.
+        filename_yaml: File name of output polymlp file in yaml format.
+        """
         convert_to_yaml(filename_txt, filename_yaml)
         return self
 
     def save_params(self, filename: str = "polymlp_params.yaml"):
-        """Save MLP parameters as file."""
+        """Save MLP parameters as file.
+
+        Parameters
+        ----------
+        filename: File name for saving parameter attributes.
+        """
         write_polymlp_params_yaml(self._params, filename=filename)
         return self
 
     def save_errors(self, filename: str = "polymlp_error.yaml"):
-        """Save prediction errors as file."""
+        """Save prediction errors as file.
+
+        Parameters
+        ----------
+        filename: File name for saving errors.
+        """
         if self._mlp_model.error_train is None:
             raise RuntimeError("estimate_error must be performed before save_errors.")
         write_error_yaml(self._mlp_model.error_train, filename=filename, mode="w")

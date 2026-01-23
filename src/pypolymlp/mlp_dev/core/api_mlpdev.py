@@ -6,9 +6,9 @@ import numpy as np
 
 from pypolymlp.core.data_format import PolymlpParams
 from pypolymlp.core.dataset import DatasetList
-from pypolymlp.mlp_dev.core.accuracy import PolymlpEvalAccuracy
 from pypolymlp.mlp_dev.core.data import PolymlpDataXY, calc_xtx_xty, calc_xy
 from pypolymlp.mlp_dev.core.dataclass import PolymlpDataMLP
+from pypolymlp.mlp_dev.core.eval_accuracy import PolymlpEvalAccuracy
 from pypolymlp.mlp_dev.core.features_attr import get_features_attr, get_num_features
 from pypolymlp.mlp_dev.core.utils import check_memory_size_in_regression, set_params
 from pypolymlp.mlp_dev.core.utils_model_selection import (
@@ -27,10 +27,16 @@ class PolymlpDevCore:
         use_gradient: bool = False,
         verbose: bool = False,
     ):
-        """Init method."""
+        """Init method.
+
+        Parameters
+        ----------
+        params: Parameters of polymlp.
+        use_gradient: Use gradient method or not.
+        """
         self.params = params
-        self._verbose = verbose
         self._use_gradient = use_gradient
+        self._verbose = verbose
         self._n_features = None
 
     def calc_xy(
@@ -44,7 +50,6 @@ class PolymlpDevCore:
         """Calculate X and y data."""
         data_xy = calc_xy(
             self.params,
-            self.common_params,
             datasets,
             element_swap=element_swap,
             scales=scales,
@@ -66,7 +71,6 @@ class PolymlpDevCore:
         """Calculate X.T @ X and X.T @ y data."""
         data_xy = calc_xtx_xty(
             self.params,
-            self.common_params,
             datasets,
             element_swap=element_swap,
             scales=scales,

@@ -4,13 +4,12 @@ from typing import Optional
 
 import numpy as np
 
-from pypolymlp.core.data_format import PolymlpParams
 from pypolymlp.core.dataset import Dataset
 
 
 def _set_weight_energy_data(energy, total_n_atoms, min_e: Optional[float] = None):
     """Define weights to energy data."""
-    # todo: more appropriate procedure for finding weight values
+    # TODO: more appropriate procedure for finding weight values
     e_per_atom = energy / total_n_atoms
     if min_e is None:
         min_e = np.min(e_per_atom)
@@ -53,50 +52,50 @@ def apply_weight_percentage(
     y: np.ndarray,
     w: np.ndarray,
     dataset: Dataset,
-    params: PolymlpParams,
     first_indices: list,
     weight_stress: float = 0.1,
     min_e: Optional[float] = None,
 ):
     """Apply weights to data."""
-    dft = dataset.dft
     include_force = dataset.include_force
-    if include_force == False:
-        include_stress = False
-    else:
-        include_stress = params.include_stress
+    include_stress = dataset.include_stress
 
     ebegin, fbegin, sbegin = first_indices
-    eend = ebegin + len(dft.energies)
+    eend = ebegin + len(dataset.energies)
     if include_force:
-        fend = fbegin + len(dft.forces)
-        send = sbegin + len(dft.stresses)
+        fend = fbegin + len(dataset.forces)
+    if include_stress:
+        send = sbegin + len(dataset.stresses)
 
-    weight_e = _set_weight_energy_data(dft.energies, dft.total_n_atoms, min_e=min_e)
+    weight_e = _set_weight_energy_data(
+        dataset.energies,
+        dataset.total_n_atoms,
+        min_e=min_e,
+    )
     weight_e *= dataset.weight
 
     w[ebegin:eend] = weight_e
-    y[ebegin:eend] = weight_e * dft.energies
-
+    y[ebegin:eend] = weight_e * dataset.energies
     x[ebegin:eend] *= weight_e[:, np.newaxis]
 
     if include_force:
-        weight_f = _set_weight_force_data(dft.forces)
+        weight_f = _set_weight_force_data(dataset.forces)
         weight_f *= dataset.weight
         w[fbegin:fend] = weight_f
-        y[fbegin:fend] = weight_f * dft.forces
+        y[fbegin:fend] = weight_f * dataset.forces
         x[fbegin:fend] *= weight_f[:, np.newaxis]
 
-        if include_stress:
-            weight_const = weight_stress * dataset.weight
-            weight_s = _set_weight_stress_data(dft.stresses, weight_const)
-            w[sbegin:send] = weight_s
-            y[sbegin:send] = weight_s * dft.stresses
-            x[sbegin:send] *= weight_s[:, np.newaxis]
-        else:
-            x[sbegin:send, :] = 0.0
-            y[sbegin:send] = 0.0
-            w[sbegin:send] = 0.0
+    if include_stress:
+        weight_const = weight_stress * dataset.weight
+        weight_s = _set_weight_stress_data(dataset.stresses, weight_const)
+        w[sbegin:send] = weight_s
+        y[sbegin:send] = weight_s * dataset.stresses
+        x[sbegin:send] *= weight_s[:, np.newaxis]
+
+    if include_force and not include_stress:
+        x[sbegin:send, :] = 0.0
+        y[sbegin:send] = 0.0
+        w[sbegin:send] = 0.0
     return x, y, w
 
 
@@ -105,7 +104,6 @@ def apply_weights(
     y: np.ndarray,
     w: np.ndarray,
     dataset: Dataset,
-    params: PolymlpParams,
     first_indices: list,
     weight_stress: float = 0.1,
     min_e: Optional[float] = None,
@@ -116,7 +114,6 @@ def apply_weights(
         y,
         w,
         dataset,
-        params,
         first_indices,
         weight_stress=weight_stress,
         min_e=min_e,

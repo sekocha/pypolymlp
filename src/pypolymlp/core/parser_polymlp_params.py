@@ -225,6 +225,8 @@ class ParamsParserSingle:
             )
             if not self._params.include_force:
                 dataset.include_force = False
+            if not self._params.include_stress:
+                dataset.include_stress = False
 
             if tag == "train_data":
                 train_set.append(dataset)

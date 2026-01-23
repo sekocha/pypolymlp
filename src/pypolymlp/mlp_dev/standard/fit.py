@@ -4,7 +4,7 @@ from typing import Optional, Union
 
 from pypolymlp.core.data_format import PolymlpParams
 from pypolymlp.core.dataset import DatasetList
-from pypolymlp.mlp_dev.core.mlpdev import PolymlpDevCore, eval_accuracy
+from pypolymlp.mlp_dev.core.api_mlpdev import PolymlpDevCore, eval_accuracy
 from pypolymlp.mlp_dev.standard.solvers import solver_ridge
 from pypolymlp.mlp_dev.standard.utils_learning_curve import print_learning_curve_log
 
@@ -20,6 +20,9 @@ def fit(
 
     Parameters
     ----------
+    params: Parameters of polymlp.
+    train: Training datasets.
+    test: Test datasets.
     batch_size: Batch size for sequential regression.
                 If None, the batch size is automatically determined
                 depending on the memory size and number of features.
@@ -66,7 +69,14 @@ def fit_standard(
     test: DatasetList,
     verbose: bool = False,
 ):
-    """Estimate MLP coefficients with direct evaluation of X."""
+    """Estimate MLP coefficients with direct evaluation of X.
+
+    Parameters
+    ----------
+    params: Parameters of polymlp.
+    train: Training datasets.
+    test: Test datasets.
+    """
 
     polymlp = PolymlpDevCore(params, verbose=verbose)
     polymlp.check_memory_size_in_regression()
@@ -108,7 +118,14 @@ def fit_learning_curve(
     test: DatasetList,
     verbose: bool = False,
 ):
-    """Calculate learning curve."""
+    """Calculate learning curve.
+
+    Parameters
+    ----------
+    params: Parameters of polymlp.
+    train: Training datasets.
+    test: Test datasets.
+    """
     if len(train) != 1:
         raise RuntimeError(
             "Number of training datasets must be one for learning curve."

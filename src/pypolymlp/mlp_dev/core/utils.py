@@ -29,8 +29,10 @@ def get_min_energy(datasets: DatasetList) -> float:
     """Calculate minimum of DFT energies."""
     min_e = 1e10
     for data in datasets:
-        dft = data.dft
-        e_per_atom = dft.energies / dft.total_n_atoms
+        if len(data.energies) == 0:
+            raise RuntimeError("Empty energy data.")
+
+        e_per_atom = data.energies / data.total_n_atoms
         min_e_trial = np.min(e_per_atom)
         if min_e_trial < min_e:
             min_e = min_e_trial

@@ -25,6 +25,7 @@ class Dataset:
         files: Optional[Union[list, str]] = None,
         location: Optional[str] = None,
         include_force: bool = True,
+        include_stress: bool = True,
         weight: float = 1.0,
         strings: Optional[list] = None,
         name: Optional[str] = None,
@@ -44,6 +45,7 @@ class Dataset:
         location: String for specifying dataset files.
         files: Dataset files.
         include_force: Consider force or not for the dataset.
+        include_force: Consider stress or not for the dataset.
         weight: Weight for the dataset.
         name: Name of dataset.
         split: Dataset is obtained by splitting into training and test datasets.
@@ -70,6 +72,7 @@ class Dataset:
             files=files,
             location=location,
             include_force=include_force,
+            include_stress=include_stress,
             weight=weight,
             strings=strings,
             name=name,
@@ -83,6 +86,7 @@ class Dataset:
         files: Optional[list] = None,
         location: Optional[str] = None,
         include_force: bool = True,
+        include_stress: bool = True,
         weight: float = 1.0,
         strings: Optional[list] = None,
         name: Optional[str] = None,
@@ -93,6 +97,7 @@ class Dataset:
             self._name = "Data_from_files" if name is None else name
             self._files = files
             self._include_force = include_force
+            self._include_stress = include_stress
             self._weight = weight
         elif location is not None:
             self._name = location if name is None else name
@@ -101,6 +106,7 @@ class Dataset:
 
             self._files = sorted(glob.glob(location))
             self._include_force = include_force
+            self._include_stress = include_stress
             self._weight = weight
         elif strings is not None:
             self._name = location = strings[0]
@@ -112,6 +118,12 @@ class Dataset:
                 self._include_force = strtobool(strings[1])
             else:
                 self._include_force = include_force
+
+            if not self._include_force:
+                self._include_stress = False
+            else:
+                self._include_stress = include_stress
+
             if len(strings) > 2:
                 self._weight = float(strings[2])
             else:
@@ -134,6 +146,7 @@ class Dataset:
             dataset_type=self._dataset_type,
             files=files_train,
             include_force=self._include_force,
+            include_stress=self._include_stress,
             weight=self._weight,
             name="Train_" + self._name,
             split=True,
@@ -142,6 +155,7 @@ class Dataset:
             dataset_type=self._dataset_type,
             files=files_test,
             include_force=self._include_force,
+            include_stress=self._include_stress,
             weight=self._weight,
             name="Test_" + self._name,
             split=True,
@@ -159,6 +173,7 @@ class Dataset:
             dataset_type=self._dataset_type,
             files=train_name,
             include_force=self._include_force,
+            include_stress=self._include_stress,
             weight=self._weight,
             name=train_name,
             split=True,
@@ -169,6 +184,7 @@ class Dataset:
             dataset_type=self._dataset_type,
             files=test_name,
             include_force=self._include_force,
+            include_stress=self._include_stress,
             weight=self._weight,
             name=test_name,
             split=True,
@@ -184,6 +200,7 @@ class Dataset:
             dataset_type=self._dataset_type,
             files=name,
             include_force=self._include_force,
+            include_stress=self._include_stress,
             weight=self._weight,
             name=name,
             dft=dft,
@@ -279,6 +296,16 @@ class Dataset:
         self._include_force = force
 
     @property
+    def include_stress(self):
+        """Return include_stress."""
+        return self._include_stress
+
+    @include_stress.setter
+    def include_stress(self, stress: bool):
+        """Setter of include_stress."""
+        self._include_stress = stress
+
+    @property
     def weight(self):
         """Return weight."""
         return self._weight
@@ -341,7 +368,6 @@ class Dataset:
         """Get structures."""
         if self._dft is None:
             return None
-        print(self._dft.structures)
         return self._dft.structures
 
     @property
@@ -401,11 +427,17 @@ class DatasetList:
         """Return datasets."""
         return self._datasets
 
+    @property
+    def include_force(self):
+        """Return include_force."""
+        return np.any([ds.include_force for ds in self._datasets])
+
 
 def set_datasets_from_multiple_filesets(
     params: PolymlpParams,
     train_files: Optional[list[list[str]]] = None,
     test_files: Optional[list[list[str]]] = None,
+    weight: float = 1.0,
 ):
     """Set datasets from files and params."""
     train, test = [], []
@@ -416,7 +448,8 @@ def set_datasets_from_multiple_filesets(
                 dataset_type=params.dataset_type,
                 files=sorted(files),
                 include_force=params.include_force,
-                weight=1.0,
+                include_stress=params.include_stress,
+                weight=weight,
             )
         )
     for i, files in enumerate(test_files):
@@ -426,7 +459,8 @@ def set_datasets_from_multiple_filesets(
                 dataset_type=params.dataset_type,
                 files=sorted(files),
                 include_force=params.include_force,
-                weight=1.0,
+                include_stress=params.include_stress,
+                weight=weight,
             )
         )
     train = DatasetList(train)
@@ -442,47 +476,53 @@ def set_datasets_from_single_fileset(
     train_files: Optional[list[str]] = None,
     test_files: Optional[list[str]] = None,
     train_ratio: float = 0.9,
+    weight: float = 1.0,
 ):
     """Set datasets from files and params."""
     parse_end = True
-    if files is not None:
-        if isinstance(files, str):
-            parse_end = False
-            data = Dataset(
-                name="data",
-                dataset_type=params.dataset_type,
-                files=files,
-                include_force=params.include_force,
-                weight=1.0,
-            )
-            data.parse_files(params)
-            train, test = data.split_dft(train_ratio=train_ratio)
-            train.name, test.name = "data1", "data2"
-        else:
-            data = Dataset(
-                name="data",
-                dataset_type=params.dataset_type,
-                files=sorted(files),
-                include_force=params.include_force,
-                weight=1.0,
-            )
-            train, test = data.split_files(train_ratio=train_ratio)
-            train.name, test.name = "data1", "data2"
-    else:
+    if files is None:
         train = Dataset(
             name="data1",
             dataset_type=params.dataset_type,
             files=sorted(train_files),
             include_force=params.include_force,
-            weight=1.0,
+            include_stress=params.include_stress,
+            weight=weight,
         )
         test = Dataset(
             name="data2",
             dataset_type=params.dataset_type,
             files=sorted(test_files),
             include_force=params.include_force,
-            weight=1.0,
+            include_stress=params.include_stress,
+            weight=weight,
         )
+    else:
+        if isinstance(files, str):
+            data = Dataset(
+                name="data",
+                dataset_type=params.dataset_type,
+                files=files,
+                include_force=params.include_force,
+                include_stress=params.include_stress,
+                weight=weight,
+            )
+            data.parse_files(params)
+            train, test = data.split_dft(train_ratio=train_ratio)
+            train.name, test.name = "data1", "data2"
+            parse_end = False
+        else:
+            data = Dataset(
+                name="data",
+                dataset_type=params.dataset_type,
+                files=sorted(files),
+                include_force=params.include_force,
+                include_stress=params.include_stress,
+                weight=weight,
+            )
+            train, test = data.split_files(train_ratio=train_ratio)
+            train.name, test.name = "data1", "data2"
+
     train = DatasetList(train)
     test = DatasetList(test)
     if parse_end:
@@ -497,7 +537,6 @@ def set_datasets_from_structures(
     energies: Optional[np.ndarray] = None,
     forces: Optional[list[np.ndarray]] = None,
     stresses: Optional[np.ndarray] = None,
-    train_ratio: float = 0.9,
     train_structures: Optional[list[PolymlpStructure]] = None,
     test_structures: Optional[list[PolymlpStructure]] = None,
     train_energies: Optional[np.ndarray] = None,
@@ -506,6 +545,8 @@ def set_datasets_from_structures(
     test_forces: Optional[list[np.ndarray]] = None,
     train_stresses: Optional[np.ndarray] = None,
     test_stresses: Optional[np.ndarray] = None,
+    train_ratio: float = 0.9,
+    weight: float = 1.0,
 ):
     """Set datasets from files and params."""
     if structures is not None and energies is not None:
@@ -521,7 +562,8 @@ def set_datasets_from_structures(
             dataset_type=params.dataset_type,
             files="data",
             include_force=params.include_force,
-            weight=1.0,
+            include_stress=params.include_stress,
+            weight=weight,
             dft=dft,
         )
         train, test = data.split_dft(train_ratio=train_ratio)
@@ -546,7 +588,8 @@ def set_datasets_from_structures(
             dataset_type=params.dataset_type,
             files="data1",
             include_force=params.include_force,
-            weight=1.0,
+            include_stress=params.include_stress,
+            weight=weight,
             dft=train_dft,
         )
         test = Dataset(
@@ -554,7 +597,8 @@ def set_datasets_from_structures(
             dataset_type=params.dataset_type,
             files="data2",
             include_force=params.include_force,
-            weight=1.0,
+            include_stress=params.include_stress,
+            weight=weight,
             dft=test_dft,
         )
     train = DatasetList(train)

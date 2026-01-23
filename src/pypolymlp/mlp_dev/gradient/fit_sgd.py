@@ -6,7 +6,7 @@ import numpy as np
 
 from pypolymlp.core.data_format import PolymlpParams
 from pypolymlp.core.dataset import DatasetList
-from pypolymlp.mlp_dev.core.mlpdev import PolymlpDevCore
+from pypolymlp.mlp_dev.core.api_mlpdev import PolymlpDevCore
 from pypolymlp.mlp_dev.gradient.solvers_sgd import solver_sgd
 
 

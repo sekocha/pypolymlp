@@ -9,6 +9,15 @@ from pypolymlp.core.dataset import DatasetList
 from pypolymlp.cxx.lib import libmlpcpp
 
 
+def _structures_to_mlpcpp_obj(structures: list[PolymlpStructure]):
+    """Set structures to apply mlpcpp format."""
+    axis_array = [st.axis for st in structures]
+    positions_c_array = [st.axis @ st.positions for st in structures]
+    types_array = [st.types for st in structures]
+    n_atoms_sum_array = [sum(st.n_atoms) for st in structures]
+    return (axis_array, positions_c_array, types_array, n_atoms_sum_array)
+
+
 def _multiple_dft_to_mlpcpp_obj(datasets: DatasetList):
     """Extract structures from multiple datasets."""
 
@@ -32,15 +41,6 @@ def _multiple_dft_to_mlpcpp_obj(datasets: DatasetList):
         n_st_dataset,
         force_dataset,
     )
-
-
-def _structures_to_mlpcpp_obj(structures: list[PolymlpStructure]):
-    """Set structures to apply mlpcpp format."""
-    axis_array = [st.axis for st in structures]
-    positions_c_array = [st.axis @ st.positions for st in structures]
-    types_array = [st.types for st in structures]
-    n_atoms_sum_array = [sum(st.n_atoms) for st in structures]
-    return (axis_array, positions_c_array, types_array, n_atoms_sum_array)
 
 
 def _init_features(
@@ -247,9 +247,16 @@ def compute_features(
     datasets: Optional[DatasetList] = None,
     structures: Optional[list[PolymlpStructure]] = None,
     element_swap: bool = False,
-    verbose: bool = True,
+    verbose: bool = False,
 ):
-    """Compute polymlp features."""
+    """Compute polymlp features.
+
+    Parameters
+    ----------
+    params: Parameters of polymlp.
+    datasets: Datasets.
+    structures: Structures.
+    """
     if isinstance(params, (list, tuple, np.ndarray)):
         features_class = FeaturesHybrid
     else:
