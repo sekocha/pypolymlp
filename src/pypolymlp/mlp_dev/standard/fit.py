@@ -145,7 +145,7 @@ def fit_learning_curve(
         print("Calculate learning curve.", flush=True)
 
     error_log = []
-    n_train = train_xy.n_data[0]
+    n_train = train_xy.total_n_data
     for n_samples in range(n_train // 10, n_train + 1, n_train // 10):
         if verbose:
             print("------------- n_samples:", n_samples, "-------------", flush=True)

@@ -29,7 +29,6 @@ class PolymlpDataXY:
     weights: Optional[np.ndarray] = None
     min_energy: Optional[float] = None
 
-    n_data: Optional[tuple[int, int, int]] = None
     first_indices: Optional[list[tuple[int, int, int]]] = None
     cumulative_n_features: Optional[int] = None
 
@@ -60,57 +59,3 @@ class PolymlpDataXY:
         ids.extend(ids_force)
         ids = np.array(ids)
         return self.x[ids], self.y[ids]
-
-
-#     def apply_scales(
-#         self,
-#         scales: Optional[np.ndarray] = None,
-#         include_force: bool = True,
-#     ):
-#         """Apply scales to X."""
-#         if self.x is None:
-#             raise RuntimeError("No data X found.")
-#
-#         if scales is None:
-#             ne, nf, ns = self.n_data
-#             scales = np.std(self.x[:ne], axis=0)
-#         scales, zero_ids = round_scales(scales, include_force=include_force)
-#
-#         self.x[:, zero_ids] = 0.0
-#         self.x /= scales
-#         self.scales = scales
-#         return self
-#
-#     def apply_weights(
-#         self,
-#         datasets: DatasetList,
-#         min_energy: Optional[float] = None,
-#         weight_stress: float = 0.1,
-#     ):
-#         """Apply weights to X and y."""
-#         if self.x is None:
-#             raise RuntimeError("No data X found.")
-#         x = self.x
-#         n_data = x.shape[0]
-#         y = np.zeros(n_data)
-#         w = np.ones(n_data)
-#
-#         if min_energy is None:
-#             min_energy = get_min_energy(datasets)
-#         self.min_energy = min_energy
-#
-#         for data, indices in zip(datasets, self.first_indices):
-#             x, y, w = apply_weights(
-#                 x,
-#                 y,
-#                 w,
-#                 data,
-#                 indices,
-#                 weight_stress=weight_stress,
-#                 min_e=min_energy,
-#             )
-#
-#         self.x = x
-#         self.y = y
-#         self.weight = w
-#         return self

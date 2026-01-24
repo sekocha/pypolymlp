@@ -69,8 +69,8 @@ def calc_xy(
         weights=w,
         scales=scales,
         min_energy=min_energy,
-        n_data=features.n_data,
         first_indices=first_indices,
         cumulative_n_features=features.cumulative_n_features,
+        total_n_data=features.n_data[0],
     )
     return data_xy

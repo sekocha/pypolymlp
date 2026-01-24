@@ -55,10 +55,12 @@ def calc_xtx_xty(
         for begin, end in zip(begin_ids, end_ids):
             if verbose:
                 print("Structures:", end, "/", n_str, flush=True)
+
+            sliced_data = data.slice_dft(begin, end)
             data_xy = _compute_products_single_batch(
-                params,
-                data.slice_dft(begin, end),
                 data_xy,
+                params,
+                sliced_data,
                 element_swap=element_swap,
                 scales=scales,
                 min_energy=min_energy,
@@ -93,9 +95,9 @@ def calc_xtx_xty(
 
 
 def _compute_products_single_batch(
+    data_xy: PolymlpDataXY,
     params: Union[PolymlpParams, list[PolymlpParams]],
     dataset_sliced: Dataset,
-    data_xy: PolymlpDataXY,
     element_swap: bool = False,
     scales: Optional[np.ndarray] = None,
     min_energy: Optional[float] = None,

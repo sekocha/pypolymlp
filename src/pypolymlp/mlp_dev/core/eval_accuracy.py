@@ -8,8 +8,7 @@ from typing import Literal, Optional
 import numpy as np
 
 from pypolymlp.calculator.properties import Properties
-from pypolymlp.core.dataset import DatasetList
-from pypolymlp.core.dataset_utils import DatasetDFT
+from pypolymlp.core.dataset import Dataset, DatasetList
 from pypolymlp.core.utils import rmse
 from pypolymlp.mlp_dev.core.dataclass import PolymlpDataMLP
 
@@ -35,10 +34,9 @@ class PolymlpEvalAccuracy:
         """Compute errors and predicted values for all datasets."""
         errors = dict()
         for data in datasets:
-            dft = data.dft
             output_key = self._generate_output_key(data.name, tag=tag)
             errors[data.name] = self.compute_error_single(
-                dft,
+                data,
                 output_key=output_key,
                 stress_unit=stress_unit,
                 log_energy=log_energy,
@@ -50,7 +48,7 @@ class PolymlpEvalAccuracy:
 
     def compute_error_single(
         self,
-        dft: DatasetDFT,
+        dataset: Dataset,
         output_key: str = "train",
         stress_unit: Literal["eV", "GPa"] = "eV",
         log_energy: bool = True,
@@ -60,7 +58,7 @@ class PolymlpEvalAccuracy:
         force_direction: bool = False,
     ):
         """Compute errors and predicted values for single dataset."""
-        strs = dft.structures
+        strs = dataset.structures
         energies, forces, stresses = self._prop.eval_multiple(strs)
         forces = np.array(
             list(itertools.chain.from_iterable([f.T.reshape(-1) for f in forces]))
@@ -69,19 +67,19 @@ class PolymlpEvalAccuracy:
 
         n_total_atoms = [sum(st.n_atoms) for st in strs]
         rmse_e, true_e, pred_e = self._compute_rmse(
-            dft.energies,
+            dataset.energies,
             energies,
             normalize=n_total_atoms,
         )
 
-        if not dft.exist_force:
+        if not dataset.exist_force:
             rmse_f = None
             rmse_percent_f_norm = None
             rmse_f_direction = None
         else:
-            rmse_f, true_f, pred_f = self._compute_rmse(dft.forces, forces)
+            rmse_f, true_f, pred_f = self._compute_rmse(dataset.forces, forces)
             if force_direction:
-                true_f1 = dft.forces.reshape((-1, 3))
+                true_f1 = dataset.forces.reshape((-1, 3))
                 pred_f1 = forces.reshape((-1, 3))
                 norm_t = np.linalg.norm(true_f1, axis=1)
                 norm_p = np.linalg.norm(pred_f1, axis=1)
@@ -104,11 +102,11 @@ class PolymlpEvalAccuracy:
             volumes = [st.volume for st in strs]
             normalize = np.repeat(volumes, 6) / eV_to_GPa
 
-        if not dft.exist_stress:
+        if not dataset.exist_stress:
             rmse_s = None
         else:
             rmse_s, true_s, pred_s = self._compute_rmse(
-                dft.stresses,
+                dataset.stresses,
                 stresses,
                 normalize=normalize,
             )
@@ -126,11 +124,11 @@ class PolymlpEvalAccuracy:
         if log_energy or log_force or log_stress:
             os.makedirs(path_output + "/predictions", exist_ok=True)
             if log_energy:
-                self._write_energies(dft, true_e, pred_e, path_output, output_key)
+                self._write_energies(dataset, true_e, pred_e, path_output, output_key)
             if log_force:
-                self._write_forces(dft, true_f, pred_f, path_output, output_key)
+                self._write_forces(true_f, pred_f, path_output, output_key)
             if log_stress:
-                self._write_stresses(dft, true_s, pred_s, path_output, output_key)
+                self._write_stresses(true_s, pred_s, path_output, output_key)
 
         return error_dict
 
@@ -177,7 +175,7 @@ class PolymlpEvalAccuracy:
 
     def _write_energies(
         self,
-        dft: DatasetDFT,
+        dataset: Dataset,
         true_e: np.ndarray,
         pred_e: np.ndarray,
         path_output: str,
@@ -187,13 +185,12 @@ class PolymlpEvalAccuracy:
         outdata = np.array([true_e, pred_e, (true_e - pred_e) * 1000]).T
         f = open(path_output + "/predictions/energy." + output_key + ".dat", "w")
         print("# DFT(eV/atom), MLP(eV/atom), DFT-MLP(meV/atom)", file=f)
-        for d, name in zip(outdata, dft.files):
+        for d, name in zip(outdata, dataset.dft.files):
             print(d[0], d[1], d[2], name, file=f)
         f.close()
 
     def _write_forces(
         self,
-        dft: DatasetDFT,
         true_f: np.ndarray,
         pred_f: np.ndarray,
         path_output: str,
@@ -210,7 +207,6 @@ class PolymlpEvalAccuracy:
 
     def _write_stresses(
         self,
-        dft: DatasetDFT,
         true_s: np.ndarray,
         pred_s: np.ndarray,
         path_output: str,

@@ -379,6 +379,20 @@ class Dataset:
             return None
         return self._dft.total_n_atoms
 
+    @property
+    def exist_force(self) -> bool:
+        """Get force existence flag."""
+        if self._dft is None:
+            return None
+        return self._dft.exist_force
+
+    @property
+    def exist_stress(self) -> bool:
+        """Get stress existence flag."""
+        if self._dft is None:
+            return None
+        return self._dft.exist_stress
+
 
 class DatasetList:
     """Class for keeping multiple datasets for training or test data."""
