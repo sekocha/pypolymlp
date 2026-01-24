@@ -11,6 +11,7 @@ cwd = Path(__file__).parent
 
 
 def test_mlp_devel_api_sscha():
+    """Test API to develop MLP for sscha free energy."""
     polymlp = Pypolymlp(verbose=True)
     polymlp.set_params(
         elements=["Sr", "Ti", "O"],
@@ -37,6 +38,7 @@ def test_mlp_devel_api_sscha():
 
 
 def test_mlp_devel_api_electron():
+    """Test API to develop MLP for electronic free energy."""
     polymlp = Pypolymlp(verbose=True)
     polymlp.set_params(
         elements=["Ti"],

@@ -18,8 +18,8 @@ reg_alpha_params -3 1 5
 include_force True
 include_stress False
 
-train_data data-SrTiO3/vaspruns/train1/vasprun.xml.* True 1.0
-test_data data-SrTiO3/vaspruns/test1/vasprun.xml.* True 1.0
+train_data data-vasp-SrTiO3/vaspruns/train1/vasprun.xml.* True 1.0
+test_data data-vasp-SrTiO3/vaspruns/test1/vasprun.xml.* True 1.0
 
 n_type 3
 elements Sr Ti O

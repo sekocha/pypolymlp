@@ -20,7 +20,7 @@ def _run_fit(files: Union[str, list]):
 
 
 def test_mlp_dev_sscha_yaml():
-    """Test yaml."""
+    """Test MLP development for sscha from input file."""
     infile = str(cwd / "polymlp.in.sscha.SrTiO3")
     pypolymlp = _run_fit(infile)
 
@@ -38,7 +38,7 @@ def test_mlp_dev_sscha_yaml():
 
 
 def test_mlp_dev_electron_yaml():
-    """Test yaml."""
+    """Test MLP development for electronic free energy from input file."""
     infile = str(cwd / "polymlp.in.electron.Ti")
     pypolymlp = _run_fit(infile)
 

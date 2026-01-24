@@ -16,5 +16,5 @@ reg_alpha_params -3 1 5
 
 atomic_energy -0.00040000 -1.85321219
 
-train_data data-MgO/vaspruns/train1/vasprun-*.xml.polymlp
-test_data data-MgO/vaspruns/test1/vasprun-*.xml.polymlp
+train_data data-vasp-MgO/vaspruns/train1/vasprun-*.xml.polymlp
+test_data data-vasp-MgO/vaspruns/test1/vasprun-*.xml.polymlp

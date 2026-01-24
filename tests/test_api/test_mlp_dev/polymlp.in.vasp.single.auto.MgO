@@ -16,7 +16,7 @@ reg_alpha_params -3 1 5
 
 atomic_energy -0.00040000 -1.85321219
 
-data data-MgO/combined_vaspruns/vasprun-*.xml.polymlp
+data data-vasp-MgO/combined_vaspruns/vasprun-*.xml.polymlp
 
 include_stress False
 
