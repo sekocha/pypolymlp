@@ -47,7 +47,7 @@ def _set_weight_stress_data(
     return weight_s
 
 
-def apply_weight_percentage(
+def apply_weights(
     x: np.ndarray,
     y: np.ndarray,
     w: np.ndarray,
@@ -64,7 +64,6 @@ def apply_weight_percentage(
     eend = ebegin + len(dataset.energies)
     if include_force:
         fend = fbegin + len(dataset.forces)
-    if include_stress:
         send = sbegin + len(dataset.stresses)
 
     weight_e = _set_weight_energy_data(
@@ -96,26 +95,4 @@ def apply_weight_percentage(
         x[sbegin:send, :] = 0.0
         y[sbegin:send] = 0.0
         w[sbegin:send] = 0.0
-    return x, y, w
-
-
-def apply_weights(
-    x: np.ndarray,
-    y: np.ndarray,
-    w: np.ndarray,
-    dataset: Dataset,
-    first_indices: list,
-    weight_stress: float = 0.1,
-    min_e: Optional[float] = None,
-):
-    """Apply weights to data."""
-    x, y, w = apply_weight_percentage(
-        x,
-        y,
-        w,
-        dataset,
-        first_indices,
-        weight_stress=weight_stress,
-        min_e=min_e,
-    )
     return x, y, w

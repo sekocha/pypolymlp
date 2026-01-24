@@ -11,7 +11,7 @@ cwd = Path(__file__).parent
 
 
 def test_mlp_devel_api_sscha():
-    polymlp = Pypolymlp()
+    polymlp = Pypolymlp(verbose=True)
     polymlp.set_params(
         elements=["Sr", "Ti", "O"],
         cutoff=8.0,
@@ -25,7 +25,7 @@ def test_mlp_devel_api_sscha():
     )
     yamlfiles = sorted(glob.glob(str(cwd) + "/data-sscha-SrTiO3/sscha_results_*.yaml"))
     polymlp.set_datasets_sscha(yamlfiles)
-    polymlp.run(verbose=True)
+    polymlp.run()
 
     error_train1 = polymlp.summary.error_train["data1"]
     error_test1 = polymlp.summary.error_test["data2"]
@@ -37,7 +37,7 @@ def test_mlp_devel_api_sscha():
 
 
 def test_mlp_devel_api_electron():
-    polymlp = Pypolymlp()
+    polymlp = Pypolymlp(verbose=True)
     polymlp.set_params(
         elements=["Ti"],
         cutoff=8.0,
@@ -51,7 +51,7 @@ def test_mlp_devel_api_electron():
     )
     yamlfiles = sorted(glob.glob(str(cwd) + "/data-electron-Ti/electron-*.yaml"))
     polymlp.set_datasets_electron(yamlfiles, temperature=500, train_ratio=0.8)
-    polymlp.run(verbose=True)
+    polymlp.run()
 
     error_train1 = polymlp.summary.error_train["data1"]
     error_test1 = polymlp.summary.error_test["data2"]

@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import phono3py
 import pytest
+from phono3py.api_phono3py import Phono3py
 
 from pypolymlp.core.interface_vasp import PolymlpStructure, Poscar
 
@@ -39,3 +41,10 @@ def pytest_collection_modifyitems(config, items):
 def structure_rocksalt() -> PolymlpStructure:
     """Return rocksalt structure."""
     return Poscar(path_file + "/POSCAR-rocksalt").structure
+
+
+@pytest.fixture(scope="session")
+def phono3py_mp_149() -> Phono3py:
+    yaml = path_file + "/phonopy_training_dataset.yaml.xz"
+    ph3 = phono3py.load(yaml, produce_fc=False, log_level=1)
+    return ph3

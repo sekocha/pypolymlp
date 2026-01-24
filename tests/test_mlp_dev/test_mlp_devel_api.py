@@ -14,7 +14,7 @@ cwd = Path(__file__).parent
 
 
 def test_mlp_devel_api_include_force_false():
-    polymlp = Pypolymlp()
+    polymlp = Pypolymlp(verbose=True)
     polymlp.set_params(
         elements=["Mg", "O"],
         cutoff=8.0,
@@ -35,7 +35,7 @@ def test_mlp_devel_api_include_force_false():
     )
     polymlp.set_datasets_vasp(train_vaspruns1, test_vaspruns1)
 
-    polymlp.run(verbose=True)
+    polymlp.run()
     error_train1 = polymlp.summary.error_train["data1"]
     error_test1 = polymlp.summary.error_test["data2"]
 
@@ -44,7 +44,7 @@ def test_mlp_devel_api_include_force_false():
 
 
 def test_mlp_devel_api_single_dataset():
-    polymlp = Pypolymlp()
+    polymlp = Pypolymlp(verbose=True)
     polymlp.set_params(
         elements=["Mg", "O"],
         cutoff=8.0,
@@ -64,7 +64,7 @@ def test_mlp_devel_api_single_dataset():
     )
     polymlp.set_datasets_vasp(train_vaspruns1, test_vaspruns1)
 
-    polymlp.run(verbose=True)
+    polymlp.run()
     error_train1 = polymlp.summary.error_train["data1"]
     error_test1 = polymlp.summary.error_test["data2"]
 
@@ -78,7 +78,7 @@ def test_mlp_devel_api_single_dataset():
 
 
 def test_mlp_devel_api_single_dataset2():
-    polymlp = Pypolymlp()
+    polymlp = Pypolymlp(verbose=True)
     polymlp.set_params(
         elements=["O", "Mg"],
         cutoff=8.0,
@@ -98,7 +98,7 @@ def test_mlp_devel_api_single_dataset2():
     )
     polymlp.set_datasets_vasp(train_vaspruns1, test_vaspruns1)
 
-    polymlp.run(verbose=True)
+    polymlp.run()
     error_train1 = polymlp.summary.error_train["data1"]
     error_test1 = polymlp.summary.error_test["data2"]
 
@@ -112,7 +112,7 @@ def test_mlp_devel_api_single_dataset2():
 
 
 def test_mlp_devel_api_multidatasets():
-    polymlp = Pypolymlp()
+    polymlp = Pypolymlp(verbose=True)
     polymlp.set_params(
         elements=["Mg", "O"],
         cutoff=8.0,
@@ -140,7 +140,7 @@ def test_mlp_devel_api_multidatasets():
         [train_vaspruns1, train_vaspruns2], [test_vaspruns1, test_vaspruns2]
     )
 
-    polymlp.run(verbose=True)
+    polymlp.run()
     print(polymlp.summary.error_train)
     error_train1 = polymlp.summary.error_train["data1"]
     error_train2 = polymlp.summary.error_train["data2"]
@@ -166,7 +166,7 @@ def test_mlp_devel_api_multidatasets():
 
 def test_mlp_devel_api_structure():
     """Test API for MLP development using structure dataset."""
-    polymlp = Pypolymlp()
+    polymlp = Pypolymlp(verbose=True)
     polymlp.set_params(
         elements=["Mg", "O"],
         cutoff=8.0,
@@ -209,7 +209,7 @@ def test_mlp_devel_api_structure():
         test_forces=test_forces,
     )
 
-    polymlp.run(verbose=True)
+    polymlp.run()
 
     error_train = polymlp.summary.error_train["data1"]
     error_test = polymlp.summary.error_test["data2"]
@@ -237,7 +237,7 @@ def test_mlp_devel_api_structure():
         train_forces=train_forces,
         test_forces=test_forces,
     )
-    polymlp.run(verbose=True)
+    polymlp.run()
 
     error_train = polymlp.summary.error_train["data1"]
     error_test = polymlp.summary.error_test["data2"]
@@ -250,7 +250,7 @@ def test_mlp_devel_api_structure():
 
 def test_mlp_devel_api_displacements():
     """Test API for MLP development using displacements."""
-    polymlp = Pypolymlp()
+    polymlp = Pypolymlp(verbose=True)
     polymlp.set_params(
         elements=["Ag", "I"],
         cutoff=8.0,
@@ -288,7 +288,7 @@ def test_mlp_devel_api_displacements():
         test_energies,
         st_dict,
     )
-    polymlp.run(verbose=True)
+    polymlp.run()
 
     error_train = polymlp.summary.error_train["data1"]
     error_test = polymlp.summary.error_test["data2"]
@@ -301,7 +301,7 @@ def test_mlp_devel_api_displacements():
 
 def test_mlp_devel_api_learning_curve():
     """Test API for learning curve."""
-    polymlp = Pypolymlp()
+    polymlp = Pypolymlp(verbose=False)
     polymlp.set_params(
         elements=["Ag", "I"],
         cutoff=8.0,
@@ -339,7 +339,7 @@ def test_mlp_devel_api_learning_curve():
         test_energies,
         st_dict,
     )
-    polymlp.fit_learning_curve(verbose=False)
+    polymlp.fit_learning_curve()
     error = polymlp.learning_curve
     assert error[0][1]["energy"] == pytest.approx(1.4029702831658057e-06, rel=1e-3)
     assert error[0][1]["force"] == pytest.approx(0.0003922588310867841, rel=1e-3)
@@ -365,7 +365,7 @@ def test_mlp_devel_api_learning_curve():
 
 def test_mlp_devel_api_distance():
 
-    polymlp = Pypolymlp()
+    polymlp = Pypolymlp(verbose=True)
 
     distance_dict = {
         ("Sr", "Sr"): [3.9, 5.5],
@@ -389,7 +389,7 @@ def test_mlp_devel_api_distance():
     test_vaspruns1 = glob.glob(str(cwd) + "/data-SrTiO3/vaspruns/test1/vasprun.xml.*")
     polymlp.set_datasets_vasp(train_vaspruns1, test_vaspruns1)
 
-    polymlp.run(verbose=True)
+    polymlp.run()
     error_train1 = polymlp.summary.error_train["data1"]
     error_test1 = polymlp.summary.error_test["data2"]
 
