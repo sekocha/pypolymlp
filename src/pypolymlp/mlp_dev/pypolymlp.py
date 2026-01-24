@@ -423,7 +423,8 @@ class Pypolymlp:
                     If None, the batch size is automatically determined
                     depending on the memory size and number of features.
         """
-        self._verbose = verbose
+        if not self._verbose:
+            self._verbose = verbose
         self._is_data_none()
         self._mlp_model = fit(
             self._params,
@@ -436,7 +437,8 @@ class Pypolymlp:
 
     def fit_standard(self, verbose: bool = False):
         """Estimate MLP coefficients with direct evaluation of X."""
-        self._verbose = verbose
+        if not self._verbose:
+            self._verbose = verbose
         self._is_data_none()
         self._mlp_model = fit_standard(
             self._params,
@@ -459,7 +461,8 @@ class Pypolymlp:
         gtol: Gradient tolerance for CG.
         max_iter: Number of maximum iterations in CG.
         """
-        self._verbose = verbose
+        if not self._verbose:
+            self._verbose = verbose
         self._is_data_none()
         self._mlp_model = fit_cg(
             self._params,
@@ -473,7 +476,8 @@ class Pypolymlp:
 
     def fit_sgd(self, verbose: bool = False):
         """Estimate MLP coefficients using stochastic gradient descent."""
-        self._verbose = verbose
+        if not self._verbose:
+            self._verbose = verbose
         self._is_data_none()
         self._mlp_model = fit_sgd(
             self._params,
@@ -490,7 +494,8 @@ class Pypolymlp:
         verbose: bool = False,
     ):
         """Estimate prediction errors."""
-        self._verbose = verbose
+        if not self._verbose:
+            self._verbose = verbose
         if self._mlp_model is None:
             raise RuntimeError("Regression must be performed before estimating errors.")
 
@@ -527,7 +532,8 @@ class Pypolymlp:
         gtol: Gradient tolerance for CG.
         max_iter: Number of maximum iterations in CG.
         """
-        self._verbose = verbose
+        if not self._verbose:
+            self._verbose = verbose
         if not use_cg:
             self.fit(batch_size=batch_size, verbose=self._verbose)
         else:
@@ -539,7 +545,8 @@ class Pypolymlp:
 
     def fit_learning_curve(self, verbose: bool = False):
         """Compute learing curve."""
-        self._verbose = verbose
+        if not self._verbose:
+            self._verbose = verbose
         self._is_data_none()
         self._learning_log = fit_learning_curve(
             self._params,
