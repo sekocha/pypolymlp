@@ -6,7 +6,9 @@ import numpy as np
 
 from pypolymlp.core.data_format import PolymlpParams
 from pypolymlp.core.dataset import DatasetList
-from pypolymlp.mlp_dev.core.data import PolymlpDataXY, calc_xtx_xty, calc_xy
+from pypolymlp.mlp_dev.core.data_sequential import calc_xtx_xty
+from pypolymlp.mlp_dev.core.data_standard import calc_xy
+from pypolymlp.mlp_dev.core.data_utils import PolymlpDataXY
 from pypolymlp.mlp_dev.core.dataclass import PolymlpDataMLP
 from pypolymlp.mlp_dev.core.eval_accuracy import PolymlpEvalAccuracy
 from pypolymlp.mlp_dev.core.features_attr import get_features_attr, get_num_features

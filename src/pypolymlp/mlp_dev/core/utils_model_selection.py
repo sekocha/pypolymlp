@@ -6,7 +6,7 @@ import numpy as np
 
 from pypolymlp.core.data_format import PolymlpParams
 from pypolymlp.core.utils import rmse
-from pypolymlp.mlp_dev.core.data import PolymlpDataXY
+from pypolymlp.mlp_dev.core.data_utils import PolymlpDataXY
 from pypolymlp.mlp_dev.core.dataclass import PolymlpDataMLP
 
 
