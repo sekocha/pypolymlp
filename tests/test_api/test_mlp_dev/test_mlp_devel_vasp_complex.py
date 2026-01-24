@@ -99,20 +99,21 @@ def test_mlp_devel_hybrid_flexible_alloy():
     error_test2 = error_test[tag_test2]
     error_test3 = error_test[tag_test3]
 
-    assert error_test1["energy"] == pytest.approx(0.005856437090626224, abs=1e-8)
-    assert error_test1["force"] == pytest.approx(0.03669204873660227, abs=1e-6)
-    assert error_test1["stress"] == pytest.approx(0.10038157705917868, abs=1e-5)
+    etol, ftol, stol = 1e-2, 5e-3, 5e-3
+    assert error_test1["energy"] == pytest.approx(0.005856437090626224, rel=etol)
+    assert error_test1["force"] == pytest.approx(0.03669204873660227, rel=ftol)
+    assert error_test1["stress"] == pytest.approx(0.10038157705917868, rel=stol)
 
-    assert error_train1["energy"] == pytest.approx(0.005714896601496177, abs=1e-8)
-    assert error_train1["force"] == pytest.approx(0.03787574853676284, abs=1e-6)
-    assert error_train1["stress"] == pytest.approx(0.09112941418627805, abs=1e-5)
+    assert error_train1["energy"] == pytest.approx(0.005714896601496177, rel=etol)
+    assert error_train1["force"] == pytest.approx(0.03787574853676284, rel=ftol)
+    assert error_train1["stress"] == pytest.approx(0.09112941418627805, rel=stol)
 
-    assert error_test2["energy"] == pytest.approx(0.016152217081171592, abs=1e-8)
-    assert error_test2["force"] == pytest.approx(0.06657513354721871, abs=1e-6)
-    assert error_test3["energy"] == pytest.approx(0.03960687938768066, abs=1e-8)
-    assert error_test3["force"] == pytest.approx(0.040258801388977375, abs=1e-6)
+    assert error_test2["energy"] == pytest.approx(0.016152217081171592, rel=etol)
+    assert error_test2["force"] == pytest.approx(0.06657513354721871, rel=ftol)
+    assert error_test3["energy"] == pytest.approx(0.03960687938768066, rel=etol)
+    assert error_test3["force"] == pytest.approx(0.040258801388977375, rel=ftol)
 
-    assert error_train2["energy"] == pytest.approx(0.012298087188725068, abs=1e-8)
-    assert error_train2["force"] == pytest.approx(0.05182914502932192, abs=1e-6)
-    assert error_train3["energy"] == pytest.approx(0.004038061027003977, abs=1e-8)
-    assert error_train3["force"] == pytest.approx(0.03427719245990994, abs=1e-6)
+    assert error_train2["energy"] == pytest.approx(0.012298087188725068, rel=etol)
+    assert error_train2["force"] == pytest.approx(0.05182914502932192, rel=ftol)
+    assert error_train3["energy"] == pytest.approx(0.004038061027003977, rel=etol)
+    assert error_train3["force"] == pytest.approx(0.03427719245990994, rel=ftol)

@@ -83,7 +83,7 @@ class Dataset:
 
     def _set_dataset_attrs(
         self,
-        files: Optional[list] = None,
+        files: Optional[Union[str, list]] = None,
         location: Optional[str] = None,
         include_force: bool = True,
         include_stress: bool = True,
@@ -96,6 +96,8 @@ class Dataset:
         if files is not None:
             self._name = "Data_from_files" if name is None else name
             self._files = files
+            if prefix_location is not None and isinstance(files, str):
+                self._files = prefix_location + "/" + self._files
             self._include_force = include_force
             self._include_stress = include_stress
             self._weight = weight
