@@ -78,6 +78,8 @@ class ParamsParserSingle:
             self._params.electron_property = self._parser.get_params(
                 "electron_property", default="free_energy", dtype=str
             )
+            self._params.include_force = False
+            self._params.include_stress = False
         return self._params
 
     def _get_force_tags(self):
