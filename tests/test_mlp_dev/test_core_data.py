@@ -1,13 +1,12 @@
 """Tests of data_utils, data_standard, and data_sequential."""
 
+import copy
 from pathlib import Path
 
 import pytest
 
 from pypolymlp.mlp_dev.core.data_sequential import calc_xtx_xty
 from pypolymlp.mlp_dev.core.data_standard import calc_xy
-
-# from pypolymlp.mlp_dev.core.data_utils import PolymlpDataXY
 
 cwd = Path(__file__).parent
 
@@ -52,8 +51,23 @@ def _assert_xtx_xty(data_xy):
     assert data_xy.cumulative_n_features is None
 
 
-def test_calc_xtx_xty(regdata_mp_149):
+def test_calc_xtx_xty1(regdata_mp_149):
     """Test for calc_xtx_xty."""
     params, datasets = regdata_mp_149
-    data_xy = calc_xtx_xty(params, datasets, verbose=True)
+    datasets_ = copy.deepcopy(datasets)
+    data_xy = calc_xtx_xty(params, datasets_, verbose=True)
+    _assert_xtx_xty(data_xy)
+
+
+def test_calc_xtx_xty2(regdata_mp_149):
+    """Test for parameters of calc_xtx_xty."""
+    params, datasets = regdata_mp_149
+    datasets_ = copy.deepcopy(datasets)
+    data_xy = calc_xtx_xty(params, datasets_, batch_size=10)
+    _assert_xtx_xty(data_xy)
+
+    data_xy = calc_xtx_xty(params, datasets_, n_features_threshold=10)
+    _assert_xtx_xty(data_xy)
+
+    data_xy = calc_xtx_xty(params, datasets_, batch_size=50, use_gradient=True)
     _assert_xtx_xty(data_xy)
