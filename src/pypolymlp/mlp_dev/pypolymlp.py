@@ -666,3 +666,18 @@ class Pypolymlp:
         if self._mlp_model is None:
             return get_num_features(self._params)
         return self._mlp_model.coeffs.shape[0]
+
+    @property
+    def train(self):
+        """Return training datasets."""
+        return self._train
+
+    @property
+    def test(self):
+        """Return test datasets."""
+        return self._test
+
+    @property
+    def datasets(self):
+        """Return training and test datasets."""
+        return (self._train, self._test)

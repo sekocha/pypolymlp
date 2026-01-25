@@ -18,7 +18,6 @@ class PolymlpDataXY:
     xty: Vector x.T @ y.
     scales: Scales of x, shape=(n_features)
     weights: Weights for data, shape=(total_n_data)
-    n_data: Number of data (energy, force, stress)
     """
 
     x: Optional[np.ndarray] = None
@@ -31,11 +30,12 @@ class PolymlpDataXY:
 
     first_indices: Optional[list[tuple[int, int, int]]] = None
     cumulative_n_features: Optional[int] = None
+    total_n_data: int = 0
+    n_structures: int = 0
 
     xe_sum: Optional[np.ndarray] = None
     xe_sq_sum: Optional[np.ndarray] = None
     y_sq_norm: float = 0.0
-    total_n_data: int = 0
 
     def clear_data(self):
         """Clear large data."""

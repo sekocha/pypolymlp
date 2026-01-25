@@ -9,6 +9,7 @@ import pytest
 from phono3py.api_phono3py import Phono3py
 
 from pypolymlp.core.interface_vasp import PolymlpStructure, Poscar
+from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
 
 cwd = Path(__file__).parent
 path_file = str(cwd) + "/files/"
@@ -45,6 +46,18 @@ def structure_rocksalt() -> PolymlpStructure:
 
 @pytest.fixture(scope="session")
 def phono3py_mp_149() -> Phono3py:
+    """Return phono3py data instance."""
     yaml = path_file + "/phonopy_training_dataset.yaml.xz"
     ph3 = phono3py.load(yaml, produce_fc=False, log_level=1)
     return ph3
+
+
+@pytest.fixture(scope="session")
+def regdata_mp_149(phono3py_mp_149):
+    """Return regression data."""
+    pypolymlp = Pypolymlp()
+    infile = path_file + "/polymlp.in.phono3py.Si"
+    pypolymlp.load_parameter_file(infile, prefix=path_file)
+    params = pypolymlp.parameters
+    data = pypolymlp.train
+    return (params, data)
