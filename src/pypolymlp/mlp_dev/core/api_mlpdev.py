@@ -160,6 +160,7 @@ class PolymlpDevCore:
     @params.setter
     def params(self, params: Union[PolymlpParams, list[PolymlpParams]]):
         """Set parameters."""
+        self._n_features = None
         self._params, self._common_params, _ = set_params(params)
         self._hybrid = True if isinstance(self._params, list) else False
 

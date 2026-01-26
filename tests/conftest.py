@@ -9,6 +9,7 @@ import pytest
 from phono3py.api_phono3py import Phono3py
 
 from pypolymlp.core.interface_vasp import PolymlpStructure, Poscar
+from pypolymlp.core.parser_polymlp_params import ParamsParser
 from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
 
 cwd = Path(__file__).parent
@@ -61,3 +62,11 @@ def regdata_mp_149(phono3py_mp_149):
     params = pypolymlp.parameters
     data = pypolymlp.train
     return (params, data)
+
+
+@pytest.fixture(scope="session")
+def params_MgO():
+    """Return parameters for MgO."""
+    infile = path_file + "/polymlp.in"
+    parser = ParamsParser(infile, prefix_data_location=path_file, parse_dft=False)
+    return parser.params
