@@ -10,13 +10,8 @@ def save_learning_curve_log(
     header = "# n_str, RMSE(energy, meV/atom) RMSE(force, eV/ang), RMSE(stress)"
     print(header, file=f)
     for n_samp, error in error_log:
-        print(
-            n_samp,
-            error["energy"] * 1000,
-            error["force"],
-            error["stress"],
-            file=f,
-        )
+        error_ev = error["energy"] * 1000
+        print(n_samp, error_ev, error["force"], error["stress"], file=f)
     f.close()
 
 
