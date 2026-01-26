@@ -150,7 +150,7 @@ def fit_learning_curve(
         if verbose:
             print("------------- n_samples:", n_samples, "-------------", flush=True)
 
-        x, y = train_xy.slices(n_samples, train[0].total_n_atoms)
+        x, y = train_xy.slice(n_samples, train[0].total_n_atoms)
         coefs = solver_ridge(
             x=x,
             y=y,

@@ -42,7 +42,7 @@ class PolymlpDataXY:
         del self.x, self.y, self.xtx, self.xty
         del self.weights, self.xe_sum, self.xe_sq_sum
 
-    def slices(self, n_samples: int, total_n_atoms: np.ndarray):
+    def slice(self, n_samples: int, total_n_atoms: np.ndarray):
         """Return slices for selected data."""
         if self.x is None:
             raise RuntimeError("Data X is not found.")
