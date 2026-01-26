@@ -41,6 +41,7 @@ class PolymlpDataXY:
         """Clear large data."""
         del self.x, self.y, self.xtx, self.xty
         del self.weights, self.xe_sum, self.xe_sq_sum
+        return self
 
     def slice(self, n_samples: int, total_n_atoms: np.ndarray):
         """Return slices for selected data."""
