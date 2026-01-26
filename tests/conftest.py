@@ -86,6 +86,17 @@ def dataxy_xtx_xty_mp_149(regdata_mp_149):
 
 
 @pytest.fixture(scope="session")
+def mlp_mp_149(regdata_mp_149):
+    """Return mlp data."""
+    params, _ = regdata_mp_149
+    pypolymlp = Pypolymlp()
+    mlp = path_file + "/polymlp.yaml.Si"
+    pypolymlp.load_mlp(mlp)
+    pypolymlp.summary.params = params
+    return pypolymlp.summary
+
+
+@pytest.fixture(scope="session")
 def params_MgO():
     """Return parameters for MgO."""
     infile = path_file + "/polymlp.in"
