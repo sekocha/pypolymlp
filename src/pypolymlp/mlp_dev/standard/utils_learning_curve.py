@@ -20,10 +20,6 @@ def print_learning_curve_log(error_log: dict):
     print("Learning Curve:", flush=True)
     for n_samples, error in error_log:
         print("- n_samples:   ", n_samples, flush=True)
-        print(
-            "  rmse_energy: ",
-            "{:.8f}".format(error["energy"] * 1000),
-            flush=True,
-        )
+        print("  rmse_energy: ", "{:.8f}".format(error["energy"] * 1000), flush=True)
         print("  rmse_force:  ", "{:.8f}".format(error["force"]), flush=True)
         print("  rmse_stress: ", error["stress"], flush=True)
