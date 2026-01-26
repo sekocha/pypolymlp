@@ -68,3 +68,27 @@ def test_get_features_attr(regdata_mp_149):
         ],
     )
     assert atomtype_pair[0][0] == [0, 0]
+
+
+def test_get_features_attr_binary(params_MgO):
+    """Test for get_features_attr in binary system."""
+    features_attr, polynomial_attr, atomtype_pair = get_features_attr(params_MgO)
+    assert isinstance(features_attr, list) == True
+    assert isinstance(polynomial_attr, list) == True
+    assert isinstance(atomtype_pair, dict) == True
+
+    assert features_attr[-1][0] == 8
+    assert features_attr[-1][1] == 19
+    assert features_attr[-1][2] == [2, 2, 2]
+    assert features_attr[-2][0] == 8
+    assert features_attr[-2][1] == 19
+    assert features_attr[-2][2] == [1, 2, 2]
+
+    np.testing.assert_equal(
+        polynomial_attr[6:9],
+        [[1, 178], [178, 178], [0, 179]],
+    )
+    assert atomtype_pair[0][0] == [0, 0]
+    assert atomtype_pair[1][0] == [0, 1]
+    assert atomtype_pair[1][1] == [1, 0]
+    assert atomtype_pair[2][0] == [1, 1]
