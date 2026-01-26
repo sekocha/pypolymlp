@@ -13,7 +13,6 @@ def auto_divide(vaspruns: list[str], verbose: bool = False):
     """Divide a dataset into training and test datasets automatically."""
     dft = set_dataset_from_vaspruns(vaspruns)
 
-    # train0, test0 = [], []
     # train1, train2, test1, test2 = split_two_datasets(dft_dict)
     train0, train1, train2, test0, test1, test2 = split_three_datasets(dft)
 
