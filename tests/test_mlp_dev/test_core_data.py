@@ -6,15 +6,13 @@ from pathlib import Path
 import pytest
 
 from pypolymlp.mlp_dev.core.data_sequential import calc_xtx_xty
-from pypolymlp.mlp_dev.core.data_standard import calc_xy
 
 cwd = Path(__file__).parent
 
 
-def test_calc_xy(regdata_mp_149):
+def test_calc_xy(dataxy_mp_149):
     """Test for calc_xy."""
-    params, datasets = regdata_mp_149
-    data_xy = calc_xy(params, datasets, verbose=True)
+    data_xy = dataxy_mp_149
     assert data_xy.x.shape == (35820, 168)
     assert data_xy.y.shape[0] == 35820
     assert data_xy.weights.shape[0] == 35820
@@ -51,12 +49,9 @@ def _assert_xtx_xty(data_xy):
     assert data_xy.cumulative_n_features is None
 
 
-def test_calc_xtx_xty1(regdata_mp_149):
+def test_calc_xtx_xty1(dataxy_xtx_xty_mp_149):
     """Test for calc_xtx_xty."""
-    params, datasets = regdata_mp_149
-    datasets_ = copy.deepcopy(datasets)
-    data_xy = calc_xtx_xty(params, datasets_, verbose=True)
-    _assert_xtx_xty(data_xy)
+    _assert_xtx_xty(dataxy_xtx_xty_mp_149)
 
 
 def test_calc_xtx_xty2(regdata_mp_149):

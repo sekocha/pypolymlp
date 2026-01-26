@@ -12,7 +12,7 @@ def round_scales(
     if include_force:
         zero_ids = np.abs(scales) < threshold
     else:
-        # Threshold value can be improved.
+        # TODO: Threshold value can be improved.
         zero_ids = np.abs(scales) < threshold * threshold
     scales[zero_ids] = 1.0
     return scales, zero_ids

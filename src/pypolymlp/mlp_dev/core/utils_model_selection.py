@@ -94,8 +94,8 @@ def get_best_model(
     alphas: np.ndarray,
     rmse_train: np.ndarray,
     rmse_test: np.ndarray,
-    params: Union[PolymlpParams, list[PolymlpParams]],
-    cumulative_n_features: bool = False,
+    params: Optional[Union[PolymlpParams, list[PolymlpParams]]] = None,
+    cumulative_n_features: Optional[tuple] = None,
 ):
     """Return best polymlp model."""
 
@@ -146,4 +146,4 @@ def smooth_alpha(alphas: np.ndarray, rmse_test: np.ndarray):
     coeffs = np.polyfit(x, y, deg=2)
     p = np.poly1d(coeffs)
     dp = p.deriv()
-    return dp.r[0]
+    return 10 ** dp.r[0]

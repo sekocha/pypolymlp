@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 from pathlib import Path
 
 import phono3py
@@ -10,6 +11,7 @@ from phono3py.api_phono3py import Phono3py
 
 from pypolymlp.core.interface_vasp import PolymlpStructure, Poscar
 from pypolymlp.core.parser_polymlp_params import ParamsParser
+from pypolymlp.mlp_dev.core.api_mlpdev import PolymlpDevCore
 from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
 
 cwd = Path(__file__).parent
@@ -62,6 +64,25 @@ def regdata_mp_149(phono3py_mp_149):
     params = pypolymlp.parameters
     data = pypolymlp.train
     return (params, data)
+
+
+@pytest.fixture(scope="session")
+def dataxy_mp_149(regdata_mp_149):
+    """Return regression data."""
+    params, datasets_ = regdata_mp_149
+    core = PolymlpDevCore(params, use_gradient=False)
+    data_xy = core.calc_xy(datasets_)
+    return data_xy
+
+
+@pytest.fixture(scope="session")
+def dataxy_xtx_xty_mp_149(regdata_mp_149):
+    """Return regression data."""
+    params, datasets = regdata_mp_149
+    datasets_ = copy.deepcopy(datasets)
+    core = PolymlpDevCore(params, use_gradient=False)
+    data_xy = core.calc_xtx_xty(datasets_)
+    return data_xy
 
 
 @pytest.fixture(scope="session")
