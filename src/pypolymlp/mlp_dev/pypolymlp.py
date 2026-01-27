@@ -1,5 +1,6 @@
 """Pypolymlp API."""
 
+import io
 from typing import Literal, Optional, Union
 
 import numpy as np
@@ -164,7 +165,7 @@ class Pypolymlp:
     def _is_params_none(self):
         """Check whether params instance exists."""
         if self._params is None:
-            raise RuntimeError("Set parameters before using set_datasets.")
+            raise RuntimeError("Set parameters before using the function.")
         return self
 
     def _is_data_none(self):
@@ -561,10 +562,6 @@ class Pypolymlp:
         save_learning_curve_log(self._learning_log, filename=filename)
         return self
 
-    def get_structures_from_poscars(self, poscars: list[str]) -> list[PolymlpStructure]:
-        """Load poscar files and convert them to structure instances."""
-        return parse_structures_from_poscars(poscars)
-
     def save_mlp(self, filename: str = "polymlp.yaml"):
         """Save polynomial MLP as file.
 
@@ -576,27 +573,12 @@ class Pypolymlp:
         self._mlp_model.save_mlp(filename=filename)
         return self
 
-    def load_mlp(self, filename: str = "polymlp.yaml"):
+    def load_mlp(self, filename: Union[str, io.IOBase] = "polymlp.yaml"):
         """Load polynomial MLP from file."""
         # TODO: hybrid is not available.
         self._params, coeffs = load_mlp(filename)
         scales = np.ones(len(coeffs))
         self._mlp_model = PolymlpDataMLP(coeffs=coeffs, scales=scales)
-        return self
-
-    def convert_to_yaml(
-        self,
-        filename_txt: str = "polymlp.lammps",
-        filename_yaml: str = "polymlp.yaml",
-    ):
-        """Convert polymlp.lammps to polymlp.yaml.
-
-        Parameters
-        ----------
-        filename_txt: File name of legacy polymlp file.
-        filename_yaml: File name of output polymlp file in yaml format.
-        """
-        convert_to_yaml(filename_txt, filename_yaml)
         return self
 
     def save_params(self, filename: str = "polymlp_params.yaml"):
@@ -606,6 +588,7 @@ class Pypolymlp:
         ----------
         filename: File name for saving parameter attributes.
         """
+        self._is_params_none()
         write_polymlp_params_yaml(self._params, filename=filename)
         return self
 
@@ -625,6 +608,27 @@ class Pypolymlp:
     def split_train_test(self, list_obj: list, train_ratio: float = 0.9):
         """Split list into training and test datasets."""
         return split_train_test(list_obj, train_ratio=train_ratio)
+
+    def convert_to_yaml(
+        self,
+        filename_txt: str = "polymlp.lammps",
+        filename_yaml: str = "polymlp.yaml",
+    ):
+        """Convert polymlp.lammps to polymlp.yaml.
+
+        Parameters
+        ----------
+        filename_txt: File name of legacy polymlp file.
+        filename_yaml: File name of output polymlp file in yaml format.
+        """
+        convert_to_yaml(filename_txt, filename_yaml)
+        return self
+
+    def get_structures_from_poscars(
+        self, poscars: Union[str, list[str]]
+    ) -> list[PolymlpStructure]:
+        """Load poscar files and convert them to structure instances."""
+        return parse_structures_from_poscars(poscars)
 
     @property
     def summary(self):
