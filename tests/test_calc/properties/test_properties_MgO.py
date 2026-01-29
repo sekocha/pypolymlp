@@ -1,4 +1,4 @@
-"""Tests of neighbor calculations."""
+"""Tests of property calculations in MgO."""
 
 from pathlib import Path
 
@@ -9,11 +9,15 @@ from pypolymlp.calculator.properties import Properties, convert_stresses_in_gpa
 from pypolymlp.core.interface_vasp import Poscar
 
 cwd = Path(__file__).parent
+path_file = str(cwd) + "/files/"
+
+unitcell = Poscar(path_file + "poscars/POSCAR.RS.MgO").structure
 
 
 def test_eval1():
-    unitcell = Poscar(cwd / "POSCAR").structure
-    prop = Properties(pot=cwd / "polymlp.lammps.pair")
+    """Test properties with pair polymlp in MgO."""
+    pot = path_file + "mlps/polymlp.yaml.pair.MgO"
+    prop = Properties(pot=pot)
     energy, forces, stresses = prop.eval(unitcell)
 
     energy_true = -40.22469744315832
@@ -41,20 +45,12 @@ def test_eval1():
     stresses = convert_stresses_in_gpa(np.array([stresses]), [unitcell])[0]
     np.testing.assert_allclose(stresses, stresses_true, atol=1e-5)
 
-    prop = Properties(pot=cwd / "polymlp.yaml.pair")
+
+def test_eval2():
+    """Test properties with polymlp in MgO."""
+    pot = path_file + "mlps/polymlp.yaml.gtinv.MgO"
+    prop = Properties(pot=pot)
     energy, forces, stresses = prop.eval(unitcell)
-
-    assert energy == pytest.approx(energy_true, rel=1e-8)
-    np.testing.assert_allclose(forces.T, forces_true, atol=1e-6)
-    stresses = convert_stresses_in_gpa(np.array([stresses]), [unitcell])[0]
-    np.testing.assert_allclose(stresses, stresses_true, atol=1e-5)
-
-
-def test_eval2_yaml():
-    unitcell = Poscar(cwd / "POSCAR").structure
-    prop = Properties(pot=cwd / "polymlp.yaml.gtinv")
-    energy, forces, stresses = prop.eval(unitcell)
-    print(forces.T)
 
     energy_true = -40.223320043232334
     forces_true = [

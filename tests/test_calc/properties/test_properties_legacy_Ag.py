@@ -9,11 +9,16 @@ from pypolymlp.calculator.properties import Properties
 from pypolymlp.core.interface_vasp import Poscar
 
 cwd = Path(__file__).parent
+path_file = str(cwd) + "/files/"
 
 
 def test_eval1():
-    unitcell = Poscar(cwd / "Ag-pair/POSCAR").structure
-    prop = Properties(pot=cwd / "Ag-pair/mlp.lammps")
+    """Test properties using legacy polymlp file."""
+    poscar = path_file + "poscars/POSCAR.fcc.Ag"
+    pot = path_file + "mlps/polymlp.lammps.pair.Ag"
+
+    unitcell = Poscar(poscar).structure
+    prop = Properties(pot=pot)
     energy, forces, stresses = prop.eval(unitcell)
 
     assert energy == pytest.approx(-10.031307591610425, abs=1e-12)

@@ -1,4 +1,4 @@
-"""Tests of neighbor calculations."""
+"""Tests of calculations for Cu-Ag-Au."""
 
 from pathlib import Path
 
@@ -9,11 +9,17 @@ from pypolymlp.calculator.properties import Properties
 from pypolymlp.core.interface_vasp import Poscar
 
 cwd = Path(__file__).parent
+path_file = str(cwd) + "/files/"
+
+pot = path_file + "/mlps/polymlp.lammps.gtinv.Cu-Ag-Au"
+prop = Properties(pot=pot)
 
 
 def test_eval1():
-    unitcell = Poscar(cwd / "POSCAR").structure
-    prop = Properties(pot=cwd / "polymlp.lammps")
+    """Test properties for a standard calculation."""
+    poscar = path_file + "/poscars/POSCAR1.Cu-Ag-Au"
+
+    unitcell = Poscar(poscar).structure
     energy, forces, stresses = prop.eval(unitcell)
 
     assert energy == pytest.approx(-10.114213158625798, abs=1e-12)
@@ -23,11 +29,14 @@ def test_eval1():
 
 
 def test_eval2():
-    prop = Properties(pot=cwd / "polymlp.lammps")
-    unitcell = Poscar(cwd / "POSCAR2").structure
-    unitcell2 = Poscar(cwd / "POSCAR3").structure
+    """Test properties of largely-distorted binary structures."""
+    poscar1 = path_file + "/poscars/POSCAR2.Cu-Ag-Au"
+    poscar2 = path_file + "/poscars/POSCAR3.Cu-Ag-Au"
 
-    energy, forces, stresses = prop.eval(unitcell)
+    unitcell1 = Poscar(poscar1).structure
+    unitcell2 = Poscar(poscar2).structure
+
+    energy, forces, stresses = prop.eval(unitcell1)
     energy2, forces2, stresses2 = prop.eval(unitcell2)
 
     assert energy == pytest.approx(-164.22234804626612, abs=1e-12)
@@ -40,8 +49,9 @@ def test_eval2():
 
 
 def test_eval3():
-    prop = Properties(pot=cwd / "polymlp.lammps")
-    unitcell = Poscar(cwd / "POSCAR4").structure
+    """Test properties of largely-distorted ternary structures."""
+    poscar = path_file + "/poscars/POSCAR4.Cu-Ag-Au"
+    unitcell = Poscar(poscar).structure
 
     energy, forces, stresses = prop.eval(unitcell)
     assert energy == pytest.approx(-156.20431533922547, abs=1e-12)
@@ -56,16 +66,20 @@ def test_eval3():
     ]
     np.testing.assert_allclose(stresses, stresses_true, atol=1e-5)
 
-    unitcell = Poscar(cwd / "POSCAR5").structure
+    poscar = path_file + "/poscars/POSCAR5.Cu-Ag-Au"
+    unitcell = Poscar(poscar).structure
     energy, forces, stresses = prop.eval(unitcell)
     assert energy == pytest.approx(-156.20431533922547, abs=1e-12)
 
 
 def test_eval_multiple1():
-    prop = Properties(pot=cwd / "polymlp.lammps")
-    unitcell1 = Poscar(cwd / "POSCAR").structure
-    unitcell2 = Poscar(cwd / "POSCAR2").structure
-    unitcell3 = Poscar(cwd / "POSCAR3").structure
+    """Test properties of multiple structures using eval_multiple."""
+    poscar1 = path_file + "/poscars/POSCAR1.Cu-Ag-Au"
+    poscar2 = path_file + "/poscars/POSCAR2.Cu-Ag-Au"
+    poscar3 = path_file + "/poscars/POSCAR3.Cu-Ag-Au"
+    unitcell1 = Poscar(poscar1).structure
+    unitcell2 = Poscar(poscar2).structure
+    unitcell3 = Poscar(poscar3).structure
 
     energies, forces, stresses = prop.eval_multiple([unitcell1, unitcell2, unitcell3])
 
