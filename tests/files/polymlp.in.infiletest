@@ -1,0 +1,35 @@
+n_type 2
+elements Mg O
+
+feature_type gtinv
+cutoff 8.0
+model_type 3
+max_p 2
+
+gtinv_order 3
+gtinv_maxl 4 4
+
+gaussian_params1 1.0 1.0 1
+gaussian_params2 0.0 7.0 8
+
+reg_alpha_params -3 1 5
+
+atomic_energy 0.2 -0.1
+
+include_force True
+include_stress True
+
+dataset_type vasp
+data dataset0/vasprun-*.xml.polymlp
+data dataset1/vasprun-*.xml.polymlp False 0.1
+train_data dataset2/vasprun-*.xml.polymlp
+train_data dataset3/vasprun-*.xml.polymlp False 0.1
+test_data dataset4/vasprun-*.xml.polymlp
+test_data dataset5/vasprun-*.xml.polymlp False 0.1
+data_md dataset6/vasprun.xml
+data_md dataset7/vasprun.xml False 0.1
+
+
+distance Mg Mg 1.0 3.0
+distance O O 1.0 2.0
+distance Mg O 2.0 3.0 4.0

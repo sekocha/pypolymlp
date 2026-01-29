@@ -45,7 +45,7 @@ A polynomial MLP represents the potential energy as a polynomial function of lin
 
 ## How to install pypolymlp
 
-- Install from conda-forge
+- Install from conda-forge (Recommended)
 
 | Version | Last Update | Downloads | Platform | License |
 | ---- | ---- | ---- | ---- | ---- |
@@ -80,10 +80,17 @@ Building C++ codes in pypolymlp may require a significant amount of time.
 ## How to use pypolymlp
 
 ### Polynomial MLP development
-- [Command line](docs/mlpdev_command.md)
-- [Python API](docs/mlpdev_api.md)
-- [Utilities](docs/utilities.md)
-  - [DFT structure generator](docs/strgen.md)
+To develop polynomial MLPs from datasets obtained from DFT calculations, both the command-line interface and the Python API are available.
+Several procedures for generating structures used in DFT calculations are also supported.
+
+- Tutorials
+  1. [Development of a single on-the-fly MLP](docs/tutorial_onthefly.md)
+  2. Development of a single general-purpose MLP
+  3. Development of Pareto-optimal MLPs
+- [MLP development using command line interface](docs/mlpdev_command.md)
+- [MLP development using Python API](docs/mlpdev_api.md)
+- [Utilities for MLP development](docs/utilities.md)
+  - [Generator of structures used for DFT calculations](docs/strgen.md)
     - Random atomic displacements with constant magnitude
     - Random atomic displacements with sequential magnitudes and volume changes
     - Random atomic displacements, cell expansion, and distortion
@@ -101,8 +108,10 @@ Building C++ codes in pypolymlp may require a significant amount of time.
 ### Calculations using polynomial MLP
 In version 0.8.0 or earlier, polymlp files are generated in a plain text format as `polymlp.lammps`.
 Starting from version 0.9.0, the files are generated in YAML format as `polymlp.yaml`.
-Both formats are supported by the following command-line interface and the Python API.
+Both formats are supported by the command-line interface and the Python API.
+The following calculations can be performed using **pypolymlp** with the polynomial MLP files `polymlp.yaml` or `polymlp.lammps`.
 
+- [Notes on hybrid polynomial MLPs](docs/calc_hybrid.md)
 - [Energy, forces, stress tensor](docs/calc_property.md)
 - [Equation of states](docs/calc_eos.md)
 - [Local geometry optimization](docs/calc_geometry.md)

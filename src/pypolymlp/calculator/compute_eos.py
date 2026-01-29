@@ -122,13 +122,13 @@ class PolymlpEOS:
 
     def run(
         self,
-        eps_min=0.7,
-        eps_max=2.0,
-        eps_int=0.03,
-        fine_grid=True,
-        eos_fit=False,
+        eps_min: float = 0.7,
+        eps_max: float = 2.0,
+        eps_int: float = 0.03,
+        fine_grid: bool = True,
+        eos_fit: bool = False,
     ):
-
+        """Run EOS calculations and fit."""
         eps_list = self._set_eps(
             eps_min=eps_min,
             eps_max=eps_max,

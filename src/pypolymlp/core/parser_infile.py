@@ -5,46 +5,28 @@ from typing import Any, Optional
 
 import numpy as np
 
-from pypolymlp.core.dataset import Dataset
 from pypolymlp.core.utils import strtobool
 
 
 class InputParser:
     """Class of input parser."""
 
-    def __init__(self, fname: str, prefix: Optional[str] = None):
+    def __init__(self, filename: str):
         """Init method."""
-        self._prefix = prefix
-        self._parse_infile(fname)
-
-    def _parse_infile(self, fname: str):
-        """Parse parameters from input file."""
-        f = open(fname)
-        lines = f.readlines()
-        f.close()
+        with open(filename) as f:
+            lines = f.readlines()
 
         self._data = dict()
-        self._distance = []
-        self._train, self._test = [], []
-        self._train_test_data = []
-        self._md = []
+        self._distance, self._dataset_strings = [], []
         for line in lines:
             d = line.split()
             if len(d) > 1:
-                self._data[d[0]] = d[1:]
                 if "distance" == d[0]:
                     self._distance.append(d[1:])
-                elif d[0] in ["train_data", "test_data", "data", "data_md"]:
-                    dataset = Dataset(string_list=d[1:], prefix=self._prefix)
-                    if d[0] == "train_data":
-                        self._train.append(dataset)
-                    elif d[0] == "test_data":
-                        self._test.append(dataset)
-                    elif d[0] == "data":
-                        self._train_test_data.append(dataset)
-                    elif d[0] == "data_md":
-                        self._md.append(dataset)
-        return self
+                elif "data" in d[0] and "dataset_type" not in d[0]:
+                    self._dataset_strings.append(d)
+                else:
+                    self._data[d[0]] = d[1:]
 
     def get_params(
         self,
@@ -94,26 +76,17 @@ class InputParser:
         elements = self._data["elements"]
         distance_dict = dict()
         for data in self._distance:
-            pair = tuple(sorted(data[:2], key=lambda x: elements.index(x)))
+            pair = data[:2]
+            for p in pair:
+                if p not in elements:
+                    raise RuntimeError(
+                        "Elements in distance not found in potential model."
+                    )
+            pair = tuple(sorted(pair, key=lambda x: elements.index(x)))
             distance_dict[pair] = [float(dis) for dis in data[2:]]
         return distance_dict
 
     @property
-    def train(self):
-        """Return training datasets."""
-        return self._train
-
-    @property
-    def test(self):
-        """Return test datasets."""
-        return self._test
-
-    @property
-    def train_test(self):
-        """Return datasets including training and test data."""
-        return self._train_test_data
-
-    @property
-    def md(self):
-        """Return MD datasets."""
-        return self._md
+    def dataset_strings(self):
+        """Return dataset strings from file."""
+        return self._dataset_strings

@@ -247,4 +247,16 @@ void Potential::compute_sum_of_prod_anlmtp(
     }
 }
 
+int Potential::convert_unit(const double energy_conv){
+    for (auto& pmodel1: potential_model){
+        for (auto& pterms1: pmodel1){
+            for (auto& pterm: pterms1){
+                pterm.coeff_e *= energy_conv;
+                pterm.coeff_f *= energy_conv;
+            }
+        }
+    }
+    return 0;
+}
+
 Maps& Potential::get_maps() { return f_obj.get_maps(); }

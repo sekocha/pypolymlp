@@ -2,16 +2,17 @@
 
 from typing import Optional, Union
 
-from pypolymlp.core.data_format import PolymlpDataDFT, PolymlpParams
-from pypolymlp.mlp_dev.core.mlpdev import PolymlpDevCore, eval_accuracy
+from pypolymlp.core.data_format import PolymlpParams
+from pypolymlp.core.dataset import DatasetList
+from pypolymlp.mlp_dev.core.api_mlpdev import PolymlpDevCore, eval_accuracy
 from pypolymlp.mlp_dev.standard.solvers import solver_ridge
 from pypolymlp.mlp_dev.standard.utils_learning_curve import print_learning_curve_log
 
 
 def fit(
     params: Union[PolymlpParams, list[PolymlpParams]],
-    train: list[PolymlpDataDFT],
-    test: list[PolymlpDataDFT],
+    train: DatasetList,
+    test: DatasetList,
     batch_size: Optional[int] = None,
     verbose: bool = False,
 ):
@@ -19,6 +20,9 @@ def fit(
 
     Parameters
     ----------
+    params: Parameters of polymlp.
+    train: Training datasets.
+    test: Test datasets.
     batch_size: Batch size for sequential regression.
                 If None, the batch size is automatically determined
                 depending on the memory size and number of features.
@@ -61,11 +65,18 @@ def fit(
 
 def fit_standard(
     params: Union[PolymlpParams, list[PolymlpParams]],
-    train: list[PolymlpDataDFT],
-    test: list[PolymlpDataDFT],
+    train: DatasetList,
+    test: DatasetList,
     verbose: bool = False,
 ):
-    """Estimate MLP coefficients with direct evaluation of X."""
+    """Estimate MLP coefficients with direct evaluation of X.
+
+    Parameters
+    ----------
+    params: Parameters of polymlp.
+    train: Training datasets.
+    test: Test datasets.
+    """
 
     polymlp = PolymlpDevCore(params, verbose=verbose)
     polymlp.check_memory_size_in_regression()
@@ -103,11 +114,18 @@ def fit_standard(
 
 def fit_learning_curve(
     params: Union[PolymlpParams, list[PolymlpParams]],
-    train: list[PolymlpDataDFT],
-    test: list[PolymlpDataDFT],
+    train: DatasetList,
+    test: DatasetList,
     verbose: bool = False,
 ):
-    """Calculate learning curve."""
+    """Calculate learning curve.
+
+    Parameters
+    ----------
+    params: Parameters of polymlp.
+    train: Training datasets.
+    test: Test datasets.
+    """
     if len(train) != 1:
         raise RuntimeError(
             "Number of training datasets must be one for learning curve."
@@ -127,12 +145,12 @@ def fit_learning_curve(
         print("Calculate learning curve.", flush=True)
 
     error_log = []
-    n_train = train_xy.n_data[0]
+    n_train = train_xy.n_structures
     for n_samples in range(n_train // 10, n_train + 1, n_train // 10):
         if verbose:
             print("------------- n_samples:", n_samples, "-------------", flush=True)
 
-        x, y = train_xy.slices(n_samples, train[0].total_n_atoms)
+        x, y = train_xy.slice(n_samples, train[0].total_n_atoms)
         coefs = solver_ridge(
             x=x,
             y=y,

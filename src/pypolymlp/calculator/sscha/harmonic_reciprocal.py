@@ -55,9 +55,7 @@ class HarmonicReciprocal:
         _, forces = self.compute_polymlp_properties(
             [phonopy_cell_to_structure(cell) for cell in supercells]
         )
-        forces = np.array(forces).transpose((0, 2, 1))
-
-        self.ph.set_forces(forces)
+        self.ph.forces = np.array(forces).transpose((0, 2, 1))
         self.ph.produce_force_constants()
         self.fc2 = self.ph.force_constants
         return self.fc2

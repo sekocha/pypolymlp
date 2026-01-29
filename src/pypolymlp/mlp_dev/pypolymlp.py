@@ -1,21 +1,24 @@
 """Pypolymlp API."""
 
+import io
 from typing import Literal, Optional, Union
 
 import numpy as np
 
 from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
-from pypolymlp.core.dataset import Dataset
+from pypolymlp.core.dataset import (
+    set_datasets_from_multiple_filesets,
+    set_datasets_from_single_fileset,
+    set_datasets_from_structures,
+)
 from pypolymlp.core.displacements import get_structures_from_displacements
-from pypolymlp.core.interface_datasets import set_dataset_from_structures
 from pypolymlp.core.interface_vasp import parse_structures_from_poscars
 from pypolymlp.core.io_polymlp import convert_to_yaml, load_mlp
-from pypolymlp.core.parser_datasets import ParserDatasets
-from pypolymlp.core.parser_polymlp_params import parse_parameter_files
+from pypolymlp.core.parser_polymlp_params import ParamsParser
 from pypolymlp.core.polymlp_params import print_params, set_all_params
-from pypolymlp.core.utils import split_ids_train_test, split_train_test
-from pypolymlp.mlp_dev.core.accuracy import PolymlpEvalAccuracy, write_error_yaml
+from pypolymlp.core.utils import split_train_test
 from pypolymlp.mlp_dev.core.dataclass import PolymlpDataMLP
+from pypolymlp.mlp_dev.core.eval_accuracy import PolymlpEvalAccuracy, write_error_yaml
 from pypolymlp.mlp_dev.core.features_attr import (
     get_num_features,
     write_polymlp_params_yaml,
@@ -29,14 +32,18 @@ from pypolymlp.mlp_dev.standard.utils_learning_curve import save_learning_curve_
 class Pypolymlp:
     """Pypolymlp API."""
 
-    def __init__(self):
+    def __init__(self, verbose: bool = False):
         """Init method."""
+        self._verbose = verbose
+
         self._params = None
         self._common_params = None
         self._train = None
         self._test = None
-        self._train_yml = None
-        self._test_yml = None
+
+        # TODO: For electrons.
+        # self._train_yml = None
+        # self._test_yml = None
 
         # TODO: set_params is not available for hybrid models at this time.
         self._hybrid = False
@@ -49,13 +56,18 @@ class Pypolymlp:
     def load_parameter_file(
         self,
         file_params: Union[str, list[str]],
+        train_ratio: float = 0.9,
         prefix: Optional[str] = None,
     ):
         """Load input parameter file and set parameters."""
-        self._params, self._common_params, _ = parse_parameter_files(
+        parser = ParamsParser(
             file_params,
-            prefix=prefix,
+            train_ratio=train_ratio,
+            prefix_data_location=prefix,
         )
+        self._train, self._test = parser.train, parser.test
+        self._params = parser.params
+        self._common_params = parser.common_params
         if not isinstance(self._params, PolymlpParams):
             self._hybrid = True
         return self
@@ -140,48 +152,26 @@ class Pypolymlp:
     def print_params(self):
         """Print input parameters."""
         print_params(self._params, self._common_params)
+        if self._train is not None:
+            print("datasets:", flush=True)
+            print("  train_data:", flush=True)
+            for dataset in self._train:
+                print("  -", dataset.name, flush=True)
+            print("  test_data:", flush=True)
+            for dataset in self._test:
+                print("  -", dataset.name, flush=True)
         return self
 
     def _is_params_none(self):
         """Check whether params instance exists."""
         if self._params is None:
-            raise RuntimeError(
-                "Set parameters using set_params() or load_parameter_file()",
-                "before using set_datasets.",
-            )
+            raise RuntimeError("Set parameters before using the function.")
         return self
 
-    def load_datasets(self, train_ratio: float = 0.9, verbose: bool = False):
-        """Load datasets provided in params instance."""
-        self._is_params_none()
-        parser = ParserDatasets(
-            self._common_params,
-            train_ratio=train_ratio,
-            train_yml=self._train_yml,
-            test_yml=self._test_yml,
-            verbose=verbose,
-        )
-        self._train, self._test = parser.train, parser.test
-        self._train_yml, self._test_yml = parser.train_yml, parser.test_yml
-        return self
-
-    def _split_dataset_auto(self, files: list[str], train_ratio: float = 0.9):
-        """Split dataset into training and test datasets automatically."""
-        train_files, test_files = split_train_test(files, train_ratio=train_ratio)
-        train = Dataset(
-            name="data1",
-            files=train_files,
-            include_force=self._params.include_force,
-            weight=1.0,
-        )
-        test = Dataset(
-            name="data2",
-            files=test_files,
-            include_force=self._params.include_force,
-            weight=1.0,
-        )
-        self._params.dft_train = [train]
-        self._params.dft_test = [test]
+    def _is_data_none(self):
+        """Check whether train and test data exist."""
+        if self._train is None or self._test is None:
+            raise RuntimeError("Set parameters and datasets before using fit.")
         return self
 
     def set_datasets_electron(
@@ -195,7 +185,6 @@ class Pypolymlp:
             "specific_heat",
         ] = "free_energy",
         train_ratio: float = 0.9,
-        verbose: bool = False,
     ):
         """Set single electron dataset.
 
@@ -212,37 +201,38 @@ class Pypolymlp:
         self._params.temperature = temperature
         self._params.electron_property = target
 
-        self._split_dataset_auto(yamlfiles, train_ratio=train_ratio)
-        self.load_datasets(verbose=verbose)
+        self._train, self._test = set_datasets_from_single_fileset(
+            self._params,
+            files=yamlfiles,
+            train_ratio=train_ratio,
+        )
         return self
 
-    def set_datasets_sscha(
-        self,
-        yamlfiles: list[str],
-        train_ratio: float = 0.9,
-        verbose: bool = False,
-    ):
+    def set_datasets_sscha(self, yamlfiles: list[str], train_ratio: float = 0.9):
         """Set single sscha dataset.
 
         Parameters
         ----------
-        yamlfiles: sscha_results.yaml files (list)
+        yamlfiles: sscha_results.yaml files (list).
         train_ratio: Ratio between training and entire data sizes.
         """
         self._is_params_none()
         self._params.dataset_type = "sscha"
         self._params.include_force = True
 
-        self._split_dataset_auto(yamlfiles, train_ratio=train_ratio)
-        self.load_datasets(verbose=verbose)
+        self._train, self._test = set_datasets_from_single_fileset(
+            self._params,
+            files=yamlfiles,
+            train_ratio=train_ratio,
+        )
         return self
 
     def set_datasets_vasp(
         self,
-        train_vaspruns: list[str],
-        test_vaspruns: list[str],
+        train_vaspruns: Optional[list[str]] = None,
+        test_vaspruns: Optional[list[str]] = None,
+        vaspruns: Optional[list[str]] = None,
         train_ratio: float = 0.9,
-        verbose: bool = False,
     ):
         """Set single DFT dataset in vasp format.
 
@@ -250,70 +240,48 @@ class Pypolymlp:
         ----------
         train_vaspruns: vasprun files for training dataset (list)
         test_vaspruns: vasprun files for test dataset (list)
+        vaspruns: vasprun files.
+                  They are automatically divided into training and test datasets.
+        train_ratio: Ratio between training and entire data sizes.
         """
         self._is_params_none()
         self._params.dataset_type = "vasp"
-        train = Dataset(
-            name="data1",
-            files=sorted(train_vaspruns),
-            include_force=self._params.include_force,
-            weight=1.0,
-        )
-        test = Dataset(
-            name="data2",
-            files=sorted(test_vaspruns),
-            include_force=self._params.include_force,
-            weight=1.0,
-        )
-        self._params.dft_train = [train]
-        self._params.dft_test = [test]
-        self.load_datasets(train_ratio=train_ratio, verbose=verbose)
+        if train_vaspruns is not None and test_vaspruns is not None:
+            self._train, self._test = set_datasets_from_single_fileset(
+                self._params,
+                train_files=train_vaspruns,
+                test_files=test_vaspruns,
+            )
+        else:
+            self._train, self._test = set_datasets_from_single_fileset(
+                self._params,
+                files=vaspruns,
+                train_ratio=train_ratio,
+            )
         return self
 
     def set_multiple_datasets_vasp(
         self,
         train_vaspruns: list[list[str]],
         test_vaspruns: list[list[str]],
-        train_ratio: float = 0.9,
-        verbose: bool = False,
     ):
         """Set multiple DFT datasets in vasp format.
 
         Parameters
         ----------
-        train_vaspruns: list of list containing vasprun files (training)
-        test_vaspruns: list of list containing vasprun files (test)
+        train_vaspruns: List of list containing vasprun files (training)
+        test_vaspruns: List of list containing vasprun files (test)
         """
         self._is_params_none()
         self._params.dataset_type = "vasp"
-        self._params.dft_train = []
-        self._params.dft_test = []
-        for i, vaspruns in enumerate(train_vaspruns):
-            train = Dataset(
-                name="dataset" + str(i + 1),
-                files=sorted(vaspruns),
-                include_force=self._params.include_force,
-                weight=1.0,
-            )
-            self._params.dft_train.append(train)
-        for i, vaspruns in enumerate(test_vaspruns):
-            test = Dataset(
-                name="dataset" + str(i + 1),
-                files=sorted(vaspruns),
-                include_force=self._params.include_force,
-                weight=1.0,
-            )
-            self._params.dft_test.append(test)
-        self.load_datasets(train_ratio=train_ratio, verbose=verbose)
+        self._train, self._test = set_datasets_from_multiple_filesets(
+            self._params,
+            train_files=train_vaspruns,
+            test_files=test_vaspruns,
+        )
         return self
 
-    def set_datasets_phono3py(
-        self,
-        yaml: str,
-        energy_dat: Optional[str] = None,
-        train_ratio: float = 0.9,
-        verbose: bool = False,
-    ):
+    def set_datasets_phono3py(self, yaml: str, train_ratio: float = 0.9):
         """Set single DFT dataset in phono3py format.
 
         Parameters
@@ -321,17 +289,82 @@ class Pypolymlp:
         yaml: Phono3py yaml file.
         train_ratio: Ratio between training and entire data sizes.
         """
-        from pypolymlp.core.interface_phono3py import parse_phono3py_yaml
-
         self._is_params_none()
         self._params.dataset_type = "phono3py"
-        dft = parse_phono3py_yaml(
-            yaml,
-            energies_filename=energy_dat,
-            element_order=self._params.element_order,
+        self._train, self._test = set_datasets_from_single_fileset(
+            self._params,
+            files=yaml,
+            train_ratio=train_ratio,
         )
-        self._train, self._test = dft.split(train_ratio=train_ratio)
-        self._post_datasets_from_api()
+        return self
+
+    def set_datasets_structures_autodiv(
+        self,
+        structures: list[PolymlpStructure],
+        energies: np.ndarray,
+        forces: Optional[list[np.ndarray]] = None,
+        stresses: Optional[np.ndarray] = None,
+        train_ratio: float = 0.9,
+    ):
+        """Set datasets from structures-(energies, forces, stresses) sets.
+
+        Given dataset is automatically divided into training and test datasets.
+
+        Parameters
+        ----------
+        structures: Structures in PolymlpStructure format (training and test).
+        energies: Energies (training and test), shape=(n_data) in eV/cell.
+        forces: Forces (training and test), shape = n_data x (3, n_atoms_i) in eV/ang.
+        stresses: Stress tensors (training and test), shape=(n_data, 3, 3), in eV/cell.
+        train_ratio: Ratio between training and entire data sizes.
+        """
+        self._is_params_none()
+        self._train, self._test = set_datasets_from_structures(
+            self._params,
+            structures=structures,
+            energies=energies,
+            forces=forces,
+            stresses=stresses,
+            train_ratio=train_ratio,
+        )
+        return self
+
+    def set_datasets_structures(
+        self,
+        train_structures: list[PolymlpStructure],
+        test_structures: list[PolymlpStructure],
+        train_energies: np.ndarray,
+        test_energies: np.ndarray,
+        train_forces: Optional[list[np.ndarray]] = None,
+        test_forces: Optional[list[np.ndarray]] = None,
+        train_stresses: Optional[np.ndarray] = None,
+        test_stresses: Optional[np.ndarray] = None,
+    ):
+        """Set datasets from structures-(energies, forces, stresses) sets.
+
+        Parameters
+        ----------
+        train_structures: Structures in PolymlpStructure format (training).
+        test_structures: Structures in PolymlpStructure format (test).
+        train_energies: Energies (training), shape=(n_train) in eV/cell.
+        test_energies: Energies (test data), shape=(n_test) in eV/cell.
+        train_forces: Forces (training), shape = n_train x (3, n_atoms_i) in eV/ang.
+        test_forces: Forces (test), shape= n_test x (3, n_atoms_i) in eV/ang.
+        train_stresses: Stress tensors (training), shape=(n_train, 3, 3), in eV/cell.
+        test_stresses: Stress tensors (test data), shape=(n_test, 3, 3) in eV/cell.
+        """
+        self._is_params_none()
+        self._train, self._test = set_datasets_from_structures(
+            self._params,
+            train_structures=train_structures,
+            test_structures=test_structures,
+            train_energies=train_energies,
+            test_energies=test_energies,
+            train_forces=train_forces,
+            test_forces=test_forces,
+            train_stresses=train_stresses,
+            test_stresses=test_stresses,
+        )
         return self
 
     def set_datasets_displacements(
@@ -382,125 +415,6 @@ class Pypolymlp:
         )
         return self
 
-    def set_datasets_structures_autodiv(
-        self,
-        structures: list[PolymlpStructure],
-        energies: np.ndarray,
-        forces: Optional[list[np.ndarray]] = None,
-        stresses: Optional[np.ndarray] = None,
-        train_ratio: float = 0.9,
-    ):
-        """Set datasets from structures-(energies, forces, stresses) sets.
-
-        Given dataset is automatically divided into training and test datasets.
-
-        Parameters
-        ----------
-        structures: Structures in PolymlpStructure format (training and test).
-        energies: Energies (training and test), shape=(n_data) in eV/cell.
-        forces: Forces (training and test), shape = n_data x (3, n_atoms_i) in eV/ang.
-        stresses: Stress tensors (training and test), shape=(n_data, 3, 3), in eV/cell.
-        train_ratio: Ratio between training and entire data sizes.
-        """
-        n_data = len(structures)
-        train_ids, test_ids = split_ids_train_test(n_data, train_ratio=train_ratio)
-
-        train_structures = [structures[i] for i in train_ids]
-        test_structures = [structures[i] for i in test_ids]
-        train_energies = [energies[i] for i in train_ids]
-        test_energies = [energies[i] for i in test_ids]
-
-        if forces is None:
-            train_forces, test_forces = None, None
-        else:
-            train_forces = [forces[i] for i in train_ids]
-            test_forces = [forces[i] for i in test_ids]
-
-        if stresses is None:
-            train_stresses, test_stresses = None, None
-        else:
-            train_stresses = [stresses[i] for i in train_ids]
-            test_stresses = [stresses[i] for i in test_ids]
-
-        self.set_datasets_structures(
-            train_structures=train_structures,
-            test_structures=test_structures,
-            train_energies=train_energies,
-            test_energies=test_energies,
-            train_forces=train_forces,
-            test_forces=test_forces,
-            train_stresses=train_stresses,
-            test_stresses=test_stresses,
-        )
-        return self
-
-    def set_datasets_structures(
-        self,
-        train_structures: list[PolymlpStructure],
-        test_structures: list[PolymlpStructure],
-        train_energies: np.ndarray,
-        test_energies: np.ndarray,
-        train_forces: Optional[list[np.ndarray]] = None,
-        test_forces: Optional[list[np.ndarray]] = None,
-        train_stresses: Optional[np.ndarray] = None,
-        test_stresses: Optional[np.ndarray] = None,
-    ):
-        """Set datasets from structures-(energies, forces, stresses) sets.
-
-        Parameters
-        ----------
-        train_structures: Structures in PolymlpStructure format (training).
-        test_structures: Structures in PolymlpStructure format (test).
-        train_energies: Energies (training), shape=(n_train) in eV/cell.
-        test_energies: Energies (test data), shape=(n_test) in eV/cell.
-        train_forces: Forces (training), shape = n_train x (3, n_atoms_i) in eV/ang.
-        test_forces: Forces (test), shape= n_test x (3, n_atoms_i) in eV/ang.
-        train_stresses: Stress tensors (training), shape=(n_train, 3, 3), in eV/cell.
-        test_stresses: Stress tensors (test data), shape=(n_test, 3, 3) in eV/cell.
-        """
-        self._is_params_none()
-        assert len(train_structures) == len(train_energies)
-        assert len(test_structures) == len(test_energies)
-        if train_forces is not None:
-            assert len(train_structures) == len(train_forces)
-            assert train_forces[0].shape[0] == 3
-        if test_forces is not None:
-            assert len(test_structures) == len(test_forces)
-            assert test_forces[0].shape[0] == 3
-        if train_stresses is not None:
-            assert len(train_structures) == len(train_stresses)
-            assert train_stresses[0].shape[0] == 3
-            assert train_stresses[0].shape[1] == 3
-        if test_stresses is not None:
-            assert len(test_structures) == len(test_stresses)
-            assert test_stresses[0].shape[0] == 3
-            assert test_stresses[0].shape[1] == 3
-
-        self._train = set_dataset_from_structures(
-            train_structures,
-            train_energies,
-            train_forces,
-            train_stresses,
-            element_order=self._params.element_order,
-        )
-        self._test = set_dataset_from_structures(
-            test_structures,
-            test_energies,
-            test_forces,
-            test_stresses,
-            element_order=self._params.element_order,
-        )
-        self._post_datasets_from_api()
-        return self
-
-    def _post_datasets_from_api(self):
-        """Set datasets as a post process."""
-        self._train.name = "data1"
-        self._test.name = "data2"
-        self._train = [self._train]
-        self._test = [self._test]
-        return self
-
     def fit(self, batch_size: Optional[int] = None, verbose: bool = False):
         """Estimate MLP coefficients without computing entire X.
 
@@ -510,22 +424,28 @@ class Pypolymlp:
                     If None, the batch size is automatically determined
                     depending on the memory size and number of features.
         """
+        if not self._verbose:
+            self._verbose = verbose
+        self._is_data_none()
         self._mlp_model = fit(
             self._params,
             self._train,
             self._test,
             batch_size=batch_size,
-            verbose=verbose,
+            verbose=self._verbose,
         )
         return self
 
     def fit_standard(self, verbose: bool = False):
         """Estimate MLP coefficients with direct evaluation of X."""
+        if not self._verbose:
+            self._verbose = verbose
+        self._is_data_none()
         self._mlp_model = fit_standard(
             self._params,
             self._train,
             self._test,
-            verbose=verbose,
+            verbose=self._verbose,
         )
         return self
 
@@ -542,23 +462,29 @@ class Pypolymlp:
         gtol: Gradient tolerance for CG.
         max_iter: Number of maximum iterations in CG.
         """
+        if not self._verbose:
+            self._verbose = verbose
+        self._is_data_none()
         self._mlp_model = fit_cg(
             self._params,
             self._train,
             self._test,
             gtol=gtol,
             max_iter=max_iter,
-            verbose=verbose,
+            verbose=self._verbose,
         )
         return self
 
     def fit_sgd(self, verbose: bool = False):
         """Estimate MLP coefficients using stochastic gradient descent."""
+        if not self._verbose:
+            self._verbose = verbose
+        self._is_data_none()
         self._mlp_model = fit_sgd(
             self._params,
             self._train,
             self._test,
-            verbose=verbose,
+            verbose=self._verbose,
         )
         return self
 
@@ -569,10 +495,12 @@ class Pypolymlp:
         verbose: bool = False,
     ):
         """Estimate prediction errors."""
+        if not self._verbose:
+            self._verbose = verbose
         if self._mlp_model is None:
             raise RuntimeError("Regression must be performed before estimating errors.")
 
-        acc = PolymlpEvalAccuracy(self._mlp_model, verbose=verbose)
+        acc = PolymlpEvalAccuracy(self._mlp_model, verbose=self._verbose)
         self._mlp_model.error_train = acc.compute_error(
             self._train,
             log_energy=log_energy,
@@ -605,22 +533,27 @@ class Pypolymlp:
         gtol: Gradient tolerance for CG.
         max_iter: Number of maximum iterations in CG.
         """
+        if not self._verbose:
+            self._verbose = verbose
         if not use_cg:
-            self.fit(batch_size=batch_size, verbose=verbose)
+            self.fit(batch_size=batch_size, verbose=self._verbose)
         else:
             # TODO: batch size must be active.
-            self.fit_cg(gtol=gtol, max_iter=max_iter, verbose=verbose)
+            self.fit_cg(gtol=gtol, max_iter=max_iter, verbose=self._verbose)
 
-        self.estimate_error(verbose=verbose)
+        self.estimate_error()
         return self
 
     def fit_learning_curve(self, verbose: bool = False):
         """Compute learing curve."""
+        if not self._verbose:
+            self._verbose = verbose
+        self._is_data_none()
         self._learning_log = fit_learning_curve(
             self._params,
             self._train,
             self._test,
-            verbose=verbose,
+            verbose=self._verbose,
         )
         return self
 
@@ -629,11 +562,7 @@ class Pypolymlp:
         save_learning_curve_log(self._learning_log, filename=filename)
         return self
 
-    def get_structures_from_poscars(self, poscars: list[str]) -> list[PolymlpStructure]:
-        """Load poscar files and convert them to structure instances."""
-        return parse_structures_from_poscars(poscars)
-
-    def save_mlp(self, filename: str = "polymlp.yaml", yaml: bool = True):
+    def save_mlp(self, filename: str = "polymlp.yaml"):
         """Save polynomial MLP as file.
 
         When hybrid models are used, mlp files will be generated as
@@ -641,13 +570,10 @@ class Pypolymlp:
         """
         if self._mlp_model is None:
             raise RuntimeError("No polymlp has been developed.")
-        if yaml:
-            self._mlp_model.save_mlp(filename=filename)
-        else:
-            self._mlp_model.save_mlp_lammps(filename=filename)
+        self._mlp_model.save_mlp(filename=filename)
         return self
 
-    def load_mlp(self, filename: str = "polymlp.yaml"):
+    def load_mlp(self, filename: Union[str, io.IOBase] = "polymlp.yaml"):
         """Load polynomial MLP from file."""
         # TODO: hybrid is not available.
         self._params, coeffs = load_mlp(filename)
@@ -655,22 +581,24 @@ class Pypolymlp:
         self._mlp_model = PolymlpDataMLP(coeffs=coeffs, scales=scales)
         return self
 
-    def convert_to_yaml(
-        self,
-        filename_txt: str = "polymlp.lammps",
-        filename_yaml: str = "polymlp.yaml",
-    ):
-        """Convert polymlp.lammps to polymlp.yaml."""
-        convert_to_yaml(filename_txt, filename_yaml)
-        return self
-
     def save_params(self, filename: str = "polymlp_params.yaml"):
-        """Save MLP parameters as file."""
+        """Save MLP parameters as file.
+
+        Parameters
+        ----------
+        filename: File name for saving parameter attributes.
+        """
+        self._is_params_none()
         write_polymlp_params_yaml(self._params, filename=filename)
         return self
 
     def save_errors(self, filename: str = "polymlp_error.yaml"):
-        """Save prediction errors as file."""
+        """Save prediction errors as file.
+
+        Parameters
+        ----------
+        filename: File name for saving errors.
+        """
         if self._mlp_model.error_train is None:
             raise RuntimeError("estimate_error must be performed before save_errors.")
         write_error_yaml(self._mlp_model.error_train, filename=filename, mode="w")
@@ -680,6 +608,27 @@ class Pypolymlp:
     def split_train_test(self, list_obj: list, train_ratio: float = 0.9):
         """Split list into training and test datasets."""
         return split_train_test(list_obj, train_ratio=train_ratio)
+
+    def convert_to_yaml(
+        self,
+        filename_txt: str = "polymlp.lammps",
+        filename_yaml: str = "polymlp.yaml",
+    ):
+        """Convert polymlp.lammps to polymlp.yaml.
+
+        Parameters
+        ----------
+        filename_txt: File name of legacy polymlp file.
+        filename_yaml: File name of output polymlp file in yaml format.
+        """
+        convert_to_yaml(filename_txt, filename_yaml)
+        return self
+
+    def get_structures_from_poscars(
+        self, poscars: Union[str, list[str]]
+    ) -> list[PolymlpStructure]:
+        """Load poscar files and convert them to structure instances."""
+        return parse_structures_from_poscars(poscars)
 
     @property
     def summary(self):
@@ -721,3 +670,18 @@ class Pypolymlp:
         if self._mlp_model is None:
             return get_num_features(self._params)
         return self._mlp_model.coeffs.shape[0]
+
+    @property
+    def train(self):
+        """Return training datasets."""
+        return self._train
+
+    @property
+    def test(self):
+        """Return test datasets."""
+        return self._test
+
+    @property
+    def datasets(self):
+        """Return training and test datasets."""
+        return (self._train, self._test)

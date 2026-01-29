@@ -1,10 +1,14 @@
 """Utilities to use spglib."""
 
+import copy
+from typing import Literal
+
 import numpy as np
 import spglib
 
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.interface_vasp import Poscar
+from pypolymlp.utils.structure_utils import refine_positions
 
 
 class SymCell:
@@ -38,7 +42,7 @@ class SymCell:
 
         self.symprec = symprec
 
-    def refine_cell(self, standardize_cell=False) -> PolymlpStructure:
+    def refine_cell(self, standardize_cell: bool = False) -> PolymlpStructure:
         """Refine cell."""
         if standardize_cell == False:
             try:
@@ -83,7 +87,7 @@ class SymCell:
         """Return space group."""
         return spglib.get_spacegroup(self.cell, symprec=self.symprec)
 
-    def get_spacegroup_multiple_prec(self, symprecs=[1e-2, 1e-3, 1e-4, 1e-5]):
+    def get_spacegroup_multiple_prec(self, symprecs: tuple = (1e-2, 1e-3, 1e-4, 1e-5)):
         """Return list of space groups using multiple precisions."""
         return [spglib.get_spacegroup(self.cell, symprec=p) for p in symprecs]
 
@@ -99,23 +103,34 @@ def standardize_cell(cell: PolymlpStructure) -> PolymlpStructure:
         to_primitive=False,
     )
 
-    n_atoms, scaled_positions_reorder, types_reorder = [], [], []
-    for i in sorted(set(types)):
-        ids = np.array(types) == i
-        n_atoms.append(np.count_nonzero(ids))
-        scaled_positions_reorder.extend(scaled_positions[ids])
-        types_reorder.extend(np.array(types)[ids])
-    scaled_positions_reorder = np.array(scaled_positions_reorder)
-    elements = [map_elements[t] for t in types_reorder]
-
+    elements = [map_elements[t] for t in types]
     cell_standardized = PolymlpStructure(
         axis=lattice.T,
-        positions=scaled_positions_reorder.T,
-        n_atoms=n_atoms,
+        positions=scaled_positions.T,
+        n_atoms=[scaled_positions.shape[0]],
         elements=elements,
-        types=types_reorder,
+        types=types,
     )
-    return cell_standardized
+    return cell_standardized.reorder()
+
+
+#    n_atoms, scaled_positions_reorder, types_reorder = [], [], []
+#    for i in sorted(set(types)):
+#        ids = np.array(types) == i
+#        n_atoms.append(np.count_nonzero(ids))
+#        scaled_positions_reorder.extend(scaled_positions[ids])
+#        types_reorder.extend(np.array(types)[ids])
+#    scaled_positions_reorder = np.array(scaled_positions_reorder)
+#    elements = [map_elements[t] for t in types_reorder]
+#
+#    cell_standardized = PolymlpStructure(
+#        axis=lattice.T,
+#        positions=scaled_positions_reorder.T,
+#        n_atoms=n_atoms,
+#        elements=elements,
+#        types=types_reorder,
+#    )
+#    return cell_standardized
 
 
 def get_symmetry_dataset(cell: PolymlpStructure):
@@ -194,3 +209,81 @@ def construct_basis_cell(
             print("Crystal system: Triclinic", flush=True)
         basis = np.eye(9)
     return basis, cell_copy
+
+
+class ReducedCell:
+    """Class for calculating reduced cell."""
+
+    def __init__(
+        self,
+        axis: np.ndarray,
+        method: Literal["niggli", "delaunay"] = "delaunay",
+    ):
+        """Init method."""
+        self._axis = axis
+        self._method = method
+
+        self._reduced_axis = None
+        self._tmat = None
+        self._reduced_metric = None
+
+        self._reduce()
+
+    def _reduce(self):
+        """Calculate Niggli reduced cell.
+        Definition
+        ----------
+        """
+        if self._method == "niggli":
+            self._reduced_axis = spglib.niggli_reduce(self._axis.T, eps=1e-10).T
+        elif self._method == "delaunay":
+            self._reduced_axis = spglib.delaunay_reduce(self._axis.T, eps=1e-10).T
+
+        self._tmat = self.transformation_matrix
+        self._reduced_metric = self._reduced_axis.T @ self._reduced_axis
+        return (self._reduced_axis, self._tmat, self._reduced_metric)
+
+    def transform_fr_coords(self, positions: np.ndarray):
+        """Transform fractional coordinates to those in Niggli reduced cell.
+
+        Definition
+        ----------
+        reduced_axis @ frac' = axis @ frac
+        (axis @ tmat) @ frac' = axis @ frac
+        frac' = tmat^{-1} @ frac
+        """
+        pos = np.linalg.inv(self._tmat) @ positions
+        return refine_positions(positions=pos)
+
+    def reduce_structure(self, st: PolymlpStructure):
+        """Return structure with reduced cell."""
+        if not np.allclose(st.axis, self._axis):
+            raise RuntimeError("Axis in structure is inconsistent with original axis.")
+
+        reduced = copy.deepcopy(st)
+        reduced.axis = self._reduced_axis
+        reduced.positions = self.transform_fr_coords(st.positions)
+        return reduced
+
+    @property
+    def transformation_matrix(self):
+        """Return transformation matrix.
+
+        Definition
+        ----------
+        reduced_axis = axis @ tmat
+        tmat = axis^{-1} @ reduced_axis
+        """
+        if self._tmat is None:
+            return np.linalg.inv(self._axis) @ self._reduced_axis
+        return self._tmat
+
+    @property
+    def reduced_axis(self):
+        """Return axis of reduced cell."""
+        return self._reduced_axis
+
+    @property
+    def reduced_metric(self):
+        """Return metric tensor of reduced cell."""
+        return self._reduced_metric

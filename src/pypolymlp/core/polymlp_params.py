@@ -45,21 +45,18 @@ def set_gtinv_params(
     gtinv_version: Literal[1, 2] = 1,
 ):
     """Set parameters for group-theoretical invariants."""
-    if feature_type == "gtinv":
-        gtinv = PolymlpGtinvParams(
-            order=gtinv_order,
-            max_l=gtinv_maxl,
-            n_type=n_type,
-            version=gtinv_version,
-        )
-        max_l = max(gtinv_maxl)
-    else:
-        gtinv = PolymlpGtinvParams(
-            order=0,
-            max_l=[],
-            n_type=n_type,
-        )
+    if feature_type == "pair":
+        empty = PolymlpGtinvParams(order=0, max_l=[], n_type=n_type)
         max_l = 0
+        return empty, max_l
+
+    gtinv = PolymlpGtinvParams(
+        order=gtinv_order,
+        max_l=gtinv_maxl,
+        n_type=n_type,
+        version=gtinv_version,
+    )
+    max_l = max(gtinv_maxl)
     return gtinv, max_l
 
 
@@ -82,17 +79,26 @@ def set_active_gaussian_params(
     distance: Optional[dict] = None,
 ):
     """Set parameters for active Gaussian radial functions."""
+    if distance is not None:
+        for ele_pair, dis_array in distance.items():
+            if len(ele_pair) != 2:
+                raise RuntimeError("Keys of distance must be element pair.")
+            if not isinstance(dis_array, (list, tuple, np.ndarray)):
+                raise RuntimeError("Values of distance must be array-type.")
+
+        cond = True
+        distance_replace = dict()
+        for ele_pair in distance.keys():
+            key = tuple(sorted(ele_pair, key=lambda x: elements.index(x)))
+            distance_replace[key] = distance[ele_pair]
+        distance = distance_replace
+    else:
+        cond = False
+        distance = dict()
+
     atomtypes = dict()
     for i, ele in enumerate(elements):
         atomtypes[ele] = i
-
-    if distance is None:
-        cond = False
-        distance = dict()
-    else:
-        cond = True
-        for k in distance.keys():
-            k = sorted(k, key=lambda x: elements.index(x))
 
     element_pairs = itertools.combinations_with_replacement(elements, 2)
     pair_params_indices = dict()
@@ -221,16 +227,6 @@ def print_params(
     print("  atomic_energy: ", common_params.atomic_energy, flush=True)
     print("  include_force: ", bool(common_params.include_force), flush=True)
     print("  include_stress:", bool(common_params.include_stress), flush=True)
-
-    if not isinstance(common_params.dft_train, list):
-        raise RuntimeError("DFT files are not kept in list format")
-
-    print("  train_data:", flush=True)
-    for v in common_params.dft_train:
-        print("  -", v.location, flush=True)
-    print("  test_data:", flush=True)
-    for v in common_params.dft_test:
-        print("  -", v.location, flush=True)
 
     params_print = [params] if isinstance(params, PolymlpParams) else params
     for i, p in enumerate(params_print):

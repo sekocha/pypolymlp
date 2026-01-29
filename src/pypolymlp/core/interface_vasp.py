@@ -2,22 +2,22 @@
 
 import re
 import xml.etree.ElementTree as ET
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 
-from pypolymlp.core.data_format import PolymlpDataDFT, PolymlpStructure
-from pypolymlp.core.interface_datasets import set_dataset_from_structures
+from pypolymlp.core.data_format import PolymlpStructure
+from pypolymlp.core.dataset_utils import DatasetDFT
 from pypolymlp.core.units import EVtoKbar
 
 
 def set_dataset_from_vaspruns(
     vaspruns: list[str],
     element_order: Optional[bool] = None,
-) -> PolymlpDataDFT:
+) -> DatasetDFT:
     """Return DFT dataset by loading vasprun.xml files."""
     structures, (energies, forces, stresses) = parse_properties_from_vaspruns(vaspruns)
-    dft = set_dataset_from_structures(
+    dft = DatasetDFT(
         structures,
         energies,
         forces=forces,
@@ -50,14 +50,20 @@ def parse_properties_from_vaspruns(vaspruns: list[str]) -> tuple:
     return structures, (np.array(energies), forces, np.array(stresses))
 
 
-def parse_structures_from_vaspruns(vaspruns: list[str]) -> list[PolymlpStructure]:
+def parse_structures_from_vaspruns(
+    vaspruns: Union[str, list[str]]
+) -> list[PolymlpStructure]:
     """Parse vasprun.xml files and return structures."""
-    return [Vasprun(f).structure for f in vaspruns]
+    if isinstance(vaspruns, (list, tuple, np.ndarray)):
+        return [Vasprun(f).structure for f in vaspruns]
+    return Vasprun(vaspruns).structure
 
 
-def parse_structures_from_poscars(poscars: list[str]):
+def parse_structures_from_poscars(poscars: Union[str, list[str]]):
     """Parse POSCAR files and return structures."""
-    return [Poscar(f).structure for f in poscars]
+    if isinstance(poscars, (list, tuple, np.ndarray)):
+        return [Poscar(f).structure for f in poscars]
+    return Poscar(poscars).structure
 
 
 def check_vasprun_type(name: str = None, root=None):

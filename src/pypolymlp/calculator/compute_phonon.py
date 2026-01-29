@@ -51,6 +51,9 @@ class PolymlpPhonon:
         self.ph = Phonopy(unitcell, supercell_matrix)
         self._with_pdos = False
 
+        self._qha = None
+        self._temperatures = None
+
     def produce_force_constants(self, distance: float = 0.001):
         """Produce force constants by evaluating forces for random structures."""
         self.ph.generate_displacements(distance=distance)
@@ -91,30 +94,34 @@ class PolymlpPhonon:
 
     def write_properties(self, path_output: str = "./"):
         """Save properties."""
-        os.makedirs(path_output + "/polymlp_phonon", exist_ok=True)
+        os.makedirs(path_output, exist_ok=True)
         np.savetxt(
-            path_output + "/polymlp_phonon/mesh-qpoints.txt",
+            path_output + "/phonon_mesh_qpoints.txt",
             self.mesh_dict["qpoints"],
             fmt="%f",
         )
-        self.ph.write_total_dos(filename=path_output + "/polymlp_phonon/total_dos.dat")
+        self.ph.write_total_dos(filename=path_output + "/phonon_total_dos.dat")
         self.ph.write_yaml_thermal_properties(
-            filename=path_output + "/polymlp_phonon/thermal_properties.yaml"
+            filename=path_output + "/phonon_thermal_properties.yaml"
         )
-
         if self._with_pdos:
-            self.ph.write_projected_dos(
-                filename=path_output + "/polymlp_phonon/proj_dos.dat"
-            )
-
-    def is_imaginary(self, threshold: float = -0.01) -> bool:
-        """Check if imaginary phonon frequencies exist."""
-        return np.min(self.mesh_dict["frequencies"]) < threshold
+            self.ph.write_projected_dos(filename=path_output + "phonon_proj_dos.dat")
 
     @property
     def phonopy(self) -> Phonopy:
         """Return phonopy instance."""
         return self.ph
+
+    @property
+    def total_dos(self):
+        """Return total phonon DOS."""
+        return np.stack([self.ph.total_dos.frequency_points, self.ph.total_dos.dos]).T
+
+    @property
+    def is_imaginary(self):
+        """Check if phonon DOS exhibits imaginary frequencies."""
+        imag = self.ph.total_dos.frequency_points < -0.01
+        return np.sum(self.ph.total_dos.dos[imag]) > 1e-6
 
 
 class PolymlpPhononQHA:
@@ -195,6 +202,7 @@ class PolymlpPhononQHA:
             entropy=entropies,
             cv=heat_capacities,
         )
+        self._temperatures = temperatures
 
     def write_qha(self, path_output: str = "./"):
         """Save results."""
@@ -213,6 +221,21 @@ class PolymlpPhononQHA:
         self._qha.write_gruneisen_temperature(filename=filename)
         filename = path_output + "/polymlp_phonon_qha/cp-temperature.dat"
         self._qha.write_heat_capacity_P_numerical(filename=filename)
+
+    @property
+    def temperatures(self):
+        """Return tempeartures."""
+        return self._temperatures
+
+    @property
+    def bulk_modulus_temperature(self):
+        """Return bulk modulus with respect to temperature."""
+        return self._qha.bulk_modulus_temperature
+
+    @property
+    def thermal_expansion(self):
+        """Return thermal_expansion with respect to temperature."""
+        return self._qha.thermal_expansion
 
 
 def calculate_harmonic_properties_from_fc2(
