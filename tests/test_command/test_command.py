@@ -7,16 +7,16 @@ def test_command_lines():
     """Test command lines."""
 
     cmd = "pypolymlp --help"
-    subprocess.call(cmd.split())
+    subprocess.run(cmd.split(), check=True)
     cmd = "pypolymlp-calc --help"
-    subprocess.call(cmd.split())
+    subprocess.run(cmd.split(), check=True)
     cmd = "pypolymlp-sscha --help"
-    subprocess.call(cmd.split())
+    subprocess.run(cmd.split(), check=True)
     cmd = "pypolymlp-sscha-post --help"
-    subprocess.call(cmd.split())
+    subprocess.run(cmd.split(), check=True)
     cmd = "pypolymlp-sscha-structure --help"
-    subprocess.call(cmd.split())
+    subprocess.run(cmd.split(), check=True)
     cmd = "pypolymlp-structure --help"
-    subprocess.call(cmd.split())
+    subprocess.run(cmd.split(), check=True)
     cmd = "pypolymlp-utils --help"
-    subprocess.call(cmd.split())
+    subprocess.run(cmd.split(), check=True)

@@ -6,10 +6,10 @@ from typing import Optional
 
 import numpy as np
 
-from pypolymlp.core.data_format import PolymlpDataDFT
+from pypolymlp.core.dataset_utils import DatasetDFT
 
 
-def _extract_properties_from_dataset(dft: PolymlpDataDFT):
+def _extract_properties_from_dataset(dft: DatasetDFT):
     """Extract energies, forces, and volumes."""
     e_all = dft.energies / dft.total_n_atoms
     vol_all = dft.volumes / dft.total_n_atoms
@@ -62,7 +62,7 @@ def split_train_test(data: np.ndarray):
 
 
 def split_two_datasets(
-    dft: PolymlpDataDFT,
+    dft: DatasetDFT,
     eth: Optional[float] = None,
     fth: Optional[float] = None,
     volth: Optional[float] = None,
@@ -98,7 +98,7 @@ def split_two_datasets(
 
 
 def split_three_datasets(
-    dft: PolymlpDataDFT,
+    dft: DatasetDFT,
     eth: Optional[float] = None,
     fth: Optional[float] = None,
     volth: Optional[float] = None,
