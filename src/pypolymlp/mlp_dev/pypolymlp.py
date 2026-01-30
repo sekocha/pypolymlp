@@ -175,6 +175,15 @@ class Pypolymlp:
             raise RuntimeError("Set parameters and datasets before using fit.")
         return self
 
+    def _turn_off_derivative_flags(self, forces: list, stresses: np.ndarray):
+        """ """
+        if forces is None:
+            self._params.include_force = False
+            self._params.include_stress = False
+        if stresses is None:
+            self._params.include_stress = False
+        return self
+
     def set_datasets_electron(
         self,
         yamlfiles: list[str],
@@ -300,15 +309,6 @@ class Pypolymlp:
             files=yaml,
             train_ratio=train_ratio,
         )
-        return self
-
-    def _turn_off_derivative_flags(self, forces: list, stresses: np.ndarray):
-        """ """
-        if forces is None:
-            self._params.include_force = False
-            self._params.include_stress = False
-        if stresses is None:
-            self._params.include_stress = False
         return self
 
     def set_datasets_structures_autodiv(

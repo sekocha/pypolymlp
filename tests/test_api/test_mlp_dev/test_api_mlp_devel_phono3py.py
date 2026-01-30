@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import pytest
+from test_mlp_devel_phono3py import _check_errors_phono3py_yaml
 
 from pypolymlp.core.interface_phono3py import Phono3pyYaml
 from pypolymlp.core.utils import split_ids_train_test
@@ -30,10 +31,7 @@ def test_mlp_devel_api_phono3py(phono3py_mp_149):
 
     error_train = polymlp.summary.error_train["data1"]
     error_test = polymlp.summary.error_test["data2"]
-    assert error_test["energy"] == pytest.approx(1.8102004041582893e-06, abs=1e-8)
-    assert error_test["force"] == pytest.approx(0.0008393682108550619, rel=1e-3)
-    assert error_train["energy"] == pytest.approx(1.7675397079081478e-06, abs=1e-8)
-    assert error_train["force"] == pytest.approx(0.0008322836157656117, rel=1e-3)
+    _check_errors_phono3py_yaml(error_train, error_test)
 
 
 def test_mlp_devel_api_phono3py2(phono3py_mp_149):
