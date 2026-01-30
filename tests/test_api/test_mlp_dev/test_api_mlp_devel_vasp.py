@@ -259,7 +259,9 @@ def test_mlp_devel_api_structure_auto():
         atomic_energy=[-0.00040000, -1.85321219],
     )
 
-    vaspruns1 = glob.glob(str(cwd) + "/data-vasp-MgO/vaspruns/*1/vasprun-*.xml.polymlp")
+    vaspruns1 = sorted(
+        glob.glob(str(cwd) + "/data-vasp-MgO/vaspruns/*1/vasprun-*.xml.polymlp")
+    )
     structures = parse_structures_from_vaspruns(vaspruns1)
 
     energies, forces = [], []
@@ -275,10 +277,11 @@ def test_mlp_devel_api_structure_auto():
 
     error_train = polymlp.summary.error_train["data1"]
     error_test = polymlp.summary.error_test["data2"]
-    assert error_test["energy"] == pytest.approx(3.210781591012298e-05, abs=1e-8)
-    assert error_test["force"] == pytest.approx(0.0023615028867863116, abs=1e-6)
-    assert error_train["energy"] == pytest.approx(3.403406074356899e-05, abs=1e-8)
-    assert error_train["force"] == pytest.approx(0.004023107824135061, abs=1e-6)
+
+    assert error_test["energy"] == pytest.approx(3.583360584541407e-05, abs=1e-8)
+    assert error_test["force"] == pytest.approx(0.00424005489325227, abs=1e-6)
+    assert error_train["energy"] == pytest.approx(3.2883990744241994e-05, abs=1e-8)
+    assert error_train["force"] == pytest.approx(0.0038686349941451396, abs=1e-6)
 
 
 def test_mlp_devel_api_distance():

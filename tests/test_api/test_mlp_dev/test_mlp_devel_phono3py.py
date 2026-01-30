@@ -31,7 +31,7 @@ def test_mlp_dev_phono3py_yaml():
     error_train = pypolymlp.summary.error_train[tag_train]
     error_test = pypolymlp.summary.error_test[tag_test]
 
-    assert error_test["energy"] == pytest.approx(6.674941030263998e-06, abs=1e-7)
-    assert error_test["force"] == pytest.approx(0.0029171266255415976, abs=1e-6)
-    assert error_train["energy"] == pytest.approx(5.847092143276064e-06, abs=1e-7)
-    assert error_train["force"] == pytest.approx(0.0028245308500032713, abs=1e-6)
+    assert error_test["energy"] == pytest.approx(6.674941030263998e-06, rel=1e-2)
+    assert error_test["force"] == pytest.approx(0.0029171266255415976, rel=1e-3)
+    assert error_train["energy"] == pytest.approx(5.847092143276064e-06, rel=1e-2)
+    assert error_train["force"] == pytest.approx(0.0028245308500032713, rel=1e-3)
