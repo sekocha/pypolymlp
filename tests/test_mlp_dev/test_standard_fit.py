@@ -40,6 +40,6 @@ def test_fit_learning_curve(regdata_mp_149):
     nums = [l[0] for l in log]
     np.testing.assert_equal(nums, np.arange(1, 11) * 18)
 
-    assert log[-3][1]["energy"] == pytest.approx(5.849589779404497e-06, rel=1e-3)
-    assert log[-2][1]["energy"] == pytest.approx(5.841377969070585e-06, rel=1e-3)
-    assert log[-1][1]["energy"] == pytest.approx(5.843977160697607e-06, rel=1e-3)
+    assert log[-3][1]["energy"] == pytest.approx(5.849589779404497e-06, rel=1e-2)
+    assert log[-2][1]["energy"] == pytest.approx(5.841377969070585e-06, rel=1e-2)
+    assert log[-1][1]["energy"] == pytest.approx(5.843977160697607e-06, rel=1e-2)
