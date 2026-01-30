@@ -70,6 +70,7 @@ class Pypolymlp:
         self._common_params = parser.common_params
         if not isinstance(self._params, PolymlpParams):
             self._hybrid = True
+
         return self
 
     def set_params(
@@ -77,7 +78,7 @@ class Pypolymlp:
         params: Optional[PolymlpParams] = None,
         elements: tuple[str] = None,
         include_force: bool = True,
-        include_stress: bool = False,
+        include_stress: bool = True,
         cutoff: float = 6.0,
         model_type: Literal[1, 2, 3, 4] = 4,
         max_p: Literal[1, 2, 3] = 2,
@@ -198,6 +199,7 @@ class Pypolymlp:
         self._is_params_none()
         self._params.dataset_type = "electron"
         self._params.include_force = False
+        self._params.include_stress = False
         self._params.temperature = temperature
         self._params.electron_property = target
 
@@ -219,6 +221,7 @@ class Pypolymlp:
         self._is_params_none()
         self._params.dataset_type = "sscha"
         self._params.include_force = True
+        self._params.include_stress = False
 
         self._train, self._test = set_datasets_from_single_fileset(
             self._params,
@@ -291,11 +294,21 @@ class Pypolymlp:
         """
         self._is_params_none()
         self._params.dataset_type = "phono3py"
+        self._params.include_stress = False
         self._train, self._test = set_datasets_from_single_fileset(
             self._params,
             files=yaml,
             train_ratio=train_ratio,
         )
+        return self
+
+    def _turn_off_derivative_flags(self, forces: list, stresses: np.ndarray):
+        """ """
+        if forces is None:
+            self._params.include_force = False
+            self._params.include_stress = False
+        if stresses is None:
+            self._params.include_stress = False
         return self
 
     def set_datasets_structures_autodiv(
@@ -319,6 +332,8 @@ class Pypolymlp:
         train_ratio: Ratio between training and entire data sizes.
         """
         self._is_params_none()
+        self._turn_off_derivative_flags(forces, stresses)
+
         self._train, self._test = set_datasets_from_structures(
             self._params,
             structures=structures,
@@ -354,6 +369,9 @@ class Pypolymlp:
         test_stresses: Stress tensors (test data), shape=(n_test, 3, 3) in eV/cell.
         """
         self._is_params_none()
+        self._turn_off_derivative_flags(train_forces, train_stresses)
+        self._turn_off_derivative_flags(test_forces, test_stresses)
+
         self._train, self._test = set_datasets_from_structures(
             self._params,
             train_structures=train_structures,
@@ -390,6 +408,7 @@ class Pypolymlp:
         structure_without_disp: Structure without displacements, PolymlpStructure
         """
         self._is_params_none()
+        self._params.include_stress = False
         assert train_disps.shape[1] == 3
         assert test_disps.shape[1] == 3
         assert train_disps.shape[0] == train_energies.shape[0]
@@ -413,6 +432,7 @@ class Pypolymlp:
             train_stresses=None,
             test_stresses=None,
         )
+
         return self
 
     def fit(self, batch_size: Optional[int] = None, verbose: bool = False):

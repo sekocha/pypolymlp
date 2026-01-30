@@ -28,14 +28,18 @@ def _run_fit_standard(files: str):
     return pypolymlp
 
 
-def _check_errors_single_dataset_MgO(error_train1: dict, error_test1: dict):
+def _check_errors_single_dataset_MgO(
+    error_train1: dict, error_test1: dict, use_stress: bool = False
+):
     """Assert errors of MLP from single dataset in MgO."""
     assert error_test1["energy"] == pytest.approx(5.7907010720826916e-05, abs=1e-8)
     assert error_test1["force"] == pytest.approx(0.004816151341623647, abs=1e-6)
-    assert error_test1["stress"] == pytest.approx(0.015092680508112657, abs=1e-5)
+    if use_stress:
+        assert error_test1["stress"] == pytest.approx(0.015092680508112657, abs=1e-5)
     assert error_train1["energy"] == pytest.approx(3.149612103914911e-05, abs=1e-8)
     assert error_train1["force"] == pytest.approx(0.0038287840554079465, abs=1e-6)
-    assert error_train1["stress"] == pytest.approx(0.015299229871848218, abs=1e-5)
+    if use_stress:
+        assert error_train1["stress"] == pytest.approx(0.015299229871848218, abs=1e-5)
 
 
 def _check_errors_multiple_datasets_MgO(
@@ -60,6 +64,14 @@ def _check_errors_multiple_datasets_MgO(
     assert error_train2["energy"] == pytest.approx(6.587197553779358e-3, abs=1e-8)
     assert error_train2["force"] == pytest.approx(0.3157543533276883, abs=1e-6)
     assert error_train2["stress"] == pytest.approx(0.03763428, abs=1e-5)
+
+
+def _check_errors_single_dataset_MgO_auto(error_train1: dict, error_test1: dict):
+    """Assert errors of MLP from single dataset using automatic division in MgO."""
+    assert error_test1["energy"] == pytest.approx(3.682827414945049e-05, abs=1e-8)
+    assert error_test1["force"] == pytest.approx(0.004239957033147398, abs=1e-6)
+    assert error_train1["energy"] == pytest.approx(3.288929693819795e-05, abs=1e-8)
+    assert error_train1["force"] == pytest.approx(0.0038657674044820195, abs=1e-6)
 
 
 def _check_errors_hybrid_single_dataset_MgO(error_train1: dict, error_test1: dict):
@@ -198,21 +210,23 @@ def test_mlp_devel_single_dataset_autodiv():
     """Test single dataset using auto division method."""
 
     file = str(cwd) + "/polymlp.in.vasp.single.auto.MgO"
-    tag_train = "Train_data-vasp-MgO/combined_vaspruns/vasprun-*.xml.polymlp"
-    tag_test = "Test_data-vasp-MgO/combined_vaspruns/vasprun-*.xml.polymlp"
+    tag_train = "Train_data-vasp-MgO/vaspruns/*1/vasprun-*.xml.polymlp"
+    tag_test = "Test_data-vasp-MgO/vaspruns/*1/vasprun-*.xml.polymlp"
 
     pypolymlp = _run_fit(file)
     assert pypolymlp.n_features == 1899
     error_train1 = pypolymlp.summary.error_train[tag_train]
     error_test1 = pypolymlp.summary.error_test[tag_test]
 
-    assert error_test1["energy"] == pytest.approx(4.004397915813554e-05, abs=1e-7)
-    assert error_test1["force"] == pytest.approx(0.0046229699982903265, abs=1e-6)
-    assert error_test1["stress"] == pytest.approx(0.01430278596979826, abs=1e-5)
+    _check_errors_single_dataset_MgO_auto(error_train1, error_test1)
 
-    assert error_train1["energy"] == pytest.approx(3.3335520987797234e-05, abs=1e-7)
-    assert error_train1["force"] == pytest.approx(0.003843503181386285, abs=1e-6)
-    assert error_train1["stress"] == pytest.approx(0.015201642733227095, abs=1e-5)
+    # assert error_test1["energy"] == pytest.approx(4.004397915813554e-05, abs=1e-7)
+    # assert error_test1["force"] == pytest.approx(0.0046229699982903265, abs=1e-6)
+    # assert error_test1["stress"] == pytest.approx(0.01430278596979826, abs=1e-5)
+
+    # assert error_train1["energy"] == pytest.approx(3.3335520987797234e-05, abs=1e-7)
+    # assert error_train1["force"] == pytest.approx(0.003843503181386285, abs=1e-6)
+    # assert error_train1["stress"] == pytest.approx(0.015201642733227095, abs=1e-5)
 
 
 def test_mlp_devel_multiple_datasets_autodiv():

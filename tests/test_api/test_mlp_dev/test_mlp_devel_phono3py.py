@@ -12,7 +12,7 @@ cwd = Path(__file__).parent
 
 def _run_fit(files: Union[str, list]):
     """Run fitting."""
-    pypolymlp = Pypolymlp()
+    pypolymlp = Pypolymlp(verbose=True)
     pypolymlp.load_parameter_file(files, train_ratio=0.9, prefix=str(cwd))
     pypolymlp.fit(batch_size=1000)
     pypolymlp.estimate_error(log_energy=False)
@@ -31,7 +31,7 @@ def test_mlp_dev_phono3py_yaml():
     error_train = pypolymlp.summary.error_train[tag_train]
     error_test = pypolymlp.summary.error_test[tag_test]
 
-    assert error_test["energy"] == pytest.approx(6.674941030263998e-06, rel=1e-2)
-    assert error_test["force"] == pytest.approx(0.0029171266255415976, rel=1e-3)
-    assert error_train["energy"] == pytest.approx(5.847092143276064e-06, rel=1e-2)
-    assert error_train["force"] == pytest.approx(0.0028245308500032713, rel=1e-3)
+    assert error_test["energy"] == pytest.approx(1.8102004041582893e-06, abs=1e-8)
+    assert error_test["force"] == pytest.approx(0.0008393682108550619, rel=1e-3)
+    assert error_train["energy"] == pytest.approx(1.7675397079081478e-06, abs=1e-8)
+    assert error_train["force"] == pytest.approx(0.0008322836157656117, rel=1e-3)

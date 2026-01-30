@@ -277,3 +277,15 @@ def test_set_datasets_from_structures2(params_MgO, structure_rocksalt):
         assert len(ds.energies) == 10
     for ds in test_all:
         assert len(ds.energies) == 10
+
+    for ds in train_all:
+        np.testing.assert_allclose(ds.energies, energies)
+
+    atomic_energy = (0.1, 0.5)
+    train_all.subtract_atomic_energy(atomic_energy)
+    for ds in train_all:
+        np.testing.assert_allclose(ds.energies, energies - 2.4)
+
+    train_all.subtract_atomic_energy(atomic_energy)
+    for ds in train_all:
+        np.testing.assert_allclose(ds.energies, energies - 2.4)

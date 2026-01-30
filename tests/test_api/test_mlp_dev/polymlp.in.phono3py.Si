@@ -16,5 +16,6 @@ reg_alpha_params -3 1 5
 
 atomic_energy 0.0
 
+include_stress False
 dataset_type phono3py
 data data-phono3py-Si/phonopy_training_dataset.yaml.xz

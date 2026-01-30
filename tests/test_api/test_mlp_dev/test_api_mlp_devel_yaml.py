@@ -23,6 +23,7 @@ def test_mlp_devel_api_sscha():
         gaussian_params2=[1.0, 7.0, 7],
         atomic_energy=[0.0, 0.0, 0.0],
         reg_alpha_params=(-1, 3, 10),
+        include_stress=False,
     )
     yamlfiles = sorted(glob.glob(str(cwd) + "/data-sscha-SrTiO3/sscha_results_*.yaml"))
     polymlp.set_datasets_sscha(yamlfiles)
