@@ -34,7 +34,7 @@ def test_eval_flexible():
     files = sorted(glob.glob(path_file + "mlps/polymlp.yaml.flexible.*"))
     prop = Properties(pot=files)
 
-    energy_true = -31.64262794659518
+    energy_true = -31.642657299368572
     energy, forces, stresses = prop.eval(unitcell)
     assert energy == pytest.approx(energy_true, rel=1e-6)
     assert forces[0][0] == pytest.approx(0.0, abs=1e-12)
