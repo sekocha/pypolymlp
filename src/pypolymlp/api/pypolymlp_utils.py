@@ -6,7 +6,7 @@ import numpy as np
 
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.postproc.count_time import PolymlpCost
-from pypolymlp.utils.dataset.auto_divide import auto_divide
+from pypolymlp.utils.dataset_auto_divide import auto_divide_vaspruns
 from pypolymlp.utils.grid_search.optimal import find_optimal_mlps
 from pypolymlp.utils.kim_utils import convert_polymlp_to_kim_model
 from pypolymlp.utils.vasp_utils import (
@@ -157,7 +157,7 @@ class PypolymlpUtils:
         ----------
         vaspruns: vasprun.xml files
         """
-        auto_divide(vaspruns, verbose=self._verbose)
+        auto_divide_vaspruns(vaspruns, verbose=self._verbose)
 
     def init_symmetry(
         self,
