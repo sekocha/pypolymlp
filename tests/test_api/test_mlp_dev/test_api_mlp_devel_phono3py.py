@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+import numpy as np
 import pytest
 from test_mlp_devel_phono3py import _check_errors_phono3py_yaml
 
@@ -158,3 +159,72 @@ def test_mlp_devel_api_learning_curve(phono3py_mp_149):
     assert error[11][1]["force"] == pytest.approx(0.00116279394273854, rel=1e-2)
     assert error[12][1]["energy"] == pytest.approx(2.594962142892688e-06, rel=1e-2)
     assert error[12][1]["force"] == pytest.approx(0.0011614306531000504, rel=1e-2)
+
+
+def _fit_assert_NaCl(polymlp):
+    """Run fit in NaCl."""
+    yamlfile = str(cwd / "data-phono3py-NaCl/phonopy_params_NaCl-rd.yaml.xz")
+    train_ids = np.arange(8)
+    test_ids = np.arange(8, 10)
+
+    ph3 = Phono3pyYaml(yamlfile)
+    disps, forces = ph3.phonon_dataset
+    supercell = ph3.supercell
+    energies = ph3.energies
+
+    train_disps = disps[train_ids]
+    train_forces = forces[train_ids]
+    train_energies = energies[train_ids]
+    test_disps = disps[test_ids]
+    test_forces = forces[test_ids]
+    test_energies = energies[test_ids]
+
+    polymlp.set_datasets_displacements(
+        train_disps,
+        train_forces,
+        train_energies,
+        test_disps,
+        test_forces,
+        test_energies,
+        supercell,
+    )
+    polymlp.run()
+
+    error_train = polymlp.summary.error_train["data1"]
+    error_test = polymlp.summary.error_test["data2"]
+    assert error_test["energy"] == pytest.approx(1.8219684368801306e-07, rel=1e-3)
+    assert error_test["force"] == pytest.approx(0.0001582001857382102, rel=1e-3)
+    assert error_train["energy"] == pytest.approx(3.1294935174049514e-07, rel=1e-3)
+    assert error_train["force"] == pytest.approx(8.979273829689044e-05, rel=1e-3)
+
+
+def test_mlp_devel_api_NaCl_structure1():
+    """Test mlp development using phono3py.yaml and structure interface."""
+    polymlp = Pypolymlp(verbose=True)
+    polymlp.set_params(
+        elements=["Cl", "Na"],
+        cutoff=8.0,
+        model_type=3,
+        max_p=2,
+        gtinv_order=3,
+        gtinv_maxl=[4, 4],
+        gaussian_params2=[0.0, 7.0, 10],
+        atomic_energy=[-0.245, -0.331],
+    )
+    _fit_assert_NaCl(polymlp)
+
+
+def test_mlp_devel_api_NaCl_structure2():
+    """Test mlp development using phono3py.yaml and structure interface."""
+    polymlp = Pypolymlp(verbose=True)
+    polymlp.set_params(
+        elements=["Na", "Cl"],
+        cutoff=8.0,
+        model_type=3,
+        max_p=2,
+        gtinv_order=3,
+        gtinv_maxl=[4, 4],
+        gaussian_params2=[0.0, 7.0, 10],
+        atomic_energy=[-0.331, -0.245],
+    )
+    _fit_assert_NaCl(polymlp)
