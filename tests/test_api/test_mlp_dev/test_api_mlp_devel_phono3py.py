@@ -13,7 +13,7 @@ from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
 cwd = Path(__file__).parent
 
 
-def test_mlp_devel_api_phono3py(phono3py_mp_149):
+def test_mlp_devel_api_phono3py():
     """Test API for MLP development using phono3py data."""
     polymlp = Pypolymlp(verbose=True)
     polymlp.set_params(

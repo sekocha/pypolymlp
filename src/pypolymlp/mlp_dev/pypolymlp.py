@@ -435,7 +435,7 @@ class Pypolymlp:
 
         return self
 
-    def fit(self, batch_size: Optional[int] = None, verbose: bool = False):
+    def fit(self, batch_size: Optional[int] = None, verbose: Optional[bool] = None):
         """Estimate MLP coefficients without computing entire X.
 
         Parameters
@@ -444,8 +444,9 @@ class Pypolymlp:
                     If None, the batch size is automatically determined
                     depending on the memory size and number of features.
         """
-        if not self._verbose:
+        if self._verbose is not None:
             self._verbose = verbose
+
         self._is_data_none()
         self._mlp_model = fit(
             self._params,
@@ -456,10 +457,11 @@ class Pypolymlp:
         )
         return self
 
-    def fit_standard(self, verbose: bool = False):
+    def fit_standard(self, verbose: Optional[bool] = None):
         """Estimate MLP coefficients with direct evaluation of X."""
-        if not self._verbose:
+        if self._verbose is not None:
             self._verbose = verbose
+
         self._is_data_none()
         self._mlp_model = fit_standard(
             self._params,
@@ -473,7 +475,7 @@ class Pypolymlp:
         self,
         gtol: float = 1e-2,
         max_iter: Optional[int] = None,
-        verbose: bool = False,
+        verbose: Optional[bool] = None,
     ):
         """Estimate MLP coefficients using conjugate gradient.
 
@@ -482,8 +484,9 @@ class Pypolymlp:
         gtol: Gradient tolerance for CG.
         max_iter: Number of maximum iterations in CG.
         """
-        if not self._verbose:
+        if self._verbose is not None:
             self._verbose = verbose
+
         self._is_data_none()
         self._mlp_model = fit_cg(
             self._params,
@@ -495,10 +498,13 @@ class Pypolymlp:
         )
         return self
 
-    def fit_sgd(self, verbose: bool = False):
+    def fit_sgd(self, verbose: Optional[bool] = None):
         """Estimate MLP coefficients using stochastic gradient descent."""
-        if not self._verbose:
+        raise NotImplementedError("SGD not available.")
+
+        if self._verbose is not None:
             self._verbose = verbose
+
         self._is_data_none()
         self._mlp_model = fit_sgd(
             self._params,
@@ -512,11 +518,12 @@ class Pypolymlp:
         self,
         log_energy: bool = False,
         file_path: str = "./",
-        verbose: bool = False,
+        verbose: Optional[bool] = None,
     ):
         """Estimate prediction errors."""
-        if not self._verbose:
+        if self._verbose is not None:
             self._verbose = verbose
+
         if self._mlp_model is None:
             raise RuntimeError("Regression must be performed before estimating errors.")
 
@@ -540,7 +547,7 @@ class Pypolymlp:
         use_cg: bool = False,
         gtol: float = 1e-2,
         max_iter: Optional[int] = None,
-        verbose: bool = False,
+        verbose: Optional[bool] = None,
     ):
         """Estimate MLP coefficients and prediction errors.
 
@@ -553,21 +560,22 @@ class Pypolymlp:
         gtol: Gradient tolerance for CG.
         max_iter: Number of maximum iterations in CG.
         """
-        if not self._verbose:
+        if self._verbose is not None:
             self._verbose = verbose
         if not use_cg:
-            self.fit(batch_size=batch_size, verbose=self._verbose)
+            self.fit(batch_size=batch_size)
         else:
             # TODO: batch size must be active.
-            self.fit_cg(gtol=gtol, max_iter=max_iter, verbose=self._verbose)
+            self.fit_cg(gtol=gtol, max_iter=max_iter)
 
         self.estimate_error()
         return self
 
-    def fit_learning_curve(self, verbose: bool = False):
+    def fit_learning_curve(self, verbose: Optional[bool] = None):
         """Compute learing curve."""
-        if not self._verbose:
+        if self._verbose is not None:
             self._verbose = verbose
+
         self._is_data_none()
         self._learning_log = fit_learning_curve(
             self._params,
