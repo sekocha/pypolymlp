@@ -1,5 +1,6 @@
 """Class for computing EOS."""
 
+import io
 from typing import Optional
 
 import numpy as np
@@ -19,7 +20,7 @@ class PolymlpEOS:
         params: Optional[PolymlpStructure] = None,
         coeffs: Optional[np.ndarray] = None,
         properties: Optional[Properties] = None,
-        verbose: bool = True,
+        verbose: bool = False,
     ):
         """Init method.
 
@@ -35,12 +36,12 @@ class PolymlpEOS:
         """
 
         if properties is not None:
-            self.prop = properties
+            self._prop = properties
         else:
-            self.prop = Properties(pot=pot, params=params, coeffs=coeffs)
+            self._prop = Properties(pot=pot, params=params, coeffs=coeffs)
 
-        self._verbose = verbose
         self._unitcell = unitcell
+        self._verbose = verbose
 
         self._eos_data = None
         self._eos_fit_data = None
@@ -48,9 +49,15 @@ class PolymlpEOS:
         self._e0 = None
         self._v0 = None
 
-    def _set_eps(self, eps_min=0.7, eps_max=2.0, eps_int=0.03, fine_grid=True):
-
-        if fine_grid == False:
+    def _set_eps(
+        self,
+        eps_min: float = 0.7,
+        eps_max: float = 2.0,
+        eps_int: float = 0.03,
+        fine_grid: bool = True,
+    ):
+        """Set eps values."""
+        if not fine_grid:
             eps_seq = np.arange(eps_min, eps_max + 0.01, eps_int)
         else:
             eps_seq = []
@@ -139,7 +146,7 @@ class PolymlpEOS:
             isotropic_volume_change(self._unitcell, eps=eps) for eps in eps_list
         ]
 
-        energies, _, _ = self.prop.eval_multiple(structures)
+        energies, _, _ = self._prop.eval_multiple(structures)
         volumes = np.array([st.volume for st in structures])
         if self._verbose:
             print(" eps =", np.array(eps_list))
@@ -153,39 +160,53 @@ class PolymlpEOS:
 
         return self
 
-    def _write_data_2d(self, data, stream, tag="volume_helmholtz"):
-
+    def _write_data_2d(
+        self, data: np.array, stream: io.IOBase, tag: str = "volume_helmholtz"
+    ):
+        """Write 2D data."""
         print("  " + tag + ":", file=stream)
         for d in data:
             print("  -", list(d), file=stream)
         print("", file=stream)
+        return self
 
-    def write_eos_yaml(self, write_eos_fit=True, filename="polymlp_eos.yaml"):
+    def write_eos_yaml(
+        self, write_eos_fit: bool = True, filename: str = "polymlp_eos.yaml"
+    ):
+        """Save yaml file for EOS data."""
+        with open(filename, "w") as f:
+            if self._b0 is not None:
+                print("equilibrium:", file=f)
+                print("  bulk_modulus:", float(self._b0), file=f)
+                print("  free_energy: ", self._e0, file=f)
+                print("  volume:      ", self._v0, file=f)
+                n_atoms = list(self._unitcell.n_atoms)
+                print("  n_atoms:     ", n_atoms, file=f)
+                print(file=f)
+                print(file=f)
 
-        f = open(filename, "w")
+            print("eos_data:", file=f)
+            print(file=f)
+            self._write_data_2d(self._eos_data, f, tag="volume_helmholtz")
+            print(file=f)
 
-        if self._b0 is not None:
-            print("equilibrium:", file=f)
-            print("  bulk_modulus:", float(self._b0), file=f)
-            print("  free_energy: ", self._e0, file=f)
-            print("  volume:      ", self._v0, file=f)
-            print(
-                "  n_atoms:     ",
-                list(self._unitcell.n_atoms),
-                file=f,
-            )
-            print("", file=f)
-            print("", file=f)
+            if write_eos_fit and self._eos_fit_data is not None:
+                print("eos_fit_data:", file=f)
+                print(file=f)
+                self._write_data_2d(self._eos_fit_data, f, tag="volume_helmholtz")
+                print(file=f)
 
-        print("eos_data:", file=f)
-        print("", file=f)
-        self._write_data_2d(self._eos_data, f, tag="volume_helmholtz")
-        print("", file=f)
+    @property
+    def energy(self):
+        """Return energy at equilibrium volume."""
+        return self._e0
 
-        if write_eos_fit and self._eos_fit_data is not None:
-            print("eos_fit_data:", file=f)
-            print("", file=f)
-            self._write_data_2d(self._eos_fit_data, f, tag="volume_helmholtz")
-            print("", file=f)
+    @property
+    def volume(self):
+        """Return equilibrium volume."""
+        return self._v0
 
-        f.close()
+    @property
+    def bulk_modulus(self):
+        """Return bulk modulus."""
+        return self._b0
