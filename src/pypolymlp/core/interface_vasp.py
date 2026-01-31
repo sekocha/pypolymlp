@@ -17,8 +17,6 @@ def set_dataset_from_vaspruns(
 ) -> DatasetDFT:
     """Return DFT dataset by loading vasprun.xml files."""
     if isinstance(vaspruns, (list, tuple, np.ndarray)):
-        if len(vaspruns) == 0:
-            raise RuntimeError("Vasprun files are empty.")
         files = vaspruns
     else:
         files = [vaspruns]
