@@ -6,7 +6,7 @@ import numpy as np
 
 from pypolymlp.calculator.compute_features import (
     compute_from_infile,
-    compute_from_polymlp_lammps,
+    compute_from_polymlp,
 )
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
@@ -26,7 +26,7 @@ class PypolymlpCalc:
         params: Union[PolymlpParams, list[PolymlpParams]] = None,
         coeffs: Union[np.ndarray, list[np.ndarray]] = None,
         properties: Optional[Properties] = None,
-        verbose: bool = True,
+        verbose: bool = False,
         require_mlp: bool = True,
     ):
         """Init method.
@@ -184,7 +184,7 @@ class PypolymlpCalc:
             self.structures = structures
 
         if develop_infile is None:
-            self._features = compute_from_polymlp_lammps(
+            self._features = compute_from_polymlp(
                 self.structures,
                 params=self.params,
                 force=features_force,

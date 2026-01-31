@@ -28,7 +28,7 @@ def update_types(structures: list[PolymlpStructure], element_order: list[str]):
     return structures
 
 
-def compute_from_polymlp_lammps(
+def compute_from_polymlp(
     structures: list[PolymlpStructure],
     pot: Optional[str] = None,
     params: Optional[PolymlpParams] = None,
