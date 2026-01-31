@@ -12,14 +12,18 @@ from pypolymlp.core.units import EVtoKbar
 
 
 def set_dataset_from_vaspruns(
-    vaspruns: list[str],
+    vaspruns: Union[str, list[str]],
     element_order: Optional[bool] = None,
 ) -> DatasetDFT:
     """Return DFT dataset by loading vasprun.xml files."""
-    if len(vaspruns) == 0:
-        raise RuntimeError("Vasprun files are empty.")
+    if isinstance(vaspruns, (list, tuple, np.ndarray)):
+        if len(vaspruns) == 0:
+            raise RuntimeError("Vasprun files are empty.")
+        files = vaspruns
+    else:
+        files = [vaspruns]
 
-    structures, (energies, forces, stresses) = parse_properties_from_vaspruns(vaspruns)
+    structures, (energies, forces, stresses) = parse_properties_from_vaspruns(files)
     dft = DatasetDFT(
         structures,
         energies,

@@ -96,6 +96,14 @@ def _check_errors_pair_single_dataset_MgO(error_train1: dict, error_test1: dict)
     assert error_train1["stress"] == pytest.approx(0.008789528675929179, abs=1e-5)
 
 
+def _check_errors_md_Cu(error_train: dict, error_test: dict):
+    """Assert errors of MLP from MD dataset in Cu."""
+    assert error_test["energy"] == pytest.approx(0.0005486086714176058, abs=1e-7)
+    assert error_test["force"] == pytest.approx(0.04747553260018069, abs=1e-6)
+    assert error_train["energy"] == pytest.approx(0.00044458300300040534, abs=1e-7)
+    assert error_train["force"] == pytest.approx(0.04692192616585159, abs=1e-6)
+
+
 def test_mlp_devel_pair():
     """Test pair features."""
 
@@ -176,6 +184,20 @@ def test_mlp_devel_multiple_datasets():
     )
 
 
+def test_mlp_devel_md():
+    """Test md datasets."""
+    file = str(cwd) + "/polymlp.in.vasp.md.Cu"
+    tag_train = "Train_data-vasp-md-Cu/vasprun.xml"
+    tag_test = "Test_data-vasp-md-Cu/vasprun.xml"
+
+    pypolymlp = _run_fit(file)
+    assert pypolymlp.n_features == 225
+    _check_errors_md_Cu(
+        pypolymlp.summary.error_train[tag_train],
+        pypolymlp.summary.error_test[tag_test],
+    )
+
+
 def test_mlp_devel_hybrid_single_dataset():
     """Test hybrid model with single dataset."""
 
@@ -192,7 +214,7 @@ def test_mlp_devel_hybrid_single_dataset():
 
 
 def test_mlp_devel_hybrid_single_dataset_standard():
-    """Test hybrid model with single dataset using standard ."""
+    """Test hybrid model with single dataset using standard method."""
 
     files = sorted(glob.glob(str(cwd) + "/infile-hybrid-MgO/polymlp*_hybrid.in"))
     tag_train = "data-vasp-MgO/vaspruns/train1/vasprun-*.xml.polymlp"
@@ -219,14 +241,6 @@ def test_mlp_devel_single_dataset_autodiv():
     error_test1 = pypolymlp.summary.error_test[tag_test]
 
     _check_errors_single_dataset_MgO_auto(error_train1, error_test1)
-
-    # assert error_test1["energy"] == pytest.approx(4.004397915813554e-05, abs=1e-7)
-    # assert error_test1["force"] == pytest.approx(0.0046229699982903265, abs=1e-6)
-    # assert error_test1["stress"] == pytest.approx(0.01430278596979826, abs=1e-5)
-
-    # assert error_train1["energy"] == pytest.approx(3.3335520987797234e-05, abs=1e-7)
-    # assert error_train1["force"] == pytest.approx(0.003843503181386285, abs=1e-6)
-    # assert error_train1["stress"] == pytest.approx(0.015201642733227095, abs=1e-5)
 
 
 def test_mlp_devel_multiple_datasets_autodiv():

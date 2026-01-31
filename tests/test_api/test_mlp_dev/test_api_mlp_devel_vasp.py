@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 from test_mlp_devel_vasp import (
+    _check_errors_md_Cu,
     _check_errors_multiple_datasets_MgO,
     _check_errors_single_dataset_MgO,
     _check_errors_single_dataset_MgO_auto,
@@ -17,6 +18,7 @@ cwd = Path(__file__).parent
 
 
 def test_mlp_devel_api_include_force_false():
+    """Test mlp development using API."""
     polymlp = Pypolymlp(verbose=True)
     polymlp.set_params(
         elements=["Mg", "O"],
@@ -48,6 +50,7 @@ def test_mlp_devel_api_include_force_false():
 
 
 def test_mlp_devel_api_single_dataset():
+    """Test mlp development using API and single dataset."""
     polymlp = Pypolymlp(verbose=True)
     polymlp.set_params(
         elements=["Mg", "O"],
@@ -61,22 +64,29 @@ def test_mlp_devel_api_single_dataset():
         include_stress=False,
     )
 
-    train_vaspruns1 = glob.glob(
-        str(cwd) + "/data-vasp-MgO/vaspruns/train1/vasprun-*.xml.polymlp"
+    vaspruns1 = sorted(
+        glob.glob(str(cwd) + "/data-vasp-MgO/vaspruns/*1/vasprun-*.xml.polymlp")
     )
-    test_vaspruns1 = glob.glob(
-        str(cwd) + "/data-vasp-MgO/vaspruns/test1/vasprun-*.xml.polymlp"
-    )
-    polymlp.set_datasets_vasp(train_vaspruns1, test_vaspruns1)
+    structures = parse_structures_from_vaspruns(vaspruns1)
 
+    energies, forces = [], []
+    for v in vaspruns1:
+        e, f, s = Vasprun(v).properties
+        energies.append(e)
+        forces.append(f)
+
+    polymlp.set_datasets_structures_autodiv(
+        structures=structures, energies=energies, forces=forces, train_ratio=0.9
+    )
     polymlp.run()
-    error_train1 = polymlp.summary.error_train["data1"]
-    error_test1 = polymlp.summary.error_test["data2"]
 
-    _check_errors_single_dataset_MgO(error_train1, error_test1)
+    error_train = polymlp.summary.error_train["data1"]
+    error_test = polymlp.summary.error_test["data2"]
+    _check_errors_single_dataset_MgO_auto(error_train, error_test)
 
 
 def test_mlp_devel_api_single_dataset_element_swapped():
+    """Test mlp development using API and single dataset."""
     polymlp = Pypolymlp(verbose=True)
     polymlp.set_params(
         elements=["O", "Mg"],
@@ -106,6 +116,7 @@ def test_mlp_devel_api_single_dataset_element_swapped():
 
 
 def test_mlp_devel_api_multidatasets():
+    """Test mlp development using API and multiple datasets."""
     polymlp = Pypolymlp(verbose=True)
     polymlp.set_params(
         elements=["Mg", "O"],
@@ -259,6 +270,31 @@ def test_mlp_devel_api_structure_auto():
     error_train = polymlp.summary.error_train["data1"]
     error_test = polymlp.summary.error_test["data2"]
     _check_errors_single_dataset_MgO_auto(error_train, error_test)
+
+
+def test_mlp_devel_api_md():
+    """Test API for MLP development using structure dataset."""
+    polymlp = Pypolymlp(verbose=True)
+    polymlp.set_params(
+        elements=["Cu"],
+        cutoff=8.0,
+        model_type=3,
+        max_p=2,
+        gtinv_order=3,
+        gtinv_maxl=[4, 4],
+        gaussian_params2=[0.0, 7.0, 8],
+        atomic_energy=[-0.00040000],
+        include_stress=False,
+    )
+
+    vaspruns = str(cwd) + "/data-vasp-md-Cu/vasprun.xml"
+    polymlp.set_datasets_vasp(vaspruns=vaspruns)
+
+    polymlp.run()
+    error_train1 = polymlp.summary.error_train["data1"]
+    error_test1 = polymlp.summary.error_test["data2"]
+
+    _check_errors_md_Cu(error_train1, error_test1)
 
 
 def test_mlp_devel_api_distance():
