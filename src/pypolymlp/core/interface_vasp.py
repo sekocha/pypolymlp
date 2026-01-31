@@ -16,6 +16,9 @@ def set_dataset_from_vaspruns(
     element_order: Optional[bool] = None,
 ) -> DatasetDFT:
     """Return DFT dataset by loading vasprun.xml files."""
+    if len(vaspruns) == 0:
+        raise RuntimeError("Vasprun files are empty.")
+
     structures, (energies, forces, stresses) = parse_properties_from_vaspruns(vaspruns)
     dft = DatasetDFT(
         structures,
