@@ -444,7 +444,7 @@ class Pypolymlp:
                     If None, the batch size is automatically determined
                     depending on the memory size and number of features.
         """
-        if self._verbose is not None:
+        if verbose is not None:
             self._verbose = verbose
 
         self._is_data_none()
@@ -459,7 +459,7 @@ class Pypolymlp:
 
     def fit_standard(self, verbose: Optional[bool] = None):
         """Estimate MLP coefficients with direct evaluation of X."""
-        if self._verbose is not None:
+        if verbose is not None:
             self._verbose = verbose
 
         self._is_data_none()
@@ -484,7 +484,7 @@ class Pypolymlp:
         gtol: Gradient tolerance for CG.
         max_iter: Number of maximum iterations in CG.
         """
-        if self._verbose is not None:
+        if verbose is not None:
             self._verbose = verbose
 
         self._is_data_none()
@@ -502,7 +502,7 @@ class Pypolymlp:
         """Estimate MLP coefficients using stochastic gradient descent."""
         raise NotImplementedError("SGD not available.")
 
-        if self._verbose is not None:
+        if verbose is not None:
             self._verbose = verbose
 
         self._is_data_none()
@@ -521,7 +521,7 @@ class Pypolymlp:
         verbose: Optional[bool] = None,
     ):
         """Estimate prediction errors."""
-        if self._verbose is not None:
+        if verbose is not None:
             self._verbose = verbose
 
         if self._mlp_model is None:
@@ -560,7 +560,7 @@ class Pypolymlp:
         gtol: Gradient tolerance for CG.
         max_iter: Number of maximum iterations in CG.
         """
-        if self._verbose is not None:
+        if verbose is not None:
             self._verbose = verbose
         if not use_cg:
             self.fit(batch_size=batch_size)
@@ -573,7 +573,7 @@ class Pypolymlp:
 
     def fit_learning_curve(self, verbose: Optional[bool] = None):
         """Compute learing curve."""
-        if self._verbose is not None:
+        if verbose is not None:
             self._verbose = verbose
 
         self._is_data_none()
