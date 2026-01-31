@@ -13,7 +13,7 @@ def test_permute_atoms(structure_rocksalt):
     """Test for permute_atoms."""
     force = np.random.random(structure_rocksalt.positions.shape)
     element_order = ("O", "Mg")
-    st, force_permute = permute_atoms(structure_rocksalt, force, element_order)
+    st, force_permute = permute_atoms(structure_rocksalt, element_order, force)
 
     order = np.array([4, 5, 6, 7, 0, 1, 2, 3])
     np.testing.assert_allclose(force_permute, force[:, order])

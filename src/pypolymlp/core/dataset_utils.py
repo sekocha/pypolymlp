@@ -11,8 +11,8 @@ from pypolymlp.core.utils import split_ids_train_test
 
 def permute_atoms(
     st: PolymlpStructure,
-    force: np.ndarray,
     element_order: list[str],
+    force: Optional[np.ndarray] = None,
 ) -> tuple[PolymlpStructure, np.ndarray]:
     """Permute atoms in structure and forces.
 
@@ -27,17 +27,22 @@ def permute_atoms(
         n_atoms.append(n_match)
         elements.extend([ele for _ in range(n_match)])
         types.extend([atomtype for _ in range(n_match)])
-        force_permute.extend(force[:, ids].T)
+        if force is not None:
+            force_permute.extend(force[:, ids].T)
 
     positions = np.array(positions).T
-    force_permute = np.array(force_permute).T
+    if force is not None:
+        force_permute = np.array(force_permute).T
 
     st_new = copy.deepcopy(st)
     st_new.positions = positions
     st_new.n_atoms = n_atoms
     st_new.elements = elements
     st_new.types = types
-    return st_new, force_permute
+
+    if force is not None:
+        return st_new, force_permute
+    return st_new
 
 
 class DatasetDFT:
@@ -110,7 +115,7 @@ class DatasetDFT:
         structures_data, forces_data, stresses_data = [], [], []
         for st, force_st, sigma in zip(structures, forces, stresses):
             if element_order is not None:
-                st1, force_st1 = permute_atoms(st, force_st, element_order)
+                st1, force_st1 = permute_atoms(st, element_order, force_st)
             else:
                 st1, force_st1 = st, force_st
 

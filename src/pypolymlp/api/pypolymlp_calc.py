@@ -40,6 +40,7 @@ class PypolymlpCalc:
 
         Any one of pot, (params, coeffs), and properties is needed.
         """
+        self._prop = None
         if require_mlp:
             if pot is None and params is None and properties is None:
                 raise RuntimeError("polymlp not defined.")
@@ -51,7 +52,6 @@ class PypolymlpCalc:
 
         self._verbose = verbose
         self._structures = None
-
         self._unitcell = None
         self._poscar = None
 

@@ -5,6 +5,7 @@ from typing import Optional
 import numpy as np
 
 from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
+from pypolymlp.core.dataset_utils import permute_atoms
 from pypolymlp.core.io_polymlp import load_mlp
 from pypolymlp.core.parser_polymlp_params import ParamsParser
 from pypolymlp.mlp_dev.core.features import Features
@@ -15,17 +16,15 @@ def update_types(structures: list[PolymlpStructure], element_order: list[str]):
 
     Integers in types will be compatible with element_order.
     """
+    updated_structures = []
     for st in structures:
-        types = np.ones(len(st.types), dtype=int) * 1000
-        elements = np.array(st.elements)
-        for i, ele in enumerate(element_order):
-            types[elements == ele] = i
-        st.types = types
-        if np.any(types == 1000):
-            print("elements (structure) =", st.elements)
-            print("elements (polymlp.lammps) =", element_order)
-            raise ("Elements in structure are not found in polymlp.lammps")
-    return structures
+        for ele in st.elements:
+            if ele not in element_order:
+                raise RuntimeError("Elements in structure not found in element_order.")
+
+        st_update = permute_atoms(st, element_order)
+        updated_structures.append(st_update)
+    return updated_structures
 
 
 def compute_from_polymlp(
@@ -48,9 +47,12 @@ def compute_from_polymlp(
     Any one of pot and params is required.
     """
     if pot is not None:
-        if len(pot) > 1:
-            raise NotImplementedError("Only single polymlp file is available.")
-        params, coeffs = load_mlp(filename=pot[0])
+        if isinstance(pot, (list, tuple, np.ndarray)):
+            if len(pot) > 1:
+                raise NotImplementedError("Only single polymlp file is available.")
+            params, coeffs = load_mlp(filename=pot[0])
+        else:
+            params, coeffs = load_mlp(filename=pot)
     else:
         return_mlp_dict = False
 
@@ -73,8 +75,8 @@ def compute_from_polymlp(
 def compute_from_infile(
     infile: str,
     structures: list[PolymlpStructure],
-    force: bool = None,
-    stress: bool = None,
+    force: Optional[bool] = None,
+    stress: Optional[bool] = None,
 ):
     """Compute features from polymlp.in.
 
