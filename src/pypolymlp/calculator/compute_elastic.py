@@ -42,10 +42,10 @@ class PolymlpElastic:
         else:
             self._prop = Properties(pot=pot, params=params, coeffs=coeffs)
 
-        self._verbose = verbose
         self._unitcell = unitcell
+        self._verbose = verbose
         with open(unitcell_poscar) as f:
-            self.st_pmg = pmg.core.Structure.from_str(f.read(), fmt="POSCAR")
+            self._st_pmg = pmg.core.Structure.from_str(f.read(), fmt="POSCAR")
 
         self._compute_initial_properties()
 
@@ -71,7 +71,7 @@ class PolymlpElastic:
 
     def run(self):
         """Run elastic constant calculation."""
-        deform = DeformedStructureSet(self.st_pmg)
+        deform = DeformedStructureSet(self._st_pmg)
         strains = [d.green_lagrange_strain for d in deform.deformations]
 
         structure_deform = []
