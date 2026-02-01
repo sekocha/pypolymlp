@@ -1,16 +1,14 @@
 """Class for calculating FCs using polymlp."""
 
 import time
-from typing import Literal, Optional, Union
+from typing import Optional, Union
 
 import numpy as np
-import phonopy
 from phono3py.file_IO import write_fc2_to_hdf5, write_fc3_to_hdf5
 from symfc import Symfc
 from symfc.utils.cutoff_tools import FCCutoff
 
 from pypolymlp.calculator.properties import Properties
-from pypolymlp.calculator.str_opt.optimization import GeometryOptimization
 from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
 from pypolymlp.core.displacements import (
     generate_random_const_displacements,
@@ -54,19 +52,25 @@ class PolymlpFC:
         Any one of pot, (params, coeffs), and properties is needed.
         """
 
-        if pot is None and params is None and properties is None:
-            self.prop = None
+        self._prop = None
+        if properties is not None:
+            self._prop = properties
         else:
-            if properties is not None:
-                self.prop = properties
-            else:
-                self.prop = Properties(pot=pot, params=params, coeffs=coeffs)
+            self._prop = Properties(pot=pot, params=params, coeffs=coeffs)
+        self._verbose = verbose
 
         self._initialize_supercell(
             supercell=supercell,
             phono3py_yaml=phono3py_yaml,
             use_phonon_dataset=use_phonon_dataset,
         )
+        if cutoff is not None:
+            # TODO: Implement order dependence of cutoff
+            self.cutoff = cutoff
+        else:
+            self._cutoff = None
+            self._fc_cutoff = None
+
         self._fc2 = None
         self._fc3 = None
         self._fc4 = None
@@ -74,49 +78,38 @@ class PolymlpFC:
         self._disps = None
         self._forces = None
 
-        if cutoff is not None:
-            self.cutoff = cutoff
-        else:
-            self._cutoff = None
-            self._fc_cutoff = None
-
-        self._verbose = verbose
-
     def _initialize_supercell(
-        self, supercell=None, phono3py_yaml=None, use_phonon_dataset=False
+        self,
+        supercell: Optional[PolymlpStructure] = None,
+        phono3py_yaml: Optional[str] = None,
+        use_phonon_dataset: bool = False,
     ):
+        """Initialize supercell."""
+        if supercell is None and phono3py_yaml is None:
+            raise RuntimeError("Supercell and phonon3py_yaml not found.")
 
         if supercell is not None:
-            if isinstance(supercell, PolymlpStructure):
-                self._supercell = supercell
-                self._supercell_ph = structure_to_phonopy_cell(supercell)
-            elif isinstance(supercell, phonopy.structure.cells.Supercell):
-                self._supercell = phonopy_cell_to_structure(supercell)
-                self._supercell_ph = supercell
-            else:
-                raise ValueError(
-                    "PolymlpFC: type(supercell) must be" " dict or phonopy supercell"
-                )
-
+            self._supercell = supercell
+            self._supercell_ph = structure_to_phonopy_cell(supercell)
         elif phono3py_yaml is not None:
             if self._verbose:
                 print("Supercell is read from:", phono3py_yaml, flush=True)
-            (self._supercell_ph, self._disps, self._st_dicts) = parse_phono3py_yaml_fcs(
+            res = parse_phono3py_yaml_fcs(
                 phono3py_yaml, use_phonon_dataset=use_phonon_dataset
             )
+            self._supercell_ph, self._disps, self._structures = res
             self._supercell = phonopy_cell_to_structure(self._supercell_ph)
 
-        else:
-            raise ValueError(
-                "PolymlpFC: supercell or phonon3py_yaml "
-                "is required for initialization"
-            )
         self._N = len(self._supercell_ph.symbols)
         return self
 
     def _compute_forces(self):
-        _, forces, _ = self.prop.eval_multiple(self._structures)
-        _, residual_forces, _ = self.prop.eval(self._supercell)
+        """Compute forces and subtract residul forces."""
+        if self._structures is None:
+            raise RuntimeError("Structures not found.")
+
+        _, forces, _ = self._prop.eval_multiple(self._structures)
+        _, residual_forces, _ = self._prop.eval(self._supercell)
         for f in forces:
             f -= residual_forces
         return np.array(forces)
@@ -146,55 +139,6 @@ class PolymlpFC:
         )
         return self
 
-    def run_geometry_optimization(
-        self,
-        gtol: float = 1e-5,
-        method: Literal["CG", "BFGS"] = "CG",
-    ):
-        """Run geometry optimization.
-
-        Parameters
-        ----------
-        gtol: Tolerance for gradient.
-        method: Optimization method.
-        """
-
-        if self._verbose:
-            print("Running geometry optimization", flush=True)
-
-        try:
-            minobj = GeometryOptimization(
-                self._supercell,
-                relax_cell=False,
-                relax_volume=False,
-                relax_positions=True,
-                with_sym=True,
-                properties=self.prop,
-                verbose=self._verbose,
-            )
-        except ValueError:
-            print("Warning: No geomerty optimization is performed.")
-            return self
-
-        minobj.run(gtol=gtol, method=method)
-        if self._verbose:
-            print("Residual forces:", flush=True)
-            print(minobj.residual_forces.T, flush=True)
-            print("E0:", minobj.energy, flush=True)
-            print("n_iter:", minobj.n_iter, flush=True)
-            print("Fractional coordinate changes:", flush=True)
-            diff_positions = self._supercell.positions - minobj.structure.positions
-            print(diff_positions.T, flush=True)
-            print("Success:", minobj.success, flush=True)
-
-        if minobj.success:
-            self._supercell = minobj.structure
-            self._supercell_ph = structure_to_phonopy_cell(self._supercell)
-            if self._disps is not None:
-                self.displacements = self._disps
-
-        return self
-
     def run_fc(
         self,
         orders: tuple = (2, 3),
@@ -203,13 +147,17 @@ class PolymlpFC:
         is_compact_fc: bool = True,
     ):
         """Construct fc basis and solve FCs."""
+        if self._disps is None:
+            RuntimeError("Displacements not found.")
 
+        if self._forces is None:
+            RuntimeError("Forces not found.")
+
+        cutoff = None
         if self._cutoff is not None:
             cutoff = dict()
             for order in orders:
                 cutoff[order] = self._cutoff
-        else:
-            cutoff = None
 
         self._symfc = Symfc(
             self._supercell_ph,
@@ -220,7 +168,9 @@ class PolymlpFC:
             log_level=self._verbose,
         )
         self._symfc.run(
-            orders=orders, batch_size=batch_size, is_compact_fc=is_compact_fc
+            orders=orders,
+            batch_size=batch_size,
+            is_compact_fc=is_compact_fc,
         )
         for order in orders:
             if order == 2:
@@ -268,27 +218,14 @@ class PolymlpFC:
         if self._verbose:
             print("Time (Symfc basis and solver)", t2 - t1, flush=True)
             for order in orders:
+                shape = self._symfc.basis_set[order].blocked_basis_set.shape
                 if order == 2:
-                    print(
-                        "Basis size (FC2):",
-                        # self._symfc.basis_set[2].basis_set.shape,
-                        self._symfc.basis_set[2].blocked_basis_set.shape,
-                        flush=True,
-                    )
+                    print("Basis size (FC2):", shape, flush=True)
                 elif order == 3:
-                    print(
-                        "Basis size (FC3):",
-                        # self._symfc.basis_set[3].basis_set.shape,
-                        self._symfc.basis_set[3].blocked_basis_set.shape,
-                        flush=True,
-                    )
+                    shape = self._symfc.basis_set[3].blocked_basis_set.shape
+                    print("Basis size (FC3):", shape, flush=True)
                 elif order == 4:
-                    print(
-                        "Basis size (FC4):",
-                        # self._symfc.basis_set[3].basis_set.shape,
-                        self._symfc.basis_set[4].blocked_basis_set.shape,
-                        flush=True,
-                    )
+                    print("Basis size (FC4):", shape, flush=True)
 
         if write_fc:
             self.save_fc()
@@ -296,10 +233,12 @@ class PolymlpFC:
         return self
 
     def save_fc(self):
+        """Save force constants."""
         if self._fc2 is not None:
             if self._verbose:
                 print("writing fc2.hdf5", flush=True)
             write_fc2_to_hdf5(self._fc2)
+
         if self._fc3 is not None:
             if self._verbose:
                 print("writing fc3.hdf5", flush=True)
@@ -307,21 +246,25 @@ class PolymlpFC:
 
     @property
     def displacements(self) -> np.ndarray:
+        """Return displacements."""
         return self._disps
 
     @property
     def forces(self) -> np.ndarray:
+        """Return forces."""
         return self._forces
 
     @property
-    def structures(self) -> PolymlpStructure:
+    def structures(self) -> list[PolymlpStructure]:
+        """Return supercell structures with displacements."""
         return self._structures
 
     @displacements.setter
     def displacements(self, disps: np.ndarray):
         """Set displacements, shape=(n_str, 3, n_atom)."""
         if not disps.shape[1] == 3 or not disps.shape[2] == self._N:
-            raise ValueError("Displacements must have a shape of " "(n_str, 3, n_atom)")
+            raise RuntimeError("Displacements not (n_str, 3, n_atom) shape.")
+
         self._disps = disps
         self._structures = get_structures_from_displacements(
             self._disps,
@@ -332,44 +275,54 @@ class PolymlpFC:
     def forces(self, f: np.ndarray):
         """Set forces, shape=(n_str, 3, n_atom)."""
         if not f.shape[1] == 3 or not f.shape[2] == self._N:
-            raise ValueError("Forces must have a shape of " "(n_str, 3, n_atom)")
+            raise RuntimeError("Forces not (n_str, 3, n_atom) shape.")
+
         self._forces = f
 
     @structures.setter
     def structures(self, structures):
+        """Set supercell structures with displacements."""
         self._structures = structures
 
     @property
     def fc2(self):
+        """Return 2nd-order FCs."""
         return self._fc2
 
     @property
     def fc3(self):
+        """Return 3rd-order FCs."""
         return self._fc3
 
     @property
     def fc4(self):
+        """Return 4th-order FCs."""
         return self._fc4
 
     @property
     def symfc_obj(self):
+        """Return symfc instance."""
         return self._symfc
 
     @property
     def supercell_phonopy(self):
+        """Return supercell in phonopy format."""
         return self._supercell_ph
 
     @property
     def supercell(self):
+        """Return supercell in pypolymlp format."""
         return self._supercell
 
     @property
     def cutoff(self):
+        """Return cutoff distance."""
         return self._cutoff
 
     @cutoff.setter
     def cutoff(self, value):
-        print("Cutoff radius:", value, "(ang.)", flush=True)
+        """Set cutoff distance."""
+        if self._verbose:
+            print("Cutoff radius:", value, "(ang.)", flush=True)
         self._cutoff = value
         self._fc_cutoff = FCCutoff(self._supercell_ph, cutoff=value)
-        return self

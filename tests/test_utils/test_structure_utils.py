@@ -68,6 +68,7 @@ def test_volumes(structure_rocksalt):
 
 def test_supercell(structure_rocksalt):
     """Test for supercell functions."""
+    # TODO: Check consistency between use_phonopy=True and False
     sup_mat = [[1, 0, 0], [0, 1, 0], [1, 0, 2]]
     sup = supercell(structure_rocksalt, supercell_matrix=sup_mat)
     np.testing.assert_equal(sup.n_atoms, [8, 8])
