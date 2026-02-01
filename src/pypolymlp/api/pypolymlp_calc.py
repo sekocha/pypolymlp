@@ -538,7 +538,11 @@ class PypolymlpCalc:
         self.unitcell = self.first_structure
 
         supercell_matrix_diag = np.diag(supercell_matrix)
-        supercell = phonopy_supercell(self.unitcell, supercell_matrix_diag)
+        supercell = phonopy_supercell(
+            self.unitcell,
+            supercell_matrix_diag,
+            return_phonopy=False,
+        )
 
         self._fc = PolymlpFC(
             supercell=supercell,

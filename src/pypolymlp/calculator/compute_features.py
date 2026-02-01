@@ -16,6 +16,9 @@ def update_types(structures: list[PolymlpStructure], element_order: list[str]):
 
     Integers in types will be compatible with element_order.
     """
+    if isinstance(structures, PolymlpStructure):
+        return replace_types(structures, element_order)
+
     for st in structures:
         st = replace_types(st, element_order)
     return structures

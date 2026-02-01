@@ -55,7 +55,10 @@ class PropertiesSingle:
     """Class for calculating properties using a single polymlp model."""
 
     def __init__(
-        self, pot: str = None, params: PolymlpParams = None, coeffs: np.ndarray = None
+        self,
+        pot: Optional[str] = None,
+        params: Optional[PolymlpParams] = None,
+        coeffs: Optional[np.ndarray] = None,
     ):
         """Init method.
 
@@ -73,9 +76,8 @@ class PropertiesSingle:
             self._coeffs = coeffs
 
         self._params.element_swap = False
-        self.obj = libmlpcpp.PotentialPropertiesFast(
-            self._params.as_dict(), self._coeffs
-        )
+        params_dict = self._params.as_dict()
+        self._obj = libmlpcpp.PotentialPropertiesFast(params_dict, self._coeffs)
 
     def eval(self, st: PolymlpStructure, use_openmp: bool = True):
         """Evaluate properties for a single structure.
@@ -87,7 +89,7 @@ class PropertiesSingle:
         stress: unit: eV/supercell: (6) in the order of xx, yy, zz, xy, yz, zx
         """
         if self._params.type_full:
-            st_calc = update_types([st], self._params.element_order)[0]
+            st_calc = update_types(st, self._params.element_order)
         else:
             st_calc, active_atoms, _ = find_active_atoms(
                 [st], self._params.element_order
@@ -98,22 +100,20 @@ class PropertiesSingle:
             else:
                 st_calc = None
 
-        if st_calc is not None:
-            positions_c = st_calc.axis @ st_calc.positions
-            self.obj.eval(st_calc.axis, positions_c, st_calc.types, use_openmp)
+        if st_calc is None:
+            return 0.0, np.zeros((3, len(st.types))), np.zeros(6)
 
-            energy = self.obj.get_e()
-            force = np.array(self.obj.get_f()).T
-            stress = np.array(self.obj.get_s())
+        positions_c = st_calc.axis @ st_calc.positions
+        self._obj.eval(st_calc.axis, positions_c, st_calc.types, use_openmp)
 
-            if self._params.type_full == False:
-                force_full = np.zeros((3, len(st.types)))
-                force_full[:, active_atoms] = force
-                force = force_full
-        else:
-            energy = 0.0
-            force = np.zeros((3, len(st.types)))
-            stress = np.zeros(6)
+        energy = self._obj.get_e()
+        force = np.array(self._obj.get_f()).T
+        stress = np.array(self._obj.get_s())
+
+        if not self._params.type_full:
+            force_full = np.zeros((3, len(st.types)))
+            force_full[:, active_atoms] = force
+            force = force_full
 
         return energy, force, stress
 
@@ -132,6 +132,7 @@ class PropertiesSingle:
                 "Properties calculations for",
                 len(structures),
                 "structures: Using a fast algorithm",
+                flush=True,
             )
         if self._params.type_full:
             structures_calc = update_types(structures, self._params.element_order)
@@ -140,26 +141,25 @@ class PropertiesSingle:
                 structures, self._params.element_order
             )
 
-        if len(structures_calc) > 0:
-            axis_array = [st.axis for st in structures_calc]
-            types_array = [st.types for st in structures_calc]
-            positions_c_array = [st.axis @ st.positions for st in structures_calc]
+        if len(structures_calc) == 0:
+            return [], [], []
 
-            # PotentialProperties.eval_multiple: Return
-            # ------------------------------------------
-            # energies = obj.get_e(), (n_str)
-            # forces = obj.get_f(), (n_str, n_atom, 3)
-            # stresses = obj.get_s(), (n_str, 6)
-            #             in the order of xx, yy, zz, xy, yz, zx
-            self.obj.eval_multiple(axis_array, positions_c_array, types_array)
+        axis_array = [st.axis for st in structures_calc]
+        types_array = [st.types for st in structures_calc]
+        positions_c_array = [st.axis @ st.positions for st in structures_calc]
 
-            energies = np.array(self.obj.get_e_array())
-            stresses = np.array(self.obj.get_s_array())
-            forces = [np.array(f).T for f in self.obj.get_f_array()]
-        else:
-            energies, forces, stresses = [], [], []
+        # PotentialProperties.eval_multiple: Return
+        # ------------------------------------------
+        # energies = _obj.get_e(), (n_str)
+        # forces = _obj.get_f(), (n_str, n_atom, 3)
+        # stresses = _obj.get_s(), (n_str, 6)
+        #             in the order of xx, yy, zz, xy, yz, zx
+        self._obj.eval_multiple(axis_array, positions_c_array, types_array)
+        energies = np.array(self._obj.get_e_array())
+        stresses = np.array(self._obj.get_s_array())
+        forces = [np.array(f).T for f in self._obj.get_f_array()]
 
-        if self._params.type_full == False:
+        if not self._params.type_full:
             energies_full, forces_full, stresses_full = [], [], []
             i = 0
             for iall, active in enumerate(active_bools):
@@ -185,6 +185,7 @@ class PropertiesSingle:
 
     @property
     def params(self):
+        """Return parameters of polymlp."""
         return self._params
 
 
