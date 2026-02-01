@@ -3,7 +3,7 @@
 import os
 from pathlib import Path
 
-import numpy as np
+from test_compute_elastic import _assert_elastic_gtinv_MgO, _assert_elastic_pair_MgO
 
 from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
 
@@ -18,22 +18,10 @@ def test_pair_MgO():
 
     polymlp = PypolymlpCalc(pot=pot, verbose=True)
     polymlp.run_elastic_constants(poscar=poscar)
-    const = polymlp.elastic_constants
+    _assert_elastic_pair_MgO(polymlp.elastic_constants)
 
     polymlp.write_elastic_constants(filename="tmp.yaml")
     os.remove("tmp.yaml")
-
-    true1 = np.array(
-        [
-            [228.991191, 103.028144, 103.028144],
-            [103.028144, 228.991191, 103.028144],
-            [103.028144, 103.028144, 228.991191],
-        ]
-    )
-    np.testing.assert_allclose(const[:3, :3], true1, atol=1e-8)
-    np.testing.assert_allclose(const[:3, 3:], 0.0, atol=1e-8)
-    np.testing.assert_allclose(const[3:, :3], 0.0, atol=1e-8)
-    np.testing.assert_allclose(const[3:, 3:], np.eye(3) * 149.41388776, atol=1e-8)
 
 
 def test_gtinv_MgO():
@@ -43,20 +31,7 @@ def test_gtinv_MgO():
 
     polymlp = PypolymlpCalc(pot=pot, verbose=True)
     polymlp.run_elastic_constants(poscar=poscar)
-    const = polymlp.elastic_constants
+    _assert_elastic_gtinv_MgO(polymlp.elastic_constants)
 
     polymlp.write_elastic_constants(filename="tmp.yaml")
     os.remove("tmp.yaml")
-
-    true1 = np.array(
-        [
-            [288.21100485, 109.44248562, 109.44248562],
-            [109.44248562, 288.21100485, 109.44248562],
-            [109.44248562, 109.44248562, 288.21100485],
-        ]
-    )
-
-    np.testing.assert_allclose(const[:3, :3], true1, atol=1e-8)
-    np.testing.assert_allclose(const[:3, 3:], 0.0, atol=1e-8)
-    np.testing.assert_allclose(const[3:, :3], 0.0, atol=1e-8)
-    np.testing.assert_allclose(const[3:, 3:], np.eye(3) * 149.55595257029483, atol=1e-8)

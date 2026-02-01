@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-import pytest
+from test_compute_eos import _assert_eos_MgO
 
 from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
 
@@ -25,6 +25,4 @@ def test_eos_MgO():
         eos_fit=True,
     )
     e0, v0, b0 = polymlp.eos_fit_data
-    assert e0 == pytest.approx(-40.391484997464076, rel=1e-6)
-    assert v0 == pytest.approx(76.0684729812003, rel=1e-6)
-    assert b0 == pytest.approx(261.9462370383162, rel=1e-4)
+    _assert_eos_MgO(e0, v0, b0)

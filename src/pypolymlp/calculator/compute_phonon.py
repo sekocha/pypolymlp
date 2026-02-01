@@ -43,12 +43,12 @@ class PolymlpPhonon:
         """
 
         if properties is not None:
-            self.prop = properties
+            self._prop = properties
         else:
-            self.prop = Properties(pot=pot, params=params, coeffs=coeffs)
+            self._prop = Properties(pot=pot, params=params, coeffs=coeffs)
 
         unitcell = structure_to_phonopy_cell(unitcell)
-        self.ph = Phonopy(unitcell, supercell_matrix)
+        self._ph = Phonopy(unitcell, supercell_matrix)
         self._with_pdos = False
 
         self._qha = None
@@ -56,15 +56,15 @@ class PolymlpPhonon:
 
     def produce_force_constants(self, distance: float = 0.001):
         """Produce force constants by evaluating forces for random structures."""
-        self.ph.generate_displacements(distance=distance)
-        supercells = self.ph.supercells_with_displacements
+        self._ph.generate_displacements(distance=distance)
+        supercells = self._ph.supercells_with_displacements
         structures = [phonopy_cell_to_structure(cell) for cell in supercells]
 
         # forces: (n_str, 3, n_atom) --> (n_str, n_atom, 3)
-        _, forces, _ = self.prop.eval_multiple(structures)
+        _, forces, _ = self._prop.eval_multiple(structures)
         forces = np.array(forces).transpose((0, 2, 1))
-        self.ph.forces = forces
-        self.ph.produce_force_constants()
+        self._ph.forces = forces
+        self._ph.produce_force_constants()
         return self
 
     def compute_properties(
@@ -78,18 +78,18 @@ class PolymlpPhonon:
         with_pdos: bool = False,
     ):
         """Compute phonon properties."""
-        self.ph.run_mesh(
+        self._ph.run_mesh(
             mesh,
             with_eigenvectors=with_eigenvectors,
             is_mesh_symmetry=is_mesh_symmetry,
         )
-        self.ph.run_total_dos()
-        self.ph.run_thermal_properties(t_step=t_step, t_max=t_max, t_min=t_min)
-        self.mesh_dict = self.ph.get_mesh_dict()
+        self._ph.run_total_dos()
+        self._ph.run_thermal_properties(t_step=t_step, t_max=t_max, t_min=t_min)
+        self.mesh_dict = self._ph.get_mesh_dict()
         if with_pdos:
             self._with_pdos = True
-            self.ph.run_mesh(mesh, with_eigenvectors=True, is_mesh_symmetry=False)
-            self.ph.run_projected_dos()
+            self._ph.run_mesh(mesh, with_eigenvectors=True, is_mesh_symmetry=False)
+            self._ph.run_projected_dos()
         return self
 
     def write_properties(self, path_output: str = "./"):
@@ -100,28 +100,32 @@ class PolymlpPhonon:
             self.mesh_dict["qpoints"],
             fmt="%f",
         )
-        self.ph.write_total_dos(filename=path_output + "/phonon_total_dos.dat")
-        self.ph.write_yaml_thermal_properties(
+        self._ph.write_total_dos(filename=path_output + "/phonon_total_dos.dat")
+        self._ph.write_yaml_thermal_properties(
             filename=path_output + "/phonon_thermal_properties.yaml"
         )
         if self._with_pdos:
-            self.ph.write_projected_dos(filename=path_output + "phonon_proj_dos.dat")
+            self._ph.write_projected_dos(filename=path_output + "phonon_proj_dos.dat")
 
     @property
     def phonopy(self) -> Phonopy:
         """Return phonopy instance."""
-        return self.ph
+        return self._ph
 
     @property
     def total_dos(self):
         """Return total phonon DOS."""
-        return np.stack([self.ph.total_dos.frequency_points, self.ph.total_dos.dos]).T
+        return np.stack([self._ph.total_dos.frequency_points, self._ph.total_dos.dos]).T
+
+    @property
+    def thermal_properties(self):
+        return self._ph.get_thermal_properties_dict()
 
     @property
     def is_imaginary(self):
         """Check if phonon DOS exhibits imaginary frequencies."""
-        imag = self.ph.total_dos.frequency_points < -0.01
-        return np.sum(self.ph.total_dos.dos[imag]) > 1e-6
+        imag = self._ph.total_dos.frequency_points < -0.01
+        return np.sum(self._ph.total_dos.dos[imag]) > 1e-6
 
 
 class PolymlpPhononQHA:
@@ -150,9 +154,9 @@ class PolymlpPhononQHA:
         """
 
         if properties is not None:
-            self.prop = properties
+            self._prop = properties
         else:
-            self.prop = Properties(pot=pot, params=params, coeffs=coeffs)
+            self._prop = Properties(pot=pot, params=params, coeffs=coeffs)
 
         self._unitcell = unitcell
         self._supercell_matrix = supercell_matrix
@@ -173,12 +177,12 @@ class PolymlpPhononQHA:
         unitcells = [
             isotropic_volume_change(self._unitcell, eps=eps) for eps in eps_all
         ]
-        energies, _, _ = self.prop.eval_multiple(unitcells)
+        energies, _, _ = self._prop.eval_multiple(unitcells)
         volumes = np.array([st.volume for st in unitcells])
 
         free_energies, entropies, heat_capacities = [], [], []
         for unitcell in unitcells:
-            ph = PolymlpPhonon(unitcell, self._supercell_matrix, properties=self.prop)
+            ph = PolymlpPhonon(unitcell, self._supercell_matrix, properties=self._prop)
             ph.produce_force_constants(distance=distance)
 
             phonopy = ph.phonopy
@@ -252,7 +256,6 @@ def calculate_harmonic_properties_from_fc2(
 
     if path_fc2 is not None:
         fc2 = read_fc2_from_hdf5(path_fc2)
-        # ph.force_constants = read_fc2_from_hdf5(path_fc2)
 
     unitcell_ph = structure_to_phonopy_cell(unitcell)
     ph = Phonopy(unitcell_ph, supercell_matrix)

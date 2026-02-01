@@ -2,8 +2,7 @@
 
 from pathlib import Path
 
-import numpy as np
-import pytest
+from test_compute_features import _assert_gtinv_MgO, _assert_pair_MgO
 
 from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
 
@@ -23,9 +22,7 @@ def test_features_from_polymlp1():
     polymlp.load_structures_from_files(poscars=poscars)
     polymlp.run_features(features_force=False, features_stress=False)
     x = polymlp.features
-    assert x.shape == (2, 324)
-    assert np.sum(x) == pytest.approx(997193.0146734761, rel=1e-6)
-    assert np.sum(x[0] - x[1]) == pytest.approx(-6.428600229143143, rel=1e-6)
+    _assert_pair_MgO(x)
 
 
 def test_features_from_polymlp2():
@@ -35,9 +32,7 @@ def test_features_from_polymlp2():
     polymlp.load_structures_from_files(poscars=poscars)
     polymlp.run_features(features_force=False, features_stress=False)
     x = polymlp.features
-    assert x.shape == (2, 1899)
-    assert np.sum(x) == pytest.approx(237100.3979091199, rel=1e-6)
-    assert np.sum(x[0] - x[1]) == pytest.approx(-1.9717588279337908, rel=1e-6)
+    _assert_gtinv_MgO(x)
 
 
 def test_features_from_infile1():
@@ -49,6 +44,4 @@ def test_features_from_infile1():
         develop_infile=infile, features_force=False, features_stress=False
     )
     x = polymlp.features
-    assert x.shape == (2, 1899)
-    assert np.sum(x) == pytest.approx(237100.3979091199, rel=1e-6)
-    assert np.sum(x[0] - x[1]) == pytest.approx(-1.9717588279337908, rel=1e-6)
+    _assert_gtinv_MgO(x)
