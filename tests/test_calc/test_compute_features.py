@@ -20,29 +20,26 @@ poscars = [
     path_file + "poscars/POSCAR-00002.MgO",
 ]
 
-# pot = path_file + "mlps/polymlp.yaml.pair.MgO"
-# pot = path_file + "mlps/polymlp.yaml.gtinv.MgO"
-# infile = path_file + "mlps/polymlp.in.gtinv.MgO"
-
 
 def test_update_types():
     """Test update_types."""
     structures = parse_structures_from_poscars(poscars)
     element_order = ["Mg", "O"]
-    updated_structures = update_types(structures, element_order)
-    st = updated_structures[0]
+    structures = update_types(structures, element_order)
+    st = structures[0]
     assert st.types[0] == 0
     assert st.types[32] == 1
     assert st.elements[0] == "Mg"
     assert st.elements[32] == "O"
 
+    structures = parse_structures_from_poscars(poscars)
     element_order = ["O", "Mg"]
-    updated_structures = update_types(structures, element_order)
-    st = updated_structures[0]
-    assert st.types[0] == 0
-    assert st.types[32] == 1
-    assert st.elements[0] == "O"
-    assert st.elements[32] == "Mg"
+    structures = update_types(structures, element_order)
+    st = structures[0]
+    assert st.types[0] == 1
+    assert st.types[32] == 0
+    assert st.elements[0] == "Mg"
+    assert st.elements[32] == "O"
 
 
 def test_features_from_polymlp1():

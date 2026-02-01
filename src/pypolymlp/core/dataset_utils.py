@@ -1,12 +1,27 @@
 """Class of DFT dataset used for developing polymlp."""
 
-import copy
 from typing import List, Optional
 
 import numpy as np
 
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.utils import split_ids_train_test
+
+
+def replace_types(st: PolymlpStructure, element_order: list[str]) -> PolymlpStructure:
+    """Replace atom types used for property calculations."""
+    st.elements = np.array(st.elements)
+    st.types = np.array(st.types)
+
+    count = 0
+    for atomtype, ele in enumerate(element_order):
+        match = st.elements == ele
+        st.types[match] = atomtype
+        count += np.count_nonzero(match)
+
+    if count != st.elements.shape[0]:
+        raise RuntimeError("Elements in structure not found in element_order.")
+    return st
 
 
 def permute_atoms(
@@ -18,28 +33,37 @@ def permute_atoms(
 
     The orders of atoms and forces are compatible with the element order.
     """
-    positions, n_atoms, elements, types = [], [], [], []
-    force_permute = []
-    for atomtype, ele in enumerate(element_order):
-        ids = np.where(np.array(st.elements) == ele)[0]
-        n_match = len(ids)
-        positions.extend(st.positions[:, ids].T)
-        n_atoms.append(n_match)
-        elements.extend([ele for _ in range(n_match)])
-        types.extend([atomtype for _ in range(n_match)])
-        if force is not None:
-            force_permute.extend(force[:, ids].T)
+    st.elements = np.array(st.elements)
+    st.types = np.array(st.types)
 
-    positions = np.array(positions).T
+    positions = np.zeros(st.positions.shape)
+    types = np.zeros(st.types.shape, dtype=int)
+    elements, n_atoms = [], []
     if force is not None:
-        force_permute = np.array(force_permute).T
+        force_permute = np.zeros(force.shape)
 
-    st_new = copy.deepcopy(st)
-    st_new.positions = positions
-    st_new.n_atoms = n_atoms
-    st_new.elements = elements
-    st_new.types = types
+    begin = 0
+    for atomtype, ele in enumerate(element_order):
+        match = st.elements == ele
+        n_match = np.count_nonzero(match)
+        end = begin + n_match
 
+        positions[:, begin:end] = st.positions[:, match]
+        types[begin:end] = atomtype
+        elements.extend([ele for _ in range(n_match)])
+        n_atoms.append(n_match)
+        if force is not None:
+            force_permute[:, begin:end] = force[:, match]
+
+        begin = end
+
+    st_new = PolymlpStructure(
+        axis=st.axis,
+        positions=positions,
+        n_atoms=n_atoms,
+        elements=elements,
+        types=types,
+    )
     if force is not None:
         return st_new, force_permute
     return st_new

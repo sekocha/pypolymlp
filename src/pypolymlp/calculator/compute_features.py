@@ -5,7 +5,7 @@ from typing import Optional
 import numpy as np
 
 from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
-from pypolymlp.core.dataset_utils import permute_atoms
+from pypolymlp.core.dataset_utils import replace_types
 from pypolymlp.core.io_polymlp import load_mlp
 from pypolymlp.core.parser_polymlp_params import ParamsParser
 from pypolymlp.mlp_dev.core.features import Features
@@ -16,15 +16,9 @@ def update_types(structures: list[PolymlpStructure], element_order: list[str]):
 
     Integers in types will be compatible with element_order.
     """
-    updated_structures = []
     for st in structures:
-        for ele in st.elements:
-            if ele not in element_order:
-                raise RuntimeError("Elements in structure not found in element_order.")
-
-        st_update = permute_atoms(st, element_order)
-        updated_structures.append(st_update)
-    return updated_structures
+        st = replace_types(st, element_order)
+    return structures
 
 
 def compute_from_polymlp(
