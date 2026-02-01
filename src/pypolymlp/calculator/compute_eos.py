@@ -83,16 +83,13 @@ class PolymlpEOS:
     def run_eos_fit_phonopy(self, volumes: np.ndarray, energies: np.ndarray):
         """Fit EOS curve using phonopy."""
 
-        from phonopy.qha.core import BulkModulus
-        from phonopy.units import EVAngstromToGPa
+        from pypolymlp.calculator.utils.eos_utils import EOS
 
         if self._verbose:
             print("EOS fitting using Vinet EOS equation")
 
-        bm = BulkModulus(volumes=volumes, energies=energies, eos="vinet")
-        self._b0 = bm.bulk_modulus * EVAngstromToGPa
-        self._e0 = bm.energy
-        self._v0 = bm.equilibrium_volume
+        eos = EOS(volumes, energies)
+        self._b0, self._e0, self._v0 = eos.b0, eos.e0, eos.v0
 
         v_min, v_max = min(volumes), max(volumes)
         extrapolation = (v_max - v_min) * 0.1
@@ -100,7 +97,7 @@ class PolymlpEOS:
         v_ub = v_max + extrapolation
 
         volumes_eval = np.arange(v_lb, v_ub, 0.01)
-        fitted = bm._eos(volumes_eval, *bm.get_parameters())
+        fitted = eos.eval(volumes_eval)
         eos_fit_data = np.stack([volumes_eval, fitted]).T
         return eos_fit_data
 

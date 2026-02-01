@@ -316,7 +316,7 @@ class Properties:
         return self._e, self._f, self._s
 
     def save(self, verbose: bool = False):
-        """Save properties."""
+        """Save properties to files."""
         np.save("polymlp_energies.npy", self.energies)
         np.save("polymlp_stress_tensors.npy", self.stresses_gpa)
         try:
