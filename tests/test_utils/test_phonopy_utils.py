@@ -19,9 +19,9 @@ def test_cell(structure_rocksalt):
     st = phonopy_cell_to_structure(cell)
     np.testing.assert_allclose(st.axis, structure_rocksalt.axis)
     np.testing.assert_allclose(st.positions, structure_rocksalt.positions)
-    assert st.elements == structure_rocksalt.elements
-    assert st.types == structure_rocksalt.types
-    assert st.n_atoms == structure_rocksalt.n_atoms
+    np.testing.assert_equal(st.elements, structure_rocksalt.elements)
+    np.testing.assert_equal(st.types, structure_rocksalt.types)
+    np.testing.assert_equal(st.n_atoms, structure_rocksalt.n_atoms)
 
 
 def test_supercell(structure_rocksalt):
