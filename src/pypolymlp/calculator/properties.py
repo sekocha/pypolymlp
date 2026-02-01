@@ -126,6 +126,11 @@ class PropertiesSingle:
         forces: unit: eV/angstrom (n_str, 3, n_atom)
         stresses: (n_str, 6) in the order of xx, yy, zz, xy, yz, zx
                     unit: eV/supercell
+
+        C++ library returns energies, forces, and stresses in the following form.
+        energies: shape=(n_str)
+        forces = shape=(n_str, n_atom, 3)
+        stresses = shape=(n_str, 6) in the order of xx, yy, zz, xy, yz, zx
         """
         if verbose:
             print(
@@ -148,12 +153,6 @@ class PropertiesSingle:
         types_array = [st.types for st in structures_calc]
         positions_c_array = [st.axis @ st.positions for st in structures_calc]
 
-        # PotentialProperties.eval_multiple: Return
-        # ------------------------------------------
-        # energies = _obj.get_e(), (n_str)
-        # forces = _obj.get_f(), (n_str, n_atom, 3)
-        # stresses = _obj.get_s(), (n_str, 6)
-        #             in the order of xx, yy, zz, xy, yz, zx
         self._obj.eval_multiple(axis_array, positions_c_array, types_array)
         energies = np.array(self._obj.get_e_array())
         stresses = np.array(self._obj.get_s_array())
@@ -210,18 +209,18 @@ class PropertiesHybrid:
         if pot is not None:
             if not isinstance(pot, list):
                 raise ValueError("Parameters in PropertiesHybrid must be lists.")
-            self.props = [PropertiesSingle(pot=p) for p in pot]
+            self._props = [PropertiesSingle(pot=p) for p in pot]
         else:
             if not isinstance(params, list) or not isinstance(coeffs, list):
                 raise ValueError("Parameters in PropertiesHybrid must be lists.")
-            self.props = [
+            self._props = [
                 PropertiesSingle(params=p, coeffs=c) for p, c in zip(params, coeffs)
             ]
 
     def eval(self, st: PolymlpStructure, use_openmp: bool = True):
         """Evaluate properties for a single structure."""
-        energy, force, stress = self.props[0].eval(st, use_openmp=use_openmp)
-        for prop in self.props[1:]:
+        energy, force, stress = self._props[0].eval(st, use_openmp=use_openmp)
+        for prop in self._props[1:]:
             e_single, f_single, s_single = prop.eval(st, use_openmp=use_openmp)
             energy += e_single
             force += f_single
@@ -230,8 +229,8 @@ class PropertiesHybrid:
 
     def eval_multiple(self, structures: list[PolymlpStructure]):
         """Evaluate properties for multiple structures."""
-        energies, forces, stresses = self.props[0].eval_multiple(structures)
-        for prop in self.props[1:]:
+        energies, forces, stresses = self._props[0].eval_multiple(structures)
+        for prop in self._props[1:]:
             e_single, f_single, s_single = prop.eval_multiple(structures)
             energies += e_single
             for i, f1 in enumerate(f_single):
@@ -241,7 +240,8 @@ class PropertiesHybrid:
 
     @property
     def params(self):
-        return [prop.params for prop in self.props]
+        """Return parameters for hybrid model."""
+        return [prop.params for prop in self._props]
 
 
 class Properties:
@@ -265,34 +265,34 @@ class Properties:
         """
 
         if pot is not None:
-            if isinstance(pot, list):
+            if isinstance(pot, (list, tuple, np.ndarray)):
                 if len(pot) > 1:
-                    self.prop = PropertiesHybrid(pot=pot)
+                    self._prop = PropertiesHybrid(pot=pot)
                 else:
-                    self.prop = PropertiesSingle(pot=pot[0])
+                    self._prop = PropertiesSingle(pot=pot[0])
             else:
-                self.prop = PropertiesSingle(pot=pot)
+                self._prop = PropertiesSingle(pot=pot)
         else:
             if isinstance(params, list) and isinstance(coeffs, list):
                 if len(params) > 1 and len(coeffs) > 1:
-                    self.prop = PropertiesHybrid(params=params, coeffs=coeffs)
+                    self._prop = PropertiesHybrid(params=params, coeffs=coeffs)
                 else:
-                    self.prop = PropertiesSingle(
+                    self._prop = PropertiesSingle(
                         params_dict=params[0], coeffs=coeffs[0]
                     )
             else:
-                self.prop = PropertiesSingle(params=params, coeffs=coeffs)
+                self._prop = PropertiesSingle(params=params, coeffs=coeffs)
 
     def eval(self, st: PolymlpStructure, use_openmp: bool = True):
         """Evaluate properties for a single structure."""
-        e, f, s = self.prop.eval(st, use_openmp=use_openmp)
+        e, f, s = self._prop.eval(st, use_openmp=use_openmp)
         self._e, self._f, self._s = [e], [f], [s]
         self._structures = [st]
         return e, f, s
 
     def eval_multiple(self, structures: list[PolymlpStructure]):
         """Evaluate properties for multiple structures."""
-        self._e, self._f, self._s = self.prop.eval_multiple(structures)
+        self._e, self._f, self._s = self._prop.eval_multiple(structures)
         self._structures = structures
         return self._e, self._f, self._s
 
@@ -301,7 +301,7 @@ class Properties:
         from pypolymlp.utils.phonopy_utils import phonopy_cell_to_structure
 
         st = phonopy_cell_to_structure(str_ph)
-        e, f, s = self.prop.eval(st, use_openmp=use_openmp)
+        e, f, s = self._prop.eval(st, use_openmp=use_openmp)
         self._e, self._f, self._s = [e], [f], [s]
         self._structures = [st]
         return e, f, s
@@ -311,11 +311,12 @@ class Properties:
         from pypolymlp.utils.phonopy_utils import phonopy_cell_to_structure
 
         structures = [phonopy_cell_to_structure(str_ph) for str_ph in str_ph_list]
-        self._e, self._f, self._s = self.prop.eval_multiple(structures)
+        self._e, self._f, self._s = self._prop.eval_multiple(structures)
         self._structures = structures
         return self._e, self._f, self._s
 
-    def save(self, verbose=False):
+    def save(self, verbose: bool = False):
+        """Save properties."""
         np.save("polymlp_energies.npy", self.energies)
         np.save("polymlp_stress_tensors.npy", self.stresses_gpa)
         try:
@@ -331,40 +332,47 @@ class Properties:
             print(
                 "polymlp_energies.npy, polymlp_forces*.npy,",
                 "and polymlp_stress_tensors.npy are generated.",
+                flush=True,
             )
         return self
 
     def print_single(self):
+        """Print properties for single structure calculation."""
         np.set_printoptions(suppress=True)
-        print("Energy:", self.energies[0], "(eV/cell)")
-        print("Forces:")
+        print("Energy:", self.energies[0], "(eV/cell)", flush=True)
+        print("Forces:", flush=True)
         for i, f in enumerate(self.forces[0].T):
-            print("- atom", i, ":", f)
+            print("- atom", i, ":", f, flush=True)
         stress = self.stresses_gpa[0]
-        print("Stress tensors:")
-        print("- xx, yy, zz:", stress[0:3])
-        print("- xy, yz, zx:", stress[3:6])
-        print("---------")
+        print("Stress tensors:", flush=True)
+        print("- xx, yy, zz:", stress[0:3], flush=True)
+        print("- xy, yz, zx:", stress[3:6], flush=True)
+        print("---------", flush=True)
         return self
 
     @property
     def params(self):
-        return self.prop.params
+        """Return parameters."""
+        return self._prop.params
 
     @property
     def energies(self):
+        """Return energies."""
         return self._e
 
     @property
     def forces(self):
+        """Return forces."""
         return self._f
 
     @property
     def stresses(self):
+        """Return stresses in eV/cell."""
         return self._s
 
     @property
     def stresses_gpa(self):
+        """Return stresses in GPa."""
         return convert_stresses_in_gpa(self._s, self._structures)
 
 

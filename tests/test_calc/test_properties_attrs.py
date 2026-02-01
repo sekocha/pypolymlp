@@ -1,8 +1,10 @@
 """Tests of functions and attributes for property calculations."""
 
+import os
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 from pypolymlp.calculator.properties import (
     Properties,
@@ -17,11 +19,41 @@ path_file = str(cwd) + "/files/"
 unitcell = Poscar(path_file + "poscars/POSCAR.RS.MgO").structure
 
 
-def test_eval1():
+def test_eval_single():
     """Test properties with pair polymlp in MgO."""
     pot = path_file + "mlps/polymlp.yaml.pair.MgO"
     prop = Properties(pot=pot)
     energy, forces, stresses = prop.eval(unitcell)
+    assert energy == pytest.approx(-40.22469744308482)
+
+    energies, forces, stresses = prop.eval_multiple([unitcell, unitcell])
+    np.testing.assert_allclose(energies, [-40.22469744308482] * 2)
+    np.testing.assert_allclose(prop.energies, [-40.22469744308482] * 2)
+    assert np.array(prop.forces).shape == (2, 3, 8)
+    assert prop.stresses.shape == (2, 6)
+
+    prop.save()
+    prop.print_single()
+    os.remove("polymlp_energies.npy")
+    os.remove("polymlp_stress_tensors.npy")
+    os.remove("polymlp_forces.npy")
+
+    assert prop.params.n_type == 2
+
+
+def test_eval_hybrid():
+    """Test properties with pair polymlp in MgO."""
+    pot = path_file + "mlps/polymlp.yaml.pair.MgO"
+    prop = Properties(pot=[pot, pot])
+    energy, forces, stresses = prop.eval(unitcell)
+    assert energy == pytest.approx(-40.22469744308482 * 2)
+
+    energies, forces, stresses = prop.eval_multiple([unitcell, unitcell])
+    np.testing.assert_allclose(energies, [-40.22469744308482 * 2] * 2)
+    np.testing.assert_allclose(prop.energies, [-40.22469744308482 * 2] * 2)
+    assert np.array(prop.forces).shape == (2, 3, 8)
+    assert prop.stresses.shape == (2, 6)
+    assert prop.stresses_gpa.shape == (2, 6)
 
 
 def test_find_active_atoms():
