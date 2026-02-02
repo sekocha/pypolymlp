@@ -1,1 +1,0 @@
-pypolymlp --properties --pot polymlp.lammps --vaspruns vaspruns/*
