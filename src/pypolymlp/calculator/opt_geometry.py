@@ -61,7 +61,7 @@ class GeometryOptimization:
             elements = params[0].elements
         else:
             elements = params.elements
-        cell = update_types([cell], elements)[0]
+        cell = update_types(cell, elements)
 
         if not relax_cell and not relax_volume and not relax_positions:
             raise ValueError("No degree of freedom to be optimized.")
