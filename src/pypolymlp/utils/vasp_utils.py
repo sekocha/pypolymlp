@@ -168,7 +168,7 @@ class ElectronProperties:
         self._free_energies = []
         self._cvs = []
         for temp in self._temperatures:
-            self._efe.run(T=temp)
+            self._efe.run(temp=temp)
             self._energies.append(self._efe.energy)
             self._entropies.append(self._efe.entropy)
             self._free_energies.append(self._efe.free_energy)

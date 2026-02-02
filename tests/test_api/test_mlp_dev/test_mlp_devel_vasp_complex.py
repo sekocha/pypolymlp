@@ -37,6 +37,7 @@ def test_mlp_devel_distance():
 
 
 def test_mlp_devel_distance_pair():
+    """Test mlp development with distance constraints in SrTiO3."""
 
     file = str(cwd) + "/polymlp.in.vasp.pair.distance.SrTiO3"
     pypolymlp = _run_fit(file)

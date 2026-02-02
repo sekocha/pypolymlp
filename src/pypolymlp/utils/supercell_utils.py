@@ -15,6 +15,13 @@ def _is_diagonal(a: np.array):
     )
 
 
+def _refine_positions(positions: np.ndarray, tol: float = 1e-13):
+    """Refine fractional coordinates."""
+    positions -= np.floor(positions)
+    positions[np.where(positions > 1 - tol)] -= 1.0
+    return positions
+
+
 def get_supercell(
     st: PolymlpStructure,
     supercell_matrix: np.ndarray,
@@ -37,9 +44,11 @@ def get_supercell(
         if not _is_diagonal(size):
             from pypolymlp.utils.phonopy_utils import phonopy_supercell
 
-            return phonopy_supercell(st, supercell_matrix=size, return_phonopy=False)
+            sup = phonopy_supercell(st, supercell_matrix=size, return_phonopy=False)
+            sup.positions = _refine_positions(sup.positions)
+            return sup
 
-        return _get_supercell_diagonal(st, size, use_phonopy=use_phonopy)
+        return _get_supercell_diagonal(st, np.diag(size), use_phonopy=use_phonopy)
     elif size.shape == (3,):
         return _get_supercell_diagonal(st, size, use_phonopy=use_phonopy)
 
@@ -71,4 +80,5 @@ def _get_supercell_diagonal(
     trans_all = np.indices(size).reshape(3, -1).T
     positions_new = (st.positions.T[:, None] + trans_all[None, :]).reshape((-1, 3))
     sup.positions = (positions_new / size).T
+    sup.positions = _refine_positions(sup.positions)
     return sup

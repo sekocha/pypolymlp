@@ -147,7 +147,12 @@ class PropertiesSingle:
             )
 
         if len(structures_calc) == 0:
-            return [], [], []
+            n_str = len(structures)
+            return (
+                np.zeros(n_str),
+                [np.zeros((3, len(st.types))) for st in structures],
+                np.zeros((n_str, 6)),
+            )
 
         axis_array = [st.axis for st in structures_calc]
         types_array = [st.types for st in structures_calc]

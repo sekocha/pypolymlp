@@ -17,7 +17,7 @@ def test_load_mlp():
     coeff_true = 9.352307613515078e00 / 2.067583465937491e-01
 
     mlp_calc = PypolymlpCalc(pot=filename)
-    coeffs = mlp_calc._prop.prop._coeffs
+    coeffs = mlp_calc._prop._prop._coeffs
     assert coeffs[0] == pytest.approx(coeff_true, rel=1e-8)
 
     # Parse polymlp.yaml.gtinv
@@ -25,7 +25,7 @@ def test_load_mlp():
     coeff_true = 5.794375827500248e01
 
     mlp_calc = PypolymlpCalc(pot=filename)
-    coeffs = mlp_calc._prop.prop._coeffs
+    coeffs = mlp_calc._prop._prop._coeffs
     assert coeffs[0] == pytest.approx(coeff_true, rel=1e-8)
 
 

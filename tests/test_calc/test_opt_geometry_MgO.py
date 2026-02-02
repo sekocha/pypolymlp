@@ -81,7 +81,7 @@ def test_opt2():
 def test_opt3():
     """Test optimization with pair polymlp in MgO."""
     pot = path_file + "mlps/polymlp.yaml.pair.MgO"
-    unitcell = Poscar(path_file + "poscars/POSCAR.RS.IdealMgO").structure
+    unitcell = Poscar(path_file + "poscars/POSCAR.RS.idealMgO").structure
     opt = GeometryOptimization(
         pot=pot,
         cell=unitcell,

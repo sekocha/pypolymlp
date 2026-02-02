@@ -45,7 +45,7 @@ def test_fc_AlN():
 
 def test_fc_MgO():
     """Test FC calculation."""
-    poscar = path_file + "poscars/POSCAR.RS.IdealMgO"
+    poscar = path_file + "poscars/POSCAR.RS.idealMgO"
     pot = path_file + "mlps/polymlp.yaml.pair.MgO"
 
     unitcell = Poscar(poscar).structure

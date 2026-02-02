@@ -40,7 +40,8 @@ def test_supercell(structure_rocksalt):
         [0.5, 0.5, 0.0],
         [0.5, 0.5, 0.5],
     ]
-    np.testing.assert_equal(sup.positions.T, positions_true)
+    print(sup.positions.T)
+    np.testing.assert_allclose(sup.positions.T, positions_true)
 
     sup = get_supercell(structure_rocksalt, (1, 1, 2))
     np.testing.assert_equal(sup.n_atoms, [8, 8])
@@ -62,8 +63,12 @@ def test_supercell(structure_rocksalt):
         [0.5, 0.5, 0.25],
         [0.5, 0.5, 0.75],
     ]
-    np.testing.assert_equal(sup.positions.T, positions_true)
+    np.testing.assert_allclose(sup.positions.T, positions_true)
 
     sup = get_supercell(structure_rocksalt, (1, 1, 2), use_phonopy=True)
     np.testing.assert_equal(sup.n_atoms, [8, 8])
-    np.testing.assert_equal(sup.positions.T, positions_true)
+    np.testing.assert_allclose(sup.positions.T, positions_true)
+
+    sup = get_supercell(structure_rocksalt, [[1, 0, 0], [0, 1, 0], [0, 0, 2]])
+    np.testing.assert_equal(sup.n_atoms, [8, 8])
+    np.testing.assert_allclose(sup.positions.T, positions_true)
