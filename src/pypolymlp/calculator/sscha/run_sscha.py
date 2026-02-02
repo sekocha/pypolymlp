@@ -12,12 +12,10 @@ from symfc import Symfc
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.sscha.harmonic_real import HarmonicReal
 from pypolymlp.calculator.sscha.harmonic_reciprocal import HarmonicReciprocal
+from pypolymlp.calculator.sscha.sscha_dataclass import PolymlpDataSSCHA
+from pypolymlp.calculator.sscha.sscha_io import save_sscha_yaml
 from pypolymlp.calculator.sscha.sscha_params import SSCHAParameters
-from pypolymlp.calculator.sscha.sscha_utils import (
-    PolymlpDataSSCHA,
-    is_imaginary,
-    save_sscha_yaml,
-)
+from pypolymlp.calculator.utils.phonon_utils import is_imaginary
 from pypolymlp.core.data_format import PolymlpParams
 from pypolymlp.core.units import EVtoKJmol
 from pypolymlp.utils.phonopy_utils import (

@@ -331,10 +331,3 @@ def save_sscha_yaml(
     print("", file=f)
 
     f.close()
-
-
-def is_imaginary(freq: np.ndarray, tol: float = -0.1):
-    """Check branches with imaginary frequencies."""
-    if np.min(freq) < tol:
-        return True
-    return False
