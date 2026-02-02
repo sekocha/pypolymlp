@@ -5,7 +5,7 @@ from typing import Optional
 
 
 @dataclass
-class PolymlpDataSSCHA:
+class SSCHAData:
     """Dataclass of sscha results.
 
     Parameters

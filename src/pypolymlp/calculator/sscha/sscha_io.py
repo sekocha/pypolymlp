@@ -4,15 +4,15 @@ import os
 
 import numpy as np
 
-from pypolymlp.calculator.sscha.sscha_data import PolymlpDataSSCHA
-from pypolymlp.calculator.sscha.sscha_params import SSCHAParameters
+from pypolymlp.calculator.sscha.sscha_data import SSCHAData
+from pypolymlp.calculator.sscha.sscha_params import SSCHAParams
 from pypolymlp.core.units import EVtoKJmol
 from pypolymlp.utils.yaml_utils import print_array1d, print_array2d, save_cell
 
 
 def save_sscha_yaml(
-    sscha_params: SSCHAParameters,
-    sscha_log: list[PolymlpDataSSCHA],
+    sscha_params: SSCHAParams,
+    sscha_log: list[SSCHAData],
     filename="sscha_results.yaml",
 ):
     """Write SSCHA results to a file."""

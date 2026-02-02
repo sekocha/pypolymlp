@@ -1,4 +1,4 @@
-"""Utility functions for SSCHA."""
+"""Utility functions for SSCHA parameters."""
 
 import os
 from typing import Literal, Optional, Sequence, Union
@@ -8,7 +8,7 @@ import numpy as np
 from pypolymlp.core.data_format import PolymlpStructure
 
 
-class SSCHAParameters:
+class SSCHAParams:
     """Container for SSCHA parameters."""
 
     def __init__(

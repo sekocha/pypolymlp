@@ -1,6 +1,5 @@
 """Class for performing SSCHA."""
 
-import copy
 import os
 from typing import Optional
 
@@ -12,9 +11,9 @@ from symfc import Symfc
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.sscha.harmonic_real import HarmonicReal
 from pypolymlp.calculator.sscha.harmonic_reciprocal import HarmonicReciprocal
-from pypolymlp.calculator.sscha.sscha_dataclass import PolymlpDataSSCHA
+from pypolymlp.calculator.sscha.sscha_dataclass import SSCHAData
 from pypolymlp.calculator.sscha.sscha_io import save_sscha_yaml
-from pypolymlp.calculator.sscha.sscha_params import SSCHAParameters
+from pypolymlp.calculator.sscha.sscha_params import SSCHAParams
 from pypolymlp.calculator.utils.phonon_utils import is_imaginary
 from pypolymlp.core.data_format import PolymlpParams
 from pypolymlp.core.units import EVtoKJmol
@@ -23,13 +22,15 @@ from pypolymlp.utils.phonopy_utils import (
     structure_to_phonopy_cell,
 )
 
+# (SSCHAParams, calculator, fc2) -> run_sscha
 
-class SSCHA:
+
+class SSCHACore:
     """Class for performing SSCHA."""
 
     def __init__(
         self,
-        sscha_params: SSCHAParameters,
+        sscha_params: SSCHAParams,
         pot: Optional[str] = None,
         params: Optional[PolymlpParams] = None,
         coeffs: Optional[np.ndarray] = None,
@@ -40,7 +41,7 @@ class SSCHA:
 
         Parameters
         ----------
-        sscha_params: Parameters for SSCHA and structures in SSCHAParameters.
+        sscha_params: Parameters for SSCHA and structures in SSCHAParams.
         pot: polymlp file.
         params: Parameters for polymlp.
         coeffs: Polymlp coefficients.
@@ -56,50 +57,58 @@ class SSCHA:
         else:
             self._prop = Properties(pot=pot, params=params, coeffs=coeffs)
 
-        self._unitcell = sscha_params.unitcell
-        self._supercell_matrix = sscha_params.supercell_matrix
-        self._sscha_params = sscha_params
-
-        self.phonopy = Phonopy(
-            structure_to_phonopy_cell(self._unitcell),
-            self._supercell_matrix,
+        self._phonopy = Phonopy(
+            structure_to_phonopy_cell(sscha_params.unitcell),
+            sscha_params.supercell_matrix,
             nac_params=sscha_params.nac_params,
         )
-        self._n_atom = len(self.phonopy.supercell.masses)
-        self.n_unitcells = round(np.linalg.det(self._supercell_matrix))
+        self._sscha_params = sscha_params
+        self._n_atom = len(self._phonopy.supercell.masses)
+        self._n_unitcells = round(np.linalg.det(sscha_params.supercell_matrix))
 
-        self.supercell_polymlp = phonopy_cell_to_structure(self.phonopy.supercell)
-        self.supercell_polymlp.masses = self.phonopy.supercell.masses
-        self.supercell_polymlp.supercell_matrix = self._supercell_matrix
-        self.supercell_polymlp.n_unitcells = self.n_unitcells
-        self._sscha_params.supercell = self.supercell_polymlp
+        self._symfc = self._set_symfc(sscha_params.cutoff_radius)
+        self._ph_real, self._ph_recip = self._set_harmonic_calculators()
+        self._set_num_samples()
 
-        cutoff = {2: sscha_params.cutoff_radius}
-        self._symfc = Symfc(
-            self.phonopy.supercell,
-            cutoff=cutoff,
-            use_mkl=True,
-            log_level=self._verbose,
-        )
+        self._fc2 = None
+        self._sscha_current = None
+        self._sscha_log = []
+
+    def _set_symfc(self, cutoff_radius: Optional[float] = None):
+        """Initialize Symfc instance."""
+        cutoff = {2: cutoff_radius}
+        sup = self._phonopy.supercell
+        self._symfc = Symfc(sup, cutoff=cutoff, use_mkl=True, log_level=self._verbose)
         self._symfc.compute_basis_set(2)
 
         n_coeffs = self._symfc.basis_set[2].basis_set.shape[1]
         if self._verbose and n_coeffs < 1000:
             self._symfc._log_level = 0
+        return self._symfc
 
+    def _set_harmonic_calculators(self):
+        """Initialize calculators for harmonic properties."""
+        supercell_polymlp = phonopy_cell_to_structure(self._phonopy.supercell)
+        supercell_polymlp.masses = self._phonopy.supercell.masses
+        supercell_matrix = self._sscha_params.supercell_matrix
+        supercell_polymlp.supercell_matrix = supercell_matrix
+        supercell_polymlp.n_unitcells = self._n_unitcells
+        # self._sscha_params.supercell = supercell_polymlp
+
+        self._ph_real = HarmonicReal(supercell_polymlp, self._prop)
+        self._ph_recip = HarmonicReciprocal(self._phonopy, self._prop)
+        return self._ph_real, self._ph_recip
+
+    def _set_num_samples(self):
+        """Initialize number of supercell samples."""
+        n_coeffs = self._symfc.basis_set[2].basis_set.shape[1]
         if self._sscha_params.n_samples_init is None:
             self._sscha_params.set_n_samples_from_basis(n_coeffs)
             if self._verbose:
                 print("Number of supercells is automatically determined.")
                 print("- first loop:", self._sscha_params.n_samples_init)
                 print("- second loop:", self._sscha_params.n_samples_final)
-
-        self.ph_real = HarmonicReal(self.supercell_polymlp, self._prop)
-        self.ph_recip = HarmonicReciprocal(self.phonopy, self._prop)
-
-        self._fc2 = None
-        self._sscha_current = None
-        self._sscha_log = []
+        return self
 
     def set_initial_force_constants(self, fc2: Optional[np.ndarray] = None):
         """Set initial FC2."""
@@ -112,7 +121,7 @@ class SSCHA:
         if self._sscha_params.init_fc_algorithm == "harmonic":
             if self._verbose:
                 print("Initial FCs: Harmonic", flush=True)
-            self._fc2 = self.ph_recip.produce_harmonic_force_constants()
+            self._fc2 = self._ph_recip.produce_harmonic_force_constants()
         elif self._sscha_params.init_fc_algorithm == "const":
             if self._verbose:
                 print("Initial FCs: Constants", flush=True)
@@ -137,45 +146,45 @@ class SSCHA:
         """Calculate effective phonon frequencies from FC2."""
         if qmesh is None:
             qmesh = self._sscha_params.mesh
-        self.phonopy.force_constants = self._fc2
-        self.phonopy.run_mesh(qmesh)
-        mesh_dict = self.phonopy.get_mesh_dict()
+        self._phonopy.force_constants = self._fc2
+        self._phonopy.run_mesh(qmesh)
+        mesh_dict = self._phonopy.get_mesh_dict()
         return mesh_dict["frequencies"]
 
     def _unit_kjmol(self, e):
         """Convert energy in eV/supercell to energy in kJ/mol."""
-        return e * EVtoKJmol / self.n_unitcells
+        return e * EVtoKJmol / self._n_unitcells
 
     def _compute_sscha_properties(self, t: float = 1000):
         """Compute SSCHA properties using FC2."""
         if self._verbose:
             print("Computing SSCHA properties from FC2.", flush=True)
         qmesh = self._sscha_params.mesh
-        self.ph_recip.force_constants = self._fc2
-        self.ph_recip.compute_thermal_properties(t=t, qmesh=qmesh)
+        self._ph_recip.force_constants = self._fc2
+        self._ph_recip.compute_thermal_properties(t=t, qmesh=qmesh)
 
-        res = PolymlpDataSSCHA(
+        res = SSCHAData(
             temperature=t,
-            static_potential=self._unit_kjmol(self.ph_real.static_potential),
+            static_potential=self._unit_kjmol(self._ph_real.static_potential),
             harmonic_potential=self._unit_kjmol(
-                self.ph_real.average_harmonic_potential
+                self._ph_real.average_harmonic_potential
             ),
-            harmonic_free_energy=self.ph_recip.free_energy,  # kJ/mol
-            average_potential=self._unit_kjmol(self.ph_real.average_full_potential),
+            harmonic_free_energy=self._ph_recip.free_energy,  # kJ/mol
+            average_potential=self._unit_kjmol(self._ph_real.average_full_potential),
             anharmonic_free_energy=self._unit_kjmol(
-                self.ph_real.average_anharmonic_potential
+                self._ph_real.average_anharmonic_potential
             ),
-            entropy=self.ph_recip.entropy,  # J/K/mol
-            harmonic_heat_capacity=self.ph_recip.heat_capacity,  # J/K/mol
-            static_forces=self.ph_real.static_forces,  # eV/ang
-            average_forces=self.ph_real.average_forces,  # eV/ang
+            entropy=self._ph_recip.entropy,  # J/K/mol
+            harmonic_heat_capacity=self._ph_recip.heat_capacity,  # J/K/mol
+            static_forces=self._ph_real.static_forces,  # eV/ang
+            average_forces=self._ph_real.average_forces,  # eV/ang
         )
         return res
 
     def _run_solver_fc2(self):
         """Estimate FC2 from a forces-displacements dataset."""
-        self._symfc.displacements = self.ph_real.displacements.transpose((0, 2, 1))
-        self._symfc.forces = self.ph_real.forces.transpose((0, 2, 1))
+        self._symfc.displacements = self._ph_real.displacements.transpose((0, 2, 1))
+        self._symfc.forces = self._ph_real.forces.transpose((0, 2, 1))
         self._symfc.solve(2, is_compact_fc=False)
         return self._symfc.force_constants[2]
 
@@ -194,8 +203,8 @@ class SSCHA:
 
     def _single_iter(self, t: float = 1000, n_samples: int = 100) -> np.ndarray:
         """Run a standard single sscha iteration."""
-        self.ph_real.force_constants = self._fc2
-        self.ph_real.run(t=t, n_samples=n_samples, eliminate_outliers=True)
+        self._ph_real.force_constants = self._fc2
+        self._ph_real.run(t=t, n_samples=n_samples, eliminate_outliers=True)
         self._sscha_current = self._compute_sscha_properties(t=t)
 
         if self._verbose:
@@ -209,7 +218,7 @@ class SSCHA:
 
     def _print_progress(self):
         """Print progress in SSCHA iterations."""
-        disp_norms = np.linalg.norm(self.ph_real.displacements, axis=1)
+        disp_norms = np.linalg.norm(self._ph_real.displacements, axis=1)
 
         print(
             "temperature:      ",
@@ -312,9 +321,9 @@ class SSCHA:
 
     def _write_dos(self, filename: str = "total_dos.dat"):
         """Save phonon DOS file."""
-        self.phonopy.force_constants = self._fc2
-        self.phonopy.run_total_dos()
-        self.phonopy.write_total_dos(filename=filename)
+        self._phonopy.force_constants = self._fc2
+        self._phonopy.run_total_dos()
+        self._phonopy.write_total_dos(filename=filename)
 
     def save_results(self):
         """Save SSCHA results for current temperature."""
@@ -339,17 +348,17 @@ class SSCHA:
             print("Frequency (max):  ", "{:.6f}".format(np.max(freq)), flush=True)
 
     @property
-    def sscha_params(self) -> SSCHAParameters:
+    def sscha_params(self) -> SSCHAParams:
         """Return SSCHA parameters."""
         return self._sscha_params
 
     @property
-    def properties(self) -> PolymlpDataSSCHA:
+    def properties(self) -> SSCHAData:
         """Return SSCHA results."""
         return self._sscha_log[-1]
 
     @property
-    def logs(self) -> list[PolymlpDataSSCHA]:
+    def logs(self) -> list[SSCHAData]:
         """Return SSCHA progress."""
         return self._sscha_log
 
@@ -369,165 +378,3 @@ class SSCHA:
         assert fc2.shape[0] == fc2.shape[1] == self._n_atom
         assert fc2.shape[2] == fc2.shape[3] == 3
         self._fc2 = fc2
-
-
-def _run_precondition(
-    sscha: SSCHA,
-    sscha_params: SSCHAParameters,
-    verbose: bool = False,
-):
-    """Run a procedure to perform precondition."""
-
-    if verbose:
-        print("---", flush=True)
-        print("Preconditioning.", flush=True)
-        print("Size of FC2 basis-set:", sscha.n_fc_basis, flush=True)
-
-    n_samples = max(min(sscha_params.n_samples_init // 50, 100), 5)
-    sscha.precondition(
-        t=sscha_params.temperatures[0],
-        n_samples=n_samples,
-        tol=0.01,
-        max_iter=5,
-    )
-    if sscha_params.tol < 0.003:
-        n_samples = max(min(sscha_params.n_samples_init // 10, 500), 10)
-        sscha.precondition(
-            t=sscha_params.temperatures[0],
-            n_samples=n_samples,
-            tol=0.005,
-            max_iter=5,
-        )
-    return sscha
-
-
-def _run_target_sscha(
-    sscha: SSCHA,
-    sscha_params: SSCHAParameters,
-    verbose: bool = False,
-):
-    """Run SSCHA for target temperatures."""
-    for temp in sscha_params.temperatures:
-        if verbose:
-            print("************** Temperature:", temp, "**************", flush=True)
-            print("Increasing number of samples.", flush=True)
-        sscha.run(t=temp, accurate=False)
-        if verbose:
-            print("Increasing number of samples.", flush=True)
-        sscha.run(t=temp, accurate=True, initialize_history=False)
-        sscha.save_results()
-    return sscha
-
-
-def run_sscha(
-    sscha_params: SSCHAParameters,
-    pot: Optional[str] = None,
-    params: Optional[PolymlpParams] = None,
-    coeffs: Optional[np.ndarray] = None,
-    properties: Optional[Properties] = None,
-    fc2: Optional[np.ndarray] = None,
-    precondition: bool = True,
-    verbose: bool = False,
-):
-    """Run sscha iterations for multiple temperatures.
-
-    Parameters
-    ----------
-    sscha_params: Parameters for SSCHA in SSCHAParameters.
-    pot: polymlp file.
-    params: Parameters for polymlp.
-    coeffs: Polymlp coefficients.
-    properties: Properties instance.
-    """
-    sscha = SSCHA(
-        sscha_params,
-        pot=pot,
-        params=params,
-        coeffs=coeffs,
-        properties=properties,
-        verbose=verbose,
-    )
-    sscha.set_initial_force_constants(fc2=fc2)
-    freq = sscha.run_frequencies()
-    if verbose:
-        print("Frequency (min):      ", np.round(np.min(freq), 5), flush=True)
-        print("Frequency (max):      ", np.round(np.max(freq), 5), flush=True)
-
-    if precondition:
-        sscha = _run_precondition(sscha, sscha_params, verbose=verbose)
-
-    if verbose:
-        print("Size of FC2 basis-set:", sscha.n_fc_basis, flush=True)
-    sscha = _run_target_sscha(sscha, sscha_params, verbose=verbose)
-    return sscha
-
-
-def run_sscha_large_system(
-    sscha_params: SSCHAParameters,
-    pot: Optional[str] = None,
-    params: Optional[PolymlpParams] = None,
-    coeffs: Optional[np.ndarray] = None,
-    properties: Optional[Properties] = None,
-    fc2: Optional[np.ndarray] = None,
-    precondition: bool = True,
-    verbose: bool = False,
-):
-    """Run sscha iterations for multiple temperatures using cutoff temporarily.
-
-    Parameters
-    ----------
-    sscha_params: Parameters for SSCHA in SSCHAParameters.
-    pot: polymlp file.
-    params: Parameters for polymlp.
-    coeffs: Polymlp coefficients.
-    properties: Properties instance.
-    """
-    sscha_params_target = copy.deepcopy(sscha_params)
-    if sscha_params.cutoff_radius is None or sscha_params.cutoff_radius > 7.0:
-        sscha_params.cutoff_radius = 6.0
-        rerun = True
-    else:
-        rerun = False
-
-    sscha = SSCHA(
-        sscha_params,
-        pot=pot,
-        params=params,
-        coeffs=coeffs,
-        properties=properties,
-        verbose=verbose,
-    )
-    sscha.set_initial_force_constants(fc2=fc2)
-    freq = sscha.run_frequencies()
-    if verbose:
-        print("Frequency (min):      ", np.round(np.min(freq), 5), flush=True)
-        print("Frequency (max):      ", np.round(np.max(freq), 5), flush=True)
-
-    if precondition:
-        sscha = _run_precondition(sscha, sscha_params, verbose=verbose)
-
-    if rerun:
-        if verbose:
-            print("---", flush=True)
-            print("Run SSCHA with temporal cutoff.", flush=True)
-            print("Temporal cutoff radius:", sscha_params.cutoff_radius, flush=True)
-            print("Size of FC2 basis-set: ", sscha.n_fc_basis, flush=True)
-        sscha.run(t=sscha_params.temperatures[0], accurate=False)
-        fc2_rerun = sscha.force_constants
-        sscha_params.cutoff_radius = sscha_params_target.cutoff_radius
-
-        sscha = SSCHA(
-            sscha_params_target,
-            pot=pot,
-            params=params,
-            coeffs=coeffs,
-            properties=properties,
-            verbose=verbose,
-        )
-        sscha.set_initial_force_constants(fc2=fc2_rerun)
-
-    if verbose:
-        print("Size of FC2 basis-set:", sscha.n_fc_basis, flush=True)
-
-    sscha = _run_target_sscha(sscha, sscha_params, verbose=verbose)
-    return sscha
