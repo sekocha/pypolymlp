@@ -42,11 +42,12 @@ class SSCHA:
 
         Parameters
         ----------
-        sscha_params: Structures and SSCHA parameters in SSCHAParameters format.
+        sscha_params: Parameters for SSCHA and structures in SSCHAParameters.
         pot: polymlp file.
         params: Parameters for polymlp.
         coeffs: Polymlp coefficients.
         properties: Properties instance.
+        verbose: Verbose mode.
 
         Any one of pot, (params, coeffs), and properties is needed.
         """

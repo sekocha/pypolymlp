@@ -11,7 +11,13 @@ cwd = Path(__file__).parent
 
 
 def test_calc_xy(dataxy_mp_149):
-    """Test for calc_xy."""
+    """Test for calc_xy.
+
+    Parameter
+    ----------
+    dataxy_mp_149 : DataXY
+        Fixture that provides DataXY for mp-149 dataset.
+    """
     data_xy = dataxy_mp_149
     assert data_xy.x.shape == (35820, 168)
     assert data_xy.y.shape[0] == 35820

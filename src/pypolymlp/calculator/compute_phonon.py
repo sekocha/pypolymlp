@@ -8,6 +8,7 @@ from phono3py.file_IO import read_fc2_from_hdf5
 from phonopy import Phonopy, PhonopyQHA
 
 from pypolymlp.calculator.properties import Properties
+from pypolymlp.calculator.utils.phonon_utils import is_imaginary
 from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
 from pypolymlp.utils.phonopy_utils import (
     phonopy_cell_to_structure,
@@ -124,8 +125,7 @@ class PolymlpPhonon:
     @property
     def is_imaginary(self):
         """Check if phonon DOS exhibits imaginary frequencies."""
-        imag = self._ph.total_dos.frequency_points < -0.01
-        return np.sum(self._ph.total_dos.dos[imag]) > 1e-6
+        return is_imaginary(self._ph.total_dos.frequency_points, self._ph.total_dos.dos)
 
 
 class PolymlpPhononQHA:
