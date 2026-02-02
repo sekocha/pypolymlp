@@ -161,12 +161,14 @@ class PolymlpFC:
 
         self._symfc = Symfc(
             self._supercell_ph,
-            displacements=self._disps.transpose((0, 2, 1)),
-            forces=self._forces.transpose((0, 2, 1)),
+            #            displacements=self._disps.transpose((0, 2, 1)),
+            #            forces=self._forces.transpose((0, 2, 1)),
             cutoff=cutoff,
             use_mkl=use_mkl,
             log_level=self._verbose,
         )
+        self._symfc.forces = self._forces.transpose((0, 2, 1))
+        self._symfc.displacements = self._disps.transpose((0, 2, 1))
         self._symfc.run(
             orders=orders,
             batch_size=batch_size,

@@ -1,19 +1,20 @@
-"""Tests of basis sets using API"""
+"""Tests of basis sets for geometry optimization."""
 
 from pathlib import Path
 
 import pytest
 
-# symfc and spglib are required.
 from pypolymlp.core.interface_vasp import Poscar
 from pypolymlp.utils.spglib_utils import construct_basis_cell
 from pypolymlp.utils.symfc_utils import construct_basis_cartesian
 
 cwd = Path(__file__).parent
+path_file = str(cwd) + "/files/"
 
 
 def test_basis_SrTiO3_tetra():
-    poscar = str(cwd) + "/data-SrTiO3-tetra/POSCAR"
+    """Test construct_basis_cell and construct_basis_cartesian."""
+    poscar = path_file + "poscars/POSCAR.tetra.SrTiO3"
     st = Poscar(poscar).structure
     basis, st_rev = construct_basis_cell(st, verbose=True)
     assert basis[0][0] == pytest.approx(0.70710678, rel=1e-5)
@@ -25,7 +26,8 @@ def test_basis_SrTiO3_tetra():
 
 
 def test_basis_ZnS_wurtzite():
-    poscar = str(cwd) + "/data-ZnS-wurtzite/POSCAR"
+    """Test construct_basis_cell and construct_basis_cartesian."""
+    poscar = path_file + "poscars/POSCAR.WZ.ZnS"
     st = Poscar(poscar).structure
     basis, st_rev = construct_basis_cell(st, verbose=True)
     assert basis[0][0] == pytest.approx(0.70710678, rel=1e-5)
