@@ -9,7 +9,7 @@ import pytest
 from pypolymlp.calculator.fc import PolymlpFC
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.interface_vasp import Poscar
-from pypolymlp.utils.structure_utils import supercell_diagonal
+from pypolymlp.utils.structure_utils import supercell
 
 cwd = Path(__file__).parent
 path_file = str(cwd) + "/files/"
@@ -21,13 +21,8 @@ def test_fc_AlN():
     pot = path_file + "mlps/polymlp.lammps.gtinv.AlN"
 
     unitcell = Poscar(poscar).structure
-    supercell = supercell_diagonal(unitcell, size=(3, 3, 2), use_phonopy=True)
-    fc = PolymlpFC(
-        supercell=supercell,
-        pot=pot,
-        cutoff=3.0,
-        verbose=True,
-    )
+    sup = supercell(unitcell, (3, 3, 2), use_phonopy=True)
+    fc = PolymlpFC(supercell=sup, pot=pot, cutoff=3.0, verbose=True)
     fc.sample(n_samples=100, displacements=0.01)
     fc.run(orders=(2, 3), write_fc=False, use_mkl=False)
 
@@ -54,13 +49,8 @@ def test_fc_MgO():
     pot = path_file + "mlps/polymlp.yaml.pair.MgO"
 
     unitcell = Poscar(poscar).structure
-    supercell = supercell_diagonal(unitcell, size=(2, 2, 2), use_phonopy=True)
-    fc = PolymlpFC(
-        supercell=supercell,
-        pot=pot,
-        cutoff=3.0,
-        verbose=True,
-    )
+    sup = supercell(unitcell, (2, 2, 2), use_phonopy=True)
+    fc = PolymlpFC(supercell=sup, pot=pot, cutoff=3.0, verbose=True)
     fc.sample(n_samples=100, displacements=0.01)
     fc.run(orders=(2, 3), write_fc=False, use_mkl=False)
 

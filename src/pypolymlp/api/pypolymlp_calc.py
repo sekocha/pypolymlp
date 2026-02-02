@@ -14,6 +14,7 @@ from pypolymlp.core.interface_vasp import (
     parse_structures_from_poscars,
     parse_structures_from_vaspruns,
 )
+from pypolymlp.utils.structure_utils import supercell
 from pypolymlp.utils.vasp_utils import write_poscar_file
 
 
@@ -531,21 +532,16 @@ class PypolymlpCalc:
 
         """
         from pypolymlp.calculator.fc import PolymlpFC
-        from pypolymlp.utils.phonopy_utils import phonopy_supercell
 
         if unitcell is not None:
             self.structures = unitcell
         self.unitcell = self.first_structure
 
-        supercell_matrix_diag = np.diag(supercell_matrix)
-        supercell = phonopy_supercell(
-            self.unitcell,
-            supercell_matrix_diag,
-            return_phonopy=False,
-        )
+        size = np.diag(supercell_matrix)
+        sup = supercell(self.unitcell, size, use_phonopy=True)
 
         self._fc = PolymlpFC(
-            supercell=supercell,
+            supercell=sup,
             properties=self._prop,
             cutoff=cutoff,
             verbose=self._verbose,
