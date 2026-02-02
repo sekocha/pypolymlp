@@ -299,7 +299,7 @@ class PypolymlpCalc:
         Parameters
         ----------
         unitcell: Unit cell of equilibrium structure.
-        supercell_matrix: Supercell matrix.
+        supercell_matrix: Supercell matrix or diagonal element vector.
 
         """
         from pypolymlp.calculator.compute_phonon import PolymlpPhonon

@@ -13,7 +13,7 @@ cwd = Path(__file__).parent
 path_file = str(cwd) + "/files/"
 
 
-def _assert_phonon(ph):
+def _assert_phonon(ph: PolymlpPhonon):
     """Assert phonon calculations."""
     assert ph.total_dos.shape == (201, 2)
     assert not ph.is_imaginary
@@ -30,7 +30,7 @@ def _assert_phonon(ph):
     os.remove("phonon_total_dos.dat")
 
 
-def _assert_qha(ph):
+def _assert_qha(ph: PolymlpPhononQHA):
     """Assert phonon calculations."""
     ph.write_qha()
     shutil.rmtree("polymlp_phonon_qha")

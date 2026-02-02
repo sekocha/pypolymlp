@@ -26,7 +26,7 @@ def test_fc_AlN():
         relax_positions=True,
     )
     polymlp.run_geometry_optimization()
-    polymlp.init_fc(supercell_matrix=[[3, 0, 0], [0, 3, 0], [0, 0, 2]], cutoff=3.0)
+    polymlp.init_fc(supercell_matrix=(3, 3, 2), cutoff=3.0)
     polymlp.run_fc(
         n_samples=100,
         distance=0.005,
@@ -58,7 +58,7 @@ def test_fc_MgO():
         relax_positions=True,
     )
     polymlp.run_geometry_optimization()
-    polymlp.init_fc(supercell_matrix=[[2, 0, 0], [0, 2, 0], [0, 0, 2]], cutoff=4.0)
+    polymlp.init_fc(supercell_matrix=(2, 2, 2), cutoff=4.0)
     polymlp.run_fc(
         n_samples=100,
         distance=0.005,
