@@ -442,7 +442,7 @@ class PypolymlpCalc:
         relax_positions: Relax atomic positions.
         pressure: Pressure in GPa.
         """
-        from pypolymlp.calculator.str_opt.optimization import GeometryOptimization
+        from pypolymlp.calculator.opt_geometry import GeometryOptimization
 
         if init_str is not None:
             self.structures = init_str
