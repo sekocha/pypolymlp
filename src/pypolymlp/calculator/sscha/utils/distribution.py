@@ -7,7 +7,7 @@ import numpy as np
 
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.sscha.harmonic_real import HarmonicReal
-from pypolymlp.calculator.sscha.sscha_utils import Restart
+from pypolymlp.calculator.sscha.sscha_restart import Restart
 from pypolymlp.utils.vasp_utils import write_poscar_file
 from pypolymlp.utils.yaml_utils import print_array2d, save_cell
 
