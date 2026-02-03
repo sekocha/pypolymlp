@@ -8,25 +8,27 @@ from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.utils.fc_utils import eval_properties_fc2
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.displacements import get_structures_from_displacements
-from pypolymlp.core.units import Avogadro, Kb, Planck
+from pypolymlp.core.units import Avogadro, EVtoKJmol, Kb, Planck
 from pypolymlp.core.utils import mass_table
 
+"""
+Constants
+---------
+const_sq_angfreq_to_sq_freq_thz:
+    1.602176634e-19 (eV->J) * 6.02214076e23 (avogadro) * 0.1 / (4 * pi^2)
+
+const_amplitude: J*s/THz -> atomic_mass * angstrom^2
+    6.62607015e-34 * 6.02214076e23 * 1e11 / (4 * pi * pi)
+
+const_planck is set to 6.62607015e-34 * 1e11 = 6.62607015e-22.
+"""
 const_planck = Planck * 1e12  # 6.62607015e-22
 const_sq_angfreq_to_sq_freq_thz = 2.4440020137144617e2
 const_amplitude = 1.010758017933576
 
 
 class HarmonicReal:
-    """Class for harmonic contribution in real space.
-
-    Constants
-    ---------
-    const_sq_angfreq_to_sq_freq_thz:
-        1.602176634e-19 (eV->J) * 6.02214076e23 (avogadro) * 0.1 / (4 * pi^2)
-
-    const_amplitude: J*s/THz -> atomic_mass * angstrom^2
-        6.62607015e-34 * 6.02214076e23 * 1e11 / (4 * pi * pi)
-    """
+    """Class for harmonic contribution in real space."""
 
     def __init__(
         self,
@@ -45,37 +47,32 @@ class HarmonicReal:
         n_unitcells: Number of unitcells in supercell
         fc2: Second-order force constants.
         """
-        self.supercell = supercell
+        self._supercell = supercell
         self._n_atom = len(supercell.elements)
-        self.fc2 = fc2
-        if n_unitcells is not None:
-            self.supercell.n_unitcells = n_unitcells
+        self.force_constants = fc2
 
-        self.prop = properties
+        if n_unitcells is not None:
+            self._supercell.n_unitcells = n_unitcells
+
+        if self._supercell.n_unitcells is None:
+            raise ValueError("Attribute n_unitcells required.")
+
+        self._prop = properties
         self._verbose = verbose
 
         self._mesh_dict = dict()
         self._tp_dict = dict()
 
         self._set_mass()
-        self._set_inverse_axis()
-        self._check_n_unitcells()
-
-        self._e0, self._f0, _ = self.prop.eval(self.supercell)
+        self._e0, self._f0, _ = self._prop.eval(self._supercell)
+        self._ev_to_kjmol = EVtoKJmol / self._supercell.n_unitcells
 
     def _set_mass(self):
-        if self.supercell.masses is None:
+        """Set mass."""
+        if self._supercell.masses is None:
             table = mass_table()
-            masses = [table[e] for e in self.supercell.elements]
-            self.supercell.masses = masses
-
-    def _set_inverse_axis(self):
-        if self.supercell.axis_inv is None:
-            self.supercell.axis_inv = np.linalg.inv(self.supercell.axis)
-
-    def _check_n_unitcells(self):
-        if self.supercell.n_unitcells is None:
-            raise ValueError("Attribute n_unitcells is required for HarmonicReal.")
+            masses = [table[e] for e in self._supercell.elements]
+            self._supercell.masses = masses
 
     def eval(self, structures: list[PolymlpStructure]) -> tuple[np.ndarray, np.ndarray]:
         """Compute energies and forces of structures.
@@ -84,22 +81,58 @@ class HarmonicReal:
         ----------
         structures: Structures.
 
-        Return
-        ------
-        energies: Energies, shape=(n_str)
-        forces: Forces, shape=(n_str, 3, n_atom)
+        Returns
+        -------
+        energies: Energies, shape=(n_str).
+        forces: Forces, shape=(n_str, 3, n_atom).
+        """
+        energies, forces, _ = self._prop.eval_multiple(structures)
+        return np.array(energies), np.array(forces)
+
+    def run(
+        self,
+        temp: float = 1000,
+        n_samples: int = 100,
+        eliminate_outliers: bool = True,
+    ):
+        """Run harmonic real-space part of SSCHA.
+
+        Parameters
+        ----------
+        temp: Temperature (K).
+        n_samples: Number of sample structures.
+        eliminate_outliers: Eliminate structures showing extreme energy values.
         """
 
-        energies, forces, _ = self.prop.eval_multiple(structures)
-        return np.array(energies), np.array(forces)
+        if self._fc2 is None:
+            raise ValueError("FC2 is required for HarmonicReal.")
+
+        self._mesh_dict = self._solve_eigen_equation()
+        self._disps = self._get_distribution(temp=temp, n_samples=n_samples)
+        self._supercells = get_structures_from_displacements(
+            self._disps, self._supercell
+        )
+        if self._verbose:
+            print("Computing energies and forces using MLP.")
+        energies, self._forces = self.eval(self._supercells)
+        self._energies_full = energies - self._e0
+
+        if self._verbose:
+            print("Eliminating outliers.")
+        self._eliminate_outliers()
+
+        if self._verbose:
+            print("Computing harmonic potentials and forces.")
+        self._energies_harm, self._average_forces = self._compute_harmonic_properties()
+        return self
 
     def _solve_eigen_equation(self) -> dict:
         """Solve eigenvalue equation for dynamical matrix."""
-        fc2 = self.fc2.transpose((0, 2, 1, 3))
+        fc2 = self._fc2.transpose((0, 2, 1, 3))
         size = fc2.shape[0] * fc2.shape[1]
         fc2 = np.reshape(fc2, (size, size))
 
-        masses = np.repeat(self.supercell.masses, 3)
+        masses = np.repeat(self._supercell.masses, 3)
         masses_sqrt = np.reciprocal(np.sqrt(masses))
         dyn = (np.diag(masses_sqrt) @ fc2) @ np.diag(masses_sqrt)
         square_w, eigvecs = np.linalg.eigh(dyn)
@@ -121,12 +154,12 @@ class HarmonicReal:
         freq_rev[np.where(freq_rev < freq_threshold)] = 0.0
         return freq_rev
 
-    def _get_distribution(self, t: float = 1000, n_samples: int = 100):
+    def _get_distribution(self, temp: float = 1000, n_samples: int = 100):
         """Calculate atomic real-space distribution from density matrix."""
         freq = self._hide_imaginary_modes(self._mesh_dict["frequencies"])
         nonzero = np.isclose(freq, 0.0) == False
 
-        beta = np.inf if np.isclose(t, 0.0) else 1.0 / (Kb * t)
+        beta = np.inf if np.isclose(temp, 0.0) else 1.0 / (Kb * temp)
         const_exp = 0.5 * beta * const_planck
         beta_h_freq = const_exp * freq[nonzero]
 
@@ -147,7 +180,7 @@ class HarmonicReal:
 
         # Generate atomic displacements.
         eigvecs = self._mesh_dict["eigenvectors"]
-        masses_sqrt = np.sqrt(np.repeat(self.supercell.masses, 3))
+        masses_sqrt = np.sqrt(np.repeat(self._supercell.masses, 3))
         dot1 = eigvecs @ disp_normal_coords.T
         disps = (np.diag(np.reciprocal(masses_sqrt)) @ dot1).T
         disps = disps.reshape((n_samples, -1, 3)).transpose((0, 2, 1))
@@ -156,8 +189,8 @@ class HarmonicReal:
     def _compute_harmonic_properties(self):
         """Calculate harmonic potentials and average forces."""
 
-        N3 = self.fc2.shape[0] * self.fc2.shape[2]
-        fc2 = self.fc2.transpose((0, 2, 1, 3)).reshape((N3, N3))
+        N3 = self._fc2.shape[0] * self._fc2.shape[2]
+        fc2 = self._fc2.transpose((0, 2, 1, 3)).reshape((N3, N3))
 
         pot_harmonic, residual_f = [], []
         for d in self._disps:
@@ -199,50 +232,20 @@ class HarmonicReal:
         self._energies_full = self._energies_full[ids]
         return self
 
-    def run(self, t: int = 1000, n_samples: int = 100, eliminate_outliers: bool = True):
-        """Run harmonic real-space part of SSCHA.
-
-        Parameters
-        ----------
-        t: Temperature (K).
-        n_samples: Number of sample structures.
-        eliminate_outliers: Eliminate structures showing extreme energy values.
-        """
-
-        if self.fc2 is None:
-            raise ValueError("FC2 is required for HarmonicReal.")
-
-        self._mesh_dict = self._solve_eigen_equation()
-        self._disps = self._get_distribution(t=t, n_samples=n_samples)
-        self._supercells = get_structures_from_displacements(
-            self._disps, self.supercell
-        )
-        if self._verbose:
-            print("Computing energies and forces using MLP.")
-        energies, self._forces = self.eval(self._supercells)
-        self._energies_full = energies - self._e0
-
-        if self._verbose:
-            print("Eliminating outliers.")
-        self._eliminate_outliers()
-
-        if self._verbose:
-            print("Computing harmonic potentials and forces.")
-        self._energies_harm, self._average_forces = self._compute_harmonic_properties()
-        # self._average_forces = self._calc_average_forces()
-        return self
-
     @property
     def force_constants(self) -> np.ndarray:
         """Return FC2, shape=(n_atom, n_atom, 3, 3)."""
-        return self.fc2
+        return self._fc2
 
     @force_constants.setter
     def force_constants(self, fc2: np.ndarray):
         """Set FC2, shape=(n_atom, n_atom, 3, 3)."""
+        if fc2 is None:
+            self._fc2 = None
+            return
         assert fc2.shape[0] == fc2.shape[1] == self._n_atom
         assert fc2.shape[2] == fc2.shape[3] == 3
-        self.fc2 = fc2
+        self._fc2 = fc2
 
     @property
     def displacements(self) -> np.ndarray:
@@ -261,47 +264,47 @@ class HarmonicReal:
 
     @property
     def full_potentials(self) -> np.ndarray:
-        """Return full potentials, shape=(n_samples)."""
-        return self._energies_full
+        """Return full potentials, shape=(n_samples) in kJ/mol."""
+        return self._energies_full * self._ev_to_kjmol
 
     @property
     def average_full_potential(self) -> float:
-        """Return average full potential."""
-        return np.average(self._energies_full)
+        """Return average full potential in kJ/mol."""
+        return np.average(self._energies_full) * self._ev_to_kjmol
 
     @property
     def harmonic_potentials(self) -> np.ndarray:
-        """Return harmonic potentials, shape=(n_samples)."""
-        return self._energies_harm
+        """Return harmonic potentials, shape=(n_samples) in kJ/mol."""
+        return self._energies_harm * self._ev_to_kjmol
 
     @property
     def average_harmonic_potential(self) -> float:
-        """Return average harmonic potential."""
-        return np.average(self._energies_harm)
+        """Return average harmonic potential in kJ/mol."""
+        return np.average(self._energies_harm) * self._ev_to_kjmol
 
     @property
     def anharmonic_potentials(self) -> np.ndarray:
-        """Return anharmonic potentials, shape=(n_samples)."""
-        return self._energies_full - self._energies_harm
+        """Return anharmonic potentials, shape=(n_samples) in kJ/mol."""
+        return (self._energies_full - self._energies_harm) * self._ev_to_kjmol
 
     @property
     def average_anharmonic_potential(self) -> float:
-        """Return average anharmonic potentials."""
+        """Return average anharmonic potentials in kJ/mol."""
         return np.average(self.anharmonic_potentials)
 
     @property
     def static_potential(self) -> float:
-        """Return static potential of given supercell."""
-        return self._e0
+        """Return static potential of given supercell in kJ/mol."""
+        return self._e0 * self._ev_to_kjmol
 
     @property
     def static_forces(self) -> float:
-        """Return static forces of given supercell."""
+        """Return static forces of given supercell in eV/ang."""
         return self._f0
 
     @property
     def average_forces(self) -> np.ndarray:
-        """Return static forces of given supercell."""
+        """Return static forces of given supercell in eV/ang."""
         return self._average_forces
 
     @property
@@ -309,7 +312,7 @@ class HarmonicReal:
         """Return phonon frequencies calculated from effective harmonic H."""
         return self._mesh_dict["frequencies"]
 
-    def _compute_properties(self, t: float = 1000):
+    def _compute_properties(self, temp: float = 1000):
         """Compute properties.
 
         Deprecated.
@@ -317,7 +320,7 @@ class HarmonicReal:
         freq = self._hide_imaginary_modes(self._mesh_dict["frequencies"])
         nonzero = np.isclose(freq, 0.0) == False
 
-        beta = 1.0 / (Kb * t)
+        beta = 1.0 / (Kb * temp)
         const_exp = 0.5 * beta * const_planck
         beta_h_freq = const_exp * freq[nonzero]
 
@@ -325,48 +328,14 @@ class HarmonicReal:
         occ[nonzero] = 0.5 * np.reciprocal(np.tanh(beta_h_freq))
 
         e_mode = const_planck * freq
-        e_total = np.sum(e_mode * occ) / self.supercell.n_unitcells
+        e_total = np.sum(e_mode * occ) / self._supercell.n_unitcells
         e_total_kJmol = e_total * Avogadro / 1000
 
         # Calculate free energy
         f_total = np.sum(np.log(2 * np.sinh(beta_h_freq))) / beta
-        f_total /= self.supercell.n_unitcells
+        f_total /= self._supercell.n_unitcells
         f_total_kJmol = f_total * Avogadro / 1000
 
         self._tp_dict["energy"] = e_total_kJmol
         self._tp_dict["free_energy"] = f_total_kJmol
         return self._tp_dict
-
-
-#    def _harmonic_residual_forces(self, disps: np.ndarray):
-#        """Calculate harmonic forces of a supercell.
-#
-#        Ideally, these forces must be zero.
-#
-#        Parameters
-#        ----------
-#        disps: Displacements. shape=(N3) or (N3, n_samples)
-#
-#        Return
-#        ------
-#        forces: Harmonic forces. shape=(n_samples, 3, n_atoms)
-#        """
-#        N3 = self.fc2.shape[0] * self.fc2.shape[2]
-#        fc2 = np.transpose(self.fc2, (0, 2, 1, 3))
-#        fc2 = np.reshape(fc2, (N3, N3))
-#        forces = -(fc2 @ disps).reshape((self.fc2.shape[0], 3, -1))
-#        forces = forces.transpose((1, 0, 2))
-#        if forces.shape[2] == 1:
-#            return forces[:, :, 0]
-#        return forces.transpose((2, 0, 1))
-#
-#    def _calc_average_forces(self):
-#        """Compute average forces."""
-#        residual_f = (
-#            self._harmonic_residual_forces(
-#                self._disps.transpose((2, 1, 0)).reshape((-1, self._disps.shape[0]))
-#            )
-#            + self._f0
-#        )
-#        self._average_forces = np.mean(self._forces - residual_f, axis=0)
-#        return self._average_forces

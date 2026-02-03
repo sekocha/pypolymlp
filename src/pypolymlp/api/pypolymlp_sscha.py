@@ -5,10 +5,10 @@ from typing import Literal, Optional, Union
 import numpy as np
 
 from pypolymlp.calculator.properties import Properties
-from pypolymlp.calculator.sscha.api_sscha import run_sscha, run_sscha_large_system
+from pypolymlp.calculator.sscha.api_sscha import run_sscha
 from pypolymlp.calculator.sscha.sscha_data import SSCHAData
 from pypolymlp.calculator.sscha.sscha_params import SSCHAParams
-from pypolymlp.calculator.sscha.sscha_utils import Restart
+from pypolymlp.calculator.sscha.sscha_restart import Restart
 from pypolymlp.core.data_format import PolymlpParams
 from pypolymlp.core.interface_vasp import Poscar
 from pypolymlp.utils.phonopy_utils import get_nac_params
@@ -115,8 +115,8 @@ class PypolymlpSSCHA:
         ascending_temp: bool = False,
         n_samples_init: Optional[int] = None,
         n_samples_final: Optional[int] = None,
-        tol: float = 0.01,
-        max_iter: int = 30,
+        tol: float = 0.005,
+        max_iter: int = 50,
         mixing: float = 0.5,
         mesh: tuple = (10, 10, 10),
         init_fc_algorithm: Literal["harmonic", "const", "random", "file"] = "harmonic",
@@ -182,22 +182,14 @@ class PypolymlpSSCHA:
             self._sscha_params.print_params()
             self._sscha_params.print_unitcell()
 
-        if use_temporal_cutoff:
-            self._sscha = run_sscha_large_system(
-                self._sscha_params,
-                properties=self._prop,
-                fc2=self._fc2,
-                precondition=precondition,
-                verbose=self._verbose,
-            )
-        else:
-            self._sscha = run_sscha(
-                self._sscha_params,
-                properties=self._prop,
-                fc2=self._fc2,
-                precondition=precondition,
-                verbose=self._verbose,
-            )
+        self._sscha = run_sscha(
+            self._sscha_params,
+            properties=self._prop,
+            fc2=self._fc2,
+            precondition=precondition,
+            use_temporal_cutoff=use_temporal_cutoff,
+            verbose=self._verbose,
+        )
         self._fc2 = self._sscha.force_constants
         return self
 

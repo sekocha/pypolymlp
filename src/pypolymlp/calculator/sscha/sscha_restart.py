@@ -1,4 +1,4 @@
-"""Utility functions for SSCHA."""
+"""Utility functions for restarting SSCHA."""
 
 from typing import Literal, Optional
 

@@ -13,7 +13,7 @@ from pypolymlp.utils.yaml_utils import print_array1d, print_array2d, save_cell
 def save_sscha_yaml(
     sscha_params: SSCHAParams,
     sscha_log: list[SSCHAData],
-    filename="sscha_results.yaml",
+    filename: str = "sscha_results.yaml",
 ):
     """Write SSCHA results to a file."""
 

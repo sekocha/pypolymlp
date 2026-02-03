@@ -1,5 +1,7 @@
 """Class for harmonic contribution in reciprocal space."""
 
+from typing import Optional
+
 import numpy as np
 from phonopy import Phonopy
 
@@ -12,7 +14,10 @@ class HarmonicReciprocal:
     """Class for harmonic contribution in reciprocal space."""
 
     def __init__(
-        self, phonopy_obj: Phonopy, properties: Properties, fc2: np.ndarray = None
+        self,
+        phonopy_obj: Phonopy,
+        properties: Properties,
+        fc2: Optional[np.ndarray] = None,
     ):
         """Init method.
 
@@ -23,16 +28,16 @@ class HarmonicReciprocal:
         fc2: Second-order force constants.
         """
 
-        self.ph = phonopy_obj
-        self._n_atom = len(self.ph.supercell.numbers)
+        self._ph = phonopy_obj
+        self._n_atom = len(self._ph.supercell.numbers)
 
-        self.prop = properties
-        self.fc2 = fc2
+        self._prop = properties
+        self.force_constants = fc2
 
         self._tp_dict = dict()
         self._mesh_dict = dict()
 
-    def compute_polymlp_properties(self, structures: list[PolymlpStructure]):
+    def eval(self, structures: list[PolymlpStructure]):
         """Compute energies and forces of structures.
 
         Parameters
@@ -44,50 +49,50 @@ class HarmonicReciprocal:
         energies: Energies, shape=(n_str)
         forces: Forces, shape=(n_str, 3, n_atom)
         """
-        energies, forces, _ = self.prop.eval_multiple(structures)
+        energies, forces, _ = self._prop.eval_multiple(structures)
         return np.array(energies), np.array(forces)
 
     def produce_harmonic_force_constants(self, displacements: float = 0.01):
         """Produce non-effective harmonic FCs."""
+        self._ph.generate_displacements(distance=displacements)
+        supercells = self._ph.supercells_with_displacements
+        _, forces = self.eval([phonopy_cell_to_structure(cell) for cell in supercells])
+        self._ph.forces = np.array(forces).transpose((0, 2, 1))
+        self._ph.produce_force_constants()
+        self._fc2 = self._ph.force_constants
+        return self._fc2
 
-        self.ph.generate_displacements(distance=displacements)
-        supercells = self.ph.supercells_with_displacements
-        _, forces = self.compute_polymlp_properties(
-            [phonopy_cell_to_structure(cell) for cell in supercells]
-        )
-        self.ph.forces = np.array(forces).transpose((0, 2, 1))
-        self.ph.produce_force_constants()
-        self.fc2 = self.ph.force_constants
-        return self.fc2
-
-    def compute_thermal_properties(self, t=1000, qmesh=[10, 10, 10]):
+    def compute_thermal_properties(
+        self, temp: float = 1000, qmesh: tuple = (10, 10, 10)
+    ):
         """Compute thermal properties."""
-
-        self.ph.run_mesh(qmesh)
-        self.ph.run_thermal_properties(t_step=10, t_max=t, t_min=t)
-        self._tp_dict = self.ph.get_thermal_properties_dict()
+        self._ph.run_mesh(qmesh)
+        self._ph.run_thermal_properties(t_step=10, t_max=temp, t_min=temp)
+        self._tp_dict = self._ph.get_thermal_properties_dict()
         return self
 
-    def compute_mesh_properties(self, qmesh=[10, 10, 10]):
+    def compute_mesh_properties(self, qmesh: tuple = (10, 10, 10)):
         """Compute mesh properties."""
-
-        self.ph.run_mesh(qmesh)
-        self.ph.run_total_dos()
-        self._mesh_dict = self.ph.get_mesh_dict()
+        self._ph.run_mesh(qmesh)
+        self._ph.run_total_dos()
+        self._mesh_dict = self._ph.get_mesh_dict()
         return self
 
     @property
     def force_constants(self):
         """Return FC2, shape=(n_atom, n_atom, 3, 3)."""
-        return self.fc2
+        return self._fc2
 
     @force_constants.setter
-    def force_constants(self, fc2):
+    def force_constants(self, fc2: np.ndarray):
         """Set FC2, shape=(n_atom, n_atom, 3, 3)."""
+        if fc2 is None:
+            self._fc2 = None
+            return
         assert fc2.shape[0] == fc2.shape[1] == self._n_atom
         assert fc2.shape[2] == fc2.shape[3] == 3
-        self.fc2 = fc2
-        self.ph.force_constants = fc2
+        self._fc2 = fc2
+        self._ph.force_constants = fc2
 
     @property
     def free_energy(self):
@@ -112,4 +117,4 @@ class HarmonicReciprocal:
     @property
     def phonopy_object(self):
         """Return phonopy object."""
-        return self.ph
+        return self._ph

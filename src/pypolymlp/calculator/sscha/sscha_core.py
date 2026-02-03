@@ -15,13 +15,10 @@ from pypolymlp.calculator.sscha.sscha_data import SSCHAData
 from pypolymlp.calculator.sscha.sscha_io import save_sscha_yaml
 from pypolymlp.calculator.sscha.sscha_params import SSCHAParams
 from pypolymlp.core.data_format import PolymlpParams
-from pypolymlp.core.units import EVtoKJmol
 from pypolymlp.utils.phonopy_utils import (
     phonopy_cell_to_structure,
     structure_to_phonopy_cell,
 )
-
-# (SSCHAParams, calculator, fc2) -> run_sscha
 
 
 class SSCHACore:
@@ -66,7 +63,7 @@ class SSCHACore:
         self._n_unitcells = sscha_params.n_unitcells
         self._n_coeffs = None
         self._fc2 = None
-        self._sscha_current = None
+        self._data_current = None
         self._sscha_log = []
 
         self._symfc = self._set_symfc(sscha_params.cutoff_radius)
@@ -101,7 +98,7 @@ class SSCHACore:
         supercell_polymlp.masses = self._phonopy.supercell.masses
         supercell_matrix = self._sscha_params.supercell_matrix
         supercell_polymlp.supercell_matrix = supercell_matrix
-        supercell_polymlp.n_unitcells = self._sscha_params.n_unitcells
+        supercell_polymlp.n_unitcells = self._n_unitcells
         self._sscha_params.supercell = supercell_polymlp
 
         self._ph_real = HarmonicReal(supercell_polymlp, self._prop)
@@ -151,35 +148,28 @@ class SSCHACore:
         mesh_dict = self._phonopy.get_mesh_dict()
         return mesh_dict["frequencies"]
 
-    def _unit_kjmol(self, e):
-        """Convert energy in eV/supercell to energy in kJ/mol."""
-        return e * EVtoKJmol / self._sscha_params.n_unitcells
-
-    def _compute_sscha_properties(self, t: float = 1000):
+    def _compute_sscha_properties(self, temp: float = 1000):
         """Compute SSCHA properties using FC2."""
         if self._verbose:
             print("Computing SSCHA properties from FC2.", flush=True)
+
         qmesh = self._sscha_params.mesh
         self._ph_recip.force_constants = self._fc2
-        self._ph_recip.compute_thermal_properties(t=t, qmesh=qmesh)
+        self._ph_recip.compute_thermal_properties(temp=temp, qmesh=qmesh)
 
-        res = SSCHAData(
-            temperature=t,
-            static_potential=self._unit_kjmol(self._ph_real.static_potential),
-            harmonic_potential=self._unit_kjmol(
-                self._ph_real.average_harmonic_potential
-            ),
+        data = SSCHAData(
+            temperature=temp,
+            static_potential=self._ph_real.static_potential,  # kJ/mol
+            harmonic_potential=self._ph_real.average_harmonic_potential,  # kJ/mol
             harmonic_free_energy=self._ph_recip.free_energy,  # kJ/mol
-            average_potential=self._unit_kjmol(self._ph_real.average_full_potential),
-            anharmonic_free_energy=self._unit_kjmol(
-                self._ph_real.average_anharmonic_potential
-            ),
+            average_potential=self._ph_real.average_full_potential,  # kJ/mol
+            anharmonic_free_energy=self._ph_real.average_anharmonic_potential,
             entropy=self._ph_recip.entropy,  # J/K/mol
             harmonic_heat_capacity=self._ph_recip.heat_capacity,  # J/K/mol
             static_forces=self._ph_real.static_forces,  # eV/ang
             average_forces=self._ph_real.average_forces,  # eV/ang
         )
-        return res
+        return data
 
     def _run_solver_fc2(self):
         """Estimate FC2 from a forces-displacements dataset."""
@@ -201,59 +191,64 @@ class SSCHACore:
         norm2 = np.linalg.norm(fc2_init)
         return norm1 / norm2
 
-    def _single_iter(self, t: float = 1000, n_samples: int = 100) -> np.ndarray:
+    def _single_iter(self, temp: float = 1000, n_samples: int = 100) -> np.ndarray:
         """Run a standard single sscha iteration."""
         self._ph_real.force_constants = self._fc2
-        self._ph_real.run(t=t, n_samples=n_samples, eliminate_outliers=True)
-        self._sscha_current = self._compute_sscha_properties(t=t)
+        self._ph_real.run(temp=temp, n_samples=n_samples, eliminate_outliers=True)
+        self._data_current = self._compute_sscha_properties(temp=temp)
 
         if self._verbose:
             print("Running symfc solver.", flush=True)
         fc2_new = self._run_solver_fc2()
         mixing = self._sscha_params.mixing
         self._fc2 = fc2_new * mixing + self._fc2 * (1 - mixing)
-        self._sscha_current.delta = self._convergence_score(self._fc2, fc2_new)
-        self._sscha_log.append(self._sscha_current)
+
+        self._data_current.delta = self._convergence_score(self._fc2, fc2_new)
+        self._sscha_log.append(self._data_current)
         return self._fc2
+
+    def _final_iter(self, temp: float = 1000, n_samples: int = 100) -> np.ndarray:
+        """Run the final iteration."""
+        self._ph_real.force_constants = self._fc2
+        self._ph_real.run(temp=temp, n_samples=n_samples, eliminate_outliers=True)
+        self._data_current = self._compute_sscha_properties(temp=temp)
+        self._sscha_log.append(self._data_current)
+        return self
+
+    def _is_imaginary(self, tol: float = -0.01):
+        """Check if imaginary frequencies exist only using frequency data."""
+        freq = self.run_frequencies(qmesh=self._sscha_params.mesh)
+        n_imag = np.count_nonzero(freq < tol)
+        return (n_imag / freq.size) > 1e-5
+
+    def _print_separator(self, n_iter: int):
+        """Print separator between SSCHA iterations."""
+        txt = "------------------ Iteration : " + str(n_iter) + " ------------------"
+        print(txt, flush=True)
 
     def _print_progress(self):
         """Print progress in SSCHA iterations."""
         disp_norms = np.linalg.norm(self._ph_real.displacements, axis=1)
 
-        print(
-            "temperature:      ",
-            "{:.1f}".format(self._sscha_current.temperature),
-            flush=True,
-        )
-        print("number of samples:", disp_norms.shape[0], flush=True)
-        print(
-            "convergence score:     ",
-            "{:.6f}".format(self._sscha_current.delta),
-            flush=True,
-        )
+        data = self._data_current
+        print("temperature:          ", "{:.1f}".format(data.temperature), flush=True)
+        print("number of samples:    ", disp_norms.shape[0], flush=True)
+        print("convergence score:    ", "{:.6f}".format(data.delta), flush=True)
         print("displacements:")
         print("- average disp. (Ang.):", np.round(np.mean(disp_norms), 6), flush=True)
         print("- max disp. (Ang.):    ", np.round(np.max(disp_norms), 6), flush=True)
+
         print("thermodynamic_properties:", flush=True)
-        print(
-            "- free energy (harmonic, kJ/mol)  :",
-            "{:.6f}".format(self._sscha_current.harmonic_free_energy),
-            flush=True,
-        )
-        print(
-            "- free energy (anharmonic, kJ/mol):",
-            "{:.6f}".format(self._sscha_current.anharmonic_free_energy),
-            flush=True,
-        )
-        print(
-            "- free energy (sscha, kJ/mol)     :",
-            "{:.6f}".format(self._sscha_current.free_energy),
-            flush=True,
-        )
+        prefix = "- free energy (harmonic, kJ/mol):   "
+        print(prefix, "{:.6f}".format(data.harmonic_free_energy), flush=True)
+        prefix = "- free energy (anharmonic, kJ/mol): "
+        print(prefix, "{:.6f}".format(data.anharmonic_free_energy), flush=True)
+        prefix = "- free energy (sscha, kJ/mol):      "
+        print(prefix, "{:.6f}".format(data.free_energy), flush=True)
 
     def precondition(
         self,
-        t: float = 1000,
+        temp: float = 1000,
         n_samples: int = 100,
         max_iter: int = 10,
         tol: float = 0.01,
@@ -262,7 +257,7 @@ class SSCHACore:
 
         Parameters
         ----------
-        t: Temperature (K).
+        temp: Temperature (K).
         """
         if self._fc2 is None:
             self._fc2 = self.set_initial_force_constants()
@@ -270,54 +265,63 @@ class SSCHACore:
         n_iter, delta = 1, 1e10
         while n_iter <= max_iter and delta > tol:
             if self._verbose:
-                txt = "--------------- Iteration : " + str(n_iter) + " ---------------"
-                print(txt, flush=True)
-            self._fc2 = self._single_iter(t=t, n_samples=n_samples)
+                self._print_separator(n_iter)
+            self._fc2 = self._single_iter(temp=temp, n_samples=n_samples)
             if self._verbose:
                 self._print_progress()
 
-            delta = self._sscha_current.delta
+            delta = self._data_current.delta
             n_iter += 1
 
-    def run(
-        self,
-        t: float = 1000,
-        accurate: bool = False,
-        initialize_history: bool = True,
-    ):
+        return self
+
+    def run(self, temp: float = 1000, initialize_history: bool = True):
         """Run sscha iterations.
 
         Parameters
         ----------
         t: Temperature (K).
-        accurate: Increase number of sample supercells.
         initialize_history: Initialize history logs.
         """
         if self._fc2 is None:
             self._fc2 = self.set_initial_force_constants()
 
-        if accurate:
-            n_samples = self._sscha_params.n_samples_final
-        else:
-            n_samples = self._sscha_params.n_samples_init
         if initialize_history:
             self._sscha_log = []
 
         n_iter, delta = 1, 1e10
-        while n_iter <= self._sscha_params.max_iter and delta > self._sscha_params.tol:
+        max_iter, tol = self._sscha_params.max_iter, self._sscha_params.tol
+        n_samples = self._sscha_params.n_samples_init
+        while (n_iter <= max_iter and delta > tol) or n_iter < 3:
             if self._verbose:
-                txt = "--------------- Iteration : " + str(n_iter) + " ---------------"
-                print(txt, flush=True)
-            self._fc2 = self._single_iter(t=t, n_samples=n_samples)
+                self._print_separator(n_iter)
+            self._fc2 = self._single_iter(temp=temp, n_samples=n_samples)
             if self._verbose:
                 self._print_progress()
 
-            delta = self._sscha_current.delta
+            delta = self._data_current.delta
             n_iter += 1
 
-        converge = True if delta < self._sscha_params.tol else False
-        self._sscha_log[-1].converge = converge
-        self._sscha_current = self._compute_sscha_properties(t=t)
+        converge = True if delta < tol else False
+        if not converge:
+            self._data_current.converge = converge
+            if self._verbose:
+                print("Error: SSCHA calculation not converge.", flush=True)
+            return self
+
+        if self._verbose:
+            self._print_separator(n_iter)
+            print("SSCHA calculation converges.", flush=True)
+            print("Proceeding to a more accurate evaluation.", flush=True)
+
+        self._final_iter(temp=temp, n_samples=self._sscha_params.n_samples_final)
+        self._data_current.converge = converge
+        self._data_current.delta = delta
+        self._data_current.imaginary = self._is_imaginary()
+        if self._verbose:
+            self._print_progress()
+
+        return self
 
     def _write_dos(self, filename: str = "total_dos.dat"):
         """Save phonon DOS file."""
@@ -325,33 +329,30 @@ class SSCHACore:
         self._phonopy.run_total_dos()
         self._phonopy.write_total_dos(filename=filename)
 
-    def _is_imaginary(self, freq: np.ndarray, tol: float = -0.01):
-        """Check if imaginary frequencies exist only using frequency data."""
-        n_imag = np.count_nonzero(freq < tol)
-        return (n_imag / freq.size) > 1e-5
+    def _print_final_results(self):
+        """Print SSCHA results for current temperature."""
+        data = self._data_current
+        freq = self.run_frequencies(qmesh=self._sscha_params.mesh)
+        print("---------------- sscha runs finished ----------------", flush=True)
+        print("Temperature:      ", data.temperature, flush=True)
+        print("Free energy:      ", data.free_energy, flush=True)
+        print("Convergence:      ", data.converge, flush=True)
+        print("Frequency (min):  ", "{:.6f}".format(np.min(freq)), flush=True)
+        print("Frequency (max):  ", "{:.6f}".format(np.max(freq)), flush=True)
 
     def save_results(self):
         """Save SSCHA results for current temperature."""
-        path_log = "./sscha/" + str(self.properties.temperature) + "/"
+        temp = self._data_current.temperature
+        path_log = "./sscha/" + str(temp) + "/"
         os.makedirs(path_log, exist_ok=True)
-        freq = self.run_frequencies(qmesh=self._sscha_params.mesh)
-        self.properties.imaginary = self._is_imaginary(freq)
-
-        save_sscha_yaml(
-            self._sscha_params,
-            self.logs,
-            filename=path_log + "sscha_results.yaml",
-        )
+        filename = path_log + "sscha_results.yaml"
+        save_sscha_yaml(self._sscha_params, self.logs, filename=filename)
         write_fc2_to_hdf5(self.force_constants, filename=path_log + "fc2.hdf5")
         self._write_dos(filename=path_log + "total_dos.dat")
-
         if self._verbose:
-            print("-------- sscha runs finished --------", flush=True)
-            print("Temperature:      ", self.properties.temperature, flush=True)
-            print("Free energy:      ", self.properties.free_energy, flush=True)
-            print("Convergence:      ", self.properties.converge, flush=True)
-            print("Frequency (min):  ", "{:.6f}".format(np.min(freq)), flush=True)
-            print("Frequency (max):  ", "{:.6f}".format(np.max(freq)), flush=True)
+            self._print_final_results()
+
+        return self
 
     @property
     def sscha_params(self) -> SSCHAParams:
@@ -361,7 +362,7 @@ class SSCHACore:
     @property
     def properties(self) -> SSCHAData:
         """Return SSCHA results."""
-        return self._sscha_log[-1]
+        return self._data_current
 
     @property
     def logs(self) -> list[SSCHAData]:

@@ -1,4 +1,4 @@
-"""Utility functions for SSCHA parameters."""
+"""Class for SSCHA parameters."""
 
 import os
 from typing import Literal, Optional, Sequence, Union
@@ -26,11 +26,11 @@ class SSCHAParams:
         ascending_temp: bool = False,
         n_samples_init: Optional[int] = None,
         n_samples_final: Optional[int] = None,
-        tol: float = 0.01,
-        max_iter: int = 30,
+        tol: float = 0.005,
+        max_iter: int = 50,
         mixing: float = 0.5,
         mesh: tuple = (10, 10, 10),
-        init_fc_algorithm: Literal["harmonic", "file"] = "harmonic",
+        init_fc_algorithm: Literal["harmonic", "const", "random", "file"] = "harmonic",
         init_fc_file: Optional[str] = None,
         nac_params: Optional[dict] = None,
         cutoff_radius: Optional[float] = None,
@@ -62,7 +62,11 @@ class SSCHAParams:
         """
 
         self._unitcell = unitcell
-        self._supercell_matrix = supercell_matrix
+        if np.array(supercell_matrix).size == 3:
+            self._supercell_matrix = np.diag(supercell_matrix)
+        else:
+            self._supercell_matrix = supercell_matrix
+
         self._supercell = supercell
         self._pot = pot
         self._temperatures = (
@@ -89,7 +93,8 @@ class SSCHAParams:
         if self._temperatures is None:
             self.set_temperatures()
 
-        self._n_unitcells = int(round(np.linalg.det(supercell_matrix)))
+        print(self._supercell_matrix)
+        self._n_unitcells = int(round(np.linalg.det(self._supercell_matrix)))
         self._n_atom = len(unitcell.elements) * self._n_unitcells
 
     def _update_n_atom(self):
@@ -166,7 +171,7 @@ class SSCHAParams:
         """
         if self._n_atom is None or self._n_atom == 0:
             raise RuntimeError("Cannot determine _n_atom for sample sizing")
-        coeff = 300 * (0.01 / self._tol) ** 2.5
+        coeff = 450 * (0.01 / self._tol) ** 2.5
         self._n_samples_init = round(coeff * n_basis / self._n_atom)
         self._n_samples_final = 3 * self._n_samples_init
         return self._n_samples_init, self._n_samples_final

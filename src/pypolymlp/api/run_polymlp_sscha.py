@@ -81,7 +81,7 @@ def run():
     parser.add_argument(
         "--tol",
         type=float,
-        default=0.01,
+        default=0.005,
         help="Tolerance parameter for FC convergence",
     )
     parser.add_argument(
@@ -94,7 +94,7 @@ def run():
     parser.add_argument(
         "--max_iter",
         type=int,
-        default=30,
+        default=50,
         help="Maximum number of iterations",
     )
     parser.add_argument("--mixing", type=float, default=0.5, help="Mixing parameter")
