@@ -11,10 +11,9 @@ from symfc import Symfc
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.sscha.harmonic_real import HarmonicReal
 from pypolymlp.calculator.sscha.harmonic_reciprocal import HarmonicReciprocal
-from pypolymlp.calculator.sscha.sscha_dataclass import SSCHAData
+from pypolymlp.calculator.sscha.sscha_data import SSCHAData
 from pypolymlp.calculator.sscha.sscha_io import save_sscha_yaml
 from pypolymlp.calculator.sscha.sscha_params import SSCHAParams
-from pypolymlp.calculator.utils.phonon_utils import is_imaginary
 from pypolymlp.core.data_format import PolymlpParams
 from pypolymlp.core.units import EVtoKJmol
 from pypolymlp.utils.phonopy_utils import (
@@ -63,16 +62,16 @@ class SSCHACore:
             nac_params=sscha_params.nac_params,
         )
         self._sscha_params = sscha_params
-        self._n_atom = len(self._phonopy.supercell.masses)
-        self._n_unitcells = round(np.linalg.det(sscha_params.supercell_matrix))
-
-        self._symfc = self._set_symfc(sscha_params.cutoff_radius)
-        self._ph_real, self._ph_recip = self._set_harmonic_calculators()
-        self._set_num_samples()
-
+        self._n_atom = sscha_params.n_atom
+        self._n_unitcells = sscha_params.n_unitcells
+        self._n_coeffs = None
         self._fc2 = None
         self._sscha_current = None
         self._sscha_log = []
+
+        self._symfc = self._set_symfc(sscha_params.cutoff_radius)
+        self._set_num_samples()
+        self._ph_real, self._ph_recip = self._set_harmonic_calculators()
 
     def _set_symfc(self, cutoff_radius: Optional[float] = None):
         """Initialize Symfc instance."""
@@ -81,10 +80,20 @@ class SSCHACore:
         self._symfc = Symfc(sup, cutoff=cutoff, use_mkl=True, log_level=self._verbose)
         self._symfc.compute_basis_set(2)
 
-        n_coeffs = self._symfc.basis_set[2].basis_set.shape[1]
-        if self._verbose and n_coeffs < 1000:
+        self._n_coeffs = self._symfc.basis_set[2].basis_set.shape[1]
+        if self._verbose and self._n_coeffs < 1000:
             self._symfc._log_level = 0
         return self._symfc
+
+    def _set_num_samples(self):
+        """Initialize number of supercell samples."""
+        if self._sscha_params.n_samples_init is None:
+            self._sscha_params.set_n_samples_from_basis(self._n_coeffs)
+            if self._verbose:
+                print("Number of supercells is automatically determined.")
+                print("- first loop:", self._sscha_params.n_samples_init)
+                print("- second loop:", self._sscha_params.n_samples_final)
+        return self
 
     def _set_harmonic_calculators(self):
         """Initialize calculators for harmonic properties."""
@@ -92,23 +101,12 @@ class SSCHACore:
         supercell_polymlp.masses = self._phonopy.supercell.masses
         supercell_matrix = self._sscha_params.supercell_matrix
         supercell_polymlp.supercell_matrix = supercell_matrix
-        supercell_polymlp.n_unitcells = self._n_unitcells
-        # self._sscha_params.supercell = supercell_polymlp
+        supercell_polymlp.n_unitcells = self._sscha_params.n_unitcells
+        self._sscha_params.supercell = supercell_polymlp
 
         self._ph_real = HarmonicReal(supercell_polymlp, self._prop)
         self._ph_recip = HarmonicReciprocal(self._phonopy, self._prop)
         return self._ph_real, self._ph_recip
-
-    def _set_num_samples(self):
-        """Initialize number of supercell samples."""
-        n_coeffs = self._symfc.basis_set[2].basis_set.shape[1]
-        if self._sscha_params.n_samples_init is None:
-            self._sscha_params.set_n_samples_from_basis(n_coeffs)
-            if self._verbose:
-                print("Number of supercells is automatically determined.")
-                print("- first loop:", self._sscha_params.n_samples_init)
-                print("- second loop:", self._sscha_params.n_samples_final)
-        return self
 
     def set_initial_force_constants(self, fc2: Optional[np.ndarray] = None):
         """Set initial FC2."""
@@ -118,24 +116,26 @@ class SSCHACore:
             self._fc2 = fc2
             return self
 
-        if self._sscha_params.init_fc_algorithm == "harmonic":
+        algorithm = self._sscha_params.init_fc_algorithm
+        if algorithm not in ("harmonic", "const", "random", "file"):
+            raise RuntimeError("Available method for initial FCs not given.")
+
+        if algorithm == "harmonic":
             if self._verbose:
                 print("Initial FCs: Harmonic", flush=True)
             self._fc2 = self._ph_recip.produce_harmonic_force_constants()
-        elif self._sscha_params.init_fc_algorithm == "const":
+        elif algorithm == "const":
             if self._verbose:
                 print("Initial FCs: Constants", flush=True)
-            n_coeffs = self._symfc.basis_set[2].basis_set.shape[1]
-            coeffs_fc2 = np.ones(n_coeffs) * 10
+            coeffs_fc2 = np.ones(self._n_coeffs) * 10
             coeffs_fc2[1::2] *= -1
             self._fc2 = self._recover_fc2(coeffs_fc2)
-        elif self._sscha_params.init_fc_algorithm == "random":
+        elif algorithm == "random":
             if self._verbose:
                 print("Initial FCs: Random", flush=True)
-            n_coeffs = self._symfc.basis_set[2].basis_set.shape[1]
-            coeffs_fc2 = (np.random.rand(n_coeffs) - 0.5) * 20
+            coeffs_fc2 = (np.random.rand(self._n_coeffs) - 0.5) * 20
             self._fc2 = self._recover_fc2(coeffs_fc2)
-        elif self._sscha_params.init_fc_algorithm == "file":
+        elif algorithm == "file":
             filename = self._sscha_params.init_fc_file
             if self._verbose:
                 print("Initial FCs: File", filename, flush=True)
@@ -153,7 +153,7 @@ class SSCHACore:
 
     def _unit_kjmol(self, e):
         """Convert energy in eV/supercell to energy in kJ/mol."""
-        return e * EVtoKJmol / self._n_unitcells
+        return e * EVtoKJmol / self._sscha_params.n_unitcells
 
     def _compute_sscha_properties(self, t: float = 1000):
         """Compute SSCHA properties using FC2."""
@@ -325,12 +325,18 @@ class SSCHACore:
         self._phonopy.run_total_dos()
         self._phonopy.write_total_dos(filename=filename)
 
+    def _is_imaginary(self, freq: np.ndarray, tol: float = -0.01):
+        """Check if imaginary frequencies exist only using frequency data."""
+        n_imag = np.count_nonzero(freq < tol)
+        return (n_imag / freq.size) > 1e-5
+
     def save_results(self):
         """Save SSCHA results for current temperature."""
         path_log = "./sscha/" + str(self.properties.temperature) + "/"
         os.makedirs(path_log, exist_ok=True)
         freq = self.run_frequencies(qmesh=self._sscha_params.mesh)
-        self.properties.imaginary = is_imaginary(freq)
+        self.properties.imaginary = self._is_imaginary(freq)
+
         save_sscha_yaml(
             self._sscha_params,
             self.logs,

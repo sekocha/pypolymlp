@@ -5,9 +5,10 @@ from typing import Literal, Optional, Union
 import numpy as np
 
 from pypolymlp.calculator.properties import Properties
-from pypolymlp.calculator.sscha.run_sscha import run_sscha, run_sscha_large_system
-from pypolymlp.calculator.sscha.sscha_params import SSCHAParameters
-from pypolymlp.calculator.sscha.sscha_utils import PolymlpDataSSCHA, Restart
+from pypolymlp.calculator.sscha.api_sscha import run_sscha, run_sscha_large_system
+from pypolymlp.calculator.sscha.sscha_data import SSCHAData
+from pypolymlp.calculator.sscha.sscha_params import SSCHAParams
+from pypolymlp.calculator.sscha.sscha_utils import Restart
 from pypolymlp.core.data_format import PolymlpParams
 from pypolymlp.core.interface_vasp import Poscar
 from pypolymlp.utils.phonopy_utils import get_nac_params
@@ -156,7 +157,7 @@ class PypolymlpSSCHA:
         if self._unitcell is None:
             raise RuntimeError("Set structure.")
 
-        self._sscha_params = SSCHAParameters(
+        self._sscha_params = SSCHAParams(
             unitcell=self._unitcell,
             supercell_matrix=self._supercell_matrix,
             pot=self._pot,
@@ -201,17 +202,17 @@ class PypolymlpSSCHA:
         return self
 
     @property
-    def sscha_params(self) -> SSCHAParameters:
+    def sscha_params(self) -> SSCHAParams:
         """Return SSCHA parameters."""
         return self._sscha_params
 
     @property
-    def sscha_properties(self) -> PolymlpDataSSCHA:
+    def sscha_properties(self) -> SSCHAData:
         """Return SSCHA properties at the final temperature."""
         return self._sscha.properties
 
     @property
-    def sscha_logs(self) -> list[PolymlpDataSSCHA]:
+    def sscha_logs(self) -> list[SSCHAData]:
         """Return logs of SSCHA properties at the final temperature."""
         return self._sscha.logs
 

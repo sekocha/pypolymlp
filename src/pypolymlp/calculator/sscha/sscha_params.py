@@ -15,7 +15,7 @@ class SSCHAParams:
         self,
         unitcell: PolymlpStructure,
         supercell_matrix: np.ndarray,
-        supercell: Optional[np.ndarray] = None,
+        supercell: Optional[PolymlpStructure] = None,
         pot: Optional[Union[str, Sequence[str]]] = None,
         temperatures: Optional[Union[Sequence[float], np.ndarray]] = None,
         temp: Optional[float] = None,
@@ -60,7 +60,6 @@ class SSCHAParams:
         init_fc_file: If algorithm = "file", coefficients are read from given fc2.hdf5.
         nac_params: Parameters for non-analytic correction in phonon calculations.
         """
-        self._n_atom = None
 
         self._unitcell = unitcell
         self._supercell_matrix = supercell_matrix
@@ -89,6 +88,9 @@ class SSCHAParams:
         self._update_n_atom()
         if self._temperatures is None:
             self.set_temperatures()
+
+        self._n_unitcells = int(round(np.linalg.det(supercell_matrix)))
+        self._n_atom = len(unitcell.elements) * self._n_unitcells
 
     def _update_n_atom(self):
         """Recompute the internal `_n_atom` derived quantity."""
@@ -251,17 +253,17 @@ class SSCHAParams:
         self._update_n_atom()
 
     @property
-    def supercell(self) -> Optional[np.ndarray]:
+    def supercell(self) -> Optional[PolymlpStructure]:
         """Optional supercell array (may be None)."""
         return self._supercell
 
     @supercell.setter
-    def supercell(self, value: Optional[np.ndarray]):
+    def supercell(self, value: Optional[PolymlpStructure]):
         """Set the supercell array; convert to numpy array if provided."""
         if value is None:
             self._supercell = None
             return
-        self._supercell = np.array(value)
+        self._supercell = value
 
     @property
     def pot(self) -> Optional[Union[str, Sequence[str]]]:
@@ -459,3 +461,13 @@ class SSCHAParams:
     def cutoff_radius(self, value: Optional[float]):
         """Set cutoff_radius (float or None)."""
         self._cutoff_radius = None if value is None else float(value)
+
+    @property
+    def n_unitcells(self) -> int:
+        """Return number of unitcells in supercell."""
+        return self._n_unitcells
+
+    @property
+    def n_atom(self) -> int:
+        """Return number of atoms in supercell."""
+        return self._n_atom
