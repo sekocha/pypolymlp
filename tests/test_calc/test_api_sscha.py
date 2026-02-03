@@ -1,5 +1,6 @@
 """Tests of SSCHA calculations using API."""
 
+import shutil
 from pathlib import Path
 
 import pytest
@@ -13,14 +14,8 @@ poscar = path_file + "poscars/POSCAR.fcc.Al"
 pot = path_file + "mlps/polymlp.yaml.gtinv.Al"
 
 
-def test_sscha_Al():
-    """Test SSCHA calculations from polymlp using API."""
-
-    sscha = PypolymlpSSCHA(verbose=True)
-    sscha.load_poscar(poscar, (2, 2, 2))
-    sscha.set_polymlp(pot)
-
-    sscha.run(temp=700, tol=0.003, mixing=0.5)
+def _assert_Al(sscha):
+    """Assert results for Al."""
     _ = sscha.sscha_params
     props = sscha.sscha_properties
     _ = sscha.sscha_logs
@@ -38,26 +33,24 @@ def test_sscha_Al():
     assert props.delta < 0.003
     assert props.converge
     assert not props.imaginary
+    shutil.rmtree("sscha")
+
+
+def test_sscha_Al():
+    """Test SSCHA calculations from polymlp using API."""
+
+    sscha = PypolymlpSSCHA(verbose=True)
+    sscha.load_poscar(poscar, (2, 2, 2))
+    sscha.set_polymlp(pot)
+    sscha.run(temp=700, tol=0.003, mixing=0.5)
+    _assert_Al(sscha)
 
 
 def test_sscha_Al_restart():
-    """Test SSCHA calculations from polymlp using API."""
-    # sscha.load_restart(yaml=args.yaml, parse_fc2=True)
-    # sscha.run(
-    #     temp=700,
-    #     temp_min=args.temp_min,
-    #     temp_max=args.temp_max,
-    #     temp_step=args.temp_step,
-    #     n_temp=args.n_temp,
-    #     ascending_temp=args.ascending_temp,
-    #     n_samples_init=n_samples_init,
-    #     n_samples_final=n_samples_final,
-    #     tol=args.tol,
-    #     max_iter=args.max_iter,
-    #     mixing=args.mixing,
-    #     mesh=args.mesh,
-    #     init_fc_algorithm=args.init,
-    #     init_fc_file=args.init_file,
-    #     cutoff_radius=args.cutoff_fc2,
-    #     use_temporal_cutoff=args.use_temporal_cutoff,
-    # )
+    """Test restart SSCHA calculations using API."""
+    path_sscha = path_file + "others/sscha_restart/"
+    yaml = path_sscha + "sscha_results.yaml"
+    sscha = PypolymlpSSCHA(verbose=True)
+    sscha.load_restart(yaml=yaml, parse_fc2=True, abspath=path_sscha)
+    sscha.run(temp=700, tol=0.003, mixing=0.5)
+    _assert_Al(sscha)
