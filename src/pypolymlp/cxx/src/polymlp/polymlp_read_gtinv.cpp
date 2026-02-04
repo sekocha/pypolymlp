@@ -73,7 +73,6 @@ void Readgtinv::screening(
         const auto& l_array_all = get_l_array(order);
         const auto& m_array_all = get_m_array(order);
         const auto& coeffs_all = get_coeffs(order);
-        std::cout << order << " " << l_array_all.size() << std::endl;
         for (size_t i = 0; i < l_array_all.size(); ++i){
             const vector1i &lcomb = l_array_all[i];
             const int maxl = *(lcomb.end()-1);
@@ -103,6 +102,10 @@ void Readgtinv::screening(
         }
     }
 }
+
+const vector3i& Readgtinv::get_lm_seq() const{ return lm_array; }
+const vector2i& Readgtinv::get_l_comb() const{ return l_array; }
+const vector2d& Readgtinv::get_lm_coeffs() const{ return coeffs; }
 
 /*
 void Readgtinv::screening_ver2(const int& gtinv_order,
@@ -141,7 +144,3 @@ void Readgtinv::screening_ver2(const int& gtinv_order,
     }
 }
 */
-
-const vector3i& Readgtinv::get_lm_seq() const{ return lm_array; }
-const vector2i& Readgtinv::get_l_comb() const{ return l_array; }
-const vector2d& Readgtinv::get_lm_coeffs() const{ return coeffs; }
