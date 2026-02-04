@@ -9,8 +9,13 @@
 #define __POLYMLP_READ_GTINV
 
 #include "polymlp_gtinv_data.h"
-#include "polymlp_gtinv_data_ver2.h"
+//#include "polymlp_gtinv_data_ver2.h"
 #include "polymlp_mlpcpp.h"
+
+const vector2i& get_l_array(int order);
+const vector3i& get_m_array(int order);
+const vector2d& get_coeffs(int order);
+
 
 class Readgtinv {
 

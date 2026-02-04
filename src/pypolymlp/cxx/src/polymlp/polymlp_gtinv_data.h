@@ -9,30 +9,22 @@
 #define __POLYMLP_GTINV_DATA
 
 #include "polymlp_mlpcpp.h"
-#include "polymlp_gtinv_data_order1.h"
-#include "polymlp_gtinv_data_order2.h"
-#include "polymlp_gtinv_data_order3.h"
-#include "polymlp_gtinv_data_order4.h"
-#include "polymlp_gtinv_data_order5.h"
-#include "polymlp_gtinv_data_order6.h"
 
-class GtinvData{
+template<int Order>
+class GtinvData {
 
-    vector2i l_array_all;
-    vector3i m_array_all;
-    vector2d coeffs_all;
-
-    void set_gtinv_info();
+    static inline const vector2i L_ARRAY_ALL;
+    static inline const vector3i M_ARRAY_ALL;
+    static inline const vector2d COEFFS_ALL;
 
     public:
 
-    GtinvData();
-   ~GtinvData();
+    GtinvData() = default;
+    ~GtinvData() = default;
 
-    const vector2i& get_l_array() const;
-    const vector3i& get_m_array() const;
-    const vector2d& get_coeffs() const;
-
+    static const vector2i& get_static_l_array() { return L_ARRAY_ALL; }
+    static const vector3i& get_static_m_array() { return M_ARRAY_ALL; }
+    static const vector2d& get_static_coeffs() { return COEFFS_ALL; }
 };
 
 #endif
