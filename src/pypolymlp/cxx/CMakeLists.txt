@@ -70,6 +70,18 @@ set(SRC_FILES
     src/compute/model.cpp
     src/python/pybind11_mlp.cpp
     src/polymlp/polymlp_gtinv_data.cpp
+    src/polymlp/polymlp_gtinv_data_order3l.cpp
+    src/polymlp/polymlp_gtinv_data_order3c.cpp
+    src/polymlp/polymlp_gtinv_data_order3m.cpp
+    src/polymlp/polymlp_gtinv_data_order4l.cpp
+    src/polymlp/polymlp_gtinv_data_order4c.cpp
+    src/polymlp/polymlp_gtinv_data_order4m.cpp
+    src/polymlp/polymlp_gtinv_data_order5l.cpp
+    src/polymlp/polymlp_gtinv_data_order5c.cpp
+    src/polymlp/polymlp_gtinv_data_order5m.cpp
+    src/polymlp/polymlp_gtinv_data_order6l.cpp
+    src/polymlp/polymlp_gtinv_data_order6c.cpp
+    src/polymlp/polymlp_gtinv_data_order6m.cpp
     # src/polymlp/polymlp_gtinv_data_ver2.cpp
     # src/polymlp/polymlp_gtinv_data_ver2_order1.cpp
     # src/polymlp/polymlp_gtinv_data_ver2_order2.cpp
