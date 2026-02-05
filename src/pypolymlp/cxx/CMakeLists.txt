@@ -15,8 +15,17 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 if(NOT DEFINED CMAKE_CXX_FLAGS_RELEASE)
-    set(CMAKE_CXX_FLAGS_RELEASE "-O2 -Wno-deprecated -DNDEBUG")
+    set(
+        CMAKE_CXX_FLAGS_RELEASE
+        "-O2 -Wno-deprecated -Wno-undefined-var-template -DNDEBUG"
+    )
+else()
+    set(
+        CMAKE_CXX_FLAGS_RELEASE
+        "${CMAKE_CXX_FLAGS_RELEASE} -Wno-deprecated -Wno-undefined-var-template"
+    )
 endif()
+message(STATUS "CMAKE_CXX_FLAGS_RELEASE: ${CMAKE_CXX_FLAGS_RELEASE}")
 
 if(NOT DEFINED CMAKE_CXX_FLAGS_DEBUG)
     set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")

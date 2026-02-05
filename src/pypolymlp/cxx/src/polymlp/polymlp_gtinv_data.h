@@ -10,12 +10,15 @@
 
 #include "polymlp_mlpcpp.h"
 
+
+#pragma once
+
 template<int Order>
 class GtinvData {
 
-    static inline const vector2i L_ARRAY_ALL;
-    static inline const vector3i M_ARRAY_ALL;
-    static inline const vector2d COEFFS_ALL;
+    static const vector2i L_ARRAY_ALL;
+    static const vector3i M_ARRAY_ALL;
+    static const vector2d COEFFS_ALL;
 
     public:
 
@@ -26,5 +29,6 @@ class GtinvData {
     static const vector3i& get_static_m_array() { return M_ARRAY_ALL; }
     static const vector2d& get_static_coeffs() { return COEFFS_ALL; }
 };
+
 
 #endif
