@@ -27,9 +27,8 @@ class SSCHADistribution:
         Load sscha_results.yaml and effective FC2.
         """
         self._verbose = verbose
-        self._res = Restart(yamlfile, fc2hdf5=fc2file)
-        pot = self._res.polymlp if pot is None else pot
-        prop = Properties(pot=pot)
+        self._res = Restart(yamlfile, fc2hdf5=fc2file, pot=pot)
+        prop = Properties(pot=self._res.polymlp)
         self._ph_real = HarmonicReal(
             self._res.supercell,
             prop,
@@ -42,16 +41,18 @@ class SSCHADistribution:
             print("Load SSCHA results:")
             print("  yaml:        ", yamlfile)
             print("  fc2 :        ", fc2file)
-            print("  mlp :        ", pot)
+            print("  polymlp :    ", pot)
             print("  temperature :", self._res.temperature)
 
-    def run_structure_distribution(self, n_samples: int = 2000):
+    def set_structure_distribution(self, n_samples: int = 2000):
         """Calculate properties of structures generated from density matrix."""
-        self._ph_real.run(t=self._res.temperature, n_samples=n_samples)
+        self._ph_real.run(temp=self._res.temperature, n_samples=n_samples)
         return self
 
     def save_structure_distribution(self, path: str = ".", save_poscars: bool = False):
         """Save structures sampled from density matrix and their properties."""
+        os.makedirs(path, exist_ok=True)
+
         disps = self.displacements.transpose((0, 2, 1))
         forces = self.forces.transpose((0, 2, 1))
         np.save(path + "/sscha_disps.npy", disps)

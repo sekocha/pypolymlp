@@ -73,7 +73,7 @@ class PypolymlpSSCHA:
         yaml: str = "sscha_results.yaml",
         parse_fc2: bool = True,
         parse_mlp: bool = True,
-        abspath: Optional[str] = None,
+        pot: Optional[Union[str, list, tuple, np.ndarray]] = None,
     ):
         """Parse sscha_results.yaml file.
 
@@ -88,10 +88,7 @@ class PypolymlpSSCHA:
         self._unitcell = res.unitcell
         self._supercell_matrix = res.supercell_matrix
         if parse_mlp:
-            if abspath is None:
-                self._pot = res.polymlp
-            else:
-                self._pot = [abspath + "/" + p for p in res.polymlp]
+            self._pot = res.polymlp if pot is None else pot
             self._prop = Properties(pot=self._pot)
         self._fc2 = res.force_constants
         return self

@@ -1,6 +1,6 @@
 """Utility functions for restarting SSCHA."""
 
-from typing import Literal, Optional
+from typing import Literal, Optional, Union
 
 import numpy as np
 import yaml
@@ -19,10 +19,12 @@ class Restart:
         self,
         res_yaml: str,
         fc2hdf5: Optional[str] = None,
+        pot: Optional[Union[str, list, tuple]] = None,
         unit: Literal["kJ/mol", "eV/cell", "eV/atom"] = "kJ/mol",
     ):
         """Init method."""
         self._yaml = res_yaml
+        self._pot = pot
         self._unit = unit
 
         self._load_sscha_yaml()
@@ -33,7 +35,8 @@ class Restart:
         """Load sscha_results.yaml file."""
         yaml_data = yaml.safe_load(open(self._yaml))
 
-        self._pot = yaml_data["parameters"]["pot"]
+        if self._pot is None:
+            self._pot = yaml_data["parameters"]["pot"]
         self._temp = yaml_data["parameters"]["temperature"]
         self._sscha_params = yaml_data["parameters"]
 

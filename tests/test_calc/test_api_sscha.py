@@ -30,7 +30,7 @@ def test_sscha_Al_restart():
     path_sscha = path_file + "others/sscha_restart/"
     yaml = path_sscha + "sscha_results.yaml"
     sscha = PypolymlpSSCHA(verbose=True)
-    sscha.load_restart(yaml=yaml, parse_fc2=True, abspath=path_sscha)
+    sscha.load_restart(yaml=yaml, parse_fc2=True, pot=pot)
     sscha.run(temp=700, tol=0.003, mixing=0.5, path="tmp")
     _assert_Al(sscha)
     shutil.rmtree("tmp")
