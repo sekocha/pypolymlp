@@ -40,7 +40,6 @@ def test_supercell(structure_rocksalt):
         [0.5, 0.5, 0.0],
         [0.5, 0.5, 0.5],
     ]
-    print(sup.positions.T)
     np.testing.assert_allclose(sup.positions.T, positions_true)
 
     sup = get_supercell(structure_rocksalt, (1, 1, 2))

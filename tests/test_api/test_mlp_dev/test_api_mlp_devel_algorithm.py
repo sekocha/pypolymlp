@@ -39,10 +39,6 @@ def _assert(polymlp: Pypolymlp):
     """Assert errors."""
     error_train = polymlp.summary.error_train["data1"]
     error_test = polymlp.summary.error_test["data2"]
-    print("Test")
-    print(error_test)
-    print("Train")
-    print(error_train)
 
     assert error_test["energy"] == pytest.approx(2.7282304588694303e-06, rel=1e-3)
     assert error_test["force"] == pytest.approx(0.0011572393315208939, rel=1e-3)
