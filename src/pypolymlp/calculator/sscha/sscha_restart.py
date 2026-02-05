@@ -50,7 +50,7 @@ class Restart:
         self._converge = yaml_data["status"]["converge"]
         self._imaginary = yaml_data["status"]["imaginary"]
         self._logs = yaml_data["logs"]
-        self._anharmonic_energy = self._logs["anharmonic_free_energy"][-1]
+        self._anharmonic_free_energy = self._logs["anharmonic_free_energy"][-1]
 
         self._unitcell = load_cell(yaml_data=yaml_data, tag="unitcell")
         self._supercell_matrix = np.array(yaml_data["supercell_matrix"])
@@ -118,9 +118,9 @@ class Restart:
         return self._unit_conversion_entropy(self._harmonic_heat_capacity)
 
     @property
-    def anharmonic_energy(self):
-        """Return static potential energy."""
-        return self._unit_conversion(self._anharmonic_energy)
+    def anharmonic_free_energy(self):
+        """Return anharmonic free energy."""
+        return self._unit_conversion(self._anharmonic_free_energy)
 
     @property
     def logs(self):
@@ -194,4 +194,5 @@ class Restart:
 
     @property
     def volume(self):
+        """Return volume."""
         return self._volume

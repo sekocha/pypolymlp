@@ -11,7 +11,6 @@ from pypolymlp.calculator.sscha.sscha_distribution import SSCHADistribution
 cwd = Path(__file__).parent
 path_file = str(cwd) + "/files/"
 
-poscar = path_file + "poscars/POSCAR.fcc.Al"
 pot = path_file + "mlps/polymlp.yaml.gtinv.Al"
 
 
