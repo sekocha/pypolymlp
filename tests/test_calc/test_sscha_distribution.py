@@ -22,7 +22,7 @@ def test_sscha_distribution():
     fc2hdf5 = path_sscha + "fc2.hdf5"
 
     distrib = SSCHADistribution(yamlfile=yaml, fc2file=fc2hdf5, pot=pot, verbose=True)
-    distrib.set_structure_distribution(n_samples=100)
+    distrib.run_structure_distribution(n_samples=100)
     assert distrib.displacements.shape == (100, 3, 32)
     assert distrib.forces.shape == (100, 3, 32)
     assert distrib.energies.shape == (100,)
