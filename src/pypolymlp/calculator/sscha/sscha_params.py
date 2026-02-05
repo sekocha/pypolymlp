@@ -93,7 +93,6 @@ class SSCHAParams:
         if self._temperatures is None:
             self.set_temperatures()
 
-        print(self._supercell_matrix)
         self._n_unitcells = int(round(np.linalg.det(self._supercell_matrix)))
         self._n_atom = len(unitcell.elements) * self._n_unitcells
 

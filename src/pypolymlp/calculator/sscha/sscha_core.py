@@ -340,10 +340,10 @@ class SSCHACore:
         print("Frequency (min):  ", "{:.6f}".format(np.min(freq)), flush=True)
         print("Frequency (max):  ", "{:.6f}".format(np.max(freq)), flush=True)
 
-    def save_results(self):
+    def save_results(self, path: str = "./sscha"):
         """Save SSCHA results for current temperature."""
         temp = self._data_current.temperature
-        path_log = "./sscha/" + str(temp) + "/"
+        path_log = path + "/" + str(temp) + "/"
         os.makedirs(path_log, exist_ok=True)
         filename = path_log + "sscha_results.yaml"
         save_sscha_yaml(self._sscha_params, self.logs, filename=filename)

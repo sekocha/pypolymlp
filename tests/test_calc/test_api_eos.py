@@ -26,4 +26,3 @@ def test_eos_MgO():
     )
     e0, v0, b0 = polymlp.eos_fit_data
     _assert_eos_MgO(e0, v0, b0)
-    assert 1 == 0

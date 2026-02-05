@@ -129,6 +129,7 @@ class PypolymlpSSCHA:
         precondition: bool = True,
         cutoff_radius: Optional[float] = None,
         use_temporal_cutoff: bool = False,
+        path: str = "./sscha",
     ):
         """Run SSCHA iterations.
 
@@ -192,6 +193,7 @@ class PypolymlpSSCHA:
             fc2=self._fc2,
             precondition=precondition,
             use_temporal_cutoff=use_temporal_cutoff,
+            path=path,
             verbose=self._verbose,
         )
         self._fc2 = self._sscha.force_constants
@@ -203,12 +205,12 @@ class PypolymlpSSCHA:
         return self._sscha_params
 
     @property
-    def sscha_properties(self) -> SSCHAData:
+    def properties(self) -> SSCHAData:
         """Return SSCHA properties at the final temperature."""
         return self._sscha.properties
 
     @property
-    def sscha_logs(self) -> list[SSCHAData]:
+    def logs(self) -> list[SSCHAData]:
         """Return logs of SSCHA properties at the final temperature."""
         return self._sscha.logs
 
@@ -219,3 +221,19 @@ class PypolymlpSSCHA:
         shape=(n_atom, n_atom, 3, 3).
         """
         return self._sscha.force_constants
+
+    @property
+    def sscha_properties(self) -> SSCHAData:
+        """Return SSCHA properties at the final temperature.
+
+        Deprecated.
+        """
+        return self._sscha.properties
+
+    @property
+    def sscha_logs(self) -> list[SSCHAData]:
+        """Return logs of SSCHA properties at the final temperature.
+
+        Deprecated.
+        """
+        return self._sscha.logs

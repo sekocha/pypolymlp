@@ -20,6 +20,7 @@ def run_sscha(
     fc2: Optional[np.ndarray] = None,
     precondition: bool = True,
     use_temporal_cutoff: bool = False,
+    path: str = "./sscha",
     verbose: bool = False,
 ):
     """Run sscha iterations for multiple temperatures.
@@ -41,6 +42,7 @@ def run_sscha(
             properties=properties,
             fc2=fc2,
             precondition=precondition,
+            path=path,
             verbose=verbose,
         )
     else:
@@ -52,6 +54,7 @@ def run_sscha(
             properties=properties,
             fc2=fc2,
             precondition=precondition,
+            path=path,
             verbose=verbose,
         )
     return sscha
@@ -65,6 +68,7 @@ def run_sscha_standard(
     properties: Optional[Properties] = None,
     fc2: Optional[np.ndarray] = None,
     precondition: bool = True,
+    path: str = "./sscha",
     verbose: bool = False,
 ):
     """Run sscha iterations for multiple temperatures.
@@ -96,7 +100,7 @@ def run_sscha_standard(
 
     if verbose:
         print("Size of FC2 basis-set:", sscha.n_fc_basis, flush=True)
-    sscha = _run_target_sscha(sscha, verbose=verbose)
+    sscha = _run_target_sscha(sscha, path=path, verbose=verbose)
     return sscha
 
 
@@ -108,6 +112,7 @@ def run_sscha_large_system(
     properties: Optional[Properties] = None,
     fc2: Optional[np.ndarray] = None,
     precondition: bool = True,
+    path: str = "./sscha",
     verbose: bool = False,
 ):
     """Run sscha iterations for multiple temperatures using cutoff temporarily.
@@ -150,7 +155,7 @@ def run_sscha_large_system(
             print("Run SSCHA with temporal cutoff.", flush=True)
             print("Temporal cutoff radius:", sscha_params.cutoff_radius, flush=True)
             print("Size of FC2 basis-set: ", sscha.n_fc_basis, flush=True)
-        sscha.run(temp=sscha_params.temperatures[0], accurate=False)
+        sscha.run(temp=sscha_params.temperatures[0])
         fc2_rerun = sscha.force_constants
         sscha_params.cutoff_radius = sscha_params_target.cutoff_radius
 
@@ -167,7 +172,7 @@ def run_sscha_large_system(
     if verbose:
         print("Size of FC2 basis-set:", sscha.n_fc_basis, flush=True)
 
-    sscha = _run_target_sscha(sscha, verbose=verbose)
+    sscha = _run_target_sscha(sscha, path=path, verbose=verbose)
     return sscha
 
 
@@ -198,11 +203,11 @@ def _run_precondition(sscha: SSCHACore, verbose: bool = False):
     return sscha
 
 
-def _run_target_sscha(sscha: SSCHACore, verbose: bool = False):
+def _run_target_sscha(sscha: SSCHACore, path: str = "./sscha", verbose: bool = False):
     """Run SSCHA for target temperatures."""
     for temp in sscha.sscha_params.temperatures:
         if verbose:
             print("************** Temperature:", temp, "**************", flush=True)
         sscha.run(temp=temp)
-        sscha.save_results()
+        sscha.save_results(path=path)
     return sscha
