@@ -69,15 +69,6 @@ class SSCHAParams:
 
         self._supercell = supercell
         self._pot = pot
-        self._temperatures = (
-            np.array(temperatures) if temperatures is not None else None
-        )
-        self._temp = temp
-        self._temp_min = temp_min
-        self._temp_max = temp_max
-        self._temp_step = temp_step
-        self._n_temp = n_temp
-        self._ascending_temp = ascending_temp
         self._n_samples_init = n_samples_init
         self._n_samples_final = n_samples_final
         self._tol = tol
@@ -89,20 +80,20 @@ class SSCHAParams:
         self._nac_params = nac_params
         self._cutoff_radius = cutoff_radius
 
-        self._update_n_atom()
+        self._temperatures = (
+            np.array(temperatures) if temperatures is not None else None
+        )
+        self._temp = temp
+        self._temp_min = temp_min
+        self._temp_max = temp_max
+        self._temp_step = temp_step
+        self._n_temp = n_temp
+        self._ascending_temp = ascending_temp
         if self._temperatures is None:
             self.set_temperatures()
 
         self._n_unitcells = int(round(np.linalg.det(self._supercell_matrix)))
         self._n_atom = len(unitcell.elements) * self._n_unitcells
-
-    def _update_n_atom(self):
-        """Recompute the internal `_n_atom` derived quantity."""
-        try:
-            det = float(np.linalg.det(self._supercell_matrix))
-        except Exception:
-            det = 1.0
-        self._n_atom = len(self._unitcell.elements) * det
 
     def _round_temperature(self, temp: float):
         """Round a temperature to int when it is very close to an integer."""
@@ -224,37 +215,10 @@ class SSCHAParams:
         """Return the stored unitcell (PolymlpStructure-like object)."""
         return self._unitcell
 
-    @unitcell.setter
-    def unitcell(self, value: PolymlpStructure):
-        """Set unitcell and update derived quantities.
-
-        Minimal validation: ensure object exposes `elements` and `axis`.
-        """
-        if value is None:
-            raise ValueError("unitcell cannot be None")
-        if not hasattr(value, "elements") or not hasattr(value, "axis"):
-            raise TypeError("unitcell must be a PolymlpStructure-like object")
-        self._unitcell = value
-        self._update_n_atom()
-
     @property
     def supercell_matrix(self) -> np.ndarray:
         """Return the 3x3 supercell matrix."""
         return self._supercell_matrix
-
-    @supercell_matrix.setter
-    def supercell_matrix(self, value: np.ndarray):
-        """Set supercell_matrix and update derived quantities.
-
-        Enforces shape (3,3).
-        """
-        if value is None:
-            raise ValueError("supercell_matrix cannot be None")
-        arr = np.array(value)
-        if arr.shape != (3, 3):
-            raise ValueError("supercell_matrix must have shape (3,3)")
-        self._supercell_matrix = arr
-        self._update_n_atom()
 
     @property
     def supercell(self) -> Optional[PolymlpStructure]:
@@ -305,112 +269,55 @@ class SSCHAParams:
         """Single temperature override (setting this will replace temperatures)."""
         return self._temp
 
-    @temp.setter
-    def temp(self, value: Optional[float]):
-        """Set single temperature; apply it immediately to `temperatures`."""
-        self._temp = None if value is None else float(value)
-        if self._temp is not None:
-            self.temperatures = [self._round_temperature(self._temp)]
-
     @property
     def temp_min(self) -> float:
         """Minimum temperature in temperature sweep."""
         return self._temp_min
-
-    @temp_min.setter
-    def temp_min(self, value: float):
-        """Set minimum temperature (rounded if near-integer)."""
-        self._temp_min = self._round_temperature(float(value))
 
     @property
     def temp_max(self) -> float:
         """Maximum temperature in temperature sweep."""
         return self._temp_max
 
-    @temp_max.setter
-    def temp_max(self, value: float):
-        """Set maximum temperature (rounded if near-integer)."""
-        self._temp_max = self._round_temperature(float(value))
-
     @property
     def temp_step(self) -> float:
         """Temperature step used when generating arithmetic sequence of temperatures."""
         return self._temp_step
-
-    @temp_step.setter
-    def temp_step(self, value: float):
-        """Set temperature step (rounded if near-integer)."""
-        self._temp_step = self._round_temperature(float(value))
 
     @property
     def n_temp(self) -> Optional[int]:
         """Number of temperatures for Chebyshev node generation (or None)."""
         return self._n_temp
 
-    @n_temp.setter
-    def n_temp(self, value: Optional[int]):
-        """Set n_temp; convert to int if provided."""
-        self._n_temp = None if value is None else int(value)
-
     @property
     def ascending_temp(self) -> bool:
         """Whether generated temperature list should be ascending."""
         return bool(self._ascending_temp)
-
-    @ascending_temp.setter
-    def ascending_temp(self, value: bool):
-        """Set ascending_temp as boolean."""
-        self._ascending_temp = bool(value)
 
     @property
     def n_samples_init(self) -> Optional[int]:
         """Number of samples in the first SSCHA loop (or None)."""
         return self._n_samples_init
 
-    @n_samples_init.setter
-    def n_samples_init(self, value: Optional[int]):
-        """Set n_samples_init (int or None)."""
-        self._n_samples_init = None if value is None else int(value)
-
     @property
     def n_samples_final(self) -> Optional[int]:
         """Number of samples in the second SSCHA loop (or None)."""
         return self._n_samples_final
-
-    @n_samples_final.setter
-    def n_samples_final(self, value: Optional[int]):
-        """Set n_samples_final (int or None)."""
-        self._n_samples_final = None if value is None else int(value)
 
     @property
     def tol(self) -> float:
         """Convergence tolerance used in FC calculations."""
         return self._tol
 
-    @tol.setter
-    def tol(self, value: float):
-        """Set tolerance (stored as float)."""
-        self._tol = float(value)
-
     @property
     def max_iter(self) -> int:
         """Maximum number of SSCHA iterations."""
         return self._max_iter
 
-    @max_iter.setter
-    def max_iter(self, value: int):
-        """Set max_iter (stored as int)."""
-        self._max_iter = int(value)
-
     @property
     def mixing(self) -> float:
         """Mixing parameter used when updating force constants."""
         return self._mixing
-
-    @mixing.setter
-    def mixing(self, value: float):
-        """Set mixing (stored as float)."""
-        self._mixing = float(value)
 
     @property
     def mesh(self) -> tuple:
@@ -429,22 +336,10 @@ class SSCHAParams:
         """Algorithm used to generate initial FCs: 'harmonic' or 'file'."""
         return self._init_fc_algorithm
 
-    @init_fc_algorithm.setter
-    def init_fc_algorithm(self, value: Literal["harmonic", "file"]):
-        """Set init_fc_algorithm and validate allowed values."""
-        if value not in ("harmonic", "file"):
-            raise ValueError("init_fc_algorithm must be 'harmonic' or 'file'")
-        self._init_fc_algorithm = value
-
     @property
     def init_fc_file(self) -> Optional[str]:
         """Path to an HDF5 file containing initial FCs if algorithm='file'."""
         return self._init_fc_file
-
-    @init_fc_file.setter
-    def init_fc_file(self, value: Optional[str]):
-        """Set init_fc_file as a string or None."""
-        self._init_fc_file = None if value is None else str(value)
 
     @property
     def nac_params(self) -> Optional[dict]:
