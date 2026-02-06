@@ -52,6 +52,12 @@ def test_run_sscha():
 def test_run_sscha2():
     """Test run_sscha."""
     sscha_params = SSCHAParams(unitcell, size, pot=pot, temp=700, tol=0.003)
-    sscha = run_sscha(sscha_params, pot=pot, use_temporal_cutoff=True, path="tmp")
+    sscha = run_sscha(
+        sscha_params,
+        pot=pot,
+        use_temporal_cutoff=True,
+        path="tmp",
+        write_pdos=True,
+    )
     _assert_Al(sscha)
     shutil.rmtree("tmp")
