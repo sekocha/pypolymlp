@@ -323,12 +323,22 @@ class SSCHACore:
 
         return self
 
-    def _write_dos(self, filename: str = "total_dos.dat", write_pdos: bool = False):
+    def _write_dos(
+        self,
+        filename: str = "total_dos.dat",
+        write_pdos: bool = False,
+        qmesh: Optional[tuple] = None,
+    ):
         """Save phonon DOS file."""
         self._phonopy.force_constants = self._fc2
         self._phonopy.run_total_dos()
         self._phonopy.write_total_dos(filename=filename)
         if write_pdos:
+            if qmesh is None:
+                qmesh = self._sscha_params.mesh
+            self._phonopy.run_mesh(
+                qmesh, is_mesh_symmetry=False, with_eigenvectors=True
+            )
             path = "/".join(filename.split("/")[:-1])
             self._phonopy.run_projected_dos()
             self._phonopy.write_projected_dos(filename=path + "/projected_dos.dat")
