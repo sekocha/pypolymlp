@@ -115,6 +115,6 @@ class HarmonicReciprocal:
         return self._mesh_dict["frequencies"]
 
     @property
-    def phonopy_object(self):
-        """Return phonopy object."""
+    def phonopy_instance(self):
+        """Return phonopy instance."""
         return self._ph
