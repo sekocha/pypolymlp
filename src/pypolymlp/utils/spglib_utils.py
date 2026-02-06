@@ -153,11 +153,11 @@ def construct_basis_cell(
     """
     cell_copy = standardize_cell(cell)
     spg_info = get_symmetry_dataset(cell_copy)
-    spg_num = spg_info["number"]
+    spg_num = spg_info.number
     if verbose:
         if len(cell_copy.types) != len(cell.types):
             print("Number of atoms changed by standardization.", flush=True)
-        print("Space group:", spg_info["international"], spg_num, flush=True)
+        print("Space group:", spg_info.international, spg_num, flush=True)
 
     if spg_num >= 195:
         if verbose:
@@ -171,7 +171,7 @@ def construct_basis_cell(
         basis[:, 0] = _normalize_vector([1, -0.5, 0, 0, np.sqrt(3) / 2, 0, 0, 0, 0])
         basis[8, 1] = 1.0
     elif spg_num >= 143 and spg_num <= 167:
-        if "P" in spg_info["international"]:
+        if "P" in spg_info.international:
             if verbose:
                 print("Crystal system: Trigonal (Hexagonal)", flush=True)
             basis = np.zeros((9, 2))
