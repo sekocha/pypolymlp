@@ -187,9 +187,9 @@ class ElectronProperties:
         from phonopy.physical_units import get_physical_units
 
         units = get_physical_units()
-        Kb = units.Kb
+        KB = units.KB
 
-        de = (epsilon - mu) / (Kb * T)
+        de = (epsilon - mu) / (KB * T)
         de = np.where(de < 100, de, 100.0)  # To avoid overflow
         de = np.where(de > -100, de, -100.0)  # To avoid underflow
         return (de * np.exp(de)) / (T * ((np.exp(de) + 1) ** 2))
