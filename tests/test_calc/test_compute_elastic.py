@@ -1,12 +1,12 @@
 """Tests of elastic constant calculations."""
 
+import copy
 import os
 from pathlib import Path
 
 import numpy as np
 
 from pypolymlp.calculator.compute_elastic import PolymlpElastic
-from pypolymlp.core.interface_vasp import Poscar
 
 cwd = Path(__file__).parent
 path_file = str(cwd) + "/files/"
@@ -45,12 +45,11 @@ def _assert_elastic_gtinv_MgO(consts: np.ndarray):
     )
 
 
-def test_pair_MgO():
+def test_pair_MgO(unitcell_pair_MgO):
     """Test elastic constants with pair polymlp in MgO."""
-    pot = path_file + "mlps/polymlp.yaml.pair.MgO"
+    unitcell1, pot = unitcell_pair_MgO
+    unitcell = copy.deepcopy(unitcell1)
     poscar = path_file + "poscars/POSCAR.RS.idealMgO"
-    unitcell = Poscar(poscar).structure
-
     el = PolymlpElastic(
         unitcell=unitcell,
         unitcell_poscar=poscar,
@@ -64,12 +63,11 @@ def test_pair_MgO():
     os.remove("tmp.yaml")
 
 
-def test_gtinv_MgO():
+def test_gtinv_MgO(unitcell_gtinv_MgO):
     """Test elastic constants with polymlp in MgO."""
-    pot = path_file + "mlps/polymlp.yaml.gtinv.MgO"
+    unitcell1, pot = unitcell_gtinv_MgO
+    unitcell = copy.deepcopy(unitcell1)
     poscar = path_file + "poscars/POSCAR.RS.idealMgO"
-    unitcell = Poscar(poscar).structure
-
     el = PolymlpElastic(
         unitcell=unitcell,
         unitcell_poscar=poscar,

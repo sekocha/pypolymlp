@@ -1,26 +1,18 @@
 """Tests of force constant calculations."""
 
 import os
-from pathlib import Path
 
 import numpy as np
 import pytest
 
 from pypolymlp.calculator.fc import PolymlpFC
 from pypolymlp.core.data_format import PolymlpStructure
-from pypolymlp.core.interface_vasp import Poscar
 from pypolymlp.utils.structure_utils import supercell
 
-cwd = Path(__file__).parent
-path_file = str(cwd) + "/files/"
 
-
-def test_fc_AlN():
+def test_fc_AlN(unitcell_wz_AlN):
     """Test FC calculation."""
-    poscar = path_file + "poscars/POSCAR.WZ.AlN"
-    pot = path_file + "mlps/polymlp.lammps.gtinv.AlN"
-
-    unitcell = Poscar(poscar).structure
+    unitcell, pot = unitcell_wz_AlN
     sup = supercell(unitcell, (3, 3, 2), use_phonopy=True)
     fc = PolymlpFC(supercell=sup, pot=pot, cutoff=3.0, verbose=True)
     fc.sample(n_samples=100, displacements=0.01)
@@ -43,12 +35,9 @@ def test_fc_AlN():
     assert isinstance(fc.supercell, PolymlpStructure)
 
 
-def test_fc_MgO():
+def test_fc_MgO(unitcell_pair_MgO):
     """Test FC calculation."""
-    poscar = path_file + "poscars/POSCAR.RS.idealMgO"
-    pot = path_file + "mlps/polymlp.yaml.pair.MgO"
-
-    unitcell = Poscar(poscar).structure
+    unitcell, pot = unitcell_pair_MgO
     sup = supercell(unitcell, (2, 2, 2), use_phonopy=True)
     fc = PolymlpFC(supercell=sup, pot=pot, cutoff=3.0, verbose=True)
     fc.sample(n_samples=100, displacements=0.01)

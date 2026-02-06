@@ -2,15 +2,10 @@
 
 import os
 import shutil
-from pathlib import Path
 
 import numpy as np
 
 from pypolymlp.calculator.compute_phonon import PolymlpPhonon, PolymlpPhononQHA
-from pypolymlp.core.interface_vasp import Poscar
-
-cwd = Path(__file__).parent
-path_file = str(cwd) + "/files/"
 
 
 def _assert_phonon(ph: PolymlpPhonon):
@@ -39,21 +34,18 @@ def _assert_qha(ph: PolymlpPhononQHA):
     assert len(ph.thermal_expansion) == 100
 
 
-poscar = path_file + "poscars/POSCAR.RS.idealMgO"
-pot = path_file + "mlps/polymlp.yaml.pair.MgO"
-unitcell = Poscar(poscar).structure
-
-
-def test_phonon_MgO():
+def test_phonon_MgO(unitcell_pair_MgO):
     """Test EOS calculation."""
+    unitcell, pot = unitcell_pair_MgO
     ph = PolymlpPhonon(unitcell=unitcell, supercell_matrix=np.diag([2, 2, 2]), pot=pot)
     ph.produce_force_constants(distance=0.01)
     ph.compute_properties()
     _assert_phonon(ph)
 
 
-def test_phonon_qha_MgO():
+def test_phonon_qha_MgO(unitcell_pair_MgO):
     """Test EOS calculation."""
+    unitcell, pot = unitcell_pair_MgO
     ph = PolymlpPhononQHA(unitcell=unitcell, supercell_matrix=np.eye(3), pot=pot)
     ph.run()
     _assert_qha(ph)

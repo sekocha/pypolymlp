@@ -1,7 +1,6 @@
 """Tests of functions and attributes for property calculations."""
 
 import os
-from pathlib import Path
 
 import numpy as np
 import pytest
@@ -11,17 +10,11 @@ from pypolymlp.calculator.properties import (
     convert_stresses_in_gpa,
     find_active_atoms,
 )
-from pypolymlp.core.interface_vasp import Poscar
-
-cwd = Path(__file__).parent
-path_file = str(cwd) + "/files/"
-
-unitcell = Poscar(path_file + "poscars/POSCAR.RS.MgO").structure
 
 
-def test_eval_single():
+def test_eval_single(unitcell_disp_pair_MgO):
     """Test properties with pair polymlp in MgO."""
-    pot = path_file + "mlps/polymlp.yaml.pair.MgO"
+    unitcell, pot = unitcell_disp_pair_MgO
     prop = Properties(pot=pot)
     energy, forces, stresses = prop.eval(unitcell)
     assert energy == pytest.approx(-40.22469744308482)
@@ -41,9 +34,9 @@ def test_eval_single():
     assert prop.params.n_type == 2
 
 
-def test_eval_hybrid():
+def test_eval_hybrid(unitcell_disp_pair_MgO):
     """Test properties with pair polymlp in MgO."""
-    pot = path_file + "mlps/polymlp.yaml.pair.MgO"
+    unitcell, pot = unitcell_disp_pair_MgO
     prop = Properties(pot=[pot, pot])
     energy, forces, stresses = prop.eval(unitcell)
     assert energy == pytest.approx(-40.22469744308482 * 2)
@@ -56,8 +49,9 @@ def test_eval_hybrid():
     assert prop.stresses_gpa.shape == (2, 6)
 
 
-def test_find_active_atoms():
+def test_find_active_atoms(unitcell_disp_pair_MgO):
     """Test find_active_atoms."""
+    unitcell, _ = unitcell_disp_pair_MgO
     element_order = ["Mg"]
     structures = [unitcell, unitcell]
     strs, active_atoms, active_bools = find_active_atoms(structures, element_order)
@@ -84,8 +78,9 @@ def test_find_active_atoms():
     np.testing.assert_equal(active_bools, False)
 
 
-def test_convert_stresses_in_gpa():
+def test_convert_stresses_in_gpa(unitcell_disp_pair_MgO):
     """Test convert_stresses_in_gpa."""
+    unitcell, _ = unitcell_disp_pair_MgO
     stresses = np.array(
         [[2.0, 3.0, 4.0, -1.0, 0.5, 0.2], [2.0, 3.0, 4.0, -1.0, 0.5, 0.2]]
     )

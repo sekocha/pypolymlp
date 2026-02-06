@@ -1,22 +1,18 @@
 """Tests of geometry optimization in MgO."""
 
+import copy
 import os
-from pathlib import Path
 
 import numpy as np
 import pytest
 
 from pypolymlp.calculator.opt_geometry import GeometryOptimization
-from pypolymlp.core.interface_vasp import Poscar
-
-cwd = Path(__file__).parent
-path_file = str(cwd) + "/files/"
 
 
-def test_opt1():
+def test_opt1(unitcell_disp_pair_MgO):
     """Test optimization with pair polymlp in MgO."""
-    pot = path_file + "mlps/polymlp.yaml.pair.MgO"
-    unitcell = Poscar(path_file + "poscars/POSCAR.RS.MgO").structure
+    unitcell1, pot = unitcell_disp_pair_MgO
+    unitcell = copy.deepcopy(unitcell1)
     opt = GeometryOptimization(
         pot=pot,
         cell=unitcell,
@@ -45,10 +41,10 @@ def test_opt1():
     assert len(x2) == 6
 
 
-def test_opt2():
+def test_opt2(unitcell_disp_pair_MgO):
     """Test optimization with pair polymlp in MgO."""
-    pot = path_file + "mlps/polymlp.yaml.pair.MgO"
-    unitcell = Poscar(path_file + "poscars/POSCAR.RS.MgO").structure
+    unitcell1, pot = unitcell_disp_pair_MgO
+    unitcell = copy.deepcopy(unitcell1)
     opt = GeometryOptimization(
         pot=pot,
         cell=unitcell,
@@ -78,10 +74,10 @@ def test_opt2():
     assert len(x2) == 6
 
 
-def test_opt3():
+def test_opt3(unitcell_pair_MgO):
     """Test optimization with pair polymlp in MgO."""
-    pot = path_file + "mlps/polymlp.yaml.pair.MgO"
-    unitcell = Poscar(path_file + "poscars/POSCAR.RS.idealMgO").structure
+    unitcell1, pot = unitcell_pair_MgO
+    unitcell = copy.deepcopy(unitcell1)
     opt = GeometryOptimization(
         pot=pot,
         cell=unitcell,

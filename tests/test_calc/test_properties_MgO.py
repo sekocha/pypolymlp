@@ -1,22 +1,14 @@
 """Tests of property calculations in MgO."""
 
-from pathlib import Path
-
 import numpy as np
 import pytest
 
 from pypolymlp.calculator.properties import Properties, convert_stresses_in_gpa
-from pypolymlp.core.interface_vasp import Poscar
-
-cwd = Path(__file__).parent
-path_file = str(cwd) + "/files/"
-
-unitcell = Poscar(path_file + "poscars/POSCAR.RS.MgO").structure
 
 
-def test_eval1():
+def test_eval1(unitcell_disp_pair_MgO):
     """Test properties with pair polymlp in MgO."""
-    pot = path_file + "mlps/polymlp.yaml.pair.MgO"
+    unitcell, pot = unitcell_disp_pair_MgO
     prop = Properties(pot=pot)
     energy, forces, stresses = prop.eval(unitcell)
 
@@ -46,9 +38,9 @@ def test_eval1():
     np.testing.assert_allclose(stresses, stresses_true, atol=1e-5)
 
 
-def test_eval2():
+def test_eval2(unitcell_disp_gtinv_MgO):
     """Test properties with polymlp in MgO."""
-    pot = path_file + "mlps/polymlp.yaml.gtinv.MgO"
+    unitcell, pot = unitcell_disp_gtinv_MgO
     prop = Properties(pot=pot)
     energy, forces, stresses = prop.eval(unitcell)
 
