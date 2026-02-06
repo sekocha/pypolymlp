@@ -332,9 +332,14 @@ class SSCHAParams:
         self._mesh = tuple(value)
 
     @property
-    def init_fc_algorithm(self) -> Literal["harmonic", "file"]:
+    def init_fc_algorithm(self) -> Literal["harmonic", "file", "random", "const"]:
         """Algorithm used to generate initial FCs: 'harmonic' or 'file'."""
         return self._init_fc_algorithm
+
+    @init_fc_algorithm.setter
+    def init_fc_algorithm(self, value: str):
+        """Set algorithm used to generate initial FCs."""
+        self._init_fc_algorithm = value
 
     @property
     def init_fc_file(self) -> Optional[str]:

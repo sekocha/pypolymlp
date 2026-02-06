@@ -141,6 +141,9 @@ class SSCHACore:
 
     def run_frequencies(self, qmesh: Optional[tuple] = None):
         """Calculate effective phonon frequencies from FC2."""
+        if self._fc2 is None:
+            raise RuntimeError("Force constants not found.")
+
         if qmesh is None:
             qmesh = self._sscha_params.mesh
         self._phonopy.force_constants = self._fc2
@@ -178,14 +181,14 @@ class SSCHACore:
         self._symfc.solve(2, is_compact_fc=False)
         return self._symfc.force_constants[2]
 
-    def _recover_fc2(self, coefs):
+    def _recover_fc2(self, coefs: np.ndarray):
         """Recover FC2 from coefficients for basis set."""
         basis_set = self._symfc.basis_set[2]
         compr_mat = basis_set.compression_matrix
         fc = basis_set.basis_set @ coefs
         return (compr_mat @ fc).reshape((self._n_atom, self._n_atom, 3, 3))
 
-    def _convergence_score(self, fc2_init, fc2_update):
+    def _convergence_score(self, fc2_init: np.ndarray, fc2_update: np.ndarray):
         """Compute convergence score."""
         norm1 = np.linalg.norm(fc2_update - fc2_init)
         norm2 = np.linalg.norm(fc2_init)
@@ -330,6 +333,9 @@ class SSCHACore:
         qmesh: Optional[tuple] = None,
     ):
         """Save phonon DOS file."""
+        path = "/".join(filename.split("/")[:-1])
+        os.makedirs(path, exist_ok=True)
+
         self._phonopy.force_constants = self._fc2
         self._phonopy.run_total_dos()
         self._phonopy.write_total_dos(filename=filename)
@@ -339,7 +345,6 @@ class SSCHACore:
             self._phonopy.run_mesh(
                 qmesh, is_mesh_symmetry=False, with_eigenvectors=True
             )
-            path = "/".join(filename.split("/")[:-1])
             self._phonopy.run_projected_dos()
             self._phonopy.write_projected_dos(filename=path + "/projected_dos.dat")
 
@@ -396,6 +401,9 @@ class SSCHACore:
     @force_constants.setter
     def force_constants(self, fc2: np.ndarray):
         """Set FC2, shape=(n_atom, n_atom, 3, 3)."""
+        if fc2 is None:
+            self._fc2 = fc2
+            return
         assert fc2.shape[0] == fc2.shape[1] == self._n_atom
         assert fc2.shape[2] == fc2.shape[3] == 3
         self._fc2 = fc2

@@ -47,4 +47,10 @@ class SSCHAData:
 
     def __post_init__(self):
         """Post init method."""
+        if self.harmonic_free_energy is None:
+            self.free_energy = None
+            return
+        if self.anharmonic_free_energy is None:
+            self.free_energy = None
+            return
         self.free_energy = self.harmonic_free_energy + self.anharmonic_free_energy

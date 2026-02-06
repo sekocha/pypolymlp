@@ -62,6 +62,11 @@ class HarmonicReal:
 
         self._mesh_dict = dict()
         self._tp_dict = dict()
+        self._energies_harm = None
+        self._energies_full = None
+        self._average_forces = None
+        self._forces = None
+        self._disps = None
 
         self._set_mass()
         self._e0, self._f0, _ = self._prop.eval(self._supercell)
@@ -250,6 +255,8 @@ class HarmonicReal:
     @property
     def displacements(self) -> np.ndarray:
         """Return displacements, shape=(n_samples, 3, n_atom)."""
+        if self._disps is None:
+            return None
         return np.array(self._disps)
 
     @property
@@ -260,36 +267,54 @@ class HarmonicReal:
     @property
     def forces(self) -> np.ndarray:
         """Return forces, shape=(n_samples, 3, n_atom)."""
+        if self._forces is None:
+            return None
         return np.array(self._forces)
 
     @property
     def full_potentials(self) -> np.ndarray:
         """Return full potentials, shape=(n_samples) in kJ/mol."""
+        if self._energies_full is None:
+            return None
         return self._energies_full * self._ev_to_kjmol
 
     @property
     def average_full_potential(self) -> float:
         """Return average full potential in kJ/mol."""
+        if self._energies_full is None:
+            return None
         return np.average(self._energies_full) * self._ev_to_kjmol
 
     @property
     def harmonic_potentials(self) -> np.ndarray:
         """Return harmonic potentials, shape=(n_samples) in kJ/mol."""
+        if self._energies_harm is None:
+            return None
         return self._energies_harm * self._ev_to_kjmol
 
     @property
     def average_harmonic_potential(self) -> float:
         """Return average harmonic potential in kJ/mol."""
+        if self._energies_harm is None:
+            return None
         return np.average(self._energies_harm) * self._ev_to_kjmol
 
     @property
     def anharmonic_potentials(self) -> np.ndarray:
         """Return anharmonic potentials, shape=(n_samples) in kJ/mol."""
+        if self._energies_harm is None:
+            return None
+        if self._energies_full is None:
+            return None
         return (self._energies_full - self._energies_harm) * self._ev_to_kjmol
 
     @property
     def average_anharmonic_potential(self) -> float:
         """Return average anharmonic potentials in kJ/mol."""
+        if self._energies_harm is None:
+            return None
+        if self._energies_full is None:
+            return None
         return np.average(self.anharmonic_potentials)
 
     @property
