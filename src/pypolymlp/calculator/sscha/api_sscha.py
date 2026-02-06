@@ -21,6 +21,7 @@ def run_sscha(
     precondition: bool = True,
     use_temporal_cutoff: bool = False,
     path: str = "./sscha",
+    write_pdos: bool = False,
     verbose: bool = False,
 ):
     """Run sscha iterations for multiple temperatures.
@@ -43,6 +44,7 @@ def run_sscha(
             fc2=fc2,
             precondition=precondition,
             path=path,
+            write_pdos=write_pdos,
             verbose=verbose,
         )
     else:
@@ -55,6 +57,7 @@ def run_sscha(
             fc2=fc2,
             precondition=precondition,
             path=path,
+            write_pdos=write_pdos,
             verbose=verbose,
         )
     return sscha
@@ -69,6 +72,7 @@ def run_sscha_standard(
     fc2: Optional[np.ndarray] = None,
     precondition: bool = True,
     path: str = "./sscha",
+    write_pdos: bool = False,
     verbose: bool = False,
 ):
     """Run sscha iterations for multiple temperatures.
@@ -100,7 +104,7 @@ def run_sscha_standard(
 
     if verbose:
         print("Size of FC2 basis-set:", sscha.n_fc_basis, flush=True)
-    sscha = _run_target_sscha(sscha, path=path, verbose=verbose)
+    sscha = _run_target_sscha(sscha, path=path, write_pdos=write_pdos, verbose=verbose)
     return sscha
 
 
@@ -113,6 +117,7 @@ def run_sscha_large_system(
     fc2: Optional[np.ndarray] = None,
     precondition: bool = True,
     path: str = "./sscha",
+    write_pdos: bool = False,
     verbose: bool = False,
 ):
     """Run sscha iterations for multiple temperatures using cutoff temporarily.
@@ -172,7 +177,7 @@ def run_sscha_large_system(
     if verbose:
         print("Size of FC2 basis-set:", sscha.n_fc_basis, flush=True)
 
-    sscha = _run_target_sscha(sscha, path=path, verbose=verbose)
+    sscha = _run_target_sscha(sscha, path=path, write_pdos=write_pdos, verbose=verbose)
     return sscha
 
 
@@ -203,11 +208,16 @@ def _run_precondition(sscha: SSCHACore, verbose: bool = False):
     return sscha
 
 
-def _run_target_sscha(sscha: SSCHACore, path: str = "./sscha", verbose: bool = False):
+def _run_target_sscha(
+    sscha: SSCHACore,
+    path: str = "./sscha",
+    write_pdos: bool = False,
+    verbose: bool = False,
+):
     """Run SSCHA for target temperatures."""
     for temp in sscha.sscha_params.temperatures:
         if verbose:
             print("************** Temperature:", temp, "**************", flush=True)
         sscha.run(temp=temp)
-        sscha.save_results(path=path)
+        sscha.save_results(path=path, write_pdos=write_pdos)
     return sscha

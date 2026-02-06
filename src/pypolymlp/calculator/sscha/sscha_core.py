@@ -323,11 +323,15 @@ class SSCHACore:
 
         return self
 
-    def _write_dos(self, filename: str = "total_dos.dat"):
+    def _write_dos(self, filename: str = "total_dos.dat", write_pdos: bool = False):
         """Save phonon DOS file."""
         self._phonopy.force_constants = self._fc2
         self._phonopy.run_total_dos()
         self._phonopy.write_total_dos(filename=filename)
+        if write_pdos:
+            path = "/".join(filename.split("/")[:-1])
+            self._phonopy.run_projected_dos()
+            self._phonopy.write_projected_dos(filename=path + "/projected_dos.dat")
 
     def _print_final_results(self):
         """Print SSCHA results for current temperature."""
@@ -340,7 +344,7 @@ class SSCHACore:
         print("Frequency (min):  ", "{:.6f}".format(np.min(freq)), flush=True)
         print("Frequency (max):  ", "{:.6f}".format(np.max(freq)), flush=True)
 
-    def save_results(self, path: str = "./sscha"):
+    def save_results(self, path: str = "./sscha", write_pdos: bool = False):
         """Save SSCHA results for current temperature."""
         temp = self._data_current.temperature
         path_log = path + "/" + str(temp) + "/"
@@ -348,7 +352,7 @@ class SSCHACore:
         filename = path_log + "sscha_results.yaml"
         save_sscha_yaml(self._sscha_params, self.logs, filename=filename)
         write_fc2_to_hdf5(self.force_constants, filename=path_log + "fc2.hdf5")
-        self._write_dos(filename=path_log + "total_dos.dat")
+        self._write_dos(filename=path_log + "total_dos.dat", write_pdos=write_pdos)
         if self._verbose:
             self._print_final_results()
 

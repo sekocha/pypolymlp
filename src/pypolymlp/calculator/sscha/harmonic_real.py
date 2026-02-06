@@ -22,7 +22,7 @@ const_amplitude: J*s/THz -> atomic_mass * angstrom^2
 
 const_planck is set to 6.62607015e-34 * 1e11 = 6.62607015e-22.
 """
-const_planck = Planck * 1e12  # 6.62607015e-22
+const_planck = Planck * 1e12  # = 6.62607015e-22
 const_sq_angfreq_to_sq_freq_thz = 2.4440020137144617e2
 const_amplitude = 1.010758017933576
 

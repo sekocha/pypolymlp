@@ -127,6 +127,7 @@ class PypolymlpSSCHA:
         cutoff_radius: Optional[float] = None,
         use_temporal_cutoff: bool = False,
         path: str = "./sscha",
+        write_pdos: bool = False,
     ):
         """Run SSCHA iterations.
 
@@ -191,6 +192,7 @@ class PypolymlpSSCHA:
             precondition=precondition,
             use_temporal_cutoff=use_temporal_cutoff,
             path=path,
+            write_pdos=write_pdos,
             verbose=self._verbose,
         )
         self._fc2 = self._sscha.force_constants

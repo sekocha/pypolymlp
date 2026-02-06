@@ -20,8 +20,8 @@ unitcell = Poscar(poscar).structure
 size = (2, 2, 2)
 
 
-def test_run_sscha():
-    """Test run_sscha."""
+def test_harmonic_reciprocal():
+    """Test HarmonicReciprocal."""
     sscha_params = SSCHAParams(unitcell, size, pot=pot, temp=700, tol=0.003)
     sscha = SSCHACore(sscha_params, pot=pot)
     rec = HarmonicReciprocal(sscha._phonopy, sscha._prop)

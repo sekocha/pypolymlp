@@ -131,6 +131,11 @@ def run():
         action="store_true",
         help="Use an algorithm temporarily using cutoff radius.",
     )
+    parser.add_argument(
+        "--write_pdos",
+        action="store_true",
+        help="Save projected DOS.",
+    )
 
     args = parser.parse_args()
 
@@ -170,4 +175,5 @@ def run():
         init_fc_file=args.init_file,
         cutoff_radius=args.cutoff_fc2,
         use_temporal_cutoff=args.use_temporal_cutoff,
+        write_pdos=args.write_pdos,
     )
