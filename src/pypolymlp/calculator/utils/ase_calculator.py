@@ -67,7 +67,7 @@ class PolymlpASECalculator(Calculator):
     def calculate(
         self,
         atoms: Optional[Atoms] = None,
-        properties: tuple = ("energy", "forces"),
+        properties: tuple = ("energy", "forces", "stress"),
         system_changes: tuple = ALL_CHANGES,
     ):
         """Calculate energy, force, and stress using `pypolymlp`."""
