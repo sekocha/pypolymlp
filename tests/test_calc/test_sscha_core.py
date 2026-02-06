@@ -1,7 +1,6 @@
-"""Tests of API for SSCHA functions."""
+"""Tests of SSCHACore functions."""
 
 import shutil
-from pathlib import Path
 
 import numpy as np
 import pytest
@@ -9,21 +8,12 @@ from test_sscha_api_sscha import _assert_Al
 
 from pypolymlp.calculator.sscha.sscha_core import SSCHACore
 from pypolymlp.calculator.sscha.sscha_params import SSCHAParams
-from pypolymlp.core.interface_vasp import Poscar
-
-cwd = Path(__file__).parent
-path_file = str(cwd) + "/files/"
 
 
-poscar = path_file + "poscars/POSCAR.fcc.Al"
-pot = path_file + "mlps/polymlp.yaml.gtinv.Al"
-
-unitcell = Poscar(poscar).structure
-size = (2, 2, 2)
-
-
-def test_sscha_core():
-    """Test run_sscha."""
+def test_sscha_core(unitcell_mlp_Al):
+    """Test SSCHACore."""
+    unitcell, pot = unitcell_mlp_Al
+    size = (2, 2, 2)
     sscha_params = SSCHAParams(unitcell, size, pot=pot, temp=700, tol=0.003)
     sscha = SSCHACore(sscha_params, pot=pot, verbose=True)
 

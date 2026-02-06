@@ -1,27 +1,18 @@
 """Tests of IO class for SSCHA."""
 
 import os
-from pathlib import Path
 
 import numpy as np
 
 from pypolymlp.calculator.sscha.sscha_data import SSCHAData
 from pypolymlp.calculator.sscha.sscha_io import save_sscha_yaml
 from pypolymlp.calculator.sscha.sscha_params import SSCHAParams
-from pypolymlp.core.interface_vasp import Poscar
-
-cwd = Path(__file__).parent
-path_file = str(cwd) + "/files/"
-
-poscar = path_file + "poscars/POSCAR.fcc.Al"
-pot = path_file + "mlps/polymlp.yaml.gtinv.Al"
-
-unitcell = Poscar(poscar).structure
-size = (2, 2, 2)
 
 
-def test_save_sscha_yaml():
+def test_save_sscha_yaml(unitcell_mlp_Al):
     """Test save_sscha_yaml."""
+    unitcell, pot = unitcell_mlp_Al
+    size = (2, 2, 2)
     data = SSCHAData(
         temperature=300,
         static_potential=0.1,

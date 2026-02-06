@@ -16,7 +16,6 @@ pot = path_file + "mlps/polymlp.yaml.gtinv.Al"
 
 def test_sscha_Al():
     """Test SSCHA calculations from polymlp using API."""
-
     sscha = PypolymlpSSCHA(verbose=True)
     sscha.load_poscar(poscar, (2, 2, 2))
     sscha.set_polymlp(pot)

@@ -1,27 +1,17 @@
 """Tests of harmonic reciprocal-part calculations."""
 
-from pathlib import Path
-
 import numpy as np
 import pytest
 
 from pypolymlp.calculator.sscha.harmonic_reciprocal import HarmonicReciprocal
 from pypolymlp.calculator.sscha.sscha_core import SSCHACore
 from pypolymlp.calculator.sscha.sscha_params import SSCHAParams
-from pypolymlp.core.interface_vasp import Poscar
-
-cwd = Path(__file__).parent
-path_file = str(cwd) + "/files/"
-
-poscar = path_file + "poscars/POSCAR.fcc.Al"
-pot = path_file + "mlps/polymlp.yaml.gtinv.Al"
-
-unitcell = Poscar(poscar).structure
-size = (2, 2, 2)
 
 
-def test_harmonic_reciprocal():
+def test_harmonic_reciprocal(unitcell_mlp_Al):
     """Test HarmonicReciprocal."""
+    unitcell, pot = unitcell_mlp_Al
+    size = (2, 2, 2)
     sscha_params = SSCHAParams(unitcell, size, pot=pot, temp=700, tol=0.003)
     sscha = SSCHACore(sscha_params, pot=pot)
     rec = HarmonicReciprocal(sscha._phonopy, sscha._prop)

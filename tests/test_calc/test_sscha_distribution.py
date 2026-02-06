@@ -11,11 +11,10 @@ from pypolymlp.calculator.sscha.sscha_distribution import SSCHADistribution
 cwd = Path(__file__).parent
 path_file = str(cwd) + "/files/"
 
-pot = path_file + "mlps/polymlp.yaml.gtinv.Al"
 
-
-def test_sscha_distribution():
+def test_sscha_distribution(unitcell_mlp_Al):
     """Test SSCHADistribution."""
+    _, pot = unitcell_mlp_Al
     path_sscha = path_file + "others/sscha_restart/"
     yaml = path_sscha + "sscha_results.yaml"
     fc2hdf5 = path_sscha + "fc2.hdf5"

@@ -9,21 +9,16 @@ from pypolymlp.calculator.sscha.harmonic_real import HarmonicReal
 from pypolymlp.calculator.sscha.sscha_core import SSCHACore
 from pypolymlp.calculator.sscha.sscha_params import SSCHAParams
 from pypolymlp.calculator.utils.fc_utils import load_fc2_hdf5
-from pypolymlp.core.interface_vasp import Poscar
 from pypolymlp.utils.phonopy_utils import phonopy_cell_to_structure
 
 cwd = Path(__file__).parent
 path_file = str(cwd) + "/files/"
 
-poscar = path_file + "poscars/POSCAR.fcc.Al"
-pot = path_file + "mlps/polymlp.yaml.gtinv.Al"
 
-unitcell = Poscar(poscar).structure
-size = (2, 2, 2)
-
-
-def test_harmonic_real():
+def test_harmonic_real(unitcell_mlp_Al):
     """Test HarmonicReal."""
+    unitcell, pot = unitcell_mlp_Al
+    size = (2, 2, 2)
     sscha_params = SSCHAParams(unitcell, size, pot=pot, temp=700, tol=0.003)
     sscha = SSCHACore(sscha_params, pot=pot)
 
