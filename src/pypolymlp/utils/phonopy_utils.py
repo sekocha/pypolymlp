@@ -8,9 +8,9 @@ import numpy as np
 import yaml
 from phonopy import Phonopy
 from phonopy.interface.vasp import VasprunxmlExpat
+from phonopy.physical_units import get_physical_units
 from phonopy.structure.atoms import PhonopyAtoms
 from phonopy.structure.symmetry import symmetrize_borns_and_epsilon
-from phonopy.units import Bohr, Hartree
 
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.core.data_format import PolymlpStructure
@@ -111,9 +111,11 @@ def get_nac_params(
         supercell_matrix=supercell_matrix,
         symprec=1e-4,
     )
+
+    units = get_physical_units()
     nac_params = {
         "born": borns_,
-        "factor": Hartree * Bohr,
+        "factor": units.Hartree * units.Bohr,
         "dielectric": epsilon_,
     }
     return nac_params
