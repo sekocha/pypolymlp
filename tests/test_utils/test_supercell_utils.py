@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 from pypolymlp.utils.supercell_utils import _is_diagonal, get_supercell
 
@@ -17,6 +18,7 @@ def test_is_diagonal():
     assert _is_diagonal(mat)
 
 
+@pytest.mark.filterwarnings("ignore:.*symmetries of supercell.*")
 def test_supercell(structure_rocksalt):
     """Test for supercell functions."""
     sup_mat = [[1, 0, 0], [0, 1, 0], [1, 0, 2]]
