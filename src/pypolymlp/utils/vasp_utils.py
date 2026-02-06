@@ -183,7 +183,11 @@ class ElectronProperties:
 
     def _calc_df_dT(self, epsilon: np.array, mu: float, T: int) -> float:
         """Calculate df/dT at temperature T."""
-        from phonopy.units import Kb
+
+        from phonopy.physical_units import get_physical_units
+
+        units = get_physical_units()
+        Kb = units.Kb
 
         de = (epsilon - mu) / (Kb * T)
         de = np.where(de < 100, de, 100.0)  # To avoid overflow
