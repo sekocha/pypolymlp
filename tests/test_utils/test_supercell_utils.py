@@ -5,7 +5,11 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from pypolymlp.utils.supercell_utils import _is_diagonal, get_supercell
+from pypolymlp.utils.supercell_utils import (
+    _is_diagonal,
+    get_supercell,
+    get_supercell_size,
+)
 
 cwd = Path(__file__).parent
 
@@ -73,3 +77,9 @@ def test_supercell(structure_rocksalt):
     sup = get_supercell(structure_rocksalt, [[1, 0, 0], [0, 1, 0], [0, 0, 2]])
     np.testing.assert_equal(sup.n_atoms, [8, 8])
     np.testing.assert_allclose(sup.positions.T, positions_true)
+
+
+def test_get_supercell_size():
+    """Test get_supercell_size."""
+    assert get_supercell_size([2, 3, 4]) == 24
+    assert get_supercell_size(np.eye(3) * 2) == 8

@@ -6,12 +6,13 @@ from typing import Optional
 
 import numpy as np
 import yaml
-from scipy.special.orthogonal import p_roots
+from scipy.special import p_roots
 
 from pypolymlp.calculator.compute_phonon import calculate_harmonic_properties_from_fc2
 from pypolymlp.calculator.md.ase_md import IntegratorASE
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.units import EVtoKJmol
+from pypolymlp.utils.supercell_utils import get_supercell_size
 
 
 def get_p_roots(n: int = 10, a: float = -1.0, b: float = 1.0):
@@ -51,7 +52,7 @@ def calculate_fc2_free_energy(
         mesh=mesh,
         temperatures=temperature,
     )
-    n_unitcell = np.linalg.det(supercell_matrix)
+    n_unitcell = get_supercell_size(supercell_matrix)
     ref_free_energy = tp_dict["free_energy"][0] * n_unitcell / EVtoKJmol
     return ref_free_energy
 

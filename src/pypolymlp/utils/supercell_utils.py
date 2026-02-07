@@ -1,6 +1,7 @@
 """Utility functions for generating supercell."""
 
 import copy
+from typing import Union
 
 import numpy as np
 
@@ -82,3 +83,13 @@ def _get_supercell_diagonal(
     sup.positions = (positions_new / size).T
     sup.positions = _refine_positions(sup.positions)
     return sup
+
+
+def get_supercell_size(supercell_matrix: Union[np.array, list, tuple]):
+    """Return number of unitcells from supercell matrix or its diagonal elements."""
+    mat = np.array(supercell_matrix)
+    if mat.size == 3:
+        return np.prod(supercell_matrix)
+    elif mat.shape == (3, 3):
+        return int(round(np.linalg.det(supercell_matrix)))
+    raise RuntimeError("Inappropriate supercell matrix.")
