@@ -1,15 +1,10 @@
 """Tests of ASE calculator using polymlp."""
 
-from pathlib import Path
-
 import numpy as np
 import pytest
 from ase.build import bulk
 
 from pypolymlp.calculator.utils.ase_calculator import PolymlpASECalculator
-
-cwd = Path(__file__).parent
-path_file = str(cwd) + "/files/"
 
 atoms_fcc = bulk("Al", "fcc", a=4.03)
 
