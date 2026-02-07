@@ -88,7 +88,7 @@ class PolymlpFC2ASECalculator(Calculator):
 
     def calculate(
         self,
-        atoms: Optional[Atoms] = None,
+        atoms: Atoms,
         properties: tuple = ("energy", "forces"),
         system_changes: tuple = ALL_CHANGES,
     ):
@@ -138,15 +138,15 @@ class PolymlpFC2ASECalculator(Calculator):
         """Return alpha."""
         return self._alpha
 
-    @property
-    def static_energy(self):
-        """Return potential energy of structure with displacements."""
-        return self._static_energy
-
     @alpha.setter
     def alpha(self, _alpha):
         """Set alpha."""
         self._alpha = _alpha
+
+    @property
+    def static_energy(self):
+        """Return potential energy of structure with displacements."""
+        return self._static_energy
 
 
 class PolymlpRefASECalculator(Calculator):
@@ -212,7 +212,7 @@ class PolymlpRefASECalculator(Calculator):
     def calculate(
         self,
         atoms: Optional[Atoms] = None,
-        properties: tuple = ("energy", "forces"),
+        properties: tuple = ("energy", "forces", "stress"),
         system_changes: tuple = ALL_CHANGES,
     ):
         """Calculate energy, force, and stress using `pypolymlp`.
@@ -300,9 +300,9 @@ class PolymlpGeneralRefASECalculator(Calculator):
         properties_ref: Properties object for reference state.
 
         alpha_ref: Mixing parameter for defining reference state.
-            E = alpha * E_polymlp_ref + (1 - alpha) * E_fc2
+            E = alpha * E_polymlp_ref + (1 - alpha_ref) * E_fc2
         alpha_final: Mixing parameter for defining final state.
-            E = alpha * E_polymlp_final + (1 - alpha) * E_fc2
+            E = alpha * E_polymlp_final + (1 - alpha_final) * E_fc2
         alpha: Mixing parameter.
             E = alpha * E_final + (1 - alpha) * E_ref
         """

@@ -56,7 +56,7 @@ class PolymlpASECalculator(Calculator):
 
     def calculate(
         self,
-        atoms: Optional[Atoms] = None,
+        atoms: Atoms,
         properties: tuple = ("energy", "forces", "stress"),
         system_changes: tuple = ALL_CHANGES,
     ):
