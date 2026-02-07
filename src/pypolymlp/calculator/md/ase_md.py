@@ -50,13 +50,11 @@ class IntegratorASE:
         self._displacements = None
         self._average_displacement = None
 
-        # Required for TI.
-        # delta_energies_10: U - U_ref
+        # Required for TI. delta_energies_10: U - U_ref
         self._delta_energies_10 = None
         self._average_delta_energy_10 = None
 
-        # Required for free energy perturbation.
-        # delta_energies_1a: U - U_alpha
+        # Required for free energy perturbation. delta_energies_1a: U - U_alpha
         self._delta_energies_1a = None
         self._average_delta_energy_1a = None
         self._free_energy_perturb = None
@@ -342,7 +340,10 @@ class IntegratorASE:
     @property
     def static_energy(self):
         """Return static energy."""
-        return self.calculator.static_energy
+        try:
+            return self.calculator.static_energy
+        except:
+            return None
 
     @property
     def heat_capacity(self):
@@ -372,11 +373,15 @@ class IntegratorASE:
     @property
     def delta_energies_10(self):
         """Return U(alpha) - U(ref) in eV/supercell."""
+        if self._delta_energies_10 is None:
+            return None
         return np.array(self._delta_energies_10)
 
     @property
     def delta_energies_1a(self):
         """Return U - U(alpha) in eV/supercell."""
+        if self._delta_energies_1a is None:
+            return None
         return np.array(self._delta_energies_1a)
 
     @property
