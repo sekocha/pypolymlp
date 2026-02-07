@@ -3,6 +3,8 @@
 import os
 from pathlib import Path
 
+import pytest
+
 from pypolymlp.api.pypolymlp_md import PypolymlpMD, run_thermodynamic_integration
 
 cwd = Path(__file__).parent
@@ -194,3 +196,37 @@ def test_thermodynamic_integration():
     os.remove("tmp_ti.yaml")
     assert md.total_free_energy is not None
     assert md.total_free_energy_order1 is not None
+    assert md.reference_free_energy is not None
+    assert md.free_energy is not None
+    assert md.free_energy_order1 is None
+    assert md.delta_heat_capacity is None
+
+
+def test_thermodynamic_integration_use_ref():
+    """Test thermodynamic integration."""
+    md = run_thermodynamic_integration(
+        pot=pot,
+        pot_ref=pot,
+        poscar=poscar,
+        supercell_size=(1, 1, 1),
+        fc2hdf5=fc2hdf5,
+        n_alphas=3,
+        max_alpha=1.0,
+        temperature=700,
+        n_eq=2,
+        n_steps=3,
+        heat_capacity=False,
+        filename="tmp_ti.yaml",
+        verbose=True,
+    )
+    os.remove("tmp_ti.yaml")
+    assert md.total_free_energy is not None
+    assert md.total_free_energy_order1 is not None
+    assert md.reference_free_energy is not None
+    assert md.free_energy is not None
+    assert md.free_energy_order1 is not None
+    assert md.delta_heat_capacity is None
+
+    assert md.total_free_energy == pytest.approx(md.total_free_energy_order1)
+    assert md.free_energy == pytest.approx(0.0)
+    assert md.free_energy_order1 == pytest.approx(0.0)
