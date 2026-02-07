@@ -16,8 +16,8 @@ from pypolymlp.calculator.md.md_utils import (
     save_thermodynamic_integration_yaml,
 )
 from pypolymlp.calculator.properties import Properties
-from pypolymlp.calculator.utils.ase_calculator import (
-    PolymlpASECalculator,
+from pypolymlp.calculator.utils.ase_calculator import PolymlpASECalculator
+from pypolymlp.calculator.utils.ase_calculator_ref import (
     PolymlpFC2ASECalculator,
     PolymlpGeneralRefASECalculator,
     PolymlpRefASECalculator,
