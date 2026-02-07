@@ -30,7 +30,7 @@ from pypolymlp.calculator.utils.fc_utils import load_fc2_hdf5
 from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
 from pypolymlp.core.interface_vasp import Poscar
 from pypolymlp.core.units import Avogadro, Kb
-from pypolymlp.utils.structure_utils import supercell_diagonal
+from pypolymlp.utils.structure_utils import supercell
 
 
 # TODO: Implement Nose-Hoover-chain thermostat.
@@ -279,12 +279,18 @@ class PypolymlpMD:
         return self
 
     def set_supercell(self, size: tuple):
-        """Set supercell from unitcell."""
+        """Set supercell from unitcell.
+
+        Parameter
+        ---------
+        size: Supercell size with three elements.
+              Diagonal elements of supercell matrix.
+        """
         if self._unitcell is None:
             raise RuntimeError("Unitcell not found.")
         if len(size) != 3:
             raise RuntimeError("Supercell size is not equal to 3.")
-        self._supercell = supercell_diagonal(self._unitcell, size)
+        self._supercell = supercell(self._unitcell, size)
         self._supercell_ase = structure_to_ase_atoms(self._supercell)
         self._supercell_matrix = np.diag(size)
         return self
