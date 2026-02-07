@@ -241,9 +241,9 @@ class PypolymlpMD:
 
         fc2hdf5: FC2 HDF file.
         alpha_ref: Mixing parameter for defining reference state.
-            E = alpha * E_polymlp_ref + (1 - alpha) * E_fc2
+            E = alpha * E_polymlp_ref + (1 - alpha_ref) * E_fc2
         alpha_final: Mixing parameter for defining final state.
-            E = alpha * E_polymlp_final + (1 - alpha) * E_fc2
+            E = alpha * E_polymlp_final + (1 - alpha_final) * E_fc2
         alpha: Mixing parameter.
             E = alpha * E_final + (1 - alpha) * E_ref
         """

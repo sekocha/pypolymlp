@@ -75,4 +75,51 @@ def test_md_use_fc2_ref():
     os.remove("tmp.dat")
     os.remove("tmp.yaml")
 
-    #     print("Potential:", args.fc2, flush=True)
+
+def test_md_use_polymlp_ref():
+    """Test MD calculations from polymlp using API."""
+    md = PypolymlpMD(verbose=True)
+    md.load_poscar(poscar)
+    md.set_supercell((1, 1, 1))
+    md.set_ase_calculator_with_reference(pot=pot, pot_ref=pot, alpha=0.5)
+    md.run_md_nvt(
+        thermostat="Langevin",
+        temperature=700,
+        n_eq=2,
+        n_steps=3,
+        interval_save_forces=1,
+        interval_save_trajectory=1,
+        interval_log=1,
+        logfile="tmp.dat",
+    )
+    md.save_yaml(filename="tmp.yaml")
+    os.remove("tmp.dat")
+    os.remove("tmp.yaml")
+
+
+def test_md_use_general_ref():
+    """Test MD calculations from polymlp using API."""
+    md = PypolymlpMD(verbose=True)
+    md.load_poscar(poscar)
+    md.set_supercell((1, 1, 1))
+    md.set_ase_calculator_with_general_reference(
+        pot_final=pot,
+        pot_ref=pot,
+        fc2hdf5=fc2hdf5,
+        alpha=0.5,
+        alpha_final=0.2,
+        alpha_ref=0.3,
+    )
+    md.run_md_nvt(
+        thermostat="Langevin",
+        temperature=700,
+        n_eq=2,
+        n_steps=3,
+        interval_save_forces=1,
+        interval_save_trajectory=1,
+        interval_log=1,
+        logfile="tmp.dat",
+    )
+    md.save_yaml(filename="tmp.yaml")
+    os.remove("tmp.dat")
+    os.remove("tmp.yaml")
