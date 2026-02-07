@@ -27,6 +27,7 @@ from pypolymlp.calculator.utils.ase_utils import (
     structure_to_ase_atoms,
 )
 from pypolymlp.calculator.utils.fc_utils import load_fc2_hdf5
+from pypolymlp.calculator.utils.io_utils import print_pot
 from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
 from pypolymlp.core.interface_vasp import Poscar
 from pypolymlp.core.units import Avogadro, Kb
@@ -738,7 +739,10 @@ class PypolymlpMD:
     @property
     def alpha(self):
         """Return mixing parameter for two states."""
-        return self._calculator.alpha
+        try:
+            return self._calculator.alpha
+        except:
+            return None
 
     @alpha.setter
     def alpha(self, val_alpha: float):
@@ -970,12 +974,9 @@ def run_thermodynamic_integration(
         with open(filename, "a") as f:
             print(file=f)
             print("free_energy_perturbation_between_polymlps:", file=f)
-            print("  polymlp_reference:", file=f)
-            for p in pot_ref:
-                print("  -", os.path.abspath(p), file=f)
-            print("  polymlp:", file=f)
-            for p in pot:
-                print("  -", os.path.abspath(p), file=f)
+
+            print_pot(pot_ref, tag="polymlp_reference", indent=2, file=f)
+            print_pot(pot, tag="polymlp", indent=2, file=f)
             print("  alpha:              ", 1.0, file=f)
             print("  free_energy_perturb:", fep, file=f)
             print("  free_energy:        ", free_energy, file=f)

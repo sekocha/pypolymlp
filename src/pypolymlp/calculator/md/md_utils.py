@@ -10,6 +10,7 @@ from scipy.special import p_roots
 
 from pypolymlp.calculator.compute_phonon import calculate_harmonic_properties_from_fc2
 from pypolymlp.calculator.md.ase_md import IntegratorASE
+from pypolymlp.calculator.utils.io_utils import print_pot
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.units import EVtoKJmol
 from pypolymlp.utils.supercell_utils import get_supercell_size
@@ -101,9 +102,8 @@ def save_thermodynamic_integration_yaml(
         print("  n_steps_eq: ", integrator._n_eq, file=f)
         print("  n_steps:    ", integrator._n_steps, file=f)
         print("  references: ", os.path.abspath(reference["fc2_file"]), file=f)
-        print("  polymlp:    ", file=f)
-        for pot in reference["polymlp"]:
-            print("  - ", os.path.abspath(pot), file=f)
+
+        print_pot(reference["polymlp"], tag="polymlp", indent=2, file=f)
         print(file=f)
 
         delta_entropy, de = 0.0, 0.0
