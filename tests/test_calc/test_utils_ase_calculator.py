@@ -6,8 +6,6 @@ from ase.build import bulk
 
 from pypolymlp.calculator.utils.ase_calculator import PolymlpASECalculator
 
-atoms_fcc = bulk("Al", "fcc", a=4.03)
-
 
 def test_PolymlpASECalculator(unitcell_mlp_Al):
     """Test PolymlpASECalculator."""
@@ -16,6 +14,7 @@ def test_PolymlpASECalculator(unitcell_mlp_Al):
     calc = PolymlpASECalculator(require_mlp=False)
     calc.set_calculator(pot=pot)
 
+    atoms_fcc = bulk("Al", "fcc", a=4.03)
     calc.calculate(atoms_fcc)
     assert calc.results["energy"] == pytest.approx(-3.4276371758140347)
     assert np.sum(calc.results["forces"]) == pytest.approx(0.0)

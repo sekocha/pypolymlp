@@ -38,14 +38,8 @@ class IntegratorASE:
         self._heat_capacity = None
         self._heat_capacity_eV = None
 
-        if not hasattr(calc, "_use_reference") or not calc._use_reference:
-            self._use_reference = False
-        else:
-            self._use_reference = True
-        if not hasattr(calc, "_use_fc2") or not calc._use_fc2:
-            self._use_fc2 = False
-        else:
-            self._use_fc2 = True
+        self._use_reference = getattr(calc, "_use_reference", False)
+        self._use_fc2 = getattr(calc, "_use_fc2", False)
 
         self._temperature = None
         self._time_step = None
@@ -53,21 +47,19 @@ class IntegratorASE:
         self._n_steps = None
         self._thermostat = None
 
-        if self._use_fc2:
-            self._displacements = None
-            self._average_displacement = None
+        self._displacements = None
+        self._average_displacement = None
 
-        if self._use_reference:
-            # Required for TI.
-            # delta_energies_10: U - U_ref
-            self._delta_energies_10 = None
-            self._average_delta_energy_10 = None
+        # Required for TI.
+        # delta_energies_10: U - U_ref
+        self._delta_energies_10 = None
+        self._average_delta_energy_10 = None
 
-            # Required for free energy perturbation.
-            # delta_energies_1a: U - U_alpha
-            self._delta_energies_1a = None
-            self._average_delta_energy_1a = None
-            self._free_energy_perturb = None
+        # Required for free energy perturbation.
+        # delta_energies_1a: U - U_alpha
+        self._delta_energies_1a = None
+        self._average_delta_energy_1a = None
+        self._free_energy_perturb = None
 
     def activate_MDLogger(
         self,

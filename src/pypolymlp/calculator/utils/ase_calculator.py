@@ -44,6 +44,8 @@ class PolymlpASECalculator(Calculator):
             properties=properties,
             require_mlp=require_mlp,
         )
+        self._use_reference = False
+        self._use_fc2 = False
 
     def set_calculator(
         self,
