@@ -110,7 +110,10 @@ def parse_errors_costs(dirs: list, key: str, verbose: bool = False):
             time36 = yml_data["costs"]["openmp"]
             name = dir_pot.split("/")[-1]
             if system is None:
-                system = yml_data["system"]
+                try:
+                    system = yml_data["system"]
+                except:
+                    pass
             d_array.append([time1, time36, rmse_e, rmse_f, name, abspath])
 
     d_array = np.array(sorted(d_array, key=lambda x: x[0]))

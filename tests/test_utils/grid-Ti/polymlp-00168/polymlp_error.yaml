@@ -1,0 +1,70 @@
+units:
+  energy: meV/atom
+  force:  eV/angstrom
+  stress: meV/atom
+
+prediction_errors:
+- dataset: /home/seko/mlip/1-unary/Ti/dataset-2024/3-dft/train_vasprun_0/*.polymlp
+  rmse_energy:  33.99583077951482
+  rmse_force:   0.1332357217659185
+  rmse_stress:  129.17066777074635
+
+- dataset: /home/seko/mlip/1-unary/Ti/dataset-2024/3-dft/train_vasprun_1/*.polymlp
+  rmse_energy:  26.374046396960672
+  rmse_force:   0.19689727779033325
+  rmse_stress:  130.78523497761174
+
+- dataset: /home/seko/mlip/1-unary/Ti/dataset-2024/3-dft/train_vasprun_2/*.polymlp
+  rmse_energy:  19.422721759185727
+  rmse_force:   0.2572781976913196
+  rmse_stress:  149.64302174037306
+
+- dataset: /home/seko/mlip/1-unary/Ti/dataset-2024/3-dft/train_vasprun_3/*.polymlp
+  rmse_energy:  24.524094356186218
+  rmse_force:   0.3572070199074066
+  rmse_stress:  241.40560037476325
+
+- dataset: /home/seko/mlip/1-unary/Ti/dataset-2024/3-dft/train_vasprun_4/*.polymlp
+  rmse_energy:  37.89924532058812
+  rmse_force:   0.50844603279738
+  rmse_stress:  327.9289948394706
+
+- dataset: /home/seko/mlip/1-unary/Ti/dataset-2024/3-dft/train_vasprun_append/*.polymlp
+  rmse_energy:  14.530144759640237
+  rmse_force:   0.2775189393077375
+  rmse_stress:  219.6893325451223
+
+- dataset: /home/seko/mlip/1-unary/Ti/dataset-2024/3-dft/train_vasprun_high_woforce1/*.polymlp
+  rmse_energy:  270.23521792564765
+  rmse_force:   0.8483282599893147
+  rmse_stress:  686.3462078339331
+
+- dataset: /home/seko/mlip/1-unary/Ti/dataset-2024/3-dft/train_vasprun_high_woforce2/*.polymlp
+  rmse_energy:  331.17821877201794
+  rmse_force:   21.765889995903656
+  rmse_stress:  1224.5817650725683
+
+- dataset: /home/seko/mlip/1-unary/Ti/dataset-2024/3-dft/test_vasprun_high/*.polymlp
+  rmse_energy:  60.55375596969877
+  rmse_force:   0.38361220193914103
+  rmse_stress:  232.8589129734481
+
+- dataset: /home/seko/mlip/1-unary/Ti/dataset-2024/3-dft/test_vasprun_high_woforce1/*.polymlp
+  rmse_energy:  277.07751955071205
+  rmse_force:   0.6156780058254737
+  rmse_stress:  731.6698417524185
+
+- dataset: /home/seko/mlip/1-unary/Ti/dataset-2024/3-dft/test_vasprun_high_woforce2/*.polymlp
+  rmse_energy:  317.1872900461343
+  rmse_force:   22.254384706285112
+  rmse_stress:  986.0425128219437
+
+- dataset: /home/seko/mlip/1-unary/Ti/dataset-2024/3-dft/test_vasprun_low/*.polymlp
+  rmse_energy:  17.624086494884477
+  rmse_force:   0.19068937271704056
+  rmse_stress:  141.25550309563678
+
+- dataset: /home/seko/mlip/1-unary/Ti/dataset-2024/3-dft/test_vasprun_selected/*.polymlp
+  rmse_energy:  14.378048163568424
+  rmse_force:   0.10683518482111765
+  rmse_stress:  90.889835970905

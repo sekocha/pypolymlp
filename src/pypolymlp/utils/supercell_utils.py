@@ -78,7 +78,10 @@ def _get_supercell_diagonal(
     sup.volume = st.volume * n_expand
     sup.supercell_matrix = supercell_matrix
 
-    trans_all = np.indices(size).reshape(3, -1).T
+    # Loop sequence: z -> y -> x, which is compatible with phonopy
+    nx, ny, nz = size
+    trans_all = np.indices((nz, ny, nx)).reshape(3, -1).T
+    trans_all = trans_all[:, [2, 1, 0]]
     positions_new = (st.positions.T[:, None] + trans_all[None, :]).reshape((-1, 3))
     sup.positions = (positions_new / size).T
     sup.positions = _refine_positions(sup.positions)
