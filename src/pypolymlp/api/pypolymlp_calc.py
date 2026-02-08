@@ -56,6 +56,7 @@ class PypolymlpCalc:
         self._unitcell = None
         self._poscar = None
 
+        self._features = None
         self._elastic = None
         self._eos = None
         self._phonon = None
@@ -73,9 +74,7 @@ class PypolymlpCalc:
         -------
         structures: list[PolymlpStructure], Structures.
         """
-        if isinstance(poscars, str):
-            self._poscar = poscars
-            poscars = [poscars]
+        self._poscar = poscars
         self.structures = parse_structures_from_poscars(poscars)
         return self.structures
 
@@ -86,8 +85,6 @@ class PypolymlpCalc:
         -------
         structures: list[PolymlpStructure], Structures.
         """
-        if isinstance(vaspruns, str):
-            vaspruns = [vaspruns]
         self.structures = parse_structures_from_vaspruns(vaspruns)
         return self.structures
 
@@ -610,22 +607,34 @@ class PypolymlpCalc:
     @property
     def energies(self) -> np.ndarray:
         """Return energies from the final calculation."""
-        return self._prop.energies
+        try:
+            return self._prop.energies
+        except:
+            return None
 
     @property
     def forces(self) -> list:
         """Return forces from the final calculation."""
-        return self._prop.forces
+        try:
+            return self._prop.forces
+        except:
+            return None
 
     @property
     def stresses(self) -> np.ndarray:
         """Return stress tensors from the final calculation."""
-        return self._prop.stresses
+        try:
+            return self._prop.stresses
+        except:
+            return None
 
     @property
     def stresses_gpa(self) -> np.ndarray:
         """Return stress tensors in GPa from the final calculation."""
-        return self._prop.stresses_gpa
+        try:
+            return self._prop.stresses_gpa
+        except:
+            return None
 
     @property
     def structures(self) -> list[PolymlpStructure]:
@@ -635,6 +644,8 @@ class PypolymlpCalc:
     @property
     def first_structure(self) -> PolymlpStructure:
         """Return the first structure for the final calculation."""
+        if self._structures is None:
+            return None
         return self._structures[0]
 
     @property
@@ -672,7 +683,10 @@ class PypolymlpCalc:
     @property
     def elastic_constants(self) -> np.ndarray:
         """Return elastic constants."""
-        return self._elastic.elastic_constants
+        try:
+            return self._elastic.elastic_constants
+        except:
+            return None
 
     @property
     def eos_fit_data(self):
@@ -682,7 +696,10 @@ class PypolymlpCalc:
         -------
         equilibrium energy, equilibrium volume, bulk modulus
         """
-        return (self._eos._e0, self._eos._v0, self._eos._b0)
+        try:
+            return (self._eos._e0, self._eos._v0, self._eos._b0)
+        except:
+            return None
 
     @property
     def eos_curve_data(self):
@@ -693,7 +710,10 @@ class PypolymlpCalc:
 
         equilibrium energy, equilibrium volume, bulk modulus
         """
-        return (self._eos._eos_data, self._eos._eos_fit_data)
+        try:
+            return (self._eos._eos_data, self._eos._eos_fit_data)
+        except:
+            return None
 
     @property
     def go_data(self):
@@ -705,34 +725,55 @@ class PypolymlpCalc:
         n_iter: Number of iterations required for convergence.
         success: Return True if optimization finished successfully.
         """
-        return (self._go.energy, self._go.n_iter, self._go.success)
+        try:
+            return (self._go.energy, self._go.n_iter, self._go.success)
+        except:
+            return None
 
     @property
     def instance_phonopy(self):
         """Return phonopy instance."""
-        return self._phonon.phonopy
+        try:
+            return self._phonon.phonopy
+        except:
+            return None
 
     @property
     def phonon_dos(self):
         """Return phonon DOS."""
-        return self._phonon.total_dos
+        try:
+            return self._phonon.total_dos
+        except:
+            return None
 
     @property
     def is_imaginary(self):
         """Return if phonon modes exhibit imaginary frequencies."""
-        return self._phonon.is_imaginary
+        try:
+            return self._phonon.is_imaginary
+        except:
+            return None
 
     @property
     def temperatures(self):
         """Return tempeartures."""
-        return self._qha._temperatures[:-1]
+        try:
+            return self._qha._temperatures[:-1]
+        except:
+            return None
 
     @property
     def bulk_modulus_temperature(self):
         """Return bulk modulus with respect to temperature."""
-        return self._qha.bulk_modulus_temperature
+        try:
+            return self._qha.bulk_modulus_temperature
+        except:
+            return None
 
     @property
     def thermal_expansion(self):
         """Return thermal_expansion with respect to temperature."""
-        return self._qha.thermal_expansion
+        try:
+            return self._qha.thermal_expansion
+        except:
+            return None

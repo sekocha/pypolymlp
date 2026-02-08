@@ -1,4 +1,4 @@
-"""Tests of TiAl structure."""
+"""Tests of property calculations using API in Ti-Al."""
 
 from pathlib import Path
 
