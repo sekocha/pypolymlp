@@ -6,9 +6,7 @@ from pathlib import Path
 
 import numpy as np
 
-from pypolymlp.utils.grid_search.optimal import (  # find_convex_mlps,; parse_errors_costs,; write_yaml,
-    find_optimal_mlps,
-)
+from pypolymlp.utils.grid_optimal import find_optimal_mlps
 
 cwd = Path(__file__).parent
 path_file = str(cwd) + "/grid-Ti/"

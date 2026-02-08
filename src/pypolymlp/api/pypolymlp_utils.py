@@ -7,7 +7,7 @@ import numpy as np
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.postproc.count_time import PolymlpCost
 from pypolymlp.utils.dataset_auto_divide import auto_divide_vaspruns
-from pypolymlp.utils.grid_search.optimal import find_optimal_mlps
+from pypolymlp.utils.grid_optimal import find_optimal_mlps
 from pypolymlp.utils.kim_utils import convert_polymlp_to_kim_model
 from pypolymlp.utils.vasp_utils import (
     load_electronic_properties_from_vasprun,
