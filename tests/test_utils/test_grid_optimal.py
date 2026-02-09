@@ -9,7 +9,7 @@ import numpy as np
 from pypolymlp.utils.grid_optimal import find_optimal_mlps
 
 cwd = Path(__file__).parent
-path_file = str(cwd) + "/grid-Ti/"
+path_file = str(cwd) + "/../files/grid-Ti/"
 polymlp_dirs = glob.glob(path_file + "polymlp-*")
 key = "test_vasprun_low"
 
