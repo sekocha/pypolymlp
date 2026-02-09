@@ -10,7 +10,7 @@ from pypolymlp.core.dataset import DatasetList
 from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
 
 cwd = Path(__file__).parent
-path_files = str(cwd) + "/../../files/"
+path_files = str(cwd) + "/../files/"
 
 
 def test_attrs():

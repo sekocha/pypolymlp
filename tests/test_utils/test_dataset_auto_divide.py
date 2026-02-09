@@ -83,7 +83,7 @@ def test_split_three_datasets(regdata_mp_149):
 
 def test_auto_divide_vaspruns():
     """Test auto_divide_vaspruns."""
-    path = str(cwd) + "/../test_api/test_mlp_dev/data-vasp-MgO/vaspruns/test1/"
+    path = str(cwd) + "/../test_mlp_dev_api/data-vasp-MgO/vaspruns/test1/"
     vaspruns = sorted(glob.glob(path + "vasprun-*.xml.*"))
     auto_divide_vaspruns(vaspruns, path_output="./tmp", verbose=True)
     shutil.rmtree("tmp")
