@@ -26,6 +26,7 @@ def generate_kim_files(
     contributor_id: Optional[str] = None,
     developer: Optional[tuple] = None,
     maintainer_id: Optional[str] = None,
+    citations: Optional[list[dict]] = None,
 ):
     """Generate potential model files required for KIM model."""
     mlp_files = sorted(glob.glob(path + "polymlp.yaml*"))
@@ -100,14 +101,31 @@ def generate_kim_files(
         if maintainer_id is not None:
             print(' "maintainer-id" "' + maintainer_id + '"', file=f)
 
+        if citations is not None:
+            for icite, cite in enumerate(citations):
+                for ikey, (key, val) in enumerate(cite.items()):
+                    key_str = '"' + key + '"'
+                    val_str = '"' + val + '"'
+                    if icite == 0 and ikey == 0:
+                        print(' "source-citations" [{' + key_str, val_str, file=f)
+                    elif ikey == 0:
+                        print("                     {" + key_str, val_str, file=f)
+                    elif icite == len(citations) - 1 and ikey == len(cite) - 1:
+                        print(
+                            "                      " + key_str, val_str + "}]", file=f
+                        )
+                    elif ikey == len(cite) - 1:
+                        print("                      " + key_str, val_str + "}", file=f)
+                    else:
+                        print("                      " + key_str, val_str, file=f)
+
         print(' "extended-id" "' + project + '"', file=f)
         print(' "kim-api-version" "2.3"', file=f)
         print(' "model-driver" "' + model_driver + '"', file=f)
         print(' "potential-type" "polymlp"', file=f)
         print(' "publication-year" "' + str(polymlp_year) + '"', file=f)
         print(' "species"', np.array(elements), file=f)
-        print(' "title" "' + title + '"', file=f)
-        print(" }", file=f)
+        print(' "title" "' + title + '"}', file=f)
 
     return project
 
