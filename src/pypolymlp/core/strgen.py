@@ -27,7 +27,7 @@ def write_structures(
 
     print("structures:", file=f)
     for i, st in enumerate(structures):
-        filename = "poscars/poscar-" + str(i + 1).zfill(5)
+        filename = path + "/poscar-" + str(i + 1).zfill(5)
         header = "pypolymlp: random-" + str(i + 1).zfill(5)
         write_poscar_file(st, filename=filename, header=header)
         print("- id:", str(i + 1).zfill(5), file=f)
