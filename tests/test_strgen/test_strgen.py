@@ -7,7 +7,9 @@ from pathlib import Path
 import numpy as np
 
 from pypolymlp.api.pypolymlp_str import PypolymlpStructureGenerator
+from pypolymlp.core.interface_vasp import Poscar
 from pypolymlp.core.strgen import (
+    StructureGenerator,
     set_structure_id,
     set_volume_eps_array,
     write_structures,
@@ -81,14 +83,7 @@ def test_set_volume_eps_array():
     np.testing.assert_allclose(eps_array, true)
 
 
-# def test_run_density_algorithm():
-#     """Test run_density_algorithm."""
-#     polymlp = PypolymlpStructureGenerator(verbose=True)
-#     polymlp.load_poscars([file_rs, file_wz])
-#     polymlp.build_supercells_auto()
-#     polymlp.run_density_algorithm(n_samples=2, vol_algorithm="low_auto")
-#     polymlp.run_density_algorithm(n_samples=2, vol_algorithm="high_auto")
-#     assert polymlp.n_samples == 8
-#
-#     assert len(polymlp.sample_structures[0].elements) == 64
-#     assert len(polymlp.sample_structures[-1].elements) == 72
+def test_StructureGenerator():
+    """Test StructureGenerator."""
+    unitcell = Poscar(file_wz).structure
+    _ = StructureGenerator(unitcell, natom_lb=50, natom_ub=150)
