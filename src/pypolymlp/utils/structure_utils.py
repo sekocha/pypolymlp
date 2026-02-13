@@ -71,10 +71,12 @@ def multiple_isotropic_volume_changes(
     st: PolymlpStructure,
     eps_min: float = 0.7,
     eps_max: float = 2.0,
+    eps_array: Optional[np.ndarray] = None,
     n_eps: float = 10,
 ):
     """Return structures with sequential isotropic volume changes."""
-    eps_array = np.linspace(eps_min, eps_max, n_eps)
+    if eps_array is None:
+        eps_array = np.linspace(eps_min, eps_max, n_eps)
     return [isotropic_volume_change(st, eps=eps) for eps in eps_array]
 
 

@@ -9,6 +9,7 @@ from pypolymlp.api.pypolymlp_str import PypolymlpStructureGenerator
 cwd = Path(__file__).parent
 path_file = str(cwd) + "/../files/"
 file_rs = path_file + "POSCAR-rocksalt"
+file_wz = path_file + "POSCAR-WZ"
 
 
 def test_run_const_displacements():
@@ -17,14 +18,16 @@ def test_run_const_displacements():
     polymlp.load_poscars(file_rs)
     polymlp.build_supercell(supercell_size=(2, 2, 2))
     polymlp.run_const_displacements(n_samples=2, distance=0.1)
+
+    polymlp.load_poscars([file_rs, file_wz])
+    polymlp.build_supercell(supercell_size=(2, 2, 2))
+    polymlp.run_const_displacements(n_samples=2, distance=0.1)
+
     polymlp.save_random_structures(path="tmp")
     os.remove("polymlp_str_samples.yaml")
     shutil.rmtree("tmp")
 
-    polymlp.load_poscars([file_rs, file_rs])
-    polymlp.build_supercell(supercell_size=(2, 2, 2))
-    polymlp.run_const_displacements(n_samples=2, distance=0.1)
-
+    assert len(polymlp.structures) == 2
     assert len(polymlp.sample_structures) == 6
     assert polymlp.n_samples == 6
 
@@ -42,7 +45,7 @@ def test_run_sequential_displacements():
     )
     assert polymlp.n_samples == 2
 
-    polymlp.load_structures_from_files(poscars=[file_rs, file_rs])
+    polymlp.load_structures_from_files(poscars=[file_rs, file_wz])
     polymlp.build_supercell(supercell_size=(2, 2, 2))
     polymlp.run_sequential_displacements(
         n_samples=2,
@@ -51,6 +54,9 @@ def test_run_sequential_displacements():
         n_volumes=3,
     )
     assert polymlp.n_samples == 14
+
+    assert len(polymlp.sample_structures[0].elements) == 64
+    assert len(polymlp.sample_structures[-1].elements) == 32
 
 
 def test_run_isotropic_volume_changes():
@@ -62,28 +68,35 @@ def test_run_isotropic_volume_changes():
     assert polymlp.n_samples == 6
 
     polymlp = PypolymlpStructureGenerator(verbose=True)
-    polymlp.load_poscars([file_rs, file_rs])
+    polymlp.load_poscars([file_rs, file_wz])
     polymlp.build_supercell(supercell_size=(2, 2, 2))
     polymlp.run_isotropic_volume_changes(n_samples=3, dense_equilibrium=True)
     assert polymlp.n_samples == 10
+
+    assert len(polymlp.sample_structures[0].elements) == 64
+    assert len(polymlp.sample_structures[-1].elements) == 32
 
 
 def test_run_standard_algorithm():
     """Test run_standard_algorithm."""
     polymlp = PypolymlpStructureGenerator(verbose=True)
-    polymlp.load_poscars([file_rs, file_rs])
+    polymlp.load_poscars([file_rs, file_wz])
     polymlp.build_supercells_auto()
     polymlp.run_standard_algorithm(n_samples=2, max_distance=1.0)
     assert polymlp.n_samples == 4
-    for st in polymlp.sample_structures:
-        assert len(st.elements) == 64
+
+    assert len(polymlp.sample_structures[0].elements) == 64
+    assert len(polymlp.sample_structures[-1].elements) == 72
 
 
 def test_run_density_algorithm():
     """Test run_density_algorithm."""
     polymlp = PypolymlpStructureGenerator(verbose=True)
-    polymlp.load_poscars([file_rs, file_rs])
+    polymlp.load_poscars([file_rs, file_wz])
     polymlp.build_supercells_auto()
     polymlp.run_density_algorithm(n_samples=2, vol_algorithm="low_auto")
     polymlp.run_density_algorithm(n_samples=2, vol_algorithm="high_auto")
     assert polymlp.n_samples == 8
+
+    assert len(polymlp.sample_structures[0].elements) == 64
+    assert len(polymlp.sample_structures[-1].elements) == 72

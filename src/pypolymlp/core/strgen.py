@@ -27,12 +27,14 @@ def write_structures(
 
     print("structures:", file=f)
     for i, st in enumerate(structures):
-        filename = path + "/poscar-" + str(i + 1).zfill(5)
-        header = "pypolymlp: random-" + str(i + 1).zfill(5)
-        write_poscar_file(st, filename=filename, header=header)
-        print("- id:", str(i + 1).zfill(5), file=f)
+        idx = str(i + 1).zfill(5)
+        print("- id:", idx, file=f)
         print("  base:", st.base, file=f)
         print("  mode:", st.mode, file=f)
+
+        filename = path + "/poscar-" + idx
+        header = "pypolymlp: random-" + idx
+        write_poscar_file(st, filename=filename, header=header)
 
     f.close()
 
@@ -43,6 +45,34 @@ def set_structure_id(structures: list[PolymlpStructure], poscar: str, mode: str)
         st.base = poscar
         st.mode = mode
     return structures
+
+
+def set_volume_eps_array(
+    n_samples: int = 30,
+    eps_min: float = 0.8,
+    eps_max: float = 2.0,
+    dense_equilibrium: bool = False,
+):
+    """Generate a sequence of ratios used to change volume."""
+    if not dense_equilibrium:
+        return np.linspace(eps_min, eps_max, n_samples)
+
+    interval_dense = 0.2 / (n_samples + 1)
+    if eps_min > 0.9:
+        raise RuntimeError("eps_min must be lower than 0.9.")
+    if eps_max < 1.1:
+        raise RuntimeError("eps_max must be higher than 1.1.")
+
+    dense_min = 0.9 + interval_dense
+    dense_max = 1.1 - interval_dense
+
+    eps_array1 = np.linspace(eps_min, 0.9, n_samples // 3)
+    eps_array2 = np.linspace(dense_min, dense_max, n_samples)
+    if n_samples // 3 == 1:
+        eps_array3 = [(1.1 + eps_max) / 2]
+    else:
+        eps_array3 = np.linspace(1.1, eps_max, n_samples // 3)
+    return np.concatenate([eps_array1, eps_array2, eps_array3])
 
 
 class StructureGenerator:

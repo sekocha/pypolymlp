@@ -8,7 +8,12 @@ import numpy as np
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.displacements import generate_random_const_displacements
 from pypolymlp.core.interface_vasp import parse_structures_from_poscars
-from pypolymlp.core.strgen import StructureGenerator, set_structure_id, write_structures
+from pypolymlp.core.strgen import (
+    StructureGenerator,
+    set_structure_id,
+    set_volume_eps_array,
+    write_structures,
+)
 from pypolymlp.utils.structure_utils import multiple_isotropic_volume_changes, supercell
 
 
@@ -117,7 +122,7 @@ class PypolymlpStructureGenerator:
                 n_samples=n_samples,
                 displacements=distance,
             )
-            structures = set_structure_id(structures, "single-str", "disp")
+            structures = set_structure_id(structures, st.name, "Displacement")
             self._sample_structures.extend(structures)
         return self
 
@@ -157,17 +162,15 @@ class PypolymlpStructureGenerator:
                 self.run_const_displacements(n_samples=1, distance=dis)
             return self
 
+        eps_array = np.linspace(eps_min, eps_max, num=n_volumes)
+        if self._verbose:
+            print("Volume ratios:", flush=True)
+            print(eps_array, flush=True)
+
         supercells_copied = copy.deepcopy(self._supercells)
         for st in supercells_copied:
-            if self._verbose:
-                print("Volume ratios:", flush=True)
-                print(np.linspace(eps_min, eps_max, num=n_volumes), flush=True)
-
             self._supercells = multiple_isotropic_volume_changes(
-                st,
-                eps_min=eps_min,
-                eps_max=eps_max,
-                n_eps=n_volumes,
+                st, eps_array=eps_array
             )
             for dis in distances:
                 self.run_const_displacements(n_samples=1, distance=dis)
@@ -194,63 +197,20 @@ class PypolymlpStructureGenerator:
         if self._supercells is None:
             raise RuntimeError("Set supercells at first.")
 
-        if not dense_equilibrium:
-            if self._verbose:
-                print("Volume ratios:", flush=True)
-                print(np.linspace(eps_min, eps_max, num=n_samples), flush=True)
+        eps_array = set_volume_eps_array(
+            n_samples=n_samples,
+            eps_min=eps_min,
+            eps_max=eps_max,
+            dense_equilibrium=dense_equilibrium,
+        )
+        if self._verbose:
+            print("Volume ratios:", flush=True)
+            print(eps_array, flush=True)
 
-            structures = []
-            for st in self._supercells:
-                structures.extend(
-                    multiple_isotropic_volume_changes(
-                        st,
-                        eps_min=eps_min,
-                        eps_max=eps_max,
-                        n_eps=n_samples,
-                    )
-                )
-        else:
-            interval_dense = 0.2 / (n_samples + 1)
-            if eps_min > 0.9:
-                raise RuntimeError("eps_min must be lower than 0.9.")
-            if eps_max < 1.1:
-                raise RuntimeError("eps_max must be higher than 1.1.")
-
-            dense_min = 0.9 + interval_dense
-            dense_max = 1.1 - interval_dense
-            if self._verbose:
-                print("Volume ratios:", flush=True)
-                print(np.linspace(eps_min, 0.9, num=n_samples // 3), flush=True)
-                print(np.linspace(dense_min, dense_max, num=n_samples), flush=True)
-                print(np.linspace(1.1, eps_max, num=n_samples // 3), flush=True)
-
-            structures_all = []
-            for st in self._supercells:
-                structures = multiple_isotropic_volume_changes(
-                    st,
-                    eps_min=eps_min,
-                    eps_max=0.9,
-                    n_eps=n_samples // 3,
-                )
-                structures_add = multiple_isotropic_volume_changes(
-                    st,
-                    eps_min=dense_min,
-                    eps_max=dense_max,
-                    n_eps=n_samples,
-                )
-                structures.extend(structures_add)
-                structures_add = multiple_isotropic_volume_changes(
-                    st,
-                    eps_min=1.1,
-                    eps_max=eps_max,
-                    n_eps=n_samples // 3,
-                )
-                structures.extend(structures_add)
-                structures_all.extend(structures)
-            structures = structures_all
-
-        structures = set_structure_id(structures, "single-str", "volume")
-        self._sample_structures.extend(structures)
+        for st in self._supercells:
+            structures = multiple_isotropic_volume_changes(st, eps_array=eps_array)
+            structures = set_structure_id(structures, st.name, "Volume")
+            self._sample_structures.extend(structures)
         return self
 
     def build_supercells_auto(self, max_natom: int = 150):
@@ -261,13 +221,8 @@ class PypolymlpStructureGenerator:
         max_natom: Maximum number of atoms in structures.
 
         """
-        if self._verbose:
-            print("Construct supercells", flush=True)
-
         self._strgen_instances = []
         for st in self._structures:
-            if self._verbose:
-                print(st.name, flush=True)
             gen = StructureGenerator(st, natom_ub=max_natom)
             self._strgen_instances.append(gen)
             if self._verbose:
@@ -301,7 +256,7 @@ class PypolymlpStructureGenerator:
                 max_disp=max_distance,
                 vol_ratio=1.0,
             )
-            structures = set_structure_id(structures, gen.name, "standard")
+            structures = set_structure_id(structures, gen.name, "Standard")
             self._sample_structures.extend(structures)
 
         return self
@@ -330,10 +285,10 @@ class PypolymlpStructureGenerator:
 
         if vol_algorithm == "low_auto":
             vol_lb, vol_ub = 1.1, 4.0
-            mode = "low density"
+            mode = "Low density"
         elif vol_algorithm == "high_auto":
             vol_lb, vol_ub = 0.6, 0.9
-            mode = "high density"
+            mode = "High density"
 
         for gen in self._strgen_instances:
             structures = gen.sample_density(
