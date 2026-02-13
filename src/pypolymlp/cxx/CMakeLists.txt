@@ -15,8 +15,17 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 if(NOT DEFINED CMAKE_CXX_FLAGS_RELEASE)
-    set(CMAKE_CXX_FLAGS_RELEASE "-O2 -Wno-deprecated -DNDEBUG")
+    set(
+        CMAKE_CXX_FLAGS_RELEASE
+        "-O2 -Wno-deprecated -Wno-undefined-var-template -DNDEBUG"
+    )
+else()
+    set(
+        CMAKE_CXX_FLAGS_RELEASE
+        "${CMAKE_CXX_FLAGS_RELEASE} -Wno-deprecated -Wno-undefined-var-template"
+    )
 endif()
+message(STATUS "CMAKE_CXX_FLAGS_RELEASE: ${CMAKE_CXX_FLAGS_RELEASE}")
 
 if(NOT DEFINED CMAKE_CXX_FLAGS_DEBUG)
     set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
@@ -70,22 +79,19 @@ set(SRC_FILES
     src/compute/model.cpp
     src/python/pybind11_mlp.cpp
     src/polymlp/polymlp_gtinv_data.cpp
-    src/polymlp/polymlp_gtinv_data_order1.cpp
-    src/polymlp/polymlp_gtinv_data_order2.cpp
     src/polymlp/polymlp_gtinv_data_order3.cpp
     src/polymlp/polymlp_gtinv_data_order4.cpp
     src/polymlp/polymlp_gtinv_data_order5.cpp
     src/polymlp/polymlp_gtinv_data_order6.cpp
-    src/polymlp/polymlp_gtinv_data_ver2.cpp
-    src/polymlp/polymlp_gtinv_data_ver2_order1.cpp
-    src/polymlp/polymlp_gtinv_data_ver2_order2.cpp
-    src/polymlp/polymlp_gtinv_data_ver2_order3.cpp
-    src/polymlp/polymlp_gtinv_data_ver2_order4.cpp
-    src/polymlp/polymlp_gtinv_data_ver2_order5.cpp
-    src/polymlp/polymlp_gtinv_data_ver2_order6.cpp
+    # src/polymlp/polymlp_gtinv_data_ver2.cpp
+    # src/polymlp/polymlp_gtinv_data_ver2_order1.cpp
+    # src/polymlp/polymlp_gtinv_data_ver2_order2.cpp
+    # src/polymlp/polymlp_gtinv_data_ver2_order3.cpp
+    # src/polymlp/polymlp_gtinv_data_ver2_order4.cpp
+    # src/polymlp/polymlp_gtinv_data_ver2_order5.cpp
+    # src/polymlp/polymlp_gtinv_data_ver2_order6.cpp
 )
 
-# add_library(libmlpcpp SHARED ${SRC_FILES})
 pybind11_add_module(libmlpcpp ${SRC_FILES})
 
 target_include_directories(libmlpcpp PRIVATE ${CMAKE_SOURCE_DIR}/src)
@@ -111,8 +117,3 @@ install(
     COMPONENT python
     LIBRARY DESTINATION ${CMAKE_SOURCE_DIR}/lib
 )
-# install(
-#     TARGETS libmlpcpp
-#     COMPONENT python
-#     LIBRARY DESTINATION .
-# )

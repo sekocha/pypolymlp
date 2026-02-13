@@ -31,7 +31,7 @@ def test_load_mlp():
 def test_find_mlps():
     """Test for find_mlps"""
     mlps = find_mlps(str(cwd) + "/../files")
-    assert len(mlps) == 1
+    assert len(mlps) == 2
 
 
 def test_is_legacy():

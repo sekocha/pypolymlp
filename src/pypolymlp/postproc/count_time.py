@@ -18,14 +18,19 @@ class PolymlpCost:
     def __init__(
         self,
         pot: Optional[Union[str, list[str]]] = None,
-        path_pot: Optional[str] = None,
+        path_pot: Optional[Union[list, tuple, np.ndarray]] = None,
         poscar: Optional[str] = None,
         supercell: np.ndarray = np.array([4, 4, 4]),
         verbose: bool = False,
     ):
         """Init method."""
         self._pot = pot
+
+        if path_pot is not None:
+            if not isinstance(path_pot, (list, tuple, np.ndarray)):
+                raise RuntimeError("Array-type paths required for path_pot.")
         self._path_pot = path_pot
+
         self._poscar = poscar
         self._supercell_size = supercell
         self._verbose = verbose

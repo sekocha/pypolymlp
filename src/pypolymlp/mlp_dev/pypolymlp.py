@@ -70,6 +70,7 @@ class Pypolymlp:
         self._common_params = parser.common_params
         if not isinstance(self._params, PolymlpParams):
             self._hybrid = True
+
         return self
 
     def set_params(
@@ -77,7 +78,7 @@ class Pypolymlp:
         params: Optional[PolymlpParams] = None,
         elements: tuple[str] = None,
         include_force: bool = True,
-        include_stress: bool = False,
+        include_stress: bool = True,
         cutoff: float = 6.0,
         model_type: Literal[1, 2, 3, 4] = 4,
         max_p: Literal[1, 2, 3] = 2,
@@ -174,6 +175,15 @@ class Pypolymlp:
             raise RuntimeError("Set parameters and datasets before using fit.")
         return self
 
+    def _turn_off_derivative_flags(self, forces: list, stresses: np.ndarray):
+        """ """
+        if forces is None:
+            self._params.include_force = False
+            self._params.include_stress = False
+        if stresses is None:
+            self._params.include_stress = False
+        return self
+
     def set_datasets_electron(
         self,
         yamlfiles: list[str],
@@ -198,6 +208,7 @@ class Pypolymlp:
         self._is_params_none()
         self._params.dataset_type = "electron"
         self._params.include_force = False
+        self._params.include_stress = False
         self._params.temperature = temperature
         self._params.electron_property = target
 
@@ -219,6 +230,7 @@ class Pypolymlp:
         self._is_params_none()
         self._params.dataset_type = "sscha"
         self._params.include_force = True
+        self._params.include_stress = False
 
         self._train, self._test = set_datasets_from_single_fileset(
             self._params,
@@ -291,6 +303,7 @@ class Pypolymlp:
         """
         self._is_params_none()
         self._params.dataset_type = "phono3py"
+        self._params.include_stress = False
         self._train, self._test = set_datasets_from_single_fileset(
             self._params,
             files=yaml,
@@ -319,6 +332,8 @@ class Pypolymlp:
         train_ratio: Ratio between training and entire data sizes.
         """
         self._is_params_none()
+        self._turn_off_derivative_flags(forces, stresses)
+
         self._train, self._test = set_datasets_from_structures(
             self._params,
             structures=structures,
@@ -354,6 +369,9 @@ class Pypolymlp:
         test_stresses: Stress tensors (test data), shape=(n_test, 3, 3) in eV/cell.
         """
         self._is_params_none()
+        self._turn_off_derivative_flags(train_forces, train_stresses)
+        self._turn_off_derivative_flags(test_forces, test_stresses)
+
         self._train, self._test = set_datasets_from_structures(
             self._params,
             train_structures=train_structures,
@@ -390,6 +408,7 @@ class Pypolymlp:
         structure_without_disp: Structure without displacements, PolymlpStructure
         """
         self._is_params_none()
+        self._params.include_stress = False
         assert train_disps.shape[1] == 3
         assert test_disps.shape[1] == 3
         assert train_disps.shape[0] == train_energies.shape[0]
@@ -413,9 +432,10 @@ class Pypolymlp:
             train_stresses=None,
             test_stresses=None,
         )
+
         return self
 
-    def fit(self, batch_size: Optional[int] = None, verbose: bool = False):
+    def fit(self, batch_size: Optional[int] = None, verbose: Optional[bool] = None):
         """Estimate MLP coefficients without computing entire X.
 
         Parameters
@@ -424,8 +444,9 @@ class Pypolymlp:
                     If None, the batch size is automatically determined
                     depending on the memory size and number of features.
         """
-        if not self._verbose:
+        if verbose is not None:
             self._verbose = verbose
+
         self._is_data_none()
         self._mlp_model = fit(
             self._params,
@@ -436,10 +457,11 @@ class Pypolymlp:
         )
         return self
 
-    def fit_standard(self, verbose: bool = False):
+    def fit_standard(self, verbose: Optional[bool] = None):
         """Estimate MLP coefficients with direct evaluation of X."""
-        if not self._verbose:
+        if verbose is not None:
             self._verbose = verbose
+
         self._is_data_none()
         self._mlp_model = fit_standard(
             self._params,
@@ -453,7 +475,7 @@ class Pypolymlp:
         self,
         gtol: float = 1e-2,
         max_iter: Optional[int] = None,
-        verbose: bool = False,
+        verbose: Optional[bool] = None,
     ):
         """Estimate MLP coefficients using conjugate gradient.
 
@@ -462,8 +484,9 @@ class Pypolymlp:
         gtol: Gradient tolerance for CG.
         max_iter: Number of maximum iterations in CG.
         """
-        if not self._verbose:
+        if verbose is not None:
             self._verbose = verbose
+
         self._is_data_none()
         self._mlp_model = fit_cg(
             self._params,
@@ -475,10 +498,13 @@ class Pypolymlp:
         )
         return self
 
-    def fit_sgd(self, verbose: bool = False):
+    def fit_sgd(self, verbose: Optional[bool] = None):
         """Estimate MLP coefficients using stochastic gradient descent."""
-        if not self._verbose:
+        raise NotImplementedError("SGD not available.")
+
+        if verbose is not None:
             self._verbose = verbose
+
         self._is_data_none()
         self._mlp_model = fit_sgd(
             self._params,
@@ -492,11 +518,12 @@ class Pypolymlp:
         self,
         log_energy: bool = False,
         file_path: str = "./",
-        verbose: bool = False,
+        verbose: Optional[bool] = None,
     ):
         """Estimate prediction errors."""
-        if not self._verbose:
+        if verbose is not None:
             self._verbose = verbose
+
         if self._mlp_model is None:
             raise RuntimeError("Regression must be performed before estimating errors.")
 
@@ -520,7 +547,7 @@ class Pypolymlp:
         use_cg: bool = False,
         gtol: float = 1e-2,
         max_iter: Optional[int] = None,
-        verbose: bool = False,
+        verbose: Optional[bool] = None,
     ):
         """Estimate MLP coefficients and prediction errors.
 
@@ -533,21 +560,22 @@ class Pypolymlp:
         gtol: Gradient tolerance for CG.
         max_iter: Number of maximum iterations in CG.
         """
-        if not self._verbose:
+        if verbose is not None:
             self._verbose = verbose
         if not use_cg:
-            self.fit(batch_size=batch_size, verbose=self._verbose)
+            self.fit(batch_size=batch_size)
         else:
             # TODO: batch size must be active.
-            self.fit_cg(gtol=gtol, max_iter=max_iter, verbose=self._verbose)
+            self.fit_cg(gtol=gtol, max_iter=max_iter)
 
         self.estimate_error()
         return self
 
-    def fit_learning_curve(self, verbose: bool = False):
+    def fit_learning_curve(self, verbose: Optional[bool] = None):
         """Compute learing curve."""
-        if not self._verbose:
+        if verbose is not None:
             self._verbose = verbose
+
         self._is_data_none()
         self._learning_log = fit_learning_curve(
             self._params,

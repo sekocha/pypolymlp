@@ -81,7 +81,7 @@ def run():
     parser.add_argument(
         "--tol",
         type=float,
-        default=0.01,
+        default=0.005,
         help="Tolerance parameter for FC convergence",
     )
     parser.add_argument(
@@ -94,7 +94,7 @@ def run():
     parser.add_argument(
         "--max_iter",
         type=int,
-        default=30,
+        default=50,
         help="Maximum number of iterations",
     )
     parser.add_argument("--mixing", type=float, default=0.5, help="Mixing parameter")
@@ -130,6 +130,11 @@ def run():
         "--use_temporal_cutoff",
         action="store_true",
         help="Use an algorithm temporarily using cutoff radius.",
+    )
+    parser.add_argument(
+        "--write_pdos",
+        action="store_true",
+        help="Save projected DOS.",
     )
 
     args = parser.parse_args()
@@ -170,4 +175,5 @@ def run():
         init_fc_file=args.init_file,
         cutoff_radius=args.cutoff_fc2,
         use_temporal_cutoff=args.use_temporal_cutoff,
+        write_pdos=args.write_pdos,
     )

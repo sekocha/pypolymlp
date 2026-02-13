@@ -5,9 +5,10 @@ from typing import Literal, Optional, Union
 import numpy as np
 
 from pypolymlp.calculator.properties import Properties
-from pypolymlp.calculator.sscha.run_sscha import run_sscha, run_sscha_large_system
-from pypolymlp.calculator.sscha.sscha_params import SSCHAParameters
-from pypolymlp.calculator.sscha.sscha_utils import PolymlpDataSSCHA, Restart
+from pypolymlp.calculator.sscha.api_sscha import run_sscha
+from pypolymlp.calculator.sscha.sscha_data import SSCHAData
+from pypolymlp.calculator.sscha.sscha_params import SSCHAParams
+from pypolymlp.calculator.sscha.sscha_restart import Restart
 from pypolymlp.core.data_format import PolymlpParams
 from pypolymlp.core.interface_vasp import Poscar
 from pypolymlp.utils.phonopy_utils import get_nac_params
@@ -72,6 +73,7 @@ class PypolymlpSSCHA:
         yaml: str = "sscha_results.yaml",
         parse_fc2: bool = True,
         parse_mlp: bool = True,
+        pot: Optional[Union[str, list, tuple, np.ndarray]] = None,
     ):
         """Parse sscha_results.yaml file.
 
@@ -86,7 +88,7 @@ class PypolymlpSSCHA:
         self._unitcell = res.unitcell
         self._supercell_matrix = res.supercell_matrix
         if parse_mlp:
-            self._pot = res.polymlp
+            self._pot = res.polymlp if pot is None else pot
             self._prop = Properties(pot=self._pot)
         self._fc2 = res.force_constants
         return self
@@ -114,8 +116,8 @@ class PypolymlpSSCHA:
         ascending_temp: bool = False,
         n_samples_init: Optional[int] = None,
         n_samples_final: Optional[int] = None,
-        tol: float = 0.01,
-        max_iter: int = 30,
+        tol: float = 0.005,
+        max_iter: int = 50,
         mixing: float = 0.5,
         mesh: tuple = (10, 10, 10),
         init_fc_algorithm: Literal["harmonic", "const", "random", "file"] = "harmonic",
@@ -124,6 +126,8 @@ class PypolymlpSSCHA:
         precondition: bool = True,
         cutoff_radius: Optional[float] = None,
         use_temporal_cutoff: bool = False,
+        path: str = "./sscha",
+        write_pdos: bool = False,
     ):
         """Run SSCHA iterations.
 
@@ -156,7 +160,7 @@ class PypolymlpSSCHA:
         if self._unitcell is None:
             raise RuntimeError("Set structure.")
 
-        self._sscha_params = SSCHAParameters(
+        self._sscha_params = SSCHAParams(
             unitcell=self._unitcell,
             supercell_matrix=self._supercell_matrix,
             pot=self._pot,
@@ -181,37 +185,31 @@ class PypolymlpSSCHA:
             self._sscha_params.print_params()
             self._sscha_params.print_unitcell()
 
-        if use_temporal_cutoff:
-            self._sscha = run_sscha_large_system(
-                self._sscha_params,
-                properties=self._prop,
-                fc2=self._fc2,
-                precondition=precondition,
-                verbose=self._verbose,
-            )
-        else:
-            self._sscha = run_sscha(
-                self._sscha_params,
-                properties=self._prop,
-                fc2=self._fc2,
-                precondition=precondition,
-                verbose=self._verbose,
-            )
+        self._sscha = run_sscha(
+            self._sscha_params,
+            properties=self._prop,
+            fc2=self._fc2,
+            precondition=precondition,
+            use_temporal_cutoff=use_temporal_cutoff,
+            path=path,
+            write_pdos=write_pdos,
+            verbose=self._verbose,
+        )
         self._fc2 = self._sscha.force_constants
         return self
 
     @property
-    def sscha_params(self) -> SSCHAParameters:
+    def sscha_params(self) -> SSCHAParams:
         """Return SSCHA parameters."""
         return self._sscha_params
 
     @property
-    def sscha_properties(self) -> PolymlpDataSSCHA:
+    def properties(self) -> SSCHAData:
         """Return SSCHA properties at the final temperature."""
         return self._sscha.properties
 
     @property
-    def sscha_logs(self) -> list[PolymlpDataSSCHA]:
+    def logs(self) -> list[SSCHAData]:
         """Return logs of SSCHA properties at the final temperature."""
         return self._sscha.logs
 
@@ -222,3 +220,19 @@ class PypolymlpSSCHA:
         shape=(n_atom, n_atom, 3, 3).
         """
         return self._sscha.force_constants
+
+    @property
+    def sscha_properties(self) -> SSCHAData:
+        """Return SSCHA properties at the final temperature.
+
+        Deprecated.
+        """
+        return self._sscha.properties
+
+    @property
+    def sscha_logs(self) -> list[SSCHAData]:
+        """Return logs of SSCHA properties at the final temperature.
+
+        Deprecated.
+        """
+        return self._sscha.logs

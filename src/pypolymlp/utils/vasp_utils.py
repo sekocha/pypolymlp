@@ -168,7 +168,7 @@ class ElectronProperties:
         self._free_energies = []
         self._cvs = []
         for temp in self._temperatures:
-            self._efe.run(T=temp)
+            self._efe.run(temp=temp)
             self._energies.append(self._efe.energy)
             self._entropies.append(self._efe.entropy)
             self._free_energies.append(self._efe.free_energy)
@@ -183,9 +183,13 @@ class ElectronProperties:
 
     def _calc_df_dT(self, epsilon: np.array, mu: float, T: int) -> float:
         """Calculate df/dT at temperature T."""
-        from phonopy.units import Kb
 
-        de = (epsilon - mu) / (Kb * T)
+        from phonopy.physical_units import get_physical_units
+
+        units = get_physical_units()
+        KB = units.KB
+
+        de = (epsilon - mu) / (KB * T)
         de = np.where(de < 100, de, 100.0)  # To avoid overflow
         de = np.where(de > -100, de, -100.0)  # To avoid underflow
         return (de * np.exp(de)) / (T * ((np.exp(de) + 1) ** 2))

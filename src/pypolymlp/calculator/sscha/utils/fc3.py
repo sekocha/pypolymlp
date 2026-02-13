@@ -12,7 +12,7 @@ from phono3py.phonon.grid import get_ir_grid_points
 from pypolymlp.calculator.fc import PolymlpFC
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.sscha.harmonic_real import HarmonicReal
-from pypolymlp.calculator.sscha.sscha_utils import Restart
+from pypolymlp.calculator.sscha.sscha_restart import Restart
 
 
 def write_dos_from_frequencies(

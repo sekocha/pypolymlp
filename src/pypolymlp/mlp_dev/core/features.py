@@ -188,7 +188,6 @@ class FeaturesHybrid:
             params.element_swap = element_swap
             params.print_memory = print_memory
             hybrid_params_dicts.append(params.as_dict())
-        print(hybrid_params_dicts)
 
         obj = libmlpcpp.PotentialHybridModel(
             hybrid_params_dicts,

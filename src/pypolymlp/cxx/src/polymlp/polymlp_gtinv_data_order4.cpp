@@ -5,23 +5,12 @@
 
 *****************************************************************************/
 
-#include "polymlp_gtinv_data_order4.h"
+#include "polymlp_gtinv_data.h"
 
-GtinvDataOrder4::GtinvDataOrder4(){
 
-    set_gtinv_info();
-}
-
-GtinvDataOrder4::~GtinvDataOrder4(){}
-
-const vector2i& GtinvDataOrder4::get_l_array() const{ return l_array_all; }
-const vector3i& GtinvDataOrder4::get_m_array() const{ return m_array_all; }
-const vector2d& GtinvDataOrder4::get_coeffs() const{ return coeffs_all; }
-
-void GtinvDataOrder4::set_gtinv_info(){
-
-    l_array_all =
-        {{0, 0, 0, 0},
+template<>
+const vector2i GtinvData<4>::L_ARRAY_ALL = {
+        {0, 0, 0, 0},
         {0, 0, 1, 1},
         {0, 0, 2, 2},
         {0, 1, 1, 2},
@@ -96,8 +85,10 @@ void GtinvDataOrder4::set_gtinv_info(){
         {4, 4, 4, 4},
         {4, 4, 4, 4}};
 
-    coeffs_all =
-        {{1},
+
+template<>
+const vector2d GtinvData<4>::COEFFS_ALL = {
+        {1},
         {-0.577350269189626,
          0.577350269189626,
          -0.577350269189626},
@@ -12796,7 +12787,9 @@ void GtinvDataOrder4::set_gtinv_info(){
          -0.00781756649231752,
          -0.0210041270679403}};
 
-    m_array_all = {
+
+template<>
+const vector3i GtinvData<4>::M_ARRAY_ALL = {
         {{0, 0, 0, 0}},
         {{0, 0, -1, 1},
         {0, 0, 0, 0},
@@ -25497,4 +25490,4 @@ void GtinvDataOrder4::set_gtinv_info(){
         {4, 4, -4, -4}}
     };
 
-}
+template class GtinvData<4>;

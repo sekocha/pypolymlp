@@ -20,11 +20,6 @@ def load_fc2_hdf5(filefc2: str = "fc2.hdf5", return_matrix: bool = True):
     return fc
 
 
-def recover_compact_fc2(fc2: np.ndarray):
-    """Recover full FC2 from compact fc2."""
-    pass
-
-
 def eval_properties_fc2(fc2: np.ndarray, disps: np.ndarray):
     """Evaluate energy and forces from FC2.
 

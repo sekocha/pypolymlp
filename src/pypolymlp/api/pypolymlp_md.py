@@ -16,8 +16,8 @@ from pypolymlp.calculator.md.md_utils import (
     save_thermodynamic_integration_yaml,
 )
 from pypolymlp.calculator.properties import Properties
-from pypolymlp.calculator.utils.ase_calculator import (
-    PolymlpASECalculator,
+from pypolymlp.calculator.utils.ase_calculator import PolymlpASECalculator
+from pypolymlp.calculator.utils.ase_calculator_ref import (
     PolymlpFC2ASECalculator,
     PolymlpGeneralRefASECalculator,
     PolymlpRefASECalculator,
@@ -27,10 +27,11 @@ from pypolymlp.calculator.utils.ase_utils import (
     structure_to_ase_atoms,
 )
 from pypolymlp.calculator.utils.fc_utils import load_fc2_hdf5
+from pypolymlp.calculator.utils.io_utils import print_pot
 from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
 from pypolymlp.core.interface_vasp import Poscar
 from pypolymlp.core.units import Avogadro, Kb
-from pypolymlp.utils.structure_utils import supercell_diagonal
+from pypolymlp.utils.structure_utils import supercell
 
 
 # TODO: Implement Nose-Hoover-chain thermostat.
@@ -241,9 +242,9 @@ class PypolymlpMD:
 
         fc2hdf5: FC2 HDF file.
         alpha_ref: Mixing parameter for defining reference state.
-            E = alpha * E_polymlp_ref + (1 - alpha) * E_fc2
+            E = alpha * E_polymlp_ref + (1 - alpha_ref) * E_fc2
         alpha_final: Mixing parameter for defining final state.
-            E = alpha * E_polymlp_final + (1 - alpha) * E_fc2
+            E = alpha * E_polymlp_final + (1 - alpha_final) * E_fc2
         alpha: Mixing parameter.
             E = alpha * E_final + (1 - alpha) * E_ref
         """
@@ -279,12 +280,18 @@ class PypolymlpMD:
         return self
 
     def set_supercell(self, size: tuple):
-        """Set supercell from unitcell."""
+        """Set supercell from unitcell.
+
+        Parameter
+        ---------
+        size: Supercell size with three elements.
+              Diagonal elements of supercell matrix.
+        """
         if self._unitcell is None:
             raise RuntimeError("Unitcell not found.")
         if len(size) != 3:
             raise RuntimeError("Supercell size is not equal to 3.")
-        self._supercell = supercell_diagonal(self._unitcell, size)
+        self._supercell = supercell(self._unitcell, size)
         self._supercell_ase = structure_to_ase_atoms(self._supercell)
         self._supercell_matrix = np.diag(size)
         return self
@@ -732,7 +739,10 @@ class PypolymlpMD:
     @property
     def alpha(self):
         """Return mixing parameter for two states."""
-        return self._calculator.alpha
+        try:
+            return self._calculator.alpha
+        except:
+            return None
 
     @alpha.setter
     def alpha(self, val_alpha: float):
@@ -964,12 +974,9 @@ def run_thermodynamic_integration(
         with open(filename, "a") as f:
             print(file=f)
             print("free_energy_perturbation_between_polymlps:", file=f)
-            print("  polymlp_reference:", file=f)
-            for p in pot_ref:
-                print("  -", os.path.abspath(p), file=f)
-            print("  polymlp:", file=f)
-            for p in pot:
-                print("  -", os.path.abspath(p), file=f)
+
+            print_pot(pot_ref, tag="polymlp_reference", indent=2, file=f)
+            print_pot(pot, tag="polymlp", indent=2, file=f)
             print("  alpha:              ", 1.0, file=f)
             print("  free_energy_perturb:", fep, file=f)
             print("  free_energy:        ", free_energy, file=f)

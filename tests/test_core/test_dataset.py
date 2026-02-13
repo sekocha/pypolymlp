@@ -277,3 +277,13 @@ def test_set_datasets_from_structures2(params_MgO, structure_rocksalt):
         assert len(ds.energies) == 10
     for ds in test_all:
         assert len(ds.energies) == 10
+
+    shift = sum(params_MgO.atomic_energy) * 4
+    for ds in train_all:
+        np.testing.assert_allclose(ds.energies, energies - shift)
+
+    # In this case, atomic energies are not subtracted in the following command
+    # because atomic energies were subtracted in set_datasets_from_structures.
+    train_all.subtract_atomic_energy(params_MgO.atomic_energy)
+    for ds in train_all:
+        np.testing.assert_allclose(ds.energies, energies - shift)

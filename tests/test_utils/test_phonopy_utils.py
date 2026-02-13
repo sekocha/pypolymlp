@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 from pypolymlp.utils.phonopy_utils import (
     phonopy_cell_to_structure,
@@ -19,11 +20,12 @@ def test_cell(structure_rocksalt):
     st = phonopy_cell_to_structure(cell)
     np.testing.assert_allclose(st.axis, structure_rocksalt.axis)
     np.testing.assert_allclose(st.positions, structure_rocksalt.positions)
-    assert st.elements == structure_rocksalt.elements
-    assert st.types == structure_rocksalt.types
-    assert st.n_atoms == structure_rocksalt.n_atoms
+    np.testing.assert_equal(st.elements, structure_rocksalt.elements)
+    np.testing.assert_equal(st.types, structure_rocksalt.types)
+    np.testing.assert_equal(st.n_atoms, structure_rocksalt.n_atoms)
 
 
+@pytest.mark.filterwarnings("ignore:.*symmetries of supercell.*")
 def test_supercell(structure_rocksalt):
     """Test supercell in phonopy."""
     supercell_matrix = np.array([[1, 0, 0], [0, 1, 0], [1, 0, 2]])

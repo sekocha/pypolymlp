@@ -1,8 +1,11 @@
 """Utility functions for EOS fitting."""
 
 import numpy as np
+from phonopy.physical_units import get_physical_units
 from phonopy.qha.core import BulkModulus
-from phonopy.units import EVAngstromToGPa
+
+units = get_physical_units()
+EVAngstromToGPa = units.EVAngstromToGPa
 
 
 class EOS:

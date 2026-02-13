@@ -4,7 +4,7 @@ from typing import Optional
 
 import numpy as np
 
-from pypolymlp.calculator.sscha.utils.distribution import SSCHADistribution
+from pypolymlp.calculator.sscha.sscha_distribution import SSCHADistribution
 
 
 class PypolymlpSSCHAPost:

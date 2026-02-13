@@ -66,6 +66,7 @@ def test_volumes(structure_rocksalt):
     assert st_vols[1].volume == pytest.approx(128.0)
 
 
+@pytest.mark.filterwarnings("ignore:.*symmetries of supercell.*")
 def test_supercell(structure_rocksalt):
     """Test for supercell functions."""
     sup_mat = [[1, 0, 0], [0, 1, 0], [1, 0, 2]]

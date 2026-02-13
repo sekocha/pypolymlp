@@ -154,4 +154,5 @@ def _compute_products_single_batch(
     data_xy.y_sq_norm += y @ y
     data_xy.total_n_data += n_data
     data_xy.cumulative_n_features = features.cumulative_n_features
+
     return data_xy

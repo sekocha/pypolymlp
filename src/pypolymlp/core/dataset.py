@@ -80,6 +80,7 @@ class Dataset:
         )
 
         self._element_order = None
+        self._finished_atomic_energy = False
 
     def _set_dataset_attrs(
         self,
@@ -228,7 +229,7 @@ class Dataset:
         else:
             raise KeyError("Given dataset_type is unavailable.")
 
-        self._subtract_atomic_energy(params.atomic_energy)
+        self.subtract_atomic_energy(params.atomic_energy)
         return self
 
     def _parse_vasp(self):
@@ -269,12 +270,21 @@ class Dataset:
         )
         return self
 
-    def _subtract_atomic_energy(self, atomic_energy: tuple):
+    def subtract_atomic_energy(self, atomic_energy: tuple):
         """Subtract atomic energy."""
         if self._dft is None:
             raise RuntimeError("DFT data not found.")
 
-        self._dft.apply_atomic_energy(atomic_energy)
+        if self._finished_atomic_energy:
+            if self._verbose:
+                print(
+                    "Atomic energies have already been subtracted,",
+                    "given atomic energies are not applied to dataset",
+                    flush=True,
+                )
+        else:
+            self._dft.apply_atomic_energy(atomic_energy)
+            self._finished_atomic_energy = True
         return self
 
     @property
@@ -438,6 +448,12 @@ class DatasetList:
             ds.parse_files(params)
         return self
 
+    def subtract_atomic_energy(self, atomic_energy: tuple):
+        """Subtract atomic energy."""
+        for ds in self._datasets:
+            ds.subtract_atomic_energy(atomic_energy)
+        return self
+
     @property
     def datasets(self):
         """Return datasets."""
@@ -544,6 +560,9 @@ def set_datasets_from_single_fileset(
     if parse_end:
         train.parse_files(params)
         test.parse_files(params)
+
+    train.subtract_atomic_energy(params.atomic_energy)
+    test.subtract_atomic_energy(params.atomic_energy)
     return train, test
 
 
@@ -619,4 +638,7 @@ def set_datasets_from_structures(
         )
     train = DatasetList(train)
     test = DatasetList(test)
+
+    train.subtract_atomic_energy(params.atomic_energy)
+    test.subtract_atomic_energy(params.atomic_energy)
     return train, test
