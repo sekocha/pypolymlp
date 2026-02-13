@@ -251,7 +251,7 @@ class PypolymlpStructureGenerator:
             )
 
         for gen in self._strgen_instances:
-            structures = gen.random_structure(
+            structures = gen.sample_random_structures(
                 n_str=n_samples,
                 max_disp=max_distance,
                 vol_ratio=1.0,

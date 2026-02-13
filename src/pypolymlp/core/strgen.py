@@ -132,7 +132,7 @@ class StructureGenerator:
             size = size_trial
         return size
 
-    def random_single_structure(
+    def sample_random_single_structure(
         self,
         disp: float,
         vol_ratio: float = 1.0,
@@ -156,7 +156,7 @@ class StructureGenerator:
         )
         return str_rand
 
-    def random_structure(
+    def sample_random_structures(
         self,
         n_str: int = 10,
         max_disp: float = 1.0,
@@ -171,12 +171,15 @@ class StructureGenerator:
             disp_function1 = 0.01
             disp_function2 = pow((i + 1) / float(n_str), 3.0) * max_disp
             disp = max(disp_function1, disp_function2)
-            str_rand = self.random_single_structure(disp, vol_ratio=vol_ratio)
+            str_rand = self.sample_random_single_structure(disp, vol_ratio=vol_ratio)
             st_array.append(str_rand)
         return st_array
 
     def random_structure_algo2(
-        self, n_str: int = 10, max_disp: float = 0.3, vol_ratio: float = 1.0
+        self,
+        n_str: int = 10,
+        max_disp: float = 0.3,
+        vol_ratio: float = 1.0,
     ):
         """Generate random structures.
 
@@ -186,7 +189,7 @@ class StructureGenerator:
         st_array = []
         for i in range(n_str):
             disp = (i + 1) * max_disp / float(n_str)
-            str_rand = self.random_single_structure(disp, vol_ratio=vol_ratio)
+            str_rand = self.sample_random_single_structure(disp, vol_ratio=vol_ratio)
             st_array.append(str_rand)
         return st_array
 
@@ -200,7 +203,7 @@ class StructureGenerator:
         """Generate random structures with various densities."""
         st_array = []
         for vol_ratio in np.linspace(vol_lb, vol_ub, n_str):
-            str_rand = self.random_single_structure(disp, vol_ratio=vol_ratio)
+            str_rand = self.sample_random_single_structure(disp, vol_ratio=vol_ratio)
             st_array.append(str_rand)
         return st_array
 

@@ -86,4 +86,15 @@ def test_set_volume_eps_array():
 def test_StructureGenerator():
     """Test StructureGenerator."""
     unitcell = Poscar(file_wz).structure
-    _ = StructureGenerator(unitcell, natom_lb=50, natom_ub=150)
+    strgen = StructureGenerator(unitcell, natom_lb=50, natom_ub=150)
+    _ = strgen.sample_random_single_structure(disp=0.01)
+    structures = strgen.sample_random_structures(n_str=3, max_disp=0.1)
+    assert len(structures) == 3
+    structures = strgen.sample_density(n_str=3, disp=0.1)
+    assert len(structures) == 3
+
+    strgen.print_size()
+    assert len(strgen.supercell.elements) == 72
+    assert tuple(strgen.supercell_size) == (3, 3, 2)
+    assert strgen.name == file_wz
+    np.testing.assert_equal(strgen.n_atoms, [36, 36])
