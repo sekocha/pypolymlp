@@ -298,6 +298,8 @@ class SSCHACore:
         while (n_iter <= max_iter and delta > tol) or n_iter < 3:
             if self._verbose:
                 self._print_separator(n_iter)
+                if n_samples > 10000:
+                    print("Number of samples:", n_samples, flush=True)
             self._fc2 = self._single_iter(temp=temp, n_samples=n_samples)
             if self._verbose:
                 self._print_progress()
@@ -407,3 +409,8 @@ class SSCHACore:
         assert fc2.shape[0] == fc2.shape[1] == self._n_atom
         assert fc2.shape[2] == fc2.shape[3] == 3
         self._fc2 = fc2
+
+    @property
+    def delta(self):
+        """Return convergence delta."""
+        return self._data_current.delta

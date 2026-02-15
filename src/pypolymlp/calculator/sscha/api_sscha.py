@@ -191,20 +191,21 @@ def _run_precondition(sscha: SSCHACore, verbose: bool = False):
         print("Size of FC2 basis-set:", sscha.n_fc_basis, flush=True)
 
     n_samples = max(min(sscha_params.n_samples_init // 50, 100), 5)
-    sscha.precondition(
-        temp=sscha_params.temperatures[0],
-        n_samples=n_samples,
-        tol=0.01,
-        max_iter=5,
-    )
-    if sscha_params.tol < 0.003:
-        n_samples = max(min(sscha_params.n_samples_init // 10, 500), 10)
+    n_iter, delta = 1, 1.0
+    while delta > sscha_params.tol * 5 and n_iter < 20:
+        if verbose:
+            string = "###########"
+            print(string, "Preconditioning Iteration:", n_iter, string, flush=True)
+
         sscha.precondition(
             temp=sscha_params.temperatures[0],
-            n_samples=n_samples,
-            tol=0.005,
+            n_samples=n_samples * n_iter,
+            tol=sscha_params.tol,
             max_iter=5,
         )
+        delta = sscha.delta
+        n_iter += 1
+
     return sscha
 
 
