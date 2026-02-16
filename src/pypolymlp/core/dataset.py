@@ -407,14 +407,16 @@ class Dataset:
     def split_imaginary(self, weight_imag: float = 0.01):
         """Split structures with and without imaginary frequencies from SSCHA."""
         files_no_imag, files_imag = split_imaginary(self._files)
-        no_imag = Dataset(
-            dataset_type=self._dataset_type,
-            files=files_no_imag,
-            include_force=self._include_force,
-            include_stress=self._include_stress,
-            weight=self._weight,
-            name=self._name + "_no_imag",
-        )
+        no_imag, imag = None, None
+        if files_no_imag is not None:
+            no_imag = Dataset(
+                dataset_type=self._dataset_type,
+                files=files_no_imag,
+                include_force=self._include_force,
+                include_stress=self._include_stress,
+                weight=self._weight,
+                name=self._name + "_no_imag",
+            )
         if files_imag is not None:
             imag = Dataset(
                 dataset_type=self._dataset_type,
@@ -424,8 +426,7 @@ class Dataset:
                 weight=self._weight * weight_imag,
                 name=self._name + "_imag",
             )
-            return no_imag, imag
-        return no_imag, None
+        return no_imag, imag
 
 
 class DatasetList:
@@ -483,7 +484,8 @@ class DatasetList:
         datasets = []
         for ds in self._datasets:
             no_imag, imag = ds.split_imaginary(weight_imag=weight_imag)
-            datasets.append(no_imag)
+            if no_imag is not None:
+                datasets.append(no_imag)
             if imag is not None:
                 datasets.append(imag)
         return DatasetList(datasets)

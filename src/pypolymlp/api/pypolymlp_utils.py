@@ -5,10 +5,12 @@ from typing import Optional, Union
 import numpy as np
 
 from pypolymlp.core.data_format import PolymlpStructure
+from pypolymlp.core.interface_vasp import Poscar
 from pypolymlp.postproc.count_time import PolymlpCost
 from pypolymlp.utils.dataset_auto_divide import auto_divide_vaspruns
 from pypolymlp.utils.grid_optimal import find_optimal_mlps
 from pypolymlp.utils.kim_utils import convert_polymlp_to_kim_model
+from pypolymlp.utils.structure_utils import supercell
 from pypolymlp.utils.vasp_utils import (
     load_electronic_properties_from_vasprun,
     print_poscar,
@@ -158,6 +160,18 @@ class PypolymlpUtils:
         vaspruns: vasprun.xml files
         """
         auto_divide_vaspruns(vaspruns, verbose=self._verbose)
+
+    def generate_supercell(
+        self,
+        structure: Optional[PolymlpStructure] = None,
+        poscar: Optional[str] = None,
+        supercell_matrix: Union[tuple, np.ndarray] = (1, 1, 1),
+    ):
+        """Generate supercell."""
+        if structure is None:
+            structure = Poscar(poscar).structure
+        sup = supercell(structure, supercell_matrix)
+        return sup
 
     def init_symmetry(
         self,

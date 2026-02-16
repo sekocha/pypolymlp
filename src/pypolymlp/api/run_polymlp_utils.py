@@ -101,13 +101,6 @@ def run():
         default="polymlp.yaml",
         help="polymlp file",
     )
-    parser.add_argument(
-        "--supercell",
-        nargs=3,
-        type=int,
-        default=[4, 4, 4],
-        help="supercell size",
-    )
     parser.add_argument("--n_calc", type=int, default=20, help="number of calculations")
 
     """Pareto optimal search"""
@@ -136,6 +129,13 @@ def run():
     )
     parser.add_argument("--refine_cell", action="store_true", help="refine cell")
     parser.add_argument("--space_group", action="store_true", help="get space group")
+    parser.add_argument(
+        "--supercell",
+        nargs="*",
+        type=int,
+        default=None,
+        help="get supercell",
+    )
 
     args = parser.parse_args()
     print_credit()
@@ -160,25 +160,44 @@ def run():
     elif args.vasprun_compress is not None:
         polymlp.compress_vaspruns(args.vasprun_compress, n_jobs=args.n_jobs)
     elif args.calc_cost:
+        if args.supercell is None:
+            size = (4, 4, 4)
+        elif len(args.supercell) == 3:
+            size = args.supercell
+        else:
+            raise RuntimeError("Option `--supercell` must have 3 elements.")
+
         polymlp.estimate_polymlp_comp_cost(
             pot=args.pot,
             path_pot=args.dirs,
             poscar=args.poscar,
-            supercell=args.supercell,
+            supercell=size,
             n_calc=args.n_calc,
         )
+
     elif args.find_optimal is not None:
         polymlp.find_optimal_mlps(args.find_optimal, args.key)
 
     elif args.auto_dataset is not None:
         polymlp.divide_dataset(args.auto_dataset)
 
+    elif args.supercell:
+        if len(args.supercell) == 9:
+            matrix = np.reshape(args.supercell, (3, 3))
+        elif len(args.supercell) == 3:
+            matrix = args.supercell
+        else:
+            raise RuntimeError("Option `--supercell` must have 3 or 9 elements.")
+        st = polymlp.generate_supercell(poscar=args.poscar, supercell_matrix=matrix)
+        polymlp.print_poscar(st)
+        polymlp.write_poscar_file(st, filename="sposcar_pypolymlp")
+
     elif args.refine_cell or args.space_group:
         polymlp.init_symmetry(poscar=args.poscar, symprec=args.symprec)
         if args.refine_cell:
             structure = polymlp.refine_cell()
             polymlp.print_poscar(structure)
-            polymlp.write_poscar_file(structure, filename="poscar_pypolymlp")
+            polymlp.write_poscar_file(st, filename="poscar_pypolymlp")
         if args.space_group:
             print(" space_group = ", polymlp.get_spacegroup(), flush=True)
     elif (

@@ -57,7 +57,8 @@ def split_imaginary(yamlfiles: list[str]):
             no_imag.append(yfile)
 
     if len(no_imag) == 0:
-        raise RuntimeError("All data with imaginary frequencies.")
+        no_imag = None
+        # raise RuntimeError("All data with imaginary frequencies.")
 
     if len(imag) == 0:
         imag = None
