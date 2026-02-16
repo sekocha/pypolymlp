@@ -229,7 +229,6 @@ class Pypolymlp:
         """
         self._is_params_none()
         self._params.dataset_type = "sscha"
-        self._params.include_force = True
         self._params.include_stress = False
 
         self._train, self._test = set_datasets_from_single_fileset(

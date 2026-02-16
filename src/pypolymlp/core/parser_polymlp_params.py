@@ -80,6 +80,8 @@ class ParamsParserSingle:
             )
             self._params.include_force = False
             self._params.include_stress = False
+        elif dataset_type in ("phono3py", "sscha"):
+            self._params.include_stress = False
         return self._params
 
     def _get_force_tags(self):
