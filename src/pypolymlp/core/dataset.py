@@ -12,6 +12,7 @@ from pypolymlp.core.interface_yaml import (
     parse_electron_yamls,
     set_dataset_from_electron_yamls,
     set_dataset_from_sscha_yamls,
+    split_imaginary,
 )
 from pypolymlp.core.utils import split_train_test, strtobool
 
@@ -403,6 +404,29 @@ class Dataset:
             return None
         return self._dft.exist_stress
 
+    def split_imaginary(self, weight_imag: float = 0.01):
+        """Split structures with and without imaginary frequencies from SSCHA."""
+        files_no_imag, files_imag = split_imaginary(self._files)
+        no_imag = Dataset(
+            dataset_type=self._dataset_type,
+            files=files_no_imag,
+            include_force=self._include_force,
+            include_stress=self._include_stress,
+            weight=self._weight,
+            name=self._name + "_no_imag",
+        )
+        if files_imag is not None:
+            imag = Dataset(
+                dataset_type=self._dataset_type,
+                files=files_imag,
+                include_force=self._include_force,
+                include_stress=self._include_stress,
+                weight=self._weight * weight_imag,
+                name=self._name + "_imag",
+            )
+            return no_imag, imag
+        return no_imag, None
+
 
 class DatasetList:
     """Class for keeping multiple datasets for training or test data."""
@@ -453,6 +477,16 @@ class DatasetList:
         for ds in self._datasets:
             ds.subtract_atomic_energy(atomic_energy)
         return self
+
+    def split_imaginary(self, weight_imag: float = 0.01):
+        """Split structures with and without imaginary frequencies from SSCHA."""
+        datasets = []
+        for ds in self._datasets:
+            no_imag, imag = ds.split_imaginary(weight_imag=weight_imag)
+            datasets.append(no_imag)
+            if imag is not None:
+                datasets.append(imag)
+        return DatasetList(datasets)
 
     @property
     def datasets(self):
@@ -557,6 +591,10 @@ def set_datasets_from_single_fileset(
 
     train = DatasetList(train)
     test = DatasetList(test)
+    if params.dataset_type == "sscha":
+        train = train.split_imaginary(weight_imag=0.01)
+        test = test.split_imaginary(weight_imag=0.01)
+
     if parse_end:
         train.parse_files(params)
         test.parse_files(params)

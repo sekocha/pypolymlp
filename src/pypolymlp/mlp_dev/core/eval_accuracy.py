@@ -167,7 +167,7 @@ class PolymlpEvalAccuracy:
         tag: str = Literal["train", "test"],
     ):
         """Generate key used for identify datasets."""
-        output_key = dataset_name.replace("*", "-").replace("." + ".", "")
+        output_key = dataset_name.replace("*", "-").replace("." + "./", "")
         output_key = output_key.replace(".", "-").replace("/", "-")
         output_key = tag + "-" + output_key
         output_key = output_key.replace("---", "-").replace("--", "-")

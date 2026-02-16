@@ -29,13 +29,21 @@ def test_mlp_devel_api_sscha():
     polymlp.set_datasets_sscha(yamlfiles)
     polymlp.run()
 
-    error_train1 = polymlp.summary.error_train["data1"]
-    error_test1 = polymlp.summary.error_test["data2"]
+    error_train1 = polymlp.summary.error_train["data1_no_imag"]
+    error_test1 = polymlp.summary.error_test["data2_no_imag"]
 
-    assert error_test1["energy"] == pytest.approx(0.00014625472319267568, rel=1e-3)
-    assert error_test1["force"] == pytest.approx(0.0011131736202838357, rel=1e-3)
-    assert error_train1["energy"] == pytest.approx(0.00015277899201758427, rel=1e-3)
-    assert error_train1["force"] == pytest.approx(0.0010830176298444144, rel=1e-3)
+    error_train2 = polymlp.summary.error_train["data1_imag"]
+    error_test2 = polymlp.summary.error_test["data2_imag"]
+
+    assert error_test1["energy"] == pytest.approx(0.0001437891687043342, rel=1e-3)
+    assert error_test1["force"] == pytest.approx(0.001112602030598342, rel=1e-3)
+    assert error_train1["energy"] == pytest.approx(0.0001533446958244101, rel=1e-3)
+    assert error_train1["force"] == pytest.approx(0.0010834715929883944, rel=1e-3)
+
+    assert error_test2["energy"] == pytest.approx(0.0030792057826591964, rel=1e-3)
+    assert error_test2["force"] == pytest.approx(0.0056073282503636915, rel=1e-3)
+    assert error_train2["energy"] == pytest.approx(0.0033314139457414366, rel=1e-3)
+    assert error_train2["force"] == pytest.approx(0.004875165188815314, rel=1e-3)
 
 
 def test_mlp_devel_api_electron():
