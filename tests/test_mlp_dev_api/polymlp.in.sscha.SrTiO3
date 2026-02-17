@@ -18,3 +18,4 @@ atomic_energy 0.0 0.0 0.0
 
 dataset_type sscha
 data data-sscha-SrTiO3/sscha_results*.yaml
+include_stress False

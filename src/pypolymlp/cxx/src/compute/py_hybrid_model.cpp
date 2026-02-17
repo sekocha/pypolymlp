@@ -44,38 +44,13 @@ PyHybridModel::PyHybridModel(
 
     const int n_st = axis.size();
     const int total_n_data = n_data[0] + n_data[1] + n_data[2];
-    int n_features(0), imodel(0);
+    int n_features(0);
     std::vector<Model> model_array;
     for (const auto& fp: fp_array){
-        vector1i active_atoms, types_active;
-        vector2d positions_c_active;
-        find_active_atoms(
-            type_full_array[imodel],
-            type_indices_array[imodel],
-            types[0],
-            positions_c[0],
-            active_atoms,
-            types_active,
-            positions_c_active
-        );
-        Neighbor neigh(axis[0], positions_c_active, types_active, fp.n_type, fp.cutoff);
-
-        vector1d xe;
-        vector2d xf, xs;
         Model mod(fp);
         model_array.emplace_back(mod);
-        mod.run(
-            neigh.get_dis_array(),
-            neigh.get_diff_array(),
-            neigh.get_atom2_array(),
-            types_active,
-            false,
-            xe, xf, xs
-        );
-
-        n_features += xe.size();
+        n_features += mod.get_n_features();
         cumulative_n_features.emplace_back(n_features);
-        ++imodel;
     }
 
     if (print_memory == true){
@@ -114,8 +89,8 @@ PyHybridModel::PyHybridModel(
                 fp_array[n].cutoff
             );
 
-            vector1d xe;
-            vector2d xf, xs;
+            Eigen::VectorXd xe;
+            Eigen::MatrixXd xf, xs;
             model_array[n].run(
                 neigh.get_dis_array(),
                 neigh.get_diff_array(),
@@ -124,20 +99,40 @@ PyHybridModel::PyHybridModel(
                 force_st[i],
                 xe, xf, xs
             );
+            /*
+            // --- energy ---
+            x_all.block(i, first_index, 1, xe.size()) = xe.transpose();
 
+            // --- force ---
+            //TODO: Test
+            if (force_st[i]) {
+                const int n_force_rows = xf.rows();
+                const int n_force_cols = xf.cols();
+
+                for (int j = 0; j < active_atoms.size(); ++j) {
+                    const int row_base = 3 * active_atoms[j];
+                    // 3行まとめてコピー
+                    x_all.block(xf_begin[i] + row_base, first_index,
+                                3, n_force_cols) = xf.block(3*j, 0, 3, n_force_cols);
+                }
+
+                // --- stress ---
+                x_all.block(xs_begin[i], first_index, xs.rows(), xs.cols()) = xs;
+            }
+            */
             for (size_t j = 0; j < xe.size(); ++j)
-                x_all(i,first_index+j) = xe[j];
+                x_all(i, first_index+j) = xe(j);
 
-            if (force_st[i] == true){
-                for (size_t j = 0; j < xf.size(); ++j) {
+            if (force_st[i]){
+                for (size_t j = 0; j < xf.rows(); ++j) {
                     const auto j_rev = 3 * active_atoms[j / 3] + j % 3;
-                    for (size_t k = 0; k < xf[j].size(); ++k){
-                        x_all(xf_begin[i] + j_rev, first_index + k) = xf[j][k];
+                    for (size_t k = 0; k < xf.cols(); ++k){
+                        x_all(xf_begin[i] + j_rev, first_index + k) = xf(j, k);
                     }
                 }
-                for (size_t j = 0; j < xs.size(); ++j) {
-                    for (size_t k = 0; k < xs[j].size(); ++k){
-                        x_all(xs_begin[i] + j, first_index + k) = xs[j][k];
+                for (size_t j = 0; j < xs.rows(); ++j) {
+                    for (size_t k = 0; k < xs.cols(); ++k){
+                        x_all(xs_begin[i] + j, first_index + k) = xs(j, k);
                     }
                 }
             }

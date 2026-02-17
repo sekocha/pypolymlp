@@ -24,6 +24,7 @@ def test_solve_ridge_xtx(dataxy_xtx_xty_mp_149):
     xtx, xty = dataxy_xtx_xty_mp_149.xtx, dataxy_xtx_xty_mp_149.xty
     alphas = (1e-0, 1e1)
     coeffs = solver_ridge(xtx=xtx, xty=xty, alphas=alphas)
+    print(coeffs[:30])
     np.testing.assert_allclose(coeffs[20], [0.02978377, 0.0064956], rtol=1e-3)
     np.testing.assert_allclose(coeffs[30], [-0.02865416, -0.00704682], rtol=1e-3)
 

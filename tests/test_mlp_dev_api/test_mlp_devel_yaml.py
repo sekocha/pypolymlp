@@ -35,14 +35,14 @@ def test_mlp_dev_sscha_yaml():
     error_train2 = pypolymlp.summary.error_train[tag_train2]
     error_test2 = pypolymlp.summary.error_test[tag_test2]
 
-    assert error_test1["energy"] == pytest.approx(0.005428856308307956, rel=1e-3)
-    assert error_test1["force"] == pytest.approx(0.0012688163505438013, rel=1e-3)
-    assert error_train1["energy"] == pytest.approx(0.01448042213655658, rel=1e-3)
-    assert error_train1["force"] == pytest.approx(0.001592800914683042, rel=1e-3)
-    assert error_test2["energy"] == pytest.approx(0.01129707208231125, rel=1e-3)
-    assert error_test2["force"] == pytest.approx(0.007713906991233589, rel=1e-3)
-    assert error_train2["energy"] == pytest.approx(0.006487735283537794, rel=1e-3)
-    assert error_train2["force"] == pytest.approx(0.005020346796099093, rel=1e-3)
+    assert error_test1["energy"] == pytest.approx(0.000151012446220204, rel=1e-3)
+    assert error_test1["force"] == pytest.approx(0.001112638711008283, rel=1e-3)
+    assert error_train1["energy"] == pytest.approx(0.000154143686174717, rel=1e-3)
+    assert error_train1["force"] == pytest.approx(0.001077150536142360, rel=1e-3)
+    assert error_test2["energy"] == pytest.approx(0.003153521146321552, rel=1e-3)
+    assert error_test2["force"] == pytest.approx(0.005446704040721597, rel=1e-3)
+    assert error_train2["energy"] == pytest.approx(0.003392538851454359, rel=1e-3)
+    assert error_train2["force"] == pytest.approx(0.00482587047243652, rel=1e-3)
 
 
 def test_mlp_dev_electron_yaml():
