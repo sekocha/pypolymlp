@@ -118,10 +118,10 @@ void Model::gtinv(
             type1, force, xe_sum, xf_sum, xs_sum);
         auto t3 = std::chrono::high_resolution_clock::now();
 
-        //auto duration1 = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
-        //auto duration2 = std::chrono::duration_cast<std::chrono::microseconds>(t3 - t2);
-        //std::cout << "tm1: " << duration1.count() << " micros" << std::endl;
-        //std::cout << "tm2: " << duration2.count() << " micros" << std::endl;
+        auto duration1 = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
+        auto duration2 = std::chrono::duration_cast<std::chrono::microseconds>(t3 - t2);
+        // std::cout << "tm1: " << duration1.count() << " micros" << std::endl;
+        // std::cout << "tm2: " << duration2.count() << " micros" << std::endl;
    }
 }
 
@@ -149,24 +149,21 @@ void Model::reshape(
 
     if (!force) return;
 
-    for (size_t i = 0; i < dfx.size(); ++i)
-        for (size_t j = 0; j < dfx[i].size(); ++j)
-            df_eig(3 * j, i) = dfx[i][j];
-
-    for (size_t i = 0; i < dfy.size(); ++i)
-        for (size_t j = 0; j < dfy[i].size(); ++j)
-            df_eig(3 * j + 1, i) = dfy[i][j];
-
-    for (size_t i = 0; i < dfz.size(); ++i)
-        for (size_t j = 0; j < dfz[i].size(); ++j)
-            df_eig(3 * j + 2, i) = dfz[i][j];
-
+    for (size_t i = 0; i < dfx.size(); ++i){
+        const auto& dfx_i = dfx[i];
+        const auto& dfy_i = dfy[i];
+        const auto& dfz_i = dfz[i];
+        for (size_t j = 0; j < dfx_i.size(); ++j){
+            df_eig(3 * j, i) = dfx_i[j];
+            df_eig(3 * j + 1, i) = dfy_i[j];
+            df_eig(3 * j + 2, i) = dfz_i[j];
+        }
+    }
     for (size_t i = 0; i < ds.size(); ++i)
         for (size_t j = 0; j < ds[i].size(); ++j)
             ds_eig(j, i) = ds[i][j];
 
 }
-
 
 
 void Model::model_polynomial(
