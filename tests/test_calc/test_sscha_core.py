@@ -15,7 +15,7 @@ def test_sscha_core(unitcell_mlp_Al):
     unitcell, pot = unitcell_mlp_Al
     size = (2, 2, 2)
     sscha_params = SSCHAParams(unitcell, size, pot=pot, temp=700, tol=0.003)
-    sscha = SSCHACore(sscha_params, pot=pot, verbose=True)
+    sscha = SSCHACore(sscha_params, pot=pot, use_mkl=False, verbose=True)
 
     assert sscha._n_atom == 32
     assert sscha._n_unitcells == 8

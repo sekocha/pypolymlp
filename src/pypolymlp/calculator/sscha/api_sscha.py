@@ -22,6 +22,7 @@ def run_sscha(
     use_temporal_cutoff: bool = False,
     path: str = "./sscha",
     write_pdos: bool = False,
+    use_mkl: bool = True,
     verbose: bool = False,
 ):
     """Run sscha iterations for multiple temperatures.
@@ -45,6 +46,7 @@ def run_sscha(
             precondition=precondition,
             path=path,
             write_pdos=write_pdos,
+            use_mkl=use_mkl,
             verbose=verbose,
         )
     else:
@@ -58,6 +60,7 @@ def run_sscha(
             precondition=precondition,
             path=path,
             write_pdos=write_pdos,
+            use_mkl=use_mkl,
             verbose=verbose,
         )
     return sscha
@@ -73,6 +76,7 @@ def run_sscha_standard(
     precondition: bool = True,
     path: str = "./sscha",
     write_pdos: bool = False,
+    use_mkl: bool = True,
     verbose: bool = False,
 ):
     """Run sscha iterations for multiple temperatures.
@@ -91,6 +95,7 @@ def run_sscha_standard(
         params=params,
         coeffs=coeffs,
         properties=properties,
+        use_mkl=use_mkl,
         verbose=verbose,
     )
     sscha.set_initial_force_constants(fc2=fc2)
@@ -118,6 +123,7 @@ def run_sscha_large_system(
     precondition: bool = True,
     path: str = "./sscha",
     write_pdos: bool = False,
+    use_mkl: bool = True,
     verbose: bool = False,
 ):
     """Run sscha iterations for multiple temperatures using cutoff temporarily.
@@ -143,6 +149,7 @@ def run_sscha_large_system(
         params=params,
         coeffs=coeffs,
         properties=properties,
+        use_mkl=use_mkl,
         verbose=verbose,
     )
     sscha.set_initial_force_constants(fc2=fc2)
@@ -170,6 +177,7 @@ def run_sscha_large_system(
             params=params,
             coeffs=coeffs,
             properties=properties,
+            use_mkl=use_mkl,
             verbose=verbose,
         )
         sscha.set_initial_force_constants(fc2=fc2_rerun)

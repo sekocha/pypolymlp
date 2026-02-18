@@ -31,6 +31,7 @@ class SSCHACore:
         params: Optional[PolymlpParams] = None,
         coeffs: Optional[np.ndarray] = None,
         properties: Optional[Properties] = None,
+        use_mkl: bool = False,
         verbose: bool = False,
     ):
         """Init method.
@@ -48,6 +49,7 @@ class SSCHACore:
         """
 
         self._verbose = verbose
+        self._use_mkl = use_mkl
         if properties is not None:
             self._prop = properties
         else:
@@ -74,7 +76,12 @@ class SSCHACore:
         """Initialize Symfc instance."""
         cutoff = {2: cutoff_radius}
         sup = self._phonopy.supercell
-        self._symfc = Symfc(sup, cutoff=cutoff, use_mkl=True, log_level=self._verbose)
+        self._symfc = Symfc(
+            sup,
+            cutoff=cutoff,
+            use_mkl=self._use_mkl,
+            log_level=self._verbose,
+        )
         self._symfc.compute_basis_set(2)
 
         self._n_coeffs = self._symfc.basis_set[2].basis_set.shape[1]

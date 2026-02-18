@@ -6,7 +6,6 @@
 ****************************************************************************/
 
 #include "py_model.h"
-#include <chrono>
 
 PyModel::PyModel(const py::dict& params_dict,
                  const vector3d& axis,
@@ -34,8 +33,8 @@ PyModel::PyModel(const py::dict& params_dict,
         std::cout << " Matrix shape (X): ("
             << total_n_data << "," << n_features << ")" << std::endl;
         double mem = double(total_n_data) * double(n_features) * 8 * 1e-9;
-        std::cout << " Required memory for X: " << std::setprecision(5)
-            << mem << " (GB)" << std::endl;
+        std::cout << " Required memory for X: "
+            << std::setprecision(5) << mem << " (GB)" << std::endl;
     }
 
     x_all = Eigen::MatrixXd(total_n_data, n_features);
@@ -44,7 +43,6 @@ PyModel::PyModel(const py::dict& params_dict,
     #endif
     for (int i = 0; i < n_st; ++i){
         Neighbor neigh(axis[i], positions_c[i], types[i], fp.n_type, fp.cutoff);
-        auto t2 = std::chrono::high_resolution_clock::now();
         Eigen::VectorXd xe;
         Eigen::MatrixXd xf, xs;
         mod.run(
@@ -55,18 +53,11 @@ PyModel::PyModel(const py::dict& params_dict,
             force_st[i],
             xe, xf, xs
         );
-        auto t3 = std::chrono::high_resolution_clock::now();
         x_all.row(i) = xe.transpose();
         if (force_st[i]) {
             x_all.block(xf_begin[i], 0, xf.rows(), xf.cols()) = xf;
             x_all.block(xs_begin[i], 0, xs.rows(), xs.cols()) = xs;
         }
-        auto t4 = std::chrono::high_resolution_clock::now();
-
-        //auto duration2 = std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2);
-        //auto duration3 = std::chrono::duration_cast<std::chrono::milliseconds>(t4 - t3);
-        //std::cout << "t2: " << duration2.count() << " ms" << std::endl;
-        //std::cout << "t3: " << duration3.count() << " ms" << std::endl;
     }
 }
 

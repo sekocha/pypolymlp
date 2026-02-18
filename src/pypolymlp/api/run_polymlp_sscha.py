@@ -136,6 +136,11 @@ def run():
         action="store_true",
         help="Save projected DOS.",
     )
+    parser.add_argument(
+        "--disable_mkl",
+        action="store_true",
+        help="Disable to use MKL in Symfc.",
+    )
 
     args = parser.parse_args()
 
@@ -176,4 +181,5 @@ def run():
         cutoff_radius=args.cutoff_fc2,
         use_temporal_cutoff=args.use_temporal_cutoff,
         write_pdos=args.write_pdos,
+        use_mkl=not args.disable_mkl,
     )

@@ -14,6 +14,22 @@ Model::Model(){}
 Model::Model(const struct feature_params& fp){
 
     polymlp.set_features(fp);
+
+    auto& maps = polymlp.get_maps();
+    terms1.resize(fp.n_type);
+    terms2.resize(fp.n_type);
+    terms3.resize(fp.n_type);
+    for (int type1 = 0; type1 < fp.n_type; ++type1){
+        auto& maps_type = maps.maps_type[type1];
+        for (const auto& term: maps_type.polynomial){
+            if (term.local_ids.size() == 1)
+                terms1[type1].emplace_back(term);
+            else if (term.local_ids.size() == 2)
+                terms2[type1].emplace_back(term);
+            else if (term.local_ids.size() == 3)
+                terms3[type1].emplace_back(term);
+        }
+    }
 }
 
 Model::~Model(){}
@@ -74,9 +90,7 @@ void Model::pair(
         Eigen::MatrixXd df_eig, ds_eig;
         reshape(de, dfx, dfy, dfz, ds, force, de_eig, df_eig, ds_eig);
 
-        model_polynomial(
-            de_eig, df_eig, ds_eig,
-            type1, force, xe_sum, xf_sum, xs_sum);
+        model_polynomial(de_eig, df_eig, ds_eig, type1, force, xe_sum, xf_sum, xs_sum);
     }
 }
 
@@ -113,13 +127,11 @@ void Model::gtinv(
         reshape(de, dfx, dfy, dfz, ds, force, de_eig, df_eig, ds_eig);
 
         auto t2 = std::chrono::high_resolution_clock::now();
-        model_polynomial(
-            de_eig, df_eig, ds_eig,
-            type1, force, xe_sum, xf_sum, xs_sum);
+        model_polynomial(de_eig, df_eig, ds_eig, type1, force, xe_sum, xf_sum, xs_sum);
         auto t3 = std::chrono::high_resolution_clock::now();
 
-        auto duration1 = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
-        auto duration2 = std::chrono::duration_cast<std::chrono::microseconds>(t3 - t2);
+        // auto duration1 = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
+        // auto duration2 = std::chrono::duration_cast<std::chrono::microseconds>(t3 - t2);
         // std::cout << "tm1: " << duration1.count() << " micros" << std::endl;
         // std::cout << "tm2: " << duration2.count() << " micros" << std::endl;
    }
@@ -176,15 +188,14 @@ void Model::model_polynomial(
     Eigen::MatrixXd& xf_sum,
     Eigen::MatrixXd& xs_sum){
 
-    auto& maps = polymlp.get_maps();
-    auto& maps_type = maps.maps_type[type1];
-    for (const auto& term: maps_type.polynomial){
-        if (term.local_ids.size() == 1)
-            model_order1(term, de, df, ds, force, xe_sum, xf_sum, xs_sum);
-        else if (term.local_ids.size() == 2)
-            model_order2(term, de, df, ds, force, xe_sum, xf_sum, xs_sum);
-        else if (term.local_ids.size() == 3)
-            model_order3(term, de, df, ds, force, xe_sum, xf_sum, xs_sum);
+    for (const auto& term: terms1[type1]){
+        model_order1(term, de, df, ds, force, xe_sum, xf_sum, xs_sum);
+    }
+    for (const auto& term: terms2[type1]){
+        model_order2(term, de, df, ds, force, xe_sum, xf_sum, xs_sum);
+    }
+    for (const auto& term: terms3[type1]){
+        model_order3(term, de, df, ds, force, xe_sum, xf_sum, xs_sum);
     }
 }
 

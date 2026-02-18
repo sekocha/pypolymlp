@@ -128,6 +128,7 @@ class PypolymlpSSCHA:
         use_temporal_cutoff: bool = False,
         path: str = "./sscha",
         write_pdos: bool = False,
+        use_mkl: bool = True,
     ):
         """Run SSCHA iterations.
 
@@ -193,6 +194,7 @@ class PypolymlpSSCHA:
             use_temporal_cutoff=use_temporal_cutoff,
             path=path,
             write_pdos=write_pdos,
+            use_mkl=use_mkl,
             verbose=self._verbose,
         )
         self._fc2 = self._sscha.force_constants

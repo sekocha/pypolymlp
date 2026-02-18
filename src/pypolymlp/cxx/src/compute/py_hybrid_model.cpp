@@ -7,6 +7,7 @@
 
 #include "py_hybrid_model.h"
 
+
 PyHybridModel::PyHybridModel(
     const std::vector<py::dict>& params_dict_array,
     const vector3d& axis,
@@ -80,7 +81,6 @@ PyHybridModel::PyHybridModel(
                 types_active,
                 positions_c_active
             );
-
             Neighbor neigh(
                 axis[i],
                 positions_c_active,
@@ -99,27 +99,6 @@ PyHybridModel::PyHybridModel(
                 force_st[i],
                 xe, xf, xs
             );
-            /*
-            // --- energy ---
-            x_all.block(i, first_index, 1, xe.size()) = xe.transpose();
-
-            // --- force ---
-            //TODO: Test
-            if (force_st[i]) {
-                const int n_force_rows = xf.rows();
-                const int n_force_cols = xf.cols();
-
-                for (int j = 0; j < active_atoms.size(); ++j) {
-                    const int row_base = 3 * active_atoms[j];
-                    // 3行まとめてコピー
-                    x_all.block(xf_begin[i] + row_base, first_index,
-                                3, n_force_cols) = xf.block(3*j, 0, 3, n_force_cols);
-                }
-
-                // --- stress ---
-                x_all.block(xs_begin[i], first_index, xs.rows(), xs.cols()) = xs;
-            }
-            */
             for (size_t j = 0; j < xe.size(); ++j)
                 x_all(i, first_index+j) = xe(j);
 

@@ -22,7 +22,7 @@ if(NOT DEFINED CMAKE_CXX_FLAGS_RELEASE)
 else()
     set(
         CMAKE_CXX_FLAGS_RELEASE
-        "${CMAKE_CXX_FLAGS_RELEASE} -Wno-deprecated -Wno-undefined-var-template"
+        "${CMAKE_CXX_FLAGS_RELEASE} -Wno-deprecated -Wno-undefined-var-template -DEIGEN_NO_DEBUG"
     )
 endif()
 message(STATUS "CMAKE_CXX_FLAGS_RELEASE: ${CMAKE_CXX_FLAGS_RELEASE}")

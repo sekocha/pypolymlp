@@ -47,9 +47,9 @@ def get_auto_batch_size(
     """
     mem_bytes = os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES")
     if use_gradient:
-        mem_bytes = mem_bytes * 0.8 - (n_features**2 * 8)
+        mem_bytes = mem_bytes * 0.8 - (n_features**2 * 8) * 1.1
     else:
-        mem_bytes = mem_bytes * 0.8 - (n_features**2 * 8) * 2
+        mem_bytes = mem_bytes * 0.8 - (n_features**2 * 8) * 2 * 1.1
 
     if mem_bytes < 0:
         raise RuntimeError("Large amount of memory is required for computing X.")
