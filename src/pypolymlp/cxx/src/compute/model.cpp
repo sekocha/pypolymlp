@@ -6,7 +6,6 @@
 *****************************************************************************/
 
 #include "compute/model.h"
-#include <chrono>
 
 
 Model::Model(){}
@@ -50,7 +49,8 @@ void Model::run(
     xe_sum = Eigen::VectorXd::Zero(size);
     if (force == true){
         const int n_atom = types.size();
-        xf_sum = Eigen::MatrixXd::Zero(3 * n_atom, size);
+        n_atom_3 = n_atom * 3;
+        xf_sum = Eigen::MatrixXd::Zero(n_atom_3, size);
         xs_sum = Eigen::MatrixXd::Zero(6, size);
     }
     if (fp.feature_type == "pair")
@@ -89,7 +89,6 @@ void Model::pair(
         Eigen::VectorXd de_eig;
         Eigen::MatrixXd df_eig, ds_eig;
         reshape(de, dfx, dfy, dfz, ds, force, de_eig, df_eig, ds_eig);
-
         model_polynomial(de_eig, df_eig, ds_eig, type1, force, xe_sum, xf_sum, xs_sum);
     }
 }
@@ -112,7 +111,6 @@ void Model::gtinv(
         const auto& dis = dis_array[atom1];
         const auto& diff = diff_array[atom1];
         vector1d de; vector2d dfx, dfy, dfz, ds;
-        auto t1 = std::chrono::high_resolution_clock::now();
         if (force == false) {
             local.gtinv(polymlp, type1, dis, diff, de);
         }
@@ -125,15 +123,7 @@ void Model::gtinv(
         Eigen::VectorXd de_eig;
         Eigen::MatrixXd df_eig, ds_eig;
         reshape(de, dfx, dfy, dfz, ds, force, de_eig, df_eig, ds_eig);
-
-        auto t2 = std::chrono::high_resolution_clock::now();
         model_polynomial(de_eig, df_eig, ds_eig, type1, force, xe_sum, xf_sum, xs_sum);
-        auto t3 = std::chrono::high_resolution_clock::now();
-
-        // auto duration1 = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
-        // auto duration2 = std::chrono::duration_cast<std::chrono::microseconds>(t3 - t2);
-        // std::cout << "tm1: " << duration1.count() << " micros" << std::endl;
-        // std::cout << "tm2: " << duration2.count() << " micros" << std::endl;
    }
 }
 
@@ -151,8 +141,7 @@ void Model::reshape(
 
     de_eig = Eigen::VectorXd(de.size());
     if (force){
-        const int three_n = 3 * dfx[0].size();
-        df_eig = Eigen::MatrixXd(three_n, dfx.size());
+        df_eig = Eigen::MatrixXd(n_atom_3, dfx.size());
         ds_eig = Eigen::MatrixXd(6, ds.size());
     }
 
@@ -217,7 +206,7 @@ void Model::model_order1(
 
     if (!force) return;
 
-    const int n_atom_3 = df.rows();
+    std::cout << n_atom_3 << std::endl;
     for (int k = 0; k < n_atom_3; ++k){
         xf_sum(k, col) += df(k, c1);
     }
@@ -225,6 +214,7 @@ void Model::model_order1(
         xs_sum(k, col) += ds(k, c1);
     }
 }
+
 
 void Model::model_order2(
     const PolynomialTerm& term,
@@ -247,7 +237,6 @@ void Model::model_order2(
     const double val1 = de(c2);
     const double val2 = de(c1);
 
-    const int n_atom_3 = df.rows();
     for (int k = 0; k < n_atom_3; ++k){
         xf_sum(k, col) += val1 * df(k, c1) + val2 * df(k, c2);
     }
@@ -280,7 +269,6 @@ void Model::model_order3(
     const double val2 = de(c1) * de(c3);
     const double val3 = de(c1) * de(c2);
 
-    const int n_atom_3 = df.rows();
     for (int k = 0; k < n_atom_3; ++k){
         xf_sum(k, col) += val1 * df(k, c1) + val2 * df(k, c2) + val3 * df(k, c3);
     }

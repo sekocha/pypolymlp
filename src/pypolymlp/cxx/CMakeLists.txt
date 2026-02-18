@@ -17,7 +17,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 if(NOT DEFINED CMAKE_CXX_FLAGS_RELEASE)
     set(
         CMAKE_CXX_FLAGS_RELEASE
-        "-O2 -Wno-deprecated -Wno-undefined-var-template -DNDEBUG"
+        "-O2 -Wno-deprecated -Wno-undefined-var-template -DNDEBUG -DEIGEN_NO_DEBUG"
     )
 else()
     set(
