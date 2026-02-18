@@ -49,8 +49,7 @@ void Model::run(
     xe_sum = Eigen::VectorXd::Zero(size);
     if (force == true){
         const int n_atom = types.size();
-        n_atom_3 = n_atom * 3;
-        xf_sum = Eigen::MatrixXd::Zero(n_atom_3, size);
+        xf_sum = Eigen::MatrixXd::Zero(n_atom * 3, size);
         xs_sum = Eigen::MatrixXd::Zero(6, size);
     }
     if (fp.feature_type == "pair")
@@ -141,6 +140,7 @@ void Model::reshape(
 
     de_eig = Eigen::VectorXd(de.size());
     if (force){
+        const int n_atom_3 = dfx[0].size() * 3;
         df_eig = Eigen::MatrixXd(n_atom_3, dfx.size());
         ds_eig = Eigen::MatrixXd(6, ds.size());
     }
@@ -206,7 +206,7 @@ void Model::model_order1(
 
     if (!force) return;
 
-    std::cout << n_atom_3 << std::endl;
+    const int n_atom_3 = df.rows();
     for (int k = 0; k < n_atom_3; ++k){
         xf_sum(k, col) += df(k, c1);
     }
@@ -237,6 +237,7 @@ void Model::model_order2(
     const double val1 = de(c2);
     const double val2 = de(c1);
 
+    const int n_atom_3 = df.rows();
     for (int k = 0; k < n_atom_3; ++k){
         xf_sum(k, col) += val1 * df(k, c1) + val2 * df(k, c2);
     }
@@ -269,6 +270,7 @@ void Model::model_order3(
     const double val2 = de(c1) * de(c3);
     const double val3 = de(c1) * de(c2);
 
+    const int n_atom_3 = df.rows();
     for (int k = 0; k < n_atom_3; ++k){
         xf_sum(k, col) += val1 * df(k, c1) + val2 * df(k, c2) + val3 * df(k, c3);
     }

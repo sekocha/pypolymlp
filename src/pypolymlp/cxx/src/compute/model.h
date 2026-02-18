@@ -19,7 +19,6 @@ class Model {
 
     PolymlpAPI polymlp;
     std::vector<std::vector<PolynomialTerm> > terms1, terms2, terms3;
-    int n_atom_3;
 
     void pair(
         const vector3d& dis_array,
