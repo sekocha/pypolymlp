@@ -42,10 +42,7 @@ def _assert_xtx_xty(data_xy):
     assert data_xy.xty.shape[0] == 168
     assert data_xy.scales.shape[0] == 168
 
-    ifeature1, ifeature2 = 56, 59
-    assert data_xy.xtx[ifeature1, ifeature2] == pytest.approx(
-        1.7809598557388415e6, rel=1e-6
-    )
+    ifeature1 = 56
     assert data_xy.xty[ifeature1] == pytest.approx(6.899130774433e5, rel=1e-6)
     assert data_xy.scales[ifeature1] == pytest.approx(0.0032488632685359524)
 

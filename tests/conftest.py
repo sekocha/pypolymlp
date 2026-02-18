@@ -71,7 +71,7 @@ def dataxy_mp_149(regdata_mp_149):
     """Return regression data."""
     params, datasets_ = regdata_mp_149
     core = PolymlpDevCore(params, use_gradient=False)
-    data_xy = core.calc_xy(datasets_)
+    data_xy = core.calc_xy(datasets_, scale_threshold=1e-10)
     return data_xy
 
 
@@ -81,7 +81,7 @@ def dataxy_xtx_xty_mp_149(regdata_mp_149):
     params, datasets = regdata_mp_149
     datasets_ = copy.deepcopy(datasets)
     core = PolymlpDevCore(params, use_gradient=False)
-    data_xy = core.calc_xtx_xty(datasets_)
+    data_xy = core.calc_xtx_xty(datasets_, scale_threshold=1e-10)
     return data_xy
 
 

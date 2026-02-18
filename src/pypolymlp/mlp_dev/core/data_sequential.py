@@ -32,6 +32,7 @@ def calc_xtx_xty(
     batch_size: Optional[int] = None,
     use_gradient: bool = False,
     n_features_threshold: int = 50000,
+    scale_threshold: float = 1e-10,
     verbose: bool = False,
 ):
     """Compute X.T @ X and X.T @ y."""
@@ -80,6 +81,7 @@ def calc_xtx_xty(
         data_xy.xe_sq_sum,
         n_data,
         include_force=datasets.include_force,
+        threshold=scale_threshold,
     )
     data_xy.xtx[zero_ids] = 0.0
     data_xy.xtx[:, zero_ids] = 0.0

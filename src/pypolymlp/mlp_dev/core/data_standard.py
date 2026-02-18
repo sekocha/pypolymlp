@@ -20,6 +20,7 @@ def calc_xy(
     scales: Optional[np.ndarray] = None,
     min_energy: Optional[float] = None,
     weight_stress: float = 0.1,
+    scale_threshold: float = 1e-10,
     verbose: bool = False,
 ):
     """Calculate X and y data."""
@@ -43,7 +44,9 @@ def calc_xy(
     if scales is None:
         scales = np.std(x[:ne], axis=0)
 
-    scales, zero_ids = round_scales(scales, include_force=include_force)
+    scales, zero_ids = round_scales(
+        scales, include_force=include_force, threshold=scale_threshold
+    )
     x[:, zero_ids] = 0.0
     x /= scales
 

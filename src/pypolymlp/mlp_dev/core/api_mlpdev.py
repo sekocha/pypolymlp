@@ -48,6 +48,7 @@ class PolymlpDevCore:
         scales: Optional[np.ndarray] = None,
         min_energy: Optional[float] = None,
         weight_stress: float = 0.1,
+        scale_threshold: float = 1e-10,
     ) -> PolymlpDataXY:
         """Calculate X and y data."""
         data_xy = calc_xy(
@@ -57,6 +58,7 @@ class PolymlpDevCore:
             scales=scales,
             min_energy=min_energy,
             weight_stress=weight_stress,
+            scale_threshold=scale_threshold,
             verbose=self._verbose,
         )
         return data_xy
@@ -69,6 +71,7 @@ class PolymlpDevCore:
         min_energy: Optional[float] = None,
         weight_stress: float = 0.1,
         batch_size: Optional[int] = None,
+        scale_threshold: float = 1e-10,
     ) -> PolymlpDataXY:
         """Calculate X.T @ X and X.T @ y data."""
         data_xy = calc_xtx_xty(
@@ -80,6 +83,7 @@ class PolymlpDevCore:
             weight_stress=weight_stress,
             batch_size=batch_size,
             use_gradient=self._use_gradient,
+            scale_threshold=scale_threshold,
             verbose=self._verbose,
         )
         return data_xy
