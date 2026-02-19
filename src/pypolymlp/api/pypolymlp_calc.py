@@ -467,8 +467,8 @@ class PypolymlpCalc:
         method: Literal["BFGS", "CG", "L-BFGS-B", "SLSQP"] = "BFGS",
         gtol: float = 1e-4,
         maxiter: int = 1000,
-        c1: Optional[float] = None,
-        c2: Optional[float] = None,
+        c1: float = 1e-4,
+        c2: float = 0.8,
     ):
         """Run geometry optimization.
 
@@ -494,8 +494,6 @@ class PypolymlpCalc:
             print("Initial structure", flush=True)
             self._go.print_structure()
 
-        c1 = 1e-4
-        c2 = 0.999
         self._go.run(method=method, gtol=gtol, maxiter=maxiter, c1=c1, c2=c2)
         self.structures = self._go.structure
         if self._verbose:

@@ -113,7 +113,6 @@ def _line_search_wolfe2(f, fprime, xk, pk, gfk, old_fval, old_old_fval, **kwargs
     for key in ("c1", "c2", "amax"):
         if key in kwargs:
             kwargs2[key] = kwargs[key]
-    print(kwargs2)
 
     ret = line_search_wolfe2(
         f,
