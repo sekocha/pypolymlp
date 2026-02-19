@@ -494,6 +494,8 @@ class PypolymlpCalc:
             print("Initial structure", flush=True)
             self._go.print_structure()
 
+        c1 = 1e-7
+        c2 = 0.9999
         self._go.run(method=method, gtol=gtol, maxiter=maxiter, c1=c1, c2=c2)
         self.structures = self._go.structure
         if self._verbose:

@@ -7,6 +7,7 @@ import numpy as np
 from scipy.optimize import NonlinearConstraint, minimize
 
 from pypolymlp.calculator.compute_features import update_types
+from pypolymlp.calculator.opt_cg import minimize_cg
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
 from pypolymlp.core.units import EVtoGPa
@@ -326,7 +327,19 @@ class GeometryOptimization:
                 constraints=[nlc],
             )
         else:
-            self._res = minimize(fun, self._x0, method=method, jac=jac, options=options)
+            if method == "CG":
+                self._res = minimize_cg(
+                    fun,
+                    self._x0,
+                    jac=jac,
+                    c1=c1,
+                    c2=c2,
+                    disp=self._verbose,
+                )
+            else:
+                self._res = minimize(
+                    fun, self._x0, method=method, jac=jac, options=options
+                )
         self._x0 = self._res.x
         return self
 
