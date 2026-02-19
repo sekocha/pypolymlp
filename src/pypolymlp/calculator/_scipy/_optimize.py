@@ -204,7 +204,7 @@ def minimize_cg(
         args=args,
         epsilon=eps,
         finite_diff_rel_step=finite_diff_rel_step,
-        workers=workers,
+        #    workers=workers,
     )
 
     f = sf.fun

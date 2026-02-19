@@ -327,7 +327,8 @@ class GeometryOptimization:
                 constraints=[nlc],
             )
         else:
-            if method == "CG":
+            use_test_scipy = False
+            if use_test_scipy and method == "CG":
                 self._res = minimize_cg(
                     fun,
                     self._x0,
@@ -340,6 +341,7 @@ class GeometryOptimization:
                 self._res = minimize(
                     fun, self._x0, method=method, jac=jac, options=options
                 )
+
         self._x0 = self._res.x
         return self
 

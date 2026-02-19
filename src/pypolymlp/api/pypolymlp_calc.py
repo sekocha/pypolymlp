@@ -468,7 +468,7 @@ class PypolymlpCalc:
         gtol: float = 1e-4,
         maxiter: int = 1000,
         c1: float = 1e-4,
-        c2: float = 0.8,
+        c2: float = 0.99,
     ):
         """Run geometry optimization.
 
