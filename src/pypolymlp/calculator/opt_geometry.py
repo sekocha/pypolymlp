@@ -6,8 +6,8 @@ from typing import Literal, Optional, Union
 import numpy as np
 from scipy.optimize import NonlinearConstraint, minimize
 
+from pypolymlp.calculator._scipy._optimize import minimize_cg
 from pypolymlp.calculator.compute_features import update_types
-from pypolymlp.calculator.opt_cg import minimize_cg
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
 from pypolymlp.core.units import EVtoGPa

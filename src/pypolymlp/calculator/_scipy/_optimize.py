@@ -3,6 +3,8 @@
 import warnings
 
 import numpy as np
+
+# from ._linesearch import (
 from scipy.optimize._linesearch import (
     LineSearchWarning,
     line_search_wolfe1,
@@ -66,6 +68,66 @@ def _line_search_wolfe12(f, fprime, xk, pk, gfk, old_fval, old_old_fval, **kwarg
     if ret[0] is None:
         raise _LineSearchError()
 
+    return ret
+
+
+def _line_search_wolfe1(
+    f,
+    fprime,
+    xk,
+    pk,
+    gfk=None,
+    old_fval=None,
+    old_old_fval=None,
+    args=(),
+    c1=1e-4,
+    c2=0.9,
+    amax=50,
+    amin=1e-8,
+    xtol=1e-14,
+):
+
+    ret = line_search_wolfe1(
+        f,
+        fprime,
+        xk,
+        pk,
+        gfk,
+        old_fval,
+        old_old_fval,
+        c1=c1,
+        c2=c2,
+        amin=amin,
+        amax=amax,
+    )
+
+    if ret[0] is None:
+        raise _LineSearchError()
+    return ret
+
+
+def _line_search_wolfe2(f, fprime, xk, pk, gfk, old_fval, old_old_fval, **kwargs):
+    """Line search."""
+    extra_condition = kwargs.pop("extra_condition", None)
+    kwargs2 = {}
+    for key in ("c1", "c2", "amax"):
+        if key in kwargs:
+            kwargs2[key] = kwargs[key]
+    print(kwargs2)
+
+    ret = line_search_wolfe2(
+        f,
+        fprime,
+        xk,
+        pk,
+        gfk,
+        old_fval,
+        old_old_fval,
+        extra_condition=extra_condition,
+        **kwargs2,
+    )
+    if ret[0] is None:
+        raise _LineSearchError()
     return ret
 
 
@@ -198,7 +260,21 @@ def minimize_cg(
             return np.dot(pk, gfk) <= -sigma_3 * np.dot(gfk, gfk)
 
         try:
-            alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = _line_search_wolfe12(
+            # alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = _line_search_wolfe2(
+            #     f,
+            #     myfprime,
+            #     xk,
+            #     pk,
+            #     gfk,
+            #     old_fval,
+            #     old_old_fval,
+            #     c1=c1,
+            #     c2=c2,
+            #     amax=1e100,
+            #     # amin=1e-100,
+            #     extra_condition=descent_condition,
+            # )
+            alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = _line_search_wolfe1(
                 f,
                 myfprime,
                 xk,
@@ -208,10 +284,10 @@ def minimize_cg(
                 old_old_fval,
                 c1=c1,
                 c2=c2,
-                amin=1e-100,
                 amax=1e100,
-                extra_condition=descent_condition,
+                amin=1e-100,
             )
+
         except _LineSearchError:
             # Line search failed to find a better solution.
             warnflag = 2

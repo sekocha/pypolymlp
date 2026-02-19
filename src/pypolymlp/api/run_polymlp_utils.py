@@ -197,7 +197,7 @@ def run():
         if args.refine_cell:
             structure = polymlp.refine_cell()
             polymlp.print_poscar(structure)
-            polymlp.write_poscar_file(st, filename="poscar_pypolymlp")
+            polymlp.write_poscar_file(structure, filename="poscar_pypolymlp")
         if args.space_group:
             print(" space_group = ", polymlp.get_spacegroup(), flush=True)
     elif (
