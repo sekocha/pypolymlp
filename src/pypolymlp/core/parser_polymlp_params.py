@@ -199,8 +199,18 @@ class ParamsParserSingle:
             dtype=float,
             return_array=True,
         )
+        n_gaussians = self._parser.get_params(
+            "n_gaussians",
+            default=None,
+            dtype=int,
+        )
         distance = self._parser.distance
-        pair_params = set_gaussian_params(params1, params2)
+        pair_params = set_gaussian_params(
+            params1=params1,
+            params2=params2,
+            n_gaussians=n_gaussians,
+            cutoff=cutoff,
+        )
         pair_params_active, cond = set_active_gaussian_params(
             pair_params,
             elements,

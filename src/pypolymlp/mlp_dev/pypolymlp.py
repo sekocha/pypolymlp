@@ -85,6 +85,7 @@ class Pypolymlp:
         feature_type: Literal["pair", "gtinv"] = "gtinv",
         gaussian_params1: tuple[float, float, int] = (1.0, 1.0, 1),
         gaussian_params2: tuple[float, float, int] = (0.0, 5.0, 7),
+        n_gaussians: Optional[int] = None,
         distance: Optional[dict] = None,
         reg_alpha_params: tuple[float, float, int] = (-3.0, 1.0, 5),
         gtinv_order: int = 3,
@@ -114,6 +115,9 @@ class Pypolymlp:
             Parameters are given as np.linspace(p[0], p[1], p[2]),
             where p[0], p[1], and p[2] are given by gaussian_params1
             and gaussian_params2.
+        n_gaussians: Number of Gaussian functions.
+                     Parameters of Gaussians are automatically determined
+                     by the cutoff radius and number of Gaussians.
         distance: Interatomic distances for element pairs.
             (e.g.) distance = {(Sr, Sr): [3.5, 4.8], (Ti, Ti): [2.5, 5.5]}
         reg_alpha_params: Parameters for penalty term in
@@ -139,6 +143,7 @@ class Pypolymlp:
             feature_type=feature_type,
             gaussian_params1=gaussian_params1,
             gaussian_params2=gaussian_params2,
+            n_gaussians=n_gaussians,
             distance=distance,
             reg_alpha_params=reg_alpha_params,
             gtinv_order=gtinv_order,

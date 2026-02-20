@@ -63,12 +63,24 @@ def set_gtinv_params(
 def set_gaussian_params(
     params1: tuple[float, float, int] = (1.0, 1.0, 1),
     params2: tuple[float, float, int] = (0.0, 5.0, 7),
+    n_gaussians: Optional[int] = None,
+    cutoff: Optional[float] = None,
 ):
     """Set parameters for Gaussian radial functions."""
-    assert len(params1) == len(params2) == 3
-    g_params1 = np.linspace(float(params1[0]), float(params1[1]), int(params1[2]))
-    g_params2 = np.linspace(float(params2[0]), float(params2[1]), int(params2[2]))
-    pair_params = list(itertools.product(g_params1, g_params2))
+    if n_gaussians is None:
+        assert len(params1) == len(params2) == 3
+        g_params1 = np.linspace(float(params1[0]), float(params1[1]), int(params1[2]))
+        g_params2 = np.linspace(float(params2[0]), float(params2[1]), int(params2[2]))
+        pair_params = list(itertools.product(g_params1, g_params2))
+    else:
+        if cutoff is None:
+            raise RuntimeError("Cutoff required for automatic setting of Gaussians.")
+
+        rmax = cutoff - 1.0
+        g_params2 = np.linspace(0.0, 1.0, n_gaussians - 1) * rmax
+        width = max(1.0, g_params2[1] - g_params2[0])
+        pair_params = [(width, p2) for p2 in g_params2]
+
     pair_params.append((0.0, 0.0))
     return pair_params
 
@@ -127,6 +139,7 @@ def set_all_params(
     feature_type: Literal["pair", "gtinv"] = "gtinv",
     gaussian_params1: tuple[float, float, int] = (1.0, 1.0, 1),
     gaussian_params2: tuple[float, float, int] = (0.0, 5.0, 7),
+    n_gaussians: Optional[int] = None,
     distance: Optional[dict] = None,
     reg_alpha_params: tuple[float, float, int] = (-3.0, 1.0, 5),
     gtinv_order: int = 3,
@@ -156,6 +169,9 @@ def set_all_params(
         Parameters are given as np.linspace(p[0], p[1], p[2]),
         where p[0], p[1], and p[2] are given by gaussian_params1
         and gaussian_params2.
+    n_gaussians: Number of Gaussian functions.
+                 Parameters of Gaussians are automatically determined
+                 by the cutoff radius and number of Gaussians.
     distance: Interatomic distances for element pairs.
         (e.g.) distance = {(Sr, Sr): [3.5, 4.8], (Ti, Ti): [2.5, 5.5]}
     reg_alpha_params: Parameters for penalty term in
@@ -182,7 +198,12 @@ def set_all_params(
         gtinv_maxl=gtinv_maxl,
         gtinv_version=gtinv_version,
     )
-    pair_params = set_gaussian_params(gaussian_params1, gaussian_params2)
+    pair_params = set_gaussian_params(
+        gaussian_params1,
+        gaussian_params2,
+        n_gaussians=n_gaussians,
+        cutoff=cutoff,
+    )
     pair_params_active, pair_cond = set_active_gaussian_params(
         pair_params,
         elements,
