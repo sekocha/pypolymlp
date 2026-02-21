@@ -648,7 +648,6 @@ def set_datasets_from_structures(
             forces=forces,
             stresses=stresses,
             element_order=params.element_order,
-            verbose=verbose,
         )
         data = Dataset(
             name="data",
