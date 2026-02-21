@@ -64,6 +64,7 @@ class Pypolymlp:
             file_params,
             train_ratio=train_ratio,
             prefix_data_location=prefix,
+            verbose=self._verbose,
         )
         self._train, self._test = parser.train, parser.test
         self._params = parser.params
@@ -221,6 +222,7 @@ class Pypolymlp:
             self._params,
             files=yamlfiles,
             train_ratio=train_ratio,
+            verbose=self._verbose,
         )
         return self
 
@@ -240,6 +242,7 @@ class Pypolymlp:
             self._params,
             files=yamlfiles,
             train_ratio=train_ratio,
+            verbose=self._verbose,
         )
         return self
 
@@ -267,12 +270,14 @@ class Pypolymlp:
                 self._params,
                 train_files=train_vaspruns,
                 test_files=test_vaspruns,
+                verbose=self._verbose,
             )
         else:
             self._train, self._test = set_datasets_from_single_fileset(
                 self._params,
                 files=vaspruns,
                 train_ratio=train_ratio,
+                verbose=self._verbose,
             )
         return self
 
@@ -294,6 +299,7 @@ class Pypolymlp:
             self._params,
             train_files=train_vaspruns,
             test_files=test_vaspruns,
+            verbose=self._verbose,
         )
         return self
 
@@ -312,6 +318,7 @@ class Pypolymlp:
             self._params,
             files=yaml,
             train_ratio=train_ratio,
+            verbose=self._verbose,
         )
         return self
 
@@ -345,6 +352,7 @@ class Pypolymlp:
             forces=forces,
             stresses=stresses,
             train_ratio=train_ratio,
+            verbose=self._verbose,
         )
         return self
 
@@ -386,6 +394,7 @@ class Pypolymlp:
             test_forces=test_forces,
             train_stresses=train_stresses,
             test_stresses=test_stresses,
+            verbose=self._verbose,
         )
         return self
 

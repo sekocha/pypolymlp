@@ -356,11 +356,13 @@ class ParamsParser:
         train_ratio: float = 0.9,
         prefix_data_location: Optional[str] = None,
         parse_dft: bool = True,
+        verbose: bool = False,
     ):
         """Init method."""
         self._train_ratio = train_ratio
         self._prefix_data_location = prefix_data_location
         self._parse_dft = parse_dft
+        self._verbose = verbose
 
         self._params = None
         self._common_params = None
@@ -381,7 +383,7 @@ class ParamsParser:
     def _set_from_single_file(self, infile: str):
         """Set parameters from single input file."""
         self._priority_file = infile
-        parser = ParamsParserSingle(infile)
+        parser = ParamsParserSingle(infile, verbose=self._verbose)
         parser.set_params()
         if self._parse_dft:
             parser.set_datasets(
@@ -398,7 +400,7 @@ class ParamsParser:
     def _set_from_multiple_files(self, infiles: list):
         """Set parameters from multiple input files."""
         self._priority_file = infiles[0]
-        parser = ParamsParserSingle(infiles[0])
+        parser = ParamsParserSingle(infiles[0], verbose=self._verbose)
         parser.set_params()
         if self._parse_dft:
             parser.set_datasets(
@@ -410,7 +412,7 @@ class ParamsParser:
 
         self._hybrid_params = [parser.params]
         for infile in infiles[1:]:
-            params = ParamsParserSingle(infile).set_params()
+            params = ParamsParserSingle(infile, verbose=self._verbose).set_params()
             self._hybrid_params.append(params)
 
         self._common_params = set_common_params(self._hybrid_params)

@@ -14,6 +14,7 @@ from pypolymlp.core.units import EVtoKbar
 def set_dataset_from_vaspruns(
     vaspruns: Union[str, list[str]],
     element_order: Optional[bool] = None,
+    verbose: bool = False,
 ) -> DatasetDFT:
     """Return DFT dataset by loading vasprun.xml files."""
     if isinstance(vaspruns, (list, tuple, np.ndarray)):
@@ -21,7 +22,8 @@ def set_dataset_from_vaspruns(
     else:
         files = [vaspruns]
 
-    structures, (energies, forces, stresses) = parse_properties_from_vaspruns(files)
+    structures, props = parse_properties_from_vaspruns(files, verbose=verbose)
+    (energies, forces, stresses) = props
     dft = DatasetDFT(
         structures,
         energies,
@@ -32,7 +34,7 @@ def set_dataset_from_vaspruns(
     return dft
 
 
-def parse_properties_from_vaspruns(vaspruns: list[str]) -> tuple:
+def parse_properties_from_vaspruns(vaspruns: list[str], verbose: bool = False) -> tuple:
     """Parse vasprun.xml files and return structures and properties."""
     energies, forces, stresses, structures = [], [], [], []
     for vasp in vaspruns:
@@ -46,7 +48,18 @@ def parse_properties_from_vaspruns(vaspruns: list[str]) -> tuple:
                 sigma = stress * st.volume / EVtoKbar
                 stresses.append(sigma)
         else:
-            v = Vasprun(vasp)
+            try:
+                v = Vasprun(vasp)
+            except:
+                if verbose:
+                    print(vasp, "not readable.", flush=True)
+                continue
+
+            if not _is_convergent(v):
+                if verbose:
+                    print(vasp, "not convergent.", flush=True)
+                continue
+
             structures.append(v.structure)
             energies.append(v.energy)
             forces.append(v.forces)
@@ -464,6 +477,65 @@ def parse_energy_volume(vaspruns):
         vol = vasp.structure.volume
         ev_data.append([vol, energy])
     return np.array(ev_data)
+
+
+def _exist_no_errors(logfile: str):
+    """Check errors in VASP calculation."""
+    try:
+        f = open(logfile)
+        lines = f.readlines()
+        f.close()
+    except:
+        return False
+
+    for l in lines:
+        if (
+            "Your highest band is occupied" in l
+            or "Error EDDDAV: Call to ZHEGV failed" in l
+            or "WARNING: Sub-Space-Matrix is not hermitian in DAV" in l
+            or "WARNING: CNORMN: search vector ill defined" in l
+        ):
+            return False
+    return True
+
+
+def _is_convergent(vasprun_xml: Union[str, Vasprun], tol: float = 1e-3):
+    """Check if VASP calculation is convergent."""
+    if isinstance(vasprun_xml, Vasprun):
+        vasp = vasprun_xml
+    else:
+        try:
+            vasp = Vasprun(vasprun_xml)
+        except:
+            return False
+
+    try:
+        e_history = vasp.get_scstep()
+        if abs(e_history[-1] - e_history[-2]) < tol:
+            return True
+        return False
+    except:
+        return True
+
+
+class VaspErrorCheck:
+    """Class for checking errors in VASP calculations."""
+
+    def __init__(self):
+        """Init method."""
+        pass
+
+    def test_no_errors(self, logfiles: Union[str, list]):
+        """Test if calculations finish successfully."""
+        if isinstance(logfiles, str):
+            return _exist_no_errors(logfiles)
+        return np.array([_exist_no_errors(log) for log in logfiles])
+
+    def test_convergence(self, vaspruns: Union[str, list], tol: float = 1e-3):
+        """Test if calculations converge."""
+        if isinstance(vaspruns, str):
+            return _is_convergent(vaspruns)
+        return np.array([_is_convergent(vasp) for vasp in vaspruns])
 
 
 # class Chg:

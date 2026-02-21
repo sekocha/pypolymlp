@@ -154,6 +154,7 @@ class Dataset:
             weight=self._weight,
             name="Train_" + self._name,
             split=True,
+            verbose=self._verbose,
         )
         test = Dataset(
             dataset_type=self._dataset_type,
@@ -163,6 +164,7 @@ class Dataset:
             weight=self._weight,
             name="Test_" + self._name,
             split=True,
+            verbose=self._verbose,
         )
         return train, test
 
@@ -182,6 +184,7 @@ class Dataset:
             name=train_name,
             split=True,
             dft=train_dft,
+            verbose=self._verbose,
         )
         test_name = "Test_" + self._name
         test = Dataset(
@@ -193,6 +196,7 @@ class Dataset:
             name=test_name,
             split=True,
             dft=test_dft,
+            verbose=self._verbose,
         )
         return train, test
 
@@ -208,6 +212,7 @@ class Dataset:
             weight=self._weight,
             name=name,
             dft=dft,
+            verbose=self._verbose,
         )
         return data
 
@@ -238,6 +243,7 @@ class Dataset:
         self._dft = set_dataset_from_vaspruns(
             self._files,
             element_order=self._element_order,
+            verbose=self._verbose,
         )
         return self
 
@@ -416,6 +422,7 @@ class Dataset:
                 include_stress=self._include_stress,
                 weight=self._weight,
                 name=self._name + "_no_imag",
+                verbose=self._verbose,
             )
         if files_imag is not None:
             imag = Dataset(
@@ -425,6 +432,7 @@ class Dataset:
                 include_stress=self._include_stress,
                 weight=self._weight * weight_imag,
                 name=self._name + "_imag",
+                verbose=self._verbose,
             )
         return no_imag, imag
 
@@ -506,6 +514,7 @@ def set_datasets_from_multiple_filesets(
     train_files: Optional[list[list[str]]] = None,
     test_files: Optional[list[list[str]]] = None,
     weight: float = 1.0,
+    verbose: bool = False,
 ):
     """Set datasets from files and params."""
     train, test = [], []
@@ -518,6 +527,7 @@ def set_datasets_from_multiple_filesets(
                 include_force=params.include_force,
                 include_stress=params.include_stress,
                 weight=weight,
+                verbose=verbose,
             )
         )
     for i, files in enumerate(test_files):
@@ -529,6 +539,7 @@ def set_datasets_from_multiple_filesets(
                 include_force=params.include_force,
                 include_stress=params.include_stress,
                 weight=weight,
+                verbose=verbose,
             )
         )
     train = DatasetList(train)
@@ -545,6 +556,7 @@ def set_datasets_from_single_fileset(
     test_files: Optional[list[str]] = None,
     train_ratio: float = 0.9,
     weight: float = 1.0,
+    verbose: bool = False,
 ):
     """Set datasets from files and params."""
     parse_end = True
@@ -556,6 +568,7 @@ def set_datasets_from_single_fileset(
             include_force=params.include_force,
             include_stress=params.include_stress,
             weight=weight,
+            verbose=verbose,
         )
         test = Dataset(
             name="data2",
@@ -564,6 +577,7 @@ def set_datasets_from_single_fileset(
             include_force=params.include_force,
             include_stress=params.include_stress,
             weight=weight,
+            verbose=verbose,
         )
     else:
         if isinstance(files, str):
@@ -574,6 +588,7 @@ def set_datasets_from_single_fileset(
                 include_force=params.include_force,
                 include_stress=params.include_stress,
                 weight=weight,
+                verbose=verbose,
             )
             data.parse_files(params)
             train, test = data.split_dft(train_ratio=train_ratio)
@@ -587,6 +602,7 @@ def set_datasets_from_single_fileset(
                 include_force=params.include_force,
                 include_stress=params.include_stress,
                 weight=weight,
+                verbose=verbose,
             )
             train, test = data.split_files(train_ratio=train_ratio)
             train.name, test.name = "data1", "data2"
@@ -622,6 +638,7 @@ def set_datasets_from_structures(
     test_stresses: Optional[np.ndarray] = None,
     train_ratio: float = 0.9,
     weight: float = 1.0,
+    verbose: bool = False,
 ):
     """Set datasets from files and params."""
     if structures is not None and energies is not None:
@@ -631,6 +648,7 @@ def set_datasets_from_structures(
             forces=forces,
             stresses=stresses,
             element_order=params.element_order,
+            verbose=verbose,
         )
         data = Dataset(
             name="data",
@@ -640,6 +658,7 @@ def set_datasets_from_structures(
             include_stress=params.include_stress,
             weight=weight,
             dft=dft,
+            verbose=verbose,
         )
         train, test = data.split_dft(train_ratio=train_ratio)
         train.name, test.name = "data1", "data2"
@@ -666,6 +685,7 @@ def set_datasets_from_structures(
             include_stress=params.include_stress,
             weight=weight,
             dft=train_dft,
+            verbose=verbose,
         )
         test = Dataset(
             name="data2",
@@ -675,6 +695,7 @@ def set_datasets_from_structures(
             include_stress=params.include_stress,
             weight=weight,
             dft=test_dft,
+            verbose=verbose,
         )
     train = DatasetList(train)
     test = DatasetList(test)
