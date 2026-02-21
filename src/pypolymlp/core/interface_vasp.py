@@ -52,12 +52,12 @@ def parse_properties_from_vaspruns(vaspruns: list[str], verbose: bool = False) -
                 v = Vasprun(vasp)
             except:
                 if verbose:
-                    print(vasp, "not readable.", flush=True)
+                    print("- Not readable:", vasp, flush=True)
                 continue
 
             if not _is_convergent(v):
                 if verbose:
-                    print(vasp, "not convergent.", flush=True)
+                    print("- Not convergent:", vasp, flush=True)
                 continue
 
             structures.append(v.structure)
