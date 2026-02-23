@@ -5,7 +5,7 @@ from typing import Optional, Union
 import numpy as np
 
 from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
-from pypolymlp.core.dataset import DatasetList
+from pypolymlp.core.dataset import Dataset, DatasetList
 from pypolymlp.cxx.lib import libmlpcpp
 
 
@@ -44,12 +44,17 @@ def _multiple_dft_to_mlpcpp_obj(datasets: DatasetList):
 
 
 def _init_features(
-    datasets: DatasetList,
+    datasets: Union[DatasetList, Dataset],
     structures: list[PolymlpStructure],
     params: PolymlpParams,
 ):
     """Initialize structure attributes for passing them to mlpcpp."""
     if datasets is not None:
+        if isinstance(datasets, Dataset):
+            datasets_current = [datasets]
+        else:
+            datasets_current = datasets
+
         (
             axis_array,
             positions_c_array,
@@ -57,7 +62,7 @@ def _init_features(
             n_atoms_sum_array,
             n_st_dataset,
             force_dataset,
-        ) = _multiple_dft_to_mlpcpp_obj(datasets)
+        ) = _multiple_dft_to_mlpcpp_obj(datasets_current)
     else:
         n_st_dataset = [len(structures)]
         force_dataset = [params.include_force]
@@ -244,7 +249,7 @@ class FeaturesHybrid:
 
 def compute_features(
     params: Union[PolymlpParams, list[PolymlpParams]],
-    datasets: Optional[DatasetList] = None,
+    datasets: Optional[Union[DatasetList, Dataset]] = None,
     structures: Optional[list[PolymlpStructure]] = None,
     element_swap: bool = False,
     verbose: bool = False,

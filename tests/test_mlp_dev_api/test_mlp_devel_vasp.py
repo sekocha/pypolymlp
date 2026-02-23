@@ -274,3 +274,25 @@ def test_mlp_devel_multiple_datasets_autodiv():
     assert error_train2["energy"] == pytest.approx(0.006914586454907308, abs=1e-7)
     assert error_train2["force"] == pytest.approx(0.354911294393713, abs=1e-6)
     assert error_train2["stress"] == pytest.approx(0.03940844639741093, abs=1e-5)
+
+
+def test_mlp_devel_multiple_datasets_autodiv_selective():
+    """Test multiple datasets using auto division method."""
+
+    file = str(cwd) + "/polymlp.in.vasp.multi.auto.selective.MgO"
+    tag_train1 = "Train_data-vasp-MgO/vaspruns/*1/vasprun-*.xml.polymlp"
+    tag_train2 = "Train_data-vasp-MgO/vaspruns/*2/vasprun-*.xml.polymlp"
+    tag_test1 = "Test_data-vasp-MgO/vaspruns/*1/vasprun-*.xml.polymlp"
+    tag_test2 = "Test_data-vasp-MgO/vaspruns/*2/vasprun-*.xml.polymlp"
+
+    pypolymlp = _run_fit(file)
+    assert pypolymlp.n_features == 1899
+    error_train1 = pypolymlp.summary.error_train[tag_train1]
+    error_train2 = pypolymlp.summary.error_train[tag_train2]
+    error_test1 = pypolymlp.summary.error_test[tag_test1]
+    error_test2 = pypolymlp.summary.error_test[tag_test2]
+
+    assert error_test1["energy"] == pytest.approx(8.341012886398416e-05, abs=1e-7)
+    assert error_train1["energy"] == pytest.approx(9.343202721780765e-05, abs=1e-7)
+    assert error_test2["energy"] == pytest.approx(0.024935665500363753, abs=1e-7)
+    assert error_train2["energy"] == pytest.approx(0.0006576070538373199, abs=1e-7)

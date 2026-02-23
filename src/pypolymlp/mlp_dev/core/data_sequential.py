@@ -111,7 +111,7 @@ def _compute_products_single_batch(
     """Compute X.T @ X and X.T @ y for a single batch."""
     features = compute_features(
         params,
-        structures=dataset_sliced.structures,
+        datasets=dataset_sliced,
         element_swap=element_swap,
         verbose=verbose,
     )
