@@ -21,7 +21,7 @@ def generate_kim_files(
     project_id: int = 0,
     project_version: int = 0,
     description: Optional[str] = None,
-    model_driver: str = "Polymlp__MD_000000123456_000",
+    model_driver: str = "Polymlp__MD_367995833009_000",
     content_origin: Optional[str] = None,
     contributor_id: Optional[str] = None,
     developer: Optional[tuple] = None,
@@ -176,7 +176,7 @@ def convert_polymlp_to_kim_model(
     performance_level: int = 1,
     project_id: int = 0,
     project_version: int = 0,
-    model_driver: str = "Polymlp__MD_000000123456_000",
+    model_driver: str = "Polymlp__MD_367995833009_000",
 ):
     """Convert polymlp to KIM-API model."""
     tmp_path = "./Polymlp__MO_tmp/"
