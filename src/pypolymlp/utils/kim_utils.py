@@ -57,7 +57,7 @@ def generate_kim_files(
         print("cmake_minimum_required(VERSION 3.10)", file=f)
         print(file=f)
         print("list(APPEND CMAKE_PREFIX_PATH $ENV{KIM_API_CMAKE_PREFIX_DIR})", file=f)
-        print("find_package(KIM-API-ITEMS 2.2 REQUIRED CONFIG)", file=f)
+        print("find_package(KIM-API-ITEMS 2.3 REQUIRED CONFIG)", file=f)
         print(file=f)
         print('kim_api_items_setup_before_project(ITEM_TYPE "portableModel")', file=f)
         print("project(" + project + ")", file=f)
