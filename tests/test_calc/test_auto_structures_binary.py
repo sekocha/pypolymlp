@@ -5,6 +5,7 @@ import numpy as np
 from pypolymlp.calculator.auto.autocalc_utils import Prototype
 from pypolymlp.calculator.auto.structures_binary import (
     get_structure_list_binary,
+    get_structure_type_binary,
     set_structure,
 )
 
@@ -30,3 +31,9 @@ def test_get_structure_list_binary():
     for st in structure_list:
         assert isinstance(st, Prototype)
     assert len(structure_list) == 39
+
+
+def test_get_structure_type_binary():
+    """Test get_structure_type_binary."""
+    structure_type = get_structure_type_binary()
+    assert structure_type["100654-01"] == "BiSe"
