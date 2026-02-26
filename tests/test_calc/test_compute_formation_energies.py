@@ -28,3 +28,4 @@ def test_PolymlpFormationEnergies():
     structures = parse_structures_from_poscars(poscars)
     api = PolymlpFormationEnergies(pot=pot)
     api.compute(structures)
+    assert 1 == 0
