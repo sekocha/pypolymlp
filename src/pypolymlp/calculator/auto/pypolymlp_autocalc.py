@@ -323,3 +323,7 @@ class PypolymlpAutoCalc:
     @property
     def prototypes(self):
         return self._prototypes
+
+    @prototypes.setter
+    def prototypes(self, value: list):
+        self._prototypes = value
