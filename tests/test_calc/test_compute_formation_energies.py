@@ -1,13 +1,12 @@
 """Tests of functions for feature calculations."""
 
+import copy
 from pathlib import Path
+
+import numpy as np
 
 from pypolymlp.calculator.compute_formation_energies import PolymlpFormationEnergies
 from pypolymlp.core.interface_vasp import parse_structures_from_poscars
-
-# import numpy as np
-# import pytest
-
 
 cwd = Path(__file__).parent
 path_file = str(cwd) + "/files/"
@@ -26,6 +25,18 @@ poscars = [
 def test_PolymlpFormationEnergies():
     """Test PolymlpFormationEnergies."""
     structures = parse_structures_from_poscars(poscars)
+    end1 = copy.deepcopy(structures[0])
+    end1.elements = ["Cu" for _ in end1.elements]
+    end1.types = [0 for _ in end1.elements]
+    end2 = structures[0]
+    end3 = copy.deepcopy(structures[0])
+    end3.elements = ["Au" for _ in end1.elements]
+    end3.types = [2 for _ in end1.elements]
+
+    end_structures = [end1, end2, end3]
+
     api = PolymlpFormationEnergies(pot=pot)
-    api.compute(structures)
-    assert 1 == 0
+    api.end_structures = end_structures
+    form = api.compute(structures)
+    values = [0.0, -1.91101088, -1.91101088, -1.58407348, -1.58407348]
+    np.testing.assert_allclose(form, values)

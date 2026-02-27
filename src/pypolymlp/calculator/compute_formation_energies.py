@@ -35,7 +35,13 @@ class PolymlpFormationEnergies:
             self._prop = properties
         else:
             self._prop = Properties(pot=pot, params=params, coeffs=coeffs)
+
         self._elements = self._prop.params.elements
+        self._n_elements = len(self._elements)
+
+        self._comp = None
+        self._end_structures = None
+        self._end_energies = None
 
     def _get_n_atoms(self, structures: list[PolymlpStructure]):
         """Get number of atoms with reordering elements."""
@@ -55,12 +61,38 @@ class PolymlpFormationEnergies:
         return np.array(n_atoms_array)
 
     def compute(self, structures: list[PolymlpStructure]):
-        """Compute formation energies."""
+        """Compute formation energies.
+
+        Return
+        ------
+        form: Formation energies.
+        """
+        if self._end_energies is None:
+            raise RuntimeError("Energies for end members not found.")
+
         energies, _, _ = self._prop.eval_multiple(structures)
         n_atoms_array = self._get_n_atoms(structures)
+        form = self._comp.compute_formation_energies(energies, n_atoms_array)
+        return form
 
-        # TODO: Set end members
-        chemical_comps_end_members = np.eye(len(self._elements))
-        comp = Composition(chemical_comps_end_members)
-        form = comp.compute_formation_energies(energies, n_atoms_array)
-        print(form)
+    @property
+    def end_structures(self):
+        """Return structures of end members."""
+        return self._end_structures
+
+    @end_structures.setter
+    def end_structures(self, structures: list[PolymlpStructure]):
+        """Set structures of end members."""
+        if len(structures) != self._n_elements:
+            raise RuntimeError("Length of end member structures must be n_elements.")
+
+        self._end_structures = structures
+        self._end_energies, _, _ = self._prop.eval_multiple(structures)
+
+        chemical_comps_end_members = [
+            [np.count_nonzero(st.elements == ele) for ele in self._elements]
+            for st in structures
+        ]
+        chemical_comps_end_members = np.array(chemical_comps_end_members)
+        self._comp = Composition(chemical_comps_end_members)
+        self._comp.energies_end_members = self._end_energies
