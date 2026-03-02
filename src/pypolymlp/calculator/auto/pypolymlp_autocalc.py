@@ -19,9 +19,12 @@ from pypolymlp.calculator.auto.structures_element import (
     get_structure_list_element,
     get_structure_type_element,
 )
+from pypolymlp.calculator.compute_formation_energies import PolymlpFormationEnergies
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.core.data_format import PolymlpParams
-from pypolymlp.core.interface_vasp import parse_properties_from_vaspruns
+from pypolymlp.core.interface_vasp import (  # parse_structures_from_vaspruns,
+    parse_properties_from_vaspruns,
+)
 from pypolymlp.utils.atomic_energies.atomic_energies import get_atomic_energies
 from pypolymlp.utils.spglib_utils import SymCell
 
@@ -73,6 +76,10 @@ class PypolymlpAutoCalc:
         self._comparison = None
         self._distribution_train = None
         self._distribution_test = None
+
+        self._formation = None
+        if self._n_types > 1:
+            self._formation = PolymlpFormationEnergies(properties=self._prop)
 
         np.set_printoptions(legacy="1.21")
 
@@ -201,9 +208,9 @@ class PypolymlpAutoCalc:
         if self._verbose:
             print("Compute energies for training and test data.")
 
-        energies_dft, energies_mlp = self._eval_energies(vaspruns_train, functional)
+        energies_dft, energies_mlp, _ = self._eval_energies(vaspruns_train, functional)
         self._distribution_train = np.stack([energies_dft, energies_mlp]).T
-        energies_dft, energies_mlp = self._eval_energies(vaspruns_test, functional)
+        energies_dft, energies_mlp, _ = self._eval_energies(vaspruns_test, functional)
         self._distribution_test = np.stack([energies_dft, energies_mlp]).T
 
         size = self._distribution_train.shape[0] + self._distribution_test.shape[0]
@@ -223,10 +230,13 @@ class PypolymlpAutoCalc:
         if self._verbose:
             print("Compute energies for structures.")
 
-        energies_dft, energies_mlp = self._eval_energies(vaspruns, functional)
+        energies_dft, energies_mlp, structures = self._eval_energies(
+            vaspruns, functional
+        )
+
         names = self._set_structure_names(vaspruns, icsd_ids=icsd_ids)
         data = np.stack([energies_dft, energies_mlp, names]).T
-        self._comparison = data[energies_dft.argsort()]
+        self._comparison = data[data[:, 0].argsort()]
 
         if filename is None:
             filename = self._path_header + "comparison.dat"
@@ -319,6 +329,23 @@ class PypolymlpAutoCalc:
             path_output=self._path_output,
         )
         return self
+
+    #    def run_formation_energy(self, vaspruns: Optional[list] = None):
+    #        """Plot comparison of mlp predictions with dft."""
+    #        if self._n_types < 2:
+    #            raise RuntimeError(
+    #                "Formation energy calculations not available in elemental system."
+    #            )
+    #        if self._formation is None:
+    #            raise RuntimeError("PolymlpFormationEnergies class not defined.")
+    #
+    #        if vaspruns is not None:
+    #            structures = parse_structures_from_vaspruns(vaspruns)
+    #
+    #
+    #        self._formation.end_structures = end_structures
+    #        delta_e = self._formation.compute(structures)
+    #
 
     @property
     def prototypes(self):

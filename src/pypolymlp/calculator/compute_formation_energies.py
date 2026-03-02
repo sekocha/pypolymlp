@@ -60,7 +60,11 @@ class PolymlpFormationEnergies:
             n_atoms_array.append(n_atoms)
         return np.array(n_atoms_array)
 
-    def compute(self, structures: list[PolymlpStructure]):
+    def compute(
+        self,
+        structures: list[PolymlpStructure],
+        energies: Optional[np.ndarray] = None,
+    ):
         """Compute formation energies.
 
         Return
@@ -70,7 +74,11 @@ class PolymlpFormationEnergies:
         if self._end_energies is None:
             raise RuntimeError("Energies for end members not found.")
 
-        energies, _, _ = self._prop.eval_multiple(structures)
+        if energies is not None:
+            if len(energies) != len(structures):
+                raise RuntimeError("Sizes of structures and energies inconsistent.")
+        else:
+            energies, _, _ = self._prop.eval_multiple(structures)
         n_atoms_array = self._get_n_atoms(structures)
         form = self._comp.compute_formation_energies(energies, n_atoms_array)
         return form
@@ -84,6 +92,8 @@ class PolymlpFormationEnergies:
     def end_structures(self, structures: list[PolymlpStructure]):
         """Set structures of end members."""
         if len(structures) != self._n_elements:
+            # TODO: Not available for Pseudo-k-ary systems,
+            #       but available for these systems by using Composition class
             raise RuntimeError("Length of end member structures must be n_elements.")
 
         self._end_structures = structures

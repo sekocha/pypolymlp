@@ -293,9 +293,9 @@ def write_error_yaml(
             print("  rmse_stress: ", dict1["stress"] * 1000, file=f)
         print("", file=f)
 
+        print("  mae_energy:  ", dict1["energy_mae"] * 1000, file=f)
         if dict1["force_mae"] is not None:
             print("  mae_force:   ", dict1["force_mae"], file=f)
-        print("  mae_energy:  ", dict1["energy_mae"] * 1000, file=f)
         if dict1["stress_mae"] is not None:
             print("  mae_stress:  ", dict1["stress_mae"] * 1000, file=f)
         print("", file=f)
