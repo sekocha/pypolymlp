@@ -87,3 +87,5 @@ def test_api_autocalc2():
     )
     api.plot_comparison_with_dft(system="Ti-Al", pot_id="polymlp-00001")
     shutil.rmtree("tmp")
+
+    api.run_formation_energy(vaspruns)
