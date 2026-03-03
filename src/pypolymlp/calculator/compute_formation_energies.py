@@ -3,6 +3,7 @@
 from typing import Optional
 
 import numpy as np
+from scipy.spatial import ConvexHull
 
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.utils.composition_utils import Composition
@@ -100,8 +101,23 @@ class PolymlpFormationEnergies:
         n_atoms_array = _get_n_atoms(structures, elements=self._elements)
         form = self._comp.compute_formation_energies(energies, n_atoms_array)
         compositions = self._comp.compositions
-        data = np.hstack([compositions, form.reshape((-1, 1))])
-        return data
+        self._data = np.hstack([compositions, form.reshape((-1, 1))])
+        return self._data
+
+    def convex_hull(self):
+        """Calculate convex hull."""
+        data = list(self._data)
+        for i in range(self._n_elements):
+            end = np.zeros(self._n_elements + 1)
+            end[i] = 1.0
+            data.append(end)
+        data = np.array(data)
+        data = data[data[:, -1] < 1e-8]
+        print(data)
+        ch = ConvexHull(data[:, 1:])
+        v_convex = np.unique(ch.simplices)
+        print(v_convex)
+        print(data[v_convex])
 
 
 def _get_n_atoms(structures: list[PolymlpStructure], elements: tuple):

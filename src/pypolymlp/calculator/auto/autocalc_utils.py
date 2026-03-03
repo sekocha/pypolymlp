@@ -37,6 +37,10 @@ class Prototype:
     qha_thermal_expansion: Optional[np.ndarray] = None
     qha_bulk_modulus: Optional[np.ndarray] = None
 
+    def is_element(self, ele: str):
+        """Return whether structure is elemental one or not."""
+        return len(self.structure.n_atoms) == 1 and self.structure.elements[0] == ele
+
     @property
     def lattice_constants(self):
         """Return lattice constants."""
@@ -92,6 +96,9 @@ class Prototype:
 
     def save_properties(self, filename: str = "polymlp_prototype.yaml"):
         """Save properties for prototype."""
+        if self.structure_eq is None:
+            return self
+
         with open(filename, "w") as f:
             save_cell(self.structure_eq, tag="unitcell", file=f)
             print("structure_type:", self.name, file=f)
@@ -146,6 +153,30 @@ class Prototype:
             if self.eos_mlp is not None:
                 print("eos_data_mlp:", file=f)
                 yaml.dump(self.eos_mlp.tolist(), f, default_flow_style=False)
+
+
+def find_endmembers(prototypes: list[Prototype], element_strings: tuple):
+    """Find end members with lowest energies."""
+    # endmembers = []
+    # for ele in element_strings:
+    #     min_e = 1e10
+    #     min_prot = None
+    #     for prot in prototypes:
+    #         if prot.is_element(ele) and prot.energy is not None:
+    #             print(prot.name, prot.energy)
+    #             energy_per_atom = prot.energy / sum(prot.structure.n_atoms)
+    #             if energy_per_atom < min_e:
+    #                 min_e = energy_per_atom
+    #                 min_prot = prot
+    #     endmembers.append(min_prot)
+    endmembers = [
+        min(
+            (p for p in prototypes if p.energy is not None and p.is_element(ele)),
+            key=lambda p: p.energy,
+        )
+        for ele in element_strings
+    ]
+    return endmembers
 
 
 def get_atomic_size_scales():
