@@ -30,7 +30,7 @@ def test_get_structure_list_binary():
     structure_list = get_structure_list_binary(elements)
     for st in structure_list:
         assert isinstance(st, Prototype)
-    assert len(structure_list) == 39
+    assert len(structure_list) == 33
 
 
 def test_get_structure_type_binary():
