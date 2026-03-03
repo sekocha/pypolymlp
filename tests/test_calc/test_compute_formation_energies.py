@@ -8,6 +8,7 @@ import numpy as np
 from pypolymlp.calculator.compute_formation_energies import (
     PolymlpFormationEnergies,
     _initialize_composition,
+    compute_formation_energies,
 )
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.core.interface_vasp import parse_structures_from_poscars
@@ -36,6 +37,48 @@ end3.elements = ["Au" for _ in end1.elements]
 end3.types = [2 for _ in end1.elements]
 
 end_structures = [end1, end2, end3]
+elements = ("Cu", "Ag", "Au")
+
+
+def test_compute_formation_energies():
+    """Test compute_formation_energies."""
+    # Energy input.
+
+    end_energies = [0.1, 0.3, 0.5]
+    form_e = compute_formation_energies(
+        structures,
+        end_energies=end_energies,
+        elements=elements,
+        properties=prop,
+    )
+
+    values = np.array([-2.82855329, -3.62129892, -3.62129892, -3.42092324, -3.42092324])
+    np.testing.assert_allclose(form_e, values)
+
+    form_e = compute_formation_energies(
+        structures,
+        end_structures=end_structures,
+        end_energies=end_energies,
+        elements=elements,
+        properties=prop,
+    )
+    values = [
+        -10.414213158625799,
+        -13.88519567052218,
+        -13.885195670522178,
+        -13.183692944935459,
+        -13.183692944935439,
+    ]
+    np.testing.assert_allclose(form_e, values)
+
+    form_e = compute_formation_energies(
+        structures,
+        end_structures=end_structures,
+        elements=elements,
+        properties=prop,
+    )
+    values = [0.0, -1.91101088, -1.91101088, -1.58407348, -1.58407348]
+    np.testing.assert_allclose(form_e, values)
 
 
 def test_initialize_composition():
@@ -66,16 +109,6 @@ def test_initialize_composition():
 
 def test_PolymlpFormationEnergies():
     """Test PolymlpFormationEnergies."""
-    # structures = parse_structures_from_poscars(poscars)
-    # end1 = copy.deepcopy(structures[0])
-    # end1.elements = ["Cu" for _ in end1.elements]
-    # end1.types = [0 for _ in end1.elements]
-    # end2 = structures[0]
-    # end3 = copy.deepcopy(structures[0])
-    # end3.elements = ["Au" for _ in end1.elements]
-    # end3.types = [2 for _ in end1.elements]
-
-    # end_structures = [end1, end2, end3]
     api = PolymlpFormationEnergies(pot=pot)
     api.end_structures = end_structures
     form = api.compute(structures)
