@@ -1,19 +1,23 @@
-# import os
+"""Functions for plotting formation energies."""
 
+import os
 from typing import Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
-
-# from matplotlib.ticker import ScalarFormatter
+from matplotlib.ticker import MaxNLocator
 
 
 def plot_binary_formation_energies(
-    data_all: np.ndarray,
-    data_convex: np.ndarray,
     system: str,
     pot_id: str,
+    data_dft_all: np.ndarray,
+    data_dft_convex: np.ndarray,
+    data_mlp_all: np.ndarray,
+    data_mlp_convex: np.ndarray,
+    data_mlp_go_all: Optional[np.ndarray] = None,
+    data_mlp_go_convex: Optional[np.ndarray] = None,
     path_output: str = "./",
     filename_suffix: Optional[str] = None,
     use_eps: bool = False,
@@ -21,58 +25,70 @@ def plot_binary_formation_energies(
     dpi: int = 300,
 ):
     """Plot formation energies."""
+    os.makedirs(path_output, exist_ok=True)
 
-    # os.makedirs(path_output, exist_ok=True)
+    plt.style.use("bmh")
+    sns.set_context("paper", 1.0, {"lines.linewidth": 4})
+    sns.set_palette("coolwarm_r", 8, 1)
 
-    # limmin = min(min(data_train[:, 0]), min(data_test[:, 0]))
-    # limmin_int = np.floor(min(min(data_train[:, 0]), min(data_test[:, 0])))
-    # limmax_int = np.ceil(min(max(max(data_train[:, 0]), max(data_test[:, 0])), 20))
-    # x = np.arange(limmin_int, limmax_int + 1)
-    # y = x
+    #
+    #    sns.set_context("paper", 1.0, {"lines.linewidth": 1})
+    #    sns.set_style("whitegrid", {"grid.linestyle": "--"})
 
-    # e_min = np.min(data_all[:, -1])
-    # e_max = np.max(data_all[:, -1])
-    # interval = (e_max - e_min) / 10
+    data_all = [data_dft_all, data_mlp_all, data_mlp_go_all]
+    data_convex = [data_dft_convex, data_mlp_convex, data_mlp_go_convex]
+    titles = ["DFT", "MLP (DFT converged structures)", "MLP (Geometry Optimization)"]
 
-    sns.set_context("paper", 1.0, {"lines.linewidth": 1})
-    sns.set_style("whitegrid", {"grid.linestyle": "--"})
+    if data_mlp_go_all is not None:
+        figsize1 = 7.5
+        size = 3
+    else:
+        figsize1 = 5
+        size = 2
 
-    fig, ax = plt.subplots(2, 1, figsize=(5, 5))
+    fig, ax = plt.subplots(size, 1, figsize=(5, figsize1))
     fig.suptitle("Formation energy (" + system + ", " + pot_id + ")", fontsize=10)
 
-    for j in range(2):
-        ax[j].scatter(
-            data_all[:, 1],
-            data_all[:, 2],
-            s=1.0,
+    for i in range(size):
+        if data_all[i] is None:
+            continue
+
+        ax[i].scatter(
+            data_all[i][:, 1],
+            data_all[i][:, 2],
+            s=2.0,
             c="black",
             alpha=1.0,
             marker=".",
         )
-        ax[j].scatter(
-            data_convex[:, 1],
-            data_convex[:, 2],
-            s=2.0,
-            c="orangered",
-            alpha=1.0,
+        ax[i].plot(
+            data_convex[i][:, 1],
+            data_convex[i][:, 2],
+            color="red",
+            linewidth=0.5,
+            alpha=0.5,
             marker="o",
+            markersize=2,
         )
 
-    ax[0].set_title("MLP", fontsize=8)
-    ax[1].set_title("DFT", fontsize=8)
-    for j in range(2):
-        ax[j].set_xlabel("Composition", fontsize=8)
-        ax[j].set_ylabel("Formation energy (eV/atom)", fontsize=8)
-        ax[j].tick_params(axis="both", labelsize=8)
+        ax[i].set_title(titles[i], fontsize=8)
+        ax[i].set_xlabel("Composition", fontsize=8)
+        ax[i].set_ylabel("Formation energy (eV/atom)", fontsize=8)
+        ax[i].tick_params(axis="both", labelsize=8)
 
-    # interval = max(int((limmax_int - limmin_int) / 10), 1)
-    for j in range(2):
-        # ax[j].set_xlim(e_min_int, limmax_int)
-        # ax[j].set_ylim(limmin_int, limmax_int)
-        # ax[j].set_xticks(np.arange(limmin_int, limmax_int + 1, interval))
-        # ax[j].set_yticks(np.arange(limmin_int, limmax_int + 1, interval))
-        ax[j].set_xlim(-0.02, 1.02)
-    #       ax[j].set_ylim(limmin - 0.05, limmin + 1.05)
+        e_min = np.min(data_all[i][:, -1])
+        e_max = np.max(data_all[i][:, -1])
+        buffer = (e_max - e_min) / 10
+        ax[i].set_xticks(np.arange(0.0, 1.01, 0.2))
+        ax[i].set_xlim(-0.02, 1.02)
+        ax[i].yaxis.set_major_locator(
+            MaxNLocator(
+                nbins=6,
+                min_n_ticks=4,
+                steps=[1, 2, 2.5, 5, 10],
+            )
+        )
+        ax[i].set_ylim(min(e_min - buffer, 0), max(e_max + buffer, 0))
 
     plt.tight_layout()
     filename = path_output + "/polymlp_formation_energy"
@@ -179,18 +195,22 @@ data_all = [
 ]
 
 data_convex = [
+    [1.0, 0.0, 0.0],
     [0.75, 0.25, -0.04421533],
     [0.5, 0.5, -0.06030366],
     [0.25, 0.75, -0.04501682],
-    [1.0, 0.0, 0.0],
     [0.0, 1.0, 0.0],
 ]
 
 data_all = np.array(data_all)
 data_convex = np.array(data_convex)
 plot_binary_formation_energies(
-    data_all,
-    data_convex,
     "Ag-Au",
     "polymlp",
+    data_all,
+    data_convex,
+    data_all,
+    data_convex,
+    data_mlp_go_all=data_all,
+    data_mlp_go_convex=data_convex,
 )
