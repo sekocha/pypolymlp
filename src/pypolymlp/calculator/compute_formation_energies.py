@@ -119,6 +119,11 @@ class PolymlpFormationEnergies:
         print(v_convex)
         print(data[v_convex])
 
+    @property
+    def has_end_members(self):
+        """Return whether end members are already defined."""
+        return self._comp is not None
+
 
 def _get_n_atoms(structures: list[PolymlpStructure], elements: tuple):
     """Get number of atoms with reordering elements."""

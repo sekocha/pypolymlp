@@ -1,7 +1,7 @@
 """Utility functions for plotting properties."""
 
 import os
-from typing import Literal, Optional
+from typing import Literal, Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -16,9 +16,10 @@ def plot_prototype_prediction(
     system: str,
     pot_id: str,
     path_output: str = "./",
+    filename_suffix: Optional[str] = None,
     dpi: int = 300,
     figsize: tuple = None,
-    fontsize: int = 10,
+    fontsize: Union[int, str] = "auto",
     use_eps: bool = False,
 ):
     """Plot errors between DFT and MLP for prototype structures.
@@ -32,6 +33,8 @@ def plot_prototype_prediction(
     system: System.
     pot_id: Potential ID.
     """
+    if fontsize == "auto":
+        fontsize = 800 // data.shape[0]
     os.makedirs(path_output, exist_ok=True)
     error = np.abs(data[:, 0].astype(float) - data[:, 1].astype(float)) * 1000
     tag = data[:, 2]
@@ -58,10 +61,15 @@ def plot_prototype_prediction(
     b.tick_params(axis="y", labelsize=fontsize)
 
     plt.tight_layout()
+    filename = path_output + "/polymlp_comparison"
+    if filename_suffix is not None:
+        filename += "_" + filename_suffix
     if use_eps:
-        plt.savefig(path_output + "/polymlp_comparison.eps", format="eps")
+        filename += ".eps"
+        plt.savefig(filename, format="eps")
     else:
-        plt.savefig(path_output + "/polymlp_comparison.png", format="png", dpi=dpi)
+        filename += ".png"
+        plt.savefig(filename, format="png", dpi=dpi)
     plt.clf()
     plt.close()
 
@@ -392,7 +400,9 @@ def plot_energy_distribution(
     system: str,
     pot_id: str,
     path_output: str = "./",
+    filename_suffix: Optional[str] = None,
     use_eps: bool = False,
+    header="Energy distribution",
     dpi: int = 300,
 ):
     """Plot energy distribution."""
@@ -409,7 +419,7 @@ def plot_energy_distribution(
     sns.set_style("whitegrid", {"grid.linestyle": "--"})
 
     fig, ax = plt.subplots(2, 2, figsize=(5, 5))
-    fig.suptitle("Energy distribution (" + system + ", " + pot_id + ")", fontsize=10)
+    fig.suptitle(header + " (" + system + ", " + pot_id + ")", fontsize=10)
 
     for i in range(2):
         for j in range(2):
@@ -449,9 +459,14 @@ def plot_energy_distribution(
         ax[1][j].set_ylim(limmin - 0.05, limmin + 1.05)
 
     plt.tight_layout()
+    filename = path_output + "/polymlp_distribution"
+    if filename_suffix is not None:
+        filename += "_" + filename_suffix
     if use_eps:
-        plt.savefig(path_output + "/polymlp_distribution.eps", format="eps")
+        filename += ".eps"
+        plt.savefig(filename, format="eps")
     else:
-        plt.savefig(path_output + "/polymlp_distribution.png", format="png", dpi=dpi)
+        filename += ".png"
+        plt.savefig(filename, format="png", dpi=dpi)
     plt.clf()
     plt.close()

@@ -20,6 +20,7 @@ class PypolymlpAutoCalc:
         coeffs: Union[np.ndarray, list[np.ndarray]] = None,
         properties: Optional[Properties] = None,
         path_output: str = ".",
+        functional: str = "PBE",
         verbose: bool = False,
     ):
         """Init method.
@@ -41,14 +42,16 @@ class PypolymlpAutoCalc:
             path_output=path_output,
             verbose=verbose,
         )
+        self._verbose = verbose
         self._prop = self._auto_prot._prop
+        self._n_types = self._auto_prot._n_types
 
         self._auto_dist = AutoCalcDistribution(
             properties=self._prop,
             path_output=path_output,
+            functional=functional,
             verbose=verbose,
         )
-        self._verbose = verbose
 
     def run_prototypes(self):
         """Run calculations for prototype structures."""
@@ -66,17 +69,35 @@ class PypolymlpAutoCalc:
         self._auto_prot.save_properties()
         return self
 
+    def set_end_members_mlp(self):
+        """Set end members from polymlp calculations."""
+        self._exists_prototypes()
+        self._auto_dist.set_end_members_mlp(self.prototypes)
+        return self
+
+    def set_end_members_dft(self, vaspruns: list):
+        """Set end members from DFT calculations."""
+        self._auto_dist.set_end_members_dft(vaspruns)
+        return self
+
+    def _exists_prototypes(self):
+        """Check if properties of prototypes are already calculated."""
+        if self._n_types == 1:
+            return True
+        if self.prototypes is not None:
+            return True
+        raise RuntimeError("Prototype calculations not found.")
+
     def calc_energy_distribution(
         self,
         vaspruns_train: list,
         vaspruns_test: list,
-        functional: str = "PBE",
     ):
         """Calculate properties for structures in training and test datasets."""
+        # self._exists_prototypes()
         self._auto_dist.calc_energy_distribution(
             vaspruns_train,
             vaspruns_test,
-            functional=functional,
         )
         return self
 
@@ -84,15 +105,28 @@ class PypolymlpAutoCalc:
         self,
         vaspruns: list,
         icsd_ids: Optional[list] = None,
-        functional: str = "PBE",
-        filename: Optional[str] = None,
+        filename_suffix: Optional[str] = None,
     ):
         """Calculate properties for DFT structures."""
         self._auto_dist.compare_with_dft(
             vaspruns=vaspruns,
             icsd_ids=icsd_ids,
-            functional=functional,
-            filename=filename,
+            filename_suffix=filename_suffix,
+        )
+        return self
+
+    def run_formation_energy(
+        self,
+        vaspruns: Optional[list] = None,
+        names: Optional[str] = None,
+        geometry_optimization: bool = False,
+    ):
+        """run formation energy calcultions."""
+        self._exists_prototypes()
+        self._auto_dist.run_formation_energy(
+            vaspruns=vaspruns,
+            names=names,
+            geometry_optimization=geometry_optimization,
         )
         return self
 
@@ -101,56 +135,23 @@ class PypolymlpAutoCalc:
         self._auto_dist.plot_energy_distribution(system, pot_id)
         return self
 
-    def plot_comparison_with_dft(self, system: str, pot_id: str):
+    def plot_comparison_with_dft(
+        self,
+        system: str,
+        pot_id: str,
+        filename_suffix: Optional[str] = None,
+    ):
         """Plot comparison of mlp predictions with dft."""
-        self._auto_dist.plot_comparison_with_dft(system, pot_id)
+        self._auto_dist.plot_comparison_with_dft(
+            system,
+            pot_id,
+            filename_suffix=filename_suffix,
+        )
         return self
 
-    #     def run_formation_energy(
-    #         self,
-    #         vaspruns: Optional[list] = None,
-    #         names: Optional[str] = None,
-    #         geometry_optimization: bool = False,
-    #     ):
-    #         """Plot comparison of mlp predictions with dft."""
-    #         if self._n_types < 2:
-    #             raise RuntimeError(
-    #                 "Formation energy calculations not available for elemental system."
-    #             )
-    #         if self._formation is None:
-    #             raise RuntimeError("PolymlpFormationEnergies class not defined.")
-    #
-    #         if vaspruns is not None:
-    #             structures = parse_structures_from_vaspruns(vaspruns)
-    #
-    #         if geometry_optimization:
-    #             structures_success = []
-    #             energies_success = []
-    #             for st in structures:
-    #                 self._calc.structures = st
-    #                 self._calc.init_geometry_optimization(
-    #                     relax_cell=True, relax_volume=True
-    #                 )
-    #                 try:
-    #                     energy, _, success = self._calc.run_geometry_optimization(
-    #                         method="CG")
-    #                     structures_success.append(self._calc.converged_structure)
-    #                     energies_success.append(energy)
-    #                 except:
-    #                     pass
-    #                     #energy, success = None, False
-    #
-    #             delta_e = self._formation.compute(
-    #                 structures=structures_success, energies=energies_success
-    #             )
-    #             self._formation.convex_hull()
-    #             print(delta_e)
-    #         else:
-    #             delta_e = self._formation.compute(structures)
-    #             self._formation.convex_hull()
-    #             print(delta_e)
-    #             return self
-    #
+    def plot_formation_energy(self):
+        """Plot formation energies."""
+
     @property
     def prototypes(self):
         return self._auto_prot.prototypes

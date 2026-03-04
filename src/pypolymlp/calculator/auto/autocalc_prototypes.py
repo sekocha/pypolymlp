@@ -5,8 +5,7 @@ from typing import Optional, Union
 
 import numpy as np
 
-from pypolymlp.calculator.auto.autocalc_base import AutoCalcBase
-from pypolymlp.calculator.auto.autocalc_utils import Prototype
+from pypolymlp.calculator.auto.autocalc_utils import AutoCalcBase, Prototype
 from pypolymlp.calculator.auto.structures_binary import get_structure_list_binary
 from pypolymlp.calculator.auto.structures_element import get_structure_list_element
 from pypolymlp.calculator.properties import Properties
@@ -89,24 +88,19 @@ class AutoCalcPrototypes(AutoCalcBase):
             self._print_targets()
 
         for prot in self._prototypes:
-            path = self._path_header + prot.name + "/"
-            os.makedirs(path, exist_ok=True)
             if self._verbose:
                 print("---- Structure", prot.name, "----", flush=True)
+
+            path = self._path_header + prot.name + "/"
+            os.makedirs(path, exist_ok=True)
             poscar = path + "POSCAR_eq"
 
-            energy, success = self._run_geometry_optimization(prot)
+            _, success = self._run_geometry_optimization(prot, poscar)
             if not success:
-                if self._verbose:
-                    print("Warning: Geometry optimization failed.", flush=True)
                 continue
-            prot.structure_eq = self._calc.converged_structure
-            self._calc.save_poscars(filename=poscar)
-
             self._run_eos(prot)
             self._run_elastic(prot, poscar)
             self._run_phonon(prot)
-
             # TODO: Activate QHA
             # self._run_qha(prot)
 
@@ -135,7 +129,7 @@ class AutoCalcPrototypes(AutoCalcBase):
             print("-", prot.name, flush=True)
         return self
 
-    def _run_geometry_optimization(self, prototype: Prototype):
+    def _run_geometry_optimization(self, prototype: Prototype, poscar: str):
         """Run geometry optimization for single prototype."""
         self._calc.structures = prototype.structure
         self._calc.init_geometry_optimization(relax_cell=True, relax_volume=True)
@@ -143,6 +137,16 @@ class AutoCalcPrototypes(AutoCalcBase):
             energy, _, success = self._calc.run_geometry_optimization(method="CG")
         except:
             energy, success = None, False
+
+        if success:
+            prototype.structure_eq = self._calc.converged_structure
+            n_atom = len(prototype.structure_eq.elements)
+            prototype.energy = energy / n_atom
+            prototype.volume = prototype.structure_eq.volume / n_atom
+            self._calc.save_poscars(filename=poscar)
+        else:
+            if self._verbose:
+                print("Warning: Geometry optimization failed.", flush=True)
         return energy, success
 
     def _run_eos(self, prototype: Prototype):

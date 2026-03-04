@@ -1,14 +1,98 @@
-"""Utility functions for systematic calculations."""
+"""Utility classes and functions for systematic calculations."""
 
+import os
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 import yaml
 
-from pypolymlp.core.data_format import PolymlpStructure
+from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
+from pypolymlp.calculator.properties import Properties
+from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
 from pypolymlp.utils.structure_utils import get_lattice_constants
 from pypolymlp.utils.yaml_utils import save_cell
+
+
+class AutoCalcBase:
+    """Base Class for systematic calculations."""
+
+    def __init__(
+        self,
+        pot: Union[str, list[str]] = None,
+        params: Union[PolymlpParams, list[PolymlpParams]] = None,
+        coeffs: Union[np.ndarray, list[np.ndarray]] = None,
+        properties: Optional[Properties] = None,
+        path_output: str = ".",
+        verbose: bool = False,
+    ):
+        """Init method.
+
+        Parameters
+        ----------
+        pot: polymlp file.
+        params: Parameters for polymlp.
+        coeffs: Polymlp coefficients.
+        properties: Properties instance.
+
+        Any one of pot, (params, coeffs), and properties is needed.
+        """
+        self._calc = PypolymlpCalc(
+            pot=pot,
+            params=params,
+            coeffs=coeffs,
+            properties=properties,
+            verbose=verbose,
+        )
+        self._pot = pot
+        self._prop = self._calc._prop
+        self._verbose = verbose
+
+        self._element_strings = self._prop.params.elements
+        self._n_types = len(self._element_strings)
+        if self._n_types not in {1, 2}:
+            raise RuntimeError("Structure list not found for systems beyond ternary.")
+
+        os.makedirs(path_output, exist_ok=True)
+        self._path_output = path_output
+        self._path_header = self._path_output + "/" + "polymlp_"
+
+        np.set_printoptions(legacy="1.21")
+
+    @property
+    def calc_api(self):
+        """Return PypolymlpCalc API instance."""
+        return self._calc
+
+    @property
+    def properties(self):
+        """Return Properties instance."""
+        return self._prop
+
+    @property
+    def pot(self):
+        """Return polymlp name."""
+        return self._pot
+
+    @property
+    def element_strings(self):
+        """Return strings of elements."""
+        return self._element_strings
+
+    @property
+    def n_types(self):
+        """Return number of atom types."""
+        return self._n_types
+
+    @property
+    def path_output(self):
+        """Return directory path for generating files."""
+        return self._path_output
+
+    @property
+    def path_header(self):
+        """Return string header of files and directories in generating files."""
+        return self._path_header
 
 
 @dataclass
@@ -24,6 +108,8 @@ class Prototype:
     structure_eq: Optional[PolymlpStructure] = None
     energy: Optional[float] = None
     volume: Optional[float] = None
+    energy_eos_fit: Optional[float] = None
+    volume_eos_fit: Optional[float] = None
     bulk_modulus: Optional[float] = None
     elastic_constants: Optional[np.ndarray] = None
 
@@ -75,8 +161,8 @@ class Prototype:
         Parameters must be given using the unit of per cell.
         Properties per atom are assigned to attributes.
         """
-        self.energy = e0 / self.n_atom
-        self.volume = v0 / self.n_atom
+        self.energy_eos_fit = e0 / self.n_atom
+        self.volume_eos_fit = v0 / self.n_atom
         self.bulk_modulus = b0
         self.eos_mlp = eos_mlp / self.n_atom
         self.eos_fit = eos_fit / self.n_atom
@@ -107,6 +193,10 @@ class Prototype:
             print("equilibrium_properties:", file=f)
             print("  energy:      ", self.energy, file=f)
             print("  volume:      ", self.volume, file=f)
+            print(file=f)
+            print("eosfit_properties:", file=f)
+            print("  energy:      ", self.energy_eos_fit, file=f)
+            print("  volume:      ", self.volume_eos_fit, file=f)
             print("  bulk_modulus:", self.bulk_modulus, file=f)
             print(file=f)
 
@@ -155,27 +245,43 @@ class Prototype:
                 yaml.dump(self.eos_mlp.tolist(), f, default_flow_style=False)
 
 
-def find_endmembers(prototypes: list[Prototype], element_strings: tuple):
-    """Find end members with lowest energies."""
-    # endmembers = []
-    # for ele in element_strings:
-    #     min_e = 1e10
-    #     min_prot = None
-    #     for prot in prototypes:
-    #         if prot.is_element(ele) and prot.energy is not None:
-    #             print(prot.name, prot.energy)
-    #             energy_per_atom = prot.energy / sum(prot.structure.n_atoms)
-    #             if energy_per_atom < min_e:
-    #                 min_e = energy_per_atom
-    #                 min_prot = prot
-    #     endmembers.append(min_prot)
-    endmembers = [
-        min(
-            (p for p in prototypes if p.energy is not None and p.is_element(ele)),
-            key=lambda p: p.energy,
-        )
-        for ele in element_strings
-    ]
+# def find_endmembers_mlp(prototypes: list[Prototype], element_strings: tuple):
+#    """Find end members with lowest energies.
+#
+#    Return
+#    ------
+#    endmembers: End members in Prototype. The energy is represented by unit of per atom.
+#    """
+#    endmembers = [
+#        min(
+#            (p for p in prototypes if p.energy is not None and p.is_element(ele)),
+#            key=lambda p: p.energy,
+#        )
+#        for ele in element_strings
+#    ]
+#    return endmembers
+
+
+def find_endmembers(structures: list, energies: np.array, element_strings: tuple):
+    """Find end members with lowest energies.
+
+    Return
+    ------
+    endmembers: End members. The energy is represented by unit of per atom.
+    """
+    endmembers = []
+    for ele in element_strings:
+        min_e, min_st = 1e10, None
+        for st, ene in zip(structures, energies):
+            if len(st.n_atoms) > 1 or st.elements[0] != ele:
+                continue
+            ene_per_atom = ene / len(st.elements)
+            if ene_per_atom < min_e:
+                min_e = ene_per_atom
+                min_st = st
+        if min_st is None:
+            raise RuntimeError("End members not found.")
+        endmembers.append((min_st, min_e))
     return endmembers
 
 
