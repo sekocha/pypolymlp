@@ -267,12 +267,12 @@ class AutoCalcDistribution(AutoCalcBase):
         energy_data_test = self._eval_energies(vaspruns_test)
 
         self._distribution_train = self._stack_data(
-            energy_data_train.energies_dft,
-            energy_data_train.energies_mlp,
+            energy_data_train.energies_dft_per_atom,
+            energy_data_train.energies_mlp_per_atom,
         )
         self._distribution_test = self._stack_data(
-            energy_data_test.energies_dft,
-            energy_data_test.energies_mlp,
+            energy_data_test.energies_dft_per_atom,
+            energy_data_test.energies_mlp_per_atom,
         )
 
         size = self._distribution_train.shape[0] + self._distribution_test.shape[0]
