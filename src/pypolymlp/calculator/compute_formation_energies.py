@@ -145,9 +145,10 @@ class PolymlpFormationEnergies:
         negative_indices = np.where(self._data[:, -1] < tol)[0]
         data, names = self._slice(self._data, self._structure_names, negative_indices)
 
-        ch = ConvexHull(data[:, 1:])
-        v_convex = np.unique(ch.simplices)
-        data, names = self._slice(data, names, v_convex)
+        if data.shape[0] > self._n_elements:
+            ch = ConvexHull(data[:, 1:])
+            v_convex = np.unique(ch.simplices)
+            data, names = self._slice(data, names, v_convex)
 
         sort_keys = self._sort_compositions(data)
         res = self._slice(data, names, sort_keys)

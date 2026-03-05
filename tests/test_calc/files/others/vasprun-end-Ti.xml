@@ -1,0 +1,60 @@
+<?xml version="1.0" ?><modeling><calculation><energy>
+   <i name="e_fr_energy">    -31.03855751 </i>
+   <i name="e_wo_entrp">    -31.04735844 </i>
+   <i name="e_0_energy">      0.02640280 </i>
+  </energy>
+  <varray name="forces">
+   <v>       0.00000000      -0.00008281       0.00000000 </v>
+   <v>       0.00000000       0.00008281       0.00000000 </v>
+   <v>       0.00000000      -0.00008281       0.00000000 </v>
+   <v>       0.00000000       0.00008281       0.00000000 </v>
+  </varray>
+  <varray name="stress">
+   <v>       0.38770058       0.00000000       0.00000000 </v>
+   <v>       0.00000000       0.43334547       0.00000000 </v>
+   <v>       0.00000000       0.00000000       0.33089774 </v>
+  </varray>
+  <structure name="finalpos">
+  <crystal>
+   <varray name="basis">
+    <v>       2.92274511       0.00000000       0.00000000 </v>
+    <v>       0.00000000       5.06191375       0.00000000 </v>
+    <v>       0.00000000       0.00000000       4.62333556 </v>
+   </varray>
+   <i name="volume">     68.40078701 </i>
+   <varray name="rec_basis">
+    <v>       0.34214410       0.00000000       0.00000000 </v>
+    <v>       0.00000000       0.19755374       0.00000000 </v>
+    <v>       0.00000000       0.00000000       0.21629406 </v>
+   </varray>
+  </crystal>
+  <varray name="positions">
+   <v>       0.50000000       0.16669142       0.25000000 </v>
+   <v>       0.50000000       0.83330858       0.75000000 </v>
+   <v>       0.00000000       0.66669142       0.25000000 </v>
+   <v>       0.00000000       0.33330858       0.75000000 </v>
+  </varray>
+ </structure>
+<array name="atomtypes">
+   <dimension dim="1">type</dimension>
+   <field type="int">atomspertype</field>
+   <field type="string">element</field>
+   <field>mass</field>
+   <field>valence</field>
+   <field type="string">pseudopotential</field>
+   <set>
+    <rc><c>   4</c><c>Ti</c><c>     47.88000000</c><c>      4.00000000</c><c>  PAW_PBE Ti 08Apr2002                  </c></rc>
+   </set>
+  </array>
+ <array name="atoms">
+   <dimension dim="1">ion</dimension>
+   <field type="string">element</field>
+   <field type="int">atomtype</field>
+   <set>
+    <rc><c>Ti</c><c>   1</c></rc>
+    <rc><c>Ti</c><c>   1</c></rc>
+    <rc><c>Ti</c><c>   1</c></rc>
+    <rc><c>Ti</c><c>   1</c></rc>
+   </set>
+  </array>
+  </calculation></modeling>

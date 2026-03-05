@@ -53,10 +53,20 @@ class PypolymlpAutoCalc:
             verbose=verbose,
         )
 
+    def load_prototypes(self):
+        """Load prototype structures."""
+        self._auto_prot.load_structures()
+        return self
+
+    def calc_prototypes(self):
+        """Calculate properties of prototype structures."""
+        self._auto_prot.run()
+        return self
+
     def run_prototypes(self):
         """Run calculations for prototype structures."""
-        self._auto_prot.load_structures()
-        self._auto_prot.run()
+        self.load_prototypes()
+        self.calc_prototypes()
         return self
 
     def set_prototypes_from_DFT(self, vaspruns: list, icsd_ids: list):
@@ -133,3 +143,7 @@ class PypolymlpAutoCalc:
     @property
     def prototypes(self):
         return self._auto_prot.prototypes
+
+    @prototypes.setter
+    def prototypes(self, values: list):
+        self._auto_prot.prototypes = values
