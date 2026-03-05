@@ -53,6 +53,8 @@ class PolymlpFormationEnergies:
 
         self._data = None
         self._data_convex = None
+        self._structure_names = None
+        self._structure_names_convex = None
 
     def define_end_members(
         self,
@@ -79,6 +81,7 @@ class PolymlpFormationEnergies:
         self,
         structures: list[PolymlpStructure],
         energies: Optional[np.ndarray] = None,
+        structure_names: Optional[np.ndarray] = None,
     ):
         """Compute formation energies.
 
@@ -102,15 +105,18 @@ class PolymlpFormationEnergies:
         n_atoms_array = _get_n_atoms(structures, elements=self._elements)
         form = self._comp.compute_formation_energies(energies, n_atoms_array)
         compositions = self._comp.compositions
+
+        self._structure_names = structure_names
         self._data = np.hstack([compositions, form.reshape((-1, 1))])
         return self._data
 
     def _sort_compositions(self, data: np.ndarray):
         """Sort data with respect to composition."""
-        keys = [data[:, i] for i in range(0, data.shape[1] - 1)]
-        return data[np.lexsort(keys)]
+        order = [-1] + list(range(0, self._n_elements))
+        keys = [data[:, i] for i in order]
+        return np.lexsort(keys)
 
-    def _append_end_members(self, tol: float = 1e-8):
+    def _append_end_members(self):
         """Append end members to calculate convex hull if needed."""
         data = list(self._data)
         for i in range(self._n_elements):
@@ -119,23 +125,44 @@ class PolymlpFormationEnergies:
             mask = np.all(np.isclose(self._data, target), axis=1)
             if np.count_nonzero(mask) == 0:
                 data.append(target)
+                if self._structure_names is not None:
+                    self._structure_names.append("End-" + str(i + 1))
+        self._data = np.array(data)
+        return self._data
 
-        data = np.array(data)
-        data = data[data[:, -1] < tol]
-        return data
+    def _slice(self, data: np.ndarray, structure_names: list, indices: np.ndarray):
+        """Slice data and structure names."""
+        data_sliced = data[indices]
+        if structure_names is not None:
+            structure_names_sliced = [structure_names[i] for i in indices]
+        else:
+            structure_names_sliced = None
+        return data_sliced, structure_names_sliced
 
-    def convex_hull(self):
+    def convex_hull(self, tol: float = 1e-8):
         """Calculate convex hull."""
-        data = self._append_end_members()
+        self._append_end_members()
+        negative_indices = np.where(self._data[:, -1] < tol)[0]
+        data, names = self._slice(self._data, self._structure_names, negative_indices)
+
         ch = ConvexHull(data[:, 1:])
         v_convex = np.unique(ch.simplices)
-        self._data_convex = self._sort_compositions(data[v_convex])
+        data, names = self._slice(data, names, v_convex)
+
+        sort_keys = self._sort_compositions(data)
+        res = self._slice(data, names, sort_keys)
+        self._data_convex, self._structure_names_convex = res
         return self._data_convex
 
     @property
     def has_end_members(self):
         """Return whether end members are already defined."""
         return self._comp is not None
+
+    @property
+    def structure_names_convex(self):
+        """Return names of structures on convex hull."""
+        return self._structure_names_convex
 
 
 def _get_n_atoms(structures: list[PolymlpStructure], elements: tuple):
@@ -182,7 +209,6 @@ def _initialize_composition(
             raise RuntimeError("Incosistent size of structures with n_type.")
 
         chemical_comps_end_members = _get_n_atoms(end_structures, elements=elements)
-        print(chemical_comps_end_members)
         composition = Composition(chemical_comps_end_members)
 
         if end_energies is None:

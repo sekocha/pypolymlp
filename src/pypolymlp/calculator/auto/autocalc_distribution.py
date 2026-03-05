@@ -23,12 +23,91 @@ from pypolymlp.utils.atomic_energies.atomic_energies import get_atomic_energies
 class FormationEnergyData:
     """Dataclass for storing formation energy data."""
 
+    names: list
     data_dft_all: np.ndarray
     data_dft_convex: np.ndarray
     data_mlp_all: np.ndarray
     data_mlp_convex: np.ndarray
     data_mlp_go_all: Optional[np.ndarray] = None
     data_mlp_go_convex: Optional[np.ndarray] = None
+
+    def save_data(self, filename: str):
+        """Save data to a yaml file."""
+        convex1 = self._collect_equiv_data(self.data_dft_all, self.data_dft_convex)
+        convex2 = self._collect_equiv_data(self.data_mlp_all, self.data_mlp_convex)
+        if self.data_mlp_go_all is None:
+            convex3 = None
+        else:
+            convex3 = self._collect_equiv_data(
+                self.data_mlp_go_all,
+                self.data_mlp_go_convex,
+            )
+
+        with open(filename, "w") as f:
+            print("convex_hull_dft:", file=f)
+            for d in convex1:
+                print("- composition:", list(d[:-2].astype(float)), file=f)
+                print("  delta:      ", float(d[-2]), file=f)
+                print("  prototype:  ", d[-1], file=f)
+            print(file=f)
+
+            print("convex_hull_mlp:", file=f)
+            for d in convex2:
+                print("- composition:", list(d[:-2].astype(float)), file=f)
+                print("  delta:      ", float(d[-2]), file=f)
+                print("  prototype:  ", d[-1], file=f)
+            print(file=f)
+
+            if convex3 is not None:
+                print("convex_hull_mlp_geometry_optimization:", file=f)
+                for d in convex3:
+                    print("- composition:", list(d[:-2].astype(float)), file=f)
+                    print("  delta:      ", float(d[-2]), file=f)
+                    print("  prototype:  ", d[-1], file=f)
+                print(file=f)
+
+            print("formation_energies_dft:", file=f)
+            for d, n in zip(self.data_dft_all, self.names):
+                print("- prototype:", n, file=f)
+                print("  data:     ", list(d), file=f)
+            print(file=f)
+
+            print("formation_energies_mlp:", file=f)
+            for d, n in zip(self.data_mlp_all, self.names):
+                print("- prototype:", n, file=f)
+                print("  data:     ", list(d), file=f)
+            print(file=f)
+
+            if self.data_mlp_go_all is not None:
+                print("formation_energies_mlp_geometry_optimization:", file=f)
+                for d, n in zip(self.data_mlp_go_all, self.names):
+                    print("- prototype:", n, file=f)
+                    print("  data:     ", list(d), file=f)
+                print(file=f)
+        return self
+
+    def _collect_equiv_data(
+        self,
+        data_all: np.ndarray,
+        data_convex: np.ndarray,
+        decimals: int = 4,
+    ):
+        """Collect all equivalent data on convex hull.."""
+
+        tol = 10 ** (-decimals)
+        convex = []
+        for de1 in data_convex:
+            ids = np.where(np.all(np.isclose(data_all, de1, atol=tol), axis=1))[0]
+            for i in ids:
+                data = list(np.round(data_all[i], decimals + 2))
+                data.append(self.names[i])
+                convex.append(data)
+        convex = np.array(convex)
+
+        order = [-1, -2] + list(range(0, convex.shape[1] - 2))
+        keys = [convex[:, i] for i in order]
+        convex = convex[np.lexsort(keys)]
+        return convex
 
 
 @dataclass
@@ -141,7 +220,11 @@ class AutoCalcDistribution(AutoCalcBase):
         )
         return energy_data
 
-    def _set_structure_names(self, vaspruns: list, icsd_ids: Optional[list] = None):
+    def _set_structure_names(
+        self,
+        vaspruns: Optional[list] = None,
+        icsd_ids: Optional[list] = None,
+    ):
         """Set structure names."""
         if icsd_ids is None:
             return np.array(vaspruns)
@@ -220,7 +303,7 @@ class AutoCalcDistribution(AutoCalcBase):
     def calc_formation_energies(
         self,
         vaspruns,
-        names: Optional[str] = None,
+        icsd_ids: Optional[list] = None,
         geometry_optimization: bool = False,
     ):
         """Run formation energy calculations."""
@@ -229,8 +312,8 @@ class AutoCalcDistribution(AutoCalcBase):
         if self._verbose:
             print("Compute formation energies.", flush=True)
 
-        # TODO: Identify structure names
         energy_data = self._set_end_members(vaspruns)
+        names = self._set_structure_names(vaspruns, icsd_ids=icsd_ids)
 
         delta_e_dft = self._formation_dft.compute(
             energy_data.structures,
@@ -250,6 +333,7 @@ class AutoCalcDistribution(AutoCalcBase):
             delta_e_mlp_go, delta_e_mlp_go_convex = res
 
         self._formation_energies = FormationEnergyData(
+            names,
             delta_e_dft,
             delta_e_dft_convex,
             delta_e_mlp,
@@ -257,6 +341,8 @@ class AutoCalcDistribution(AutoCalcBase):
             delta_e_mlp_go,
             delta_e_mlp_go_convex,
         )
+        filename = self._path_header + "formation_energy.yaml"
+        self._formation_energies.save_data(filename=filename)
         return self
 
     def _run_formation_energy_with_optimization(self, energy_data: EnergyData):

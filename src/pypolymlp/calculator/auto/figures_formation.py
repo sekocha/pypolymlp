@@ -68,7 +68,7 @@ def plot_binary_formation_energies(
             data_convex[i][:, 2],
             color="red",
             linewidth=0.5,
-            alpha=0.5,
+            alpha=0.7,
             marker="o",
             markersize=2,
         )
@@ -76,11 +76,12 @@ def plot_binary_formation_energies(
         ax[i].set_title(titles[i], fontsize=8)
         ax[i].set_xlabel("Composition", fontsize=8)
         ax[i].set_ylabel("Formation energy (eV/atom)", fontsize=8)
-        ax[i].tick_params(axis="both", labelsize=8)
+        ax[i].tick_params(axis="both", labelsize=8, length=0)
 
         e_min = np.min(data_all[i][:, -1])
         e_max = np.max(data_all[i][:, -1])
         buffer = (e_max - e_min) / 10
+
         ax[i].set_xticks(np.arange(0.0, 1.01, 0.2))
         ax[i].set_xlim(-0.02, 1.02)
         ax[i].yaxis.set_major_locator(
@@ -91,6 +92,12 @@ def plot_binary_formation_energies(
             )
         )
         ax[i].set_ylim(min(e_min - buffer, 0), max(e_max + buffer, 0))
+        ax[i].set_axisbelow(True)
+        ax[i].grid(
+            True,
+            linestyle="--",
+            linewidth=0.5,
+        )
 
     plt.tight_layout()
     filename = path_output + "/polymlp_formation_energy"

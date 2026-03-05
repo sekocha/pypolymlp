@@ -86,13 +86,13 @@ class PypolymlpAutoCalc:
     def calc_formation_energies(
         self,
         vaspruns: Optional[list] = None,
-        names: Optional[str] = None,
+        icsd_ids: Optional[list] = None,
         geometry_optimization: bool = False,
     ):
         """run formation energy calcultions."""
         self._auto_dist.calc_formation_energies(
             vaspruns=vaspruns,
-            names=names,
+            icsd_ids=icsd_ids,
             geometry_optimization=geometry_optimization,
         )
         return self
