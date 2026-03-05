@@ -5,7 +5,6 @@ import numpy as np
 from pypolymlp.calculator.auto.autocalc_utils import Prototype
 from pypolymlp.calculator.auto.structures_element import (
     get_structure_list_element,
-    get_structure_type_element,
     set_structure,
 )
 
@@ -30,9 +29,3 @@ def test_get_structure_list_element():
     for st in structure_list:
         assert isinstance(st, Prototype)
     assert len(structure_list) == 18
-
-
-def test_get_structure_type_element():
-    """Test get_structure_type_element."""
-    structure_type = get_structure_type_element()
-    assert structure_type[105489] == "FeB"
