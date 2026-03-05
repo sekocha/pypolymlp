@@ -5,10 +5,23 @@ from pathlib import Path
 
 import numpy as np
 
-from pypolymlp.calculator.auto.autocalc_utils import Prototype
+from pypolymlp.calculator.auto.autocalc_utils import AutoCalcBase, Prototype
 
 cwd = Path(__file__).parent
 path_file = str(cwd) + "/files/"
+
+
+def test_AutoCalcBase():
+    """Test AutoCalcBase."""
+    pot = path_file + "mlps/polymlp.lammps.pair.Ag"
+    base = AutoCalcBase(pot=pot)
+    assert base.pot == pot
+    assert base.properties is not None
+    assert base.calc_api is not None
+    assert tuple(base.element_strings) == tuple(["Ag"])
+    assert base.n_types == 1
+    assert base.path_output == "."
+    assert base.path_header == "./polymlp_"
 
 
 def test_prototype_class(structure_rocksalt):
