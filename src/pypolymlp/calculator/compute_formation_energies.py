@@ -52,6 +52,7 @@ class PolymlpFormationEnergies:
         self._comp = None
 
         self._data = None
+        self._data_convex = None
 
     def define_end_members(
         self,
@@ -104,20 +105,32 @@ class PolymlpFormationEnergies:
         self._data = np.hstack([compositions, form.reshape((-1, 1))])
         return self._data
 
-    def convex_hull(self):
-        """Calculate convex hull."""
+    def _sort_compositions(self, data: np.ndarray):
+        """Sort data with respect to composition."""
+        keys = [data[:, i] for i in range(0, data.shape[1] - 1)]
+        return data[np.lexsort(keys)]
+
+    def _append_end_members(self, tol: float = 1e-8):
+        """Append end members to calculate convex hull if needed."""
         data = list(self._data)
         for i in range(self._n_elements):
-            end = np.zeros(self._n_elements + 1)
-            end[i] = 1.0
-            data.append(end)
+            target = np.zeros(self._n_elements + 1)
+            target[i] = 1.0
+            mask = np.all(np.isclose(self._data, target), axis=1)
+            if np.count_nonzero(mask) == 0:
+                data.append(target)
+
         data = np.array(data)
-        data = data[data[:, -1] < 1e-8]
-        print(data)
+        data = data[data[:, -1] < tol]
+        return data
+
+    def convex_hull(self):
+        """Calculate convex hull."""
+        data = self._append_end_members()
         ch = ConvexHull(data[:, 1:])
         v_convex = np.unique(ch.simplices)
-        print(v_convex)
-        print(data[v_convex])
+        self._data_convex = self._sort_compositions(data[v_convex])
+        return self._data_convex
 
     @property
     def has_end_members(self):

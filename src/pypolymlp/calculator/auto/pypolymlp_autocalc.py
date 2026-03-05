@@ -69,38 +69,6 @@ class PypolymlpAutoCalc:
         self._auto_prot.save_properties()
         return self
 
-    def set_end_members_mlp(self):
-        """Set end members from polymlp calculations."""
-        self._exists_prototypes()
-        self._auto_dist.set_end_members_mlp(self.prototypes)
-        return self
-
-    def set_end_members_dft(self, vaspruns: list):
-        """Set end members from DFT calculations."""
-        self._auto_dist.set_end_members_dft(vaspruns)
-        return self
-
-    def _exists_prototypes(self):
-        """Check if properties of prototypes are already calculated."""
-        if self._n_types == 1:
-            return True
-        if self.prototypes is not None:
-            return True
-        raise RuntimeError("Prototype calculations not found.")
-
-    def calc_energy_distribution(
-        self,
-        vaspruns_train: list,
-        vaspruns_test: list,
-    ):
-        """Calculate properties for structures in training and test datasets."""
-        # self._exists_prototypes()
-        self._auto_dist.calc_energy_distribution(
-            vaspruns_train,
-            vaspruns_test,
-        )
-        return self
-
     def calc_comparison_with_dft(
         self,
         vaspruns: list,
@@ -115,24 +83,27 @@ class PypolymlpAutoCalc:
         )
         return self
 
-    def run_formation_energy(
+    def calc_formation_energies(
         self,
         vaspruns: Optional[list] = None,
         names: Optional[str] = None,
         geometry_optimization: bool = False,
     ):
         """run formation energy calcultions."""
-        self._exists_prototypes()
-        self._auto_dist.run_formation_energy(
+        self._auto_dist.calc_formation_energies(
             vaspruns=vaspruns,
             names=names,
             geometry_optimization=geometry_optimization,
         )
         return self
 
-    def plot_energy_distribution(self, system: str, pot_id: str):
-        """Plot comparison of mlp predictions with dft."""
-        self._auto_dist.plot_energy_distribution(system, pot_id)
+    def calc_energy_distribution(
+        self,
+        vaspruns_train: list,
+        vaspruns_test: list,
+    ):
+        """Calculate properties for structures in training and test datasets."""
+        self._auto_dist.calc_energy_distribution(vaspruns_train, vaspruns_test)
         return self
 
     def plot_comparison_with_dft(
@@ -149,8 +120,15 @@ class PypolymlpAutoCalc:
         )
         return self
 
-    def plot_formation_energy(self):
+    def plot_binary_formation_energies(self, system: str, pot_id: str):
         """Plot formation energies."""
+        self._auto_dist.plot_binary_formation_energies(system, pot_id)
+        return self
+
+    def plot_energy_distribution(self, system: str, pot_id: str):
+        """Plot comparison of mlp predictions with dft."""
+        self._auto_dist.plot_energy_distribution(system, pot_id)
+        return self
 
     @property
     def prototypes(self):

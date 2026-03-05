@@ -6,6 +6,7 @@ from typing import Optional, Union
 import numpy as np
 
 from pypolymlp.calculator.auto.autocalc_utils import AutoCalcBase, find_endmembers
+from pypolymlp.calculator.auto.figures_formation import plot_binary_formation_energies
 from pypolymlp.calculator.auto.figures_properties import (
     plot_energy_distribution,
     plot_prototype_prediction,
@@ -16,6 +17,18 @@ from pypolymlp.calculator.properties import Properties
 from pypolymlp.core.data_format import PolymlpParams
 from pypolymlp.core.interface_vasp import parse_properties_from_vaspruns
 from pypolymlp.utils.atomic_energies.atomic_energies import get_atomic_energies
+
+
+@dataclass
+class FormationEnergyData:
+    """Dataclass for storing formation energy data."""
+
+    data_dft_all: np.ndarray
+    data_dft_convex: np.ndarray
+    data_mlp_all: np.ndarray
+    data_mlp_convex: np.ndarray
+    data_mlp_go_all: Optional[np.ndarray] = None
+    data_mlp_go_convex: Optional[np.ndarray] = None
 
 
 @dataclass
@@ -81,6 +94,7 @@ class AutoCalcDistribution(AutoCalcBase):
         self._distribution_test = None
         self._distribution_formation_train = None
         self._distribution_formation_test = None
+        self._formation_energies = None
 
         self._formation_mlp = None
         self._formation_dft = None
@@ -203,7 +217,7 @@ class AutoCalcDistribution(AutoCalcBase):
             print("Energies of end members (MLP):", end_energies, flush=True)
         return energy_data
 
-    def run_formation_energy(
+    def calc_formation_energies(
         self,
         vaspruns,
         names: Optional[str] = None,
@@ -212,24 +226,37 @@ class AutoCalcDistribution(AutoCalcBase):
         """Run formation energy calculations."""
         if self._n_types == 1:
             return self
+        if self._verbose:
+            print("Compute formation energies.", flush=True)
 
+        # TODO: Identify structure names
         energy_data = self._set_end_members(vaspruns)
-        # delta_e_mlp = self._formation_mlp.compute(
-        _ = self._formation_mlp.compute(
-            energy_data.structures,
-            energies=energy_data.energies_mlp,
-        )
-        self._formation_mlp.convex_hull()
 
-        # delta_e_dft = self._formation_dft.compute(
-        _ = self._formation_dft.compute(
+        delta_e_dft = self._formation_dft.compute(
             energy_data.structures,
             energies=energy_data.energies_dft,
         )
-        self._formation_dft.convex_hull()
+        delta_e_dft_convex = self._formation_dft.convex_hull()
 
+        delta_e_mlp = self._formation_mlp.compute(
+            energy_data.structures,
+            energies=energy_data.energies_mlp,
+        )
+        delta_e_mlp_convex = self._formation_mlp.convex_hull()
+
+        delta_e_mlp_go, delta_e_mlp_go_convex = None, None
         if geometry_optimization:
-            self._run_formation_energy_with_optimization(energy_data)
+            res = self._run_formation_energy_with_optimization(energy_data)
+            delta_e_mlp_go, delta_e_mlp_go_convex = res
+
+        self._formation_energies = FormationEnergyData(
+            delta_e_dft,
+            delta_e_dft_convex,
+            delta_e_mlp,
+            delta_e_mlp_convex,
+            delta_e_mlp_go,
+            delta_e_mlp_go_convex,
+        )
         return self
 
     def _run_formation_energy_with_optimization(self, energy_data: EnergyData):
@@ -246,12 +273,31 @@ class AutoCalcDistribution(AutoCalcBase):
             except:
                 pass
 
-        # delta_e_mlp_go = self._formation_mlp.compute(
-        _ = self._formation_mlp.compute(
+        delta_e_mlp_go = self._formation_mlp.compute(
             structures=structures_success,
             energies=energies_success,
         )
-        self._formation_mlp.convex_hull()
+        delta_e_mlp_go_convex = self._formation_mlp.convex_hull()
+        return (delta_e_mlp_go, delta_e_mlp_go_convex)
+
+    def plot_binary_formation_energies(self, system: str, pot_id: str):
+        """Plot formation energies."""
+        if self._n_types != 2:
+            raise RuntimeError("System is not binary.")
+        if self._formation_energies is None:
+            raise RuntimeError("Formation energy data not found.")
+
+        plot_binary_formation_energies(
+            system,
+            pot_id,
+            self._formation_energies.data_dft_all,
+            self._formation_energies.data_dft_convex,
+            self._formation_energies.data_mlp_all,
+            self._formation_energies.data_mlp_convex,
+            self._formation_energies.data_mlp_go_all,
+            self._formation_energies.data_mlp_go_convex,
+            path_output=self._path_output,
+        )
         return self
 
     def calc_energy_distribution(
@@ -279,6 +325,14 @@ class AutoCalcDistribution(AutoCalcBase):
         with open(self._path_header + "size.dat", "w") as f:
             print(size, file=f)
 
+        self._calc_formation_energy_distribution(energy_data_train, energy_data_test)
+        return self
+
+    def _calc_formation_energy_distribution(
+        self,
+        energy_data_train: EnergyData,
+        energy_data_test: EnergyData,
+    ):
         if self._n_types == 1:
             return self
         if not self._formation_dft.has_end_members:
@@ -312,11 +366,6 @@ class AutoCalcDistribution(AutoCalcBase):
         )
         return self
 
-    def _stack_data(self, data1: np.ndarray, data2: np.ndarray):
-        """Stack two dataset."""
-        stacked = np.stack([data1, data2]).T
-        return stacked
-
     def plot_energy_distribution(self, system: str, pot_id: str):
         """Plot comparison of mlp predictions with dft."""
         if self._distribution_train is None or self._distribution_test is None:
@@ -345,3 +394,8 @@ class AutoCalcDistribution(AutoCalcBase):
             header="Formation energy distribution",
         )
         return self
+
+    def _stack_data(self, data1: np.ndarray, data2: np.ndarray):
+        """Stack two dataset."""
+        stacked = np.stack([data1, data2]).T
+        return stacked
