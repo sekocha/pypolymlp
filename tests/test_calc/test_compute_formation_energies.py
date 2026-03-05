@@ -162,3 +162,45 @@ def test_PolymlpFormationEnergies3():
     )
     data = api.compute(structures[-1:])
     np.testing.assert_allclose(data[0], values[[0, 2, 1, 3]], atol=1e-7)
+
+
+def test_PolymlpFormationEnergies_convex():
+    """Test PolymlpFormationEnergies to obtain convex hull."""
+
+    api = PolymlpFormationEnergies(elements=("Cu", "Ag"))
+    api.define_end_members(energies=[0.1, 0.2])
+    api._data = np.array(
+        [
+            [0.8, 0.2, -0.03495486],
+            [0.5, 0.5, -0.04193504],
+            [0.75, 0.25, -0.04421533],
+            [0.75, 0.25, -0.04305931],
+            [0.66666667, 0.33333333, -0.00756026],
+            [0.16666667, 0.83333333, -0.02537713],
+            [0.6, 0.4, -0.02018703],
+            [0.75, 0.25, -0.04391786],
+            [1.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+        ]
+    )
+    api._structure_names = [str(i) for i in range(api._data.shape[0])]
+
+    convex = api.convex_hull()
+    assert convex.shape == (5, 3)
+    assert api.structure_names_convex == ["8", "2", "1", "5", "9"]
+    assert api.has_end_members
+
+    api._data = np.array(
+        [
+            [0.8, 0.2, -0.03495486],
+            [0.5, 0.5, -0.04193504],
+            [0.75, 0.25, -0.04421533],
+            [0.75, 0.25, -0.04305931],
+            [0.66666667, 0.33333333, -0.00756026],
+            [0.16666667, 0.83333333, -0.02537713],
+            [0.6, 0.4, -0.02018703],
+            [0.75, 0.25, -0.04391786],
+        ]
+    )
+    convex = api.convex_hull()
+    assert convex.shape == (5, 3)
