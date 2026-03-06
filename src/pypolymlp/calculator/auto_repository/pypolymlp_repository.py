@@ -13,15 +13,15 @@ from pypolymlp.calculator.auto.figures_properties import (
     plot_phonon,
     plot_qha,
 )
-from pypolymlp.calculator.auto.figures_summary import (
+from pypolymlp.calculator.auto.pypolymlp_autocalc import PypolymlpAutoCalc
+from pypolymlp.calculator.auto_repository.figures_summary import (
     plot_eqm_properties,
     plot_mlp_distribution,
 )
-from pypolymlp.calculator.auto.pypolymlp_autocalc import PypolymlpAutoCalc
-from pypolymlp.calculator.auto.web import WebContents
+from pypolymlp.calculator.auto_repository.web import WebContents
 from pypolymlp.core.io_polymlp import find_mlps
 from pypolymlp.postproc.count_time import PolymlpCost
-from pypolymlp.utils.grid_search.optimal import find_optimal_mlps
+from pypolymlp.utils.grid_optimal import find_optimal_mlps
 
 
 class PypolymlpRepository:
@@ -51,7 +51,10 @@ class PypolymlpRepository:
     def calc_costs(self, n_calc: int = 20):
         """Calculate computational costs of MLPs."""
         if self._mlp_paths is None:
-            raise RuntimeError("MLP paths are required.")
+            raise RuntimeError("MLP paths not found.")
+
+        if self._verbose:
+            print("Calculating computational costs of polymlps.", flush=True)
 
         pycost = PolymlpCost(path_pot=self._mlp_paths, verbose=self._verbose)
         pycost.run(n_calc=n_calc)
@@ -73,7 +76,7 @@ class PypolymlpRepository:
         use_logscale_time: Use time in log scale to define MLP efficiency.
         """
         if self._mlp_paths is None:
-            raise RuntimeError("MLP paths are required.")
+            raise RuntimeError("MLP paths not found.")
 
         summary_all, summary_convex, self._system = find_optimal_mlps(
             self._mlp_paths,
@@ -82,37 +85,36 @@ class PypolymlpRepository:
             use_logscale_time=use_logscale_time,
             verbose=self._verbose,
         )
+        datetime_str = datetime.now().strftime("%Y-%m-%d")
+        self._entry_path = self._system + "-" + datetime_str + "/"
+
         self._times = summary_convex[:, 0].astype(float)
         abspaths = summary_convex[:, -1]
         self._copy_convex_mlp_files(self._system, abspaths)
 
-        target = self._entry_path + "/summary"
+        path_summary = self._entry_path + "/summary"
         plot_mlp_distribution(
             summary_all,
             summary_convex,
             self._system,
-            path_output=target,
+            path_output=path_summary,
         )
         return self
 
     def _copy_convex_mlp_files(self, system: str, abspaths: list):
         """Copy files for convex MLPs."""
-        datetime_str = datetime.now().strftime("%Y-%m-%d")
-        self._entry_path = system + "-" + datetime_str + "/"
-        if os.path.exists(self._entry_path):
-            os.remove("polymlp_summary_all.yaml")
-            os.remove("polymlp_summary_convex.yaml")
-            raise RuntimeError("Output directory already exists.")
+        path_summary = self._entry_path + "/summary"
+        path_mlp = self._entry_path + "/polymlps"
+        os.makedirs(path_summary, exist_ok=True)
+        os.makedirs(path_mlp, exist_ok=True)
 
-        os.makedirs(self._entry_path + "/summary", exist_ok=True)
-        shutil.move("polymlp_summary_all.yaml", self._entry_path + "/summary/")
-        shutil.move("polymlp_summary_convex.yaml", self._entry_path + "/summary/")
+        shutil.move("polymlp_summary_all.yaml", path_summary)
+        shutil.move("polymlp_summary_convex.yaml", path_summary)
 
-        os.makedirs(self._entry_path + "/polymlps", exist_ok=True)
         self._convex_mlp_paths = []
         for path in abspaths:
             name = path.split("/")[-1]
-            target = self._entry_path + "/polymlps/" + name
+            target = path_mlp + "/" + name
             shutil.copytree(path, target)
             self._convex_mlp_paths.append(target)
         return self
@@ -127,6 +129,11 @@ class PypolymlpRepository:
         """Calculate properties."""
         if self._entry_path is None:
             raise RuntimeError("Run extract_convex_polymlps first.")
+
+        if self._times is None:
+            raise RuntimeError("Computational times not found.")
+        if self._convex_mlp_paths is None:
+            raise RuntimeError("Convex MLPs not found.")
 
         prototypes_all = []
         for path in self._convex_mlp_paths:
@@ -187,3 +194,13 @@ class PypolymlpRepository:
         """Generate web contents."""
         web = WebContents(path_prediction=path_prediction)
         web.run()
+
+    @property
+    def mlp_paths(self):
+        """Return paths of polymlp locations."""
+        return self._mlp_paths
+
+    @mlp_paths.setter
+    def mlp_paths(self, paths: list):
+        """Set paths of polymlp locations."""
+        self._mlp_paths = paths

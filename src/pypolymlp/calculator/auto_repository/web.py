@@ -8,7 +8,7 @@ from datetime import datetime
 
 import yaml
 
-from pypolymlp.calculator.auto.web_utils import (
+from pypolymlp.calculator.auto_repository.web_utils import (
     generate_predictions_txt,
     generate_summary_txt,
 )

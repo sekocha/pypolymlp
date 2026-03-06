@@ -6,7 +6,10 @@ import os
 import numpy as np
 import yaml
 
-from pypolymlp.calculator.auto.web_sphinx_utils import array_to_csv_table, include_image
+from pypolymlp.calculator.auto_repository.web_sphinx_utils import (
+    array_to_csv_table,
+    include_image,
+)
 
 
 def generate_summary_txt(
