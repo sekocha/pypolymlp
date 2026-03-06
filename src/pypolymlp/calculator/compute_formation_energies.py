@@ -69,6 +69,7 @@ class PolymlpFormationEnergies:
 
         If structures are not given, energies are regarded as those per atom.
         """
+        # TODO: Implement initialization using input of number of atoms.
         self._comp = _initialize_composition(
             end_structures=structures,
             end_energies=energies,
@@ -106,7 +107,9 @@ class PolymlpFormationEnergies:
         form = self._comp.compute_formation_energies(energies, n_atoms_array)
         compositions = self._comp.compositions
 
-        self._structure_names = structure_names
+        if structure_names is None:
+            self._structure_names = list(range(form.shape[0]))
+        # self._structure_names = structure_names
         self._data = np.hstack([compositions, form.reshape((-1, 1))])
         return self._data
 

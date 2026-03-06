@@ -1,4 +1,4 @@
-"""Tests of functions for feature calculations."""
+"""Tests of functions for calculating formation energies."""
 
 import copy
 from pathlib import Path
@@ -93,7 +93,6 @@ def test_PolymlpFormationEnergies():
         [0.75, 0.16666667, 0.08333333],
         [0.75, 0.16666667, 0.08333333],
     ]
-    end_energies = np.array([-11.64504468, -10.11421316, -12.16160509])
 
     api.define_end_members(structures=end_structures)
     data = api.compute(structures)
@@ -123,7 +122,6 @@ def test_PolymlpFormationEnergies2():
         [0.75, 0.16666667, 0.08333333],
         [0.75, 0.16666667, 0.08333333],
     ]
-    end_energies = np.array([-11.64504468, -10.11421316, -12.16160509])
 
     energies = [
         -10.11421316,

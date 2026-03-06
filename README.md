@@ -115,6 +115,7 @@ The following calculations can be performed using **pypolymlp** with the polynom
 
 - [Notes on hybrid polynomial MLPs](docs/calc_hybrid.md)
 - [Energy, forces, stress tensor](docs/calc_property.md)
+- [Formation energy](docs/calc_formation.md)
 - [Equation of states](docs/calc_eos.md)
 - [Local geometry optimization](docs/calc_geometry.md)
 - [Elastic constants](docs/calc_elastic.md)
