@@ -5,14 +5,17 @@ from typing import Optional, Union
 
 import numpy as np
 
-from pypolymlp.calculator.auto.autocalc_utils import AutoCalcBase, find_endmembers
+from pypolymlp.calculator.auto.autocalc_utils import AutoCalcBase
 from pypolymlp.calculator.auto.figures_formation import plot_binary_formation_energies
 from pypolymlp.calculator.auto.figures_properties import (
     plot_energy_distribution,
     plot_prototype_prediction,
 )
 from pypolymlp.calculator.auto.structures_types import get_structure_types
-from pypolymlp.calculator.compute_formation_energies import PolymlpFormationEnergies
+from pypolymlp.calculator.compute_formation_energies import (
+    PolymlpFormationEnergies,
+    find_endmembers,
+)
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.core.data_format import PolymlpParams
 from pypolymlp.core.interface_vasp import parse_properties_from_vaspruns

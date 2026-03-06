@@ -9,6 +9,7 @@ from pypolymlp.calculator.compute_formation_energies import (
     PolymlpFormationEnergies,
     _get_n_atoms,
     _initialize_composition,
+    find_endmembers,
 )
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.core.interface_vasp import parse_structures_from_poscars
@@ -202,3 +203,20 @@ def test_PolymlpFormationEnergies_convex():
     )
     convex = api.convex_hull()
     assert convex.shape == (5, 3)
+
+
+def test_find_endmembers():
+    """Test find_endmembers."""
+    endmembers = find_endmembers(
+        end_structures,
+        end_energies,
+        elements,
+    )
+    st, e = endmembers[0]
+    assert st.elements[0] == "Cu"
+    st, e = endmembers[1]
+    assert st.elements[0] == "Ag"
+    st, e = endmembers[2]
+    assert st.elements[0] == "Au"
+    energies = [end[1] for end in endmembers]
+    np.testing.assert_allclose(energies, end_energies / 4)

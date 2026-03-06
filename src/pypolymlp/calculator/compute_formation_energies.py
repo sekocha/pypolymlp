@@ -226,3 +226,26 @@ def _initialize_composition(
             composition.energies_end_members = end_energies
 
     return composition
+
+
+def find_endmembers(structures: list, energies: np.array, element_strings: tuple):
+    """Find end members with lowest energies.
+
+    Return
+    ------
+    endmembers: End members. Their energies are represented by unit of per atom.
+    """
+    endmembers = []
+    for ele in element_strings:
+        min_e, min_st = 1e10, None
+        for st, ene in zip(structures, energies):
+            if len(st.n_atoms) > 1 or st.elements[0] != ele:
+                continue
+            ene_per_atom = ene / len(st.elements)
+            if ene_per_atom < min_e:
+                min_e = ene_per_atom
+                min_st = st
+        if min_st is None:
+            raise RuntimeError("End members not found.")
+        endmembers.append((min_st, min_e))
+    return endmembers

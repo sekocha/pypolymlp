@@ -245,46 +245,6 @@ class Prototype:
                 yaml.dump(self.eos_mlp.tolist(), f, default_flow_style=False)
 
 
-# def find_endmembers_mlp(prototypes: list[Prototype], element_strings: tuple):
-#    """Find end members with lowest energies.
-#
-#    Return
-#    ------
-#    endmembers: End members in Prototype. The energy is represented by unit of per atom.
-#    """
-#    endmembers = [
-#        min(
-#            (p for p in prototypes if p.energy is not None and p.is_element(ele)),
-#            key=lambda p: p.energy,
-#        )
-#        for ele in element_strings
-#    ]
-#    return endmembers
-
-
-def find_endmembers(structures: list, energies: np.array, element_strings: tuple):
-    """Find end members with lowest energies.
-
-    Return
-    ------
-    endmembers: End members. The energy is represented by unit of per atom.
-    """
-    endmembers = []
-    for ele in element_strings:
-        min_e, min_st = 1e10, None
-        for st, ene in zip(structures, energies):
-            if len(st.n_atoms) > 1 or st.elements[0] != ele:
-                continue
-            ene_per_atom = ene / len(st.elements)
-            if ene_per_atom < min_e:
-                min_e = ene_per_atom
-                min_st = st
-        if min_st is None:
-            raise RuntimeError("End members not found.")
-        endmembers.append((min_st, min_e))
-    return endmembers
-
-
 def get_atomic_size_scales():
     """Return scale."""
     atomic_radius = {
