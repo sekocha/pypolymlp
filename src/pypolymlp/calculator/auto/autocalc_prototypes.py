@@ -79,7 +79,8 @@ class AutoCalcPrototypes(AutoCalcBase):
                 pass
         return self
 
-    def run(self):
+    # TODO: Activate QHA
+    def run(self, run_qha: bool = False):
         """Calculate properties systematically for prototype structures."""
         if self._prototypes is None:
             raise RuntimeError("Prototype structures not found.")
@@ -101,8 +102,8 @@ class AutoCalcPrototypes(AutoCalcBase):
             self._run_eos(prot)
             self._run_elastic(prot, poscar)
             self._run_phonon(prot)
-            # TODO: Activate QHA
-            # self._run_qha(prot)
+            if run_qha:
+                self._run_qha(prot)
 
         return self
 

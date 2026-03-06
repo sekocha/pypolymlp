@@ -34,7 +34,7 @@ def plot_prototype_prediction(
     pot_id: Potential ID.
     """
     if fontsize == "auto":
-        fontsize = 800 // data.shape[0]
+        fontsize = min(800 // data.shape[0], 12)
     os.makedirs(path_output, exist_ok=True)
     error = np.abs(data[:, 0].astype(float) - data[:, 1].astype(float)) * 1000
     tag = data[:, 2]
@@ -217,7 +217,8 @@ def plot_eos_separate(
 
         row = i // n_cols
         col = i % n_cols
-        ax[row][col].scatter(
+        ax_obj = ax[col] if n_rows == 1 else ax[row][col]
+        ax_obj.scatter(
             ev[:, 0],
             ev[:, 1],
             color="turquoise",
@@ -226,17 +227,19 @@ def plot_eos_separate(
             linewidths=0.1,
             edgecolors="k",
         )
-        ax[row][col].set_title(st, fontsize=fontsize, loc="left")
-        ax[row][col].set_xlim(limmin_x, limmax_x)
-        ax[row][col].set_ylim(limmin_y, limmax_y)
-        ax[row][col].tick_params(axis="both", labelsize=fontsize)
+        ax_obj.set_title(st, fontsize=fontsize, loc="left")
+        ax_obj.set_xlim(limmin_x, limmax_x)
+        ax_obj.set_ylim(limmin_y, limmax_y)
+        ax_obj.tick_params(axis="both", labelsize=fontsize)
 
     for i in range(n_rows):
-        ax[i][0].set_ylabel("Energy (eV/atom)", fontsize=fontsize)
+        ax_obj = ax[0] if n_rows == 1 else ax[i][0]
+        ax_obj.set_ylabel("Energy (eV/atom)", fontsize=fontsize)
 
     for i in range(n_cols):
-        ax[-1][i].set_xlabel(r"Volume ($\mathrm{\AA}^3$/atom)", fontsize=fontsize)
-        ax[-1][i].tick_params(axis="both", labelsize=fontsize)
+        ax_obj = ax[i] if n_rows == 1 else ax[-1][i]
+        ax_obj.set_xlabel(r"Volume ($\mathrm{\AA}^3$/atom)", fontsize=fontsize)
+        ax_obj.tick_params(axis="both", labelsize=fontsize)
 
     plt.tight_layout()
     if use_eps:
@@ -286,19 +289,20 @@ def plot_phonon(
 
         row = i // n_cols
         col = i % n_cols
-        ax[row][col].plot(
-            dos[:, 0], dos[:, 1] / prot.n_atom, color="darkcyan", linewidth=1
-        )
-        ax[row][col].set_title(st, fontsize=fontsize, loc="left")
-        ax[row][col].set_xlim(limmin_x, limmax_x)
-        ax[row][col].set_ylim(limmin_y, limmax_y)
-        ax[row][col].tick_params(axis="both", labelsize=8)
+        ax_obj = ax[col] if n_rows == 1 else ax[row][col]
+        ax_obj.plot(dos[:, 0], dos[:, 1] / prot.n_atom, color="darkcyan", linewidth=1)
+        ax_obj.set_title(st, fontsize=fontsize, loc="left")
+        ax_obj.set_xlim(limmin_x, limmax_x)
+        ax_obj.set_ylim(limmin_y, limmax_y)
+        ax_obj.tick_params(axis="both", labelsize=8)
 
     for i in range(n_rows):
-        ax[i][0].set_ylabel("DOS", fontsize=fontsize)
+        ax_obj = ax[0] if n_rows == 1 else ax[i][0]
+        ax_obj.set_ylabel("DOS", fontsize=fontsize)
     for i in range(n_cols):
-        ax[-1][i].set_xlabel("Frequency (THz)", fontsize=fontsize)
-        ax[-1][i].tick_params(axis="both", labelsize=8)
+        ax_obj = ax[i] if n_rows == 1 else ax[-1][i]
+        ax_obj.set_xlabel("Frequency (THz)", fontsize=fontsize)
+        ax_obj.tick_params(axis="both", labelsize=8)
 
     plt.tight_layout()
     if use_eps:
