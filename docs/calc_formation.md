@@ -11,4 +11,5 @@ polymlp.load_poscars(["POSCAR", "POSCAR2", "POSCAR3"])
 
 polymlp.init_formation_energy(end_structures=end_structures)
 formation_energies = polymlp.run_formation_energy()
+formation_energies, convex_hull, names = polymlp.run_formation_energy(convex_hull=True)
 ```
