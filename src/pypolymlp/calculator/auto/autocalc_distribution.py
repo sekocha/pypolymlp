@@ -128,6 +128,11 @@ class EnergyData:
 
     def get_comparison_data(self, decimals: int = 6):
         """Return data for comparison between DFT and MLP."""
+        if self.energies_dft_per_atom is None or self.energies_mlp_per_atom is None:
+            raise RuntimeError("Energies per atom not found.")
+        if self.names is None:
+            raise RuntimeError("Names not found.")
+
         data = np.stack(
             [
                 np.round(self.energies_dft_per_atom, decimals),
