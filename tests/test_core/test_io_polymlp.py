@@ -1,8 +1,10 @@
 """Tests of polymlp parser."""
 
+import os
 from pathlib import Path
 
 from pypolymlp.core.io_polymlp import (
+    convert_to_yaml,
     find_mlps,
     is_hybrid,
     is_legacy,
@@ -32,6 +34,23 @@ def test_find_mlps():
     """Test for find_mlps"""
     mlps = find_mlps(str(cwd) + "/../files")
     assert len(mlps) == 2
+
+
+def test_convert_to_yaml():
+    """Test convert_to_yaml"""
+    file1 = str(cwd) + "/../files/polymlp.lammps.Ti"
+    convert_to_yaml(file1, yaml="tmp.yaml")
+    os.remove("tmp.yaml")
+
+    files = [file1, file1]
+    convert_to_yaml(files, yaml="tmp.yaml")
+    os.remove("tmp.yaml.1")
+    os.remove("tmp.yaml.2")
+
+    file2 = str(cwd) + "/../files/polymlp.yaml.MgO"
+    convert_to_yaml(file2, yaml="tmp.yaml")
+    files = [file2, file2]
+    convert_to_yaml(files, yaml="tmp.yaml")
 
 
 def test_is_legacy():

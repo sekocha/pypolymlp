@@ -101,7 +101,10 @@ class WebContents:
             self._path_prediction + "/predictions/polymlp_eqm_properties.png",
         ]
         for f in files:
-            shutil.copy(f, path)
+            try:
+                shutil.copy(f, path)
+            except shutil.SameFileError:
+                pass
 
         generate_summary_txt(
             self._path_web,
@@ -121,7 +124,10 @@ class WebContents:
             path_prediction = self._path_prediction + "/predictions/" + d["id"] + "/"
             files = glob.glob(path_prediction + "/polymlp_*.png")
             for f in files:
-                shutil.copy(f, path)
+                try:
+                    shutil.copy(f, path)
+                except shutil.SameFileError:
+                    pass
 
         generate_predictions_txt(
             self._path_web,

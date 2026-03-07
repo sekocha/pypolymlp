@@ -117,6 +117,9 @@ def plot_eqm_properties(
         for j, (st, list1) in enumerate(eqm_props_dict[i].items()):
             x = [t / 1000 for t, val in zip(times, list1) if val is not None]
             y = [val for val in list1 if val is not None]
+            if len(y) < 2:
+                continue
+
             ax[i].plot(
                 x,
                 y,

@@ -6,6 +6,12 @@ from typing import Optional, Union
 import numpy as np
 
 from pypolymlp.calculator.auto.autocalc_utils import AutoCalcBase, Prototype
+from pypolymlp.calculator.auto.figures_properties import (
+    plot_eos,
+    plot_eos_separate,
+    plot_phonon,
+    plot_qha,
+)
 from pypolymlp.calculator.auto.structures_binary import get_structure_list_binary
 from pypolymlp.calculator.auto.structures_element import get_structure_list_element
 from pypolymlp.calculator.properties import Properties
@@ -112,6 +118,30 @@ class AutoCalcPrototypes(AutoCalcBase):
         for prot in self._prototypes:
             path = self._path_header + prot.name + "/"
             prot.save_properties(filename=path + "polymlp_predictions.yaml")
+        return self
+
+    def plot_properties(self, system: str, pot_id: str):
+        """Plot properties."""
+        path = self._path_output
+        if self._n_types == 1:
+            plot_eos(self._prototypes, system, pot_id, path_output=path)
+
+        plot_eos_separate(self._prototypes, system, pot_id, path_output=path)
+        plot_phonon(self._prototypes, system, pot_id, path_output=path)
+        plot_qha(
+            self._prototypes,
+            system,
+            pot_id,
+            target="thermal_expansion",
+            path_output=path,
+        )
+        plot_qha(
+            self._prototypes,
+            system,
+            pot_id,
+            target="bulk_modulus",
+            path_output=path,
+        )
         return self
 
     def _print_targets(self):

@@ -79,6 +79,11 @@ class PypolymlpAutoCalc:
         self._auto_prot.save_properties()
         return self
 
+    def plot_prototypes(self, system: str, pot_id: str):
+        """Plot properties of prototypes."""
+        self._auto_prot.plot_properties(system, pot_id)
+        return self
+
     def calc_comparison_with_dft(
         self,
         vaspruns: list,

@@ -2,26 +2,52 @@
 
 import os
 import shutil
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
 
 import numpy as np
 
-from pypolymlp.calculator.auto.figures_properties import (
-    plot_eos,
-    plot_eos_separate,
-    plot_phonon,
-    plot_qha,
-)
+from pypolymlp.api.pypolymlp_utils import PypolymlpUtils
 from pypolymlp.calculator.auto.pypolymlp_autocalc import PypolymlpAutoCalc
 from pypolymlp.calculator.auto_repository.figures_summary import (
     plot_eqm_properties,
     plot_mlp_distribution,
 )
 from pypolymlp.calculator.auto_repository.web import WebContents
-from pypolymlp.core.io_polymlp import find_mlps
-from pypolymlp.postproc.count_time import PolymlpCost
-from pypolymlp.utils.grid_optimal import find_optimal_mlps
+from pypolymlp.core.io_polymlp import convert_to_yaml, find_mlps
+
+
+@dataclass
+class MLPAttr:
+    """Dataclass for attributes of polymlp."""
+
+    entry_path: str
+    mlp_id: str
+    path_mlp: Optional[str] = None
+    path_prediction: Optional[PypolymlpAutoCalc] = None
+    autocalc: Optional[PypolymlpAutoCalc] = None
+
+    def __post_init__(self):
+        """Init method."""
+        self.path_mlp = self.entry_path + "/polymlps/" + self.mlp_id
+        self.path_prediction = self.entry_path + "/predictions/" + self.mlp_id
+        os.makedirs(self.path_mlp, exist_ok=True)
+        os.makedirs(self.path_prediction, exist_ok=True)
+
+        # pot = find_mlps(mlp_attr.path_mlp)
+        # pot_id = path.split("/")[-1]
+
+    def set_autocalc(self, verbose: bool = False):
+        """Set autocalc instance."""
+        if self.autocalc is None:
+            pot = find_mlps(self.path_mlp)
+            self.autocalc = PypolymlpAutoCalc(
+                pot=pot,
+                path_output=self.path_prediction,
+                verbose=verbose,
+            )
+        return self
 
 
 class PypolymlpRepository:
@@ -40,24 +66,26 @@ class PypolymlpRepository:
                 raise RuntimeError("mlp_paths must be array-like.")
 
         self._verbose = verbose
+        self._utils = PypolymlpUtils(verbose=self._verbose)
 
         self._entry_path = None
         self._system = None
-        self._convex_mlp_paths = None
+        self._convex_mlp_attrs = None
         self._times = None
 
         np.set_printoptions(legacy="1.21")
 
     def calc_costs(self, n_calc: int = 20):
         """Calculate computational costs of MLPs."""
+        if self._verbose:
+            print("Calculating computational costs of polymlps.", flush=True)
         if self._mlp_paths is None:
             raise RuntimeError("MLP paths not found.")
 
-        if self._verbose:
-            print("Calculating computational costs of polymlps.", flush=True)
-
-        pycost = PolymlpCost(path_pot=self._mlp_paths, verbose=self._verbose)
-        pycost.run(n_calc=n_calc)
+        self._utils.estimate_polymlp_comp_cost(
+            path_pot=self._mlp_paths,
+            n_calc=n_calc,
+        )
         return self
 
     def extract_convex_polymlps(
@@ -75,22 +103,21 @@ class PypolymlpRepository:
         use_force: Use errors for forces to define MLP accuracy.
         use_logscale_time: Use time in log scale to define MLP efficiency.
         """
+        if self._verbose:
+            print("Determining optimal polymlps on convex hull.", flush=True)
         if self._mlp_paths is None:
             raise RuntimeError("MLP paths not found.")
 
-        summary_all, summary_convex, self._system = find_optimal_mlps(
+        summary_all, summary_convex, self._system = self._utils.find_optimal_mlps(
             self._mlp_paths,
             key,
             use_force=use_force,
             use_logscale_time=use_logscale_time,
-            verbose=self._verbose,
         )
         datetime_str = datetime.now().strftime("%Y-%m-%d")
         self._entry_path = self._system + "-" + datetime_str + "/"
-
         self._times = summary_convex[:, 0].astype(float)
-        abspaths = summary_convex[:, -1]
-        self._copy_convex_mlp_files(self._system, abspaths)
+        self._copy_convex_mlp_files(self._system, abspaths=summary_convex[:, -1])
 
         path_summary = self._entry_path + "/summary"
         plot_mlp_distribution(
@@ -104,19 +131,43 @@ class PypolymlpRepository:
     def _copy_convex_mlp_files(self, system: str, abspaths: list):
         """Copy files for convex MLPs."""
         path_summary = self._entry_path + "/summary"
-        path_mlp = self._entry_path + "/polymlps"
+        shutil.rmtree(path_summary, ignore_errors=True)
         os.makedirs(path_summary, exist_ok=True)
-        os.makedirs(path_mlp, exist_ok=True)
 
-        shutil.move("polymlp_summary_all.yaml", path_summary)
-        shutil.move("polymlp_summary_convex.yaml", path_summary)
+        # path_mlp = self._entry_path + "/polymlps"
+        # shutil.rmtree(path_mlp, ignore_errors=True)
+        # os.makedirs(path_mlp, exist_ok=True)
 
-        self._convex_mlp_paths = []
+        shutil.move(
+            "polymlp_summary_all.yaml",
+            path_summary + "/polymlp_summary_all.yaml",
+        )
+        shutil.move(
+            "polymlp_summary_convex.yaml",
+            path_summary + "/polymlp_summary_convex.yaml",
+        )
+
+        self._convex_mlp_attrs = []
         for path in abspaths:
-            name = path.split("/")[-1]
-            target = path_mlp + "/" + name
-            shutil.copytree(path, target)
-            self._convex_mlp_paths.append(target)
+            mlp_id = path.split("/")[-1]
+            mlp_attr = MLPAttr(entry_path=self._entry_path, mlp_id=mlp_id)
+
+            pot = find_mlps(path)
+            legacy = convert_to_yaml(pot, yaml="polymlp.yaml")
+            if legacy:
+                for p in find_mlps("."):
+                    try:
+                        shutil.move(p, mlp_attr.path_mlp)
+                    except:
+                        pass
+            else:
+                for p in pot:
+                    shutil.copy(p, mlp_attr.path_mlp)
+
+            for file in ("polymlp_cost.yaml", "polymlp_error.yaml"):
+                shutil.copy(path + "/" + file, mlp_attr.path_mlp)
+
+            self._convex_mlp_attrs.append(mlp_attr)
         return self
 
     def calc_properties(
@@ -129,34 +180,37 @@ class PypolymlpRepository:
         """Calculate properties."""
         if self._entry_path is None:
             raise RuntimeError("Run extract_convex_polymlps first.")
-
         if self._times is None:
             raise RuntimeError("Computational times not found.")
-        if self._convex_mlp_paths is None:
+        if self._convex_mlp_attrs is None:
             raise RuntimeError("Convex MLPs not found.")
 
         prototypes_all = []
-        for path in self._convex_mlp_paths:
-            name = path.split("/")[-1]
-            target = self._entry_path + "/predictions/" + name
-            calc = PypolymlpAutoCalc(
-                pot=find_mlps(path),
-                path_output=target,
-                verbose=self._verbose,
-            )
-            calc.load_structures()
-            calc.run()
+        for mlp_attr in self._convex_mlp_attrs:
+            mlp_attr.set_autocalc(verbose=self._verbose)
+            calc = mlp_attr.autocalc
+            calc.run_prototypes()
+            calc.save_prototypes()
+            calc.plot_prototypes(self._system, mlp_attr.mlp_id)
+            prototypes_all.append(calc.prototypes)
+
             if vaspruns_prototypes is not None:
-                calc.compare_with_dft(vaspruns=vaspruns_prototypes, icsd_ids=icsd_ids)
-                calc.plot_comparison_with_dft(self._system, name)
+                calc.calc_comparison_with_dft(
+                    vaspruns=vaspruns_prototypes,
+                    icsd_ids=icsd_ids,
+                )
+                calc.plot_comparison_with_dft(self._system, mlp_attr.mlp_id)
+
+                if calc._n_types == 2:
+                    calc.calc_formation_energies(
+                        vaspruns=vaspruns_prototypes,
+                        icsd_ids=icsd_ids,
+                    )
+                    calc.plot_binary_formation_energies(self._system, mlp_attr.mlp_id)
 
             if vaspruns_train is not None and vaspruns_test is not None:
                 calc.calc_energy_distribution(vaspruns_train, vaspruns_test)
-                calc.plot_energy_distribution(self._system, name)
-
-            calc.save_properties()
-            prototypes_all.append(calc.prototypes)
-            self._plot_properties(calc.prototypes, name, target)
+                calc.plot_energy_distribution(self._system, mlp_attr.mlp_id)
 
         plot_eqm_properties(
             prototypes_all,
@@ -166,34 +220,64 @@ class PypolymlpRepository:
         )
         return self
 
-    def _plot_properties(self, prototypes: list, name: str, path_output: str):
-        """Plot properties from single MLP."""
-        n_type = len(self._system.split("-"))
-        if n_type == 1:
-            plot_eos(prototypes, self._system, name, path_output=path_output)
+    #     def calc_formation_energies(
+    #         self,
+    #         vaspruns: list,
+    #         icsd_ids: Optional[list] = None,
+    #     ):
+    #         """Calculate properties."""
+    #         if self._entry_path is None:
+    #             raise RuntimeError("Run extract_convex_polymlps first.")
+    #         if self._convex_mlp_attrs is None:
+    #             raise RuntimeError("Convex MLPs not found.")
+    #
+    #         for path in self._convex_mlp_attrs:
+    #             pot = find_mlps(path)
+    #             name = path.split("/")[-1]
+    #             target = self._entry_path + "/predictions/" + name
+    #             calc = PypolymlpAutoCalc(
+    #                 pot=pot,
+    #                 path_output=target,
+    #                 verbose=self._verbose,
+    #             )
+    #             calc.run_prototypes()
+    #             calc.save_prototypes()
+    #             calc.plot_prototypes(self._system, name)
+    #             prototypes_all.append(calc.prototypes)
+    #
+    #             if vaspruns_prototypes is not None:
+    #                 calc.calc_comparison_with_dft(
+    #                     vaspruns=vaspruns_prototypes,
+    #                     icsd_ids=icsd_ids,
+    #                 )
+    #                 calc.plot_comparison_with_dft(self._system, name)
+    #
+    #                 if calc._n_types == 2:
+    #                     calc.calc_formation_energies(
+    #                         vaspruns=vaspruns_prototypes,
+    #                         icsd_ids=icsd_ids,
+    #                     )
+    #                     calc.plot_binary_formation_energies(self._system, name)
+    #
+    #             if vaspruns_train is not None and vaspruns_test is not None:
+    #                 calc.calc_energy_distribution(vaspruns_train, vaspruns_test)
+    #                 calc.plot_energy_distribution(self._system, name)
+    #
+    #         plot_eqm_properties(
+    #             prototypes_all,
+    #             self._times,
+    #             self._system,
+    #             path_output=self._entry_path + "/predictions",
+    #         )
+    #         return self
 
-        plot_eos_separate(prototypes, self._system, name, path_output=path_output)
-        plot_phonon(prototypes, self._system, name, path_output=path_output)
-        plot_qha(
-            prototypes,
-            self._system,
-            name,
-            target="thermal_expansion",
-            path_output=path_output,
-        )
-        plot_qha(
-            prototypes,
-            self._system,
-            name,
-            target="bulk_modulus",
-            path_output=path_output,
-        )
-        return self
-
-    def generate_web_contents(self, path_prediction: str = "./"):
+    def generate_web_contents(self, path_prediction: Optional[str] = None):
         """Generate web contents."""
+        if path_prediction is None:
+            path_prediction = self._entry_path
         web = WebContents(path_prediction=path_prediction)
         web.run()
+        return self
 
     @property
     def mlp_paths(self):

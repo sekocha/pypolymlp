@@ -81,8 +81,8 @@ def _set_eos_minmax(
 ):
     """Set minimum and maximum values for EOS plot."""
     limmin_x, limmax_x, limmin_y, limmax_y = [], [], [], []
-    v_array = np.ravel([p.eos_mlp[:, 0] for p in prototypes])
-    e_array = np.ravel([p.eos_mlp[:, 1] for p in prototypes])
+    v_array = np.ravel([p.eos_mlp[:, 0] for p in prototypes if p.eos_mlp is not None])
+    e_array = np.ravel([p.eos_mlp[:, 1] for p in prototypes if p.eos_mlp is not None])
 
     vmin, vmax = np.min(v_array), np.max(v_array)
     emax = np.max(e_array)
@@ -177,7 +177,8 @@ def _sns_init(
     fontsize: int = 10,
 ):
     """Initialize seaborn subplot environment."""
-    n_rows = int(np.ceil(len(prototypes) / n_cols - 1e-10))
+    n_success = len([1 for p in prototypes if p.structure_eq is not None])
+    n_rows = int(np.ceil(n_success / n_cols - 1e-10))
     figsize = (figsize[0], figsize[1] * n_rows / 6)
 
     sns.set_context("paper", 1.0, {"lines.linewidth": 2})
@@ -210,7 +211,8 @@ def plot_eos_separate(
     fig, ax, n_rows = _sns_init(
         prototypes, suptitle, n_cols=n_cols, figsize=figsize, fontsize=8
     )
-    for i, prot in enumerate(prototypes):
+    i = 0
+    for prot in prototypes:
         st, ev = prot.name, prot.eos_mlp
         if ev is None:
             continue
@@ -231,6 +233,7 @@ def plot_eos_separate(
         ax_obj.set_xlim(limmin_x, limmax_x)
         ax_obj.set_ylim(limmin_y, limmax_y)
         ax_obj.tick_params(axis="both", labelsize=fontsize)
+        i += 1
 
     for i in range(n_rows):
         ax_obj = ax[0] if n_rows == 1 else ax[i][0]
@@ -252,8 +255,12 @@ def plot_eos_separate(
 
 def _set_phonon_minmax(prototypes: list[Prototype]):
     """Set minimum and maximum values for phonon DOS plot."""
-    freq_array = np.ravel([p.phonon_dos[:, 0] for p in prototypes])
-    dos_array = np.ravel([p.phonon_dos[:, 1] / p.n_atom for p in prototypes])
+    freq_array = np.ravel(
+        [p.phonon_dos[:, 0] for p in prototypes if p.phonon_dos is not None]
+    )
+    dos_array = np.ravel(
+        [p.phonon_dos[:, 1] / p.n_atom for p in prototypes if p.phonon_dos is not None]
+    )
 
     limmin_x = np.floor(np.min(freq_array))
     limmax_x = np.ceil(np.max(freq_array))
@@ -282,7 +289,8 @@ def plot_phonon(
     fig, ax, n_rows = _sns_init(
         prototypes, suptitle, n_cols=n_cols, figsize=figsize, fontsize=8
     )
-    for i, prot in enumerate(prototypes):
+    i = 0
+    for prot in prototypes:
         st, dos = prot.name, prot.phonon_dos
         if dos is None:
             continue
@@ -295,6 +303,7 @@ def plot_phonon(
         ax_obj.set_xlim(limmin_x, limmax_x)
         ax_obj.set_ylim(limmin_y, limmax_y)
         ax_obj.tick_params(axis="both", labelsize=8)
+        i += 1
 
     for i in range(n_rows):
         ax_obj = ax[0] if n_rows == 1 else ax[i][0]
@@ -315,8 +324,12 @@ def plot_phonon(
 
 def _set_qha_minmax(prototypes: list[Prototype], attr: str):
     """Set minimum and maximum values for QHA plot."""
-    temp_array = np.ravel([p.temperatures for p in prototypes])
-    val_array = np.ravel([getattr(p, attr) for p in prototypes])
+    temp_array = np.ravel(
+        [p.temperatures for p in prototypes if p.temperatures is not None]
+    )
+    val_array = np.ravel(
+        [getattr(p, attr) for p in prototypes if getattr(p, attr) is not None]
+    )
 
     tstep = temp_array[1] - temp_array[0]
     limmin_x = np.min(temp_array)
@@ -364,7 +377,8 @@ def plot_qha(
     fig, ax, n_rows = _sns_init(
         prototypes_active, suptitle, n_cols=n_cols, figsize=figsize
     )
-    for i, prot in enumerate(prototypes_active):
+    i = 0
+    for prot in prototypes_active:
         st, temp, val = prot.name, prot.temperatures, getattr(prot, attr)
         if val is None:
             continue
@@ -379,6 +393,7 @@ def plot_qha(
         ax_obj.tick_params(axis="both", labelsize=8)
         ax_obj.yaxis.set_major_formatter(ScalarFormatter(useMathText=True))
         ax_obj.ticklabel_format(style="sci", axis="y", scilimits=(0, 0))
+        i += 1
 
     for i in range(n_rows):
         ax_obj = ax[0] if n_rows == 1 else ax[i][0]

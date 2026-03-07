@@ -109,8 +109,22 @@ def convert_to_yaml(
     yaml: str = "polymlp.yaml",
 ):
     """Convert text format to yaml format."""
-    params, coeffs = load_mlp(txt)
-    save_mlp(params, coeffs, np.ones(len(coeffs)), filename=yaml)
+    if isinstance(txt, str):
+        if not is_legacy(txt):
+            return False
+        params, coeffs = load_mlp(txt)
+        save_mlp(params, coeffs, np.ones(len(coeffs)), filename=yaml)
+        return True
+    for i, file1 in enumerate(sorted(txt)):
+        if not is_legacy(file1):
+            return False
+        params, coeffs = load_mlp(file1)
+        if len(txt) > 1:
+            filename = yaml + "." + str(i + 1)
+        else:
+            filename = yaml
+        save_mlp(params, coeffs, np.ones(len(coeffs)), filename=filename)
+    return True
 
 
 def is_legacy(filename: Union[str, io.IOBase] = "polymlp.yaml"):
