@@ -175,7 +175,7 @@ class PypolymlpRepository:
                     pass
         return self
 
-    def calc_properties(
+    def calc_properties_elements(
         self,
         vaspruns_prototypes: Optional[list] = None,
         vaspruns_train: Optional[list] = None,
@@ -206,13 +206,6 @@ class PypolymlpRepository:
                 )
                 calc.plot_comparison_with_dft(self._system, mlp_attr.mlp_id)
 
-                if calc._n_types == 2:
-                    calc.calc_formation_energies(
-                        vaspruns=vaspruns_prototypes,
-                        icsd_ids=icsd_ids,
-                    )
-                    calc.plot_binary_formation_energies(self._system, mlp_attr.mlp_id)
-
             if vaspruns_train is not None and vaspruns_test is not None:
                 calc.calc_energy_distribution(vaspruns_train, vaspruns_test)
                 calc.plot_energy_distribution(self._system, mlp_attr.mlp_id)
@@ -225,56 +218,104 @@ class PypolymlpRepository:
         )
         return self
 
-    #     def calc_formation_energies(
-    #         self,
-    #         vaspruns: list,
-    #         icsd_ids: Optional[list] = None,
-    #     ):
-    #         """Calculate properties."""
-    #         if self._entry_path is None:
-    #             raise RuntimeError("Run extract_convex_polymlps first.")
-    #         if self._convex_mlp_attrs is None:
-    #             raise RuntimeError("Convex MLPs not found.")
-    #
-    #         for path in self._convex_mlp_attrs:
-    #             pot = find_mlps(path)
-    #             name = path.split("/")[-1]
-    #             target = self._entry_path + "/predictions/" + name
-    #             calc = PypolymlpAutoCalc(
-    #                 pot=pot,
-    #                 path_output=target,
-    #                 verbose=self._verbose,
-    #             )
-    #             calc.run_prototypes()
-    #             calc.save_prototypes()
-    #             calc.plot_prototypes(self._system, name)
-    #             prototypes_all.append(calc.prototypes)
-    #
-    #             if vaspruns_prototypes is not None:
-    #                 calc.calc_comparison_with_dft(
-    #                     vaspruns=vaspruns_prototypes,
-    #                     icsd_ids=icsd_ids,
-    #                 )
-    #                 calc.plot_comparison_with_dft(self._system, name)
-    #
-    #                 if calc._n_types == 2:
-    #                     calc.calc_formation_energies(
-    #                         vaspruns=vaspruns_prototypes,
-    #                         icsd_ids=icsd_ids,
-    #                     )
-    #                     calc.plot_binary_formation_energies(self._system, name)
-    #
-    #             if vaspruns_train is not None and vaspruns_test is not None:
-    #                 calc.calc_energy_distribution(vaspruns_train, vaspruns_test)
-    #                 calc.plot_energy_distribution(self._system, name)
-    #
-    #         plot_eqm_properties(
-    #             prototypes_all,
-    #             self._times,
-    #             self._system,
-    #             path_output=self._entry_path + "/predictions",
-    #         )
-    #         return self
+    def calc_properties_binary_alloys(
+        self,
+        vaspruns_binary_prototypes: Optional[list] = None,
+        vaspruns_element_prototypes1: Optional[list] = None,
+        vaspruns_element_prototypes2: Optional[list] = None,
+        icsd_ids_binary: Optional[list] = None,
+        icsd_ids_element1: Optional[list] = None,
+        icsd_ids_element2: Optional[list] = None,
+        vaspruns_train: Optional[list] = None,
+        vaspruns_test: Optional[list] = None,
+    ):
+        """Calculate properties."""
+        if self._entry_path is None:
+            raise RuntimeError("Run extract_convex_polymlps first.")
+        if self._times is None:
+            raise RuntimeError("Computational times not found.")
+        if self._convex_mlp_attrs is None:
+            raise RuntimeError("Convex MLPs not found.")
+
+        elements = self._system.split("-")
+        prototypes_all = []
+        for mlp_attr in self._convex_mlp_attrs:
+            mlp_attr.set_autocalc(verbose=self._verbose)
+            calc = mlp_attr.autocalc
+            calc.run_prototypes()
+            calc.save_prototypes()
+            calc.plot_prototypes(self._system, mlp_attr.mlp_id)
+            prototypes_all.append(calc.prototypes)
+
+        if vaspruns_binary_prototypes is not None:
+            for mlp_attr in self._convex_mlp_attrs:
+                calc = mlp_attr.autocalc
+                calc.calc_comparison_with_dft(
+                    vaspruns=vaspruns_binary_prototypes,
+                    icsd_ids=icsd_ids_binary,
+                )
+                calc.plot_comparison_with_dft(
+                    self._system,
+                    mlp_attr.mlp_id,
+                    filename_suffix=self._system,
+                )
+
+        if vaspruns_element_prototypes1 is not None:
+            for mlp_attr in self._convex_mlp_attrs:
+                calc = mlp_attr.autocalc
+                calc.calc_comparison_with_dft(
+                    vaspruns=vaspruns_element_prototypes1,
+                    icsd_ids=icsd_ids_element1,
+                )
+                calc.plot_comparison_with_dft(
+                    self._system,
+                    mlp_attr.mlp_id,
+                    filename_suffix=elements[0],
+                )
+        if vaspruns_element_prototypes2 is not None:
+            for mlp_attr in self._convex_mlp_attrs:
+                calc = mlp_attr.autocalc
+                calc.calc_comparison_with_dft(
+                    vaspruns=vaspruns_element_prototypes2,
+                    icsd_ids=icsd_ids_element2,
+                )
+                calc.plot_comparison_with_dft(
+                    self._system,
+                    mlp_attr.mlp_id,
+                    filename_suffix=elements[1],
+                )
+
+        #            vaspruns = list(vaspruns_binary_prototypes)
+        #            if vaspruns_element_prototypes1 is not None:
+        #            vaspruns = (
+        #                + list(vaspruns_element_prototypes1)
+        #                + list(vaspruns_element_prototypes2)
+        #            )
+        #            icsd_ids = (
+        #                list(icsd_ids_binary)
+        #                + list(icsd_ids_element1)
+        #                + list(icsd_ids_element2)
+        #            )
+        #            calc.calc_formation_energies(
+        #                vaspruns=vaspruns_prototypes,
+        #                icsd_ids=icsd_ids,
+        #            )
+        #            calc.plot_binary_formation_energies(self._system, mlp_attr.mlp_id)
+
+        if vaspruns_train is not None and vaspruns_test is not None:
+            for mlp_attr in self._convex_mlp_attrs:
+                calc = mlp_attr.autocalc
+                calc.calc_energy_distribution(vaspruns_train, vaspruns_test)
+                calc.plot_energy_distribution(self._system, mlp_attr.mlp_id)
+
+        # TODO: Implement function for binary
+        # plot_eqm_properties(
+        #     prototypes_all,
+        #     self._times,
+        #     self._system,
+        #     path_output=self._entry_path + "/predictions",
+        # )
+        return self
 
     def generate_web_contents(self, path_prediction: Optional[str] = None):
         """Generate web contents."""
