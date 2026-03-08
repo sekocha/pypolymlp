@@ -174,3 +174,6 @@ def plot_eqm_properties(
         plt.savefig(path_output + "/polymlp_eqm_properties.png", format="png", dpi=dpi)
     plt.clf()
     plt.close()
+
+
+# TODO: plot eqm_properties in binary alloy.

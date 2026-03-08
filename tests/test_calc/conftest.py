@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import shutil
 from pathlib import Path
 
 import pytest
 
+from pypolymlp.calculator.auto.pypolymlp_autocalc import PypolymlpAutoCalc
 from pypolymlp.core.interface_vasp import PolymlpStructure, Poscar
 
 cwd = Path(__file__).parent
@@ -63,3 +65,17 @@ def unitcell_wz_AlN() -> (PolymlpStructure, str):
     pot = path_file + "mlps/polymlp.lammps.gtinv.AlN"
     unitcell = Poscar(poscar).structure
     return unitcell, pot
+
+
+@pytest.fixture(scope="session")
+def prototypes_Ag():
+    api = PypolymlpAutoCalc(
+        pot=path_file + "mlps/polymlp.lammps.pair.Ag",
+        path_output="tmp",
+    )
+    api.load_prototypes()
+    api.prototypes = api.prototypes[0:2]
+    api.calc_prototypes()
+    prototypes = api.prototypes
+    shutil.rmtree("tmp")
+    return prototypes

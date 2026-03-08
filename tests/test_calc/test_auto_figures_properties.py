@@ -1,7 +1,6 @@
 """Tests of functions to draw figures for properties."""
 
 import shutil
-from pathlib import Path
 
 import numpy as np
 
@@ -13,21 +12,9 @@ from pypolymlp.calculator.auto.figures_properties import (
     plot_prototype_prediction,
     plot_qha,
 )
-from pypolymlp.calculator.auto.pypolymlp_autocalc import PypolymlpAutoCalc
-
-cwd = Path(__file__).parent
-path_file = str(cwd) + "/files/"
 
 system = "Ag"
 pot_id = "polymlp-00001"
-api = PypolymlpAutoCalc(
-    pot=path_file + "mlps/polymlp.lammps.pair.Ag",
-    path_output="tmp",
-)
-api.load_prototypes()
-api.prototypes = api.prototypes[0:2]
-api.calc_prototypes()
-prototypes = api.prototypes
 
 
 def test_plot_prototype_prediction():
@@ -37,28 +24,30 @@ def test_plot_prototype_prediction():
     shutil.rmtree("tmp")
 
 
-def test_plot_eos():
+def test_plot_eos(prototypes_Ag):
     """Test plot_eos."""
-    plot_eos(prototypes, system, pot_id, path_output="tmp")
+    plot_eos(prototypes_Ag, system, pot_id, path_output="tmp")
     shutil.rmtree("tmp")
 
 
-def test_plot_eos_separate():
+def test_plot_eos_separate(prototypes_Ag):
     """Test plot_eos_separate."""
-    plot_eos_separate(prototypes, system, pot_id, path_output="tmp")
+    plot_eos_separate(prototypes_Ag, system, pot_id, path_output="tmp")
     shutil.rmtree("tmp")
 
 
-def test_plot_phonon():
+def test_plot_phonon(prototypes_Ag):
     """Test plot_phonon."""
-    plot_phonon(prototypes, system, pot_id, path_output="tmp")
+    plot_phonon(prototypes_Ag, system, pot_id, path_output="tmp")
     shutil.rmtree("tmp")
 
 
-def test_plot_qha():
+def test_plot_qha(prototypes_Ag):
     """Test plot_qha."""
-    plot_qha(prototypes, system, pot_id, target="thermal_expansion", path_output="tmp")
-    plot_qha(prototypes, system, pot_id, target="bulk_modulus", path_output="tmp")
+    plot_qha(
+        prototypes_Ag, system, pot_id, target="thermal_expansion", path_output="tmp"
+    )
+    plot_qha(prototypes_Ag, system, pot_id, target="bulk_modulus", path_output="tmp")
     shutil.rmtree("tmp")
 
 
