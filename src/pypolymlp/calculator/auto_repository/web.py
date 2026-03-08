@@ -5,6 +5,7 @@ import os
 import shutil
 import tarfile
 from datetime import datetime
+from typing import Optional
 
 import yaml
 
@@ -21,13 +22,19 @@ class WebContents:
     def __init__(
         self,
         path_prediction: str = "./",
-        path_web: str = "./",
+        path_web: Optional[str] = None,
         verbose: bool = False,
     ):
         """Init method."""
 
         self._path_prediction = path_prediction
         self._verbose = verbose
+
+        self._system = None
+        self._elements = None
+        self._path_web = None
+        self._polymlps = None
+        self._polymlps_id = None
 
         self._parse_optimal_mlps()
         self._set_paths(path_web)
@@ -42,7 +49,7 @@ class WebContents:
         self._elements = self._system.split("-")
         return self
 
-    def _set_paths(self, path_web: str):
+    def _set_paths(self, path_web: Optional[str] = None):
         """Set paths and potential ID."""
         today = datetime.now().strftime("%Y-%m-%d")
         self._polymlps_id = self._system + "-" + today
@@ -50,7 +57,12 @@ class WebContents:
             if "hybrid" in d["id"]:
                 self._polymlps_id += "-hybrid"
                 break
-        self._path_web = path_web + "/" + self._polymlps_id + "/"
+
+        if path_web is not None:
+            self._path_web = path_web
+        else:
+            self._path_web = "web-" + self._polymlps_id + "/"
+
         if self._verbose:
             path = os.path.abspath(self._path_web)
             print("Repository web contents are generated in", path, flush=True)

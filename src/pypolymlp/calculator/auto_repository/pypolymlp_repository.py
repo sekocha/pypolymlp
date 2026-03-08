@@ -35,9 +35,6 @@ class MLPAttr:
         os.makedirs(self.path_mlp, exist_ok=True)
         os.makedirs(self.path_prediction, exist_ok=True)
 
-        # pot = find_mlps(mlp_attr.path_mlp)
-        # pot_id = path.split("/")[-1]
-
     def set_autocalc(self, verbose: bool = False):
         """Set autocalc instance."""
         if self.autocalc is None:
@@ -130,13 +127,24 @@ class PypolymlpRepository:
 
     def _copy_convex_mlp_files(self, system: str, abspaths: list):
         """Copy files for convex MLPs."""
+        self._move_summary()
+
+        self._convex_mlp_attrs = []
+        for path in abspaths:
+            mlp_id = path.split("/")[-1]
+            mlp_attr = MLPAttr(entry_path=self._entry_path, mlp_id=mlp_id)
+            self._copy_mlp(path, mlp_attr.path_mlp)
+            for file in ("polymlp_cost.yaml", "polymlp_error.yaml"):
+                shutil.copy(path + "/" + file, mlp_attr.path_mlp)
+
+            self._convex_mlp_attrs.append(mlp_attr)
+        return self
+
+    def _move_summary(self):
+        """Move summary files."""
         path_summary = self._entry_path + "/summary"
         shutil.rmtree(path_summary, ignore_errors=True)
         os.makedirs(path_summary, exist_ok=True)
-
-        # path_mlp = self._entry_path + "/polymlps"
-        # shutil.rmtree(path_mlp, ignore_errors=True)
-        # os.makedirs(path_mlp, exist_ok=True)
 
         shutil.move(
             "polymlp_summary_all.yaml",
@@ -146,28 +154,25 @@ class PypolymlpRepository:
             "polymlp_summary_convex.yaml",
             path_summary + "/polymlp_summary_convex.yaml",
         )
+        return self
 
-        self._convex_mlp_attrs = []
-        for path in abspaths:
-            mlp_id = path.split("/")[-1]
-            mlp_attr = MLPAttr(entry_path=self._entry_path, mlp_id=mlp_id)
-
-            pot = find_mlps(path)
-            legacy = convert_to_yaml(pot, yaml="polymlp.yaml")
-            if legacy:
-                for p in find_mlps("."):
-                    try:
-                        shutil.move(p, mlp_attr.path_mlp)
-                    except:
-                        pass
-            else:
-                for p in pot:
-                    shutil.copy(p, mlp_attr.path_mlp)
-
-            for file in ("polymlp_cost.yaml", "polymlp_error.yaml"):
-                shutil.copy(path + "/" + file, mlp_attr.path_mlp)
-
-            self._convex_mlp_attrs.append(mlp_attr)
+    def _copy_mlp(self, path_mlp_original: str, path_mlp_target: str):
+        """Copy files of a single polymlp."""
+        pot = find_mlps(path_mlp_original)
+        legacy = convert_to_yaml(pot, yaml="polymlp.yaml")
+        if legacy:
+            for p in find_mlps("."):
+                try:
+                    shutil.move(p, path_mlp_target)
+                except:
+                    pass
+                os.remove(p)
+        else:
+            for p in pot:
+                try:
+                    shutil.copy(p, path_mlp_target)
+                except:
+                    pass
         return self
 
     def calc_properties(
@@ -275,6 +280,7 @@ class PypolymlpRepository:
         """Generate web contents."""
         if path_prediction is None:
             path_prediction = self._entry_path
+
         web = WebContents(path_prediction=path_prediction)
         web.run()
         return self
