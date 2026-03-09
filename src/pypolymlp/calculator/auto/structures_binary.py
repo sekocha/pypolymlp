@@ -31,12 +31,6 @@ def get_structure_list_binary(element_strings: tuple):
     const = (scales["Ag"] + scales["Au"]) / 2
     scale = np.average([scales[ele] for ele in element_strings]) * 1.1 / const
     return [
-        #        structure_fcc_x0(element_strings, scale),
-        #        structure_fcc_x1(element_strings, scale),
-        #        structure_bcc_x0(element_strings, scale),
-        #        structure_bcc_x1(element_strings, scale),
-        #        structure_hcp_x0(element_strings, scale),
-        #        structure_hcp_x1(element_strings, scale),
         structure_MoNi4_D1a_x020(element_strings, scale),
         structure_MoNi4_D1a_x080(element_strings, scale),
         structure_Ni3Sn_D019_x025(element_strings, scale),

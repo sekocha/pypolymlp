@@ -2,6 +2,7 @@
 
 import os
 from collections import defaultdict
+from typing import Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -84,6 +85,7 @@ def plot_eqm_properties(
     path_output: str = "./",
     use_eps: bool = False,
     dpi: int = 300,
+    filename_suffix: Optional[str] = None,
 ):
     """Plot mlp-dependent properties of equilibrium prototypes.
 
@@ -157,6 +159,9 @@ def plot_eqm_properties(
         ax[i].set_xlim(5e-7, 5e-2)
         ax[i].set_xscale("log")
 
+        if len(max_vals[i]) == 0 or len(min_vals[i]) == 0:
+            continue
+
         dval = (max(max_vals[i]) - min(min_vals[i])) / 4
         if i == 1:
             dval = max(dval, 1.0)
@@ -168,12 +173,14 @@ def plot_eqm_properties(
             ax[i].set_ylim(0, max(max_vals[i]) + dval)
 
     plt.tight_layout()
+    filename = path_output + "/polymlp_eqm_properties"
+    if filename_suffix is not None:
+        filename += "_" + filename_suffix
     if use_eps:
-        plt.savefig(path_output + "/polymlp_eqm_properties.eps", format="eps")
+        filename += ".eps"
+        plt.savefig(filename, format="eps")
     else:
-        plt.savefig(path_output + "/polymlp_eqm_properties.png", format="png", dpi=dpi)
+        filename += ".png"
+        plt.savefig(filename, format="png", dpi=dpi)
     plt.clf()
     plt.close()
-
-
-# TODO: plot eqm_properties in binary alloy.

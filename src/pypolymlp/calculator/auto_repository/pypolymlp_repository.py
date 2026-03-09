@@ -268,7 +268,7 @@ class PypolymlpRepository:
                     icsd_ids=icsd_ids_element1,
                 )
                 calc.plot_comparison_with_dft(
-                    self._system,
+                    elements[0] + " in " + self._system,
                     mlp_attr.mlp_id,
                     filename_suffix=elements[0],
                 )
@@ -280,27 +280,28 @@ class PypolymlpRepository:
                     icsd_ids=icsd_ids_element2,
                 )
                 calc.plot_comparison_with_dft(
-                    self._system,
+                    elements[1] + " in " + self._system,
                     mlp_attr.mlp_id,
                     filename_suffix=elements[1],
                 )
 
-        #            vaspruns = list(vaspruns_binary_prototypes)
-        #            if vaspruns_element_prototypes1 is not None:
-        #            vaspruns = (
-        #                + list(vaspruns_element_prototypes1)
-        #                + list(vaspruns_element_prototypes2)
-        #            )
-        #            icsd_ids = (
-        #                list(icsd_ids_binary)
-        #                + list(icsd_ids_element1)
-        #                + list(icsd_ids_element2)
-        #            )
-        #            calc.calc_formation_energies(
-        #                vaspruns=vaspruns_prototypes,
-        #                icsd_ids=icsd_ids,
-        #            )
-        #            calc.plot_binary_formation_energies(self._system, mlp_attr.mlp_id)
+        if vaspruns_binary_prototypes is not None:
+            vaspruns = list(vaspruns_binary_prototypes)
+            icsd_ids = list(icsd_ids_binary)
+            if vaspruns_element_prototypes1 is not None:
+                vaspruns.extend(vaspruns_element_prototypes1)
+                icsd_ids.extend(icsd_ids_element1)
+            if vaspruns_element_prototypes2 is not None:
+                vaspruns.extend(vaspruns_element_prototypes2)
+                icsd_ids.extend(icsd_ids_element2)
+
+            for mlp_attr in self._convex_mlp_attrs:
+                calc = mlp_attr.autocalc
+                calc.calc_formation_energies(
+                    vaspruns=vaspruns,
+                    icsd_ids=icsd_ids,
+                )
+                calc.plot_binary_formation_energies(self._system, mlp_attr.mlp_id)
 
         if vaspruns_train is not None and vaspruns_test is not None:
             for mlp_attr in self._convex_mlp_attrs:
@@ -308,13 +309,34 @@ class PypolymlpRepository:
                 calc.calc_energy_distribution(vaspruns_train, vaspruns_test)
                 calc.plot_energy_distribution(self._system, mlp_attr.mlp_id)
 
-        # TODO: Implement function for binary
-        # plot_eqm_properties(
-        #     prototypes_all,
-        #     self._times,
-        #     self._system,
-        #     path_output=self._entry_path + "/predictions",
-        # )
+        for i, comp_range in enumerate(
+            [(-0.01, 0.01), (0.01, 0.45), (0.45, 0.55), (0.55, 0.99), (0.99, 1.01)]
+        ):
+            prototypes = []
+            for p1 in prototypes_all:
+                p_each_mlp = []
+                for p2 in p1:
+                    if p2.structure_eq is None:
+                        continue
+                    n_atoms = p2.structure_eq.n_atoms
+                    st_elements = p2.structure_eq.elements
+                    if len(n_atoms) == 1 and st_elements[0] == elements[0]:
+                        comp = 0.0
+                    elif len(n_atoms) == 1 and st_elements[0] == elements[1]:
+                        comp = 1.0
+                    else:
+                        comp = n_atoms[1] / sum(n_atoms)
+                    if comp > comp_range[0] and comp < comp_range[1]:
+                        p_each_mlp.append(p2)
+            prototypes.append(p_each_mlp)
+
+            plot_eqm_properties(
+                prototypes,
+                self._times,
+                self._system,
+                path_output=self._entry_path + "/predictions",
+                filename_suffix="c" + str(i),
+            )
         return self
 
     def generate_web_contents(self, path_prediction: Optional[str] = None):
