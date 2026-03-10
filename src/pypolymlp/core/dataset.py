@@ -7,6 +7,7 @@ import numpy as np
 
 from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
 from pypolymlp.core.dataset_utils import DatasetDFT
+from pypolymlp.core.interface_openmx import set_dataset_from_openmx
 from pypolymlp.core.interface_vasp import set_dataset_from_vaspruns
 from pypolymlp.core.interface_yaml import (
     parse_electron_yamls,
@@ -22,7 +23,9 @@ class Dataset:
 
     def __init__(
         self,
-        dataset_type: Literal["vasp", "sscha", "electron", "phono3py"] = "vasp",
+        dataset_type: Literal[
+            "vasp", "sscha", "electron", "phono3py", "openmx"
+        ] = "vasp",
         files: Optional[Union[list, str]] = None,
         location: Optional[str] = None,
         include_force: bool = True,
@@ -228,6 +231,8 @@ class Dataset:
             self._parse_vasp()
         elif self._dataset_type == "phono3py":
             self._parse_phono3py()
+        elif self._dataset_type == "openmx":
+            self._parse_openmx()
         elif self._dataset_type == "sscha":
             self._parse_sscha()
         elif self._dataset_type == "electron":
@@ -273,6 +278,14 @@ class Dataset:
             yml_data,
             temperature=params.temperature,
             target=params.electron_property,
+            element_order=self._element_order,
+        )
+        return self
+
+    def _parse_openmx(self):
+        """Parse data from openmx log files."""
+        self._dft = set_dataset_from_openmx(
+            self._files,
             element_order=self._element_order,
         )
         return self

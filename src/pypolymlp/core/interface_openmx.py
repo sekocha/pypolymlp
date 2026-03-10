@@ -1,9 +1,34 @@
 """Interfaces for openmx files."""
 
+from typing import Optional, Union
+
 import numpy as np
 
 from pypolymlp.core.data_format import PolymlpStructure
+from pypolymlp.core.dataset_utils import DatasetDFT
 from pypolymlp.core.units import BohrtoAng, HartreetoEV
+
+
+def set_dataset_from_openmx(
+    filenames: Union[str, list[str]],
+    element_order: Optional[bool] = None,
+    verbose: bool = False,
+) -> DatasetDFT:
+    """Return DFT dataset by loading openmx log files."""
+    if isinstance(filenames, (list, tuple, np.ndarray)):
+        files = filenames
+    else:
+        files = [filenames]
+
+    structures, energies, forces = parse_openmx(files)
+    dft = DatasetDFT(
+        structures,
+        energies,
+        forces=forces,
+        stresses=None,
+        element_order=element_order,
+    )
+    return dft
 
 
 def parse_openmx(filenames: list[str]):
