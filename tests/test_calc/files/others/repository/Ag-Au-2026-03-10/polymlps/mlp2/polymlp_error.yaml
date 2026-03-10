@@ -1,0 +1,16 @@
+units:
+  energy: meV/atom
+  force:  eV/angstrom
+  stress: meV/atom
+
+prediction_errors:
+- dataset: dataset/vasprun-*.xml.polymlp
+  rmse_energy:  5.47648057945598
+  rmse_force:   0.26714675881626254
+  rmse_stress:  31.775968904982
+
+prediction_errors:
+- dataset: dataset/vasprun-*.xml.polymlp
+  rmse_energy:  5.47648057945598
+  rmse_force:   0.26714675881626254
+  rmse_stress:  31.775968904982

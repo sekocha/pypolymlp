@@ -23,9 +23,9 @@ def test_find_optimal_mlps():
         filename_convex="tmp_convex.yaml",
     )
     assert system is None
-    assert data_all.shape == (285, 6)
-    assert data_convex.shape == (11, 6)
-    polymlps = data_convex[:, 4]
+    assert data_all.shape == (285, 8)
+    assert data_convex.shape == (11, 8)
+    polymlps = data_convex[:, -2]
 
     true = [
         "polymlp-00035",

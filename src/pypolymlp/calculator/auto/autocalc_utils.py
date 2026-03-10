@@ -127,6 +127,18 @@ class Prototype:
         """Return whether structure is elemental one or not."""
         return len(self.structure.n_atoms) == 1 and self.structure.elements[0] == ele
 
+    def get_composition(self, element_strings: tuple):
+        """Return composition used for binary alloy."""
+        if self.structure_eq is None:
+            return None
+        n_atoms = self.structure_eq.n_atoms
+        st_elements = self.structure_eq.elements
+        if len(n_atoms) == 1 and st_elements[0] == element_strings[0]:
+            return 0.0
+        if len(n_atoms) == 1 and st_elements[0] == element_strings[1]:
+            return 1.0
+        return n_atoms[1] / sum(n_atoms)
+
     @property
     def lattice_constants(self):
         """Return lattice constants."""

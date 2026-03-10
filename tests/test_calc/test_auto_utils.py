@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 from pypolymlp.calculator.auto.autocalc_utils import AutoCalcBase, Prototype
 
@@ -55,3 +56,9 @@ def test_prototype_class(structure_rocksalt):
     )
     prot.save_properties(filename="tmp.yaml")
     os.remove("tmp.yaml")
+
+    is_element = prot.is_element("Mg")
+    assert is_element == False
+
+    comp = prot.get_composition(element_strings=("Mg", "O"))
+    assert comp == pytest.approx(0.5)

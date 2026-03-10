@@ -92,7 +92,13 @@ def _parse_errors(filename: str, key: str):
 
     rmse_e = match_d["rmse_energy"]
     rmse_f = match_d["rmse_force"]
-    return rmse_e, rmse_f
+    try:
+        mae_e = match_d["mae_energy"]
+        mae_f = match_d["mae_force"]
+    except:
+        mae_e = None
+        mae_f = None
+    return rmse_e, rmse_f, mae_e, mae_f
 
 
 def _parse_costs(filename: str):
@@ -122,7 +128,7 @@ def _parse_errors_costs(dirs: list, key: str, verbose: bool = False):
         res = _parse_errors(fname1, key)
         if res is None:
             continue
-        rmse_e, rmse_f = res
+        rmse_e, rmse_f, mae_e, mae_f = res
 
         fname2 = dir_pot + "/polymlp_cost.yaml"
         res = _parse_costs(fname2)
@@ -131,7 +137,7 @@ def _parse_errors_costs(dirs: list, key: str, verbose: bool = False):
         time1, time_mp, system = res
         name = dir_pot.split("/")[-1]
         abspath = os.path.abspath(dir_pot)
-        d_array.append([time1, time_mp, rmse_e, rmse_f, name, abspath])
+        d_array.append([time1, time_mp, rmse_e, rmse_f, mae_e, mae_f, name, abspath])
 
     d_array = np.array(sorted(d_array, key=lambda x: x[0]))
     return d_array, system
@@ -160,6 +166,10 @@ def _write_yaml(
         print("  cost_openmp:", d[1], file=f)
         print("  rmse_energy:", d[2], file=f)
         print("  rmse_force: ", d[3], file=f)
+        if d[4] is not None:
+            print("  mae_energy: ", d[4], file=f)
+        if d[5] is not None:
+            print("  mae_force:  ", d[5], file=f)
         print("", file=f)
 
     f.close()

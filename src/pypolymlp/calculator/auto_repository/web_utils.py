@@ -17,6 +17,7 @@ def generate_summary_txt(
     path_prediction: str,
     polymlps_id: str,
     polymlps: list,
+    binary: bool = False,
 ):
     """Generate text for summary."""
     f = open(path_web + "/info.rst", "w")
@@ -43,12 +44,21 @@ def generate_summary_txt(
     )
     print(file=f)
 
-    include_image(
-        "summary/polymlp_eqm_properties.png",
-        title="Predictions using convex hull MLPs",
-        height=350,
-        file=f,
-    )
+    if binary:
+        for i in range(1, 6):
+            include_image(
+                "summary/polymlp_eqm_properties_c" + str(i) + ".png",
+                title="Predictions using convex hull MLPs",
+                height=350,
+                file=f,
+            )
+    else:
+        include_image(
+            "summary/polymlp_eqm_properties.png",
+            title="Predictions using convex hull MLPs",
+            height=350,
+            file=f,
+        )
 
     print(
         "These properties are calculated for MLP equilibrium structures"
@@ -87,8 +97,8 @@ def generate_summary_txt(
     print(".", end="", file=f)
     print(".", end="", file=f)
     print(" csv-table:: Pareto optimals (on convex hull)", file=f)
-    print("  :header: Name, Time, RMSE, Predictions, Files", file=f)
-    print("  :widths: 15,8,8,6,15", file=f)
+    print("  :header: Name, Time, RMSE, MAE, Predictions, Files", file=f)
+    print("  :widths: 15,8,8,8,6,10", file=f)
     print(file=f)
 
     for d in polymlps:
@@ -100,14 +110,22 @@ def generate_summary_txt(
         txt_header = "  " + id1
         txt_cost = txt_cost1 + " / " + txt_cost2
         txt_rmse = txt_rmse1 + " / " + txt_rmse2
+        try:
+            txt_mae1 = "{:.3f}".format(float(d["mae_energy"]))
+            txt_mae2 = "{:.4f}".format(float(d["mae_force"]))
+            txt_mae = txt_mae1 + " / " + txt_mae2
+        except:
+            txt_mae = "--"
 
         if d["active"]:
             txt_pred = ":doc:`predictions <predictions/" + id1 + "/prediction>`"
             txt_mlp = ":download:`polymlp <polymlps/polymlp-" + id1 + ".tar.xz>`"
-            txt1 = ", ".join([txt_header, txt_cost, txt_rmse, txt_pred, txt_mlp])
+            txt1 = ", ".join(
+                [txt_header, txt_cost, txt_rmse, txt_mae, txt_pred, txt_mlp]
+            )
             print(txt1, file=f)
         else:
-            txt1 = ", ".join([txt_header, txt_cost, txt_rmse])
+            txt1 = ", ".join([txt_header, txt_cost, txt_rmse, txt_mae])
             print(txt1 + ", --, --", file=f)
     print(file=f)
 
@@ -115,6 +133,7 @@ def generate_summary_txt(
     print(file=f)
     print("* Time: [ms] (1core/36cores)", file=f)
     print("* RMSE: [meV/atom]/[eV/ang.]", file=f)
+    print("* MAE:  [meV/atom]/[eV/ang.]", file=f)
     print(file=f)
     print(
         'Column "Time" shows the time required to compute the energy'
@@ -167,13 +186,31 @@ def generate_predictions_txt(
                 file=f,
                 title="Energy distribution",
             )
-        if os.path.exists(path + "polymlp_comparison.png"):
+        if os.path.exists(path + "polymlp_distribution_formation.png"):
             include_image(
-                "polymlp_comparison.png",
+                "polymlp_distribution_formation.png",
+                height=600,
+                file=f,
+                title="Formation energy distribution",
+            )
+
+        for file in glob.glob(path + "polymlp_comparison_*.png"):
+            filename = file.split("/")[-1]
+            include_image(
+                filename,
                 height=300,
                 file=f,
                 title="Absolute errors for energy in prototype structures",
             )
+
+        if os.path.exists(path + "polymlp_formation_energy.png"):
+            include_image(
+                "polymlp_formation_energy.png",
+                height=600,
+                file=f,
+                title="Formation energies for prototype structures",
+            )
+
         if os.path.exists(path + "polymlp_eos.png"):
             include_image(
                 "polymlp_eos.png",

@@ -108,10 +108,10 @@ class WebContents:
         """Generate contents for summary."""
         path = self._path_web + "/summary/"
         os.makedirs(path, exist_ok=True)
-        files = [
-            self._path_prediction + "/summary/polymlp_convex.png",
-            self._path_prediction + "/predictions/polymlp_eqm_properties.png",
-        ]
+        files = glob.glob(
+            self._path_prediction + "/predictions/polymlp_eqm_properties*.png"
+        )
+        files.append(self._path_prediction + "/summary/polymlp_convex.png")
         for f in files:
             try:
                 shutil.copy(f, path)
@@ -123,6 +123,7 @@ class WebContents:
             self._path_prediction,
             self._polymlps_id,
             self._polymlps,
+            binary=len(self._elements) == 2,
         )
         return self
 
