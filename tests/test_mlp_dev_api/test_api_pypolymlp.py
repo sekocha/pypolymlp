@@ -43,7 +43,7 @@ def test_attrs():
 def test_load_mlp():
     """Test for loading polymlp files."""
     # Parse polymlp.lammps.pair
-    filename = cwd / "mlps/polymlp.lammps.pair"
+    filename = str(cwd / "mlps/polymlp.lammps.pair")
     coeff_true = 9.352307613515078e00 / 2.067583465937491e-01
 
     mlp = Pypolymlp()
@@ -56,7 +56,7 @@ def test_load_mlp():
     assert mlp.coeffs[0] == pytest.approx(coeff_true, rel=1e-8)
 
     # Parse polymlp.yaml.gtinv
-    filename = cwd / "mlps/polymlp.yaml.gtinv"
+    filename = str(cwd / "mlps/polymlp.yaml.gtinv")
     coeff_true = 5.794375827500248e01
 
     mlp = Pypolymlp()
@@ -85,10 +85,10 @@ def test_convert_to_yaml():
     """Test for converting legacy polymlp file."""
     mlp = Pypolymlp()
     mlp.convert_to_yaml(
-        cwd / "mlps/polymlp.lammps.pair",
-        cwd / "mlps/polymlp_tmp.yaml",
+        str(cwd / "mlps/polymlp.lammps.pair"),
+        str(cwd / "mlps/polymlp_tmp.yaml"),
     )
-    os.remove(cwd / "mlps/polymlp_tmp.yaml")
+    os.remove(str(cwd / "mlps/polymlp_tmp.yaml"))
 
 
 def test_get_structures_from_poscars():
