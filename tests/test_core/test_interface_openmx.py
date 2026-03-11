@@ -2,9 +2,19 @@
 
 from pathlib import Path
 
-from pypolymlp.core.interface_openmx import parse_openmx
+from pypolymlp.core.interface_openmx import parse_openmx, set_dataset_from_openmx
 
 cwd = Path(__file__).parent
+
+
+def test_set_dataset_from_openmx():
+    """Test set_dataset_from_openmx."""
+    dft = set_dataset_from_openmx(cwd / "./../files/openmx.AgC_444_5C_1.md")
+    assert len(dft.energies) == 207
+    assert len(dft.forces) == 42228
+    dft = set_dataset_from_openmx([cwd / "./../files/openmx.AgC_444_5C_1.md"])
+    assert len(dft.energies) == 207
+    assert len(dft.forces) == 42228
 
 
 def test_load_openmx():

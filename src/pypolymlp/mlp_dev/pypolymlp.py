@@ -156,6 +156,95 @@ class Pypolymlp:
         self._common_params = self._params
         return self
 
+    def set_hybrid_params(
+        self,
+        params: Optional[PolymlpParams] = None,
+        elements: tuple[str] = None,
+        include_force: bool = True,
+        include_stress: bool = True,
+        cutoff: float = 6.0,
+        model_type: Literal[1, 2, 3, 4] = 4,
+        max_p: Literal[1, 2, 3] = 2,
+        feature_type: Literal["pair", "gtinv"] = "gtinv",
+        gaussian_params1: tuple[float, float, int] = (1.0, 1.0, 1),
+        gaussian_params2: tuple[float, float, int] = (0.0, 5.0, 7),
+        n_gaussians: Optional[int] = None,
+        distance: Optional[dict] = None,
+        reg_alpha_params: tuple[float, float, int] = (-3.0, 1.0, 5),
+        gtinv_order: int = 3,
+        gtinv_maxl: tuple[int] = (4, 4, 2, 1, 1),
+        gtinv_version: Literal[1, 2] = 1,
+        atomic_energy: tuple[float] = None,
+        rearrange_by_elements: bool = True,
+    ):
+        """Append parameters to hybrid models.
+
+        Parameters
+        ----------
+        elements: Element species, (e.g., ['Mg','O'])
+        include_force: Considering force entries
+        include_stress: Considering stress entries
+        cutoff: Cutoff radius
+        model_type: Polynomial function type
+            model_type = 1: Linear polynomial of polynomial invariants
+            model_type = 2: Polynomial of polynomial invariants
+            model_type = 3: Polynomial of pair invariants
+                            + linear polynomial of polynomial invariants
+            model_type = 4: Polynomial of pair and second-order invariants
+                            + linear polynomial of polynomial invariants
+        max_p: Order of polynomial function
+        feature_type: 'gtinv' or 'pair'
+        gaussian_params: Parameters for exp[- param1 * (r - param2)**2]
+            Parameters are given as np.linspace(p[0], p[1], p[2]),
+            where p[0], p[1], and p[2] are given by gaussian_params1
+            and gaussian_params2.
+        n_gaussians: Number of Gaussian functions.
+                     Parameters of Gaussians are automatically determined
+                     by the cutoff radius and number of Gaussians.
+        distance: Interatomic distances for element pairs.
+            (e.g.) distance = {(Sr, Sr): [3.5, 4.8], (Ti, Ti): [2.5, 5.5]}
+        reg_alpha_params: Parameters for penalty term in
+            linear ridge regression. Parameters are given as
+            np.linspace(p[0], p[1], p[2]).
+        gtinv_order: Maximum order of polynomial invariants.
+        gtinv_maxl: Maximum angular numbers of polynomial invariants.
+            [maxl for order=2, maxl for order=3, ...]
+        atomic_energy: Atomic energies.
+        rearrange_by_elements: Set True if not developing special MLPs.
+        """
+        if self._params is None:
+            print("Use set_params to set priority parameters at first.")
+
+        if isinstance(self._params, PolymlpParams):
+            self._params = [self._params]
+
+        if params is not None:
+            self._params.append(params)
+            return self
+
+        params_append = set_all_params(
+            elements=elements,
+            include_force=include_force,
+            include_stress=include_stress,
+            cutoff=cutoff,
+            model_type=model_type,
+            max_p=max_p,
+            feature_type=feature_type,
+            gaussian_params1=gaussian_params1,
+            gaussian_params2=gaussian_params2,
+            n_gaussians=n_gaussians,
+            distance=distance,
+            reg_alpha_params=reg_alpha_params,
+            gtinv_order=gtinv_order,
+            gtinv_maxl=gtinv_maxl,
+            gtinv_version=gtinv_version,
+            atomic_energy=atomic_energy,
+            rearrange_by_elements=rearrange_by_elements,
+        )
+        self._params.append(params_append)
+        self._hybrid = True
+        return self
+
     def print_params(self):
         """Print input parameters."""
         print_params(self._params, self._common_params)
@@ -183,6 +272,15 @@ class Pypolymlp:
 
     def _turn_off_derivative_flags(self, forces: list, stresses: np.ndarray):
         """ """
+        if self._hybrid:
+            for params in self._params:
+                if forces is None:
+                    params.include_force = False
+                    params.include_stress = False
+                if stresses is None:
+                    params.include_stress = False
+            return self
+
         if forces is None:
             self._params.include_force = False
             self._params.include_stress = False
