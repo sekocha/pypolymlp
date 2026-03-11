@@ -89,8 +89,14 @@ Several procedures for generating structures used in DFT calculations are also s
   1. [Development of a single on-the-fly MLP](docs/tutorial_onthefly.md)
   2. Development of a single general-purpose MLP
   3. Development of Pareto-optimal MLPs
-- [MLP development using command line interface](docs/mlpdev_command.md)
-- [MLP development using Python API](docs/mlpdev_api.md)
+- MLP developments
+  - [VASP (Command line interface)](docs/mlpdev_command.md)
+  - [VASP (Python API)](docs/mlpdev_api.md)
+  - [Structure-Properties general datasets (Python API)](docs/mlpdev_dataset_api.md)
+  - [Phono3py (Python API)](docs/mlpdev_phono3py.md)
+  - [OpenMX](docs/mlpdev_openmx.md)
+  - [Notes on parameter and dataset settings](docs/mlpdev_params.md)
+
 - [Utilities for MLP development](docs/utilities.md)
   - [Generator of structures used for DFT calculations](docs/strgen.md)
     - Random atomic displacements with constant magnitude

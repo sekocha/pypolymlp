@@ -14,6 +14,7 @@ from pypolymlp.core.polymlp_params import (
     set_gtinv_params,
     set_regression_alphas,
 )
+from pypolymlp.core.units import HartreetoEV
 
 
 class ParamsParserSingle:
@@ -111,6 +112,7 @@ class ParamsParserSingle:
             return_array=True,
         )
         d_atom_e = [0.0 for i in range(n_type)]
+
         atom_e = self._parser.get_params(
             "atomic_energy",
             size=n_type,
@@ -118,6 +120,13 @@ class ParamsParserSingle:
             dtype=float,
             return_array=True,
         )
+        atom_e_unit = self._parser.get_params(
+            "atomic_energy_unit",
+            default="eV",
+            dtype=str,
+        )
+        if atom_e_unit in ("Hartree", "hartree"):
+            atom_e = [e * HartreetoEV for e in atom_e]
         return elements, n_type, tuple(atom_e)
 
     def _get_regression_params(self):

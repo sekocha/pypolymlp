@@ -242,12 +242,12 @@ def print_params(
     """Print parameters."""
     print("priority_input:", common_params.priority_infile, flush=True)
     print("parameters:", flush=True)
-    print("  n_types:       ", common_params.n_type, flush=True)
-    print("  elements:      ", common_params.elements, flush=True)
-    print("  element_order: ", common_params.element_order, flush=True)
-    print("  atomic_energy: ", common_params.atomic_energy, flush=True)
-    print("  include_force: ", bool(common_params.include_force), flush=True)
-    print("  include_stress:", bool(common_params.include_stress), flush=True)
+    print("  n_types:         ", common_params.n_type, flush=True)
+    print("  elements:        ", common_params.elements, flush=True)
+    print("  element_order:   ", common_params.element_order, flush=True)
+    print("  atomic_energy_eV:", common_params.atomic_energy, flush=True)
+    print("  include_force:   ", bool(common_params.include_force), flush=True)
+    print("  include_stress:  ", bool(common_params.include_stress), flush=True)
 
     params_print = [params] if isinstance(params, PolymlpParams) else params
     for i, p in enumerate(params_print):

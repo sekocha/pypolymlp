@@ -1,0 +1,209 @@
+# Polynomial MLP development using general datasets
+
+## MLP development using displacements and forces
+
+```python
+from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
+from pypolymlp.core.data_format import PolymlpStructure
+
+polymlp = Pypolymlp()
+polymlp.set_params(
+    elements=['Ag','I'],
+    cutoff=8.0,
+    model_type=3,
+    max_p=2,
+    gtinv_order=3,
+    gtinv_maxl=[4,4],
+    gaussian_params2=[0.0,7.0,10],
+    atomic_energy=[-0.19820116,-0.21203241],
+)
+
+'''
+Parameters in polymlp.set_datasets_displacements
+-------------------------------------------------
+train_disps: (n_train, 3, n_atoms)
+train_forces: (n_train, 3, n_atoms)
+train_energies: (n_train)
+test_disps: (n_test, 3, n_atom)
+test_forces: (n_test, 3, n_atom)
+test_energies: (n_test)
+
+structure_without_disp: supercell structure without displacements, PolymlpStructure format.
+(attributes)
+- axis: (3,3), [a, b, c]
+- positions: (3, n_atom) [x1, x2, ...]
+- n_atoms: [4, 4]
+- elements: Element list (e.g.) ['Mg','Mg','Mg','Mg','O','O','O','O']
+- types: Atomic type integers (e.g.) [0, 0, 0, 0, 1, 1, 1, 1]
+- volume: 64.0 (ang.^3)
+
+'''
+structure_without_disp = PolymlpStructure(
+    axis = axis,
+    positions = positions,
+    n_atoms = n_atoms,
+    elements = elements,
+    types = types,
+)
+
+'''
+Structure can also be generated from POSCAR as follows.
+'''
+from pypolymlp.core.interface_vasp import Poscar
+structure_without_disp = Poscar('POSCAR').structure
+
+polymlp.set_datasets_displacements(
+    train_disps,
+    train_forces,
+    train_energies,
+    test_disps,
+    test_forces,
+    test_energies,
+    structure_without_disp,
+)
+polymlp.run(verbose=True)
+polymlp.save_mlp(filename="polymlp.yaml")
+```
+
+## MLP development using a dataset of structure and properties
+
+```python
+from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
+
+polymlp = Pypolymlp()
+polymlp.set_params(
+    elements=['Ag','I'],
+    cutoff=8.0,
+    model_type=3,
+    max_p=2,
+    gtinv_order=3,
+    gtinv_maxl=[4,4],
+    gaussian_params2=[0.0,7.0,10],
+    atomic_energy=[-0.19820116,-0.21203241],
+)
+
+'''
+Parameters in polymlp.set_datasets_structures
+-------------------------------------------------
+train_structures: shape=(n_train), list of PolymlpStructure.
+train_energies: shape=(n_test), list of PolymlpStructure.
+test_energies: shape=(n_test), unit: eV/cell.
+train_forces: shape=(n_train, (3, n_atom)), unit: eV/ang.
+test_forces: shape=(n_test, (3, n_atom)), unit: eV/ang.
+train_stresses: shape=(n_train, 3, 3), unit: eV/cell.
+test_stresses: shape=(n_test, 3, 3), unit: eV/cell.
+
+Each structure must be provided in the `PolymlpStructure` format as
+
+structure = PolymlpStructure(
+    axis = axis,
+    positions = positions,
+    n_atoms = n_atoms,
+    elements = elements,
+    types = types,
+)
+
+(attributes)
+- axis: shape=(3, 3), [a, b, c]
+- positions: shape=(3, n_atom) [x1, x2, ...]
+- n_atoms: [4, 4]
+- elements: Element list (e.g.) ['Mg','Mg','Mg','Mg','O','O','O','O']
+- types: Atomic type integers (e.g.) [0, 0, 0, 0, 1, 1, 1, 1]
+- volume: 64.0 (ang.^3)
+'''
+
+polymlp.set_datasets_structures(
+    train_structures = train_structures,
+    test_structures = test_structures,
+    train_energies = train_energies,
+    test_energies = test_energies,
+    train_forces = train_forces,
+    test_forces = test_forces,
+    train_stresses = train_stresses,
+    test_stresses = test_stresses,
+)
+polymlp.run(verbose=True)
+polymlp.save_mlp(filename="polymlp.yaml")
+```
+
+If stress tensor data is not available, the corresponding input lines can be omitted.
+```python
+polymlp.set_datasets_structures(
+    train_structures = train_structures,
+    test_structures = test_structures,
+    train_energies = train_energies,
+    test_energies = test_energies,
+    train_forces = train_forces,
+    test_forces = test_forces,
+)
+polymlp.run(verbose=True)
+```
+
+When a dataset is automatically divided into training and test datasets, ``set_datasets_structures_autodiv`` can be used as follows.
+
+```python
+'''
+Parameters in polymlp.set_datasets_structures
+-------------------------------------------------
+structures: shape=(n_entire_data), list of PolymlpStructure.
+energies: shape=(n_entire_data), unit: eV/cell.
+forces: shape=(n_entire_data, (3, n_atom)), unit: eV/ang.
+stresses: shape=(n_entire_data, 3, 3), unit: eV/cell.
+'''
+
+polymlp.set_datasets_structures_autodiv(
+    structures=structures,
+    energies=energies,
+    forces=forces,
+    stresses=stresses,
+    train_ratio=0.9,
+)
+```
+
+## MLP development using POSCAR files
+
+```python
+from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
+
+polymlp = Pypolymlp()
+polymlp.set_params(
+    elements=['Ag','I'],
+    cutoff=8.0,
+    model_type=3,
+    max_p=2,
+    gtinv_order=3,
+    gtinv_maxl=[4,4],
+    gaussian_params2=[0.0,7.0,10],
+    atomic_energy=[-0.19820116,-0.21203241],
+)
+
+train_poscars = glob.glob('poscars/train/POSCAR-*')
+train_structures = polymlp.get_structures_from_poscars(train_poscars)
+
+test_poscars = glob.glob('poscars/test/POSCAR-*')
+test_structures = polymlp.get_structures_from_poscars(test_poscars)
+
+"""
+DFT values must be prepared by the following settings.
+
+train_energies: shape=(n_train), unit: eV/cell.
+test_energies: shape=(n_test), unit: eV/cell.
+train_forces: shape=(n_train, (3, n_atom)), unit: eV/ang.
+test_forces: shape=(n_test, (3, n_atom)), unit: eV/ang.
+train_stresses: shape=(n_train, 3, 3), unit: eV/cell.
+test_stresses: shape=(n_test, 3, 3), unit: eV/cell.
+"""
+
+polymlp.set_datasets_structures(
+    train_structures = train_structures,
+    test_structures = test_structures,
+    train_energies = train_energies,
+    test_energies = test_energies,
+    train_forces = train_forces,
+    test_forces = test_forces,
+    train_stresses = train_stresses,
+    test_stresses = test_stresses,
+)
+polymlp.run(verbose=True)
+polymlp.save_mlp(filename="polymlp.yaml")
+```
