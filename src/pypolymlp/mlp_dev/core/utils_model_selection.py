@@ -1,10 +1,10 @@
 """Functions for model selection."""
 
-from typing import Optional, Union
+from typing import Optional
 
 import numpy as np
 
-from pypolymlp.core.data_format import PolymlpParams
+from pypolymlp.core.params import PolymlpParams
 from pypolymlp.core.utils import rmse
 from pypolymlp.mlp_dev.core.data_utils import PolymlpDataXY
 from pypolymlp.mlp_dev.core.dataclass import PolymlpDataMLP
@@ -94,7 +94,7 @@ def get_best_model(
     alphas: np.ndarray,
     rmse_train: np.ndarray,
     rmse_test: np.ndarray,
-    params: Optional[Union[PolymlpParams, list[PolymlpParams]]] = None,
+    params: PolymlpParams = None,
     cumulative_n_features: Optional[tuple] = None,
 ):
     """Return best polymlp model."""

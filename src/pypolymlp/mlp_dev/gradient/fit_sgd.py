@@ -1,17 +1,15 @@
 """Functions sgd for estimating regression coefficients from datasets."""
 
-from typing import Union
-
 import numpy as np
 
-from pypolymlp.core.data_format import PolymlpParams
 from pypolymlp.core.dataset import DatasetList
+from pypolymlp.core.params import PolymlpParams
 from pypolymlp.mlp_dev.core.api_mlpdev import PolymlpDevCore
 from pypolymlp.mlp_dev.gradient.solvers_sgd import solver_sgd
 
 
 def fit_sgd(
-    params: Union[PolymlpParams, list[PolymlpParams]],
+    params: PolymlpParams,
     train: DatasetList,
     test: DatasetList,
     verbose: bool = False,

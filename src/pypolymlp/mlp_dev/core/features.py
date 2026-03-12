@@ -4,8 +4,9 @@ from typing import Optional, Union
 
 import numpy as np
 
-from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
+from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.dataset import Dataset, DatasetList
+from pypolymlp.core.params import PolymlpParams
 from pypolymlp.cxx.lib import libmlpcpp
 
 
@@ -113,10 +114,12 @@ class Features:
             force_dataset,
         ) = _init_features(datasets, structures, params)
 
-        params.element_swap = element_swap
-        params.print_memory = print_memory
+        params.params.element_swap = element_swap
+        params.params.print_memory = print_memory
+        # params.element_swap = element_swap
+        # params.print_memory = print_memory
         obj = libmlpcpp.PotentialModel(
-            params.as_dict(),
+            params.params.as_dict(),
             axis_array,
             positions_c_array,
             types_array,
@@ -172,7 +175,7 @@ class FeaturesHybrid:
 
     def __init__(
         self,
-        hybrid_params: list[PolymlpParams],
+        hybrid_params: PolymlpParams,
         datasets: Optional[DatasetList] = None,
         structures: Optional[list[PolymlpStructure]] = None,
         print_memory: bool = True,
@@ -186,7 +189,7 @@ class FeaturesHybrid:
             n_atoms_sum_array,
             n_st_dataset,
             force_dataset,
-        ) = _init_features(datasets, structures, hybrid_params[0])
+        ) = _init_features(datasets, structures, hybrid_params)
 
         hybrid_params_dicts = []
         for params in hybrid_params:
@@ -248,7 +251,7 @@ class FeaturesHybrid:
 
 
 def compute_features(
-    params: Union[PolymlpParams, list[PolymlpParams]],
+    params: PolymlpParams,
     datasets: Optional[Union[DatasetList, Dataset]] = None,
     structures: Optional[list[PolymlpStructure]] = None,
     element_swap: bool = False,
@@ -262,7 +265,7 @@ def compute_features(
     datasets: Datasets.
     structures: Structures.
     """
-    if isinstance(params, (list, tuple, np.ndarray)):
+    if params.is_hybrid:
         features_class = FeaturesHybrid
     else:
         features_class = Features

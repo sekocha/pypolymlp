@@ -5,7 +5,7 @@ from typing import Literal, Optional, Union
 
 import numpy as np
 
-from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
+from pypolymlp.core.data_format import PolymlpParamsSingle, PolymlpStructure
 from pypolymlp.core.dataset import (
     set_datasets_from_multiple_filesets,
     set_datasets_from_single_fileset,
@@ -14,8 +14,9 @@ from pypolymlp.core.dataset import (
 from pypolymlp.core.displacements import get_structures_from_displacements
 from pypolymlp.core.interface_vasp import parse_structures_from_poscars
 from pypolymlp.core.io_polymlp import convert_to_yaml, load_mlp
+from pypolymlp.core.params import PolymlpParams
 from pypolymlp.core.parser_polymlp_params import ParamsParser
-from pypolymlp.core.polymlp_params import print_params, set_all_params
+from pypolymlp.core.polymlp_params import set_all_params
 from pypolymlp.core.utils import split_train_test
 from pypolymlp.mlp_dev.core.dataclass import PolymlpDataMLP
 from pypolymlp.mlp_dev.core.eval_accuracy import PolymlpEvalAccuracy, write_error_yaml
@@ -37,7 +38,7 @@ class Pypolymlp:
         self._verbose = verbose
 
         self._params = None
-        self._common_params = None
+        # self._common_params = None
         self._train = None
         self._test = None
 
@@ -68,15 +69,16 @@ class Pypolymlp:
         )
         self._train, self._test = parser.train, parser.test
         self._params = parser.params
-        self._common_params = parser.common_params
-        if not isinstance(self._params, PolymlpParams):
-            self._hybrid = True
+        self._hybrid = self._params.is_hybrid
 
+        # # self._common_params = parser.common_params
+        # if not isinstance(self._params, PolymlpParams):
+        #     self._hybrid = True
         return self
 
     def set_params(
         self,
-        params: Optional[PolymlpParams] = None,
+        params: Optional[PolymlpParamsSingle] = None,
         elements: tuple[str] = None,
         include_force: bool = True,
         include_stress: bool = True,
@@ -92,6 +94,7 @@ class Pypolymlp:
         gtinv_order: int = 3,
         gtinv_maxl: tuple[int] = (4, 4, 2, 1, 1),
         gtinv_version: Literal[1, 2] = 1,
+        atomic_energy_unit: Literal["eV", "Hartree"] = "eV",
         atomic_energy: tuple[float] = None,
         rearrange_by_elements: bool = True,
     ):
@@ -131,10 +134,10 @@ class Pypolymlp:
         rearrange_by_elements: Set True if not developing special MLPs.
         """
         if params is not None:
-            self._params = self._common_params = params
+            self._params = PolymlpParams(params)
             return self
 
-        self._params = set_all_params(
+        params_single = set_all_params(
             elements=elements,
             include_force=include_force,
             include_stress=include_stress,
@@ -150,15 +153,16 @@ class Pypolymlp:
             gtinv_order=gtinv_order,
             gtinv_maxl=gtinv_maxl,
             gtinv_version=gtinv_version,
+            atomic_energy_unit=atomic_energy_unit,
             atomic_energy=atomic_energy,
             rearrange_by_elements=rearrange_by_elements,
         )
-        self._common_params = self._params
+        self._params = PolymlpParams(params_single)
         return self
 
     def set_hybrid_params(
         self,
-        params: Optional[PolymlpParams] = None,
+        params: Optional[PolymlpParamsSingle] = None,
         elements: tuple[str] = None,
         include_force: bool = True,
         include_stress: bool = True,
@@ -174,6 +178,7 @@ class Pypolymlp:
         gtinv_order: int = 3,
         gtinv_maxl: tuple[int] = (4, 4, 2, 1, 1),
         gtinv_version: Literal[1, 2] = 1,
+        atomic_energy_unit: Literal["eV", "Hartree"] = "eV",
         atomic_energy: tuple[float] = None,
         rearrange_by_elements: bool = True,
     ):
@@ -215,9 +220,6 @@ class Pypolymlp:
         if self._params is None:
             print("Use set_params to set priority parameters at first.")
 
-        if isinstance(self._params, PolymlpParams):
-            self._params = [self._params]
-
         if params is not None:
             self._params.append(params)
             return self
@@ -238,6 +240,7 @@ class Pypolymlp:
             gtinv_order=gtinv_order,
             gtinv_maxl=gtinv_maxl,
             gtinv_version=gtinv_version,
+            atomic_energy_unit=atomic_energy_unit,
             atomic_energy=atomic_energy,
             rearrange_by_elements=rearrange_by_elements,
         )
@@ -247,7 +250,7 @@ class Pypolymlp:
 
     def print_params(self):
         """Print input parameters."""
-        print_params(self._params, self._common_params)
+        self._params.print_params()
         if self._train is not None:
             print("datasets:", flush=True)
             print("  train_data:", flush=True)

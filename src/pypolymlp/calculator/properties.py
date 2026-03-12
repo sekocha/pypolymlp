@@ -5,8 +5,9 @@ from typing import Optional, Union
 import numpy as np
 
 from pypolymlp.calculator.compute_features import update_types
-from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
+from pypolymlp.core.data_format import PolymlpParamsSingle, PolymlpStructure
 from pypolymlp.core.io_polymlp import load_mlp
+from pypolymlp.core.params import PolymlpParams
 from pypolymlp.cxx.lib import libmlpcpp
 
 
@@ -57,7 +58,7 @@ class PropertiesSingle:
     def __init__(
         self,
         pot: Optional[str] = None,
-        params: Optional[PolymlpParams] = None,
+        params: Optional[PolymlpParamsSingle] = None,
         coeffs: Optional[np.ndarray] = None,
     ):
         """Init method.
@@ -198,9 +199,9 @@ class PropertiesHybrid:
 
     def __init__(
         self,
-        pot: str = None,
-        params: list[PolymlpParams] = None,
-        coeffs: list[np.ndarray] = None,
+        pot: Optional[list[str]] = None,
+        params: Optional[PolymlpParams] = None,
+        coeffs: Optional[list[np.ndarray]] = None,
     ):
         """Init method.
 
@@ -216,8 +217,6 @@ class PropertiesHybrid:
                 raise ValueError("Parameters in PropertiesHybrid must be lists.")
             self._props = [PropertiesSingle(pot=p) for p in pot]
         else:
-            if not isinstance(params, list) or not isinstance(coeffs, list):
-                raise ValueError("Parameters in PropertiesHybrid must be lists.")
             self._props = [
                 PropertiesSingle(params=p, coeffs=c) for p, c in zip(params, coeffs)
             ]
@@ -254,9 +253,9 @@ class Properties:
 
     def __init__(
         self,
-        pot: str = None,
-        params: Union[PolymlpParams, list[PolymlpParams]] = None,
-        coeffs: Union[np.ndarray, list[np.ndarray]] = None,
+        pot: Optional[Union[str, list]] = None,
+        params: Optional[PolymlpParams] = None,
+        coeffs: Optional[Union[np.ndarray, list[np.ndarray]]] = None,
     ):
         """Init method.
 
@@ -278,15 +277,16 @@ class Properties:
             else:
                 self._prop = PropertiesSingle(pot=pot)
         else:
-            if isinstance(params, list) and isinstance(coeffs, list):
-                if len(params) > 1 and len(coeffs) > 1:
+            if isinstance(coeffs, list):
+                if len(coeffs) > 1:
                     self._prop = PropertiesHybrid(params=params, coeffs=coeffs)
                 else:
                     self._prop = PropertiesSingle(
-                        params_dict=params[0], coeffs=coeffs[0]
+                        params=params.params,
+                        coeffs=coeffs[0],
                     )
             else:
-                self._prop = PropertiesSingle(params=params, coeffs=coeffs)
+                self._prop = PropertiesSingle(params=params.params, coeffs=coeffs)
 
     def eval(self, st: PolymlpStructure, use_openmp: bool = True):
         """Evaluate properties for a single structure."""

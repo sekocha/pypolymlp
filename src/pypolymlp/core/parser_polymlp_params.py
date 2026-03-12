@@ -5,8 +5,9 @@ from typing import Literal, Optional, Union
 
 import numpy as np
 
-from pypolymlp.core.data_format import PolymlpModelParams, PolymlpParams
+from pypolymlp.core.data_format import PolymlpModelParams, PolymlpParamsSingle
 from pypolymlp.core.dataset import Dataset, DatasetList
+from pypolymlp.core.params import PolymlpParams
 from pypolymlp.core.parser_infile import InputParser
 from pypolymlp.core.polymlp_params import (
     set_active_gaussian_params,
@@ -60,7 +61,7 @@ class ParamsParserSingle:
         )
         element_order = elements if rearrange else None
 
-        self._params = PolymlpParams(
+        self._params = PolymlpParamsSingle(
             n_type=n_type,
             elements=elements,
             model=model,
@@ -374,18 +375,17 @@ class ParamsParser:
         self._verbose = verbose
 
         self._params = None
-        self._common_params = None
-        self._hybrid_params = None
         self._train = None
         self._test = None
 
         if isinstance(infiles, str):
             self._set_from_single_file(infiles)
         elif isinstance(infiles, (list, tuple, np.ndarray)):
-            if len(infiles) == 1:
-                self._set_from_single_file(infiles[0])
-            else:
-                self._set_from_multiple_files(infiles)
+            self._set_from_multiple_files(infiles)
+            # if len(infiles) == 1:
+            #     self._set_from_single_file(infiles[0])
+            # else:
+            #     self._set_from_multiple_files(infiles)
         else:
             raise RuntimeError("Inappropriate format for input files.")
 
@@ -394,6 +394,8 @@ class ParamsParser:
         self._priority_file = infile
         parser = ParamsParserSingle(infile, verbose=self._verbose)
         parser.set_params()
+        self._params = PolymlpParams(parser.params)
+
         if self._parse_dft:
             parser.set_datasets(
                 train_ratio=self._train_ratio,
@@ -402,33 +404,35 @@ class ParamsParser:
             self._train = parser.train
             self._test = parser.test
 
-        self._params = self._common_params = parser.params
-        self._hybrid_params = None
+        # self._params = self._common_params = parser.params
+        # self._hybrid_params = None
         return self
 
     def _set_from_multiple_files(self, infiles: list):
         """Set parameters from multiple input files."""
         self._priority_file = infiles[0]
-        parser = ParamsParserSingle(infiles[0], verbose=self._verbose)
-        parser.set_params()
-        if self._parse_dft:
-            parser.set_datasets(
-                train_ratio=self._train_ratio,
-                prefix_data_location=self._prefix_data_location,
-            )
-            self._train = parser.train
-            self._test = parser.test
+        self._set_from_single_file(self._priority_file)
 
-        self._hybrid_params = [parser.params]
+        # parser = ParamsParserSingle(infiles[0], verbose=self._verbose)
+        # parser.set_params()
+        # if self._parse_dft:
+        #     parser.set_datasets(
+        #         train_ratio=self._train_ratio,
+        #         prefix_data_location=self._prefix_data_location,
+        #     )
+        #     self._train = parser.train
+        #     self._test = parser.test
+
         for infile in infiles[1:]:
             params = ParamsParserSingle(infile, verbose=self._verbose).set_params()
-            self._hybrid_params.append(params)
+            self._params.append(params)
 
-        self._common_params = set_common_params(self._hybrid_params)
-        self._hybrid_params = _set_unique_types(
-            self._hybrid_params, self._common_params
-        )
-        self._params = self._hybrid_params
+        # self._hybrid_params = [parser.params]
+        # self._common_params = set_common_params(self._hybrid_params)
+        # self._hybrid_params = _set_unique_types(
+        #     self._hybrid_params, self._common_params
+        # )
+        # self._params = self._hybrid_params
         return self
 
     @property
@@ -441,16 +445,16 @@ class ParamsParser:
         """Return parameters."""
         return self._params
 
-    @property
-    def common_params(self):
-        """Return common parameters."""
-        return self._common_params
-
-    @property
-    def hybrid_params(self):
-        """Return parameters for hybrid models."""
-        return self._hybrid_params
-
+    #     @property
+    #     def common_params(self):
+    #         """Return common parameters."""
+    #         return self._common_params
+    #
+    #     @property
+    #     def hybrid_params(self):
+    #         """Return parameters for hybrid models."""
+    #         return self._hybrid_params
+    #
     @property
     def train(self):
         """Return training dataset in DatasetList."""

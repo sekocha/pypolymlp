@@ -8,9 +8,9 @@ import numpy as np
 from pypolymlp.core.data_format import (
     PolymlpGtinvParams,
     PolymlpModelParams,
-    PolymlpParams,
+    PolymlpParamsSingle,
 )
-from pypolymlp.core.utils import mass_table, strtobool
+from pypolymlp.core.utils import strtobool
 
 
 def _read_var(line, dtype=int, return_list=False):
@@ -25,7 +25,7 @@ def load_mlp_lammps(filename="polymlp.lammps"):
 
     Return
     ------
-    params: Parameters in PolymlpParams.
+    params: Parameters in PolymlpParamsSingle.
     coeffs: polymlp model coefficients.
 
     Usage
@@ -150,7 +150,7 @@ def load_mlp_lammps(filename="polymlp.lammps"):
         pair_params=pair_params,
         pair_params_conditional=pair_params_cond,
     )
-    params = PolymlpParams(
+    params = PolymlpParamsSingle(
         n_type=n_type,
         elements=elements,
         model=model,
@@ -161,110 +161,3 @@ def load_mlp_lammps(filename="polymlp.lammps"):
     )
     coeffs_ = coeffs / scales
     return params, coeffs_
-
-
-def _print_param(dict1, key, fstream, prefix=""):
-    print(str(dict1[key]), "#", prefix + key, file=fstream)
-
-
-def _print_array1d(array, fstream, comment="", fmt=None):
-    for obj in array:
-        if fmt is not None:
-            print(fmt.format(obj), end=" ", file=fstream)
-        else:
-            print(obj, end=" ", file=fstream)
-    print("#", comment, file=fstream)
-
-
-def save_mlp_lammps(
-    params: PolymlpParams,
-    coeffs: np.ndarray,
-    scales: np.ndarray,
-    filename: bool = "polymlp.lammps",
-):
-    """Generate polymlp.lammps file for single polymlp model"""
-    f = open(filename, "w")
-    _print_array1d(params.elements, f, comment="elements")
-    model_dict = params.model.as_dict()
-    _print_param(model_dict, "cutoff", f)
-    _print_param(model_dict, "pair_type", f)
-    _print_param(model_dict, "feature_type", f)
-    _print_param(model_dict, "model_type", f)
-    _print_param(model_dict, "max_p", f)
-    _print_param(model_dict, "max_l", f)
-
-    if model_dict["feature_type"] == "gtinv":
-        gtinv_dict = model_dict["gtinv"]
-        _print_param(gtinv_dict, "order", f, prefix="gtinv_")
-        _print_array1d(gtinv_dict["max_l"], f, comment="gtinv_max_l")
-        gtinv_sym = [0 for _ in gtinv_dict["max_l"]]
-        _print_array1d(gtinv_sym, f, comment="gtinv_sym")
-
-    print(len(coeffs), "# n_coeffs", file=f)
-    _print_array1d(coeffs, f, comment="reg. coeffs", fmt="{0:15.15e}")
-    _print_array1d(scales, f, comment="scales", fmt="{0:15.15e}")
-
-    print(len(model_dict["pair_params"]), "# n_params", file=f)
-    for obj in model_dict["pair_params"]:
-        print(
-            "{0:15.15f}".format(obj[0]),
-            "{0:15.15f}".format(obj[1]),
-            "# pair func. params",
-            file=f,
-        )
-
-    mass = [mass_table()[ele] for ele in params.elements]
-    _print_array1d(mass, f, comment="atomic mass", fmt="{0:15.15e}")
-    print("False # electrostatic", file=f)
-
-    if model_dict["feature_type"] == "gtinv":
-        _print_param(gtinv_dict, "version", f, prefix="gtinv_")
-
-    print(len(model_dict["pair_params_conditional"]), "# n_type_pairs", file=f)
-    for atomtypes, n_ids in model_dict["pair_params_conditional"].items():
-        for v in atomtypes:
-            print(v, end=" ", file=f)
-        print(len(n_ids), "# atom type pair", file=f)
-        for v in n_ids:
-            print(v, end=" ", file=f)
-        print("# pair params indices ", file=f)
-
-    if params.type_full is not None:
-        print(int(params.type_full), "# type_full", file=f)
-        _print_array1d(params.type_indices, f, comment="type_indices")
-    else:
-        print("1 # type_full", file=f)
-        _print_array1d(np.arange(params.n_type), f, comment="type_indices")
-
-    f.close()
-
-
-def save_multiple_mlp_lammps(
-    multiple_params: list[PolymlpParams],
-    cumulative_n_features: int,
-    coeffs: np.ndarray,
-    scales: np.ndarray,
-    prefix: str = "polymlp.lammps",
-) -> tuple[list[np.ndarray], list[np.ndarray]]:
-    """Generate polymlp.lammps files for hybrid polymlp model"""
-    multiple_coeffs = []
-    multiple_scales = []
-    for i, params in enumerate(multiple_params):
-        if i == 0:
-            begin, end = 0, cumulative_n_features[0]
-        else:
-            begin, end = (
-                cumulative_n_features[i - 1],
-                cumulative_n_features[i],
-            )
-
-        save_mlp_lammps(
-            params,
-            coeffs[begin:end],
-            scales[begin:end],
-            filename=prefix + "." + str(i + 1),
-        )
-        multiple_coeffs.append(coeffs[begin:end])
-        multiple_scales.append(scales[begin:end])
-
-    return multiple_coeffs, multiple_scales

@@ -1,11 +1,11 @@
 """Functions for computing X.T @ X and X.T @ y sequentially."""
 
-from typing import Optional, Union
+from typing import Optional
 
 import numpy as np
 
-from pypolymlp.core.data_format import PolymlpParams
 from pypolymlp.core.dataset import Dataset, DatasetList
+from pypolymlp.core.params import PolymlpParams
 from pypolymlp.mlp_dev.core.data_utils import PolymlpDataXY
 from pypolymlp.mlp_dev.core.features import compute_features
 from pypolymlp.mlp_dev.core.features_attr import get_num_features
@@ -23,7 +23,7 @@ from pypolymlp.mlp_dev.core.utils_weights import apply_weights
 
 
 def calc_xtx_xty(
-    params: Union[PolymlpParams, list[PolymlpParams]],
+    params: PolymlpParams,
     datasets: DatasetList,
     element_swap: bool = False,
     scales: Optional[np.ndarray] = None,
@@ -98,7 +98,7 @@ def calc_xtx_xty(
 
 def _compute_products_single_batch(
     data_xy: PolymlpDataXY,
-    params: Union[PolymlpParams, list[PolymlpParams]],
+    params: PolymlpParams,
     dataset_sliced: Dataset,
     element_swap: bool = False,
     scales: Optional[np.ndarray] = None,

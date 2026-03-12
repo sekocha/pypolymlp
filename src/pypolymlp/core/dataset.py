@@ -5,7 +5,7 @@ from typing import List, Literal, Optional, Union
 
 import numpy as np
 
-from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
+from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.dataset_utils import DatasetDFT
 from pypolymlp.core.interface_openmx import set_dataset_from_openmx
 from pypolymlp.core.interface_vasp import set_dataset_from_vaspruns
@@ -15,6 +15,7 @@ from pypolymlp.core.interface_yaml import (
     set_dataset_from_sscha_yamls,
     split_imaginary,
 )
+from pypolymlp.core.params import PolymlpParams
 from pypolymlp.core.utils import split_train_test, strtobool
 
 

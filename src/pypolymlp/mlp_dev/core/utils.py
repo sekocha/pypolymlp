@@ -1,28 +1,10 @@
 """Utility function for polymlp development."""
 
 import os
-from typing import Union
 
 import numpy as np
 
-from pypolymlp.core.data_format import PolymlpParams
 from pypolymlp.core.dataset import DatasetList
-from pypolymlp.core.parser_polymlp_params import set_common_params
-
-
-def set_params(params_in: Union[PolymlpParams, list[PolymlpParams]]):
-    """Set parameters, hybrid parameters, and common parameters."""
-    if isinstance(params_in, (list, tuple, np.ndarray)):
-        if len(params_in) > 1:
-            params = hybrid_params = params_in
-            common_params = set_common_params(params_in)
-        else:
-            params = common_params = params[0]
-            hybrid_params = None
-    else:
-        params = common_params = params_in
-        hybrid_params = None
-    return (params, common_params, hybrid_params)
 
 
 def get_min_energy(datasets: DatasetList) -> float:

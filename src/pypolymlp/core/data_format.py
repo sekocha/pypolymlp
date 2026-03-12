@@ -190,7 +190,7 @@ class PolymlpModelParams:
 
 
 @dataclass
-class PolymlpParams:
+class PolymlpParamsSingle:
     """Dataclass of input parameters for developing polymlp.
 
     Parameters

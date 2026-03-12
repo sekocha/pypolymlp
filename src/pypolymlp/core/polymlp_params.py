@@ -1,15 +1,16 @@
 """Functions for setting input parameters."""
 
 import itertools
-from typing import Literal, Optional, Union
+from typing import Literal, Optional
 
 import numpy as np
 
 from pypolymlp.core.data_format import (
     PolymlpGtinvParams,
     PolymlpModelParams,
-    PolymlpParams,
+    PolymlpParamsSingle,
 )
+from pypolymlp.core.units import HartreetoEV
 
 
 def set_regression_alphas(alpha_params: tuple):
@@ -21,6 +22,7 @@ def set_regression_alphas(alpha_params: tuple):
 def set_element_properties(
     elements: list[str],
     n_type: Optional[int] = None,
+    atomic_energy_unit: Literal["eV", "Hartree"] = "eV",
     atomic_energy: Optional[list] = None,
 ):
     """Set properties for identifying elements."""
@@ -33,6 +35,9 @@ def set_element_properties(
         atomic_energy = tuple([0.0 for i in range(n_type)])
     else:
         assert len(atomic_energy) == n_type
+
+    if atomic_energy_unit == "Hartree":
+        atomic_energy = [e * HartreetoEV for e in atomic_energy]
 
     return (elements, n_type, atomic_energy)
 
@@ -145,6 +150,7 @@ def set_all_params(
     gtinv_order: int = 3,
     gtinv_maxl: tuple[int] = (4, 4, 2, 1, 1),
     gtinv_version: Literal[1, 2] = 1,
+    atomic_energy_unit: Literal["eV", "Hartree"] = "eV",
     atomic_energy: tuple[float] = None,
     rearrange_by_elements: bool = True,
 ):
@@ -186,6 +192,7 @@ def set_all_params(
     elements, n_type, atomic_energy = set_element_properties(
         elements,
         n_type=len(elements),
+        atomic_energy_unit=atomic_energy_unit,
         atomic_energy=atomic_energy,
     )
     element_order = elements if rearrange_by_elements else None
@@ -222,7 +229,7 @@ def set_all_params(
         pair_params=pair_params,
         pair_params_conditional=pair_params_active,
     )
-    params = PolymlpParams(
+    params = PolymlpParamsSingle(
         n_type=n_type,
         elements=elements,
         model=model,
@@ -233,31 +240,3 @@ def set_all_params(
         element_order=element_order,
     )
     return params
-
-
-def print_params(
-    params: Union[PolymlpParams, list[PolymlpParams]],
-    common_params: PolymlpParams,
-):
-    """Print parameters."""
-    print("priority_input:", common_params.priority_infile, flush=True)
-    print("parameters:", flush=True)
-    print("  n_types:         ", common_params.n_type, flush=True)
-    print("  elements:        ", common_params.elements, flush=True)
-    print("  element_order:   ", common_params.element_order, flush=True)
-    print("  atomic_energy_eV:", common_params.atomic_energy, flush=True)
-    print("  include_force:   ", bool(common_params.include_force), flush=True)
-    print("  include_stress:  ", bool(common_params.include_stress), flush=True)
-
-    params_print = [params] if isinstance(params, PolymlpParams) else params
-    for i, p in enumerate(params_print):
-        print("model_" + str(i + 1) + ":", flush=True)
-        print("  cutoff:      ", p.model.cutoff, flush=True)
-        print("  model_type:  ", p.model.model_type, flush=True)
-        print("  max_p:       ", p.model.max_p, flush=True)
-        print("  n_gaussians: ", len(p.model.pair_params), flush=True)
-        print("  feature_type:", p.model.feature_type, flush=True)
-        if p.model.feature_type == "gtinv":
-            orders = [i for i in range(2, p.model.gtinv.order + 1)]
-            print("  max_l:       ", p.model.gtinv.max_l, end=" ", flush=True)
-            print("for order =", orders, flush=True)
