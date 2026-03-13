@@ -13,14 +13,14 @@ from pypolymlp.core.data_format import (
 from pypolymlp.core.utils import strtobool
 
 
-def _read_var(line, dtype=int, return_list=False):
+def _read_var(line: str, dtype=int, return_list: bool = False):
     list1 = line.split("#")[0].split()
     if return_list:
         return [dtype(v) for v in list1]
     return dtype(list1[0])
 
 
-def load_mlp_lammps(filename="polymlp.lammps"):
+def load_mlp_lammps(filename: str = "polymlp.lammps"):
     """Load polymlp.lammps file.
 
     Return

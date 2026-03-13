@@ -170,5 +170,5 @@ def precision(x, alpha=0.0001):
 def print_credit():
     """Print credit of pypolymlp."""
     print("Pypolymlp", "version", __version__, flush=True)
-    print("  polynomial machine learning potential:", flush=True)
+    print("  Polynomial machine learning potential:", flush=True)
     print("  A. Seko, J. Appl. Phys. 133, 011101 (2023)", flush=True)

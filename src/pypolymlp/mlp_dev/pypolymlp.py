@@ -36,21 +36,15 @@ class Pypolymlp:
     def __init__(self, verbose: bool = False):
         """Init method."""
         self._verbose = verbose
-
         self._params = None
-        # self._common_params = None
         self._train = None
         self._test = None
+        self._mlp_model = None
+        self._learning_log = None
 
         # TODO: For electrons.
         # self._train_yml = None
         # self._test_yml = None
-
-        # TODO: set_params is not available for hybrid models at this time.
-        self._hybrid = False
-
-        self._mlp_model = None
-        self._learning_log = None
 
         np.set_printoptions(legacy="1.21")
 
@@ -67,13 +61,7 @@ class Pypolymlp:
             prefix_data_location=prefix,
             verbose=self._verbose,
         )
-        self._train, self._test = parser.train, parser.test
-        self._params = parser.params
-        self._hybrid = self._params.is_hybrid
-
-        # # self._common_params = parser.common_params
-        # if not isinstance(self._params, PolymlpParams):
-        #     self._hybrid = True
+        self._params, self._train, self._test = parser.params, parser.train, parser.test
         return self
 
     def set_params(
@@ -160,7 +148,7 @@ class Pypolymlp:
         self._params = PolymlpParams(params_single)
         return self
 
-    def set_hybrid_params(
+    def append_hybrid_params(
         self,
         params: Optional[PolymlpParamsSingle] = None,
         elements: tuple[str] = None,
@@ -245,7 +233,6 @@ class Pypolymlp:
             rearrange_by_elements=rearrange_by_elements,
         )
         self._params.append(params_append)
-        self._hybrid = True
         return self
 
     def print_params(self):
@@ -273,17 +260,8 @@ class Pypolymlp:
             raise RuntimeError("Set parameters and datasets before using fit.")
         return self
 
-    def _turn_off_derivative_flags(self, forces: list, stresses: np.ndarray):
-        """ """
-        if self._hybrid:
-            for params in self._params:
-                if forces is None:
-                    params.include_force = False
-                    params.include_stress = False
-                if stresses is None:
-                    params.include_stress = False
-            return self
-
+    def _disable_derivative_flags(self, forces: list, stresses: np.ndarray):
+        """Disable force and stress flags according to dataset entries."""
         if forces is None:
             self._params.include_force = False
             self._params.include_stress = False
@@ -444,7 +422,7 @@ class Pypolymlp:
         train_ratio: Ratio between training and entire data sizes.
         """
         self._is_params_none()
-        self._turn_off_derivative_flags(forces, stresses)
+        self._disable_derivative_flags(forces, stresses)
 
         self._train, self._test = set_datasets_from_structures(
             self._params,
@@ -482,8 +460,8 @@ class Pypolymlp:
         test_stresses: Stress tensors (test data), shape=(n_test, 3, 3) in eV/cell.
         """
         self._is_params_none()
-        self._turn_off_derivative_flags(train_forces, train_stresses)
-        self._turn_off_derivative_flags(test_forces, test_stresses)
+        self._disable_derivative_flags(train_forces, train_stresses)
+        self._disable_derivative_flags(test_forces, test_stresses)
 
         self._train, self._test = set_datasets_from_structures(
             self._params,
@@ -561,6 +539,7 @@ class Pypolymlp:
         if verbose is not None:
             self._verbose = verbose
 
+        self._is_params_none()
         self._is_data_none()
         self._mlp_model = fit(
             self._params,
@@ -576,6 +555,7 @@ class Pypolymlp:
         if verbose is not None:
             self._verbose = verbose
 
+        self._is_params_none()
         self._is_data_none()
         self._mlp_model = fit_standard(
             self._params,
@@ -601,6 +581,7 @@ class Pypolymlp:
         if verbose is not None:
             self._verbose = verbose
 
+        self._is_params_none()
         self._is_data_none()
         self._mlp_model = fit_cg(
             self._params,
@@ -619,6 +600,7 @@ class Pypolymlp:
         if verbose is not None:
             self._verbose = verbose
 
+        self._is_params_none()
         self._is_data_none()
         self._mlp_model = fit_sgd(
             self._params,
@@ -690,6 +672,7 @@ class Pypolymlp:
         if verbose is not None:
             self._verbose = verbose
 
+        self._is_params_none()
         self._is_data_none()
         self._learning_log = fit_learning_curve(
             self._params,

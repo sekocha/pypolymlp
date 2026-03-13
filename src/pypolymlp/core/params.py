@@ -38,30 +38,10 @@ def set_common_params(
     element_order = elements if bool_element_order else None
 
     common_params.n_type = n_type
-    common_params.elements = elements
-    common_params.element_order = element_order
-    common_params.atomic_energy = atom_e
+    common_params.elements = tuple(elements)
+    common_params.element_order = tuple(element_order)
+    common_params.atomic_energy = tuple(atom_e)
     return common_params
-
-
-# def _set_unique_types(params: PolymlpParams):
-#     """Set type indices for hybrid models."""
-#     if not params.is_hybrid:
-#         return params
-#
-#     n_type = params.n_type
-#     elements = params.elements
-#     for single in params:
-#         single.elements = sorted(single.elements, key=lambda x: elements.index(x))
-#
-#     for single in params:
-#         if single.n_type == n_type:
-#             single.type_full = True
-#             single.type_indices = list(range(n_type))
-#         else:
-#             single.type_full = False
-#             single.type_indices = [elements.index(ele) for ele in single.elements]
-#     return params
 
 
 class PolymlpParams:
@@ -166,6 +146,8 @@ class PolymlpParams:
     def include_force(self, include: bool):
         """Setter of include_force."""
         self._common_params.include_force = include
+        for p in self._params:
+            p.include_force = include
 
     @property
     def include_stress(self):
@@ -176,11 +158,44 @@ class PolymlpParams:
     def include_stress(self, include: bool):
         """Setter of include_stress."""
         self._common_params.include_stress = include
+        for p in self._params:
+            p.include_stress = include
 
     @property
     def dataset_type(self):
         """Return dataset type."""
         return bool(self._common_params.dataset_type)
+
+    @dataset_type.setter
+    def dataset_type(self, dtype: str):
+        """Setter of dataset type."""
+        self._common_params.dataset_type = dtype
+        for p in self._params:
+            p.dataset_type = dtype
+
+    @property
+    def temperature(self):
+        """Return temperature."""
+        return self._common_params.temperature
+
+    @temperature.setter
+    def temperature(self, temp: float):
+        """Setter of temperature."""
+        self._common_params.temperature = temp
+        for p in self._params:
+            p.temperature = temp
+
+    @property
+    def electron_property(self):
+        """Return target electronic property."""
+        return self._common_params.electron_property
+
+    @electron_property.setter
+    def electron_property(self, prop: str):
+        """Setter of target electronic property."""
+        self._common_params.electron_property = prop
+        for p in self._params:
+            p.electron_property = prop
 
     @property
     def alphas(self):
@@ -194,7 +209,6 @@ class PolymlpParams:
 
     def print_params(self):
         """Print parameters."""
-        # print("priority_input:", common_params.priority_infile, flush=True)
         print("parameters:", flush=True)
         print("  n_types:         ", self.n_type, flush=True)
         print("  elements:        ", self.elements, flush=True)

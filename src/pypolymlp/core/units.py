@@ -32,11 +32,3 @@ HartreetoEV = 27.211386245981
 
 # Convert Bohr to angstrom
 BohrtoAng = 0.529177210544
-
-
-def kjmol_to_ev(e):
-    return e / 96.48533212331002
-
-
-def ev_to_kjmol(e):
-    return e * 96.48533212331002
