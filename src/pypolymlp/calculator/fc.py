@@ -8,6 +8,7 @@ from phono3py.file_IO import write_fc2_to_hdf5, write_fc3_to_hdf5
 from symfc import Symfc
 from symfc.utils.cutoff_tools import FCCutoff
 
+from pypolymlp.calculator.compute_base import PolymlpComputeBase
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
 from pypolymlp.core.displacements import (
@@ -21,7 +22,7 @@ from pypolymlp.utils.phonopy_utils import (
 )
 
 
-class PolymlpFC:
+class PolymlpFC(PolymlpComputeBase):
     """Class for calculating FCs using polymlp."""
 
     def __init__(
@@ -29,12 +30,12 @@ class PolymlpFC:
         supercell: Optional[PolymlpStructure] = None,
         phono3py_yaml: Optional[str] = None,
         use_phonon_dataset: bool = False,
-        pot: Optional[str] = None,
-        params: Optional[Union[PolymlpParams, list[PolymlpParams]]] = None,
+        pot: Optional[str, list[str]] = None,
+        params: Optional[PolymlpParams] = None,
         coeffs: Optional[Union[np.ndarray, list[np.ndarray]]] = None,
         properties: Optional[Properties] = None,
         cutoff: float = None,
-        verbose: bool = True,
+        verbose: bool = False,
     ):
         """Init method.
 
@@ -51,14 +52,13 @@ class PolymlpFC:
         Any one of supercell and phono3py_yaml is needed.
         Any one of pot, (params, coeffs), and properties is needed.
         """
-
-        self._prop = None
-        if properties is not None:
-            self._prop = properties
-        else:
-            self._prop = Properties(pot=pot, params=params, coeffs=coeffs)
-        self._verbose = verbose
-
+        super().__init__(
+            pot=pot,
+            params=params,
+            coeffs=coeffs,
+            properties=properties,
+            verbose=verbose,
+        )
         self._initialize_supercell(
             supercell=supercell,
             phono3py_yaml=phono3py_yaml,

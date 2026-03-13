@@ -1,23 +1,24 @@
 """Class for computing formation energies."""
 
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 from scipy.spatial import ConvexHull
 
+from pypolymlp.calculator.compute_base import PolymlpComputeBase
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.utils.composition_utils import Composition
 from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
 
 
-class PolymlpFormationEnergies:
+class PolymlpFormationEnergies(PolymlpComputeBase):
     """Class for computing formation energies."""
 
     def __init__(
         self,
-        pot: Optional[str] = None,
+        pot: Optional[str, list[str]] = None,
         params: Optional[PolymlpParams] = None,
-        coeffs: Optional[np.ndarray] = None,
+        coeffs: Optional[Union[np.ndarray, list[np.ndarray]]] = None,
         properties: Optional[Properties] = None,
         elements: Optional[tuple] = None,
         verbose: bool = False,
@@ -33,12 +34,21 @@ class PolymlpFormationEnergies:
 
         Any one of pot, (params, coeffs), and properties is needed.
         """
-        if all(x is None for x in (properties, pot, params, coeffs)):
-            self._prop = None
-        elif properties is not None:
-            self._prop = properties
-        else:
-            self._prop = Properties(pot=pot, params=params, coeffs=coeffs)
+        super().__init__(
+            pot=pot,
+            params=params,
+            coeffs=coeffs,
+            properties=properties,
+            verbose=verbose,
+            return_none=True,
+        )
+
+        # if all(x is None for x in (properties, pot, params, coeffs)):
+        #     self._prop = None
+        # elif properties is not None:
+        #     self._prop = properties
+        # else:
+        #     self._prop = Properties(pot=pot, params=params, coeffs=coeffs)
 
         if self._prop is not None:
             self._elements = self._prop.params.elements
@@ -47,10 +57,8 @@ class PolymlpFormationEnergies:
                 raise RuntimeError("Elements required if polymlp not provided.")
             self._elements = elements
 
-        self._verbose = verbose
         self._n_elements = len(self._elements)
         self._comp = None
-
         self._data = None
         self._data_convex = None
         self._structure_names = None

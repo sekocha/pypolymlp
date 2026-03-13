@@ -7,6 +7,7 @@ import numpy as np
 from scipy.optimize import NonlinearConstraint, minimize
 
 from pypolymlp.calculator._scipy._optimize import minimize_cg
+from pypolymlp.calculator.compute_base import PolymlpComputeBase
 from pypolymlp.calculator.compute_features import update_types
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
@@ -17,7 +18,7 @@ from pypolymlp.utils.symfc_utils import construct_basis_fractional_coordinates
 from pypolymlp.utils.vasp_utils import write_poscar_file
 
 
-class GeometryOptimization:
+class GeometryOptimization(PolymlpComputeBase):
     """Class for geometry optimization."""
 
     def __init__(
@@ -28,9 +29,9 @@ class GeometryOptimization:
         relax_positions: bool = True,
         with_sym: bool = True,
         pressure: float = 0.0,
-        pot: str = None,
-        params: Optional[Union[PolymlpParams, list[PolymlpParams]]] = None,
-        coeffs: Optional[np.ndarray] = None,
+        pot: Optional[str, list[str]] = None,
+        params: Optional[PolymlpParams] = None,
+        coeffs: Optional[Union[np.ndarray, list[np.ndarray]]] = None,
         properties: Optional[Properties] = None,
         verbose: bool = False,
     ):
@@ -51,12 +52,13 @@ class GeometryOptimization:
 
         Any one of pot, (params, coeffs), and properties is needed.
         """
-
-        if properties is not None:
-            self._prop = properties
-        else:
-            self._prop = Properties(pot=pot, params=params, coeffs=coeffs)
-
+        super().__init__(
+            pot=pot,
+            params=params,
+            coeffs=coeffs,
+            properties=properties,
+            verbose=verbose,
+        )
         params = self._prop.params
         if isinstance(params, list):
             elements = params[0].elements
@@ -72,7 +74,6 @@ class GeometryOptimization:
         self._relax_positions = relax_positions
         self._with_sym = with_sym
         self._pressure = pressure
-        self._verbose = verbose
 
         self._basis_axis, cell_update = self._set_basis_axis(cell)
         self.structure = cell_update

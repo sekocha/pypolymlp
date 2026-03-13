@@ -1,12 +1,13 @@
 """Class for computing phonon."""
 
 import os
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 from phono3py.file_IO import read_fc2_from_hdf5
 from phonopy import Phonopy, PhonopyQHA
 
+from pypolymlp.calculator.compute_base import PolymlpComputeBase
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.utils.phonon_utils import is_imaginary
 from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
@@ -17,17 +18,18 @@ from pypolymlp.utils.phonopy_utils import (
 from pypolymlp.utils.structure_utils import isotropic_volume_change
 
 
-class PolymlpPhonon:
+class PolymlpPhonon(PolymlpComputeBase):
     """Class for computing phonon."""
 
     def __init__(
         self,
         unitcell: PolymlpStructure,
         supercell_matrix: np.ndarray,
-        pot: Optional[str] = None,
+        pot: Optional[str, list[str]] = None,
         params: Optional[PolymlpParams] = None,
-        coeffs: Optional[np.ndarray] = None,
+        coeffs: Optional[Union[np.ndarray, list[np.ndarray]]] = None,
         properties: Optional[Properties] = None,
+        verbose: bool = False,
     ):
         """Init method.
 
@@ -42,12 +44,13 @@ class PolymlpPhonon:
 
         Any one of pot, (params, coeffs), and properties is needed.
         """
-
-        if properties is not None:
-            self._prop = properties
-        else:
-            self._prop = Properties(pot=pot, params=params, coeffs=coeffs)
-
+        super().__init__(
+            pot=pot,
+            params=params,
+            coeffs=coeffs,
+            properties=properties,
+            verbose=verbose,
+        )
         unitcell = structure_to_phonopy_cell(unitcell)
         self._ph = Phonopy(unitcell, supercell_matrix)
         self._with_pdos = False
@@ -128,17 +131,18 @@ class PolymlpPhonon:
         return is_imaginary(self._ph.total_dos.frequency_points, self._ph.total_dos.dos)
 
 
-class PolymlpPhononQHA:
+class PolymlpPhononQHA(PolymlpComputeBase):
     """Class for computing QHA."""
 
     def __init__(
         self,
         unitcell: PolymlpStructure,
         supercell_matrix: np.ndarray,
-        pot: Optional[str] = None,
+        pot: Optional[str, list[str]] = None,
         params: Optional[PolymlpParams] = None,
-        coeffs: Optional[np.ndarray] = None,
+        coeffs: Optional[Union[np.ndarray, list[np.ndarray]]] = None,
         properties: Optional[Properties] = None,
+        verbose: bool = False,
     ):
         """Init method.
 
@@ -152,12 +156,13 @@ class PolymlpPhononQHA:
 
         Any one of pot, (params, coeffs), and properties is needed.
         """
-
-        if properties is not None:
-            self._prop = properties
-        else:
-            self._prop = Properties(pot=pot, params=params, coeffs=coeffs)
-
+        super().__init__(
+            pot=pot,
+            params=params,
+            coeffs=coeffs,
+            properties=properties,
+            verbose=verbose,
+        )
         self._unitcell = unitcell
         self._supercell_matrix = supercell_matrix
 

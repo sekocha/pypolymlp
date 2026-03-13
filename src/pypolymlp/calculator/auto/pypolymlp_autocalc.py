@@ -7,7 +7,7 @@ import numpy as np
 from pypolymlp.calculator.auto.autocalc_distribution import AutoCalcDistribution
 from pypolymlp.calculator.auto.autocalc_prototypes import AutoCalcPrototypes
 from pypolymlp.calculator.properties import Properties
-from pypolymlp.core.data_format import PolymlpParams
+from pypolymlp.core.params import PolymlpParams
 
 
 class PypolymlpAutoCalc:
@@ -15,9 +15,9 @@ class PypolymlpAutoCalc:
 
     def __init__(
         self,
-        pot: Union[str, list[str]] = None,
-        params: Union[PolymlpParams, list[PolymlpParams]] = None,
-        coeffs: Union[np.ndarray, list[np.ndarray]] = None,
+        pot: Optional[str, list[str]] = None,
+        params: Optional[PolymlpParams] = None,
+        coeffs: Optional[Union[np.ndarray, list[np.ndarray]]] = None,
         properties: Optional[Properties] = None,
         path_output: str = ".",
         functional: str = "PBE",

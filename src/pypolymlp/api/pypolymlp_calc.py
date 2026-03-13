@@ -4,22 +4,24 @@ from typing import Literal, Optional, Union
 
 import numpy as np
 
+from pypolymlp.calculator.compute_base import PolymlpComputeBase
 from pypolymlp.calculator.compute_features import (
     compute_from_infile,
     compute_from_polymlp,
 )
 from pypolymlp.calculator.compute_formation_energies import PolymlpFormationEnergies
 from pypolymlp.calculator.properties import Properties
-from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
+from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.interface_vasp import (
     parse_structures_from_poscars,
     parse_structures_from_vaspruns,
 )
+from pypolymlp.core.params import PolymlpParams
 from pypolymlp.utils.structure_utils import supercell
 from pypolymlp.utils.vasp_utils import write_poscar_file
 
 
-class PypolymlpCalc:
+class PypolymlpCalc(PolymlpComputeBase):
     """API Class for calculating properties."""
 
     def __init__(
@@ -42,17 +44,25 @@ class PypolymlpCalc:
 
         Any one of pot, (params, coeffs), and properties is needed.
         """
-        self._prop = None
-        if require_mlp:
-            if pot is None and params is None and properties is None:
-                raise RuntimeError("polymlp not defined.")
+        super().__init__(
+            pot=pot,
+            params=params,
+            coeffs=coeffs,
+            properties=properties,
+            verbose=verbose,
+            return_none=not require_mlp,
+        )
+        # self._prop = None
+        # if require_mlp:
+        #     if pot is None and params is None and properties is None:
+        #         raise RuntimeError("polymlp not defined.")
 
-            if properties is None:
-                self._prop = Properties(pot=pot, params=params, coeffs=coeffs)
-            else:
-                self._prop = properties
+        #     if properties is None:
+        #         self._prop = Properties(pot=pot, params=params, coeffs=coeffs)
+        #     else:
+        #         self._prop = properties
 
-        self._verbose = verbose
+        # self._verbose = verbose
         self._structures = None
         self._unitcell = None
         self._poscar = None

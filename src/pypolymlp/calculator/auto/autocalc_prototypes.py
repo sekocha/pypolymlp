@@ -15,8 +15,8 @@ from pypolymlp.calculator.auto.figures_properties import (
 from pypolymlp.calculator.auto.structures_binary import get_structure_list_binary
 from pypolymlp.calculator.auto.structures_element import get_structure_list_element
 from pypolymlp.calculator.properties import Properties
-from pypolymlp.core.data_format import PolymlpParams
 from pypolymlp.core.interface_vasp import parse_properties_from_vaspruns
+from pypolymlp.core.params import PolymlpParams
 from pypolymlp.utils.spglib_utils import SymCell
 
 

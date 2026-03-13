@@ -1,24 +1,26 @@
 """Class for computing EOS."""
 
 import io
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 
+from pypolymlp.calculator.compute_base import PolymlpComputeBase
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.core.data_format import PolymlpStructure
+from pypolymlp.core.params import PolymlpParams
 from pypolymlp.utils.structure_utils import isotropic_volume_change
 
 
-class PolymlpEOS:
+class PolymlpEOS(PolymlpComputeBase):
     """Class for computing EOS."""
 
     def __init__(
         self,
         unitcell: PolymlpStructure,
-        pot: Optional[str] = None,
-        params: Optional[PolymlpStructure] = None,
-        coeffs: Optional[np.ndarray] = None,
+        pot: Optional[str, list[str]] = None,
+        params: Optional[PolymlpParams] = None,
+        coeffs: Optional[Union[np.ndarray, list[np.ndarray]]] = None,
         properties: Optional[Properties] = None,
         verbose: bool = False,
     ):
@@ -34,15 +36,14 @@ class PolymlpEOS:
 
         Any one of pot, (params, coeffs), and properties is needed.
         """
-
-        if properties is not None:
-            self._prop = properties
-        else:
-            self._prop = Properties(pot=pot, params=params, coeffs=coeffs)
-
+        super().__init__(
+            pot=pot,
+            params=params,
+            coeffs=coeffs,
+            properties=properties,
+            verbose=verbose,
+        )
         self._unitcell = unitcell
-        self._verbose = verbose
-
         self._eos_data = None
         self._eos_fit_data = None
         self._b0 = None

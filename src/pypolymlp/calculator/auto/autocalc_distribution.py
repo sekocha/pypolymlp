@@ -17,8 +17,8 @@ from pypolymlp.calculator.compute_formation_energies import (
     find_endmembers,
 )
 from pypolymlp.calculator.properties import Properties
-from pypolymlp.core.data_format import PolymlpParams
 from pypolymlp.core.interface_vasp import parse_properties_from_vaspruns
+from pypolymlp.core.params import PolymlpParams
 from pypolymlp.utils.atomic_energies.atomic_energies import get_atomic_energies
 
 
