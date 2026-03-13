@@ -40,7 +40,7 @@ def fit_cg(
         max_iter = max(polymlp.n_features * 3, 50000)
 
     coefs, coef0 = [], None
-    for alpha in reversed(polymlp.common_params.alphas):
+    for alpha in reversed(params.alphas):
         c = solver_cg(
             x=train_xy.x,
             y=train_xy.y,

@@ -20,7 +20,7 @@ def fit_sgd(
 
     train_xy = polymlp.calc_xy(train)
     coefs = []
-    for alpha in polymlp.common_params.alphas:
+    for alpha in params.alphas:
         c = solver_sgd(train_xy.x, train_xy.y, alpha=alpha, gtol=1e-2, verbose=verbose)
         coefs.append(c)
     coefs = np.array(coefs).T
