@@ -15,8 +15,8 @@ from pypolymlp.core.displacements import get_structures_from_displacements
 from pypolymlp.core.interface_vasp import parse_structures_from_poscars
 from pypolymlp.core.io_polymlp import convert_to_yaml, load_mlp
 from pypolymlp.core.params import PolymlpParams
+from pypolymlp.core.params_utils import set_all_params
 from pypolymlp.core.parser_polymlp_params import ParamsParser
-from pypolymlp.core.polymlp_params import set_all_params
 from pypolymlp.core.utils import split_train_test
 from pypolymlp.mlp_dev.core.dataclass import PolymlpDataMLP
 from pypolymlp.mlp_dev.core.eval_accuracy import PolymlpEvalAccuracy, write_error_yaml

@@ -210,12 +210,12 @@ class PolymlpParams:
     def print_params(self):
         """Print parameters."""
         print("parameters:", flush=True)
-        print("  n_types:         ", self.n_type, flush=True)
-        print("  elements:        ", self.elements, flush=True)
-        print("  element_order:   ", self.element_order, flush=True)
-        print("  atomic_energy_eV:", self.atomic_energy, flush=True)
-        print("  include_force:   ", self.include_force, flush=True)
-        print("  include_stress:  ", self.include_stress, flush=True)
+        print("  n_types:           ", self.n_type, flush=True)
+        print("  elements:          ", self.elements, flush=True)
+        print("  element_order:     ", self.element_order, flush=True)
+        print("  atomic_energy (eV):", self.atomic_energy, flush=True)
+        print("  include_force:     ", self.include_force, flush=True)
+        print("  include_stress:    ", self.include_stress, flush=True)
 
         for i, p in enumerate(self._params):
             print("model_" + str(i + 1) + ":", flush=True)

@@ -131,18 +131,17 @@ class PolymlpDevCore:
     ):
         """Return best polymlp model."""
         return get_best_model(
+            self._params,
             coefs,
             scales,
-            self._params.alphas,
             rmse_train,
             rmse_test,
-            self._params,
             cumulative_n_features,
         )
 
     def print_model_selection_log(self, rmse_train: np.ndarray, rmse_test: np.ndarray):
         """Print log from model selection."""
-        print_log(rmse_train, rmse_test, self._params.alphas)
+        print_log(self._params, rmse_train, rmse_test)
 
     @property
     def n_features(self):

@@ -89,15 +89,20 @@ def compute_rmse(
 
 
 def get_best_model(
+    params: PolymlpParams,
     coefs_array: np.ndarray,
     scales: np.ndarray,
-    alphas: np.ndarray,
     rmse_train: np.ndarray,
     rmse_test: np.ndarray,
-    params: PolymlpParams = None,
     cumulative_n_features: Optional[tuple] = None,
 ):
     """Return best polymlp model."""
+    if len(params.alphas) != coefs_array.shape[1]:
+        raise RuntimeError("Shapes of alphas and coeffs not consistent.")
+    if len(params.alphas) != len(rmse_train):
+        raise RuntimeError("Shapes of alphas and rmse_train not consistent.")
+    if len(params.alphas) != len(rmse_test):
+        raise RuntimeError("Shapes of alphas and rmse_test not consistent.")
 
     idx = np.argmin(rmse_test)
     best_model = PolymlpDataMLP(
@@ -105,7 +110,7 @@ def get_best_model(
         scales=scales,
         rmse_train=rmse_train[idx],
         rmse_test=rmse_test[idx],
-        alpha=alphas[idx],
+        alpha=params.alphas[idx],
         params=params,
         cumulative_n_features=cumulative_n_features,
     )
@@ -113,14 +118,14 @@ def get_best_model(
 
 
 def print_log(
+    params: PolymlpParams,
     rmse_train: np.ndarray,
     rmse_test: np.ndarray,
-    alphas: np.ndarray,
     error_threshold: float = 1e6,
 ):
     """Output log for ridge regression."""
     print("Regression: model selection ...", flush=True)
-    for a, rmse1, rmse2 in zip(alphas, rmse_train, rmse_test):
+    for a, rmse1, rmse2 in zip(params.alphas, rmse_train, rmse_test):
         if rmse1 > error_threshold:
             text = ": rmse (train, test) = Failed, Failed"
             print("- alpha =", "{:.3e}".format(a), text, flush=True)
@@ -133,17 +138,3 @@ def print_log(
                 "{:.5f}".format(rmse2),
                 flush=True,
             )
-
-
-def smooth_alpha(alphas: np.ndarray, rmse_test: np.ndarray):
-    """Estimate optimal regularization parameter."""
-    if len(alphas) < 3:
-        return None
-
-    data = np.array(sorted([(y1, x1) for x1, y1 in zip(alphas, rmse_test)])[:3])
-    x, y = np.log10(data[:, 1]), data[:, 0]
-
-    coeffs = np.polyfit(x, y, deg=2)
-    p = np.poly1d(coeffs)
-    dp = p.deriv()
-    return 10 ** dp.r[0]
