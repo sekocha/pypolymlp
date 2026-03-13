@@ -105,6 +105,9 @@ class Features:
         element_swap: bool = False,
     ):
         """Init method."""
+        if len(params) > 1:
+            raise RuntimeError("Use FeaturesHybrid for hybrid model.")
+
         (
             axis_array,
             positions_c_array,
@@ -114,12 +117,10 @@ class Features:
             force_dataset,
         ) = _init_features(datasets, structures, params)
 
-        params.params.element_swap = element_swap
-        params.params.print_memory = print_memory
-        # params.element_swap = element_swap
-        # params.print_memory = print_memory
+        params.element_swap = element_swap
+        params.print_memory = print_memory
         obj = libmlpcpp.PotentialModel(
-            params.params.as_dict(),
+            params.as_dict(),
             axis_array,
             positions_c_array,
             types_array,
@@ -175,7 +176,7 @@ class FeaturesHybrid:
 
     def __init__(
         self,
-        hybrid_params: PolymlpParams,
+        params: PolymlpParams,
         datasets: Optional[DatasetList] = None,
         structures: Optional[list[PolymlpStructure]] = None,
         print_memory: bool = True,
@@ -189,16 +190,12 @@ class FeaturesHybrid:
             n_atoms_sum_array,
             n_st_dataset,
             force_dataset,
-        ) = _init_features(datasets, structures, hybrid_params)
+        ) = _init_features(datasets, structures, params)
 
-        hybrid_params_dicts = []
-        for params in hybrid_params:
-            params.element_swap = element_swap
-            params.print_memory = print_memory
-            hybrid_params_dicts.append(params.as_dict())
-
+        params.element_swap = element_swap
+        params.print_memory = print_memory
         obj = libmlpcpp.PotentialHybridModel(
-            hybrid_params_dicts,
+            params.as_dict(),
             axis_array,
             positions_c_array,
             types_array,

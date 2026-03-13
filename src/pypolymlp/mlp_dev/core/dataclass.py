@@ -26,28 +26,19 @@ class PolymlpDataMLP:
     alpha: Optional[float] = None
     beta: Optional[float] = None
 
-    error_train: Optional[dict] = None
-    error_test: Optional[dict] = None
-
+    #     error_train: Optional[dict] = None
+    #     error_test: Optional[dict] = None
+    #
     params: Optional[PolymlpParams] = None
-
     cumulative_n_features: Optional[tuple] = None
-    hybrid: bool = False
-    coeffs_hybrid: Optional[np.ndarray] = None
-    scales_hybrid: Optional[np.ndarray] = None
     scaled_coeffs: Optional[np.ndarray] = None
 
     def __post_init__(self):
         """Post init method."""
         if self.cumulative_n_features is not None:
-            self.hybrid = True
-
-        if self.hybrid:
-            self.coeffs_hybrid = self.hybrid_division(self.coeffs)
-            self.scales_hybrid = self.hybrid_division(self.scales)
-            self.scaled_coeffs = [
-                c / s for c, s in zip(self.coeffs_hybrid, self.scales_hybrid)
-            ]
+            coeffs_hybrid = self.hybrid_division(self.coeffs)
+            scales_hybrid = self.hybrid_division(self.scales)
+            self.scaled_coeffs = [c / s for c, s in zip(coeffs_hybrid, scales_hybrid)]
         else:
             self.scaled_coeffs = self.coeffs / self.scales
 
@@ -70,9 +61,7 @@ class PolymlpDataMLP:
         cumulative = self.cumulative_n_features
         list_target = []
         for i, params in enumerate(self.params):
-            if i == 0:
-                begin, end = 0, cumulative[0]
-            else:
-                begin, end = cumulative[i - 1], cumulative[i]
+            begin = 0 if i == 0 else cumulative[i - 1]
+            end = cumulative[i]
             list_target.append(np.array(target[begin:end]))
         return list_target

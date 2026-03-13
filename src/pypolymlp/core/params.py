@@ -198,6 +198,30 @@ class PolymlpParams:
             p.electron_property = prop
 
     @property
+    def element_swap(self):
+        """Return element_swap."""
+        return bool(self._common_params.element_swap)
+
+    @element_swap.setter
+    def element_swap(self, es: str):
+        """Setter of element_swap."""
+        self._common_params.element_swap = es
+        for p in self._params:
+            p.element_swap = es
+
+    @property
+    def print_memory(self):
+        """Return print_memory."""
+        return bool(self._common_params.print_memory)
+
+    @print_memory.setter
+    def print_memory(self, pm: str):
+        """Setter of print_memory."""
+        self._common_params.print_memory = pm
+        for p in self._params:
+            p.print_memory = pm
+
+    @property
     def alphas(self):
         """Return whether stresses are included or not."""
         return self._common_params.alphas
@@ -206,6 +230,12 @@ class PolymlpParams:
     def is_hybrid(self):
         """Return whether model is hybrid one or not."""
         return len(self._params) > 1
+
+    def as_dict(self):
+        """Convert parameters to dictionary or list of dictionary."""
+        if self.is_hybrid:
+            return [p.as_dict() for p in self._params]
+        return self._params.params.as_dict()
 
     def print_params(self):
         """Print parameters."""

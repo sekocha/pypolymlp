@@ -9,21 +9,6 @@ from pypolymlp.core.params import PolymlpParams
 from pypolymlp.cxx.lib import libmlpcpp
 
 
-def _get_num_features(params: PolymlpParamsSingle):
-    """Return number of features."""
-    features_attr, polynomial_attr, atomtype_pair_dict = get_features_attr(params)
-    n_fearures = len(features_attr) + len(polynomial_attr)
-    return n_fearures
-
-
-def get_num_features(params: PolymlpParams):
-    """Return number of features."""
-    n_features = 0
-    for p in params:
-        n_features += _get_num_features(p)
-    return n_features
-
-
 def get_features_attr(params: PolymlpParamsSingle, element_swap: bool = False):
     """Get feature attributes."""
     params.element_swap = element_swap
@@ -47,8 +32,23 @@ def get_features_attr(params: PolymlpParamsSingle, element_swap: bool = False):
     return features_attr, polynomial_attr, atomtype_pair_dict
 
 
+def _get_num_features(params: PolymlpParamsSingle):
+    """Return number of features."""
+    features_attr, polynomial_attr, atomtype_pair_dict = get_features_attr(params)
+    n_fearures = len(features_attr) + len(polynomial_attr)
+    return n_fearures
+
+
+def get_num_features(params: PolymlpParams):
+    """Return number of features."""
+    n_features = 0
+    for p in params:
+        n_features += _get_num_features(p)
+    return n_features
+
+
 def _write_polymlp_params_yaml(
-    params: PolymlpParams,
+    params: PolymlpParamsSingle,
     filename: str = "polymlp_params.yaml",
 ):
     """Save feature attributes to yaml file."""
@@ -120,11 +120,12 @@ def write_polymlp_params_yaml(
 ):
     """Write polymlp_params.yaml"""
     np.set_printoptions(legacy="1.21")
-    if params.is_hybrid:
-        n_features = 0
-        for i, p in enumerate(params):
-            filename = "polymlp_params" + str(i + 1) + ".yaml"
-            n_features += _write_polymlp_params_yaml(p, filename=filename)
-    else:
+    if not params.is_hybrid:
         n_features = _write_polymlp_params_yaml(params.params, filename=filename)
+        return n_features
+
+    n_features = 0
+    for i, p in enumerate(params):
+        filename = "polymlp_params" + str(i + 1) + ".yaml"
+        n_features += _write_polymlp_params_yaml(p, filename=filename)
     return n_features
