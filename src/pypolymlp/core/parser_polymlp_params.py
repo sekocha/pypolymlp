@@ -49,6 +49,7 @@ class ParamsParserSingle:
 
     def set_params(self):
         """Get parameters from file and set them."""
+        # TODO: Use set_all_params
         include_force, include_stress = self._get_force_tags()
         elements, n_type, atom_e = self._get_element_properties()
         alphas = self._get_regression_params()
