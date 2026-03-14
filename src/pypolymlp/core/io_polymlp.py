@@ -85,12 +85,12 @@ def load_mlps(file_list_or_file):
     """
     if isinstance(file_list_or_file, str):
         params_single, coeffs = load_mlp(file_list_or_file)
-        return PolymlpParams(params_single), coeffs
+        return PolymlpParams(params_single), [coeffs]
 
     if isinstance(file_list_or_file, (list, tuple, np.ndarray)):
         if len(file_list_or_file) == 1:
             params_single, coeffs = load_mlp(file_list_or_file[0])
-            return PolymlpParams(params_single), coeffs
+            return PolymlpParams(params_single), [coeffs]
 
         params, coeffs_array = PolymlpParams(), []
         for pot in file_list_or_file:
@@ -98,8 +98,7 @@ def load_mlps(file_list_or_file):
             params.append(params_single)
             coeffs_array.append(coeffs)
         return params, coeffs_array
-
-    return load_mlp(file_list_or_file)
+    raise RuntimeError("Input object not appropriate for load_mlps.")
 
 
 def find_mlps(path: str):

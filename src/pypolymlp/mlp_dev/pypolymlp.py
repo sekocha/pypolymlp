@@ -700,10 +700,15 @@ class Pypolymlp:
 
     def load_mlp(self, filename: Union[str, io.IOBase] = "polymlp.yaml"):
         """Load polynomial MLP from file."""
-        # TODO: hybrid is not available.
-        self._params, coeffs = load_mlp(filename)
+        if isinstance(filename, (list, tuple, np.ndarray)):
+            raise RuntimeError("load_mlp not available for hybrid model.")
+
+        params_single, coeffs = load_mlp(filename)
+        self._params = PolymlpParams(params_single)
         scales = np.ones(len(coeffs))
-        self._mlp_model = PolymlpDataMLP(coeffs=coeffs, scales=scales)
+        self._mlp_model = PolymlpDataMLP(
+            coeffs=coeffs, scales=scales, params=self._params
+        )
         return self
 
     def save_params(self, filename: str = "polymlp_params.yaml"):

@@ -391,7 +391,7 @@ class Properties:
 
 
 def initialize_polymlp_calculator(
-    pot: Optional[str, list[str]] = None,
+    pot: Optional[Union[str, list[str]]] = None,
     params: Optional[PolymlpParams] = None,
     coeffs: Optional[Union[np.ndarray, list[np.ndarray]]] = None,
     properties: Optional[Properties] = None,

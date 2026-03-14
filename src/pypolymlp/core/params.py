@@ -14,9 +14,11 @@ def _get_variable_with_max_length(
     """Select variable with max length."""
     array = []
     for single in multiple_params:
-        single_dict = single.as_dict()
-        if len(single_dict[key]) > len(array):
-            array = single_dict[key]
+        target = getattr(single, key)
+        if target is None:
+            continue
+        if len(target) > len(array):
+            array = target
     return array
 
 
