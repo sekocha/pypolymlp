@@ -23,7 +23,9 @@ def test_features_hybrid(regdata_mp_149):
     params, datasets = regdata_mp_149
     params.type_indices = [0]
     params.type_full = True
-    features = compute_features([params, params], datasets)
+
+    hybrid = params.as_hybrid_model()
+    features = compute_features(hybrid, datasets)
     assert features.x.shape[0] == 35820
     assert features.x.shape[1] == 336
     assert features.n_data == (180, 34560, 180 * 6)

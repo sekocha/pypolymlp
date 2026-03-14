@@ -14,8 +14,8 @@ def test_get_num_features(regdata_mp_149):
     params, _ = regdata_mp_149
     n_features = get_num_features(params)
     assert n_features == 168
-    n_features = get_num_features([params, params, params])
-    assert n_features == 168 * 3
+    n_features = get_num_features(params.as_hybrid_model())
+    assert n_features == 168 * 2
 
 
 def test_get_num_features_binary(params_MgO):
@@ -27,7 +27,7 @@ def test_get_num_features_binary(params_MgO):
 def test_get_features_attr(regdata_mp_149):
     """Test for get_features_attr."""
     params, _ = regdata_mp_149
-    features_attr, polynomial_attr, atomtype_pair = get_features_attr(params)
+    features_attr, polynomial_attr, atomtype_pair = get_features_attr(params.params)
     assert isinstance(features_attr, list) == True
     assert isinstance(polynomial_attr, list) == True
     assert isinstance(atomtype_pair, dict) == True
@@ -72,7 +72,7 @@ def test_get_features_attr(regdata_mp_149):
 
 def test_get_features_attr_binary(params_MgO):
     """Test for get_features_attr in binary system."""
-    features_attr, polynomial_attr, atomtype_pair = get_features_attr(params_MgO)
+    features_attr, polynomial_attr, atomtype_pair = get_features_attr(params_MgO.params)
     assert isinstance(features_attr, list) == True
     assert isinstance(polynomial_attr, list) == True
     assert isinstance(atomtype_pair, dict) == True

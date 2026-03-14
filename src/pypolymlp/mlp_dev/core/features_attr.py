@@ -11,6 +11,9 @@ from pypolymlp.cxx.lib import libmlpcpp
 
 def get_features_attr(params: PolymlpParamsSingle, element_swap: bool = False):
     """Get feature attributes."""
+    if isinstance(params, PolymlpParams):
+        raise RuntimeError("params must be PolymlpParamsSingle")
+
     params.element_swap = element_swap
     obj = libmlpcpp.FeaturesAttr(params.as_dict())
 

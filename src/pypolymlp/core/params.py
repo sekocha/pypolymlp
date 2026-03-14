@@ -295,3 +295,9 @@ class PolymlpParams:
                 orders = [i for i in range(2, p.model.gtinv.order + 1)]
                 print("  max_l:       ", p.model.gtinv.max_l, end=" ", flush=True)
                 print("for order =", orders, flush=True)
+
+    def as_hybrid_model(self):
+        """Make a hybrid model used for tests."""
+        if len(self._params) > 1:
+            raise RuntimeError("Hybrid model not required to convert.")
+        return PolymlpParams([self._params[0], self._params[0]])
