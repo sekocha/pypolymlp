@@ -3,6 +3,8 @@
 import copy
 from typing import Optional, Union
 
+import numpy as np
+
 from pypolymlp.core.data_format import PolymlpParamsSingle
 
 
@@ -117,6 +119,22 @@ class PolymlpParams:
             return self._params[0]
         return None
 
+    @params.setter
+    def params(
+        self,
+        p: Union[PolymlpParamsSingle, list[PolymlpParamsSingle]],
+    ):
+        """Setter of parameters."""
+        if p is None:
+            self._params = []
+        elif isinstance(p, PolymlpParamsSingle):
+            self._params = [p]
+        elif isinstance(p, (list, tuple, np.ndarray)):
+            self._params = list(p)
+        else:
+            raise RuntimeError("Inappropriate input for parameters.")
+        self._common_params = self._set_common_params()
+
     @property
     def n_type(self):
         """Return number of atom types."""
@@ -164,7 +182,7 @@ class PolymlpParams:
     @property
     def dataset_type(self):
         """Return dataset type."""
-        return bool(self._common_params.dataset_type)
+        return self._common_params.dataset_type
 
     @dataset_type.setter
     def dataset_type(self, dtype: str):
@@ -222,9 +240,28 @@ class PolymlpParams:
             p.print_memory = pm
 
     @property
+    def regression_alpha(self):
+        """Return power indices of alpha penalty values."""
+        return self._common_params.regression_alpha
+
+    @regression_alpha.setter
+    def regression_alpha(self, a: str):
+        """Setter of print_memory."""
+        self._common_params.regression_alpha = a
+        for p in self._params:
+            p.regression_alpha = a
+
+    @property
     def alphas(self):
-        """Return whether stresses are included or not."""
+        """Return alpha penalty values."""
         return self._common_params.alphas
+
+    @alphas.setter
+    def alphas(self, a: str):
+        """Setter of print_memory."""
+        self._common_params.alphas = a
+        for p in self._params:
+            p.alphas = a
 
     @property
     def is_hybrid(self):
@@ -235,7 +272,7 @@ class PolymlpParams:
         """Convert parameters to dictionary or list of dictionary."""
         if self.is_hybrid:
             return [p.as_dict() for p in self._params]
-        return self._params.params.as_dict()
+        return self._params[0].as_dict()
 
     def print_params(self):
         """Print parameters."""

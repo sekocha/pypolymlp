@@ -70,7 +70,8 @@ def load_mlp(filename: Union[str, io.IOBase] = "polymlp.yaml"):
     legacy = is_legacy(filename)
     if legacy:
         params_single, coeffs = load_mlp_lammps(filename)
-    params_single, coeffs = load_mlp_yaml(filename)
+    else:
+        params_single, coeffs = load_mlp_yaml(filename)
     return params_single, coeffs
 
 

@@ -90,8 +90,11 @@ class PolymlpDevCore:
 
     def get_features_attr(self, element_swap: bool = False):
         """Return feature attributes."""
+        if self.is_hybrid:
+            raise RuntimeError("get_features_attr available for single model.")
+
         features_attr, polynomial_attr, atomtype_pair_dict = get_features_attr(
-            self._params,
+            self._params.params,
             element_swap=element_swap,
         )
         return (features_attr, polynomial_attr, atomtype_pair_dict)
@@ -154,12 +157,6 @@ class PolymlpDevCore:
     def params(self) -> PolymlpParams:
         """Return polymlp parameters."""
         return self._params
-
-    @params.setter
-    def params(self, params: PolymlpParams):
-        """Set parameters."""
-        self._params = params
-        self._n_features = None
 
     @property
     def is_hybrid(self) -> bool:

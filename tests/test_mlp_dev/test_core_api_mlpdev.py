@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from pypolymlp.core.params import PolymlpParams
 from pypolymlp.mlp_dev.core.api_mlpdev import PolymlpDevCore
 
 cwd = Path(__file__).parent
@@ -24,10 +25,11 @@ def test_api_functions(regdata_mp_149):
 
     assert core.n_features == 168
     assert core.params == params
-    assert core.common_params == params
     assert core.is_hybrid == False
 
-    core.params = [params, params]
+    params_single = params[0]
+    params_hybrid = PolymlpParams([params_single, params_single])
+    core = PolymlpDevCore(params_hybrid, use_gradient=False)
     assert core.is_hybrid == True
     assert core.n_features == 336
 
