@@ -1,7 +1,7 @@
 """API Class for evaluating accuracy of distributions."""
 
 from dataclasses import dataclass
-from typing import Optional, Union
+from typing import Optional
 
 import numpy as np
 
@@ -18,7 +18,6 @@ from pypolymlp.calculator.compute_formation_energies import (
 )
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.core.interface_vasp import parse_properties_from_vaspruns
-from pypolymlp.core.params import PolymlpParams
 from pypolymlp.utils.atomic_energies.atomic_energies import get_atomic_energies
 
 
@@ -149,10 +148,7 @@ class AutoCalcDistribution(AutoCalcBase):
 
     def __init__(
         self,
-        pot: Union[str, list[str]] = None,
-        params: Union[PolymlpParams, list[PolymlpParams]] = None,
-        coeffs: Union[np.ndarray, list[np.ndarray]] = None,
-        properties: Optional[Properties] = None,
+        properties: Properties,
         path_output: str = ".",
         functional: str = "PBE",
         verbose: bool = False,
@@ -161,21 +157,12 @@ class AutoCalcDistribution(AutoCalcBase):
 
         Parameters
         ----------
-        pot: polymlp file.
-        params: Parameters for polymlp.
-        coeffs: Polymlp coefficients.
         properties: Properties instance.
-
-        Any one of pot, (params, coeffs), and properties is needed.
         """
-        super().__init__(
-            pot=pot,
-            params=params,
-            coeffs=coeffs,
-            properties=properties,
-            path_output=path_output,
-            verbose=verbose,
-        )
+        super().__init__(properties, path_output=path_output, verbose=verbose)
+        self._prop = properties
+        self._verbose = verbose
+
         self._comparison = None
         self._distribution_train = None
         self._distribution_test = None

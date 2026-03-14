@@ -2,7 +2,7 @@
 
 import os
 from dataclasses import dataclass
-from typing import Optional, Union
+from typing import Optional
 
 import numpy as np
 import yaml
@@ -10,7 +10,6 @@ import yaml
 from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.core.data_format import PolymlpStructure
-from pypolymlp.core.params import PolymlpParams
 from pypolymlp.utils.structure_utils import get_lattice_constants
 from pypolymlp.utils.yaml_utils import save_cell
 
@@ -20,10 +19,7 @@ class AutoCalcBase:
 
     def __init__(
         self,
-        pot: Union[str, list[str]] = None,
-        params: Union[PolymlpParams, list[PolymlpParams]] = None,
-        coeffs: Union[np.ndarray, list[np.ndarray]] = None,
-        properties: Optional[Properties] = None,
+        properties: Properties,
         path_output: str = ".",
         verbose: bool = False,
     ):
@@ -31,21 +27,9 @@ class AutoCalcBase:
 
         Parameters
         ----------
-        pot: polymlp file.
-        params: Parameters for polymlp.
-        coeffs: Polymlp coefficients.
         properties: Properties instance.
-
-        Any one of pot, (params, coeffs), and properties is needed.
         """
-        self._calc = PypolymlpCalc(
-            pot=pot,
-            params=params,
-            coeffs=coeffs,
-            properties=properties,
-            verbose=verbose,
-        )
-        self._pot = pot
+        self._calc = PypolymlpCalc(properties=properties, verbose=verbose)
         self._prop = self._calc._prop
         self._verbose = verbose
 
@@ -69,11 +53,6 @@ class AutoCalcBase:
     def properties(self):
         """Return Properties instance."""
         return self._prop
-
-    @property
-    def pot(self):
-        """Return polymlp name."""
-        return self._pot
 
     @property
     def element_strings(self):

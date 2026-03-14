@@ -8,15 +8,11 @@ import numpy as np
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.sscha.sscha_core import SSCHACore
 from pypolymlp.calculator.sscha.sscha_params import SSCHAParams
-from pypolymlp.core.data_format import PolymlpParams
 
 
 def run_sscha(
     sscha_params: SSCHAParams,
-    pot: Optional[str] = None,
-    params: Optional[PolymlpParams] = None,
-    coeffs: Optional[np.ndarray] = None,
-    properties: Optional[Properties] = None,
+    properties: Properties,
     fc2: Optional[np.ndarray] = None,
     precondition: bool = True,
     use_temporal_cutoff: bool = False,
@@ -30,18 +26,12 @@ def run_sscha(
     Parameters
     ----------
     sscha_params: Parameters for SSCHA in SSCHAParams.
-    pot: polymlp file.
-    params: Parameters for polymlp.
-    coeffs: Polymlp coefficients.
     properties: Properties instance.
     """
     if use_temporal_cutoff:
         sscha = run_sscha_large_system(
             sscha_params,
-            pot=pot,
-            params=params,
-            coeffs=coeffs,
-            properties=properties,
+            properties,
             fc2=fc2,
             precondition=precondition,
             path=path,
@@ -52,10 +42,7 @@ def run_sscha(
     else:
         sscha = run_sscha_standard(
             sscha_params,
-            pot=pot,
-            params=params,
-            coeffs=coeffs,
-            properties=properties,
+            properties,
             fc2=fc2,
             precondition=precondition,
             path=path,
@@ -68,10 +55,7 @@ def run_sscha(
 
 def run_sscha_standard(
     sscha_params: SSCHAParams,
-    pot: Optional[str] = None,
-    params: Optional[PolymlpParams] = None,
-    coeffs: Optional[np.ndarray] = None,
-    properties: Optional[Properties] = None,
+    properties: Properties,
     fc2: Optional[np.ndarray] = None,
     precondition: bool = True,
     path: str = "./sscha",
@@ -84,17 +68,11 @@ def run_sscha_standard(
     Parameters
     ----------
     sscha_params: Parameters for SSCHA in SSCHAParams.
-    pot: polymlp file.
-    params: Parameters for polymlp.
-    coeffs: Polymlp coefficients.
     properties: Properties instance.
     """
     sscha = SSCHACore(
         sscha_params,
-        pot=pot,
-        params=params,
-        coeffs=coeffs,
-        properties=properties,
+        properties,
         use_mkl=use_mkl,
         verbose=verbose,
     )
@@ -115,10 +93,7 @@ def run_sscha_standard(
 
 def run_sscha_large_system(
     sscha_params: SSCHAParams,
-    pot: Optional[str] = None,
-    params: Optional[PolymlpParams] = None,
-    coeffs: Optional[np.ndarray] = None,
-    properties: Optional[Properties] = None,
+    properties: Properties,
     fc2: Optional[np.ndarray] = None,
     precondition: bool = True,
     path: str = "./sscha",
@@ -131,9 +106,6 @@ def run_sscha_large_system(
     Parameters
     ----------
     sscha_params: Parameters for SSCHA in SSCHAParams.
-    pot: polymlp file.
-    params: Parameters for polymlp.
-    coeffs: Polymlp coefficients.
     properties: Properties instance.
     """
     sscha_params_target = copy.deepcopy(sscha_params)
@@ -145,10 +117,7 @@ def run_sscha_large_system(
 
     sscha = SSCHACore(
         sscha_params,
-        pot=pot,
-        params=params,
-        coeffs=coeffs,
-        properties=properties,
+        properties,
         use_mkl=use_mkl,
         verbose=verbose,
     )
@@ -173,10 +142,7 @@ def run_sscha_large_system(
 
         sscha = SSCHACore(
             sscha_params_target,
-            pot=pot,
-            params=params,
-            coeffs=coeffs,
-            properties=properties,
+            properties,
             use_mkl=use_mkl,
             verbose=verbose,
         )

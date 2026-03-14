@@ -6,11 +6,12 @@ import numpy as np
 from ase import Atoms
 from ase.calculators.calculator import Calculator, all_changes
 
-from pypolymlp.calculator.properties import Properties, set_instance_properties
+from pypolymlp.calculator.properties import Properties, initialize_polymlp_calculator
 from pypolymlp.calculator.utils.ase_utils import ase_atoms_to_structure
 from pypolymlp.calculator.utils.fc_utils import eval_properties_fc2
-from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
+from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.displacements import convert_positions_to_disps
+from pypolymlp.core.params import PolymlpParams
 
 ALL_CHANGES = tuple(all_changes)
 
@@ -32,9 +33,9 @@ class PolymlpFC2ASECalculator(Calculator):
         self,
         fc2: np.ndarray,
         structure_without_disp: PolymlpStructure,
-        pot: Optional[Union[str, list]] = None,
+        pot: Optional[str, list[str]] = None,
         params: Optional[PolymlpParams] = None,
-        coeffs: Optional[np.ndarray] = None,
+        coeffs: Optional[Union[np.ndarray, list[np.ndarray]]] = None,
         properties: Optional[Properties] = None,
         alpha: float = 0.0,
         **kwargs,
@@ -53,7 +54,7 @@ class PolymlpFC2ASECalculator(Calculator):
         alpha: Mixing parameter. E = alpha * E_polymlp + (1 - alpha) * E_fc2
         """
         super().__init__(**kwargs)
-        self._prop = set_instance_properties(
+        self._prop = initialize_polymlp_calculator(
             pot=pot,
             params=params,
             coeffs=coeffs,
@@ -182,14 +183,14 @@ class PolymlpRefASECalculator(Calculator):
         alpha: Mixing parameter. E = alpha * E_polymlp + (1 - alpha) * E_polymlp_ref
         """
         super().__init__(**kwargs)
-        self._prop = set_instance_properties(
+        self._prop = initialize_polymlp_calculator(
             pot=pot,
             params=params,
             coeffs=coeffs,
             properties=properties,
             require_mlp=True,
         )
-        self._prop_ref = set_instance_properties(
+        self._prop_ref = initialize_polymlp_calculator(
             pot=pot_ref,
             params=params_ref,
             coeffs=coeffs_ref,
@@ -307,14 +308,14 @@ class PolymlpGeneralRefASECalculator(Calculator):
             E = alpha * E_final + (1 - alpha) * E_ref
         """
         super().__init__(**kwargs)
-        self._prop_final = set_instance_properties(
+        self._prop_final = initialize_polymlp_calculator(
             pot=pot_final,
             params=params_final,
             coeffs=coeffs_final,
             properties=properties_final,
             require_mlp=True,
         )
-        self._prop_ref = set_instance_properties(
+        self._prop_ref = initialize_polymlp_calculator(
             pot=pot_ref,
             params=params_ref,
             coeffs=coeffs_ref,

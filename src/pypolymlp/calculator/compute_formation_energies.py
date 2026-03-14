@@ -1,24 +1,20 @@
 """Class for computing formation energies."""
 
-from typing import Optional, Union
+from typing import Optional
 
 import numpy as np
 from scipy.spatial import ConvexHull
 
-from pypolymlp.calculator.compute_base import PolymlpComputeBase
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.utils.composition_utils import Composition
-from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
+from pypolymlp.core.data_format import PolymlpStructure
 
 
-class PolymlpFormationEnergies(PolymlpComputeBase):
+class PolymlpFormationEnergies:
     """Class for computing formation energies."""
 
     def __init__(
         self,
-        pot: Optional[str, list[str]] = None,
-        params: Optional[PolymlpParams] = None,
-        coeffs: Optional[Union[np.ndarray, list[np.ndarray]]] = None,
         properties: Optional[Properties] = None,
         elements: Optional[tuple] = None,
         verbose: bool = False,
@@ -27,29 +23,10 @@ class PolymlpFormationEnergies(PolymlpComputeBase):
 
         Parameters
         ----------
-        pot: polymlp file.
-        params: Parameters for polymlp.
-        coeffs: Polymlp coefficients.
-        properties: Properties object.
-
-        Any one of pot, (params, coeffs), and properties is needed.
+        properties: Properties instance.
         """
-        super().__init__(
-            pot=pot,
-            params=params,
-            coeffs=coeffs,
-            properties=properties,
-            verbose=verbose,
-            return_none=True,
-        )
-
-        # if all(x is None for x in (properties, pot, params, coeffs)):
-        #     self._prop = None
-        # elif properties is not None:
-        #     self._prop = properties
-        # else:
-        #     self._prop = Properties(pot=pot, params=params, coeffs=coeffs)
-
+        self._prop = properties
+        self._verbose = verbose
         if self._prop is not None:
             self._elements = self._prop.params.elements
         else:

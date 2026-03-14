@@ -6,9 +6,9 @@ import numpy as np
 from ase import Atoms
 from ase.calculators.calculator import Calculator, all_changes
 
-from pypolymlp.calculator.properties import Properties, set_instance_properties
+from pypolymlp.calculator.properties import Properties, initialize_polymlp_calculator
 from pypolymlp.calculator.utils.ase_utils import ase_atoms_to_structure
-from pypolymlp.core.data_format import PolymlpParams
+from pypolymlp.core.params import PolymlpParams
 
 ALL_CHANGES = tuple(all_changes)
 
@@ -20,9 +20,9 @@ class PolymlpASECalculator(Calculator):
 
     def __init__(
         self,
-        pot: Optional[Union[str, list]] = None,
+        pot: Optional[str, list[str]] = None,
         params: Optional[PolymlpParams] = None,
-        coeffs: Optional[np.ndarray] = None,
+        coeffs: Optional[Union[np.ndarray, list[np.ndarray]]] = None,
         properties: Optional[Properties] = None,
         require_mlp: bool = True,
         **kwargs,
@@ -37,24 +37,28 @@ class PolymlpASECalculator(Calculator):
         properties: Properties object.
         """
         super().__init__(**kwargs)
-        self._prop = set_instance_properties(
+        self._prop = initialize_polymlp_calculator(
             pot=pot,
             params=params,
             coeffs=coeffs,
             properties=properties,
-            require_mlp=require_mlp,
+            return_none=not require_mlp,
         )
         self._use_reference = False
         self._use_fc2 = False
 
     def set_calculator(
         self,
-        pot: Optional[Union[str, list]] = None,
+        pot: Optional[str, list[str]] = None,
         params: Optional[PolymlpParams] = None,
-        coeffs: Optional[np.ndarray] = None,
+        coeffs: Optional[Union[np.ndarray, list[np.ndarray]]] = None,
     ):
         """Set polymlp."""
-        self._prop = set_instance_properties(pot=pot, params=params, coeffs=coeffs)
+        self._prop = initialize_polymlp_calculator(
+            pot=pot,
+            params=params,
+            coeffs=coeffs,
+        )
 
     def calculate(
         self,

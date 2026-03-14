@@ -1,16 +1,15 @@
 """Class for geometry optimization with symmetric constraint."""
 
 import copy
-from typing import Literal, Optional, Union
+from typing import Literal, Optional
 
 import numpy as np
 from scipy.optimize import NonlinearConstraint, minimize
 
 from pypolymlp.calculator._scipy._optimize import minimize_cg
-from pypolymlp.calculator.compute_base import PolymlpComputeBase
 from pypolymlp.calculator.compute_features import update_types
 from pypolymlp.calculator.properties import Properties
-from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
+from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.units import EVtoGPa
 from pypolymlp.utils.spglib_utils import construct_basis_cell
 from pypolymlp.utils.structure_utils import refine_positions
@@ -18,21 +17,18 @@ from pypolymlp.utils.symfc_utils import construct_basis_fractional_coordinates
 from pypolymlp.utils.vasp_utils import write_poscar_file
 
 
-class GeometryOptimization(PolymlpComputeBase):
+class GeometryOptimization:
     """Class for geometry optimization."""
 
     def __init__(
         self,
         cell: PolymlpStructure,
+        properties: Properties,
         relax_cell: bool = False,
         relax_volume: bool = False,
         relax_positions: bool = True,
         with_sym: bool = True,
         pressure: float = 0.0,
-        pot: Optional[str, list[str]] = None,
-        params: Optional[PolymlpParams] = None,
-        coeffs: Optional[Union[np.ndarray, list[np.ndarray]]] = None,
-        properties: Optional[Properties] = None,
         verbose: bool = False,
     ):
         """Init method.
@@ -40,25 +36,15 @@ class GeometryOptimization(PolymlpComputeBase):
         Parameters
         ----------
         cell: Initial structure.
+        properties: Properties instance.
         relax_cell: Optimize cell shape.
         relax_volume: Optimize volume.
         relax_positions: Optimize atomic positions.
         with_sym: Consider symmetric properties.
         pressure: Pressure in GPa.
-        pot: polymlp file.
-        params: Parameters for polymlp.
-        coeffs: Polymlp coefficients.
-        properties: Properties instance.
-
-        Any one of pot, (params, coeffs), and properties is needed.
         """
-        super().__init__(
-            pot=pot,
-            params=params,
-            coeffs=coeffs,
-            properties=properties,
-            verbose=verbose,
-        )
+        self._prop = properties
+        self._verbose = verbose
         params = self._prop.params
         if isinstance(params, list):
             elements = params[0].elements

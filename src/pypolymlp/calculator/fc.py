@@ -1,16 +1,15 @@
 """Class for calculating FCs using polymlp."""
 
 import time
-from typing import Optional, Union
+from typing import Optional
 
 import numpy as np
 from phono3py.file_IO import write_fc2_to_hdf5, write_fc3_to_hdf5
 from symfc import Symfc
 from symfc.utils.cutoff_tools import FCCutoff
 
-from pypolymlp.calculator.compute_base import PolymlpComputeBase
 from pypolymlp.calculator.properties import Properties
-from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
+from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.displacements import (
     generate_random_const_displacements,
     get_structures_from_displacements,
@@ -22,18 +21,15 @@ from pypolymlp.utils.phonopy_utils import (
 )
 
 
-class PolymlpFC(PolymlpComputeBase):
+class PolymlpFC:
     """Class for calculating FCs using polymlp."""
 
     def __init__(
         self,
+        properties: Properties,
         supercell: Optional[PolymlpStructure] = None,
         phono3py_yaml: Optional[str] = None,
         use_phonon_dataset: bool = False,
-        pot: Optional[str, list[str]] = None,
-        params: Optional[PolymlpParams] = None,
-        coeffs: Optional[Union[np.ndarray, list[np.ndarray]]] = None,
-        properties: Optional[Properties] = None,
         cutoff: float = None,
         verbose: bool = False,
     ):
@@ -41,24 +37,15 @@ class PolymlpFC(PolymlpComputeBase):
 
         Parameters
         ----------
+        properties: Properties object.
         supercell: Supercell in PolymlpStructure or phonopy format.
         phono3py_yaml: phono3py.yaml file.
-        pot: polymlp file.
-        params: Parameters for polymlp.
-        coeffs: Polymlp coefficients.
-        properties: Properties object.
         cutoff: Cutoff radius in angstroms.
 
         Any one of supercell and phono3py_yaml is needed.
-        Any one of pot, (params, coeffs), and properties is needed.
         """
-        super().__init__(
-            pot=pot,
-            params=params,
-            coeffs=coeffs,
-            properties=properties,
-            verbose=verbose,
-        )
+        self._prop = properties
+        self._verbose = verbose
         self._initialize_supercell(
             supercell=supercell,
             phono3py_yaml=phono3py_yaml,
@@ -161,8 +148,6 @@ class PolymlpFC(PolymlpComputeBase):
 
         self._symfc = Symfc(
             self._supercell_ph,
-            #            displacements=self._disps.transpose((0, 2, 1)),
-            #            forces=self._forces.transpose((0, 2, 1)),
             cutoff=cutoff,
             use_mkl=use_mkl,
             log_level=self._verbose,

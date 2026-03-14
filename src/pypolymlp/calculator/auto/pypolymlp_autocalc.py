@@ -6,7 +6,7 @@ import numpy as np
 
 from pypolymlp.calculator.auto.autocalc_distribution import AutoCalcDistribution
 from pypolymlp.calculator.auto.autocalc_prototypes import AutoCalcPrototypes
-from pypolymlp.calculator.properties import Properties
+from pypolymlp.calculator.properties import Properties, initialize_polymlp_calculator
 from pypolymlp.core.params import PolymlpParams
 
 
@@ -34,11 +34,14 @@ class PypolymlpAutoCalc:
 
         Any one of pot, (params, coeffs), and properties is needed.
         """
-        self._auto_prot = AutoCalcPrototypes(
+        self._prop = initialize_polymlp_calculator(
             pot=pot,
             params=params,
             coeffs=coeffs,
             properties=properties,
+        )
+        self._auto_prot = AutoCalcPrototypes(
+            self._prop,
             path_output=path_output,
             verbose=verbose,
         )
@@ -47,7 +50,7 @@ class PypolymlpAutoCalc:
         self._n_types = self._auto_prot._n_types
 
         self._auto_dist = AutoCalcDistribution(
-            properties=self._prop,
+            self._prop,
             path_output=path_output,
             functional=functional,
             verbose=verbose,

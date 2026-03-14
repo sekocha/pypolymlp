@@ -1,16 +1,15 @@
 """Class for computing phonon."""
 
 import os
-from typing import Optional, Union
+from typing import Optional
 
 import numpy as np
 from phono3py.file_IO import read_fc2_from_hdf5
 from phonopy import Phonopy, PhonopyQHA
 
-from pypolymlp.calculator.compute_base import PolymlpComputeBase
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.utils.phonon_utils import is_imaginary
-from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
+from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.utils.phonopy_utils import (
     phonopy_cell_to_structure,
     structure_to_phonopy_cell,
@@ -18,17 +17,14 @@ from pypolymlp.utils.phonopy_utils import (
 from pypolymlp.utils.structure_utils import isotropic_volume_change
 
 
-class PolymlpPhonon(PolymlpComputeBase):
+class PolymlpPhonon:
     """Class for computing phonon."""
 
     def __init__(
         self,
         unitcell: PolymlpStructure,
         supercell_matrix: np.ndarray,
-        pot: Optional[str, list[str]] = None,
-        params: Optional[PolymlpParams] = None,
-        coeffs: Optional[Union[np.ndarray, list[np.ndarray]]] = None,
-        properties: Optional[Properties] = None,
+        properties: Properties,
         verbose: bool = False,
     ):
         """Init method.
@@ -37,20 +33,10 @@ class PolymlpPhonon(PolymlpComputeBase):
         ----------
         unitcell: Unitcell in PolymlpStructure format
         supercell_matrix: Supercell matrix or diagonal three element vector.
-        pot: polymlp file.
-        params: Parameters for polymlp.
-        coeffs: Polymlp coefficients.
-        properties: Properties object.
-
-        Any one of pot, (params, coeffs), and properties is needed.
+        properties: Properties instance.
         """
-        super().__init__(
-            pot=pot,
-            params=params,
-            coeffs=coeffs,
-            properties=properties,
-            verbose=verbose,
-        )
+        self._prop = properties
+        self._verbose = verbose
         unitcell = structure_to_phonopy_cell(unitcell)
         self._ph = Phonopy(unitcell, supercell_matrix)
         self._with_pdos = False
@@ -131,17 +117,14 @@ class PolymlpPhonon(PolymlpComputeBase):
         return is_imaginary(self._ph.total_dos.frequency_points, self._ph.total_dos.dos)
 
 
-class PolymlpPhononQHA(PolymlpComputeBase):
+class PolymlpPhononQHA:
     """Class for computing QHA."""
 
     def __init__(
         self,
         unitcell: PolymlpStructure,
         supercell_matrix: np.ndarray,
-        pot: Optional[str, list[str]] = None,
-        params: Optional[PolymlpParams] = None,
-        coeffs: Optional[Union[np.ndarray, list[np.ndarray]]] = None,
-        properties: Optional[Properties] = None,
+        properties: Properties,
         verbose: bool = False,
     ):
         """Init method.
@@ -149,22 +132,12 @@ class PolymlpPhononQHA(PolymlpComputeBase):
         Parameters
         ----------
         unitcell: unitcell in PolymlpStructure format
-        pot: polymlp file.
-        params: Parameters for polymlp.
-        coeffs: Polymlp coefficients.
-        properties: Properties object.
-
-        Any one of pot, (params, coeffs), and properties is needed.
+        properties: Properties instance.
         """
-        super().__init__(
-            pot=pot,
-            params=params,
-            coeffs=coeffs,
-            properties=properties,
-            verbose=verbose,
-        )
+        self._prop = properties
         self._unitcell = unitcell
         self._supercell_matrix = supercell_matrix
+        self._verbose = verbose
 
     def run(
         self,

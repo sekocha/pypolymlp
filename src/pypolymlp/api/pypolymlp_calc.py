@@ -4,13 +4,12 @@ from typing import Literal, Optional, Union
 
 import numpy as np
 
-from pypolymlp.calculator.compute_base import PolymlpComputeBase
 from pypolymlp.calculator.compute_features import (
     compute_from_infile,
     compute_from_polymlp,
 )
 from pypolymlp.calculator.compute_formation_energies import PolymlpFormationEnergies
-from pypolymlp.calculator.properties import Properties
+from pypolymlp.calculator.properties import Properties, initialize_polymlp_calculator
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.interface_vasp import (
     parse_structures_from_poscars,
@@ -21,7 +20,7 @@ from pypolymlp.utils.structure_utils import supercell
 from pypolymlp.utils.vasp_utils import write_poscar_file
 
 
-class PypolymlpCalc(PolymlpComputeBase):
+class PypolymlpCalc:
     """API Class for calculating properties."""
 
     def __init__(
@@ -44,25 +43,15 @@ class PypolymlpCalc(PolymlpComputeBase):
 
         Any one of pot, (params, coeffs), and properties is needed.
         """
-        super().__init__(
+        self._prop = initialize_polymlp_calculator(
             pot=pot,
             params=params,
             coeffs=coeffs,
             properties=properties,
-            verbose=verbose,
             return_none=not require_mlp,
         )
-        # self._prop = None
-        # if require_mlp:
-        #     if pot is None and params is None and properties is None:
-        #         raise RuntimeError("polymlp not defined.")
+        self._verbose = verbose
 
-        #     if properties is None:
-        #         self._prop = Properties(pot=pot, params=params, coeffs=coeffs)
-        #     else:
-        #         self._prop = properties
-
-        # self._verbose = verbose
         self._structures = None
         self._unitcell = None
         self._poscar = None
@@ -463,7 +452,7 @@ class PypolymlpCalc(PolymlpComputeBase):
         try:
             self._go = GeometryOptimization(
                 init_str,
-                properties=self._prop,
+                self._prop,
                 relax_cell=relax_cell,
                 relax_volume=relax_volume,
                 relax_positions=relax_positions,
@@ -553,8 +542,8 @@ class PypolymlpCalc(PolymlpComputeBase):
         sup = supercell(self.unitcell, size, use_phonopy=True)
 
         self._fc = PolymlpFC(
+            self._prop,
             supercell=sup,
-            properties=self._prop,
             cutoff=cutoff,
             verbose=self._verbose,
         )

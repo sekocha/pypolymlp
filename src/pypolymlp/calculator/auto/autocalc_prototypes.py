@@ -1,7 +1,6 @@
 """API Class for systematically calculating properties."""
 
 import os
-from typing import Optional, Union
 
 import numpy as np
 
@@ -16,7 +15,6 @@ from pypolymlp.calculator.auto.structures_binary import get_structure_list_binar
 from pypolymlp.calculator.auto.structures_element import get_structure_list_element
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.core.interface_vasp import parse_properties_from_vaspruns
-from pypolymlp.core.params import PolymlpParams
 from pypolymlp.utils.spglib_utils import SymCell
 
 
@@ -25,10 +23,7 @@ class AutoCalcPrototypes(AutoCalcBase):
 
     def __init__(
         self,
-        pot: Union[str, list[str]] = None,
-        params: Union[PolymlpParams, list[PolymlpParams]] = None,
-        coeffs: Union[np.ndarray, list[np.ndarray]] = None,
-        properties: Optional[Properties] = None,
+        properties: Properties,
         path_output: str = ".",
         verbose: bool = False,
     ):
@@ -36,21 +31,9 @@ class AutoCalcPrototypes(AutoCalcBase):
 
         Parameters
         ----------
-        pot: polymlp file.
-        params: Parameters for polymlp.
-        coeffs: Polymlp coefficients.
         properties: Properties instance.
-
-        Any one of pot, (params, coeffs), and properties is needed.
         """
-        super().__init__(
-            pot=pot,
-            params=params,
-            coeffs=coeffs,
-            properties=properties,
-            path_output=path_output,
-            verbose=verbose,
-        )
+        super().__init__(properties, path_output=path_output, verbose=verbose)
         self._prototypes = None
 
     def load_structures(self):

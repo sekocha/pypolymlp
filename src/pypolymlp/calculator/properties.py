@@ -381,30 +381,34 @@ class Properties:
         return convert_stresses_in_gpa(self._s, self._structures)
 
 
-def set_instance_properties(
-    pot: Union[str, list[str]] = None,
-    params: Union[PolymlpParams, list[PolymlpParams]] = None,
-    coeffs: Union[np.ndarray, list[np.ndarray]] = None,
+def initialize_polymlp_calculator(
+    pot: Optional[str, list[str]] = None,
+    params: Optional[PolymlpParams] = None,
+    coeffs: Optional[Union[np.ndarray, list[np.ndarray]]] = None,
     properties: Optional[Properties] = None,
-    require_mlp: bool = True,
+    return_none: bool = False,
 ):
-    """Set instance of Properties class.
+    """Initialize calculator of polymlp.
 
     Parameters
     ----------
     pot: polymlp file.
     params: Parameters for polymlp.
     coeffs: Polymlp coefficients.
-    properties: Properties instance.
+    properties: Properties object.
 
     Any one of pot, (params, coeffs), and properties is needed.
     """
-    if require_mlp:
-        if pot is None and params is None and properties is None:
-            raise RuntimeError("polymlp not defined.")
-
-    if properties is not None:
+    if all(x is None for x in (properties, pot, params, coeffs)):
+        if return_none:
+            return None
+        raise RuntimeError("Polymlp not provided.")
+    elif properties is not None:
         return properties
-    elif pot is not None or params is not None:
-        return Properties(pot=pot, params=params, coeffs=coeffs)
-    return None
+
+    if params is not None:
+        if coeffs is None:
+            raise RuntimeError("Coefficients not provided.")
+        if len(params) != len(coeffs):
+            raise RuntimeError("Length of params and coeffs not consistent.")
+    return Properties(pot=pot, params=params, coeffs=coeffs)

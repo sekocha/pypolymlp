@@ -1,50 +1,36 @@
 """Class for computing elastic constants."""
 
 import copy
-from typing import Optional, Union
 
 import numpy as np
 import pymatgen as pmg
 from pymatgen.analysis.elasticity import DeformedStructureSet, diff_fit
 
-from pypolymlp.calculator.compute_base import PolymlpComputeBase
 from pypolymlp.calculator.properties import Properties, convert_stresses_in_gpa
-from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
+from pypolymlp.core.data_format import PolymlpStructure
 
 
-class PolymlpElastic(PolymlpComputeBase):
+class PolymlpElastic:
     """Class for computing elastic constants."""
 
     def __init__(
         self,
         unitcell: PolymlpStructure,
         unitcell_poscar: str,
-        pot: Optional[str, list[str]] = None,
-        params: Optional[PolymlpParams] = None,
-        coeffs: Optional[Union[np.ndarray, list[np.ndarray]]] = None,
-        properties: Optional[Properties] = None,
+        properties: Properties,
         verbose: bool = False,
     ):
         """Init method.
 
         Parameters
         ----------
-        unitcell: unitcell in PolymlpStructure format.
-        pot: polymlp file.
-        params: Parameters for polymlp.
-        coeffs: Polymlp coefficients.
-        properties: Properties object.
-
-        Any one of pot, (params, coeffs), and properties is needed.
+        unitcell: unitcell in PolymlpStructure.
+        unitcell_poscar: POSCAR file of unitcell.
+        properties: Properties instance.
         """
-        super().__init__(
-            pot=pot,
-            params=params,
-            coeffs=coeffs,
-            properties=properties,
-            verbose=verbose,
-        )
+        self._prop = properties
         self._unitcell = unitcell
+        self._verbose = verbose
         with open(unitcell_poscar) as f:
             self._st_pmg = pmg.core.Structure.from_str(f.read(), fmt="POSCAR")
 
