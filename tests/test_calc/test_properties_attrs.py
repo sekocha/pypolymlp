@@ -14,8 +14,7 @@ from pypolymlp.calculator.properties import (
 
 def test_eval_single(unitcell_disp_pair_MgO):
     """Test properties with pair polymlp in MgO."""
-    unitcell, pot = unitcell_disp_pair_MgO
-    prop = Properties(pot=pot)
+    unitcell, pot, prop = unitcell_disp_pair_MgO
     energy, forces, stresses = prop.eval(unitcell)
     assert energy == pytest.approx(-40.22469744308482)
 
@@ -36,7 +35,7 @@ def test_eval_single(unitcell_disp_pair_MgO):
 
 def test_eval_hybrid(unitcell_disp_pair_MgO):
     """Test properties with pair polymlp in MgO."""
-    unitcell, pot = unitcell_disp_pair_MgO
+    unitcell, pot, _ = unitcell_disp_pair_MgO
     prop = Properties(pot=[pot, pot])
     energy, forces, stresses = prop.eval(unitcell)
     assert energy == pytest.approx(-40.22469744308482 * 2)
@@ -51,7 +50,7 @@ def test_eval_hybrid(unitcell_disp_pair_MgO):
 
 def test_find_active_atoms(unitcell_disp_pair_MgO):
     """Test find_active_atoms."""
-    unitcell, _ = unitcell_disp_pair_MgO
+    unitcell, _, _ = unitcell_disp_pair_MgO
     element_order = ["Mg"]
     structures = [unitcell, unitcell]
     strs, active_atoms, active_bools = find_active_atoms(structures, element_order)
@@ -80,7 +79,7 @@ def test_find_active_atoms(unitcell_disp_pair_MgO):
 
 def test_convert_stresses_in_gpa(unitcell_disp_pair_MgO):
     """Test convert_stresses_in_gpa."""
-    unitcell, _ = unitcell_disp_pair_MgO
+    unitcell, _, _ = unitcell_disp_pair_MgO
     stresses = np.array(
         [[2.0, 3.0, 4.0, -1.0, 0.5, 0.2], [2.0, 3.0, 4.0, -1.0, 0.5, 0.2]]
     )

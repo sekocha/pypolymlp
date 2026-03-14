@@ -11,7 +11,7 @@ cwd = Path(__file__).parent
 path_file = str(cwd) + "/files/"
 
 
-def test_AutoCalcDistribution1():
+def test_AutoCalcDistribution1(properties_Ag):
     """Test AutoCalcDistribution for elemental system."""
     system = "Ag"
     pot_id = "polymlp-00001"
@@ -22,10 +22,7 @@ def test_AutoCalcDistribution1():
     ]
     icsd_ids = ["104296", "105489", "105489"]
 
-    api = AutoCalcDistribution(
-        pot=path_file + "mlps/polymlp.lammps.pair.Ag",
-        path_output="tmp",
-    )
+    api = AutoCalcDistribution(properties_Ag, path_output="tmp")
     api.compare_with_dft(vaspruns=vaspruns, icsd_ids=icsd_ids)
     api.plot_comparison_with_dft(system, pot_id)
 
@@ -34,7 +31,7 @@ def test_AutoCalcDistribution1():
     shutil.rmtree("tmp")
 
 
-def test_AutoCalcDistribution2():
+def test_AutoCalcDistribution2(properties_TiAl):
     """Test AutoCalcDistribution for binary alloy system."""
 
     system = "Ti-Al"
@@ -48,10 +45,7 @@ def test_AutoCalcDistribution2():
     ]
     icsd_ids = ["99787-01", "99787-10", "99787-10", "652876", "52914"]
 
-    api = AutoCalcDistribution(
-        pot=path_file + "mlps/polymlp.lammps.gtinv.Ti-Al",
-        path_output="tmp",
-    )
+    api = AutoCalcDistribution(properties_TiAl, path_output="tmp")
     api.compare_with_dft(vaspruns=vaspruns, icsd_ids=icsd_ids)
     api.plot_comparison_with_dft(system, pot_id)
 
@@ -67,12 +61,9 @@ def test_AutoCalcDistribution2():
     shutil.rmtree("tmp")
 
 
-def test_EnergyData():
+def test_EnergyData(properties_Ag):
     """Test EnergyData."""
-    api = AutoCalcDistribution(
-        pot=path_file + "mlps/polymlp.lammps.pair.Ag",
-        path_output="tmp",
-    )
+    api = AutoCalcDistribution(properties_Ag, path_output="tmp")
     vaspruns = [
         path_file + "others/vasprun-00001-Ag.xml",
         path_file + "others/vasprun-00002-Ag.xml",
@@ -100,7 +91,7 @@ def test_EnergyData():
     shutil.rmtree("tmp")
 
 
-def test_FormationEnergyData():
+def test_FormationEnergyData(properties_TiAl):
     """Test FormationEnergyData."""
     vaspruns = [
         path_file + "others/vasprun-00001-Ti-Al.xml",
@@ -111,10 +102,7 @@ def test_FormationEnergyData():
     ]
     icsd_ids = ["99787-01", "99787-10", "99787-10", "652876", "52914"]
 
-    api = AutoCalcDistribution(
-        pot=path_file + "mlps/polymlp.lammps.gtinv.Ti-Al",
-        path_output="tmp",
-    )
+    api = AutoCalcDistribution(properties_TiAl, path_output="tmp")
     api.calc_formation_energies(
         vaspruns=vaspruns,
         icsd_ids=icsd_ids,

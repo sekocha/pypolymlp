@@ -31,6 +31,7 @@ class AutoCalcBase:
         """
         self._calc = PypolymlpCalc(properties=properties, verbose=verbose)
         self._prop = self._calc._prop
+        self._pot = self._prop.pot
         self._verbose = verbose
 
         self._element_strings = self._prop.params.elements
@@ -48,6 +49,11 @@ class AutoCalcBase:
     def calc_api(self):
         """Return PypolymlpCalc API instance."""
         return self._calc
+
+    @property
+    def pot(self):
+        """Return potential path."""
+        return self._pot
 
     @property
     def properties(self):

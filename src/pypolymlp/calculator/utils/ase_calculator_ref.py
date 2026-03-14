@@ -188,14 +188,12 @@ class PolymlpRefASECalculator(Calculator):
             params=params,
             coeffs=coeffs,
             properties=properties,
-            require_mlp=True,
         )
         self._prop_ref = initialize_polymlp_calculator(
             pot=pot_ref,
             params=params_ref,
             coeffs=coeffs_ref,
             properties=properties_ref,
-            require_mlp=True,
         )
         self._alpha = alpha
         self._check_errors()
@@ -313,14 +311,12 @@ class PolymlpGeneralRefASECalculator(Calculator):
             params=params_final,
             coeffs=coeffs_final,
             properties=properties_final,
-            require_mlp=True,
         )
         self._prop_ref = initialize_polymlp_calculator(
             pot=pot_ref,
             params=params_ref,
             coeffs=coeffs_ref,
             properties=properties_ref,
-            require_mlp=True,
         )
         self._alpha_final = alpha_final
         self._alpha_ref = alpha_ref

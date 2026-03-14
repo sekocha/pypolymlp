@@ -27,7 +27,7 @@ fc2 = load_fc2_hdf5(fc2hdf5)
 
 def test_convert_atoms_to_str(unitcell_mlp_Al):
     """Test convert_atoms_to_str."""
-    unitcell, pot = unitcell_mlp_Al
+    unitcell, pot, prop = unitcell_mlp_Al
     atoms_fcc = structure_to_ase_atoms(unitcell)
     structure = ase_atoms_to_structure(atoms_fcc)
     disps, _ = convert_atoms_to_str(atoms_fcc, structure)
@@ -36,7 +36,7 @@ def test_convert_atoms_to_str(unitcell_mlp_Al):
 
 def testPolymlpFC2ASECalculator(unitcell_mlp_Al):
     """Test PolymlpFC2ASECalculator."""
-    unitcell, pot = unitcell_mlp_Al
+    unitcell, pot, prop = unitcell_mlp_Al
     atoms_fcc = structure_to_ase_atoms(unitcell)
     calc = PolymlpFC2ASECalculator(fc2, unitcell, pot=pot, alpha=0.5)
     assert calc._use_reference
@@ -62,7 +62,7 @@ def testPolymlpFC2ASECalculator(unitcell_mlp_Al):
 
 def testPolymlpRefASECalculator(unitcell_mlp_Al):
     """Test PolymlpRefASECalculator."""
-    unitcell, pot = unitcell_mlp_Al
+    unitcell, pot, prop = unitcell_mlp_Al
     atoms_fcc = structure_to_ase_atoms(unitcell)
     calc = PolymlpRefASECalculator(pot=pot, pot_ref=pot, alpha=0.5)
     assert calc._use_reference
@@ -79,7 +79,7 @@ def testPolymlpRefASECalculator(unitcell_mlp_Al):
 
 def testPolymlpGeneralRefASECalculator(unitcell_mlp_Al):
     """Test PolymlpGeneralRefASECalculator."""
-    unitcell, pot = unitcell_mlp_Al
+    unitcell, pot, prop = unitcell_mlp_Al
     atoms_fcc = structure_to_ase_atoms(unitcell)
     calc = PolymlpGeneralRefASECalculator(
         fc2,

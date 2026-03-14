@@ -11,7 +11,7 @@ from pypolymlp.calculator.sscha.sscha_params import SSCHAParams
 
 def test_save_sscha_yaml(unitcell_mlp_Al):
     """Test save_sscha_yaml."""
-    unitcell, pot = unitcell_mlp_Al
+    unitcell, pot, _ = unitcell_mlp_Al
     size = (2, 2, 2)
     data = SSCHAData(
         temperature=300,

@@ -12,11 +12,10 @@ cwd = Path(__file__).parent
 path_file = str(cwd) + "/files/"
 
 
-def test_AutoCalcBase():
+def test_AutoCalcBase(properties_Ag):
     """Test AutoCalcBase."""
-    pot = path_file + "mlps/polymlp.lammps.pair.Ag"
-    base = AutoCalcBase(pot=pot)
-    assert base.pot == pot
+    base = AutoCalcBase(properties=properties_Ag)
+    assert base.pot.split("/")[-1] == "polymlp.lammps.pair.Ag"
     assert base.properties is not None
     assert base.calc_api is not None
     assert tuple(base.element_strings) == tuple(["Ag"])

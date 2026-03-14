@@ -47,13 +47,13 @@ def _assert_elastic_gtinv_MgO(consts: np.ndarray):
 
 def test_pair_MgO(unitcell_pair_MgO):
     """Test elastic constants with pair polymlp in MgO."""
-    unitcell1, pot = unitcell_pair_MgO
+    unitcell1, pot, prop = unitcell_pair_MgO
     unitcell = copy.deepcopy(unitcell1)
     poscar = path_file + "poscars/POSCAR.RS.idealMgO"
     el = PolymlpElastic(
         unitcell=unitcell,
         unitcell_poscar=poscar,
-        pot=pot,
+        properties=prop,
         verbose=True,
     )
     el.run()
@@ -65,13 +65,13 @@ def test_pair_MgO(unitcell_pair_MgO):
 
 def test_gtinv_MgO(unitcell_gtinv_MgO):
     """Test elastic constants with polymlp in MgO."""
-    unitcell1, pot = unitcell_gtinv_MgO
+    unitcell1, pot, prop = unitcell_gtinv_MgO
     unitcell = copy.deepcopy(unitcell1)
     poscar = path_file + "poscars/POSCAR.RS.idealMgO"
     el = PolymlpElastic(
         unitcell=unitcell,
         unitcell_poscar=poscar,
-        pot=pot,
+        properties=prop,
         verbose=True,
     )
     el.run()

@@ -3,13 +3,12 @@
 import numpy as np
 import pytest
 
-from pypolymlp.calculator.properties import Properties, convert_stresses_in_gpa
+from pypolymlp.calculator.properties import convert_stresses_in_gpa
 
 
 def test_eval1(unitcell_disp_pair_MgO):
     """Test properties with pair polymlp in MgO."""
-    unitcell, pot = unitcell_disp_pair_MgO
-    prop = Properties(pot=pot)
+    unitcell, pot, prop = unitcell_disp_pair_MgO
     energy, forces, stresses = prop.eval(unitcell)
 
     energy_true = -40.22469744315832
@@ -40,8 +39,7 @@ def test_eval1(unitcell_disp_pair_MgO):
 
 def test_eval2(unitcell_disp_gtinv_MgO):
     """Test properties with polymlp in MgO."""
-    unitcell, pot = unitcell_disp_gtinv_MgO
-    prop = Properties(pot=pot)
+    unitcell, pot, prop = unitcell_disp_gtinv_MgO
     energy, forces, stresses = prop.eval(unitcell)
 
     energy_true = -40.223320043232334

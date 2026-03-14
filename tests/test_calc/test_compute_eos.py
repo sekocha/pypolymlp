@@ -16,8 +16,8 @@ def _assert_eos_MgO(e0: float, v0: float, b0: float):
 
 def test_eos_MgO(unitcell_pair_MgO):
     """Test EOS calculation."""
-    unitcell, pot = unitcell_pair_MgO
-    eos = PolymlpEOS(unitcell=unitcell, pot=pot)
+    unitcell, pot, prop = unitcell_pair_MgO
+    eos = PolymlpEOS(unitcell=unitcell, properties=prop)
     eos.run(eos_fit=True)
     _assert_eos_MgO(eos.energy, eos.volume, eos.bulk_modulus)
 

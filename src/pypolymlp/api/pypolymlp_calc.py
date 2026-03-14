@@ -25,9 +25,9 @@ class PypolymlpCalc:
 
     def __init__(
         self,
-        pot: Union[str, list[str]] = None,
-        params: Union[PolymlpParams, list[PolymlpParams]] = None,
-        coeffs: Union[np.ndarray, list[np.ndarray]] = None,
+        pot: Optional[Union[str, list[str]]] = None,
+        params: Optional[PolymlpParams] = None,
+        coeffs: Optional[Union[np.ndarray, list[np.ndarray]]] = None,
         properties: Optional[Properties] = None,
         verbose: bool = False,
         require_mlp: bool = True,

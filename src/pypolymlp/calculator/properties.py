@@ -268,7 +268,9 @@ class Properties:
         Any one of pot and (params, coeffs) is needed.
         """
 
+        self._pot = None
         if pot is not None:
+            self._pot = pot
             if isinstance(pot, (list, tuple, np.ndarray)):
                 if len(pot) > 1:
                     self._prop = PropertiesHybrid(pot=pot)
@@ -356,8 +358,15 @@ class Properties:
         return self
 
     @property
+    def pot(self):
+        """Return potential path."""
+        return self._pot
+
+    @property
     def params(self):
         """Return parameters."""
+        if isinstance(self._prop.params, PolymlpParamsSingle):
+            return PolymlpParams(self._prop.params)
         return self._prop.params
 
     @property
