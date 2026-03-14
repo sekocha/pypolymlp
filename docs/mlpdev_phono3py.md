@@ -1,4 +1,4 @@
-# Interface for Phono3py Datasets
+# Interface to Phono3py Datasets
 
 ## MLP development using a parameter input file
 ```python

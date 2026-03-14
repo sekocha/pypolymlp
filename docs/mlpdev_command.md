@@ -87,3 +87,4 @@ More details on input parameter and dataset settings can be found in [Notes on p
     gaussian_params1 1.0 1.0 1
     gaussian_params2 0.0 3.0 4
 ```
+Two polymlp files `polymlp.yaml.1` and `polymlp.yaml.2` will be generated.

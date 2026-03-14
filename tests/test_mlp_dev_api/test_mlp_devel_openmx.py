@@ -21,6 +21,22 @@ def _run_fit(files: Union[str, list]):
     return pypolymlp
 
 
+def _assert_AgC(error_train: dict, error_test: dict):
+    """Assert regression results."""
+    assert error_test["energy"] == pytest.approx(0.00018557502400592924, rel=1e-2)
+    assert error_test["force"] == pytest.approx(0.01363102581104331, rel=1e-3)
+    assert error_train["energy"] == pytest.approx(0.0001801334904126147, rel=1e-2)
+    assert error_train["force"] == pytest.approx(0.012532615917227246, rel=1e-3)
+
+
+def _assert_AgC_hybrid(error_train: dict, error_test: dict):
+    """Assert regression results."""
+    assert error_test["energy"] == pytest.approx(0.00016563370642374878, rel=1e-2)
+    assert error_test["force"] == pytest.approx(0.011224567747625657, rel=1e-3)
+    assert error_train["energy"] == pytest.approx(0.000163876427103251, rel=1e-2)
+    assert error_train["force"] == pytest.approx(0.010396168543175642, rel=1e-3)
+
+
 def test_mlp_dev_openmx():
     """Test MLP development using openmx data."""
     infile = str(cwd / "data-openmx-AgC/polymlp.in")
@@ -32,11 +48,7 @@ def test_mlp_dev_openmx():
     assert pypolymlp.n_features == 1660
     error_train = pypolymlp.summary.error_train[tag_train]
     error_test = pypolymlp.summary.error_test[tag_test]
-
-    assert error_test["energy"] == pytest.approx(0.00018557502400592924, rel=1e-2)
-    assert error_test["force"] == pytest.approx(0.01363102581104331, rel=1e-3)
-    assert error_train["energy"] == pytest.approx(0.0001801334904126147, rel=1e-2)
-    assert error_train["force"] == pytest.approx(0.012532615917227246, rel=1e-3)
+    _assert_AgC(error_train, error_test)
 
 
 def test_mlp_dev_openmx_hybrid():
@@ -53,7 +65,4 @@ def test_mlp_dev_openmx_hybrid():
     assert pypolymlp.n_features == 4099
     error_train = pypolymlp.summary.error_train[tag_train]
     error_test = pypolymlp.summary.error_test[tag_test]
-    assert error_test["energy"] == pytest.approx(0.00016563370642374878, rel=1e-2)
-    assert error_test["force"] == pytest.approx(0.011224567747625657, rel=1e-3)
-    assert error_train["energy"] == pytest.approx(0.000163876427103251, rel=1e-2)
-    assert error_train["force"] == pytest.approx(0.010396168543175642, rel=1e-3)
+    _assert_AgC_hybrid(error_train, error_test)
