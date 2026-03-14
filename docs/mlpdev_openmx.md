@@ -7,6 +7,9 @@ Version 0.19.0 or later.
 
 ## MLP development using a single model via command-line interface
 
+If the file is named `polymlp.in`, simply run `pypolymlp -i polymlp.in` and and the potential file will be generated.
+Details on input parameter and dataset settings can be found in [Notes on parameter and dataset settings](mlpdev_params.md).
+
 ```shell
 > pypolymlp -i polymlp.in
 > cat polymlp.in
@@ -22,8 +25,7 @@ Version 0.19.0 or later.
     gtinv_order 3
     gtinv_maxl 4 4
 
-    gaussian_params1 1.0 1.0 1
-    gaussian_params2 0.0 7.0 10
+    n_gaussians 10
 
     reg_alpha_params -5 -1 5
 
@@ -39,9 +41,15 @@ Version 0.19.0 or later.
     include_stress False
 ```
 In this example, the datasets will be automatically divided into training and test sets.
-More details on input parameter and dataset settings can be found in [Notes on parameter and dataset settings](mlpdev_params.md).
+
 
 ## MLP development using a hybrid model via command-line interface
+
+A hybrid polynomial MLP represents the potential energy as the sum of multiple MLPs.
+All coefficients of the hybrid model are simultaneously estimated using regression and the given datasets.
+
+When a hybrid model with two polymlps is considered, the corresponding two input files must be specified as follows.
+
 
 ```shell
 > pypolymlp -i polymlp1.in polymlp2.in
@@ -60,8 +68,7 @@ More details on input parameter and dataset settings can be found in [Notes on p
     gtinv_order 3
     gtinv_maxl 4 4
 
-    gaussian_params1 1.0 1.0 1
-    gaussian_params2 0.0 7.0 10
+    n_gaussians 10
 
     reg_alpha_params -5 -1 5
 
@@ -90,13 +97,18 @@ More details on input parameter and dataset settings can be found in [Notes on p
     gtinv_order 3
     gtinv_maxl 8 8
 
-    gaussian_params1 1.0 1.0 1
-    gaussian_params2 0.0 3.0 5
+    n_gaussians 5
 ```
 Two polymlp files `polymlp.yaml.1` and `polymlp.yaml.2` will be generated.
 
 
 ## MLP development using a single model via Python API
+
+In the following example, a polynomial MLP is developed using the `pypolymlp` Python API.
+The model is constructed using datasets from `OpenMX` files.
+
+The input parameters for the polynomial MLP are defined via the `set_params` function. For a detailed explanation of these parameters, please refer to [Notes on Polymlp Parameters](mlpdev_params.md).
+
 
 ```python
 from pypolymlp.core.interface_openmx import parse_openmx
@@ -119,14 +131,14 @@ test_forces = [forces[i] for i in test_ids]
 
 polymlp = Pypolymlp()
 polymlp.set_params(
-    elements=["Ag", "C"],
+    elements=("Ag", "C"),
     cutoff=8.0,
     model_type=3,
     max_p=2,
     gtinv_order=3,
     gtinv_maxl=(4, 4),
     reg_alpha_params=(-5, -1, 5),
-    gaussian_params2=(0.0, 7.0, 10),
+    n_gaussians=10,
     atomic_energy_unit="Hartree",
     atomic_energy=(-114.017822031176,-5.499002028934),
 )
@@ -147,28 +159,31 @@ polymlp.save_mlp(filename="polymlp.yaml")
 
 ## MLP development using a hybrid model via Python API
 
+A hybrid model can also be developed using the Python API.
+To specify additional sets of parameters, use the `append_hybrid_params` function.
+
 ```python
 polymlp = Pypolymlp()
 polymlp.set_params(
-    elements=["Ag", "C"],
+    elements=("Ag", "C"),
     cutoff=8.0,
     model_type=3,
     max_p=2,
     gtinv_order=3,
     gtinv_maxl=(4, 4),
     reg_alpha_params=(-5, -1, 5),
-    gaussian_params2=(0.0, 7.0, 10),
+    n_gaussians=10,
     atomic_energy_unit="Hartree",
     atomic_energy=(-114.017822031176,-5.499002028934),
 )
 polymlp.append_hybrid_params(
-    elements=["Ag", "C"],
+    elements=("Ag", "C"),
     cutoff=4.0,
     model_type=3,
     max_p=2,
     gtinv_order=3,
     gtinv_maxl=(8, 8),
-    gaussian_params2=(0.0, 3.0, 5),
+    n_gaussians=5,
 )
 polymlp.set_datasets_structures(
     train_structures=train_structures,
@@ -183,5 +198,4 @@ polymlp.print_params()
 polymlp.run(verbose=True)
 polymlp.save_mlp(filename="polymlp.yaml")
 ```
-
 Two polymlp files `polymlp.yaml.1` and `polymlp.yaml.2` will be generated.

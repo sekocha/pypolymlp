@@ -97,8 +97,7 @@ max_p 2
 gtinv_order 3
 gtinv_maxl 4 4
 
-gaussian_params1 1.0 1.0 1
-gaussian_params2 0.0 7.0 8
+n_gaussians 9
 
 reg_alpha_params -3 1 5
 

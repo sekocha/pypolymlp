@@ -2,32 +2,47 @@
 
 ## Parameter settings
 - `elements`: Strings of element species, (e.g., ['Mg','O']).
+
 - `include_force`: Considering force entries (Default True).
+
 - `include_stress`: Considering stress entries (Default True).
+
 - `cutoff`: Cutoff radius (in angstroms).
+
 - `model_type`: Polynomial function type with respect to invariants.
-  - `model_type = 1`: Linear polynomial of polynomial invariants
-  - `model_type = 2`: Polynomial of polynomial invariants
-  - `model_type = 3`: Polynomial of pair invariants
-                    + linear polynomial of polynomial invariants
-  - `model_type = 4`: Polynomial of pair and second-order invariants
-                    + linear polynomial of polynomial invariants
-- `max_p`: Order of polynomial function
-- `feature_type`: 'gtinv' or 'pair'
+  - `model_type = 1`: Use linear polynomial of polynomial invariants
+  - `model_type = 2`: Use polynomial of polynomial invariants
+  - `model_type = 3`: Use polynomial of pair invariants
+                      + linear polynomial of polynomial invariants
+  - `model_type = 4`: Use polynomial of pair and second-order invariants
+                      + linear polynomial of polynomial invariants
+
+- `max_p`: Order of polynomial function.
+           Only a value satisfying `max_p <= 3` is available.
+
+- `feature_type`: Type of structural features. `feature_type = gtinv` or
+                  `feature_type = pair` is available.
+
+- `n_gaussians`: `n_gaussians` Gaussian functions are automatically provided.
+                 If parameters in Gaussians are manually given, use `gaussian_params1`
+                 and `gaussian_params2`.
+
 - `gaussian_params`: Parameters for exp[- param1 * (r - param2)**2]
-    Parameters are given as np.linspace(p[0], p[1], p[2]),
-    where p[0], p[1], and p[2] are given by gaussian_params1
-    and gaussian_params2.
-- `reg_alpha_params`: Parameters for penalty term in
-    linear ridge regression. Parameters are given as
-    np.linspace(p[0], p[1], p[2]).
+                     Parameters are given as np.linspace(p[0], p[1], p[2]),
+                     where p[0], p[1], and p[2] are given by gaussian_params1
+                     and gaussian_params2.
+
+- `reg_alpha_params`: Parameters for penalty term in linear ridge regression.
+                      Parameters are given as np.linspace(p[0], p[1], p[2]).
+
 - `gtinv_order`: Maximum order of polynomial invariants.
+
 - `gtinv_maxl`: Maximum angular numbers of polynomial invariants.
-    [maxl for order=2, maxl for order=3, ...]
+                [maxl for order=2, maxl for order=3, ...]
 
 - `atomic_energy_unit`: "eV" or "Hartree" (Default: "eV").
 
-- `atomic_energy`: Atomic energies (in atomic_energy_unit).
+- `atomic_energy`: Atomic energies (in `atomic_energy_unit`).
 
 - `rearrange_by_elements`: Set True if not developing special MLPs.
 

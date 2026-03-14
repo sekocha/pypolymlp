@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 from test_mlp_devel_vasp import (
+    _check_errors_hybrid_single_dataset_MgO,
     _check_errors_md_Cu,
     _check_errors_multiple_datasets_MgO,
     _check_errors_single_dataset_MgO,
@@ -27,8 +28,7 @@ def test_mlp_devel_api_include_force_false():
         max_p=2,
         gtinv_order=3,
         gtinv_maxl=[4, 4],
-        n_gaussians=9,
-        # gaussian_params2=[0.0, 7.0, 8],
+        n_gaussians=9,  # gaussian_params2=[0.0, 7.0, 8],
         atomic_energy=[-0.00040000, -1.85321219],
         include_force=False,
         include_stress=False,
@@ -337,3 +337,49 @@ def test_mlp_devel_api_distance():
     assert error_test1["force"] == pytest.approx(0.02750490198874777, abs=1e-6)
     assert error_train1["energy"] == pytest.approx(0.0015997025381622896, abs=1e-8)
     assert error_train1["force"] == pytest.approx(0.01742941204519919, abs=1e-6)
+
+
+def test_mlp_devel_api_hybrid_single_dataset():
+    """Test hybrid model using API."""
+    polymlp = Pypolymlp(verbose=True)
+    polymlp.set_params(
+        elements=["Mg", "O"],
+        cutoff=8.0,
+        model_type=3,
+        max_p=2,
+        gtinv_order=3,
+        gtinv_maxl=[4, 4],
+        n_gaussians=9,
+        atomic_energy=[-0.00040000, -1.85321219],
+    )
+    polymlp.append_hybrid_params(
+        elements=["Mg", "O"],
+        cutoff=4.0,
+        model_type=3,
+        max_p=2,
+        gtinv_order=3,
+        gtinv_maxl=[4, 4],
+        n_gaussians=5,
+    )
+    polymlp.append_hybrid_params(
+        elements=["Mg", "O"],
+        cutoff=3.0,
+        model_type=1,
+        max_p=1,
+        gtinv_order=3,
+        gtinv_maxl=[8, 8],
+        n_gaussians=4,
+    )
+
+    train_vaspruns1 = glob.glob(
+        str(cwd) + "/data-vasp-MgO/vaspruns/train1/vasprun-*.xml.polymlp"
+    )
+    test_vaspruns1 = glob.glob(
+        str(cwd) + "/data-vasp-MgO/vaspruns/test1/vasprun-*.xml.polymlp"
+    )
+    polymlp.set_datasets_vasp(train_vaspruns1, test_vaspruns1)
+    polymlp.run()
+
+    error_train1 = polymlp.summary.error_train["data1"]
+    error_test1 = polymlp.summary.error_test["data2"]
+    _check_errors_hybrid_single_dataset_MgO(error_train1, error_test1)
