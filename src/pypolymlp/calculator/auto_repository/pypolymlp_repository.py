@@ -165,8 +165,8 @@ class PypolymlpRepository:
                 try:
                     shutil.move(p, path_mlp_target)
                 except:
+                    os.remove(p)
                     pass
-                os.remove(p)
         else:
             for p in pot:
                 try:
