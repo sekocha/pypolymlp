@@ -26,11 +26,6 @@ def set_common_params(
     multiple_params: list[PolymlpParamsSingle],
 ) -> PolymlpParamsSingle:
     """Set common parameters of multiple PolymlpParams."""
-    keys = set()
-    for single in multiple_params:
-        for k in single.as_dict().keys():
-            keys.add(k)
-
     common_params = copy.copy(multiple_params[0])
     n_type = max([single.n_type for single in multiple_params])
     elements = _get_variable_with_max_length(multiple_params, "elements")
@@ -114,7 +109,14 @@ class PolymlpParams:
 
     @property
     def params(self):
-        """Return parameters or parameter list."""
+        """Return parameters or parameter list.
+
+        Return
+        ------
+        Parameters. If single model is defined, parameters in PolymlpParamsSingle
+        are returned. In the case of hybrid model, list of parameters
+        in PolymlpParamsSingle will be returned.
+        """
         if len(self) > 1:
             return self._params
         elif len(self) == 1:

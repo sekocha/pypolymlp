@@ -6,11 +6,9 @@ from pathlib import Path
 import numpy as np
 
 from pypolymlp.core.data_format import PolymlpParamsSingle
-from pypolymlp.core.params import PolymlpParams
+from pypolymlp.core.params import PolymlpParams, set_common_params
 
 cwd = Path(__file__).parent
-
-# TODO: unique_type, setters
 
 
 def _assert_properties(params):
@@ -80,7 +78,90 @@ def test_PolymlpParams2(regdata_mp_149):
     for d in params.as_dict():
         assert isinstance(d, dict)
 
+    for p in params:
+        assert p.type_full
+        assert p.type_indices == [0]
+
     params.print_params()
 
-    params.append(params_single)
+
+def test_PolymlpParams3(regdata_mp_149):
+    """Test params setters in PolymlpParams."""
+    params_in, _ = regdata_mp_149
+    params_single = copy.deepcopy(params_in.params)
+
+    params = PolymlpParams()
+    params.params = params_single
+    assert len(params) == 1
+    params.params = [params_single, params_single, params_single]
     assert len(params) == 3
+    params.append(params_single)
+    assert len(params) == 4
+
+
+def test_PolymlpParams4(regdata_mp_149):
+    """Test setters in PolymlpParams."""
+    params_in, _ = regdata_mp_149
+    params_single = copy.deepcopy(params_in.params)
+    params = PolymlpParams([params_single, params_single])
+
+    params.include_force = False
+    assert not params.include_force
+    for p in params:
+        assert not p.include_force
+
+    params.include_stress = False
+    assert not params.include_stress
+    for p in params:
+        assert not p.include_stress
+
+    params.dataset_type = "vasp"
+    assert params.dataset_type == "vasp"
+    for p in params:
+        assert p.dataset_type == "vasp"
+
+    params.temperature = 200
+    assert params.temperature == 200
+    for p in params:
+        assert p.temperature == 200
+
+    params.electron_property = "entropy"
+    assert params.electron_property == "entropy"
+    for p in params:
+        assert p.electron_property == "entropy"
+
+    params.element_swap = False
+    assert not params.element_swap
+    for p in params:
+        assert not p.element_swap
+
+    params.print_memory = True
+    assert params.print_memory
+    for p in params:
+        assert p.print_memory
+
+    params.regression_alpha = (-1, 0, 1)
+    assert params.regression_alpha == (-1, 0, 1)
+    for p in params:
+        assert p.regression_alpha == (-1, 0, 1)
+
+    params.alphas = (100, 50)
+    assert params.alphas == (100, 50)
+    for p in params:
+        assert p.alphas == (100, 50)
+
+
+def test_set_common_params(regdata_mp_149):
+    """Test set_common_params."""
+    params_in, _ = regdata_mp_149
+    params_single = copy.deepcopy(params_in.params)
+    multiple_params = [params_single, params_single]
+
+    multiple_params[1].n_type = 2
+    multiple_params[1].elements = ("Si", "Ge")
+    multiple_params[1].atomic_energy = (0.1, 0.2)
+
+    common_params = set_common_params(multiple_params)
+    assert common_params.n_type == 2
+    assert common_params.elements == ("Si", "Ge")
+    assert common_params.atomic_energy == (0.1, 0.2)
