@@ -7,7 +7,7 @@ Version 0.19.0 or later.
 
 ## MLP development using a single model via command-line interface
 
-If the file is named `polymlp.in`, simply run `pypolymlp -i polymlp.in` and and the potential file will be generated.
+If the file is named `polymlp.in`, simply run `pypolymlp -i polymlp.in` and the potential file will be generated.
 Details on input parameter and dataset settings can be found in [Notes on parameter and dataset settings](mlpdev_params.md).
 
 ```shell

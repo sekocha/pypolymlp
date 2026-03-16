@@ -107,6 +107,7 @@ Several procedures for generating structures used in DFT calculations are also s
   - Atomic energies
   - Enumeration of optimal MLPs
   - Estimation of computational costs
+  - [Generator of portable model for OpenKIM](docs/utils_kim.md)
 
 - Experimental features
   - [SSCHA free energy model](docs/experimental/mlpdev_sscha.md)
