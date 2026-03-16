@@ -7,7 +7,8 @@ import sys
 import numpy as np
 from pypolymlp.api.pypolymlp_utils import PypolymlpUtils
 
-
+# variable "pot" must be string for single polymlp model
+#   or list of string for hybrid polymlp model
 pot = sys.argv[1:]
 user_id = "b3113743-4f85-48da-86e1-85acf6bb3388"
 author = "Seko"

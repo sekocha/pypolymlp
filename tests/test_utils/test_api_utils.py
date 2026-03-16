@@ -93,4 +93,29 @@ def test_auto_divide():
     os.remove("polymlp.in.append")
 
 
-# TODO: generate_kim_model
+def test_generate_kim_model():
+    """Test generate_kim_model."""
+    user_id = "b3113743-4f85-48da-86e1-85acf6bb3388"
+    author = "Seko"
+    citation1 = {
+        "article-number": "{011101}",
+        "author": "Seko, Atsuto",
+    }
+    citations = [citation1]
+
+    polymlp = PypolymlpUtils()
+    polymlp.generate_kim_model(
+        path_file + "polymlp.yaml.MgO",
+        author=author,
+        performance_level=1,
+        project_id=123,
+        project_version=2,
+        model_driver="Polymlp__MD_367995833009_000",
+        content_origin="pypolymlp",
+        contributor_id=user_id,
+        developer=[user_id],
+        maintainer_id=user_id,
+        citations=citations,
+    )
+    for d in glob.glob("Polymlp_Seko_*_MgO__MO_000000000123_002"):
+        shutil.rmtree(d)
