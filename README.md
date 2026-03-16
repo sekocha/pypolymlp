@@ -102,6 +102,7 @@ Several procedures for generating structures used in DFT calculations are also s
     - Random atomic displacements with constant magnitude
     - Random atomic displacements with sequential magnitudes and volume changes
     - Random atomic displacements, cell expansion, and distortion
+  - [Generator of input files for grid-search MLP development](docs/utils_grid.md)
   - Compression of vasprun.xml files
   - Automatic division of DFT dataset
   - Atomic energies
