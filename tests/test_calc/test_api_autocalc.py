@@ -4,7 +4,7 @@ import os
 import shutil
 from pathlib import Path
 
-from pypolymlp.calculator.auto.pypolymlp_autocalc import PypolymlpAutoCalc
+from pypolymlp.api.pypolymlp_autocalc import PypolymlpAutoCalc
 
 cwd = Path(__file__).parent
 path_file = str(cwd) + "/files/"

@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from pypolymlp.calculator.auto.pypolymlp_autocalc import PypolymlpAutoCalc
+from pypolymlp.api.pypolymlp_autocalc import PypolymlpAutoCalc
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.core.interface_vasp import PolymlpStructure, Poscar
 

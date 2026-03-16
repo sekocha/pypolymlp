@@ -8,8 +8,8 @@ from typing import Optional
 
 import numpy as np
 
+from pypolymlp.api.pypolymlp_autocalc import PypolymlpAutoCalc
 from pypolymlp.api.pypolymlp_utils import PypolymlpUtils
-from pypolymlp.calculator.auto.pypolymlp_autocalc import PypolymlpAutoCalc
 from pypolymlp.calculator.auto_repository.figures_summary import (
     plot_eqm_properties,
     plot_mlp_distribution,

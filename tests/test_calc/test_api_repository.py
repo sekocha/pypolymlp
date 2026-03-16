@@ -4,10 +4,7 @@ import glob
 import shutil
 from pathlib import Path
 
-from pypolymlp.calculator.auto_repository.pypolymlp_repository import (
-    MLPAttr,
-    PypolymlpRepository,
-)
+from pypolymlp.api.pypolymlp_repository import MLPAttr, PypolymlpRepository
 
 cwd = Path(__file__).parent
 path_file = str(cwd) + "/files/"

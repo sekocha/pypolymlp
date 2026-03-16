@@ -5,7 +5,7 @@
 Note that systematic property calculations for property structures are available only for elemental and binary alloy systems at this time.
 
 ```python
-from pypolymlp.calculator.auto.pypolymlp_autocalc import PypolymlpAutoCalc
+from pypolymlp.api.pypolymlp_autocalc import PypolymlpAutoCalc
 
 pot = "polymlp.yaml"
 calc = PypolymlpAutoCalc(pot=pot, verbose=True)
@@ -18,7 +18,7 @@ calc.save_prototypes()
 ### Elemental system
 ```python
 import glob
-from pypolymlp.calculator.auto.pypolymlp_autocalc import PypolymlpAutoCalc
+from pypolymlp.api.pypolymlp_autocalc import PypolymlpAutoCalc
 
 pot = "polymlp.yaml"
 vaspruns = glob.glob("DFT-prototypes/Ti/*/vasprun.xml.polymlp")
@@ -46,7 +46,7 @@ calc.plot_energy_distribution("Ti", "polymlp-00001")
 import numpy as np
 import glob
 
-from pypolymlp.calculator.auto.pypolymlp_autocalc import PypolymlpAutoCalc
+from pypolymlp.api.pypolymlp_autocalc import PypolymlpAutoCalc
 
 pot = "polymlp.yaml"
 
@@ -121,9 +121,7 @@ calc.plot_energy_distribution("Ag-Au", "polymlp-00001")
 import numpy as np
 import glob
 
-from pypolymlp.calculator.auto_repository.pypolymlp_repository import (
-    PypolymlpRepository
-)
+from pypolymlp.api.pypolymlp_repository import PypolymlpRepository
 
 mlp_paths = [
     "grid-Ti/mlp1",
@@ -156,9 +154,7 @@ rep.generate_web_contents()
 import numpy as np
 import glob
 
-from pypolymlp.calculator.auto_repository.pypolymlp_repository import (
-    PypolymlpRepository
-)
+from pypolymlp.api.pypolymlp_repository import PypolymlpRepository
 
 mlp_paths = [
     "grid-Ag-Au/mlp1",
