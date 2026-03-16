@@ -215,6 +215,13 @@ class PypolymlpUtils:
         project_id: int = 0,
         project_version: int = 0,
         model_driver: str = "Polymlp__MD_000000123456_000",
+        description: Optional[str] = None,
+        content_origin: Optional[str] = None,
+        contributor_id: Optional[str] = None,
+        developer: Optional[tuple] = None,
+        maintainer_id: Optional[str] = None,
+        citations: Optional[list[dict]] = None,
+        path_license: Optional[str] = None,
     ):
         """Generate potential model for KIM-API.
 
@@ -233,4 +240,11 @@ class PypolymlpUtils:
             project_id=project_id,
             project_version=project_version,
             model_driver=model_driver,
+            description=description,
+            content_origin=content_origin,
+            contributor_id=contributor_id,
+            developer=developer,
+            maintainer_id=maintainer_id,
+            citations=citations,
+            path_license=path_license,
         )

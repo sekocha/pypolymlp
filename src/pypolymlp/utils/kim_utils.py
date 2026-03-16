@@ -177,6 +177,13 @@ def convert_polymlp_to_kim_model(
     project_id: int = 0,
     project_version: int = 0,
     model_driver: str = "Polymlp__MD_367995833009_000",
+    description: Optional[str] = None,
+    content_origin: Optional[str] = None,
+    contributor_id: Optional[str] = None,
+    developer: Optional[tuple] = None,
+    maintainer_id: Optional[str] = None,
+    citations: Optional[list[dict]] = None,
+    path_license: Optional[str] = None,
 ):
     """Convert polymlp to KIM-API model."""
     tmp_path = "./Polymlp__MO_tmp/"
@@ -184,12 +191,13 @@ def convert_polymlp_to_kim_model(
     dt = datetime.datetime.now()
     polymlp_year = dt.year
 
-    description = (
-        "Polynomial machine learning potential (MLP) for",
-        "-".join(elements),
-        "system.",
-    )
-    description = " ".join(description)
+    if description is None:
+        description = (
+            "Polynomial machine learning potential (MLP) for",
+            "-".join(elements),
+            "system.",
+        )
+        description = " ".join(description)
 
     project = generate_kim_files(
         tmp_path,
@@ -201,5 +209,13 @@ def convert_polymlp_to_kim_model(
         project_version=project_version,
         description=description,
         model_driver=model_driver,
+        content_origin=content_origin,
+        contributor_id=contributor_id,
+        developer=developer,
+        maintainer_id=maintainer_id,
+        citations=citations,
     )
     shutil.move(tmp_path, project)
+
+    if path_license is not None:
+        shutil.copy(path_license, project)
