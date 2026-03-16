@@ -129,8 +129,8 @@ The following calculations can be performed using **pypolymlp** with the polynom
 - [Phonon properties, Quasi-harmonic approximation](docs/calc_phonon.md)
 - [Force constants](docs/calc_fc.md)
 - [Polynomial invariants](docs/calc_features.md)
+- [Systematic property calculations](docs/calc_auto.md)
 - Experimental features
-  - [Systematic property calculations](docs/calc_auto.md)
   - [Self-consistent phonon calculations](docs/experimental/calc_sscha.md)
   - [Molecular dynamics](docs/experimental/calc_md.md)
   - [Thermodynamic integration using molecular dynamics](docs/experimental/calc_ti.md)

@@ -1,8 +1,32 @@
 # Systematic Property Calculations
 
-## Property calculations for prototype structures
+## Property Calculations for Prototype Structures
 
-Note that systematic property calculations for property structures are available only for elemental and binary alloy systems at this time.
+> **Note:** This feature is available only for elemental and binary alloy systems.
+> Requires version 0.19.1 or later.
+
+Several properties of prototype structures prepared in `pypolymlp` can be automatically calculated.
+For elemental systems, properties are calculated for 18 prototype structures, while for binary alloy systems, calculations are performed for 69 structures, including elemental end-member structures.
+
+The calculated properties include:
+
+- Equilibrium structure
+- Potential energy of the equilibrium structure
+- Equilibrium volume
+- Bulk modulus
+- Equation of state (EOS)
+- Lattice constants
+- Elastic constants
+- Phonon density of states
+- Thermodynamic properties from QHA calculations
+
+When using the command-line interface, simply run `pypolymlp-autocalc` by specifying the potential file name, as follows:
+
+```shell
+pypolymlp-autocalc --pot polymlp.yaml
+```
+
+When using the Python API, the following example may be helpful:
 
 ```python
 from pypolymlp.api.pypolymlp_autocalc import PypolymlpAutoCalc
@@ -13,9 +37,9 @@ calc.run_prototypes()
 calc.save_prototypes()
 ```
 
-## Comparison with DFT calculations
+## Comparison with DFT Calculations
 
-### Elemental system
+### Elemental System
 ```python
 import glob
 from pypolymlp.api.pypolymlp_autocalc import PypolymlpAutoCalc
@@ -41,7 +65,7 @@ calc.calc_energy_distribution(vaspruns_train, vaspruns_test)
 calc.plot_energy_distribution("Ti", "polymlp-00001")
 ```
 
-### Binary alloy system
+### Binary Alloy System
 ```python
 import numpy as np
 import glob
@@ -115,8 +139,8 @@ calc.calc_energy_distribution(vaspruns_train, vaspruns_test)
 calc.plot_energy_distribution("Ag-Au", "polymlp-00001")
 ```
 
-## For Repository Construction
-### Elemental system
+## Construction of an Entry in the Polynomial MLP Repository
+### Elemental System
 ```python
 import numpy as np
 import glob
@@ -149,7 +173,7 @@ rep.generate_web_contents()
 
 ```
 
-### Binary alloy system
+### Binary Alloy System
 ```python
 import numpy as np
 import glob
