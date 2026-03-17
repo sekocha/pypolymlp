@@ -94,3 +94,20 @@ def test_grid_search_local_functions():
     assert radial_params[1].n_gaussians == 12
     assert radial_params[2].n_gaussians == 12
     assert radial_params[3].n_gaussians == 16
+
+
+def test_grid_search_extend():
+    """Test api_grid_search with complex models and hybrid models."""
+    grid1 = PolymlpGridSearch(elements=["Ag", "Au"], verbose=True)
+    grid1.set_params()
+    grid1.run()
+    assert len(grid1.grid) == 112
+
+    grid1.add_complex_models()
+    assert len(grid1.grid) == 114
+
+    grid1.enum_hybrid_models()
+    assert len(grid1.grid_hybrid) == 114 * 2
+
+    grid1.save_hybrid_models(path="tmp")
+    shutil.rmtree("tmp")

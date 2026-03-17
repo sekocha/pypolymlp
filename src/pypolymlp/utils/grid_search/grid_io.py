@@ -35,17 +35,3 @@ def save_params(params: PolymlpParamsSingle, filename: str = "polymlp.in"):
         for ele in params.elements:
             print("", ele, end="", file=f)
         print("", file=f)
-
-
-# def write_grid_hybrid(params_grid1, params_grid2, iseq=0):
-#
-#     grid_pairs = itertools.product(params_grid1, params_grid2)
-#     for params_dict1, params_dict2 in grid_pairs:
-#         idx = str(iseq + 1).zfill(5)
-#         dirname = "model_grid/polymlp-hybrid-" + idx + "/"
-#         os.makedirs(dirname, exist_ok=True)
-#         write_params_dict(params_dict1, dirname + "polymlp.in")
-#         write_params_dict(params_dict2, dirname + "polymlp.in.2")
-#         iseq += 1
-#
-#     return iseq

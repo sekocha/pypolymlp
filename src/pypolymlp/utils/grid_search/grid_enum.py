@@ -60,19 +60,23 @@ def enum_gtinv_models(grid: ParamsGrid, elements: tuple):
     return grid_params
 
 
-def add_complex_model1(
+def add_single_model(
     grid: ParamsGrid,
     elements: tuple,
-    cutoff: float,
-    n_gaussians: int,
+    cutoff: float = 8.0,
+    n_gaussians: int = 10,
+    max_p: int = 2,
+    model_type: int = 4,
+    gtinv_order: int = 3,
+    gtinv_maxl: tuple = (8, 8),
 ):
     """Add complex model."""
-    gtinv_attr = GtinvAttrs(model_type=4, order=3, max_l=(8, 8))
+    gtinv_attr = GtinvAttrs(model_type=model_type, order=gtinv_order, max_l=gtinv_maxl)
     model = PolymlpModelParams(
         cutoff=cutoff,
-        model_type=4,
-        max_p=2,
-        max_l=8,
+        model_type=model_type,
+        max_p=max_p,
+        max_l=max(gtinv_maxl),
         feature_type="gtinv",
         gtinv=gtinv_attr,
         n_gaussians=n_gaussians,

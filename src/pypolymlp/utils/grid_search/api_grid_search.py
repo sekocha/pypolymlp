@@ -1,4 +1,4 @@
-"""API Class for using utility functions."""
+"""API Class for performing grid search for finding optimal MLPs."""
 
 import itertools
 import os
@@ -8,7 +8,7 @@ import numpy as np
 
 from pypolymlp.core.utils import get_atomic_size_scales
 from pypolymlp.utils.grid_search.grid_enum import (
-    add_complex_model1,
+    add_single_model,
     enum_gtinv_models,
     enum_pair_models,
 )
@@ -17,28 +17,7 @@ from pypolymlp.utils.grid_search.grid_utils import GaussianAttrs, GtinvAttrs, Pa
 
 
 class PolymlpGridSearch:
-    """API Class for performing grid search for finding optimal MLPs.
-
-    Examples
-    --------
-    (Hybrid models)
-    grid2 = PolymlpGridSearch(elements=["Al"], verbose=True)
-    grid2.set_params(
-        cutoffs = (4.0),
-        nums_gaussians = (4),
-        model_types = (4),
-        gaussian_width = 0.5,
-        gtinv = True,
-        gtinv_order_ub = 3,
-        gtinv_maxl_ub = (12, 12, 2, 1, 1),
-        gtinv_maxl_int = (6, 6, 2, 1, 1),
-        include_force = True,
-        include_stress = True,
-        reg_alpha_params = (-4, 3, 8),
-    )
-    grid2.enum_gtinv_models()
-    save_hybrid_models(grid1.grid, grid2.grid)
-    """
+    """API Class for performing grid search for finding optimal MLPs."""
 
     def __init__(self, elements: tuple, verbose: bool = False):
         """Init method."""
@@ -47,7 +26,7 @@ class PolymlpGridSearch:
 
         self._grid = None
         self._grid_params = None
-        self._grid_params_exp = None
+        self._grid_params_hybrid = None
 
     def _auto_cutoff(self):
         """Determine cutoff radii automatically."""
@@ -170,15 +149,65 @@ class PolymlpGridSearch:
         max_cutoff = max([rad.cutoff for rad in radial_params])
         max_n_gaussians = max([rad.n_gaussians for rad in radial_params])
 
-        if max_n_gaussians < 15:
+        if max_n_gaussians >= 15:
+            return self
+
+        if max_n_gaussians < 12:
+            n_gaussians = 12
+        else:
             n_gaussians = 15
-            params = add_complex_model1(
+
+        params = add_single_model(
+            self._grid,
+            self._elements,
+            cutoff=max_cutoff,
+            n_gaussians=n_gaussians,
+            gtinv_order=3,
+            gtinv_maxl=(8, 8),
+        )
+        self._grid_params.append(params)
+
+        params = add_single_model(
+            self._grid,
+            self._elements,
+            cutoff=max_cutoff,
+            n_gaussians=n_gaussians,
+            gtinv_order=4,
+            gtinv_maxl=(12, 8, 2),
+        )
+        self._grid_params.append(params)
+        return self
+
+    def enum_hybrid_models(self):
+        """Enumerate hybrid models."""
+        if self._grid is None:
+            raise RuntimeError("Set parameter candidates at first. Use set_params.")
+        if self._grid_params is None:
+            raise RuntimeError("Enumerated models not found. Use enum_gtinv_models.")
+
+        self._grid_params_hybrid = []
+        for i, params_main in enumerate(self._grid_params):
+            cutoff_main = params_main.model.cutoff
+            cutoff = np.rint(cutoff_main * 2 / 3)
+            n_gaussians = np.rint((cutoff + 1) * 1.3).astype(int)
+            add_params = add_single_model(
                 self._grid,
                 self._elements,
-                max_cutoff,
-                n_gaussians,
+                cutoff=cutoff,
+                n_gaussians=n_gaussians,
+                gtinv_order=3,
+                gtinv_maxl=(4, 4),
             )
-            self._grid_params.append(params)
+            self._grid_params_hybrid.append((params_main, add_params, i, 1))
+            add_params = add_single_model(
+                self._grid,
+                self._elements,
+                cutoff=cutoff,
+                n_gaussians=n_gaussians,
+                gtinv_order=3,
+                gtinv_maxl=(8, 8),
+            )
+            self._grid_params_hybrid.append((params_main, add_params, i, 2))
         return self
 
     def save_models(self, path: str = "./polymlps", first_id: int = 1):
@@ -189,25 +218,22 @@ class PolymlpGridSearch:
             save_params(params, path_mlp + "/polymlp.in")
         return self
 
+    def save_hybrid_models(self, path: str = "./polymlps", first_id: int = 1):
+        """Save input files of hybrid models."""
+        for params1, params2, id_main, id_hyb in self._grid_params_hybrid:
+            polyid = str(id_main + first_id).zfill(4)
+            path_mlp = path + "/polymlp-" + polyid + "-h" + str(id_hyb).zfill(2)
+            os.makedirs(path_mlp, exist_ok=True)
+            save_params(params1, path_mlp + "/polymlp.in.1")
+            save_params(params2, path_mlp + "/polymlp.in.2")
+        return self
+
     @property
     def grid(self):
         """Return parameters on grid."""
         return self._grid_params
 
-
-# def save_hybrid_models(
-#     grid1: list[PolymlpParams],
-#     grid2: list[PolymlpParams],
-#     path: str = "./polymlps_hybrid",
-#     first_id: int = 1,
-# ):
-#     """Save input files of hybrid models."""
-#     os.makedirs(path, exist_ok=True)
-#     i = 0
-#     for params1 in grid1:
-#         for params2 in grid2:
-#             path_mlp = path + "/polymlp-" + str(i + first_id).zfill(4)
-#             os.makedirs(path_mlp, exist_ok=True)
-#             save_params(params1, path_mlp + "/polymlp1.in")
-#             save_params(params2, path_mlp + "/polymlp2.in")
-#             i += 1
+    @property
+    def grid_hybrid(self):
+        """Return parameters including hybrid models on grid."""
+        return self._grid_params_hybrid
