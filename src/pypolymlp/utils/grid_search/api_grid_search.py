@@ -157,29 +157,29 @@ class PolymlpGridSearch:
         self._grid_params.extend(params)
         return self
 
-    # def enum_complex_models(self):
-    #     """Enumerate models with many features."""
-    #     for cut in self._grid.cutoffs:
-    #         gtinv_attr = GtinvAttrs(model_type=4, order=4, max_l=(12, 12, 4))
-    #         model = PolymlpModelParams(
-    #             cutoff=cut,
-    #             model_type=4,
-    #             max_p=2,
-    #             max_l=12,
-    #             feature_type="gtinv",
-    #             gtinv=gtinv_attr,
-    #             n_gaussians=15,
-    #         )
-    #         params = PolymlpParams(
-    #             n_type=len(self._elements),
-    #             elements=self._elements,
-    #             model=model,
-    #             regression_alpha=self._grid.regression_alpha,
-    #             include_force=self._grid.include_force,
-    #             include_stress=self._grid.include_stress,
-    #         )
-    #         self._grid_params.append(params)
-
+    #    def enum_complex_models(self):
+    #        """Enumerate models with many features."""
+    #        for cut in self._grid.cutoffs:
+    #            gtinv_attr = GtinvAttrs(model_type=4, order=4, max_l=(12, 12, 4))
+    #            model = PolymlpModelParams(
+    #                cutoff=cut,
+    #                model_type=4,
+    #                max_p=2,
+    #                max_l=12,
+    #                feature_type="gtinv",
+    #                gtinv=gtinv_attr,
+    #                n_gaussians=15,
+    #            )
+    #            params = PolymlpParams(
+    #                n_type=len(self._elements),
+    #                elements=self._elements,
+    #                model=model,
+    #                regression_alpha=self._grid.regression_alpha,
+    #                include_force=self._grid.include_force,
+    #                include_stress=self._grid.include_stress,
+    #            )
+    #            self._grid_params.append(params)
+    #
     def save_models(self, path: str = "./polymlps", first_id: int = 1):
         """Save input files of models."""
         for i, params in enumerate(self._grid_params):

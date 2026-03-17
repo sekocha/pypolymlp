@@ -1,5 +1,20 @@
 # Systematic Generation of Input Files for Polynomial MLP Development
 
+- **Command-line interface**
+```shell
+# For elemental systems
+pypolymlp-utils --generate_models --generate_models_elements Be
+
+# For binary systems
+pypolymlp-utils --generate_models --generate_models_elements Ag Au
+pypolymlp-utils --generate_models --generate_models_system Ag-Au
+
+# For ternary systems
+pypolymlp-utils --generate_models --generate_models_elements Sr Ti O
+pypolymlp-utils --generate_models --generate_models_system Cu-Ag-Au
+```
+
+- **Python API**
 ```python
 from pypolymlp.api.pypolymlp_utils import PypolymlpUtils
 

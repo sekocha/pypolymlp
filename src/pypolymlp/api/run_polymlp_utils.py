@@ -137,6 +137,26 @@ def run():
         help="get supercell",
     )
 
+    """Model generation"""
+    parser.add_argument(
+        "--generate_models",
+        action="store_true",
+        help="Generate polymlp candidate models.",
+    )
+    parser.add_argument(
+        "--generate_models_elements",
+        nargs="*",
+        type=str,
+        default=None,
+        help="Elements for model generation.",
+    )
+    parser.add_argument(
+        "--generate_models_system",
+        type=str,
+        default=None,
+        help="System for model generation.",
+    )
+
     args = parser.parse_args()
     print_credit()
 
@@ -209,3 +229,15 @@ def run():
             formula=args.atomic_energy_formula,
             functional=args.atomic_energy_functional,
         )
+
+    elif args.generate_models is not None:
+        if (
+            args.generate_models_elements is None
+            and args.generate_models_system is None
+        ):
+            raise RuntimeError("Elements or system required.")
+        if args.generate_models_system is not None:
+            elements = args.generate_models_system.split("-")
+        else:
+            elements = args.generate_models_elements
+        polymlp.enumerate_models(elements=elements, path="polymlps")
