@@ -48,10 +48,11 @@ class PolymlpGridSearch:
     def _auto_cutoff(self):
         """Determine cutoff radii automatically."""
         sizes = get_atomic_size_scales()
-        element_sizes = [sizes[ele] for ele in self._elements]
-        max_size = max(element_sizes)
+        max_size = max([sizes[ele] for ele in self._elements])
         cutoffs = np.round(np.array([5.5, 7.5]) * max_size)
-        return tuple(cutoffs)
+        cutoffs_ref = [6.0, 8.0]
+        cutoffs = np.maximum(cutoffs, cutoffs_ref)
+        return tuple(np.unique(cutoffs))
 
     def _auto_gaussians(self, cutoffs: tuple, nums_gaussians: Optional[tuple] = None):
         """Determine numbers of Gaussians automatically."""

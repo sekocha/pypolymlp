@@ -15,8 +15,8 @@ def test_enum_pair_model():
 
     params = enum_pair_models(params_grid, elements)
     assert len(params) == 8
-    assert params[7].model.cutoff == pytest.approx(6.0)
-    assert params[7].model.n_gaussians == pytest.approx(9)
+    assert params[7].model.cutoff == pytest.approx(8.0)
+    assert params[7].model.n_gaussians == pytest.approx(12)
 
 
 def test_enum_gtinv_model():
@@ -28,5 +28,5 @@ def test_enum_gtinv_model():
 
     params = enum_gtinv_models(params_grid, elements)
     assert len(params) == 104
-    assert params[7].model.cutoff == pytest.approx(5.0)
-    assert params[7].model.n_gaussians == pytest.approx(6)
+    assert params[7].model.cutoff == pytest.approx(6.0)
+    assert params[7].model.n_gaussians == pytest.approx(7)

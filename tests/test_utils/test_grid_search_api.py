@@ -79,7 +79,7 @@ def test_grid_search_local_functions():
     """Test local functions in api_grid_search."""
     grid1 = PolymlpGridSearch(elements=["Be"], verbose=True)
     cutoffs = grid1._auto_cutoff()
-    np.testing.assert_allclose(cutoffs, [5.0, 6.0])
+    np.testing.assert_allclose(cutoffs, [6.0, 8.0])
 
     grid1 = PolymlpGridSearch(elements=["Ba"], verbose=True)
     cutoffs = grid1._auto_cutoff()
