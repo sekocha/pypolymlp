@@ -9,6 +9,7 @@ from pypolymlp.core.interface_vasp import Poscar
 from pypolymlp.postproc.count_time import PolymlpCost
 from pypolymlp.utils.dataset_auto_divide import auto_divide_vaspruns
 from pypolymlp.utils.grid_optimal import find_optimal_mlps
+from pypolymlp.utils.grid_search.api_grid_search import PolymlpGridSearch
 from pypolymlp.utils.kim_utils import convert_polymlp_to_kim_model
 from pypolymlp.utils.structure_utils import supercell
 from pypolymlp.utils.vasp_utils import (
@@ -248,3 +249,43 @@ class PypolymlpUtils:
             citations=citations,
             path_license=path_license,
         )
+
+    def enumerate_models(
+        self,
+        elements: tuple,
+        cutoffs: Optional[tuple] = None,
+        nums_gaussians: Optional[tuple] = None,
+        model_types: tuple = (3, 4),
+        maxps: tuple = (2, 3),
+        gtinv: bool = True,
+        gtinv_order_ub: int = 4,
+        gtinv_maxl_ub: tuple = (12, 8, 2, 1, 1),
+        gtinv_maxl_int: tuple = (4, 4, 2, 1, 1),
+        include_force: bool = True,
+        include_stress: bool = True,
+        regression_alpha: tuple = (-4, 1, 6),
+        path: str = "polymlps",
+    ):
+        """Generate candidate models systematically.
+
+        Parameters
+        ----------
+        Coming soon.
+        """
+        grid1 = PolymlpGridSearch(elements=elements, verbose=self._verbose)
+        grid1.set_params(
+            cutoffs=cutoffs,
+            nums_gaussians=nums_gaussians,
+            model_types=model_types,
+            maxps=maxps,
+            gtinv=gtinv,
+            gtinv_order_ub=gtinv_order_ub,
+            gtinv_maxl_ub=gtinv_maxl_ub,
+            gtinv_maxl_int=gtinv_maxl_int,
+            include_force=include_force,
+            include_stress=include_stress,
+            regression_alpha=regression_alpha,
+        )
+        grid1.run()
+        grid1.save_models(path=path)
+        return self

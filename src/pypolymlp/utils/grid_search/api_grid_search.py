@@ -1,11 +1,15 @@
 """API Class for using utility functions."""
 
+import itertools
 import os
 from typing import Optional
 
+import numpy as np
+
+from pypolymlp.core.utils import get_atomic_size_scales
 from pypolymlp.utils.grid_search.grid_enum import enum_gtinv_models, enum_pair_models
 from pypolymlp.utils.grid_search.grid_io import save_params
-from pypolymlp.utils.grid_search.grid_utils import GtinvAttrs, ParamsGrid
+from pypolymlp.utils.grid_search.grid_utils import GaussianAttrs, GtinvAttrs, ParamsGrid
 
 
 class PolymlpGridSearch:
@@ -41,21 +45,43 @@ class PolymlpGridSearch:
         self._grid_params = None
         self._grid_params_exp = None
 
+    def _auto_cutoff(self):
+        """Determine cutoff radii automatically."""
+        sizes = get_atomic_size_scales()
+        element_sizes = [sizes[ele] for ele in self._elements]
+        max_size = max(element_sizes)
+        cutoffs = np.round(np.array([5.5, 7.5]) * max_size)
+        return tuple(cutoffs)
+
+    def _auto_gaussians(self, cutoffs: tuple, nums_gaussians: Optional[tuple] = None):
+        """Determine numbers of Gaussians automatically."""
+        radial_params = []
+        if nums_gaussians is None:
+            for c, r in itertools.product(*[cutoffs, (1.0, 1.3)]):
+                n1 = c + 1
+                n_gauss = np.rint(n1 * r).astype(int)
+                attr = GaussianAttrs(cutoff=c, n_gaussians=n_gauss)
+                radial_params.append(attr)
+        else:
+            for c, n in itertools.product(*[cutoffs, nums_gaussians]):
+                attr = GaussianAttrs(cutoff=c, n_gaussians=n)
+                radial_params.append(attr)
+        return radial_params
+
     def set_params(
         self,
-        cutoffs: tuple = (6.0, 8.0, 10.0),
-        nums_gaussians: tuple = (7, 10, 13),
-        model_types: tuple = (2, 3, 4),
+        cutoffs: Optional[tuple] = None,
+        nums_gaussians: Optional[tuple] = None,
+        model_types: tuple = (3, 4),
         maxps: tuple = (2, 3),
-        gaussian_width: float = 1.0,
         gtinv: bool = True,
-        gtinv_order_ub: int = 3,
+        gtinv_order_ub: int = 4,
         gtinv_maxl_ub: tuple = (12, 8, 2, 1, 1),
         gtinv_maxl_int: tuple = (4, 4, 2, 1, 1),
         gtinv_attrs: Optional[list[GtinvAttrs]] = None,
         include_force: bool = True,
         include_stress: bool = True,
-        regression_alpha: tuple = (-4, 3, 8),
+        regression_alpha: tuple = (-4, 1, 6),
     ):
         """Initialize parameters in grid search for finding optimal MLPs.
 
@@ -72,14 +98,14 @@ class PolymlpGridSearch:
         include_stress: Include stress in regression.
         regression_alpha: Regularization parameters.
         """
-        # TODO: Automatical cutoff distance determination using element size.
+        if cutoffs is None:
+            cutoffs = self._auto_cutoff()
+        radial_params = self._auto_gaussians(cutoffs, nums_gaussians)
 
         self._grid = ParamsGrid(
-            cutoffs=cutoffs,
-            nums_gaussians=nums_gaussians,
+            radial_params=radial_params,
             model_types=model_types,
             maxps=maxps,
-            gaussian_width=gaussian_width,
             gtinv=gtinv,
             gtinv_order_ub=gtinv_order_ub,
             gtinv_maxl_ub=gtinv_maxl_ub,
@@ -89,6 +115,14 @@ class PolymlpGridSearch:
             include_stress=include_stress,
             regression_alpha=regression_alpha,
         )
+        if self._verbose:
+            print("Cutoff radius and number of Gaussians:", flush=True)
+            for rad in radial_params:
+                print("- cutoff:       ", rad.cutoff, flush=True)
+                print("  n_gaussians:  ", rad.n_gaussians, flush=True)
+            print("Polynomial orders:  ", maxps, flush=True)
+            print("Invariant max order:", gtinv_order_ub, flush=True)
+            print("Invariant max L:    ", gtinv_maxl_ub, flush=True)
         return self
 
     def run(self):

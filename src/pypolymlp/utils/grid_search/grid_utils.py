@@ -25,13 +25,26 @@ class GtinvAttrs:
 
 
 @dataclass
+class GaussianAttrs:
+    """Dataclass of parameters for setting Gaussians and cutoff radius.
+
+    Parameters
+    ----------
+    cutoff: Cutoff radius.
+    n_gaussians: Number of Gaussians.
+    """
+
+    cutoff: float
+    n_gaussians: int
+
+
+@dataclass
 class ParamsGrid:
     """Dataclass of parameters in grid search.
 
     Parameters
     ----------
-    cutoff: Cutoff radius (Angstrom).
-    nums_gaussians: Numbers of Gaussians.
+    radial_grid: List of (cutoff radius in angstroms and number of Gaussians).
     gtinv: Use settings for polynomial invariants.
     gtinv_order_ub: Upper bound of invariant order.
     gtinv_maxl_ub: Upper bound of invariant max_l.
@@ -42,8 +55,7 @@ class ParamsGrid:
     regression_alpha: Regularization parameters.
     """
 
-    cutoffs: tuple = (6.0, 8.0, 10.0)
-    nums_gaussians: tuple = (7, 10, 13)
+    radial_params: list[GaussianAttrs]
     model_types: tuple = (2, 3, 4)
     maxps: tuple = (2, 3)
     gaussian_width: float = 1.0
@@ -68,10 +80,6 @@ class ParamsGrid:
 
     def _check_type(self):
         """Check types of variables."""
-        if isinstance(self.cutoffs, float):
-            self.cutoffs = [self.cutoffs]
-        if isinstance(self.nums_gaussians, int):
-            self.nums_gaussians = [self.nums_gaussians]
         if isinstance(self.model_types, int):
             self.model_types = [self.model_types]
         if isinstance(self.maxps, int):
