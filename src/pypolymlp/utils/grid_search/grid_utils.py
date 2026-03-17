@@ -2,7 +2,7 @@
 
 import itertools
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 
@@ -21,7 +21,7 @@ class GtinvAttrs:
 
     model_type: int
     order: int
-    max_l: int
+    max_l: Union[list, tuple]
 
 
 @dataclass
@@ -44,7 +44,7 @@ class ParamsGrid:
 
     Parameters
     ----------
-    radial_grid: List of (cutoff radius in angstroms and number of Gaussians).
+    radial_params: List of (cutoff radius in angstroms and number of Gaussians).
     gtinv: Use settings for polynomial invariants.
     gtinv_order_ub: Upper bound of invariant order.
     gtinv_maxl_ub: Upper bound of invariant max_l.
