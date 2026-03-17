@@ -7,7 +7,11 @@ from typing import Optional
 import numpy as np
 
 from pypolymlp.core.utils import get_atomic_size_scales
-from pypolymlp.utils.grid_search.grid_enum import enum_gtinv_models, enum_pair_models
+from pypolymlp.utils.grid_search.grid_enum import (
+    add_complex_model1,
+    enum_gtinv_models,
+    enum_pair_models,
+)
 from pypolymlp.utils.grid_search.grid_io import save_params
 from pypolymlp.utils.grid_search.grid_utils import GaussianAttrs, GtinvAttrs, ParamsGrid
 
@@ -157,29 +161,26 @@ class PolymlpGridSearch:
         self._grid_params.extend(params)
         return self
 
-    #    def enum_complex_models(self):
-    #        """Enumerate models with many features."""
-    #        for cut in self._grid.cutoffs:
-    #            gtinv_attr = GtinvAttrs(model_type=4, order=4, max_l=(12, 12, 4))
-    #            model = PolymlpModelParams(
-    #                cutoff=cut,
-    #                model_type=4,
-    #                max_p=2,
-    #                max_l=12,
-    #                feature_type="gtinv",
-    #                gtinv=gtinv_attr,
-    #                n_gaussians=15,
-    #            )
-    #            params = PolymlpParams(
-    #                n_type=len(self._elements),
-    #                elements=self._elements,
-    #                model=model,
-    #                regression_alpha=self._grid.regression_alpha,
-    #                include_force=self._grid.include_force,
-    #                include_stress=self._grid.include_stress,
-    #            )
-    #            self._grid_params.append(params)
-    #
+    def add_complex_models(self):
+        """Enumerate complex models with many features."""
+        if self._grid is None:
+            raise RuntimeError("Set parameter candidates at first. Use set_params.")
+
+        radial_params = self._grid.radial_params
+        max_cutoff = max([rad.cutoff for rad in radial_params])
+        max_n_gaussians = max([rad.n_gaussians for rad in radial_params])
+
+        if max_n_gaussians < 15:
+            n_gaussians = 15
+            params = add_complex_model1(
+                self._grid,
+                self._elements,
+                max_cutoff,
+                n_gaussians,
+            )
+            self._grid_params.append(params)
+        return self
+
     def save_models(self, path: str = "./polymlps", first_id: int = 1):
         """Save input files of models."""
         for i, params in enumerate(self._grid_params):
