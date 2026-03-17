@@ -119,3 +119,12 @@ def test_generate_kim_model():
     )
     for d in glob.glob("Polymlp_Seko_*_MgO__MO_000000000123_002"):
         shutil.rmtree(d)
+
+
+def test_enumerate_models():
+    """Test enumerate_models."""
+    polymlp = PypolymlpUtils()
+    polymlp.enumerate_models(elements=["Ag", "Au"], path="tmp")
+    shutil.rmtree("tmp")
+    polymlp.enumerate_models(elements=["Be"], path="tmp")
+    shutil.rmtree("tmp")
