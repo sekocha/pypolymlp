@@ -5,12 +5,12 @@
 # For elemental systems
 pypolymlp-utils --generate_models --generate_models_elements Be
 
-# For binary systems
+# For binary alloy systems
 pypolymlp-utils --generate_models --generate_models_elements Ag Au
 pypolymlp-utils --generate_models --generate_models_system Ag-Au
 
-# For ternary systems
-pypolymlp-utils --generate_models --generate_models_elements Sr Ti O
+# For ternary alloy systems
+pypolymlp-utils --generate_models --generate_models_elements Cu Ag Au
 pypolymlp-utils --generate_models --generate_models_system Cu-Ag-Au
 ```
 
