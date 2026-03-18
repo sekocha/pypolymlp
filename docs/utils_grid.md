@@ -101,9 +101,10 @@ Before running the MLP development, these must be specified for each model.
 
 ## 3. Computational Cost Estimation of MLPs
 
-Once multiple MLPs with various models have been systematically evaluated, the computational cost of calculating the properties must also be assessed in order to evaluate the trade-off between computational cost and accuracy.
+Once MLPs with various models have been systematically evaluated, the computational cost of calculating the properties must also be assessed in order to evaluate the trade-off between computational cost and accuracy.
 
-`calc_cost` option generates a file 'polymlp_cost.yaml', which is required for finding optimal MLPs.
+The `calc_cost` option in `pypolymlp-utils` calculates the properties of a structure multiple times and estimates the computational time per atom required for a single run of energy, force, or virial stress tensor calculations.
+For each MLP, a file named `polymlp_cost.yaml` is generated, containing the computational costs necessary for identifying convex-hull (Pareto-optimal) MLPs.
 
 1. Single polynomial MLP
 

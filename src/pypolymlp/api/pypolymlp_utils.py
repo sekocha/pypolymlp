@@ -255,7 +255,7 @@ class PypolymlpUtils:
         elements: tuple,
         cutoffs: Optional[tuple] = None,
         nums_gaussians: Optional[tuple] = None,
-        model_types: tuple = (3, 4),
+        model_types: tuple = (2, 3, 4),
         maxps: tuple = (2, 3),
         gtinv: bool = True,
         gtinv_order_ub: int = 4,

@@ -41,7 +41,7 @@ class PolymlpGridSearch:
         """Determine numbers of Gaussians automatically."""
         radial_params = []
         if nums_gaussians is None:
-            for c, r in itertools.product(*[cutoffs, (1.0, 1.3)]):
+            for c, r in itertools.product(*[cutoffs, (1.0, 1.25, 1.5)]):
                 n1 = c + 1
                 n_gauss = np.rint(n1 * r).astype(int)
                 attr = GaussianAttrs(cutoff=c, n_gaussians=n_gauss)
@@ -56,7 +56,7 @@ class PolymlpGridSearch:
         self,
         cutoffs: Optional[tuple] = None,
         nums_gaussians: Optional[tuple] = None,
-        model_types: tuple = (3, 4),
+        model_types: tuple = (2, 3, 4),
         maxps: tuple = (2, 3),
         gtinv: bool = True,
         gtinv_order_ub: int = 4,
@@ -196,7 +196,7 @@ class PolymlpGridSearch:
                 cutoff=cutoff,
                 n_gaussians=n_gaussians,
                 gtinv_order=3,
-                gtinv_maxl=(4, 4),
+                gtinv_maxl=(12, 4),
             )
             self._grid_params_hybrid.append((params_main, add_params, i, 1))
             add_params = add_single_model(
@@ -205,7 +205,7 @@ class PolymlpGridSearch:
                 cutoff=cutoff,
                 n_gaussians=n_gaussians,
                 gtinv_order=3,
-                gtinv_maxl=(8, 8),
+                gtinv_maxl=(12, 8),
             )
             self._grid_params_hybrid.append((params_main, add_params, i, 2))
         return self
