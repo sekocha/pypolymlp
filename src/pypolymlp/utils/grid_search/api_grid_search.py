@@ -189,14 +189,14 @@ class PolymlpGridSearch:
         for i, params_main in enumerate(self._grid_params):
             cutoff_main = params_main.model.cutoff
             cutoff = np.rint(cutoff_main * 2 / 3)
-            n_gaussians = np.rint((cutoff + 1) * 1.3).astype(int)
+            n_gaussians = np.rint((cutoff + 1) * 2.0).astype(int)
             add_params = add_single_model(
                 self._grid,
                 self._elements,
                 cutoff=cutoff,
                 n_gaussians=n_gaussians,
                 gtinv_order=3,
-                gtinv_maxl=(12, 4),
+                gtinv_maxl=(4, 4),
             )
             self._grid_params_hybrid.append((params_main, add_params, i, 1))
             add_params = add_single_model(
@@ -205,7 +205,7 @@ class PolymlpGridSearch:
                 cutoff=cutoff,
                 n_gaussians=n_gaussians,
                 gtinv_order=3,
-                gtinv_maxl=(12, 8),
+                gtinv_maxl=(8, 8),
             )
             self._grid_params_hybrid.append((params_main, add_params, i, 2))
         return self
