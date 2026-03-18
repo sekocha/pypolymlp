@@ -53,6 +53,8 @@ This means that the potential energy of a structure is measured relative to the 
 
 Therefore, when using potential energies from training datasets obtained from DFT calculations, the atomic energies must be subtracted from the DFT-computed total energies to serve as reference values.
 
+See the utility [Atomic Energies](utils_atomic_energies.md) when using VASP.
+
 
 ## Dataset settings
 When both the training and test datasets are explicitly provided, they can be included in the input file as follows:

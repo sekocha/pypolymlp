@@ -105,6 +105,7 @@ Several procedures for generating structures used in DFT calculations are also s
   - [Convex hull (Pareto-optimal) MLP search](docs/utils_grid.md)
   - [Atomic energies](docs/utils_atomic_energies.md)
   - [Generator of portable model for OpenKIM](docs/utils_kim.md)
+  - [Other utilities](docs/utils.md)
 
 - Experimental features
   - [SSCHA free energy model](docs/experimental/mlpdev_sscha.md)
@@ -140,5 +141,3 @@ The following calculations can be performed using **pypolymlp** with the polynom
   - LAMMPS
   - phonopy and phonon3py
   - ASE
-
-## Theoretical background
