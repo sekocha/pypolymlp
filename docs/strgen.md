@@ -1,5 +1,9 @@
 # Structure generator for DFT calculations
 
+- Random atomic displacements with constant magnitude
+- Random atomic displacements with sequential magnitudes and volume changes
+- Random atomic displacements, cell expansion, and distortion
+
 ## Random atomic displacements from a single structure
 - Constant magnitude of atomic displacements, Fixed cell
 ```shell

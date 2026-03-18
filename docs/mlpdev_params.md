@@ -47,6 +47,13 @@
 - `rearrange_by_elements`: Set True if not developing special MLPs.
 
 
+## Notes on Atomic Energy
+In the current implementation of polynomial MLP models, the intercept (constant term) is not included.
+This means that the potential energy of a structure is measured relative to the sum of the energies of the isolated atoms that compose the structure.
+
+Therefore, when using potential energies from training datasets obtained from DFT calculations, the atomic energies must be subtracted from the DFT-computed total energies to serve as reference values.
+
+
 ## Dataset settings
 When both the training and test datasets are explicitly provided, they can be included in the input file as follows:
 

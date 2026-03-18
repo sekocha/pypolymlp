@@ -97,17 +97,13 @@ Several procedures for generating structures used in DFT calculations are also s
   - [OpenMX](docs/mlpdev_openmx.md)
   - [Notes on parameter and dataset settings](docs/mlpdev_params.md)
 
-- [Utilities for MLP development](docs/utilities.md)
-  - [Generator of structures used for DFT calculations](docs/strgen.md)
-    - Random atomic displacements with constant magnitude
-    - Random atomic displacements with sequential magnitudes and volume changes
-    - Random atomic displacements, cell expansion, and distortion
-  - [Generator of input files for grid-search MLP development](docs/utils_grid.md)
-  - Compression of vasprun.xml files
-  - Automatic division of DFT dataset
-  - Atomic energies
-  - Enumeration of optimal MLPs
-  - Estimation of computational costs
+- Utilities for MLP development
+  - Dataset Generation
+    - [Generator of DFT random structures](docs/strgen.md)
+    - [Compression of vasprun.xml files](docs/utils_compress.md)
+    - [Automatic division of DFT dataset](docs/utils_dataset_div.md)
+  - [Convex hull (Pareto-optimal) MLP search](docs/utils_grid.md)
+  - [Atomic energies](docs/utils_atomic_energies.md)
   - [Generator of portable model for OpenKIM](docs/utils_kim.md)
 
 - Experimental features
@@ -144,3 +140,5 @@ The following calculations can be performed using **pypolymlp** with the polynom
   - LAMMPS
   - phonopy and phonon3py
   - ASE
+
+## Theoretical background
