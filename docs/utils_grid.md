@@ -1,6 +1,6 @@
 # Systematic Generation of Input Files for Polynomial MLP Development
 
-> Notes: Version 0.19.1 or later.
+> Note: Requires version 0.19.1 or later.
 
 ## Using Command-Line Interface
 ```shell
@@ -39,7 +39,7 @@ utils = PypolymlpUtils(verbose=True)
 utils.enumerate_models(path="polymlps", hybrid=True)
 ```
 
-**Parameter settings**
+- **Parameter settings**
 ```python
 from pypolymlp.api.pypolymlp_utils import PypolymlpUtils
 
