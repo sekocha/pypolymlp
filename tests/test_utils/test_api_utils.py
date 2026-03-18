@@ -128,3 +128,23 @@ def test_enumerate_models():
     shutil.rmtree("tmp")
     polymlp.enumerate_models(elements=["Be"], path="tmp")
     shutil.rmtree("tmp")
+    polymlp.enumerate_models(elements=["Be"], path="tmp", hybrid=True)
+    shutil.rmtree("tmp")
+
+    polymlp.enumerate_models(
+        elements=["Be"],
+        cutoffs=None,
+        nums_gaussians=None,
+        model_types=(2, 3, 4),
+        maxps=(2,),
+        gtinv=True,
+        gtinv_order_ub=3,
+        gtinv_maxl_ub=(16, 12),
+        gtinv_maxl_int=(8, 4),
+        include_force=True,
+        include_stress=True,
+        regression_alpha=(-4, 1, 6),
+        path="tmp",
+        hybrid=True,
+    )
+    shutil.rmtree("tmp")

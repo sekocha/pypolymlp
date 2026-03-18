@@ -156,6 +156,11 @@ def run():
         default=None,
         help="System for model generation.",
     )
+    parser.add_argument(
+        "--enable_hybrid",
+        action="store_true",
+        help="Enable enumeration of hybrid models.",
+    )
 
     args = parser.parse_args()
     print_credit()
@@ -240,4 +245,8 @@ def run():
             elements = args.generate_models_system.split("-")
         else:
             elements = args.generate_models_elements
-        polymlp.enumerate_models(elements=elements, path="polymlps")
+        polymlp.enumerate_models(
+            elements=elements,
+            path="polymlps",
+            hybrid=args.enable_hybrid,
+        )

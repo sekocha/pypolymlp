@@ -265,6 +265,7 @@ class PypolymlpUtils:
         include_stress: bool = True,
         regression_alpha: tuple = (-4, 1, 6),
         path: str = "polymlps",
+        hybrid: bool = False,
     ):
         """Generate candidate models systematically.
 
@@ -288,4 +289,7 @@ class PypolymlpUtils:
         )
         grid1.run()
         grid1.save_models(path=path)
+        if hybrid:
+            grid1.enum_hybrid_models()
+            grid1.save_hybrid_models(path=path)
         return self
