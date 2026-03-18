@@ -3,9 +3,7 @@
 ## Parameter settings
 - `elements`: Strings of element species, (e.g., ['Mg','O']).
 
-- `include_force`: Considering force entries (Default True).
-
-- `include_stress`: Considering stress entries (Default True).
+- `n_type`: Number of elements.
 
 - `cutoff`: Cutoff radius (in angstroms).
 
@@ -32,9 +30,6 @@
                      where p[0], p[1], and p[2] are given by gaussian_params1
                      and gaussian_params2.
 
-- `reg_alpha_params`: Parameters for penalty term in linear ridge regression.
-                      Parameters are given as np.linspace(p[0], p[1], p[2]).
-
 - `gtinv_order`: Maximum order of polynomial invariants.
 
 - `gtinv_maxl`: Maximum angular numbers of polynomial invariants.
@@ -43,6 +38,13 @@
 - `atomic_energy_unit`: "eV" or "Hartree" (Default: "eV").
 
 - `atomic_energy`: Atomic energies (in `atomic_energy_unit`).
+
+- `include_force`: Considering force entries (Default True).
+
+- `include_stress`: Considering stress entries (Default True).
+
+- `reg_alpha_params`: Parameters for penalty term in linear ridge regression.
+                      Parameters are given as np.linspace(p[0], p[1], p[2]).
 
 - `rearrange_by_elements`: Set True if not developing special MLPs.
 
