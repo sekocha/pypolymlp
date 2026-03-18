@@ -22,7 +22,7 @@ def test_ParamsGrid_gtinv():
     params_grid = grid1._grid
 
     assert params_grid.get_model_types_pair() == [2]
-    assert len(params_grid.gtinv_attrs) == 26
+    assert len(params_grid.gtinv_attrs) == 29
 
 
 def test_ParamsGrid_pair():

@@ -12,7 +12,7 @@ def test_grid_search1():
     grid1 = PolymlpGridSearch(elements=["Be"], verbose=True)
     grid1.set_params()
     grid1.run()
-    assert len(grid1.grid) == 112
+    assert len(grid1.grid) == 186
 
     grid1.save_models(path="tmp")
     shutil.rmtree("tmp")
@@ -23,7 +23,7 @@ def test_grid_search2():
     grid1 = PolymlpGridSearch(elements=["Ag", "Au"], verbose=True)
     grid1.set_params()
     grid1.run()
-    assert len(grid1.grid) == 112
+    assert len(grid1.grid) == 186
 
     grid1.save_models(path="tmp")
     shutil.rmtree("tmp")
@@ -34,10 +34,10 @@ def test_grid_search3():
     grid1 = PolymlpGridSearch(elements=["Ag", "Au"], verbose=True)
     grid1.set_params()
     grid1.enum_pair_models()
-    assert len(grid1.grid) == 8
+    assert len(grid1.grid) == 12
 
     grid1.enum_gtinv_models()
-    assert len(grid1.grid) == 112
+    assert len(grid1.grid) == 186
 
 
 def test_grid_search_input1():
@@ -88,12 +88,16 @@ def test_grid_search_local_functions():
     radial_params = grid1._auto_gaussians(cutoffs, None)
     assert radial_params[0].cutoff == 8.0
     assert radial_params[1].cutoff == 8.0
-    assert radial_params[2].cutoff == 11.0
+    assert radial_params[2].cutoff == 8.0
     assert radial_params[3].cutoff == 11.0
+    assert radial_params[4].cutoff == 11.0
+    assert radial_params[5].cutoff == 11.0
     assert radial_params[0].n_gaussians == 9
-    assert radial_params[1].n_gaussians == 12
-    assert radial_params[2].n_gaussians == 12
-    assert radial_params[3].n_gaussians == 16
+    assert radial_params[1].n_gaussians == 11
+    assert radial_params[2].n_gaussians == 14
+    assert radial_params[3].n_gaussians == 12
+    assert radial_params[4].n_gaussians == 15
+    assert radial_params[5].n_gaussians == 18
 
 
 def test_grid_search_extend():
@@ -101,13 +105,13 @@ def test_grid_search_extend():
     grid1 = PolymlpGridSearch(elements=["Ag", "Au"], verbose=True)
     grid1.set_params()
     grid1.run()
-    assert len(grid1.grid) == 112
+    assert len(grid1.grid) == 186
 
     grid1.add_complex_models()
-    assert len(grid1.grid) == 114
+    assert len(grid1.grid) == 188
 
     grid1.enum_hybrid_models()
-    assert len(grid1.grid_hybrid) == 114 * 2
+    assert len(grid1.grid_hybrid) == 188 * 2
 
     grid1.save_hybrid_models(path="tmp")
     shutil.rmtree("tmp")
