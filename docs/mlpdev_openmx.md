@@ -1,9 +1,10 @@
 # Interface to OpenMX Datasets
 
+> Note: Requires version 0.19.0 or later.
+
 `pypolymlp` can be used for OpenMX datasets in a manner similar to VASP datasets. See [VASP (Command line interface)](mlpdev_command.md) and [VASP (Python API)](mlpdev_api.md).
 When using command-line interface, the only difference is that `dataset_type` must be set to `openmx` in the input file.
 
-Version 0.19.0 or later.
 
 ## MLP development using a single model via command-line interface
 
