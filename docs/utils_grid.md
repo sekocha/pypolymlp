@@ -106,7 +106,9 @@ Once MLPs with various models have been systematically evaluated, the computatio
 The `calc_cost` option in `pypolymlp-utils` calculates the properties of a structure multiple times and estimates the computational time per atom required for a single run of energy, force, or virial stress tensor calculations.
 For each MLP, a file named `polymlp_cost.yaml` is generated, containing the computational costs necessary for identifying convex-hull (Pareto-optimal) MLPs.
 
-1. Single polynomial MLP
+### Single polynomial MLP
+
+To estimate the computational cost for a single MLP or a hybrid MLP, specify the polymlp file using the `--pot` option as follows:
 
 ```shell
 > pypolymlp-utils --calc_cost --pot polymlp.yaml
@@ -114,46 +116,12 @@ For each MLP, a file named `polymlp_cost.yaml` is generated, containing the comp
 # hybrid polynomial MLP
 > pypolymlp-utils --calc_cost --pot polymlp.yaml*
 ```
-2. Multiple polynomial MLPs
 
-Consider the following file and directory structures, which can be found in `examples/utils/mlp_opt`.
+### Multiple polynomial MLPs
 
-```shell
-> ls Ag-Au
-polymlp-00001/  polymlp-00003/  polymlp-00005/  polymlp-00007/  polymlp-00009/
-polymlp-00002/  polymlp-00004/  polymlp-00006/  polymlp-00008/
+When the computational costs of multiple MLPs, which have been systematically developed, are evaluated simultaneously, the `-d` option can be used to specify the directory paths containing the MLP files.
 
-> ls Ag-Au/polymlp-00*
-test/polymlp-00001:
-polymlp.yaml
-
-test/polymlp-00002:
-polymlp.yaml
-
-test/polymlp-00003:
-polymlp.yaml
-
-test/polymlp-00004:
-polymlp.yaml
-
-test/polymlp-00005:
-polymlp.yaml
-
-test/polymlp-00006:
-polymlp.yaml
-
-test/polymlp-00007:
-polymlp.yaml
-
-test/polymlp-00008:
-polymlp.yaml
-
-test/polymlp-00009:
-polymlp.yaml
-```
-2. Multiple polynomial MLPs
-
-Consider the following file and directory structures, which can be found in `examples/utils/mlp_opt`.
+Consider the following file and directory structures, which can be found in `examples/utils/mlp_opt/`.
 
 ```shell
 > ls Ag-Au
@@ -161,83 +129,51 @@ polymlp-00001/  polymlp-00003/  polymlp-00005/  polymlp-00007/  polymlp-00009/
 polymlp-00002/  polymlp-00004/  polymlp-00006/  polymlp-00008/
 
 > ls Ag-Au/polymlp-00*
-test/polymlp-00001:
+Ag-Au/polymlp-00001:
 polymlp.yaml
 
-test/polymlp-00002:
+Ag-Au/polymlp-00002:
 polymlp.yaml
 
-test/polymlp-00003:
+Ag-Au/polymlp-00003:
 polymlp.yaml
 
-test/polymlp-00004:
+Ag-Au/polymlp-00004:
 polymlp.yaml
 
-test/polymlp-00005:
+Ag-Au/polymlp-00005:
 polymlp.yaml
 
-test/polymlp-00006:
+Ag-Au/polymlp-00006:
 polymlp.yaml
 
-test/polymlp-00007:
+Ag-Au/polymlp-00007:
 polymlp.yaml
 
-test/polymlp-00008:
+Ag-Au/polymlp-00008:
 polymlp.yaml
 
-test/polymlp-00009:
-polymlp.yaml
-```
-2. Multiple polynomial MLPs
-
-Consider the following file and directory structures, which can be found in `examples/utils/mlp_opt`.
-
-```shell
-> ls Ag-Au
-polymlp-00001/  polymlp-00003/  polymlp-00005/  polymlp-00007/  polymlp-00009/
-polymlp-00002/  polymlp-00004/  polymlp-00006/  polymlp-00008/
-
-> ls Ag-Au/polymlp-00*
-test/polymlp-00001:
-polymlp.yaml
-
-test/polymlp-00002:
-polymlp.yaml
-
-test/polymlp-00003:
-polymlp.yaml
-
-test/polymlp-00004:
-polymlp.yaml
-
-test/polymlp-00005:
-polymlp.yaml
-
-test/polymlp-00006:
-polymlp.yaml
-
-test/polymlp-00007:
-polymlp.yaml
-
-test/polymlp-00008:
-polymlp.yaml
-
-test/polymlp-00009:
+Ag-Au/polymlp-00009:
 polymlp.yaml
 ```
 
-In this case, computational costs for multiple polynomial MLPs can be estimated as follows.
+To obtain the computational costs for all MLPs in this example, the directory paths can be specified as follows:
+
 ```shell
 > pypolymlp-utils --calc_cost -d Ag-Au/polymlp-00*
 ```
+Once the estimation is complete, `polymlp_cost.yaml` files are generated for all MLPs in each directory.
 
-# 4. Enumeration of optimal MLPs on convex hull
-Consider the following file and directory structures, which can be found in `examples/utils/mlp_opt`.
+## 4. Convex Hull MLP Search
+
+Consider the following file and directory structures, which can be found in `examples/utils/mlp_opt/`.
 
 ```shell
 > ls Ag-Au
 polymlp-00001/  polymlp-00003/  polymlp-00005/  polymlp-00007/  polymlp-00009/
 polymlp-00002/  polymlp-00004/  polymlp-00006/  polymlp-00008/
+
+> ls Ag-Au/polymlp-00*
 
 Ag-Au/polymlp-00001:
 polymlp.yaml  polymlp_cost.yaml  polymlp_error.yaml
@@ -266,9 +202,18 @@ polymlp.yaml  polymlp_cost.yaml  polymlp_error.yaml
 Ag-Au/polymlp-00009:
 polymlp.yaml  polymlp_cost.yaml  polymlp_error.yaml
 ```
-Files `polymlp_error.yaml` and `polymlp_cost.yaml` are needed for each MLP.
 
-In this case, optimal MLPs on the convex hull can be found as follows.
+In each directory corresponding to an MLP, there are two files: `polymlp_error.yaml`, generated during MLP development, and `polymlp_cost.yaml`, generated from the computational cost estimation described above.
+
+Using these files, a set of convex-hull MLPs can be identified with the `--find_optimal` option in `pypolymlp-utils`.
+In this example, the optimal MLPs on the convex hull can be identified as follows:
+
 ```shell
 > pypolymlp-utils --find_optimal Ag-Au/* --key test-disp1
 ```
+
+The `--key` option defines the prediction error used in this search and specifies which dataset is used to estimate that error.
+In this example, a dataset whose name includes "test-disp1" is used to define the prediction error.
+This option must be specified according to the dataset names provided by the user.
+
+Once the search is complete, `polymlp_summary_all.yaml`, containing the attributes of all MLPs, and `polymlp_summary_convex.yaml`, containing the attributes of the MLPs on the convex hull of computational cost versus prediction error, are generated.
