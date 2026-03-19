@@ -123,6 +123,39 @@ def split_three_datasets(
     return train1, train2, train0, test1, test2, test0
 
 
+def split_datasets(dft: DatasetDFT, verbose: bool = False):
+    """Split a dataset into three datasets according to properties."""
+    e_all, f_std_all, vol_all = _extract_properties_from_dataset(dft)
+
+    e_min = np.min(e_all)
+    f_std_average = np.average(f_std_all)
+
+    group_e = np.zeros(e_all.shape[0], dtype=int)
+    for i, e_ratio in enumerate((0, 0.25, 0.5, 0.75)):
+        eth = e_min * e_ratio
+        group_e[e_all <= eth] = i + 1
+
+    group_f = np.zeros(e_all.shape[0], dtype=int)
+    for i, f_ratio in enumerate((4, 2, 1, 0.5)):
+        fth = f_std_average * f_ratio
+        group_f[f_std_all <= fth] = i + 1
+
+    group = np.maximum(group_e, group_f)
+    print("---")
+    print(np.count_nonzero(group == 4))
+    print(np.count_nonzero(group == 3))
+    print(np.count_nonzero(group == 2))
+    print(np.count_nonzero(group == 1))
+    print(np.count_nonzero(group == 0))
+
+    datasets = []
+    for group_id in range(5):
+        set1 = np.where(group == group_id)[0]
+        train, test = split_train_test(set1)
+        datasets.append((train, test))
+    return datasets
+
+
 def copy_vaspruns(vaspruns: list, tag: str, path_output: str = "./", suffix: str = ""):
     """Copy vasprun.xml files."""
     dir_output = path_output + "/" + tag + "/"
