@@ -1,19 +1,16 @@
 """Tests of functions used for dividing dataset automatically."""
 
-import glob
-import shutil
 from pathlib import Path
 
 import pytest
 
-from pypolymlp.utils.dataset_auto_divide import (
+from pypolymlp.utils.dataset_divide_utils import (
     _extract_properties_from_dataset,
     _set_threshold_energy,
     _set_threshold_force,
     _set_threshold_volume,
-    _split_three_datasets,
-    _split_two_datasets,
-    auto_divide_vaspruns,
+    split_three_datasets,
+    split_two_datasets,
 )
 
 cwd = Path(__file__).parent
@@ -46,7 +43,7 @@ def test_local_functions(regdata_mp_149):
 def test_split_two_datasets(regdata_mp_149):
     """Test split_two_datasets."""
     params, datasets = regdata_mp_149
-    train1, train2, test1, test2 = _split_two_datasets(
+    train1, train2, test1, test2 = split_two_datasets(
         datasets[0].dft,
         eth=None,
         fth=None,
@@ -64,7 +61,7 @@ def test_split_two_datasets(regdata_mp_149):
 def test_split_three_datasets(regdata_mp_149):
     """Test split_three_datasets."""
     params, datasets = regdata_mp_149
-    train1, train2, train0, test1, test2, test0 = _split_three_datasets(
+    train1, train2, train0, test1, test2, test0 = split_three_datasets(
         datasets[0].dft,
         eth=None,
         fth=None,
@@ -79,11 +76,3 @@ def test_split_three_datasets(regdata_mp_149):
     assert len(test1) == 1
     assert len(test2) == 17
     assert len(test0) == 0
-
-
-def test_auto_divide_vaspruns():
-    """Test auto_divide_vaspruns."""
-    path = str(cwd) + "/../test_mlp_dev_api/data-vasp-MgO/vaspruns/test1/"
-    vaspruns = sorted(glob.glob(path + "vasprun-*.xml.*"))
-    auto_divide_vaspruns(vaspruns, path_output="./tmp", verbose=True)
-    shutil.rmtree("tmp")

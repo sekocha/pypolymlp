@@ -7,7 +7,7 @@ import numpy as np
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.interface_vasp import Poscar
 from pypolymlp.postproc.count_time import PolymlpCost
-from pypolymlp.utils.dataset_auto_divide import auto_divide_vaspruns
+from pypolymlp.utils.dataset_divide import auto_divide_vaspruns
 from pypolymlp.utils.grid_optimal import find_optimal_mlps
 from pypolymlp.utils.grid_search.api_grid_search import PolymlpGridSearch
 from pypolymlp.utils.kim_utils import convert_polymlp_to_kim_model
