@@ -98,8 +98,8 @@ def auto_divide_vaspruns_repository(
             print("- Subset size (test " + str(i + 1) + "): ", len(test))
 
     vaspruns = np.array(vaspruns)
-    os.makedirs(path_output, exist_ok=True)
     path = path_output + "/vaspruns/"
+    os.makedirs(path, exist_ok=True)
     f = open(path + "/polymlp.in.append", "w")
 
     if atom_e is not None:

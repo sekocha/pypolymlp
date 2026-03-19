@@ -131,7 +131,7 @@ def split_datasets(dft: DatasetDFT, verbose: bool = False):
     f_std_average = np.average(f_std_all)
 
     group_e = np.zeros(e_all.shape[0], dtype=int)
-    for i, e_ratio in enumerate((0, 0.25, 0.5, 0.75)):
+    for i, e_ratio in enumerate((0, 0.3, 0.6, 0.8)):
         eth = e_min * e_ratio
         group_e[e_all <= eth] = i + 1
 
