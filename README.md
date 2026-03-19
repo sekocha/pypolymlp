@@ -140,5 +140,6 @@ The following calculations can be performed using **pypolymlp** with the polynom
 
 - [How to use polymlp in other calculator tools](docs/api_other_calc.md)
   - LAMMPS
-  - phonopy and phonon3py
   - ASE
+  - OpenKIM
+  - phonopy and phonon3py
