@@ -1,7 +1,7 @@
 """Functions for dividing datasets according to property values."""
 
 import os
-from typing import Literal
+from typing import Literal, Optional
 
 import numpy as np
 
@@ -78,7 +78,7 @@ def auto_divide_vaspruns_repository(
     vaspruns: list[str],
     elements: tuple,
     functional: Literal["PBE", "PBEsol"] = "PBE",
-    path_output: str = "./",
+    path_output: Optional[str] = None,
     verbose: bool = False,
 ):
     """Divide a dataset into training and test datasets automatically."""
@@ -98,7 +98,11 @@ def auto_divide_vaspruns_repository(
             print("- Subset size (test " + str(i + 1) + "): ", len(test))
 
     vaspruns = np.array(vaspruns)
-    path = path_output + "/vaspruns/"
+    if path_output is None:
+        path = "./polymlp_datasets/"
+    else:
+        path = path_output + "/"
+
     os.makedirs(path, exist_ok=True)
     f = open(path + "/polymlp.in.append", "w")
 
@@ -128,3 +132,22 @@ def auto_divide_vaspruns_repository(
             if verbose:
                 print("test_data", files, "True", str(weight), flush=True)
     f.close()
+
+
+# TODO:
+def auto_divide_vaspruns_repository_alloy(
+    vaspruns: list[str],
+    elements: tuple,
+    functional: Literal["PBE", "PBEsol"] = "PBE",
+    path_output: Optional[str] = None,
+    verbose: bool = False,
+):
+    """Divide a dataset into training and test datasets automatically."""
+    dft = set_dataset_from_vaspruns(vaspruns, element_order=elements)
+    try:
+        atom_e = get_atomic_energies(elements, functional=functional)[0]
+        dft.apply_atomic_energy(atom_e)
+    except:
+        print("Atomic energies not found.")
+        atom_e = None
+        pass
