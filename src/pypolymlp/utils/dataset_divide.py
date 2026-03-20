@@ -103,25 +103,28 @@ def auto_divide_vaspruns_repository(
     f = open(path + "/polymlp.in.append", "w")
 
     if atom_e is not None:
+        print("n_type", len(atom_e), file=f)
         print("atomic_enegy ", end="", file=f)
         for e in atom_e:
             print(e, end=" ", file=f)
         print(file=f)
 
+    weights = (0.01, 0.1, 1.0, 1.0, 1.0)
     for i, (train, test) in enumerate(datasets):
-        weight = 0.1 if i == 0 else 1.0
+        weight = weights[i]
         if len(train) > 0:
             tag = "train" + str(i + 1)
+            files = path + tag + "/*.xml"
             copy_vaspruns(vaspruns[train], tag, path_output=path)
-            print("train_data vaspruns/" + tag + "/*.xml True " + str(weight), file=f)
+            print("train_data", files, "True", str(weight), file=f)
             if verbose:
-                print("train_data vaspruns/" + tag + "/*.xml True " + str(weight))
+                print("train_data", files, "True", str(weight), flush=True)
 
         if len(test) > 0:
             tag = "test" + str(i + 1)
+            files = path + tag + "/*.xml"
             copy_vaspruns(vaspruns[test], tag, path_output=path)
-            print("test_data vaspruns/" + tag + "/*.xml True " + str(weight), file=f)
+            print("test_data", files, "True", str(weight), file=f)
             if verbose:
-                print("test_data vaspruns/" + tag + "/*.xml True " + str(weight))
-
+                print("test_data", files, "True", str(weight), flush=True)
     f.close()

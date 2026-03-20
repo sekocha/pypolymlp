@@ -141,13 +141,6 @@ def split_datasets(dft: DatasetDFT, verbose: bool = False):
         group_f[f_std_all <= fth] = i + 1
 
     group = np.maximum(group_e, group_f)
-    print("---")
-    print(np.count_nonzero(group == 4))
-    print(np.count_nonzero(group == 3))
-    print(np.count_nonzero(group == 2))
-    print(np.count_nonzero(group == 1))
-    print(np.count_nonzero(group == 0))
-
     datasets = []
     for group_id in range(5):
         set1 = np.where(group == group_id)[0]
