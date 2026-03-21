@@ -152,7 +152,7 @@ class PypolymlpUtils:
         )
         return summary_all, summary_convex, system
 
-    def divide_dataset(self, vaspruns: list[str]):
+    def divide_dataset(self, vaspruns: list[str], elements: tuple, n_divide: int = 3):
         """Divide a dataset into training and test datasets automatically.
 
         Generate divided subsets and texts that will be included in input files.
@@ -161,7 +161,12 @@ class PypolymlpUtils:
         ----------
         vaspruns: vasprun.xml files
         """
-        auto_divide_vaspruns(vaspruns, verbose=self._verbose)
+        auto_divide_vaspruns(
+            vaspruns,
+            elements,
+            n_divide=n_divide,
+            verbose=self._verbose,
+        )
 
     def generate_supercell(
         self,

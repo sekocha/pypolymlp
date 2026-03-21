@@ -59,6 +59,19 @@ def run():
         default=None,
         help="Automatic dataset division using " + "vasprun.xml files",
     )
+    parser.add_argument(
+        "--n_divide",
+        type=int,
+        default=3,
+        help="Number of groups to divide datasets",
+    )
+    parser.add_argument(
+        "--elements",
+        nargs="*",
+        type=str,
+        default=None,
+        help="Element strings.",
+    )
 
     parser.add_argument(
         "--atomic_energy_elements",
@@ -204,7 +217,7 @@ def run():
         polymlp.find_optimal_mlps(args.find_optimal, args.key)
 
     elif args.auto_dataset is not None:
-        polymlp.divide_dataset(args.auto_dataset)
+        polymlp.divide_dataset(args.auto_dataset, args.elements, n_divide=args.n_divide)
 
     elif args.supercell:
         if len(args.supercell) == 9:
@@ -236,15 +249,13 @@ def run():
         )
 
     elif args.generate_models is not None:
-        if (
-            args.generate_models_elements is None
-            and args.generate_models_system is None
-        ):
+        if args.elements is None and args.generate_models_system is None:
             raise RuntimeError("Elements or system required.")
         if args.generate_models_system is not None:
             elements = args.generate_models_system.split("-")
         else:
-            elements = args.generate_models_elements
+            elements = args.elements
+
         polymlp.enumerate_models(
             elements=elements,
             path="polymlps",

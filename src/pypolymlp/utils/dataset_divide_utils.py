@@ -123,26 +123,37 @@ def split_three_datasets(
     return train1, train2, train0, test1, test2, test0
 
 
-def split_datasets(dft: DatasetDFT, verbose: bool = False):
+def split_datasets(dft: DatasetDFT, n_divide: int = 6, verbose: bool = False):
     """Split a dataset into three datasets according to properties."""
-    e_all, f_std_all, vol_all = _extract_properties_from_dataset(dft)
+    if n_divide < 2:
+        ids = np.arange(dft.energies.shape[0], dtype=int)
+        train, test = split_train_test(ids)
+        return [(train, test)]
 
+    e_all, f_std_all, vol_all = _extract_properties_from_dataset(dft)
     e_min = np.min(e_all)
     f_std_average = np.average(f_std_all)
 
-    group_e = np.zeros(e_all.shape[0], dtype=int)
-    for i, e_ratio in enumerate((0, 0.3, 0.6, 0.8)):
-        eth = e_min * e_ratio
-        group_e[e_all <= eth] = i + 1
+    e_ratios = np.linspace(0, 1, n_divide)[:-1]
+    f_ratios = 2 ** np.linspace(2, -4, n_divide)[:-1]
 
+    if verbose:
+        print("Energy thresholds:", flush=True)
+        print("- Group 1: E >= 0", flush=True)
+        for i, (e_ratio, f_ratio) in enumerate(zip(e_ratios, f_ratios)):
+            print("- Group " + str(i + 2) + ": E <", e_min * e_ratio, flush=True)
+
+    group_e = np.zeros(e_all.shape[0], dtype=int)
     group_f = np.zeros(e_all.shape[0], dtype=int)
-    for i, f_ratio in enumerate((4, 2, 1, 0.5)):
+    for i, (e_ratio, f_ratio) in enumerate(zip(e_ratios, f_ratios)):
+        eth = e_min * e_ratio
         fth = f_std_average * f_ratio
+        group_e[e_all <= eth] = i + 1
         group_f[f_std_all <= fth] = i + 1
 
     group = np.maximum(group_e, group_f)
     datasets = []
-    for group_id in range(5):
+    for group_id in range(n_divide):
         set1 = np.where(group == group_id)[0]
         train, test = split_train_test(set1)
         datasets.append((train, test))

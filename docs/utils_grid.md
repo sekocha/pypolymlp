@@ -27,17 +27,17 @@ For other parameters, such as the truncation of polynomial invariants, candidate
 ### Using Command-Line Interface
 ```shell
 # For elemental systems
-pypolymlp-utils --generate_models --generate_models_elements Be
+pypolymlp-utils --generate_models --elements Be
 
 # Enumeration with hybrid models for elemental systems
-pypolymlp-utils --generate_models --generate_models_elements Si --enable_hybrid
+pypolymlp-utils --generate_models --elements Si --enable_hybrid
 
 # For binary alloy systems
-pypolymlp-utils --generate_models --generate_models_elements Ag Au
+pypolymlp-utils --generate_models --elements Ag Au
 pypolymlp-utils --generate_models --generate_models_system Ag-Au
 
 # For ternary alloy systems
-pypolymlp-utils --generate_models --generate_models_elements Cu Ag Au
+pypolymlp-utils --generate_models --elements Cu Ag Au
 pypolymlp-utils --generate_models --generate_models_system Cu-Ag-Au
 ```
 Input files for the enumerated models can be found in the `polymlps` directory.
