@@ -123,7 +123,6 @@ def split_datasets_alloy(
             if comp not in end_comp:
                 end_comp[comp] = seq
                 seq += n_divide
-    print(end_comp)
 
     groups = np.zeros(e_all.shape[0], dtype=int)
     for comp, ids in comp_ids.items():
