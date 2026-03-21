@@ -81,6 +81,11 @@ class PolymlpStructure:
         st.elements = [map_elements[t] for t in types_reorder]
         return st
 
+    def composition(self, elements: tuple):
+        """Return composition."""
+        n_atoms = [np.count_nonzero(np.array(self.elements) == e) for e in elements]
+        return np.array(n_atoms) / sum(n_atoms)
+
 
 @dataclass
 class PolymlpGtinvParams:
