@@ -21,6 +21,58 @@ polymlp.save_mlp(filename="polymlp.yaml")
 params = polymlp.parameters
 mlp_info = polymlp.summary
 ```
+```shell
+> cat polymlp.in
+
+    # Parameters
+    # ----------
+    # elements: Element species, (e.g., ['Mg','O'])
+    # include_force: Include force entries
+    # include_stress: Include virial stress entries
+    # cutoff: Cutoff radius (Angstrom)
+    # model_type: Polynomial function type
+    #     model_type = 1: Linear polynomial of polynomial invariants
+    #     model_type = 2: Polynomial of polynomial invariants
+    #     model_type = 3: Polynomial of pair invariants
+    #                     + linear polynomial of polynomial invariants
+    #     model_type = 4: Polynomial of pair and second-order invariants
+    #                     + linear polynomial of polynomial invariants
+    # max_p: Order of polynomial function
+    # feature_type: Structural feature type. 'gtinv' or 'pair'.
+    # n_gaussians: Number of Gaussians.
+    # reg_alpha_params: Parameters for penalty term in
+    #                   linear ridge regression. Parameters are given as
+    #                   np.linspace(p[0], p[1], p[2]).
+    # gtinv_order: Maximum order of polynomial invariants.
+    # gtinv_maxl: Maximum angular numbers of polynomial invariants.
+    #             [maxl for order=2, maxl for order=3, ...]
+    # atomic_energy: Atomic energies (in eV).
+
+    n_type 2
+    elements Mg O
+
+    feature_type gtinv
+    cutoff 8.0
+    model_type 3
+    max_p 2
+
+    gtinv_order 3
+    gtinv_maxl 4 4
+
+    # Equivalent to
+    # gaussian_params1 1.0 1.0 1
+    # gaussian_params2 0.0 7.0 8
+    n_gaussians 9
+
+    reg_alpha_params -3 1 5
+
+    atomic_energy -0.00040000 -1.85321219
+
+    train_data vaspruns/train/vasprun-*.xml.polymlp
+    test_data vaspruns/test/vasprun-*.xml.polymlp
+
+    include_force True
+```
 In this example, the polynomial MLP file `polymlp.yaml` is generated.
 When the coefficients of the polynomial MLP are needed, they can be obtained from the `summary` attribute.
 
