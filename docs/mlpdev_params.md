@@ -59,7 +59,9 @@ See the utility [Atomic Energies](utils_atomic_energies.md) when using VASP.
 
 
 ## Dataset settings
-When both the training and test datasets are explicitly provided, they can be included in the input file as follows:
+
+When both training and test datasets are explicitly provided, the root-mean-square errors (RMSEs) and mean absolute errors (MAEs) are evaluated separately for each dataset.
+They can be specified in the input file as follows:
 
 ```shell
 train_data vaspruns/train1/vasprun-*.xml.polymlp
