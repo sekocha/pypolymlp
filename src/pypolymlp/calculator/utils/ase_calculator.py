@@ -20,7 +20,7 @@ class PolymlpASECalculator(Calculator):
 
     def __init__(
         self,
-        pot: Optional[str, list[str]] = None,
+        pot: Optional[Union[str, list[str]]] = None,
         params: Optional[PolymlpParams] = None,
         coeffs: Optional[Union[np.ndarray, list[np.ndarray]]] = None,
         properties: Optional[Properties] = None,
@@ -49,7 +49,7 @@ class PolymlpASECalculator(Calculator):
 
     def set_calculator(
         self,
-        pot: Optional[str, list[str]] = None,
+        pot: Optional[Union[str, list[str]]] = None,
         params: Optional[PolymlpParams] = None,
         coeffs: Optional[Union[np.ndarray, list[np.ndarray]]] = None,
     ):

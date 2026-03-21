@@ -33,7 +33,7 @@ class PolymlpFC2ASECalculator(Calculator):
         self,
         fc2: np.ndarray,
         structure_without_disp: PolymlpStructure,
-        pot: Optional[str, list[str]] = None,
+        pot: Optional[Union[str, list[str]]] = None,
         params: Optional[PolymlpParams] = None,
         coeffs: Optional[Union[np.ndarray, list[np.ndarray]]] = None,
         properties: Optional[Properties] = None,
