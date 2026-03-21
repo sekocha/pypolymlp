@@ -88,9 +88,9 @@ def test_auto_divide():
     """Test divide_dataset."""
     polymlp = PypolymlpUtils(verbose=True)
     files = [path_file + "vasprun-00001-MgO.xml", path_file + "vasprun-00002-MgO.xml"]
-    polymlp.divide_dataset(files)
-    shutil.rmtree("vaspruns")
-    os.remove("polymlp.in.append")
+    elements = ["Mg", "O"]
+    polymlp.divide_dataset(files, elements, n_divide=6)
+    shutil.rmtree("polymlp_datasets")
 
 
 def test_generate_kim_model():
