@@ -88,7 +88,7 @@ Several procedures for generating structures used in DFT calculations are also s
 - Tutorials
   1. [Development of a single on-the-fly MLP](docs/tutorial_onthefly.md)
   2. Development of a single general-purpose MLP
-  3. Development of Pareto-optimal MLPs
+  3. [Development of convex hull (Pareto-optimal) MLPs](docs/utils_grid.md)
 - MLP developments
   - [VASP (Command line interface)](docs/mlpdev_command.md)
   - [VASP (Python API)](docs/mlpdev_api.md)
@@ -99,7 +99,7 @@ Several procedures for generating structures used in DFT calculations are also s
 
 - Utilities for MLP development
   - Dataset Generation
-    - [Generator of DFT random structures](docs/strgen.md)
+    - [Generator of DFT random structures](docs/utils_strgen.md)
     - [Compression of vasprun.xml files](docs/utils_compress.md)
     - [Automatic division of DFT dataset](docs/utils_dataset_div.md)
   - [Convex hull (Pareto-optimal) MLP search](docs/utils_grid.md)

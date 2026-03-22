@@ -49,7 +49,7 @@ If random structures with atomic displacements, cell expansions, and distortions
 > pypolymlp-structure --poscars POSCAR --standard 100 --max_distance 1.5
 ```
 
-See [DFT Structure Generator](strgen.md) for other commands to generate structures.
+See [DFT Structure Generator](utils_strgen.md) for other commands to generate structures.
 
 
 ## 2. Perform DFT Calculations for the Random Structures
