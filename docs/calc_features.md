@@ -1,10 +1,20 @@
-# Polynomial invariant calculation
+# Polynomial Invariant Calculation
+
+Polynomial invariants used in polynomial MLPs can be calculated using the command-line interface and the Python API.
 
 ## Using command line interface
+
+The `--features` option enables polynomial invariant calculations.
+Input parameters can be provided from two types of files: an input file used for developing an MLP, or a file containing a developed MLP.
+The input file used for developing the MLP can be specified with the `-i` option.
+The polynomial MLP file can be specified with the `--pot` option.
+Multiple structures can be specified using the `--poscars` option.
+
 ```shell
 > pypolymlp-calc --features --pot polymlp.yaml --poscars */POSCAR
 > pypolymlp-calc --features -i polymlp.in --poscars */POSCAR
 ```
+
 ## Using Python API
 
 ### Polynomial invariant calculation using `polymlp.in`

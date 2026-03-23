@@ -89,7 +89,7 @@ Several procedures for generating structures used in DFT calculations are also s
   1. [Development of a single on-the-fly MLP](docs/tutorial_onthefly.md)
   2. Development of a single general-purpose MLP
   3. [Development of convex hull (Pareto-optimal) MLPs](docs/utils_grid.md)
-- MLP developments
+- MLP Developments
   - [VASP (Command line interface)](docs/mlpdev_command.md)
   - [VASP (Python API)](docs/mlpdev_api.md)
   - [Structure-Properties general datasets (Python API)](docs/mlpdev_dataset_api.md)
@@ -107,10 +107,12 @@ Several procedures for generating structures used in DFT calculations are also s
   - [Generator of portable model for OpenKIM](docs/utils_kim.md)
   - [Other utilities](docs/utils.md)
 
-- Experimental features
+- Experimental Features
   - [SSCHA free energy model](docs/experimental/mlpdev_sscha.md)
   - [Electronic free energy model](docs/experimental/mlpdev_electron.md)
   - [Substitutional disordered model](docs/experimental/mlpdev_disorder.md)
+
+- [Theoretical Background](docs/theory.md)
 
 ### Calculations using polynomial MLP
 In version 0.8.0 or earlier, polymlp files are generated in a plain text format as `polymlp.lammps`.
