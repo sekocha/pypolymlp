@@ -127,6 +127,7 @@ The following calculations can be performed using **pypolymlp** with the polynom
   - [Elastic constants](docs/calc_elastic.md)
   - [Phonon properties, Quasi-harmonic approximation](docs/calc_phonon.md)
   - [Force constants](docs/calc_fc.md)
+  - [Lattice thermal conductivity](docs/calc_ltc.md)
   - [Polynomial invariants](docs/calc_features.md)
   - [Systematic property calculations](docs/calc_auto.md)
 - Experimental features
