@@ -5,6 +5,9 @@
 The equation of state for a structure specified in `POSCAR` is calculated using the given polynomial MLP.
 
 ## Using command-line interface
+
+The `--eos` option activates the equation-of-state (EOS) calculation.
+
 ```shell
 > pypolymlp-calc --eos --poscar POSCAR --pot polymlp.yaml
 ```

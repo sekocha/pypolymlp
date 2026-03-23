@@ -1,10 +1,29 @@
-# Phonon calculations
-`phonopy` is required.
+# Phonon Calculations
+
+> **Note**: Requires `phonopy`.
+
+Phonon and quasi-harmonic approximation (QHA) calculations can be performed using both the command-line interface and the Python API.
 
 ## Using command line interface
+
+The `--phonon` option activates standard phonon and quasi-harmonic approximation (QHA) calculations for a given structure.
+
 ```shell
 > pypolymlp-calc --phonon --pot polymlp.yaml --poscar POSCAR --supercell 3 3 2 --ph_mesh 20 20 20
 ```
+
+The available options are as folows:
+```
+  --ph_mesh PH_MESH PH_MESH PH_MESH
+                        k-mesh used for phonon calculation
+  --ph_tmin PH_TMIN     Temperature (min)
+  --ph_tmax PH_TMAX     Temperature (max)
+  --ph_tstep PH_TSTEP   Temperature (step)
+  --ph_pdos             Compute phonon PDOS
+  --supercell SUPERCELL SUPERCELL SUPERCELL
+                        Supercell size (diagonal components)
+```
+
 
 ## Using Python API
 ```python

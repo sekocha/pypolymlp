@@ -2,7 +2,7 @@
 
 > **Note**: Requires `pymatgen`.
 
-The elastic constants of a structure are calculated using a polynomial MLP.
+The `--elastic` option activates the calculation of elastic constants for a structure using a given polynomial MLP.
 
 ## Using command-line interface
 ```shell

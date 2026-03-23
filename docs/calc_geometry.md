@@ -1,9 +1,10 @@
 # Local Geometry Optimization
 
-Local geometry optimization is performed from a structure specified in `POSCAR` using a given polynomial MLP.
+Local geometry optimization for a structure can be performed using the command-line interface and the Python API.
 
 ## Using command-line interface
 
+The `--geometry_optimization` option activates local geometry optimization for a structure specified in `POSCAR`, using a given polynomial MLP.
 The options `--no_symmetry`, `--fix_cell`, `--fix_volume`, and `--fix_atom` control the degrees of freedom during optimization.
 The available options are as follows:
 
