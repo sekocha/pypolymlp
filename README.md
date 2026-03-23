@@ -112,7 +112,6 @@ Several procedures for generating structures used in DFT calculations are also s
   - [Electronic free energy model](docs/experimental/mlpdev_electron.md)
   - [Substitutional disordered model](docs/experimental/mlpdev_disorder.md)
 
-- [Theoretical Background](docs/theory.md)
 
 ### Calculations using polynomial MLP
 In version 0.8.0 or earlier, polymlp files are generated in a plain text format as `polymlp.lammps`.
