@@ -145,3 +145,6 @@ The following calculations can be performed using **pypolymlp** with the polynom
   - ASE
   - OpenKIM
   - phonopy and phonon3py
+
+### Theoretical Background
+- [Polynomial Invariants and Potential Models](https://cms.mtl.kyoto-u.ac.jp/seko/mlp-repository/theory.html)
