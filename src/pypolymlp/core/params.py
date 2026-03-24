@@ -30,6 +30,7 @@ def set_common_params(
     n_type = max([single.n_type for single in multiple_params])
     elements = _get_variable_with_max_length(multiple_params, "elements")
     atom_e = _get_variable_with_max_length(multiple_params, "atomic_energy")
+    enable_spins = _get_variable_with_max_length(multiple_params, "enable_spins")
 
     bool_element_order = [
         single.element_order for single in multiple_params
@@ -40,6 +41,10 @@ def set_common_params(
     common_params.elements = tuple(elements)
     common_params.element_order = tuple(element_order)
     common_params.atomic_energy = tuple(atom_e)
+    if len(enable_spins) == 0:
+        common_params.enable_spins = None
+    else:
+        common_params.enable_spins = tuple(enable_spins)
     return common_params
 
 
@@ -85,7 +90,9 @@ class PolymlpParams:
             self._common_params = self._params[0]
         else:
             self._common_params = set_common_params(self._params)
+
         self._set_unique_types()
+        self._check_dataset_type()
         return self._common_params
 
     def _set_unique_types(self):
@@ -167,9 +174,13 @@ class PolymlpParams:
     @include_force.setter
     def include_force(self, include: bool):
         """Setter of include_force."""
+        if self._common_params is None:
+            raise RuntimeError("Parameters not defined.")
+
         self._common_params.include_force = include
         for p in self._params:
             p.include_force = include
+        self._check_dataset_type()
 
     @property
     def include_stress(self):
@@ -179,9 +190,27 @@ class PolymlpParams:
     @include_stress.setter
     def include_stress(self, include: bool):
         """Setter of include_stress."""
+        if self._common_params is None:
+            raise RuntimeError("Parameters not defined.")
         self._common_params.include_stress = include
         for p in self._params:
             p.include_stress = include
+        self._check_dataset_type()
+
+    @property
+    def enable_spins(self):
+        """Return whether spins are included or not."""
+        return self._common_params.enable_spins
+
+    @enable_spins.setter
+    def enable_spins(self, spins: tuple[bool]):
+        """Setter of include_spin."""
+        if self._common_params is None:
+            raise RuntimeError("Parameters not defined.")
+        self._common_params.enable_spins = spins
+        for p in self._params:
+            p.enable_spins = spins
+        self._check_dataset_type()
 
     @property
     def dataset_type(self):
@@ -191,9 +220,12 @@ class PolymlpParams:
     @dataset_type.setter
     def dataset_type(self, dtype: str):
         """Setter of dataset type."""
+        if self._common_params is None:
+            raise RuntimeError("Parameters not defined.")
         self._common_params.dataset_type = dtype
         for p in self._params:
             p.dataset_type = dtype
+        self._check_dataset_type()
 
     @property
     def temperature(self):
@@ -203,6 +235,8 @@ class PolymlpParams:
     @temperature.setter
     def temperature(self, temp: float):
         """Setter of temperature."""
+        if self._common_params is None:
+            raise RuntimeError("Parameters not defined.")
         self._common_params.temperature = temp
         for p in self._params:
             p.temperature = temp
@@ -215,6 +249,8 @@ class PolymlpParams:
     @electron_property.setter
     def electron_property(self, prop: str):
         """Setter of target electronic property."""
+        if self._common_params is None:
+            raise RuntimeError("Parameters not defined.")
         self._common_params.electron_property = prop
         for p in self._params:
             p.electron_property = prop
@@ -227,6 +263,8 @@ class PolymlpParams:
     @element_swap.setter
     def element_swap(self, es: str):
         """Setter of element_swap."""
+        if self._common_params is None:
+            raise RuntimeError("Parameters not defined.")
         self._common_params.element_swap = es
         for p in self._params:
             p.element_swap = es
@@ -239,6 +277,8 @@ class PolymlpParams:
     @print_memory.setter
     def print_memory(self, pm: str):
         """Setter of print_memory."""
+        if self._common_params is None:
+            raise RuntimeError("Parameters not defined.")
         self._common_params.print_memory = pm
         for p in self._params:
             p.print_memory = pm
@@ -251,6 +291,8 @@ class PolymlpParams:
     @regression_alpha.setter
     def regression_alpha(self, a: str):
         """Setter of print_memory."""
+        if self._common_params is None:
+            raise RuntimeError("Parameters not defined.")
         self._common_params.regression_alpha = a
         for p in self._params:
             p.regression_alpha = a
@@ -263,6 +305,8 @@ class PolymlpParams:
     @alphas.setter
     def alphas(self, a: str):
         """Setter of print_memory."""
+        if self._common_params is None:
+            raise RuntimeError("Parameters not defined.")
         self._common_params.alphas = a
         for p in self._params:
             p.alphas = a
@@ -287,6 +331,7 @@ class PolymlpParams:
         print("  atomic_energy (eV):", self.atomic_energy, flush=True)
         print("  include_force:     ", self.include_force, flush=True)
         print("  include_stress:    ", self.include_stress, flush=True)
+        print("  enable_spins:      ", self.enable_spins, flush=True)
 
         for i, p in enumerate(self._params):
             print("model_" + str(i + 1) + ":", flush=True)
@@ -305,3 +350,28 @@ class PolymlpParams:
         if len(self._params) > 1:
             raise RuntimeError("Hybrid model not required to convert.")
         return PolymlpParams([self._params[0], self._params[0]])
+
+    def _check_dataset_type(self):
+        """Check whether dataset type is available for given parameters."""
+        if self._common_params is None:
+            return
+
+        if self.dataset_type in ("phono3py", "sscha", "openmx"):
+            if self.include_stress:
+                raise RuntimeError(
+                    "Include_stress not supported for given dataset type."
+                )
+            if self.enable_spins is not None:
+                raise RuntimeError("Spin not supported for given dataset type.")
+
+        elif self.dataset_type == "electron":
+            if self.include_force:
+                raise RuntimeError(
+                    "Include_force not supported for given dataset type."
+                )
+            if self.include_stress:
+                raise RuntimeError(
+                    "Include_stress not supported for given dataset type."
+                )
+            if self.enable_spins is not None:
+                raise RuntimeError("Spin not supported in phono3py dataset.")

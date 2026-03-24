@@ -174,8 +174,6 @@ class PolymlpModelParams:
     pair_params: Optional[list[list[float]]] = None
     pair_params_conditional: Optional[dict] = None
     n_gaussians: Optional[int] = None
-    # pair_params_in1: Optional[tuple] = None
-    # pair_params_in2: Optional[tuple] = None
 
     def __post_init__(self):
         self.check_errors()
@@ -204,6 +202,7 @@ class PolymlpParamsSingle:
     n_type: Number of atomic types.
     elements: Element species, (e.g., ['Mg','O']).
     model: Model parameters in PolymlpModelParams.
+    enable_spins: Boolean array to activate spins, (e.g., [True, False])
     atomic_energy: Atomic energies (in eV).
     dft_train, dft_test: Location of DFT datasets.
                          Their data structures depend on the dataset type.
@@ -218,6 +217,7 @@ class PolymlpParamsSingle:
     n_type: int
     elements: tuple[str]
     model: PolymlpModelParams
+    enable_spins: Optional[tuple] = None
     atomic_energy: Optional[tuple[float]] = None
     dft_train: Optional[Union[list, dict]] = None
     dft_test: Optional[Union[list, dict]] = None

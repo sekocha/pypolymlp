@@ -49,9 +49,8 @@ class ParamsParserSingle:
 
     def set_params(self):
         """Get parameters from file and set them."""
-        # TODO: Use set_all_params
         include_force, include_stress = self._get_force_tags()
-        elements, n_type, atom_e = self._get_element_properties()
+        elements, n_type, atom_e, enable_spins = self._get_element_properties()
         alphas = self._get_regression_params()
         model = self._get_potential_model_params(n_type, elements)
 
@@ -66,6 +65,7 @@ class ParamsParserSingle:
             elements=elements,
             model=model,
             atomic_energy=atom_e,
+            enable_spins=enable_spins,
             regression_alpha=alphas,
             include_force=include_force,
             include_stress=include_stress,
@@ -82,8 +82,10 @@ class ParamsParserSingle:
             )
             self._params.include_force = False
             self._params.include_stress = False
-        elif dataset_type in ("phono3py", "sscha", "openmx"):
+            self._params.enable_spins = None
+        elif dataset_type in ("phono3py", "openmx", "sscha"):
             self._params.include_stress = False
+            self._params.enable_spins = None
         return self._params
 
     def _get_force_tags(self):
@@ -128,7 +130,15 @@ class ParamsParserSingle:
         )
         if atom_e_unit in ("Hartree", "hartree"):
             atom_e = [e * HartreetoEV for e in atom_e]
-        return elements, n_type, tuple(atom_e)
+
+        enable_spins = self._parser.get_params(
+            "enable_spins",
+            size=n_type,
+            default=None,
+            dtype=bool,
+            return_array=True,
+        )
+        return elements, n_type, tuple(atom_e), enable_spins
 
     def _get_regression_params(self):
         """Set regularization parameters in regression."""
@@ -286,7 +296,7 @@ class ParamsParserSingle:
         return self
 
     @property
-    def params(self) -> PolymlpModelParams:
+    def params(self) -> PolymlpParamsSingle:
         """Return parameters for developing polymlp."""
         return self._params
 
