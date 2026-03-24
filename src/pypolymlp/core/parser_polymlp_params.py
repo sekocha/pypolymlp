@@ -80,12 +80,12 @@ class ParamsParserSingle:
             self._params.electron_property = self._parser.get_params(
                 "electron_property", default="free_energy", dtype=str
             )
-            self._params.include_force = False
-            self._params.include_stress = False
-            self._params.enable_spins = None
-        elif dataset_type in ("phono3py", "openmx", "sscha"):
-            self._params.include_stress = False
-            self._params.enable_spins = None
+        #     self._params.include_force = False
+        #     self._params.include_stress = False
+        #     self._params.enable_spins = None
+        # elif dataset_type in ("phono3py", "openmx", "sscha"):
+        #     self._params.include_stress = False
+        #     self._params.enable_spins = None
         return self._params
 
     def _get_force_tags(self):

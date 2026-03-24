@@ -298,8 +298,8 @@ class Pypolymlp:
         """
         self._is_params_none()
         self._params.dataset_type = "electron"
-        self._params.include_force = False
-        self._params.include_stress = False
+        # self._params.include_force = False
+        # self._params.include_stress = False
         self._params.temperature = temperature
         self._params.electron_property = target
 
@@ -321,7 +321,7 @@ class Pypolymlp:
         """
         self._is_params_none()
         self._params.dataset_type = "sscha"
-        self._params.include_stress = False
+        # self._params.include_stress = False
 
         self._train, self._test = set_datasets_from_single_fileset(
             self._params,
@@ -398,6 +398,7 @@ class Pypolymlp:
         """
         self._is_params_none()
         self._params.dataset_type = "phono3py"
+        # self._include_stress = False
         self._train, self._test = set_datasets_from_single_fileset(
             self._params,
             files=yaml,

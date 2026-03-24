@@ -92,7 +92,7 @@ class PolymlpParams:
             self._common_params = set_common_params(self._params)
 
         self._set_unique_types()
-        self._check_dataset_type()
+        self._set_tags()
         return self._common_params
 
     def _set_unique_types(self):
@@ -177,10 +177,12 @@ class PolymlpParams:
         if self._common_params is None:
             raise RuntimeError("Parameters not defined.")
 
+        if self.dataset_type == "electron" and include:
+            raise RuntimeError("Include_force not supported for given dataset type.")
+
         self._common_params.include_force = include
         for p in self._params:
             p.include_force = include
-        self._check_dataset_type()
 
     @property
     def include_stress(self):
@@ -192,10 +194,14 @@ class PolymlpParams:
         """Setter of include_stress."""
         if self._common_params is None:
             raise RuntimeError("Parameters not defined.")
+
+        exception = ("phono3py", "sscha", "openmx", "electron")
+        if self.dataset_type in exception and include:
+            raise RuntimeError("Include_stress not supported for given dataset type.")
+
         self._common_params.include_stress = include
         for p in self._params:
             p.include_stress = include
-        self._check_dataset_type()
 
     @property
     def enable_spins(self):
@@ -207,10 +213,14 @@ class PolymlpParams:
         """Setter of include_spin."""
         if self._common_params is None:
             raise RuntimeError("Parameters not defined.")
+
+        exception = ("phono3py", "sscha", "openmx", "electron")
+        if self.dataset_type in exception and spins is not None:
+            raise RuntimeError("enable_spins not supported for given dataset type.")
+
         self._common_params.enable_spins = spins
         for p in self._params:
             p.enable_spins = spins
-        self._check_dataset_type()
 
     @property
     def dataset_type(self):
@@ -222,10 +232,11 @@ class PolymlpParams:
         """Setter of dataset type."""
         if self._common_params is None:
             raise RuntimeError("Parameters not defined.")
+
         self._common_params.dataset_type = dtype
         for p in self._params:
             p.dataset_type = dtype
-        self._check_dataset_type()
+        self._set_tags()
 
     @property
     def temperature(self):
@@ -351,27 +362,16 @@ class PolymlpParams:
             raise RuntimeError("Hybrid model not required to convert.")
         return PolymlpParams([self._params[0], self._params[0]])
 
-    def _check_dataset_type(self):
-        """Check whether dataset type is available for given parameters."""
+    def _set_tags(self):
+        """Force to set tags."""
         if self._common_params is None:
-            return
+            return self
 
         if self.dataset_type in ("phono3py", "sscha", "openmx"):
-            if self.include_stress:
-                raise RuntimeError(
-                    "Include_stress not supported for given dataset type."
-                )
-            if self.enable_spins is not None:
-                raise RuntimeError("Spin not supported for given dataset type.")
-
+            self.include_stress = False
+            self.enable_spins = None
         elif self.dataset_type == "electron":
-            if self.include_force:
-                raise RuntimeError(
-                    "Include_force not supported for given dataset type."
-                )
-            if self.include_stress:
-                raise RuntimeError(
-                    "Include_stress not supported for given dataset type."
-                )
-            if self.enable_spins is not None:
-                raise RuntimeError("Spin not supported in phono3py dataset.")
+            self.include_force = False
+            self.include_stress = False
+            self.enable_spins = None
+        return self
