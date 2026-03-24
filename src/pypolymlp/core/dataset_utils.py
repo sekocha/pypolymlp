@@ -79,6 +79,7 @@ class DatasetDFT:
         forces: Optional[List[np.ndarray]] = None,
         stresses: Optional[np.ndarray] = None,
         element_order: Optional[List[str]] = None,
+        enable_spins: Optional[bool] = None,
     ):
         """Init method.
 
@@ -89,6 +90,7 @@ class DatasetDFT:
         forces: Forces, shape=(n_str, 3, n_atom(i_str)).
         stresses: Stress tensor elements, shape=(n_str, 3, 3).
         element_order: Order of elements to define atom types.
+        enable_spins: Boolean array to activate spin configurations.
 
         Attributes
         ----------
@@ -112,6 +114,7 @@ class DatasetDFT:
                 forces=forces,
                 stresses=stresses,
                 element_order=element_order,
+                enable_spins=enable_spins,
             )
 
     def _set_properties(
@@ -121,6 +124,7 @@ class DatasetDFT:
         forces: Optional[List[np.ndarray]] = None,
         stresses: Optional[np.ndarray] = None,
         element_order: Optional[List[str]] = None,
+        enable_spins: Optional[bool] = None,
     ):
         """Set properties in the form used for pypolymlp regression."""
         assert len(structures) == len(energies)

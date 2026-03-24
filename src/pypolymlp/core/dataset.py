@@ -84,6 +84,7 @@ class Dataset:
             prefix_location=prefix_location,
         )
 
+        self._params = None
         self._element_order = None
         self._finished_atomic_energy = False
 
@@ -227,6 +228,7 @@ class Dataset:
 
     def parse_files(self, params: PolymlpParams):
         """Parse data from files."""
+        self._params = params
         self._element_order = params.element_order
         if self._dataset_type == "vasp":
             self._parse_vasp()
@@ -237,7 +239,7 @@ class Dataset:
         elif self._dataset_type == "sscha":
             self._parse_sscha()
         elif self._dataset_type == "electron":
-            self._parse_electron(params)
+            self._parse_electron()
         else:
             raise KeyError("Given dataset_type is unavailable.")
 
@@ -249,6 +251,7 @@ class Dataset:
         self._dft = set_dataset_from_vaspruns(
             self._files,
             element_order=self._element_order,
+            # enable_spins=self._params.enable_spins,
             verbose=self._verbose,
         )
         return self
@@ -271,9 +274,10 @@ class Dataset:
         )
         return self
 
-    def _parse_electron(self, params: PolymlpParams):
+    def _parse_electron(self):
         """Parse data from electron.yaml."""
         # TODO: Efficient implementation for multiple temperatures and properties.
+        params = self._params
         yml_data = parse_electron_yamls(self._files)
         self._dft = set_dataset_from_electron_yamls(
             yml_data,
