@@ -10,14 +10,33 @@ from pypolymlp.core.utils import split_ids_train_test
 
 def replace_types(st: PolymlpStructure, element_order: list[str]) -> PolymlpStructure:
     """Replace atom types used for property calculations."""
+
     st.elements = np.array(st.elements)
     st.types = np.array(st.types)
-
     count = 0
-    for atomtype, ele in enumerate(element_order):
-        match = st.elements == ele
-        st.types[match] = atomtype
-        count += np.count_nonzero(match)
+    if len(element_order) == len(np.unique(element_order)):
+        for atomtype, ele in enumerate(element_order):
+            match = st.elements == ele
+            st.types[match] = atomtype
+            count += np.count_nonzero(match)
+    else:
+        atomtype = 0
+        types = np.zeros(st.types.shape, dtype=int)
+        unique_elements = list(dict.fromkeys(element_order))
+        for ele in unique_elements:
+            match = st.elements == ele
+            count += np.count_nonzero(match)
+
+            match_ids = np.where(match)[0]
+            idx = np.argsort(st.types[match])
+            match_ids = match_ids[idx]
+            types_local = st.types[match_ids]
+            mapping = {v: i + atomtype for i, v in enumerate(np.unique(types_local))}
+            types_local = np.array([mapping[t] for t in types_local])
+            types[match_ids] = types_local
+
+            atomtype += len(np.unique(types_local))
+        st.types = types
 
     if count != st.elements.shape[0]:
         raise RuntimeError("Elements in structure not found in element_order.")
@@ -72,7 +91,6 @@ def permute_atoms(
 def permute_atoms_with_spins(
     st: PolymlpStructure,
     element_order: list[str],
-    enable_spins: tuple,
     force: Optional[np.ndarray] = None,
 ) -> tuple[PolymlpStructure, np.ndarray]:
     """Permute atoms in structure and forces with considering spins.
@@ -88,8 +106,10 @@ def permute_atoms_with_spins(
     if force is not None:
         force_permute = np.zeros(force.shape)
 
+    atomtype = 0
     begin = 0
-    for ele in element_order:
+    unique_elements = list(dict.fromkeys(element_order))
+    for ele in unique_elements:
         match = st.elements == ele
         n_match = np.count_nonzero(match)
         end = begin + n_match
@@ -97,13 +117,17 @@ def permute_atoms_with_spins(
         match_ids = np.where(match)[0]
         idx = np.argsort(st.types[match])
         match_ids = match_ids[idx]
-        types_local = st.types[match_ids]
 
-        types[begin:end] = types_local
         positions[:, begin:end] = st.positions[:, match_ids]
         elements.extend([ele for _ in range(n_match)])
+
+        types_local = st.types[match_ids]
+        mapping = {v: i + atomtype for i, v in enumerate(np.unique(types_local))}
+        types_local = np.array([mapping[t] for t in types_local])
+        types[begin:end] = types_local
         for t in np.unique(types_local):
             n_atoms.append(np.count_nonzero(types_local == t))
+            atomtype += 1
 
         if force is not None:
             force_permute[:, begin:end] = force[:, match_ids]
@@ -203,7 +227,6 @@ class DatasetDFT:
                 st1, force_st1 = permute_atoms_with_spins(
                     st,
                     element_order,
-                    enable_spins,
                     force=force_st,
                 )
 

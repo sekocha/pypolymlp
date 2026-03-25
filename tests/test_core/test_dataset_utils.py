@@ -70,7 +70,7 @@ def test_permute_atoms_with_spins2(structure_rocksalt):
     np.testing.assert_allclose(force_permute, force[:, order])
     np.testing.assert_allclose(st.positions, structure_rocksalt.positions[:, order])
     np.testing.assert_equal(st.n_atoms, [4, 2, 2])
-    np.testing.assert_equal(st.types, [2, 2, 2, 2, 0, 0, 1, 1])
+    np.testing.assert_equal(st.types, [0, 0, 0, 0, 1, 1, 2, 2])
     np.testing.assert_equal(st.elements, np.array(structure_rocksalt.elements)[order])
 
 

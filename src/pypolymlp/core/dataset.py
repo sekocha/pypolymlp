@@ -251,7 +251,7 @@ class Dataset:
         self._dft = set_dataset_from_vaspruns(
             self._files,
             element_order=self._element_order,
-            # enable_spins=self._params.enable_spins,
+            enable_spins=self._params.enable_spins,
             verbose=self._verbose,
         )
         return self

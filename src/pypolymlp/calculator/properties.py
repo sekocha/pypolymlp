@@ -16,6 +16,10 @@ def find_active_atoms(
     element_order: list[str],
 ):
     """Reconstruct structures only using active atoms."""
+    # TODO: Implement active atoms for spin-configuration.
+    if len(element_order) != len(np.unique(element_order)):
+        raise RuntimeError("Not available for system with spin configurations.")
+
     structures_active = []
     active_atoms_all = []
     active_bools = []
@@ -89,7 +93,7 @@ class PropertiesSingle:
         force: unit: eV/angstrom (3, n_atom)
         stress: unit: eV/supercell: (6) in the order of xx, yy, zz, xy, yz, zx
         """
-        if self._params.type_full:
+        if self._params.type_full or self._params.type_full is None:
             st_calc = update_types(st, self._params.element_order)
         else:
             st_calc, active_atoms, _ = find_active_atoms(
@@ -111,10 +115,12 @@ class PropertiesSingle:
         force = np.array(self._obj.get_f()).T
         stress = np.array(self._obj.get_s())
 
-        if not self._params.type_full:
-            force_full = np.zeros((3, len(st.types)))
-            force_full[:, active_atoms] = force
-            force = force_full
+        if self._params.type_full or self._params.type_full is None:
+            return energy, force, stress
+
+        force_full = np.zeros((3, len(st.types)))
+        force_full[:, active_atoms] = force
+        force = force_full
 
         return energy, force, stress
 
@@ -140,7 +146,7 @@ class PropertiesSingle:
                 "structures: Using a fast algorithm",
                 flush=True,
             )
-        if self._params.type_full:
+        if self._params.type_full or self._params.type_full is None:
             structures_calc = update_types(structures, self._params.element_order)
         else:
             structures_calc, active_atoms, active_bools = find_active_atoms(
@@ -164,27 +170,29 @@ class PropertiesSingle:
         stresses = np.array(self._obj.get_s_array())
         forces = [np.array(f).T for f in self._obj.get_f_array()]
 
-        if not self._params.type_full:
-            energies_full, forces_full, stresses_full = [], [], []
-            i = 0
-            for iall, active in enumerate(active_bools):
-                st = structures[iall]
-                f_full = np.zeros((3, len(st.types)))
-                if active:
-                    atoms = active_atoms[i]
-                    f_full[:, atoms] = forces[i]
-                    energies_full.append(energies[i])
-                    forces_full.append(f_full)
-                    stresses_full.append(stresses[i])
-                    i += 1
-                else:
-                    energies_full.append(0.0)
-                    forces_full.append(f_full)
-                    stresses_full.append(np.zeros(6))
+        if self._params.type_full or self._params.type_full is None:
+            return energies, forces, stresses
 
-            energies = np.array(energies_full)
-            forces = forces_full
-            stresses = np.array(stresses_full)
+        energies_full, forces_full, stresses_full = [], [], []
+        i = 0
+        for iall, active in enumerate(active_bools):
+            st = structures[iall]
+            f_full = np.zeros((3, len(st.types)))
+            if active:
+                atoms = active_atoms[i]
+                f_full[:, atoms] = forces[i]
+                energies_full.append(energies[i])
+                forces_full.append(f_full)
+                stresses_full.append(stresses[i])
+                i += 1
+            else:
+                energies_full.append(0.0)
+                forces_full.append(f_full)
+                stresses_full.append(np.zeros(6))
+
+        energies = np.array(energies_full)
+        forces = forces_full
+        stresses = np.array(stresses_full)
 
         return energies, forces, stresses
 

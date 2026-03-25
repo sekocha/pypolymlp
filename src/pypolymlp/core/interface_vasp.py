@@ -25,7 +25,6 @@ def set_dataset_from_vaspruns(
 
     structures, props = parse_properties_from_vaspruns(files, verbose=verbose)
     (energies, forces, stresses) = props
-    print(structures[0].types)
     dft = DatasetDFT(
         structures,
         energies,
@@ -34,8 +33,6 @@ def set_dataset_from_vaspruns(
         element_order=element_order,
         enable_spins=enable_spins,
     )
-    print(dft.structures[0].elements)
-    print(dft.structures[0].types)
     return dft
 
 

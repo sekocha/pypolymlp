@@ -1,6 +1,8 @@
 """Dataclasses used for developing polymlp."""
 
 import copy
+import itertools
+from collections import defaultdict
 from dataclasses import asdict, dataclass
 from typing import Literal, Optional, Union
 
@@ -192,6 +194,17 @@ class PolymlpModelParams:
                     "Either of pair_params or pair_params_conditional is required."
                 )
 
+    def revise_params(self, map_types: dict):
+        """Revise pair parameters."""
+        if self.pair_params_conditional is not None:
+            pair_params_conditional = dict()
+            for k, values in self.pair_params_conditional.items():
+                for t1, t2 in itertools.product(map_types[k[0]], map_types[k[1]]):
+                    key = tuple(sorted([t1, t2]))
+                    pair_params_conditional[key] = values
+            self.pair_params_conditional = pair_params_conditional
+        return self
+
 
 @dataclass
 class PolymlpParamsSingle:
@@ -246,6 +259,7 @@ class PolymlpParamsSingle:
     def __post_init__(self):
         self.check_errors()
         self.alphas = np.array([pow(10, a) for a in self.regression_alpha])
+        self._set_systems()
 
     def as_dict(self) -> dict:
         """Convert the dataclass to dict."""
@@ -267,3 +281,69 @@ class PolymlpParamsSingle:
             reg_alpha_params[2],
         )
         self.alphas = np.array([pow(10, a) for a in self.regression_alpha])
+
+    def _set_systems(self):
+        """Set system variables."""
+        self._system_elements = PolymlpSystem(
+            n_type=self.n_type,
+            elements=self.elements,
+            atomic_energy=self.atomic_energy,
+            enable_spins=self.enable_spins,
+        )
+        if self.enable_spins is None:
+            self._system = self._system_elements
+        else:
+            n_type = 0
+            elements, atomic_energy, enable_spins = [], [], []
+            map_types = defaultdict(list)
+            for i, (ele, atom_e, spin) in enumerate(
+                zip(
+                    self.elements,
+                    self.atomic_energy,
+                    self.enable_spins,
+                )
+            ):
+                elements.append(ele)
+                atomic_energy.append(atom_e)
+                enable_spins.append(spin)
+                map_types[i].append(n_type)
+                n_type += 1
+                if spin:
+                    elements.append(ele)
+                    atomic_energy.append(atom_e)
+                    enable_spins.append(spin)
+                    map_types[i].append(n_type)
+                    n_type += 1
+
+            self.n_type = n_type
+            self.elements = tuple(elements)
+            self.element_order = self.elements
+            self.atomic_energy = tuple(atomic_energy)
+            self.enable_spins = tuple(enable_spins)
+            self._system = PolymlpSystem(
+                n_type=self.n_type,
+                elements=self.elements,
+                atomic_energy=self.atomic_energy,
+                enable_spins=self.enable_spins,
+            )
+            self.model.revise_params(map_types)
+
+    @property
+    def system(self):
+        """Return system."""
+        return self._system
+
+    @property
+    def system_elements(self):
+        """Return system."""
+        return self._system_elements
+
+
+@dataclass
+class PolymlpSystem:
+    """Dataclass for describing system."""
+
+    n_type: int
+    elements: tuple
+    atomic_energy: tuple
+    enable_spins: Optional[tuple] = None
