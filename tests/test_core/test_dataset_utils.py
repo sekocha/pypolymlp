@@ -33,13 +33,11 @@ def test_permute_atoms_with_spins1(structure_rocksalt):
     structure_rocksalt_copy = copy.deepcopy(structure_rocksalt)
     structure_rocksalt_copy.types = np.array([0, 1, 0, 1, 2, 2, 2, 2])
     force = np.random.random(structure_rocksalt.positions.shape)
-    element_order = ("Mg", "O")
-    enable_spins = (True, False)
+    element_order = ("Mg", "Mg", "O")
 
     st, force_permute = permute_atoms_with_spins(
         structure_rocksalt_copy,
         element_order,
-        enable_spins,
         force,
     )
 
@@ -56,13 +54,11 @@ def test_permute_atoms_with_spins2(structure_rocksalt):
     structure_rocksalt_copy = copy.deepcopy(structure_rocksalt)
     structure_rocksalt_copy.types = np.array([0, 1, 0, 1, 2, 2, 2, 2])
     force = np.random.random(structure_rocksalt.positions.shape)
-    element_order = ("O", "Mg")
-    enable_spins = (False, True)
+    element_order = ("O", "Mg", "Mg")
 
     st, force_permute = permute_atoms_with_spins(
         structure_rocksalt_copy,
         element_order,
-        enable_spins,
         force,
     )
 

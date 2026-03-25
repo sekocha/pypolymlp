@@ -26,8 +26,6 @@ def set_common_params(
     multiple_params: list[PolymlpParamsSingle],
 ) -> PolymlpParamsSingle:
     """Set common parameters of multiple PolymlpParams."""
-    for p in multiple_params:
-        print(p)
     common_params = copy.copy(multiple_params[0])
     n_type = max([single.n_type for single in multiple_params])
     elements = _get_variable_with_max_length(multiple_params, "elements")
@@ -70,6 +68,7 @@ class PolymlpParams:
         This initialization is needed if parameters are changed.
         """
         self._set_common_params()
+        self._check_errors()
         self._set_tags()
         self._set_unique_types()
 
@@ -94,6 +93,29 @@ class PolymlpParams:
         """Append parameters."""
         self._params.append(params)
         self._initialize()
+
+    def _check_errors(self):
+        """Check errors in parameters."""
+        if len(self._params) == 1:
+            return self
+
+        enable_spins_all = [p.enable_spins for p in self._params]
+        n_none = enable_spins_all.count(None)
+        if n_none == len(enable_spins_all):
+            return self
+
+        if n_none != 0 and n_none != len(enable_spins_all):
+            raise RuntimeError(
+                "enable_spins not consistent across all components of hybrid model."
+            )
+
+        combs = [
+            (ele, spin)
+            for p in self.params
+            for ele, spin in zip(p.elements, p.enable_spins)
+        ]
+        if len(set(combs)) != len(np.unique(self.elements)):
+            raise RuntimeError("Same values of enable_spins not given.")
 
     def _set_common_params(self):
         """Set common parameters in hybrid model."""
@@ -173,6 +195,20 @@ class PolymlpParams:
     def enable_spins(self):
         """Return whether spins are included or not."""
         return self._common_params.enable_spins
+
+    @enable_spins.setter
+    def enable_spins(self, include: bool):
+        """Setter of enable_spins."""
+        if self._common_params is None:
+            raise RuntimeError("Parameters not defined.")
+
+        exception = ("phono3py", "sscha", "openmx", "electron")
+        if self.dataset_type in exception and include:
+            raise RuntimeError("Enable_spins not supported for given dataset type.")
+
+        self._common_params.enable_spins = include
+        for p in self._params:
+            p.enable_spins = include
 
     @property
     def include_force(self):

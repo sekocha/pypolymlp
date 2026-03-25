@@ -22,11 +22,18 @@ def save_mlp_yaml(
 ):
     """Generate polymlp.yaml file for single polymlp model"""
     model = params.model
+    system = params.system_elements
 
     np.set_printoptions(legacy="1.21")
     f = open(filename, "w")
-    elements_str = "[" + ", ".join(["{0}".format(x) for x in params.elements]) + "]"
+    elements_str = "[" + ", ".join(["{0}".format(x) for x in system.elements]) + "]"
     print("elements:     ", elements_str, file=f)
+
+    if system.enable_spins is None:
+        print("enable_spins: ", system.enable_spins, file=f)
+    else:
+        print("enable_spins: ", [int(s) for s in system.enable_spins], file=f)
+
     print("cutoff:       ", model.cutoff, file=f)
     print("pair_type:    ", model.pair_type, file=f)
     print("feature_type: ", model.feature_type, file=f)
