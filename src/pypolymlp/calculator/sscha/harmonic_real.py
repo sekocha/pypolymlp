@@ -214,7 +214,7 @@ class HarmonicReal:
         residual_f = np.array(residual_f)
         residual_s = np.array(residual_s)
         average_forces = np.mean(self._forces - residual_f, axis=0)
-        average_stress_tensor = np.mean(self._forces - residual_f, axis=0)
+        average_stress_tensor = np.mean(self._stress_tensors - residual_s, axis=0)
         return pot_harmonic, average_forces, average_stress_tensor
 
     def _eliminate_outliers(self, tol_negative: float = -10):
