@@ -21,7 +21,7 @@ def load_fc2_hdf5(filefc2: str = "fc2.hdf5", return_matrix: bool = True):
 
 
 def eval_properties_fc2(fc2: np.ndarray, disps: np.ndarray):
-    """Evaluate energy and forces from FC2.
+    """Evaluate energy, forces, and stress tensor from FC2.
 
     Parameters
     ----------
@@ -32,11 +32,18 @@ def eval_properties_fc2(fc2: np.ndarray, disps: np.ndarray):
     ------
     energy: Energy in eV.
     forces: Forces in eV/angstrom. shape=(3, N).
+    stress_tensor: Stress tensor in eV, shape=(6) in the order of xx, yy, zz, xy, yz, zx.
     """
     n_atom = fc2.shape[0] // 3
     disps_minus = -disps
     forces = fc2 @ disps_minus
     energy = disps_minus @ forces
-
     forces = forces.reshape((n_atom, 3)).T
-    return 0.5 * energy, forces
+
+    stress_tensor = np.zeros(6)
+    d = disps.reshape(n_atom, 3).T
+    stress_indices = [(0, 0), (1, 1), (2, 2), (0, 1), (1, 2), (2, 0)]
+    for k, (i, j) in enumerate(stress_indices):
+        stress_tensor[k] = 0.5 * np.sum(forces[i, :] * d[j, :] + forces[j, :] * d[i, :])
+
+    return 0.5 * energy, forces, stress_tensor
