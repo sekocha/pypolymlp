@@ -82,7 +82,7 @@ class ParamsParserSingle:
             )
             self._params.include_force = False
             self._params.include_stress = False
-        elif dataset_type in ("phono3py", "sscha", "openmx"):
+        elif dataset_type in ("phono3py", "openmx"):
             self._params.include_stress = False
         return self._params
 
