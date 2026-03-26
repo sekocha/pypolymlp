@@ -102,7 +102,6 @@ class Features:
         datasets: Optional[DatasetList] = None,
         structures: Optional[list[PolymlpStructure]] = None,
         print_memory: bool = True,
-        element_swap: bool = False,
     ):
         """Init method."""
         if len(params) > 1:
@@ -117,7 +116,6 @@ class Features:
             force_dataset,
         ) = _init_features(datasets, structures, params)
 
-        params.element_swap = element_swap
         params.print_memory = print_memory
         obj = libmlpcpp.PotentialModel(
             params.as_dict(),
@@ -180,7 +178,6 @@ class FeaturesHybrid:
         datasets: Optional[DatasetList] = None,
         structures: Optional[list[PolymlpStructure]] = None,
         print_memory: bool = True,
-        element_swap: bool = False,
     ):
         """Init method."""
         (
@@ -192,7 +189,6 @@ class FeaturesHybrid:
             force_dataset,
         ) = _init_features(datasets, structures, params)
 
-        params.element_swap = element_swap
         params.print_memory = print_memory
         obj = libmlpcpp.PotentialHybridModel(
             params.as_dict(),
@@ -251,7 +247,6 @@ def compute_features(
     params: PolymlpParams,
     datasets: Optional[Union[DatasetList, Dataset]] = None,
     structures: Optional[list[PolymlpStructure]] = None,
-    element_swap: bool = False,
     verbose: bool = False,
 ):
     """Compute polymlp features.
@@ -272,6 +267,5 @@ def compute_features(
         datasets=datasets,
         structures=structures,
         print_memory=verbose,
-        element_swap=element_swap,
     )
     return features

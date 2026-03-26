@@ -281,20 +281,6 @@ class PolymlpParams:
             p.electron_property = prop
 
     @property
-    def element_swap(self):
-        """Return element_swap."""
-        return bool(self._common_params.element_swap)
-
-    @element_swap.setter
-    def element_swap(self, es: str):
-        """Setter of element_swap."""
-        if self._common_params is None:
-            raise RuntimeError("Parameters not defined.")
-        self._common_params.element_swap = es
-        for p in self._params:
-            p.element_swap = es
-
-    @property
     def print_memory(self):
         """Return print_memory."""
         return bool(self._common_params.print_memory)

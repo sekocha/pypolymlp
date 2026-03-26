@@ -16,7 +16,6 @@ from pypolymlp.mlp_dev.core.utils_weights import apply_weights
 def calc_xy(
     params: PolymlpParams,
     datasets: DatasetList,
-    element_swap: bool = False,
     scales: Optional[np.ndarray] = None,
     min_energy: Optional[float] = None,
     weight_stress: float = 0.1,
@@ -27,7 +26,6 @@ def calc_xy(
     features = compute_features(
         params,
         datasets=datasets,
-        element_swap=element_swap,
         verbose=verbose,
     )
     x = features.x

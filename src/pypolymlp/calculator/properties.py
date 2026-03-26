@@ -80,7 +80,6 @@ class PropertiesSingle:
             self._params = params
             self._coeffs = coeffs
 
-        self._params.element_swap = False
         params_dict = self._params.as_dict()
         self._obj = libmlpcpp.PotentialPropertiesFast(params_dict, self._coeffs)
 
