@@ -108,6 +108,13 @@ def load_mlp_yaml(filename: Union[str, io.IOBase] = "polymlp.yaml"):
     n_type = len(elements)
     mass = yml["mass"]
 
+    try:
+        enable_spins = tuple([bool(v) for v in yml["enable_spins"]])
+        atomic_energy = tuple([0.0 for v in yml["enable_spins"]])
+    except:
+        enable_spins = None
+        atomic_energy = None
+
     if yml["feature_type"] == "gtinv":
         gtinv = PolymlpGtinvParams(
             order=yml["gtinv_order"],
@@ -138,6 +145,8 @@ def load_mlp_yaml(filename: Union[str, io.IOBase] = "polymlp.yaml"):
     params = PolymlpParamsSingle(
         n_type=n_type,
         elements=elements,
+        atomic_energy=atomic_energy,
+        enable_spins=enable_spins,
         model=model,
         type_full=yml["type_full"],
         type_indices=yml["type_indices"],
