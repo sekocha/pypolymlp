@@ -157,7 +157,6 @@ def set_all_params(
     atomic_energy_unit: Literal["eV", "Hartree"] = "eV",
     atomic_energy: Optional[tuple[float]] = None,
     enable_spins: Optional[tuple] = None,
-    rearrange_by_elements: bool = True,
 ):
     """Assign input parameters.
 
@@ -193,7 +192,6 @@ def set_all_params(
         [maxl for order=2, maxl for order=3, ...]
     atomic_energy: Atomic energies.
     enable_spins: Boolean array to activate spin configuration.
-    rearrange_by_elements: Set True if not developing special MLPs.
     """
     elements, n_type, atomic_energy, enable_spins = set_element_properties(
         elements,
@@ -202,7 +200,6 @@ def set_all_params(
         atomic_energy=atomic_energy,
         enable_spins=enable_spins,
     )
-    element_order = elements if rearrange_by_elements else None
     alphas = set_regression_alphas(reg_alpha_params)
 
     gtinv, max_l = set_gtinv_params(
@@ -245,6 +242,5 @@ def set_all_params(
         regression_alpha=alphas,
         include_force=include_force,
         include_stress=include_stress,
-        element_order=element_order,
     )
     return params

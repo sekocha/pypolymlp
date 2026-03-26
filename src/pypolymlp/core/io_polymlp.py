@@ -88,16 +88,19 @@ def load_mlps(file_list_or_file):
         return PolymlpParams(params_single), [coeffs]
 
     if isinstance(file_list_or_file, (list, tuple, np.ndarray)):
-        if len(file_list_or_file) == 1:
-            params_single, coeffs = load_mlp(file_list_or_file[0])
-            return PolymlpParams(params_single), [coeffs]
+        params_single, coeffs = load_mlp(file_list_or_file[0])
+        params = PolymlpParams(params_single)
+        coeffs_array = [coeffs]
 
-        params, coeffs_array = PolymlpParams(), []
-        for pot in file_list_or_file:
+        if len(file_list_or_file) == 1:
+            return params, coeffs_array
+
+        for pot in file_list_or_file[1:]:
             params_single, coeffs = load_mlp(pot)
             params.append(params_single)
             coeffs_array.append(coeffs)
         return params, coeffs_array
+
     raise RuntimeError("Input object not appropriate for load_mlps.")
 
 

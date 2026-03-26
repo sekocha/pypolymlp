@@ -85,7 +85,7 @@ class Dataset:
         )
 
         self._params = None
-        self._element_order = None
+        self._elements = None
         self._finished_atomic_energy = False
 
     def _set_dataset_attrs(
@@ -229,7 +229,7 @@ class Dataset:
     def parse_files(self, params: PolymlpParams):
         """Parse data from files."""
         self._params = params
-        self._element_order = params.element_order
+        self._elements = params.elements
         if self._dataset_type == "vasp":
             self._parse_vasp()
         elif self._dataset_type == "phono3py":
@@ -250,7 +250,7 @@ class Dataset:
         """Parse data from vaspruns."""
         self._dft = set_dataset_from_vaspruns(
             self._files,
-            element_order=self._element_order,
+            elements=self._elements,
             enable_spins=self._params.enable_spins,
             verbose=self._verbose,
         )
@@ -262,7 +262,7 @@ class Dataset:
 
         self._dft = parse_phono3py_yaml(
             self._files,
-            element_order=self._element_order,
+            elements=self._elements,
         )
         return self
 
@@ -270,7 +270,7 @@ class Dataset:
         """Parse data from polymlp_sscha.yaml files."""
         self._dft = set_dataset_from_sscha_yamls(
             self._files,
-            element_order=self._element_order,
+            elements=self._elements,
         )
         return self
 
@@ -283,16 +283,13 @@ class Dataset:
             yml_data,
             temperature=params.temperature,
             target=params.electron_property,
-            element_order=self._element_order,
+            elements=self._elements,
         )
         return self
 
     def _parse_openmx(self):
         """Parse data from openmx log files."""
-        self._dft = set_dataset_from_openmx(
-            self._files,
-            element_order=self._element_order,
-        )
+        self._dft = set_dataset_from_openmx(self._files, elements=self._elements)
         return self
 
     def subtract_atomic_energy(self, atomic_energy: tuple):
@@ -665,7 +662,7 @@ def set_datasets_from_structures(
             energies,
             forces=forces,
             stresses=stresses,
-            element_order=params.element_order,
+            elements=params.elements,
         )
         data = Dataset(
             name="data",
@@ -685,14 +682,14 @@ def set_datasets_from_structures(
             train_energies,
             forces=train_forces,
             stresses=train_stresses,
-            element_order=params.element_order,
+            elements=params.elements,
         )
         test_dft = DatasetDFT(
             test_structures,
             test_energies,
             forces=test_forces,
             stresses=test_stresses,
-            element_order=params.element_order,
+            elements=params.elements,
         )
         train = Dataset(
             name="data1",

@@ -85,7 +85,6 @@ class Pypolymlp:
         atomic_energy_unit: Literal["eV", "Hartree"] = "eV",
         atomic_energy: Optional[tuple[float]] = None,
         enable_spins: Optional[tuple] = None,
-        rearrange_by_elements: bool = True,
     ):
         """Assign input parameters.
 
@@ -121,7 +120,6 @@ class Pypolymlp:
             [maxl for order=2, maxl for order=3, ...]
         atomic_energy: Atomic energies.
         enable_spins: Boolean array to activate spin configurations.
-        rearrange_by_elements: Set True if not developing special MLPs.
         """
         if params is not None:
             self._params = PolymlpParams(params)
@@ -146,7 +144,6 @@ class Pypolymlp:
             atomic_energy_unit=atomic_energy_unit,
             atomic_energy=atomic_energy,
             enable_spins=enable_spins,
-            rearrange_by_elements=rearrange_by_elements,
         )
         self._params = PolymlpParams(params_single)
         return self
@@ -172,7 +169,6 @@ class Pypolymlp:
         atomic_energy_unit: Literal["eV", "Hartree"] = "eV",
         atomic_energy: Optional[tuple[float]] = None,
         enable_spins: Optional[tuple] = None,
-        rearrange_by_elements: bool = True,
     ):
         """Append parameters to hybrid models.
 
@@ -208,7 +204,6 @@ class Pypolymlp:
             [maxl for order=2, maxl for order=3, ...]
         atomic_energy: Atomic energies.
         enable_spins: Boolean array to activate spin configurations.
-        rearrange_by_elements: Set True if not developing special MLPs.
         """
         if self._params is None:
             print("Use set_params to set priority parameters at first.")
@@ -236,7 +231,6 @@ class Pypolymlp:
             atomic_energy_unit=atomic_energy_unit,
             atomic_energy=atomic_energy,
             enable_spins=enable_spins,
-            rearrange_by_elements=rearrange_by_elements,
         )
         self._params.append(params_append)
         return self
@@ -298,8 +292,6 @@ class Pypolymlp:
         """
         self._is_params_none()
         self._params.dataset_type = "electron"
-        # self._params.include_force = False
-        # self._params.include_stress = False
         self._params.temperature = temperature
         self._params.electron_property = target
 
@@ -321,7 +313,6 @@ class Pypolymlp:
         """
         self._is_params_none()
         self._params.dataset_type = "sscha"
-        # self._params.include_stress = False
 
         self._train, self._test = set_datasets_from_single_fileset(
             self._params,
@@ -398,7 +389,6 @@ class Pypolymlp:
         """
         self._is_params_none()
         self._params.dataset_type = "phono3py"
-        # self._include_stress = False
         self._train, self._test = set_datasets_from_single_fileset(
             self._params,
             files=yaml,

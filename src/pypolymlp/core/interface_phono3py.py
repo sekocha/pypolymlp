@@ -14,7 +14,7 @@ from pypolymlp.utils.phonopy_utils import phonopy_cell_to_structure
 
 def parse_phono3py_yaml(
     filename: Union[str, Phono3py],
-    element_order: Optional[list[str]] = None,
+    elements: Optional[list[str]] = None,
     use_phonon_dataset: bool = False,
     return_displacements: bool = False,
 ) -> DatasetDFT:
@@ -33,7 +33,7 @@ def parse_phono3py_yaml(
     if ph3.energies is None:
         raise RuntimeError("Energy data not found in phono3py.yaml")
 
-    if not np.all(np.isin(element_order, ph3.supercell_phono3py.symbols)):
+    if not np.all(np.isin(elements, ph3.supercell_phono3py.symbols)):
         raise ValueError("Elements in the input file are not found in phono3py.yaml.")
 
     dft = DatasetDFT(
@@ -41,7 +41,7 @@ def parse_phono3py_yaml(
         ph3.energies,
         forces=ph3.forces,
         stresses=None,
-        element_order=element_order,
+        elements=elements,
     )
     if return_displacements:
         return dft, ph3.displacements

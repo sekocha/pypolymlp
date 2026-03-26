@@ -21,18 +21,19 @@ def save_mlp_yaml(
     filename: bool = "polymlp.yaml",
 ):
     """Generate polymlp.yaml file for single polymlp model"""
-    model = params.model
-    system = params.system_elements
+
+    params_ele = params.params_elements
+    model = params_ele.model
 
     np.set_printoptions(legacy="1.21")
     f = open(filename, "w")
-    elements_str = "[" + ", ".join(["{0}".format(x) for x in system.elements]) + "]"
+    elements_str = "[" + ", ".join(["{0}".format(x) for x in params_ele.elements]) + "]"
     print("elements:     ", elements_str, file=f)
 
-    if system.enable_spins is None:
-        print("enable_spins: ", system.enable_spins, file=f)
+    if params_ele.enable_spins is None:
+        print("enable_spins: ", params_ele.enable_spins, file=f)
     else:
-        print("enable_spins: ", [int(s) for s in system.enable_spins], file=f)
+        print("enable_spins: ", [int(s) for s in params_ele.enable_spins], file=f)
 
     print("cutoff:       ", model.cutoff, file=f)
     print("pair_type:    ", model.pair_type, file=f)
@@ -68,12 +69,12 @@ def save_mlp_yaml(
         print("  pair_params_indices:", list(n_ids), file=f)
     print("", file=f)
 
-    if params.type_full is not None:
-        print("type_full:   ", int(params.type_full), file=f)
-        print("type_indices:", list(params.type_indices), file=f)
+    if params_ele.type_full is not None:
+        print("type_full:   ", int(params_ele.type_full), file=f)
+        print("type_indices:", list(params_ele.type_indices), file=f)
     else:
         print("type_full:   ", 1, file=f)
-        print("type_indices:", list(np.arange(params.n_type)), file=f)
+        print("type_indices:", list(np.arange(params_ele.n_type)), file=f)
     print("", file=f)
 
     coeffs_ = coeffs / scales
@@ -103,7 +104,6 @@ def load_mlp_yaml(filename: Union[str, io.IOBase] = "polymlp.yaml"):
         yml = yaml.safe_load(open(filename))
 
     elements = yml["elements"]
-    element_order = elements
     n_type = len(elements)
     mass = yml["mass"]
 
@@ -138,7 +138,6 @@ def load_mlp_yaml(filename: Union[str, io.IOBase] = "polymlp.yaml"):
         n_type=n_type,
         elements=elements,
         model=model,
-        element_order=element_order,
         type_full=yml["type_full"],
         type_indices=yml["type_indices"],
         mass=mass,

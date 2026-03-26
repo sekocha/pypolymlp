@@ -12,7 +12,7 @@ from pypolymlp.utils.yaml_utils import load_cell
 
 def set_dataset_from_sscha_yamls(
     yamlfiles: list[str],
-    element_order: Optional[bool] = None,
+    elements: Optional[tuple] = None,
 ) -> DatasetDFT:
     """Return DFT dataset by loading sscha_results.yaml files."""
     structures, free_energies, forces = parse_sscha_yamls(yamlfiles)
@@ -21,7 +21,7 @@ def set_dataset_from_sscha_yamls(
         free_energies,
         forces=forces,
         stresses=None,
-        element_order=element_order,
+        elements=elements,
     )
     return dft
 
@@ -119,7 +119,7 @@ def set_dataset_from_electron_yamls(
         "entropy",
         "specific_heat",
     ] = "free_energy",
-    element_order: Optional[bool] = None,
+    elements: Optional[bool] = None,
 ) -> DatasetDFT:
     """Return DFT dataset by loading electron.yaml files."""
     structures, properties = extract_electron_properties(
@@ -132,6 +132,6 @@ def set_dataset_from_electron_yamls(
         properties,
         forces=None,
         stresses=None,
-        element_order=element_order,
+        elements=elements,
     )
     return dft

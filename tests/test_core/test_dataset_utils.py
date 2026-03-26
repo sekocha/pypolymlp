@@ -17,8 +17,8 @@ cwd = Path(__file__).parent
 def test_permute_atoms(structure_rocksalt):
     """Test for permute_atoms."""
     force = np.random.random(structure_rocksalt.positions.shape)
-    element_order = ("O", "Mg")
-    st, force_permute = permute_atoms(structure_rocksalt, element_order, force)
+    elements = ("O", "Mg")
+    st, force_permute = permute_atoms(structure_rocksalt, elements, force)
 
     order = np.array([4, 5, 6, 7, 0, 1, 2, 3])
     np.testing.assert_allclose(force_permute, force[:, order])
@@ -33,11 +33,11 @@ def test_permute_atoms_with_spins1(structure_rocksalt):
     structure_rocksalt_copy = copy.deepcopy(structure_rocksalt)
     structure_rocksalt_copy.types = np.array([0, 1, 0, 1, 2, 2, 2, 2])
     force = np.random.random(structure_rocksalt.positions.shape)
-    element_order = ("Mg", "Mg", "O")
+    elements = ("Mg", "Mg", "O")
 
     st, force_permute = permute_atoms_with_spins(
         structure_rocksalt_copy,
-        element_order,
+        elements,
         force,
     )
 
@@ -54,11 +54,11 @@ def test_permute_atoms_with_spins2(structure_rocksalt):
     structure_rocksalt_copy = copy.deepcopy(structure_rocksalt)
     structure_rocksalt_copy.types = np.array([0, 1, 0, 1, 2, 2, 2, 2])
     force = np.random.random(structure_rocksalt.positions.shape)
-    element_order = ("O", "Mg", "Mg")
+    elements = ("O", "Mg", "Mg")
 
     st, force_permute = permute_atoms_with_spins(
         structure_rocksalt_copy,
-        element_order,
+        elements,
         force,
     )
 
@@ -131,7 +131,7 @@ def test_dataset_dft_initialize(structure_rocksalt):
         energies,
         forces=forces,
         stresses=stresses,
-        element_order=elements,
+        elements=elements,
     )
     np.testing.assert_allclose(data.energies, energies)
     np.testing.assert_equal(data.elements, elements)

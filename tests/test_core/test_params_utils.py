@@ -33,6 +33,24 @@ def test_set_element_properties():
     assert spins is None
 
 
+def test_set_element_properties2():
+    """Test set_element_properties for spin configurations."""
+    elements = ["Fe", "Au"]
+    atom_e = (0.1, 0.2)
+    enable_spins = (True, False)
+
+    elements1, n_type1, atomic_energies1, spins = set_element_properties(
+        elements,
+        n_type=2,
+        atomic_energy=atom_e,
+        enable_spins=enable_spins,
+    )
+    assert tuple(elements1) == tuple(elements)
+    assert n_type1 == 2
+    np.testing.assert_allclose(atomic_energies1, atom_e)
+    assert spins == enable_spins
+
+
 def test_set_gtinv_params():
     """Test set_gtinv_params."""
     n_type = 2

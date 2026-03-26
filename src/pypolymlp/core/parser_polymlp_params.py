@@ -53,12 +53,7 @@ class ParamsParserSingle:
         elements, n_type, atom_e, enable_spins = self._get_element_properties()
         alphas = self._get_regression_params()
         model = self._get_potential_model_params(n_type, elements)
-
         dataset_type = self._parser.get_params("dataset_type", default="vasp")
-        rearrange = self._parser.get_params(
-            "rearrange_by_elements", default=True, dtype=bool
-        )
-        element_order = elements if rearrange else None
 
         self._params = PolymlpParamsSingle(
             n_type=n_type,
@@ -70,7 +65,6 @@ class ParamsParserSingle:
             include_force=include_force,
             include_stress=include_stress,
             dataset_type=dataset_type,
-            element_order=element_order,
         )
 
         if dataset_type == "electron":
@@ -80,12 +74,7 @@ class ParamsParserSingle:
             self._params.electron_property = self._parser.get_params(
                 "electron_property", default="free_energy", dtype=str
             )
-        #     self._params.include_force = False
-        #     self._params.include_stress = False
-        #     self._params.enable_spins = None
-        # elif dataset_type in ("phono3py", "openmx", "sscha"):
-        #     self._params.include_stress = False
-        #     self._params.enable_spins = None
+
         return self._params
 
     def _get_force_tags(self):

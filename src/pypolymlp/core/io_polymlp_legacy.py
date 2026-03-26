@@ -41,7 +41,6 @@ def load_mlp_lammps(filename: str = "polymlp.lammps"):
 
     idx = 0
     elements = _read_var(lines[idx], str, return_list=True)
-    element_order = elements
     n_type = len(elements)
     idx += 1
 
@@ -154,7 +153,6 @@ def load_mlp_lammps(filename: str = "polymlp.lammps"):
         n_type=n_type,
         elements=elements,
         model=model,
-        element_order=element_order,
         type_full=type_full,
         type_indices=type_indices,
         mass=mass,

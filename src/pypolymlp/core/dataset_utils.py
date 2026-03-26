@@ -8,21 +8,24 @@ from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.utils import split_ids_train_test
 
 
-def replace_types(st: PolymlpStructure, element_order: list[str]) -> PolymlpStructure:
+def replace_types(
+    st: PolymlpStructure,
+    elements_string: list[str],
+) -> PolymlpStructure:
     """Replace atom types used for property calculations."""
 
     st.elements = np.array(st.elements)
     st.types = np.array(st.types)
     count = 0
-    if len(element_order) == len(np.unique(element_order)):
-        for atomtype, ele in enumerate(element_order):
+    if len(elements_string) == len(np.unique(elements_string)):
+        for atomtype, ele in enumerate(elements_string):
             match = st.elements == ele
             st.types[match] = atomtype
             count += np.count_nonzero(match)
     else:
         atomtype = 0
         types = np.zeros(st.types.shape, dtype=int)
-        unique_elements = list(dict.fromkeys(element_order))
+        unique_elements = list(dict.fromkeys(elements_string))
         for ele in unique_elements:
             match = st.elements == ele
             count += np.count_nonzero(match)
@@ -39,13 +42,13 @@ def replace_types(st: PolymlpStructure, element_order: list[str]) -> PolymlpStru
         st.types = types
 
     if count != st.elements.shape[0]:
-        raise RuntimeError("Elements in structure not found in element_order.")
+        raise RuntimeError("Elements in structure not found in elements.")
     return st
 
 
 def permute_atoms(
     st: PolymlpStructure,
-    element_order: list[str],
+    elements_string: list[str],
     force: Optional[np.ndarray] = None,
 ) -> tuple[PolymlpStructure, np.ndarray]:
     """Permute atoms in structure and forces.
@@ -62,7 +65,7 @@ def permute_atoms(
         force_permute = np.zeros(force.shape)
 
     begin = 0
-    for atomtype, ele in enumerate(element_order):
+    for atomtype, ele in enumerate(elements_string):
         match = st.elements == ele
         n_match = np.count_nonzero(match)
         end = begin + n_match
@@ -90,7 +93,7 @@ def permute_atoms(
 
 def permute_atoms_with_spins(
     st: PolymlpStructure,
-    element_order: list[str],
+    elements_string: list[str],
     force: Optional[np.ndarray] = None,
 ) -> tuple[PolymlpStructure, np.ndarray]:
     """Permute atoms in structure and forces with considering spins.
@@ -108,7 +111,7 @@ def permute_atoms_with_spins(
 
     atomtype = 0
     begin = 0
-    unique_elements = list(dict.fromkeys(element_order))
+    unique_elements = list(dict.fromkeys(elements_string))
     for ele in unique_elements:
         match = st.elements == ele
         n_match = np.count_nonzero(match)
@@ -155,7 +158,7 @@ class DatasetDFT:
         energies: Optional[np.ndarray] = None,
         forces: Optional[List[np.ndarray]] = None,
         stresses: Optional[np.ndarray] = None,
-        element_order: Optional[List[str]] = None,
+        elements: Optional[List[str]] = None,
         enable_spins: Optional[tuple] = None,
     ):
         """Init method.
@@ -166,7 +169,7 @@ class DatasetDFT:
         energies: Energies, shape=(n_str).
         forces: Forces, shape=(n_str, 3, n_atom(i_str)).
         stresses: Stress tensor elements, shape=(n_str, 3, 3).
-        element_order: Order of elements to define atom types.
+        elements: Order of elements to define atom types.
         enable_spins: Boolean array to activate spin configurations.
 
         Attributes
@@ -190,7 +193,7 @@ class DatasetDFT:
                 energies=energies,
                 forces=forces,
                 stresses=stresses,
-                element_order=element_order,
+                elements=elements,
                 enable_spins=enable_spins,
             )
 
@@ -200,7 +203,7 @@ class DatasetDFT:
         energies: np.ndarray,
         forces: Optional[List[np.ndarray]] = None,
         stresses: Optional[np.ndarray] = None,
-        element_order: Optional[List[str]] = None,
+        elements: Optional[List[str]] = None,
         enable_spins: Optional[tuple] = None,
     ):
         """Set properties in the form used for pypolymlp regression."""
@@ -219,16 +222,12 @@ class DatasetDFT:
 
         structures_data, forces_data, stresses_data = [], [], []
         for st, force_st, sigma in zip(structures, forces, stresses):
-            if element_order is None:
+            if elements is None:
                 st1, force_st1 = st, force_st
             elif enable_spins is None:
-                st1, force_st1 = permute_atoms(st, element_order, force=force_st)
+                st1, force_st1 = permute_atoms(st, elements, force=force_st)
             else:
-                st1, force_st1 = permute_atoms_with_spins(
-                    st,
-                    element_order,
-                    force=force_st,
-                )
+                st1, force_st1 = permute_atoms_with_spins(st, elements, force=force_st)
 
             structures_data.append(st1)
             force_ravel = np.ravel(force_st1, order="F")
@@ -252,13 +251,13 @@ class DatasetDFT:
         self._total_n_atoms = np.array([sum(st.n_atoms) for st in self._structures])
         self._files = [st.name for st in self._structures]
 
-        if element_order is None:
-            # This part must be tested. In general, element_order is not None.
+        if elements is None:
+            # TODO: This part must be tested. In general, element_order is not None.
             elements_size = [len(st.n_atoms) for st in self._structures]
             elements = self._structures[np.argmax(elements_size)].elements
             self._elements = sorted(set(elements), key=elements.index)
         else:
-            self._elements = element_order
+            self._elements = elements
 
         self._check_errors()
         return self

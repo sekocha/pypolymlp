@@ -32,14 +32,8 @@ def set_common_params(
     atom_e = _get_variable_with_max_length(multiple_params, "atomic_energy")
     enable_spins = _get_variable_with_max_length(multiple_params, "enable_spins")
 
-    bool_element_order = [
-        single.element_order for single in multiple_params
-    ] is not None
-    element_order = elements if bool_element_order else None
-
     common_params.n_type = n_type
     common_params.elements = tuple(elements)
-    common_params.element_order = tuple(element_order)
     common_params.atomic_energy = tuple(atom_e)
     if len(enable_spins) == 0:
         common_params.enable_spins = None
@@ -180,11 +174,6 @@ class PolymlpParams:
     def elements(self):
         """Return element strings."""
         return self._common_params.elements
-
-    @property
-    def element_order(self):
-        """Return element order."""
-        return self._common_params.element_order
 
     @property
     def atomic_energy(self):
@@ -363,7 +352,6 @@ class PolymlpParams:
         print("parameters:", flush=True)
         print("  n_types:           ", self.n_type, flush=True)
         print("  elements:          ", self.elements, flush=True)
-        print("  element_order:     ", self.element_order, flush=True)
         print("  atomic_energy (eV):", self.atomic_energy, flush=True)
         print("  include_force:     ", self.include_force, flush=True)
         print("  include_stress:    ", self.include_stress, flush=True)
