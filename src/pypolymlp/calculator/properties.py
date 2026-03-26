@@ -13,11 +13,11 @@ from pypolymlp.cxx.lib import libmlpcpp
 
 def find_active_atoms(
     structures: list[PolymlpStructure],
-    element_order: list[str],
+    elements_string: list[str],
 ):
     """Reconstruct structures only using active atoms."""
     # TODO: Implement active atoms for spin-configuration.
-    if len(element_order) != len(np.unique(element_order)):
+    if len(elements_string) != len(np.unique(elements_string)):
         raise RuntimeError("Not available for system with spin configurations.")
 
     structures_active = []
@@ -25,10 +25,10 @@ def find_active_atoms(
     active_bools = []
     for st in structures:
         active_atoms = np.array(
-            [i for i, ele in enumerate(st.elements) if ele in element_order]
+            [i for i, ele in enumerate(st.elements) if ele in elements_string]
         )
-        types = np.array([element_order.index(st.elements[i]) for i in active_atoms])
-        n_atoms = [np.count_nonzero(types == i) for i in range(len(element_order))]
+        types = np.array([elements_string.index(st.elements[i]) for i in active_atoms])
+        n_atoms = [np.count_nonzero(types == i) for i in range(len(elements_string))]
 
         if len(active_atoms) > 0:
             st_active = PolymlpStructure(
@@ -94,11 +94,9 @@ class PropertiesSingle:
         stress: unit: eV/supercell: (6) in the order of xx, yy, zz, xy, yz, zx
         """
         if self._params.type_full or self._params.type_full is None:
-            st_calc = update_types(st, self._params.element_order)
+            st_calc = update_types(st, self._params.elements)
         else:
-            st_calc, active_atoms, _ = find_active_atoms(
-                [st], self._params.element_order
-            )
+            st_calc, active_atoms, _ = find_active_atoms([st], self._params.elements)
             if len(st_calc) > 0:
                 st_calc = st_calc[0]
                 active_atoms = active_atoms[0]
@@ -147,10 +145,10 @@ class PropertiesSingle:
                 flush=True,
             )
         if self._params.type_full or self._params.type_full is None:
-            structures_calc = update_types(structures, self._params.element_order)
+            structures_calc = update_types(structures, self._params.elements)
         else:
             structures_calc, active_atoms, active_bools = find_active_atoms(
-                structures, self._params.element_order
+                structures, self._params.elements
             )
 
         if len(structures_calc) == 0:

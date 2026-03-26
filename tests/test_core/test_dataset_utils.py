@@ -9,16 +9,35 @@ from pypolymlp.core.dataset_utils import (
     DatasetDFT,
     permute_atoms,
     permute_atoms_with_spins,
+    replace_types,
 )
 
 cwd = Path(__file__).parent
 
 
+def test_replace_types(structure_rocksalt):
+    """Test for replace_types."""
+    structure_rocksalt_copy = copy.deepcopy(structure_rocksalt)
+    elements = ("O", "Mg")
+    st = replace_types(structure_rocksalt_copy, elements)
+    np.testing.assert_equal(st.types, [1, 1, 1, 1, 0, 0, 0, 0])
+
+
+def test_replace_types_spins(structure_rocksalt):
+    """Test for replace_types with spin configurations."""
+    structure_rocksalt_copy = copy.deepcopy(structure_rocksalt)
+    structure_rocksalt_copy.types = [0, 1, 1, 0, 2, 2, 2, 2]
+    elements = ("O", "Mg", "Mg")
+    st = replace_types(structure_rocksalt_copy, elements)
+    np.testing.assert_equal(st.types, [1, 2, 2, 1, 0, 0, 0, 0])
+
+
 def test_permute_atoms(structure_rocksalt):
     """Test for permute_atoms."""
+    structure_rocksalt_copy = copy.deepcopy(structure_rocksalt)
     force = np.random.random(structure_rocksalt.positions.shape)
     elements = ("O", "Mg")
-    st, force_permute = permute_atoms(structure_rocksalt, elements, force)
+    st, force_permute = permute_atoms(structure_rocksalt_copy, elements, force)
 
     order = np.array([4, 5, 6, 7, 0, 1, 2, 3])
     np.testing.assert_allclose(force_permute, force[:, order])
