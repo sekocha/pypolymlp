@@ -83,7 +83,7 @@ class PolymlpFC2ASECalculator(Calculator):
 
     def _eval_fc2_model(self, disps: np.array):
         """Calculate energy and forces using FC2."""
-        energy, forces = eval_properties_fc2(self._fc2, disps)
+        energy, forces, _ = eval_properties_fc2(self._fc2, disps)
         energy += self._static_energy
         return energy, forces
 
@@ -356,7 +356,7 @@ class PolymlpGeneralRefASECalculator(Calculator):
         alpha: float,
     ):
         """Calculate energy and forces of a linear combination of polymlp and FC2."""
-        energy0, forces0 = eval_properties_fc2(fc2, disps)
+        energy0, forces0, _ = eval_properties_fc2(fc2, disps)
         energy0 += static_energy
         energy1, forces1, _ = prop.eval(structure)
 
