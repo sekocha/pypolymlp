@@ -366,7 +366,9 @@ class PolymlpParams:
         if self._common_params is None:
             return self
 
-        if self.dataset_type in ("phono3py", "sscha", "openmx"):
+        if self.dataset_type == "sscha":
+            self.enable_spins = None
+        elif self.dataset_type in ("phono3py", "openmx"):
             self.include_stress = False
             self.enable_spins = None
         elif self.dataset_type == "electron":

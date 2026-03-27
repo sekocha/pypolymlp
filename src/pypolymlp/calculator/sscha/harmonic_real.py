@@ -91,7 +91,8 @@ class HarmonicReal:
         -------
         energies: Energies, shape=(n_str).
         forces: Forces, shape=(n_str, 3, n_atom).
-        stress_tensors: Stress tensors, shape=(n_str, 6) in the order of xx, yy, zz, xy, yz, zx.
+        stress_tensors: Stress tensors,
+                        shape=(n_str, 6) in the order of xx, yy, zz, xy, yz, zx.
         """
         energies, forces, stress_tensors = self._prop.eval_multiple(structures)
         return np.array(energies), np.array(forces), np.array(stress_tensors)
