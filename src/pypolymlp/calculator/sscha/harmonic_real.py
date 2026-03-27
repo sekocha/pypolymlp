@@ -66,10 +66,11 @@ class HarmonicReal:
         self._energies_full = None
         self._average_forces = None
         self._forces = None
+        self._stress_tensors = None
         self._disps = None
 
         self._set_mass()
-        self._e0, self._f0, _ = self._prop.eval(self._supercell)
+        self._e0, self._f0, self._s0 = self._prop.eval(self._supercell)
         self._ev_to_kjmol = EVtoKJmol / self._supercell.n_unitcells
 
     def _set_mass(self):
@@ -80,7 +81,7 @@ class HarmonicReal:
             self._supercell.masses = masses
 
     def eval(self, structures: list[PolymlpStructure]) -> tuple[np.ndarray, np.ndarray]:
-        """Compute energies and forces of structures.
+        """Compute energies, forces, and stress tensors of structures.
 
         Parameters
         ----------
@@ -90,9 +91,10 @@ class HarmonicReal:
         -------
         energies: Energies, shape=(n_str).
         forces: Forces, shape=(n_str, 3, n_atom).
+        stress_tensors: Stress tensors, shape=(n_str, 6) in the order of xx, yy, zz, xy, yz, zx.
         """
-        energies, forces, _ = self._prop.eval_multiple(structures)
-        return np.array(energies), np.array(forces)
+        energies, forces, stress_tensors = self._prop.eval_multiple(structures)
+        return np.array(energies), np.array(forces), np.array(stress_tensors)
 
     def run(
         self,
@@ -118,8 +120,8 @@ class HarmonicReal:
             self._disps, self._supercell
         )
         if self._verbose:
-            print("Computing energies and forces using MLP.")
-        energies, self._forces = self.eval(self._supercells)
+            print("Computing energies, forces, and stress tensors using MLP.")
+        energies, self._forces, self._stress_tensors = self.eval(self._supercells)
         self._energies_full = energies - self._e0
 
         if self._verbose:
@@ -127,8 +129,10 @@ class HarmonicReal:
         self._eliminate_outliers()
 
         if self._verbose:
-            print("Computing harmonic potentials and forces.")
-        self._energies_harm, self._average_forces = self._compute_harmonic_properties()
+            print("Computing harmonic potentials, forces, and stress tensors.")
+        self._energies_harm, self._average_forces, self._average_stress_tensor = (
+            self._compute_harmonic_properties()
+        )
         return self
 
     def _solve_eigen_equation(self) -> dict:
@@ -197,16 +201,21 @@ class HarmonicReal:
         N3 = self._fc2.shape[0] * self._fc2.shape[2]
         fc2 = self._fc2.transpose((0, 2, 1, 3)).reshape((N3, N3))
 
-        pot_harmonic, residual_f = [], []
+        pot_harmonic, residual_f, residual_s = [], [], []
         for d in self._disps:
-            energy, harmonic_forces = eval_properties_fc2(fc2, d.T.reshape(-1))
+            energy, harmonic_forces, harmonic_stress_tensor = eval_properties_fc2(
+                fc2, d.T.reshape(-1)
+            )
             pot_harmonic.append(energy)
             residual_f.append(harmonic_forces + self._f0)
+            residual_s.append(harmonic_stress_tensor + self._s0)
 
         pot_harmonic = np.array(pot_harmonic)
         residual_f = np.array(residual_f)
+        residual_s = np.array(residual_s)
         average_forces = np.mean(self._forces - residual_f, axis=0)
-        return pot_harmonic, average_forces
+        average_stress_tensor = np.mean(self._stress_tensors - residual_s, axis=0)
+        return pot_harmonic, average_forces, average_stress_tensor
 
     def _eliminate_outliers(self, tol_negative: float = -10):
         """Eliminate outliers."""
@@ -234,6 +243,7 @@ class HarmonicReal:
         self._disps = self._disps[ids]
         self._supercells = [self._supercells[i] for i in ids]
         self._forces = self._forces[ids]
+        self._stress_tensors = self._stress_tensors[ids]
         self._energies_full = self._energies_full[ids]
         return self
 
@@ -270,6 +280,13 @@ class HarmonicReal:
         if self._forces is None:
             return None
         return np.array(self._forces)
+
+    @property
+    def stress_tensors(self) -> np.ndarray:
+        """Return stresses, shape=(n_samples, 6)."""
+        if self._stress_tensors is None:
+            return None
+        return np.array(self._stress_tensors)
 
     @property
     def full_potentials(self) -> np.ndarray:
@@ -328,9 +345,19 @@ class HarmonicReal:
         return self._f0
 
     @property
+    def static_stress_tensor(self) -> float:
+        """Return static stress tensor of given supercell in eV."""
+        return self._s0 * self._ev_to_kjmol
+
+    @property
     def average_forces(self) -> np.ndarray:
-        """Return static forces of given supercell in eV/ang."""
+        """Return temperature-dependent forces of given supercell in eV/ang."""
         return self._average_forces
+
+    @property
+    def average_stress_tensor(self) -> np.ndarray:
+        """Return temperature-dependent stress tensor of given supercell in eV."""
+        return self._average_stress_tensor
 
     @property
     def frequencies(self):

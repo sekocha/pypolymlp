@@ -165,6 +165,8 @@ class SSCHACore:
             harmonic_heat_capacity=self._ph_recip.heat_capacity,  # J/K/mol
             static_forces=self._ph_real.static_forces,  # eV/ang
             average_forces=self._ph_real.average_forces,  # eV/ang
+            static_stress_tensor=self._ph_real.static_stress_tensor,  # eV
+            average_stress_tensor=self._ph_real.average_stress_tensor,  # eV
         )
         return data
 
