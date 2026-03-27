@@ -349,7 +349,6 @@ class HarmonicReal:
     @property
     def static_stress_tensor(self) -> float:
         """Return static stress tensor of given supercell in eV/unitcell."""
-        # return self._s0 * self._ev_to_kjmol
         return self._s0 / self._supercell.n_unitcells
 
     @property
@@ -360,6 +359,8 @@ class HarmonicReal:
     @property
     def average_stress_tensor(self) -> np.ndarray:
         """Return temperature-dependent stress tensor in eV/unitcell."""
+        if self._average_stress_tensor is None:
+            return None
         return self._average_stress_tensor / self._supercell.n_unitcells
 
     @property
