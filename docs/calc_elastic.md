@@ -1,8 +1,10 @@
-# Elastic constant calculation
+# Elastic Constant Calculation
 
-`pymatgen` is required for elastic constant calculation.
+> **Note**: Requires `pymatgen`.
 
-## Using command line interface
+The `--elastic` option activates the calculation of elastic constants for a structure using a given polynomial MLP.
+
+## Using command-line interface
 ```shell
 > pypolymlp-calc --elastic --poscar POSCAR --pot polymlp.yaml
 ```

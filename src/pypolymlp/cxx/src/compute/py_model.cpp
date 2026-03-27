@@ -16,7 +16,6 @@ PyModel::PyModel(const py::dict& params_dict,
                  const vector1i& n_atoms_all){
 
     struct feature_params fp;
-    const bool& element_swap = params_dict["element_swap"].cast<bool>();
     const bool& print_memory = params_dict["print_memory"].cast<bool>();
     convert_params_dict_to_feature_params(params_dict, fp);
 

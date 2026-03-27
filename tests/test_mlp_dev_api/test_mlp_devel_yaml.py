@@ -19,30 +19,57 @@ def _run_fit(files: Union[str, list]):
     return pypolymlp
 
 
-def test_mlp_dev_sscha_yaml():
+def test_mlp_dev_sscha_yaml_Ti():
     """Test MLP development for sscha from input file."""
-    infile = str(cwd / "polymlp.in.sscha.SrTiO3")
+    infile = str(cwd / "polymlp.in.sscha.Ti")
     pypolymlp = _run_fit(infile)
 
-    assert pypolymlp.n_features == 1998
-    tag_train1 = "Train_data-sscha-SrTiO3/sscha_results*.yaml_no_imag"
-    tag_test1 = "Test_data-sscha-SrTiO3/sscha_results*.yaml_no_imag"
-    tag_train2 = "Train_data-sscha-SrTiO3/sscha_results*.yaml_imag"
-    tag_test2 = "Test_data-sscha-SrTiO3/sscha_results*.yaml_imag"
+    assert pypolymlp.n_features == 75
+    tag_train1 = "Train_data-sscha-Ti/sscha_results*.yaml_no_imag"
+    tag_test1 = "Test_data-sscha-Ti/sscha_results*.yaml_no_imag"
+    tag_train2 = "Train_data-sscha-Ti/sscha_results*.yaml_imag"
 
     error_train1 = pypolymlp.summary.error_train[tag_train1]
     error_test1 = pypolymlp.summary.error_test[tag_test1]
     error_train2 = pypolymlp.summary.error_train[tag_train2]
-    error_test2 = pypolymlp.summary.error_test[tag_test2]
 
-    assert error_test1["energy"] == pytest.approx(0.000151012446220204, rel=1e-3)
-    assert error_test1["force"] == pytest.approx(0.001112638711008283, rel=1e-3)
-    assert error_train1["energy"] == pytest.approx(0.000154143686174717, rel=1e-3)
-    assert error_train1["force"] == pytest.approx(0.001077150536142360, rel=1e-3)
-    assert error_test2["energy"] == pytest.approx(0.003153521146321552, rel=1e-3)
-    assert error_test2["force"] == pytest.approx(0.005446704040721597, rel=1e-3)
-    assert error_train2["energy"] == pytest.approx(0.003392538851454359, rel=1e-3)
-    assert error_train2["force"] == pytest.approx(0.00482587047243652, rel=1e-3)
+    assert error_test1["energy"] == pytest.approx(0.0007019932025020726, rel=1e-3)
+    assert error_test1["force"] == pytest.approx(0.012301717920084972, rel=1e-3)
+    assert error_test1["stress"] == pytest.approx(0.01778462961440081, rel=1e-3)
+
+    assert error_train1["energy"] == pytest.approx(0.0008006158374186052, rel=1e-3)
+    assert error_train1["force"] == pytest.approx(0.013203331953378295, rel=1e-3)
+    assert error_train1["stress"] == pytest.approx(0.01948304195737294, rel=1e-3)
+
+    assert error_train2["energy"] == pytest.approx(0.003981728671942075, rel=1e-3)
+    assert error_train2["force"] == pytest.approx(0.014575874894480867, rel=1e-3)
+    assert error_train2["stress"] == pytest.approx(0.10492590995670706, rel=1e-3)
+
+
+# def test_mlp_dev_sscha_yaml():
+#     """Test MLP development for sscha from input file."""
+#     infile = str(cwd / "polymlp.in.sscha.SrTiO3")
+#     pypolymlp = _run_fit(infile)
+#
+#     assert pypolymlp.n_features == 1998
+#     tag_train1 = "Train_data-sscha-SrTiO3/sscha_results*.yaml_no_imag"
+#     tag_test1 = "Test_data-sscha-SrTiO3/sscha_results*.yaml_no_imag"
+#     tag_train2 = "Train_data-sscha-SrTiO3/sscha_results*.yaml_imag"
+#     tag_test2 = "Test_data-sscha-SrTiO3/sscha_results*.yaml_imag"
+#
+#     error_train1 = pypolymlp.summary.error_train[tag_train1]
+#     error_test1 = pypolymlp.summary.error_test[tag_test1]
+#     error_train2 = pypolymlp.summary.error_train[tag_train2]
+#     error_test2 = pypolymlp.summary.error_test[tag_test2]
+#
+#     assert error_test1["energy"] == pytest.approx(0.000151012446220204, rel=1e-3)
+#     assert error_test1["force"] == pytest.approx(0.001112638711008283, rel=1e-3)
+#     assert error_train1["energy"] == pytest.approx(0.000154143686174717, rel=1e-3)
+#     assert error_train1["force"] == pytest.approx(0.001077150536142360, rel=1e-3)
+#     assert error_test2["energy"] == pytest.approx(0.003153521146321552, rel=1e-3)
+#     assert error_test2["force"] == pytest.approx(0.005446704040721597, rel=1e-3)
+#     assert error_train2["energy"] == pytest.approx(0.003392538851454359, rel=1e-3)
+#     assert error_train2["force"] == pytest.approx(0.00482587047243652, rel=1e-3)
 
 
 def test_mlp_dev_electron_yaml():

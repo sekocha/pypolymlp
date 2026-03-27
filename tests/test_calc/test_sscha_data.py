@@ -18,6 +18,8 @@ def test_data():
         harmonic_heat_capacity=0.7,
         static_forces=[0.1, 0.2],
         average_forces=[0.01, 0.02],
+        static_stress_tensor=[0.2, 0.3],
+        average_stress_tensor=[0.12, 0.13],
         delta=0.003,
         converge=True,
         imaginary=False,

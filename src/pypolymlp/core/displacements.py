@@ -7,7 +7,9 @@ import numpy as np
 from pypolymlp.core.data_format import PolymlpStructure
 
 
-def convert_disps_to_positions(disps, axis, positions):
+def convert_disps_to_positions(
+    disps: np.ndarray, axis: np.ndarray, positions: np.ndarray
+):
     """Convert displacements into positions.
 
     Parameters

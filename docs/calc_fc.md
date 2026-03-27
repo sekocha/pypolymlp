@@ -1,13 +1,54 @@
-# Force constant calculation
-`symfc`, `phonopy`, and `phono3py` are required.
+# Force Constant Calculation
+
+> **Note**: Requires `symfc`, `phonopy`, and `phono3py`.
+
+Second- and third-order force constants can be calculated using both the command-line interface and the Python API.
+First, structures with random atomic displacements are generated, and the corresponding forces are computed using a given polynomial MLP.
+Using the resulting displacement–force datasets, the second- and third-order force constants are then estimated via a projector-based efficient algorithm combined with linear regression [1].
+The resulting force constants satisfy invariant with respect to index permutations, space group operations, and infinitesimal translations.
+
+[1] "Projector-based efficient estimation of force constants",
+A. Seko and A. Togo, Phys. Rev. B, **110**, 214302 (2024)
+[[doi](https://doi.org/10.1103/PhysRevB.110.214302)]
+[[arxiv](https://arxiv.org/abs/2403.03588)].
+
 
 ## Using command line interface
+
+The `--force_constants` option activates the force constant calculations.
+
 ```shell
 > pypolymlp-calc --force_constants --pot polymlp.yaml --poscar POSCAR --supercell 3 3 2 --fc_n_samples 100 --disp 0.001 --fc_orders 2 3
 ```
-If a cutoff radius is introduced to evaluate FC3s, use "--cutoff" option as follows.
+Once the force constant calculation is completed, the files `fc2.hdf5` and `fc3.hdf5`, which can be used in `phonopy` and `phono3py`, will be generated.
+
+The available options are as follows:
+
+```
+  --fc_n_samples FC_N_SAMPLES
+                        Number of random displacement samples
+  --disp DISP           Displacement (in Angstroms)
+  --is_plusminus        Plus-minus displacements will be generated.
+  --geometry_optimization
+                        Geometry optimization is performed for initial structure.
+  --supercell SUPERCELL SUPERCELL SUPERCELL
+                        Supercell size (diagonal components)
+  --batch_size BATCH_SIZE
+                        Batch size for FC solver.
+  --cutoff CUTOFF       Cutoff radius for setting zero elements.
+  --fc_orders [FC_ORDERS ...]
+                        FC orders.
+```
+
+If a cutoff radius is introduced to evaluate FC3s, use the `--cutoff` option as follows:
 ```shell
-> pypolymlp-calc --force_constants --pot polymlp.yaml --poscar POSCAR --geometry_optimization --fc_n_samples 300 --fc_orders 2 3 --disp 0.001 --batch_size 100 --supercell 3 3 2 --cutoff 6
+> pypolymlp-calc --force_constants --pot polymlp.yaml --poscar POSCAR --fc_n_samples 300 --fc_orders 2 3 --disp 0.01 --supercell 3 3 2 --cutoff 6
+```
+
+When local geometry optimization is performed to eliminate residual forces before calculating the force constants, enable this by setting the `--geometry_optimization` flag as follows:
+
+```shell
+> pypolymlp-calc --force_constants --pot polymlp.yaml --poscar POSCAR --geometry_optimization --fc_n_samples 300 --fc_orders 2 3 --disp 0.001 --batch_size 100 --supercell 3 3 2
 ```
 
 ## Using Python API

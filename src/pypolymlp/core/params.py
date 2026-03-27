@@ -1,7 +1,7 @@
 """Class for input parameters including hybrid polymlps."""
 
 import copy
-from typing import Optional, Union
+from typing import Union
 
 import numpy as np
 
@@ -30,31 +30,41 @@ def set_common_params(
     n_type = max([single.n_type for single in multiple_params])
     elements = _get_variable_with_max_length(multiple_params, "elements")
     atom_e = _get_variable_with_max_length(multiple_params, "atomic_energy")
-
-    bool_element_order = [
-        single.element_order for single in multiple_params
-    ] is not None
-    element_order = elements if bool_element_order else None
+    enable_spins = _get_variable_with_max_length(multiple_params, "enable_spins")
 
     common_params.n_type = n_type
     common_params.elements = tuple(elements)
-    common_params.element_order = tuple(element_order)
     common_params.atomic_energy = tuple(atom_e)
+    if len(enable_spins) == 0:
+        common_params.enable_spins = None
+    else:
+        common_params.enable_spins = tuple(enable_spins)
     return common_params
 
 
 class PolymlpParams:
     """Class for input parameters including hybrid polymlps."""
 
-    def __init__(self, params: Optional[Union[list, PolymlpParamsSingle]] = None):
+    def __init__(self, params: Union[list, PolymlpParamsSingle]):
         """Init method."""
-        if params is None:
-            self._params = []
-        elif isinstance(params, PolymlpParamsSingle):
+        if isinstance(params, PolymlpParamsSingle):
             self._params = [params]
-        else:
+        elif isinstance(params, (list, tuple, np.ndarray)):
             self._params = params
-        self._common_params = self._set_common_params()
+        else:
+            raise RuntimeError("Initialize failed. Inappropriate instance.")
+
+        self._initialize()
+
+    def _initialize(self):
+        """Initialize variables.
+
+        This initialization is needed if parameters are changed.
+        """
+        self._set_common_params()
+        self._check_errors()
+        self._set_tags()
+        self._set_unique_types()
 
     def __iter__(self):
         """Iter method."""
@@ -67,6 +77,7 @@ class PolymlpParams:
     def __setitem__(self, index: int, value: PolymlpParamsSingle):
         """Setitem method."""
         self._params[index] = value
+        self._initialize()
 
     def __len__(self):
         """Len method."""
@@ -75,17 +86,37 @@ class PolymlpParams:
     def append(self, params: PolymlpParamsSingle):
         """Append parameters."""
         self._params.append(params)
-        self._common_params = self._set_common_params()
+        self._initialize()
+
+    def _check_errors(self):
+        """Check errors in parameters."""
+        if len(self._params) == 1:
+            return self
+
+        enable_spins_all = [p.enable_spins for p in self._params]
+        n_none = enable_spins_all.count(None)
+        if n_none == len(enable_spins_all):
+            return self
+
+        if n_none != 0 and n_none != len(enable_spins_all):
+            raise RuntimeError(
+                "enable_spins not consistent across all components of hybrid model."
+            )
+
+        combs = [
+            (ele, spin)
+            for p in self.params
+            for ele, spin in zip(p.elements, p.enable_spins)
+        ]
+        if len(set(combs)) != len(np.unique(self.elements)):
+            raise RuntimeError("Same values of enable_spins not given.")
 
     def _set_common_params(self):
         """Set common parameters in hybrid model."""
-        if len(self._params) == 0:
-            self._common_params = None
-        elif len(self._params) == 1:
+        if len(self._params) == 1:
             self._common_params = self._params[0]
         else:
             self._common_params = set_common_params(self._params)
-        self._set_unique_types()
         return self._common_params
 
     def _set_unique_types(self):
@@ -124,20 +155,15 @@ class PolymlpParams:
         return None
 
     @params.setter
-    def params(
-        self,
-        p: Union[PolymlpParamsSingle, list[PolymlpParamsSingle]],
-    ):
+    def params(self, p: Union[PolymlpParamsSingle, list[PolymlpParamsSingle]]):
         """Setter of parameters."""
-        if p is None:
-            self._params = []
-        elif isinstance(p, PolymlpParamsSingle):
+        if isinstance(p, PolymlpParamsSingle):
             self._params = [p]
         elif isinstance(p, (list, tuple, np.ndarray)):
             self._params = list(p)
         else:
             raise RuntimeError("Inappropriate input for parameters.")
-        self._common_params = self._set_common_params()
+        self._initialize()
 
     @property
     def n_type(self):
@@ -150,14 +176,28 @@ class PolymlpParams:
         return self._common_params.elements
 
     @property
-    def element_order(self):
-        """Return element order."""
-        return self._common_params.element_order
-
-    @property
     def atomic_energy(self):
         """Return atomic energies."""
         return self._common_params.atomic_energy
+
+    @property
+    def enable_spins(self):
+        """Return whether spins are included or not."""
+        return self._common_params.enable_spins
+
+    @enable_spins.setter
+    def enable_spins(self, include: bool):
+        """Setter of enable_spins."""
+        if self._common_params is None:
+            raise RuntimeError("Parameters not defined.")
+
+        exception = ("phono3py", "sscha", "openmx", "electron")
+        if self.dataset_type in exception and include:
+            raise RuntimeError("Enable_spins not supported for given dataset type.")
+
+        self._common_params.enable_spins = include
+        for p in self._params:
+            p.enable_spins = include
 
     @property
     def include_force(self):
@@ -167,6 +207,12 @@ class PolymlpParams:
     @include_force.setter
     def include_force(self, include: bool):
         """Setter of include_force."""
+        if self._common_params is None:
+            raise RuntimeError("Parameters not defined.")
+
+        if self.dataset_type == "electron" and include:
+            raise RuntimeError("Include_force not supported for given dataset type.")
+
         self._common_params.include_force = include
         for p in self._params:
             p.include_force = include
@@ -179,6 +225,13 @@ class PolymlpParams:
     @include_stress.setter
     def include_stress(self, include: bool):
         """Setter of include_stress."""
+        if self._common_params is None:
+            raise RuntimeError("Parameters not defined.")
+
+        exception = ("phono3py", "sscha", "openmx", "electron")
+        if self.dataset_type in exception and include:
+            raise RuntimeError("Include_stress not supported for given dataset type.")
+
         self._common_params.include_stress = include
         for p in self._params:
             p.include_stress = include
@@ -191,9 +244,13 @@ class PolymlpParams:
     @dataset_type.setter
     def dataset_type(self, dtype: str):
         """Setter of dataset type."""
+        if self._common_params is None:
+            raise RuntimeError("Parameters not defined.")
+
         self._common_params.dataset_type = dtype
         for p in self._params:
             p.dataset_type = dtype
+        self._set_tags()
 
     @property
     def temperature(self):
@@ -203,6 +260,8 @@ class PolymlpParams:
     @temperature.setter
     def temperature(self, temp: float):
         """Setter of temperature."""
+        if self._common_params is None:
+            raise RuntimeError("Parameters not defined.")
         self._common_params.temperature = temp
         for p in self._params:
             p.temperature = temp
@@ -215,21 +274,11 @@ class PolymlpParams:
     @electron_property.setter
     def electron_property(self, prop: str):
         """Setter of target electronic property."""
+        if self._common_params is None:
+            raise RuntimeError("Parameters not defined.")
         self._common_params.electron_property = prop
         for p in self._params:
             p.electron_property = prop
-
-    @property
-    def element_swap(self):
-        """Return element_swap."""
-        return bool(self._common_params.element_swap)
-
-    @element_swap.setter
-    def element_swap(self, es: str):
-        """Setter of element_swap."""
-        self._common_params.element_swap = es
-        for p in self._params:
-            p.element_swap = es
 
     @property
     def print_memory(self):
@@ -239,6 +288,8 @@ class PolymlpParams:
     @print_memory.setter
     def print_memory(self, pm: str):
         """Setter of print_memory."""
+        if self._common_params is None:
+            raise RuntimeError("Parameters not defined.")
         self._common_params.print_memory = pm
         for p in self._params:
             p.print_memory = pm
@@ -251,6 +302,8 @@ class PolymlpParams:
     @regression_alpha.setter
     def regression_alpha(self, a: str):
         """Setter of print_memory."""
+        if self._common_params is None:
+            raise RuntimeError("Parameters not defined.")
         self._common_params.regression_alpha = a
         for p in self._params:
             p.regression_alpha = a
@@ -263,6 +316,8 @@ class PolymlpParams:
     @alphas.setter
     def alphas(self, a: str):
         """Setter of print_memory."""
+        if self._common_params is None:
+            raise RuntimeError("Parameters not defined.")
         self._common_params.alphas = a
         for p in self._params:
             p.alphas = a
@@ -283,10 +338,10 @@ class PolymlpParams:
         print("parameters:", flush=True)
         print("  n_types:           ", self.n_type, flush=True)
         print("  elements:          ", self.elements, flush=True)
-        print("  element_order:     ", self.element_order, flush=True)
         print("  atomic_energy (eV):", self.atomic_energy, flush=True)
         print("  include_force:     ", self.include_force, flush=True)
         print("  include_stress:    ", self.include_stress, flush=True)
+        print("  enable_spins:      ", self.enable_spins, flush=True)
 
         for i, p in enumerate(self._params):
             print("model_" + str(i + 1) + ":", flush=True)
@@ -305,3 +360,19 @@ class PolymlpParams:
         if len(self._params) > 1:
             raise RuntimeError("Hybrid model not required to convert.")
         return PolymlpParams([self._params[0], self._params[0]])
+
+    def _set_tags(self):
+        """Force to set tags."""
+        if self._common_params is None:
+            return self
+
+        if self.dataset_type == "sscha":
+            self.enable_spins = None
+        elif self.dataset_type in ("phono3py", "openmx"):
+            self.include_stress = False
+            self.enable_spins = None
+        elif self.dataset_type == "electron":
+            self.include_force = False
+            self.include_stress = False
+            self.enable_spins = None
+        return self

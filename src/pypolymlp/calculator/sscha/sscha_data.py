@@ -38,8 +38,11 @@ class SSCHAData:
 
     entropy: Optional[float] = None
     harmonic_heat_capacity: Optional[float] = None
+
     static_forces: Optional[np.ndarray] = None
     average_forces: Optional[np.ndarray] = None
+    static_stress_tensor: Optional[np.ndarray] = None
+    average_stress_tensor: Optional[np.ndarray] = None
 
     delta: Optional[float] = None
     converge: Optional[bool] = None

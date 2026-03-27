@@ -24,6 +24,8 @@ def test_save_sscha_yaml(unitcell_mlp_Al):
         harmonic_heat_capacity=0.7,
         static_forces=np.array([[0.1, 0.2], [0.2, 0.3]]),
         average_forces=np.array([[0.01, 0.02], [0.2, 0.3]]),
+        static_stress_tensor=np.array([0.1, 0.2, 0.2, 0, 0, 0]),
+        average_stress_tensor=np.array([0.1, 0.2, 0.2, 0, 0, 0]),
         delta=0.003,
         converge=True,
         imaginary=False,

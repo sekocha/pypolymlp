@@ -87,8 +87,8 @@ Several procedures for generating structures used in DFT calculations are also s
 - Tutorials
   1. [Development of a single on-the-fly MLP](docs/tutorial_onthefly.md)
   2. Development of a single general-purpose MLP
-  3. Development of Pareto-optimal MLPs
-- MLP developments
+  3. [Development of convex hull (Pareto-optimal) MLPs](docs/utils_grid.md)
+- MLP Developments
   - [VASP (Command line interface)](docs/mlpdev_command.md)
   - [VASP (Python API)](docs/mlpdev_api.md)
   - [Structure-Properties general datasets (Python API)](docs/mlpdev_dataset_api.md)
@@ -98,7 +98,7 @@ Several procedures for generating structures used in DFT calculations are also s
 
 - Utilities for MLP development
   - Dataset Generation
-    - [Generator of DFT random structures](docs/strgen.md)
+    - [Generator of DFT random structures](docs/utils_strgen.md)
     - [Compression of vasprun.xml files](docs/utils_compress.md)
     - [Automatic division of DFT dataset](docs/utils_dataset_div.md)
   - [Convex hull (Pareto-optimal) MLP search](docs/utils_grid.md)
@@ -106,10 +106,12 @@ Several procedures for generating structures used in DFT calculations are also s
   - [Generator of portable model for OpenKIM](docs/utils_kim.md)
   - [Other utilities](docs/utils.md)
 
-- Experimental features
+- Experimental Features
   - [SSCHA free energy model](docs/experimental/mlpdev_sscha.md)
   - [Electronic free energy model](docs/experimental/mlpdev_electron.md)
   - [Substitutional disordered model](docs/experimental/mlpdev_disorder.md)
+  - [Spin-dependent model](docs/experimental/mlpdev_spin.md)
+
 
 ### Calculations using polynomial MLP
 In version 0.8.0 or earlier, polymlp files are generated in a plain text format as `polymlp.lammps`.
@@ -126,6 +128,7 @@ The following calculations can be performed using **pypolymlp** with the polynom
   - [Elastic constants](docs/calc_elastic.md)
   - [Phonon properties, Quasi-harmonic approximation](docs/calc_phonon.md)
   - [Force constants](docs/calc_fc.md)
+  - [Lattice thermal conductivity](docs/calc_ltc.md)
   - [Polynomial invariants](docs/calc_features.md)
   - [Systematic property calculations](docs/calc_auto.md)
 - Experimental features
@@ -142,3 +145,6 @@ The following calculations can be performed using **pypolymlp** with the polynom
   - ASE
   - OpenKIM
   - phonopy and phonon3py
+
+### Theoretical Background
+- [Polynomial Invariants and Potential Models](https://cms.mtl.kyoto-u.ac.jp/seko/mlp-repository/theory.html)

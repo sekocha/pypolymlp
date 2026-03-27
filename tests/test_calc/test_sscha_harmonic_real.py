@@ -33,9 +33,11 @@ def test_harmonic_real(unitcell_mlp_Al):
     fc2hdf5 = path_sscha + "fc2.hdf5"
     fc2 = load_fc2_hdf5(fc2hdf5, return_matrix=False)
     real = HarmonicReal(supercell_polymlp, sscha._prop, fc2=fc2)
-    energies, forces = real.eval([unitcell, unitcell])
+    energies, forces, stress = real.eval([unitcell, unitcell])
     np.testing.assert_allclose(energies, -13.71119227, atol=1e-7)
     np.testing.assert_allclose(forces, 0.0, atol=1e-7)
+    np.testing.assert_allclose(stress[:, :3], 0.05207764921738811, atol=1e-7)
+    np.testing.assert_allclose(stress[:, 3:], 0.0, atol=1e-7)
 
     real.run(temp=700, n_samples=10)
 
@@ -45,6 +47,8 @@ def test_harmonic_real(unitcell_mlp_Al):
     assert real.displacements.shape == (10, 3, 32)
     assert real.supercells is not None
     assert real.forces.shape == (10, 3, 32)
+    assert real.stress_tensors.shape == (10, 6)
+
     assert real.full_potentials.shape == (10,)
     assert real.average_full_potential is not None
     assert real.harmonic_potentials.shape == (10,)
@@ -54,4 +58,6 @@ def test_harmonic_real(unitcell_mlp_Al):
     assert real.static_potential == pytest.approx(-1322.92893961425)
     assert np.sum(real.static_forces) == pytest.approx(0.0)
     assert np.sum(real.average_forces) == pytest.approx(0.0)
+    assert np.sum(real.static_stress_tensor) == pytest.approx(0.15623294765213275)
+    assert real.average_stress_tensor.shape == (6,)
     assert real.frequencies.shape == (96,)

@@ -21,10 +21,9 @@ PyHybridModel::PyHybridModel(
     std::vector<feature_params> fp_array;
     vector2i type_indices_array;
     std::vector<bool> type_full_array;
-    bool element_swap, print_memory;
+    bool print_memory;
     for (const auto& params_dict: params_dict_array){
         feature_params fp;
-        element_swap = params_dict["element_swap"].cast<bool>();
         print_memory = params_dict["print_memory"].cast<bool>();
         convert_params_dict_to_feature_params(params_dict, fp);
         fp_array.emplace_back(fp);

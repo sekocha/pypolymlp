@@ -12,23 +12,24 @@ from pypolymlp.utils.yaml_utils import load_cell
 
 def set_dataset_from_sscha_yamls(
     yamlfiles: list[str],
-    element_order: Optional[bool] = None,
+    elements: Optional[tuple] = None,
 ) -> DatasetDFT:
     """Return DFT dataset by loading sscha_results.yaml files."""
-    structures, free_energies, forces = parse_sscha_yamls(yamlfiles)
+    structures, free_energies, forces, stress_tensors = parse_sscha_yamls(yamlfiles)
+
     dft = DatasetDFT(
         structures,
         free_energies,
         forces=forces,
-        stresses=None,
-        element_order=element_order,
+        stresses=stress_tensors,
+        elements=elements,
     )
     return dft
 
 
 def parse_sscha_yamls(yamlfiles: list[str]):
     """Parse sscha_results.yaml files."""
-    free_energies, structures, forces = [], [], []
+    free_energies, structures, forces, stress_tensors = [], [], [], []
     for yfile in yamlfiles:
         yml = yaml.safe_load(open(yfile))
         if not yml["status"]["converge"]:
@@ -37,13 +38,16 @@ def parse_sscha_yamls(yamlfiles: list[str]):
             continue
         if "average_forces" not in yml:
             continue
+        if "average_stress_tensor" not in yml:
+            continue
 
         res = _get_sscha_properties(yml, yfile)
         structures.append(res[0])
         free_energies.append(res[1])
         forces.append(res[2])
+        stress_tensors.append(res[3])
 
-    return (structures, np.array(free_energies), forces)
+    return (structures, np.array(free_energies), forces, stress_tensors)
 
 
 def split_imaginary(yamlfiles: list[str]):
@@ -58,7 +62,6 @@ def split_imaginary(yamlfiles: list[str]):
 
     if len(no_imag) == 0:
         no_imag = None
-        # raise RuntimeError("All data with imaginary frequencies.")
 
     if len(imag) == 0:
         imag = None
@@ -74,7 +77,8 @@ def _get_sscha_properties(yml: dict, name: str):
     fvib = float(yml["properties"]["free_energy"])
     free_energy = fvib * n_cells / EVtoKJmol  # kJ/mol->eV/supercell
     force = np.array(yml["average_forces"]).T
-    return supercell, free_energy, force
+    stress_tensor = np.array(yml["average_stress_tensor"]) * n_cells
+    return supercell, free_energy, force, stress_tensor
 
 
 def parse_electron_yamls(yamlfiles: list[str]):
@@ -119,7 +123,7 @@ def set_dataset_from_electron_yamls(
         "entropy",
         "specific_heat",
     ] = "free_energy",
-    element_order: Optional[bool] = None,
+    elements: Optional[bool] = None,
 ) -> DatasetDFT:
     """Return DFT dataset by loading electron.yaml files."""
     structures, properties = extract_electron_properties(
@@ -132,6 +136,6 @@ def set_dataset_from_electron_yamls(
         properties,
         forces=None,
         stresses=None,
-        element_order=element_order,
+        elements=elements,
     )
     return dft

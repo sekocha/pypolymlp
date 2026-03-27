@@ -25,6 +25,7 @@ def test_fc2_functions():
     disps[3] = 0.002
     disps[10] = 0.001
     disps[20] = -0.001
-    energy, forces = eval_properties_fc2(fc2, disps)
+    energy, forces, stresses = eval_properties_fc2(fc2, disps)
     assert energy == pytest.approx(1.5667425536505865e-05)
     assert forces.shape == (3, 32)
+    assert stresses.shape == (6,)

@@ -49,28 +49,22 @@ class ParamsParserSingle:
 
     def set_params(self):
         """Get parameters from file and set them."""
-        # TODO: Use set_all_params
         include_force, include_stress = self._get_force_tags()
-        elements, n_type, atom_e = self._get_element_properties()
+        elements, n_type, atom_e, enable_spins = self._get_element_properties()
         alphas = self._get_regression_params()
         model = self._get_potential_model_params(n_type, elements)
-
         dataset_type = self._parser.get_params("dataset_type", default="vasp")
-        rearrange = self._parser.get_params(
-            "rearrange_by_elements", default=True, dtype=bool
-        )
-        element_order = elements if rearrange else None
 
         self._params = PolymlpParamsSingle(
             n_type=n_type,
             elements=elements,
             model=model,
             atomic_energy=atom_e,
+            enable_spins=enable_spins,
             regression_alpha=alphas,
             include_force=include_force,
             include_stress=include_stress,
             dataset_type=dataset_type,
-            element_order=element_order,
         )
 
         if dataset_type == "electron":
@@ -80,10 +74,7 @@ class ParamsParserSingle:
             self._params.electron_property = self._parser.get_params(
                 "electron_property", default="free_energy", dtype=str
             )
-            self._params.include_force = False
-            self._params.include_stress = False
-        elif dataset_type in ("phono3py", "sscha", "openmx"):
-            self._params.include_stress = False
+
         return self._params
 
     def _get_force_tags(self):
@@ -128,7 +119,15 @@ class ParamsParserSingle:
         )
         if atom_e_unit in ("Hartree", "hartree"):
             atom_e = [e * HartreetoEV for e in atom_e]
-        return elements, n_type, tuple(atom_e)
+
+        enable_spins = self._parser.get_params(
+            "enable_spins",
+            size=n_type,
+            default=None,
+            dtype=bool,
+            return_array=True,
+        )
+        return elements, n_type, tuple(atom_e), enable_spins
 
     def _get_regression_params(self):
         """Set regularization parameters in regression."""
@@ -286,7 +285,7 @@ class ParamsParserSingle:
         return self
 
     @property
-    def params(self) -> PolymlpModelParams:
+    def params(self) -> PolymlpParamsSingle:
         """Return parameters for developing polymlp."""
         return self._params
 

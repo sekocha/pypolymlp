@@ -21,7 +21,7 @@ def test_parse_sscha_yamls():
         cwd / "./../files/sscha_results_0002.yaml",
         cwd / "./../files/sscha_results_0003.yaml",
     ]
-    strs, free_energies, forces = parse_sscha_yamls(yamls)
+    strs, free_energies, forces, stresses = parse_sscha_yamls(yamls)
     np.testing.assert_allclose(
         free_energies,
         [-1.41748102, -1.803403, -0.94484543],
@@ -32,6 +32,10 @@ def test_parse_sscha_yamls():
     assert forces[0].shape == (3, 40)
     assert forces[1].shape == (3, 40)
     assert forces[2].shape == (3, 40)
+    assert len(stresses) == 3
+    assert stresses[0].shape == (3, 3)
+    assert stresses[1].shape == (3, 3)
+    assert stresses[2].shape == (3, 3)
 
 
 def test_split_imaginary():

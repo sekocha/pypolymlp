@@ -41,6 +41,8 @@ def save_sscha_yaml(
     print("  static_potential:       kJ/mol", file=f)
     print("  entropy:                J/K/mol", file=f)
     print("  harmonic_heat_capacity: J/K/mol", file=f)
+    print("  force:                  eV/angstrom", file=f)
+    print("  stress_tensor:          eV/unitcell", file=f)
     print("", file=f)
 
     print("properties:", file=f)
@@ -78,6 +80,15 @@ def save_sscha_yaml(
     save_cell(sscha_params.supercell, tag="supercell", file=f)
 
     print_array2d(properties.average_forces.T, "average_forces", f, indent_l=0)
+    print("", file=f)
+
+    s = properties.average_stress_tensor
+    sigma = [
+        [s[0], s[3], s[5]],
+        [s[3], s[1], s[4]],
+        [s[5], s[4], s[2]],
+    ]
+    print_array2d(np.array(sigma), "average_stress_tensor", f, indent_l=0)
     print("", file=f)
 
     print("logs:", file=f)

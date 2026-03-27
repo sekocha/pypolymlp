@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from pypolymlp.core.data_format import PolymlpStructure
+from pypolymlp.core.data_format import PolymlpParamsSingle, PolymlpStructure
 
 cwd = Path(__file__).parent
 
@@ -49,3 +49,56 @@ def test_polymlp_structure(structure_rocksalt):
 
     np.testing.assert_allclose(st.composition(["Mg", "O"]), [0.5, 0.5])
     np.testing.assert_allclose(st.composition(["Sr", "Mg", "O"]), [0, 0.5, 0.5])
+
+
+def test_PolymlpParamsSingle(params_MgO):
+    """Test PolymlpParamsSingle."""
+    params_single = params_MgO.params
+    assert isinstance(params_single, PolymlpParamsSingle)
+    assert params_single.n_type == 2
+    assert tuple(params_single.elements) == ("Mg", "O")
+    assert len(params_single.atomic_energy) == 2
+    assert params_single.enable_spins is None
+    assert len(params_single.regression_alpha) == 5
+    assert len(params_single.alphas) == 5
+    assert params_single.dataset_type == "vasp"
+    assert params_single.include_force
+    assert params_single.include_stress
+    assert not params_single.print_memory
+
+    assert params_single.type_indices is None
+    assert params_single.type_full is None
+
+    assert params_single.temperature == 300
+    assert params_single.electron_property == "free_energy"
+    assert isinstance(params_single.as_dict(), dict)
+
+
+def test_PolymlpParamsSingle_spin(params_MgO):
+    """Test PolymlpParamsSingle for spin configurations."""
+    params_single = copy.deepcopy(params_MgO.params)
+    params_single.enable_spins = (True, False)
+    params_single._set_params_spins()
+    assert isinstance(params_single, PolymlpParamsSingle)
+
+    assert params_single.n_type == 3
+    assert tuple(params_single.elements) == ("Mg", "Mg", "O")
+    assert len(params_single.atomic_energy) == 3
+    assert params_single.enable_spins == (True, True, False)
+
+    params_ele = params_single.params_elements
+    assert params_ele.n_type == 2
+    assert tuple(params_ele.elements) == ("Mg", "O")
+    assert len(params_ele.atomic_energy) == 2
+    assert params_ele.enable_spins == (True, False)
+
+
+def test_PolymlpModelParams_spin(params_MgO):
+    """Test PolymlpModelParamsSingle for spin configurations."""
+    params_single = copy.deepcopy(params_MgO.params)
+    params_single.enable_spins = (True, False)
+    model = params_single.model
+
+    map_types = {0: [0, 1], 1: [2]}
+    model.revise_params(map_types)
+    assert len(model.pair_params_conditional) == 6
