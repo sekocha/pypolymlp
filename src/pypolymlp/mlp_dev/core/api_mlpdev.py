@@ -44,7 +44,6 @@ class PolymlpDevCore:
     def calc_xy(
         self,
         datasets: DatasetList,
-        element_swap: bool = False,
         scales: Optional[np.ndarray] = None,
         min_energy: Optional[float] = None,
         weight_stress: float = 0.1,
@@ -54,7 +53,6 @@ class PolymlpDevCore:
         data_xy = calc_xy(
             self.params,
             datasets,
-            element_swap=element_swap,
             scales=scales,
             min_energy=min_energy,
             weight_stress=weight_stress,
@@ -66,7 +64,6 @@ class PolymlpDevCore:
     def calc_xtx_xty(
         self,
         datasets: DatasetList,
-        element_swap: bool = False,
         scales: Optional[np.ndarray] = None,
         min_energy: Optional[float] = None,
         weight_stress: float = 0.1,
@@ -77,7 +74,6 @@ class PolymlpDevCore:
         data_xy = calc_xtx_xty(
             self.params,
             datasets,
-            element_swap=element_swap,
             scales=scales,
             min_energy=min_energy,
             weight_stress=weight_stress,
@@ -88,14 +84,13 @@ class PolymlpDevCore:
         )
         return data_xy
 
-    def get_features_attr(self, element_swap: bool = False):
+    def get_features_attr(self):
         """Return feature attributes."""
         if self.is_hybrid:
             raise RuntimeError("get_features_attr available for single model.")
 
         features_attr, polynomial_attr, atomtype_pair_dict = get_features_attr(
             self._params.params,
-            element_swap=element_swap,
         )
         return (features_attr, polynomial_attr, atomtype_pair_dict)
 

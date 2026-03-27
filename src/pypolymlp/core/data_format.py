@@ -1,6 +1,8 @@
 """Dataclasses used for developing polymlp."""
 
 import copy
+import itertools
+from collections import defaultdict
 from dataclasses import asdict, dataclass
 from typing import Literal, Optional, Union
 
@@ -174,8 +176,6 @@ class PolymlpModelParams:
     pair_params: Optional[list[list[float]]] = None
     pair_params_conditional: Optional[dict] = None
     n_gaussians: Optional[int] = None
-    # pair_params_in1: Optional[tuple] = None
-    # pair_params_in2: Optional[tuple] = None
 
     def __post_init__(self):
         self.check_errors()
@@ -194,6 +194,17 @@ class PolymlpModelParams:
                     "Either of pair_params or pair_params_conditional is required."
                 )
 
+    def revise_params(self, map_types: dict):
+        """Revise pair parameters."""
+        if self.pair_params_conditional is not None:
+            pair_params_conditional = dict()
+            for k, values in self.pair_params_conditional.items():
+                for t1, t2 in itertools.product(map_types[k[0]], map_types[k[1]]):
+                    key = tuple(sorted([t1, t2]))
+                    pair_params_conditional[key] = values
+            self.pair_params_conditional = pair_params_conditional
+        return self
+
 
 @dataclass
 class PolymlpParamsSingle:
@@ -205,32 +216,40 @@ class PolymlpParamsSingle:
     elements: Element species, (e.g., ['Mg','O']).
     model: Model parameters in PolymlpModelParams.
     atomic_energy: Atomic energies (in eV).
-    dft_train, dft_test: Location of DFT datasets.
-                         Their data structures depend on the dataset type.
+    enable_spins: Boolean array to activate spins, (e.g., [True, False])
+
     regression_alpha: Parameters for penalty term in linear ridge regression.
                       alphas = np.linspace(p[0], p[1], p[2]).
+
+    dataset_type: Dataset type.
     include_force: Consider force entries.
     include_stress: Consider stress entries.
+
     temperature: Temperature (active if dataset = "electron")
     electron_property: Target electronic property
+
+    dft_train, dft_test: Location of DFT datasets.
+                         Their data structures depend on the dataset type.
     """
 
     n_type: int
     elements: tuple[str]
     model: PolymlpModelParams
-    atomic_energy: Optional[tuple[float]] = None
-    dft_train: Optional[Union[list, dict]] = None
-    dft_test: Optional[Union[list, dict]] = None
+    atomic_energy: Optional[tuple] = None
+    enable_spins: Optional[tuple] = None
+
     regression_method: str = "ridge"
     regression_alpha: tuple[float] = tuple(np.linspace(-3.0, 1.0, 5))
+    alphas: Optional[np.ndarray] = None
+
+    dataset_type: Literal["vasp", "phonon3py", "openmx", "sscha", "electron"] = "vasp"
     include_force: bool = True
     include_stress: bool = True
-    dataset_type: Literal["vasp", "phonon3py"] = "vasp"
-    element_order: Optional[tuple[str]] = None
-    element_swap: bool = False
     print_memory: bool = False
+
     type_indices: Optional[list] = None
     type_full: Optional[bool] = None
+
     temperature: float = 300
     electron_property: Literal[
         "free_energy",
@@ -238,13 +257,17 @@ class PolymlpParamsSingle:
         "entropy",
         "specific_heat",
     ] = "free_energy"
+
     name: Optional[str] = None
     mass: Optional[float] = None
     priority_infile: Optional[str] = None
-    alphas: Optional[np.ndarray] = None
+
+    dft_train: Optional[Union[list, dict]] = None
+    dft_test: Optional[Union[list, dict]] = None
 
     def __post_init__(self):
         self.check_errors()
+        self._set_params_spins()
         self.alphas = np.array([pow(10, a) for a in self.regression_alpha])
 
     def as_dict(self) -> dict:
@@ -258,6 +281,8 @@ class PolymlpParamsSingle:
         assert len(self.elements) == self.n_type
         if self.atomic_energy is not None:
             assert len(self.atomic_energy) == self.n_type
+        if self.enable_spins is not None:
+            assert len(self.enable_spins) == self.n_type
 
     def set_alphas(self, reg_alpha_params: tuple):
         """Set alpha values."""
@@ -267,3 +292,41 @@ class PolymlpParamsSingle:
             reg_alpha_params[2],
         )
         self.alphas = np.array([pow(10, a) for a in self.regression_alpha])
+
+    def _set_params_spins(self):
+        """Set parameters with spin configurations."""
+        self._params_elements = copy.deepcopy(self)
+
+        if self.enable_spins is None:
+            return self
+        if np.count_nonzero(self.enable_spins) == 0:
+            return self
+
+        n_type = 0
+        elements, atomic_energy, enable_spins = [], [], []
+        map_types = defaultdict(list)
+        zip_array = zip(self.elements, self.atomic_energy, self.enable_spins)
+        for i, (ele, atom_e, spin) in enumerate(zip_array):
+            elements.append(ele)
+            atomic_energy.append(atom_e)
+            enable_spins.append(spin)
+            map_types[i].append(n_type)
+            n_type += 1
+            if spin:
+                elements.append(ele)
+                atomic_energy.append(atom_e)
+                enable_spins.append(spin)
+                map_types[i].append(n_type)
+                n_type += 1
+
+        self.n_type = n_type
+        self.elements = tuple(elements)
+        self.atomic_energy = tuple(atomic_energy)
+        self.enable_spins = tuple(enable_spins)
+        self.model.revise_params(map_types)
+        return self
+
+    @property
+    def params_elements(self):
+        """Return parameters for element configurations."""
+        return self._params_elements

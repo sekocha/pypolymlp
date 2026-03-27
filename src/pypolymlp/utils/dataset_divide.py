@@ -25,7 +25,7 @@ def _parse_vaspruns(
     if elements is None:
         raise RuntimeError("Element strings not found.")
 
-    dft = set_dataset_from_vaspruns(vaspruns, element_order=elements)
+    dft = set_dataset_from_vaspruns(vaspruns, elements=elements)
     try:
         atom_e = get_atomic_energies(elements, functional=functional)[0]
         dft.apply_atomic_energy(atom_e)

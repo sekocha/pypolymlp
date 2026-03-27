@@ -11,7 +11,6 @@
 PyFeaturesAttr::PyFeaturesAttr(const py::dict& params_dict){
 
     feature_params fp;
-    const bool& element_swap = params_dict["element_swap"].cast<bool>();
     convert_params_dict_to_feature_params(params_dict, fp);
 
     PolymlpAPI polymlp;

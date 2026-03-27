@@ -11,7 +11,7 @@ from pypolymlp.core.units import BohrtoAng, HartreetoEV
 
 def set_dataset_from_openmx(
     filenames: Union[str, list[str]],
-    element_order: Optional[bool] = None,
+    elements: Optional[tuple] = None,
     verbose: bool = False,
 ) -> DatasetDFT:
     """Return DFT dataset by loading openmx log files."""
@@ -26,7 +26,7 @@ def set_dataset_from_openmx(
         energies,
         forces=forces,
         stresses=None,
-        element_order=element_order,
+        elements=elements,
     )
     return dft
 

@@ -13,7 +13,8 @@ from pypolymlp.core.units import EVtoKbar
 
 def set_dataset_from_vaspruns(
     vaspruns: Union[str, list[str]],
-    element_order: Optional[bool] = None,
+    elements: Optional[tuple] = None,
+    enable_spins: Optional[tuple] = None,
     verbose: bool = False,
 ) -> DatasetDFT:
     """Return DFT dataset by loading vasprun.xml files."""
@@ -29,12 +30,16 @@ def set_dataset_from_vaspruns(
         energies,
         forces=forces,
         stresses=stresses,
-        element_order=element_order,
+        elements=elements,
+        enable_spins=enable_spins,
     )
     return dft
 
 
-def parse_properties_from_vaspruns(vaspruns: list[str], verbose: bool = False) -> tuple:
+def parse_properties_from_vaspruns(
+    vaspruns: list[str],
+    verbose: bool = False,
+) -> tuple:
     """Parse vasprun.xml files and return structures and properties."""
     energies, forces, stresses, structures = [], [], [], []
     for vasp in vaspruns:

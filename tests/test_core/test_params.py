@@ -15,14 +15,12 @@ def _assert_properties(params):
     """Assert properties."""
     assert params.n_type == 1
     assert tuple(params.elements) == ("Si",)
-    assert tuple(params.element_order) == ("Si",)
     assert params.atomic_energy == (0.0,)
     assert params.include_force
     assert not params.include_stress
     assert params.dataset_type == "phono3py"
     assert params.temperature == 300
     assert params.electron_property == "free_energy"
-    assert not params.element_swap
     assert not params.print_memory
     np.testing.assert_allclose(params.regression_alpha, [-3, -2, -1, 0, 1])
     np.testing.assert_allclose(params.alphas, [1e-3, 1e-2, 1e-1, 1e0, 1e1])
@@ -38,7 +36,6 @@ def test_PolymlpParams1(regdata_mp_149):
     assert isinstance(common, PolymlpParamsSingle)
     assert common.n_type == 1
     assert tuple(common.elements) == ("Si",)
-    assert tuple(common.element_order) == ("Si",)
 
     for p in params:
         assert isinstance(p, PolymlpParamsSingle)
@@ -63,7 +60,6 @@ def test_PolymlpParams2(regdata_mp_149):
     assert isinstance(common, PolymlpParamsSingle)
     assert common.n_type == 1
     assert tuple(common.elements) == ("Si",)
-    assert tuple(common.element_order) == ("Si",)
 
     for p in params:
         assert isinstance(p, PolymlpParamsSingle)
@@ -90,8 +86,7 @@ def test_PolymlpParams3(regdata_mp_149):
     params_in, _ = regdata_mp_149
     params_single = copy.deepcopy(params_in.params)
 
-    params = PolymlpParams()
-    params.params = params_single
+    params = PolymlpParams(params_single)
     assert len(params) == 1
     params.params = [params_single, params_single, params_single]
     assert len(params) == 3
@@ -130,11 +125,6 @@ def test_PolymlpParams4(regdata_mp_149):
     for p in params:
         assert p.electron_property == "entropy"
 
-    params.element_swap = False
-    assert not params.element_swap
-    for p in params:
-        assert not p.element_swap
-
     params.print_memory = True
     assert params.print_memory
     for p in params:
@@ -165,3 +155,57 @@ def test_set_common_params(regdata_mp_149):
     assert common_params.n_type == 2
     assert common_params.elements == ("Si", "Ge")
     assert common_params.atomic_energy == (0.1, 0.2)
+
+
+def test_PolymlpParams_tags1(regdata_mp_149):
+    """Test tags in PolymlpParams."""
+    params_in, _ = regdata_mp_149
+    params_single = copy.deepcopy(params_in.params)
+    params = PolymlpParams(params_single)
+
+    assert params.dataset_type == "phono3py"
+    assert params.include_force
+    assert not params.include_stress
+    assert params.enable_spins is None
+
+    params.dataset_type = "sscha"
+    assert params.include_force
+    assert not params.include_stress
+    assert params.enable_spins is None
+
+    params.dataset_type = "openmx"
+    assert params.include_force
+    assert not params.include_stress
+    assert params.enable_spins is None
+
+    params.dataset_type = "electron"
+    assert not params.include_force
+    assert not params.include_stress
+    assert params.enable_spins is None
+
+
+def test_PolymlpParams_tags2(regdata_mp_149):
+    """Test tags in PolymlpParams."""
+    params_in, _ = regdata_mp_149
+    params_single = copy.deepcopy(params_in.params)
+    params = PolymlpParams(params_single)
+
+    params.dataset_type = "vasp"
+    params.include_force = True
+    params.include_stress = True
+    params.enable_spins = (True,)
+
+    params.dataset_type = "openmx"
+    assert params.include_force
+    assert not params.include_stress
+    assert params.enable_spins is None
+
+    params.dataset_type = "sscha"
+    assert params.include_force
+    assert not params.include_stress
+    assert params.enable_spins is None
+
+    params.dataset_type = "electron"
+    assert not params.include_force
+    assert not params.include_stress
+    assert params.enable_spins is None

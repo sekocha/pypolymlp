@@ -33,12 +33,12 @@ def test_phono3py_yaml_class(phono3py_mp_149):
 
 def test_parse_phono3py_yaml(phono3py_mp_149):
     """Test parse_phono3py_yaml."""
-    dft = parse_phono3py_yaml(phono3py_mp_149, element_order=["Si"])
+    dft = parse_phono3py_yaml(phono3py_mp_149, elements=["Si"])
     assert len(dft.energies) == 200
     assert dft.forces.shape[0] == (38400)
 
     dft, disps = parse_phono3py_yaml(
-        phono3py_mp_149, element_order=["Si"], return_displacements=True
+        phono3py_mp_149, elements=["Si"], return_displacements=True
     )
     assert disps.shape == (200, 3, 64)
 

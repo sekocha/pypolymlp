@@ -12,7 +12,6 @@ void convert_params_dict_to_feature_params(const py::dict& params_dict,
                                            feature_params& fp){
 
     const int n_type = params_dict["n_type"].cast<int>();
-    const bool& element_swap = params_dict["element_swap"].cast<bool>();
     const bool& print_memory = params_dict["print_memory"].cast<bool>();
 
     const py::dict& model = params_dict["model"].cast<py::dict>();

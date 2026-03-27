@@ -111,6 +111,7 @@ Several procedures for generating structures used in DFT calculations are also s
   - [SSCHA free energy model](docs/experimental/mlpdev_sscha.md)
   - [Electronic free energy model](docs/experimental/mlpdev_electron.md)
   - [Substitutional disordered model](docs/experimental/mlpdev_disorder.md)
+  - [Spin-dependent model](docs/experimental/mlpdev_spin.md)
 
 
 ### Calculations using polynomial MLP

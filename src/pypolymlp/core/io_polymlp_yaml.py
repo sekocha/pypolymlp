@@ -21,19 +21,28 @@ def save_mlp_yaml(
     filename: bool = "polymlp.yaml",
 ):
     """Generate polymlp.yaml file for single polymlp model"""
-    model = params.model
+
+    params_ele = params.params_elements
+    model = params_ele.model
 
     np.set_printoptions(legacy="1.21")
     f = open(filename, "w")
-    elements_str = "[" + ", ".join(["{0}".format(x) for x in params.elements]) + "]"
+    txt1 = ", ".join(["{0}".format(x) for x in params_ele.elements])
+    elements_str = "[" + txt1 + "]"
     print("elements:     ", elements_str, file=f)
+
+    if params_ele.enable_spins is None:
+        print("enable_spins: ", [0 for _ in params_ele.elements], file=f)
+    else:
+        print("enable_spins: ", [int(s) for s in params_ele.enable_spins], file=f)
+
     print("cutoff:       ", model.cutoff, file=f)
     print("pair_type:    ", model.pair_type, file=f)
     print("feature_type: ", model.feature_type, file=f)
     print("model_type:   ", model.model_type, file=f)
     print("max_p:        ", model.max_p, file=f)
     print("max_l:        ", model.max_l, file=f)
-    print("", file=f)
+    print(file=f)
 
     if model.feature_type == "gtinv":
         gtinv = model.gtinv
@@ -41,12 +50,12 @@ def save_mlp_yaml(
         print("gtinv_maxl:   ", list(gtinv.max_l), file=f)
         print("gtinv_sym:    ", [0 for _ in gtinv.max_l], file=f)
         print("gtinv_version:", gtinv.version, file=f)
-        print("", file=f)
+        print(file=f)
 
     print("electrostatic:", 0, file=f)
     mass = [mass_table()[ele] for ele in params.elements]
     print("mass:         ", mass, file=f)
-    print("", file=f)
+    print(file=f)
 
     print("n_pair_params:", len(model.pair_params), file=f)
     print("pair_params:", file=f)
@@ -59,15 +68,15 @@ def save_mlp_yaml(
     for atomtypes, n_ids in model.pair_params_conditional.items():
         print("- atom_type_pair:     ", list(atomtypes), file=f)
         print("  pair_params_indices:", list(n_ids), file=f)
-    print("", file=f)
+    print(file=f)
 
-    if params.type_full is not None:
-        print("type_full:   ", int(params.type_full), file=f)
-        print("type_indices:", list(params.type_indices), file=f)
+    if params_ele.type_full is not None:
+        print("type_full:   ", int(params_ele.type_full), file=f)
+        print("type_indices:", list(params_ele.type_indices), file=f)
     else:
         print("type_full:   ", 1, file=f)
-        print("type_indices:", list(np.arange(params.n_type)), file=f)
-    print("", file=f)
+        print("type_indices:", list(np.arange(params_ele.n_type)), file=f)
+    print(file=f)
 
     coeffs_ = coeffs / scales
     coeffs_str = "[" + ", ".join([f"{c:.15e}" for c in coeffs_]) + "]"
@@ -96,9 +105,15 @@ def load_mlp_yaml(filename: Union[str, io.IOBase] = "polymlp.yaml"):
         yml = yaml.safe_load(open(filename))
 
     elements = yml["elements"]
-    element_order = elements
     n_type = len(elements)
     mass = yml["mass"]
+
+    try:
+        enable_spins = tuple([bool(v) for v in yml["enable_spins"]])
+        atomic_energy = tuple([0.0 for v in yml["enable_spins"]])
+    except:
+        enable_spins = None
+        atomic_energy = None
 
     if yml["feature_type"] == "gtinv":
         gtinv = PolymlpGtinvParams(
@@ -130,8 +145,9 @@ def load_mlp_yaml(filename: Union[str, io.IOBase] = "polymlp.yaml"):
     params = PolymlpParamsSingle(
         n_type=n_type,
         elements=elements,
+        atomic_energy=atomic_energy,
+        enable_spins=enable_spins,
         model=model,
-        element_order=element_order,
         type_full=yml["type_full"],
         type_indices=yml["type_indices"],
         mass=mass,

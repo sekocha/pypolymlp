@@ -1,0 +1,17 @@
+feature_type pair
+cutoff 6.0
+n_gaussians 9
+model_type 2
+max_p 3
+
+include_force True
+include_stress True
+reg_alpha_params -4 1 6
+
+n_type 1
+elements Fe
+atomic_energy -3.37684106
+train_data data-vasp-spin-Fe/vaspruns/train/*.xml True 1.0
+test_data data-vasp-spin-Fe/vaspruns/test/*.xml True 1.0
+
+enable_spins True

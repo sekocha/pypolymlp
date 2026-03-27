@@ -77,7 +77,6 @@ def test_parse_parameter_files_hybrid():
     assert params.n_type == 2
     assert params.atomic_energy == (-0.0004, -1.85321219)
     np.testing.assert_equal(params.elements, ["Mg", "O"])
-    np.testing.assert_equal(params.element_order, ["Mg", "O"])
 
     train = parser.train[0]
     assert train.files == []
@@ -103,7 +102,6 @@ def test_parse_parameter_files_hybrid2():
     assert params.n_type == 2
     assert params.atomic_energy == (-0.0004, -1.85321219)
     np.testing.assert_equal(params.elements, ["Mg", "O"])
-    np.testing.assert_equal(params.element_order, ["Mg", "O"])
 
 
 def test_parse_parameter_files2():

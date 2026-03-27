@@ -70,7 +70,7 @@ def test_functions_from_poscars():
     assert st.elements == ["Mg", "Mg", "Mg", "Mg", "O", "O", "O", "O"]
 
 
-def test_is_converget():
+def test_is_convergent():
     """Test is_convergent."""
     vasprun = cwd / "./../files/vasprun-00001-Ti-full.xml"
     assert _is_convergent(vasprun)

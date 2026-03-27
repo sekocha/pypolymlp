@@ -25,7 +25,6 @@ from pypolymlp.mlp_dev.core.utils_weights import apply_weights
 def calc_xtx_xty(
     params: PolymlpParams,
     datasets: DatasetList,
-    element_swap: bool = False,
     scales: Optional[np.ndarray] = None,
     min_energy: Optional[float] = None,
     weight_stress: float = 0.1,
@@ -62,7 +61,6 @@ def calc_xtx_xty(
                 data_xy,
                 params,
                 sliced_data,
-                element_swap=element_swap,
                 scales=scales,
                 min_energy=min_energy,
                 weight_stress=weight_stress,
@@ -100,7 +98,6 @@ def _compute_products_single_batch(
     data_xy: PolymlpDataXY,
     params: PolymlpParams,
     dataset_sliced: Dataset,
-    element_swap: bool = False,
     scales: Optional[np.ndarray] = None,
     min_energy: Optional[float] = None,
     weight_stress: float = 0.1,
@@ -112,7 +109,6 @@ def _compute_products_single_batch(
     features = compute_features(
         params,
         datasets=dataset_sliced,
-        element_swap=element_swap,
         verbose=verbose,
     )
     x = features.x
