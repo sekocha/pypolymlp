@@ -16,10 +16,6 @@ def set_dataset_from_sscha_yamls(
 ) -> DatasetDFT:
     """Return DFT dataset by loading sscha_results.yaml files."""
     structures, free_energies, forces, stress_tensors = parse_sscha_yamls(yamlfiles)
-    # TODO: Remove in a later version
-    if np.any(stress_tensors is None):
-        stress_tensors = None
-    print(stress_tensors)
 
     dft = DatasetDFT(
         structures,
@@ -42,10 +38,8 @@ def parse_sscha_yamls(yamlfiles: list[str]):
             continue
         if "average_forces" not in yml:
             continue
-
-        # TODO: Activate in a later version
-        # if "average_stress_tensor" not in yml:
-        #     continue
+        if "average_stress_tensor" not in yml:
+            continue
 
         res = _get_sscha_properties(yml, yfile)
         structures.append(res[0])
@@ -53,7 +47,7 @@ def parse_sscha_yamls(yamlfiles: list[str]):
         forces.append(res[2])
         stress_tensors.append(res[3])
 
-    return (structures, np.array(free_energies), forces, np.array(stress_tensors))
+    return (structures, np.array(free_energies), forces, stress_tensors)
 
 
 def split_imaginary(yamlfiles: list[str]):
@@ -83,10 +77,7 @@ def _get_sscha_properties(yml: dict, name: str):
     fvib = float(yml["properties"]["free_energy"])
     free_energy = fvib * n_cells / EVtoKJmol  # kJ/mol->eV/supercell
     force = np.array(yml["average_forces"]).T
-    try:
-        stress_tensor = np.array(yml["average_stress_tensor"])
-    except:
-        stress_tensor = None
+    stress_tensor = np.array(yml["average_stress_tensor"]) * n_cells
     return supercell, free_energy, force, stress_tensor
 
 

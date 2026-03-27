@@ -41,6 +41,8 @@ def save_sscha_yaml(
     print("  static_potential:       kJ/mol", file=f)
     print("  entropy:                J/K/mol", file=f)
     print("  harmonic_heat_capacity: J/K/mol", file=f)
+    print("  force:                  eV/angstrom", file=f)
+    print("  stress_tensor:          eV/unitcell", file=f)
     print("", file=f)
 
     print("properties:", file=f)

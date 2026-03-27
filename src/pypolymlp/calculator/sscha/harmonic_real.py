@@ -65,6 +65,7 @@ class HarmonicReal:
         self._energies_harm = None
         self._energies_full = None
         self._average_forces = None
+        self._average_stress_tensor = None
         self._forces = None
         self._stress_tensors = None
         self._disps = None
@@ -347,8 +348,9 @@ class HarmonicReal:
 
     @property
     def static_stress_tensor(self) -> float:
-        """Return static stress tensor of given supercell in eV."""
-        return self._s0 * self._ev_to_kjmol
+        """Return static stress tensor of given supercell in eV/unitcell."""
+        # return self._s0 * self._ev_to_kjmol
+        return self._s0 / self._supercell.n_unitcells
 
     @property
     def average_forces(self) -> np.ndarray:
@@ -357,8 +359,8 @@ class HarmonicReal:
 
     @property
     def average_stress_tensor(self) -> np.ndarray:
-        """Return temperature-dependent stress tensor of given supercell in eV."""
-        return self._average_stress_tensor
+        """Return temperature-dependent stress tensor in eV/unitcell."""
+        return self._average_stress_tensor / self._supercell.n_unitcells
 
     @property
     def frequencies(self):
