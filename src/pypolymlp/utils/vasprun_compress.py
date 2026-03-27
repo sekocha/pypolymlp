@@ -33,9 +33,13 @@ def compress_vaspruns(vasprun: str, write_file: bool = True):
     st = root.find(".//*[@name='finalpos']")
     st2 = root.find(".//*[@name='atomtypes']")
     st3 = root.find(".//*[@name='atoms']")
+    scsteps = root.find("calculation").findall("scstep")
 
     m1, c1 = ET.Element("modeling"), ET.Element("calculation")
     c1.extend([e, f, s, st, st2, st3])
+    for sc in scsteps:
+        c1.append(sc)
+
     m1.append(c1)
 
     if write_file:

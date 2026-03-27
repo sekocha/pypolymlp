@@ -8,6 +8,7 @@ from pypolymlp.core.interface_yaml import (
     extract_electron_properties,
     parse_electron_yamls,
     parse_sscha_yamls,
+    split_imaginary,
 )
 
 cwd = Path(__file__).parent
@@ -21,11 +22,28 @@ def test_parse_sscha_yamls():
         cwd / "./../files/sscha_results_0003.yaml",
     ]
     strs, free_energies, forces = parse_sscha_yamls(yamls)
-    np.testing.assert_allclose(free_energies, [-1.41748102, -0.94484543], atol=1e-6)
-    assert len(strs) == 2
-    assert len(forces) == 2
+    np.testing.assert_allclose(
+        free_energies,
+        [-1.41748102, -1.803403, -0.94484543],
+        atol=1e-6,
+    )
+    assert len(strs) == 3
+    assert len(forces) == 3
     assert forces[0].shape == (3, 40)
     assert forces[1].shape == (3, 40)
+    assert forces[2].shape == (3, 40)
+
+
+def test_split_imaginary():
+    """Test for split_imaginary."""
+    yamls = [
+        cwd / "./../files/sscha_results_0001.yaml",
+        cwd / "./../files/sscha_results_0002.yaml",
+        cwd / "./../files/sscha_results_0003.yaml",
+    ]
+    yaml1, yaml2 = split_imaginary(yamls)
+    assert len(yaml1) == 2
+    assert len(yaml2) == 1
 
 
 def test_electron_yamls():

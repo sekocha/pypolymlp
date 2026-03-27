@@ -42,6 +42,7 @@ A polynomial MLP represents the potential energy as a polynomial function of lin
 - pymatgen
 - ase
 - joblib
+- matplotlib, seaborn
 
 ## How to install pypolymlp
 
@@ -87,18 +88,23 @@ Several procedures for generating structures used in DFT calculations are also s
   1. [Development of a single on-the-fly MLP](docs/tutorial_onthefly.md)
   2. Development of a single general-purpose MLP
   3. Development of Pareto-optimal MLPs
-- [MLP development using command line interface](docs/mlpdev_command.md)
-- [MLP development using Python API](docs/mlpdev_api.md)
-- [Utilities for MLP development](docs/utilities.md)
-  - [Generator of structures used for DFT calculations](docs/strgen.md)
-    - Random atomic displacements with constant magnitude
-    - Random atomic displacements with sequential magnitudes and volume changes
-    - Random atomic displacements, cell expansion, and distortion
-  - Compression of vasprun.xml files
-  - Automatic division of DFT dataset
-  - Atomic energies
-  - Enumeration of optimal MLPs
-  - Estimation of computational costs
+- MLP developments
+  - [VASP (Command line interface)](docs/mlpdev_command.md)
+  - [VASP (Python API)](docs/mlpdev_api.md)
+  - [Structure-Properties general datasets (Python API)](docs/mlpdev_dataset_api.md)
+  - [Phono3py (Python API)](docs/mlpdev_phono3py.md)
+  - [OpenMX](docs/mlpdev_openmx.md)
+  - [Notes on parameter and dataset settings](docs/mlpdev_params.md)
+
+- Utilities for MLP development
+  - Dataset Generation
+    - [Generator of DFT random structures](docs/strgen.md)
+    - [Compression of vasprun.xml files](docs/utils_compress.md)
+    - [Automatic division of DFT dataset](docs/utils_dataset_div.md)
+  - [Convex hull (Pareto-optimal) MLP search](docs/utils_grid.md)
+  - [Atomic energies](docs/utils_atomic_energies.md)
+  - [Generator of portable model for OpenKIM](docs/utils_kim.md)
+  - [Other utilities](docs/utils.md)
 
 - Experimental features
   - [SSCHA free energy model](docs/experimental/mlpdev_sscha.md)
@@ -112,13 +118,16 @@ Both formats are supported by the command-line interface and the Python API.
 The following calculations can be performed using **pypolymlp** with the polynomial MLP files `polymlp.yaml` or `polymlp.lammps`.
 
 - [Notes on hybrid polynomial MLPs](docs/calc_hybrid.md)
-- [Energy, forces, stress tensor](docs/calc_property.md)
-- [Equation of states](docs/calc_eos.md)
-- [Local geometry optimization](docs/calc_geometry.md)
-- [Elastic constants](docs/calc_elastic.md)
-- [Phonon properties, Quasi-harmonic approximation](docs/calc_phonon.md)
-- [Force constants](docs/calc_fc.md)
-- [Polynomial invariants](docs/calc_features.md)
+- Property calculations and simulation
+  - [Energy, forces, stress tensor](docs/calc_property.md)
+  - [Formation energy](docs/calc_formation.md)
+  - [Equation of states](docs/calc_eos.md)
+  - [Local geometry optimization](docs/calc_geometry.md)
+  - [Elastic constants](docs/calc_elastic.md)
+  - [Phonon properties, Quasi-harmonic approximation](docs/calc_phonon.md)
+  - [Force constants](docs/calc_fc.md)
+  - [Polynomial invariants](docs/calc_features.md)
+  - [Systematic property calculations](docs/calc_auto.md)
 - Experimental features
   - [Self-consistent phonon calculations](docs/experimental/calc_sscha.md)
   - [Molecular dynamics](docs/experimental/calc_md.md)
@@ -130,5 +139,6 @@ The following calculations can be performed using **pypolymlp** with the polynom
 
 - [How to use polymlp in other calculator tools](docs/api_other_calc.md)
   - LAMMPS
-  - phonopy and phonon3py
   - ASE
+  - OpenKIM
+  - phonopy and phonon3py

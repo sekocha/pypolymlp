@@ -46,3 +46,6 @@ def test_polymlp_structure(structure_rocksalt):
     np.testing.assert_equal(st.n_atoms, st_rev.n_atoms)
     np.testing.assert_equal(st.types, st_rev.types)
     np.testing.assert_equal(st.elements, st_rev.elements)
+
+    np.testing.assert_allclose(st.composition(["Mg", "O"]), [0.5, 0.5])
+    np.testing.assert_allclose(st.composition(["Sr", "Mg", "O"]), [0, 0.5, 0.5])

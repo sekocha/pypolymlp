@@ -8,7 +8,7 @@ from pypolymlp.calculator.sscha.sscha_params import SSCHAParams
 
 def test_params1(unitcell_mlp_Al):
     """Test SSCHAParams."""
-    unitcell, pot = unitcell_mlp_Al
+    unitcell, pot, _ = unitcell_mlp_Al
     size = (2, 2, 2)
     params = SSCHAParams(
         unitcell=unitcell,
@@ -49,7 +49,7 @@ def test_params1(unitcell_mlp_Al):
 
 def test_params_temperatures(unitcell_mlp_Al):
     """Test SSCHAParams."""
-    unitcell, pot = unitcell_mlp_Al
+    unitcell, pot, _ = unitcell_mlp_Al
     size = (2, 2, 2)
     params = SSCHAParams(
         unitcell=unitcell,

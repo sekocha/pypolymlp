@@ -71,13 +71,20 @@ class PolymlpEvalAccuracy:
             energies,
             normalize=n_total_atoms,
         )
+        mae_e, _, _ = self._compute_mae(
+            dataset.energies,
+            energies,
+            normalize=n_total_atoms,
+        )
 
         if not dataset.exist_force:
             rmse_f = None
+            mae_f = None
             rmse_percent_f_norm = None
             rmse_f_direction = None
         else:
             rmse_f, true_f, pred_f = self._compute_rmse(dataset.forces, forces)
+            mae_f, _, _ = self._compute_mae(dataset.forces, forces)
             if force_direction:
                 true_f1 = dataset.forces.reshape((-1, 3))
                 pred_f1 = forces.reshape((-1, 3))
@@ -104,8 +111,14 @@ class PolymlpEvalAccuracy:
 
         if not dataset.exist_stress:
             rmse_s = None
+            mae_s = None
         else:
             rmse_s, true_s, pred_s = self._compute_rmse(
+                dataset.stresses,
+                stresses,
+                normalize=normalize,
+            )
+            mae_s, _, _ = self._compute_mae(
                 dataset.stresses,
                 stresses,
                 normalize=normalize,
@@ -115,6 +128,9 @@ class PolymlpEvalAccuracy:
             "energy": rmse_e,
             "force": rmse_f,
             "stress": rmse_s,
+            "energy_mae": mae_e,
+            "force_mae": mae_f,
+            "stress_mae": mae_s,
             "percent_force_norm": rmse_percent_f_norm,
             "force_direction": rmse_f_direction,
         }
@@ -135,14 +151,28 @@ class PolymlpEvalAccuracy:
     def print_error(self, error: dict, key: str = "train"):
         """Print prediction errors."""
         print("prediction:", key, flush=True)
+
         energy = "{0:13.5f}".format(error["energy"] * 1000)
         print("  rmse_energy:", energy, "(meV/atom)", flush=True)
+
         if error["force"] is not None:
             force = "{0:13.5f}".format(error["force"])
             print("  rmse_force: ", force, "(eV/ang)", flush=True)
+
         if error["stress"] is not None:
             stress = "{0:13.5f}".format(error["stress"] * 1000)
             print("  rmse_stress:", stress, "(meV/atom)", flush=True)
+
+        energy = "{0:13.5f}".format(error["energy_mae"] * 1000)
+        print("  mae_energy: ", energy, "(meV/atom)", flush=True)
+
+        if error["force_mae"] is not None:
+            force = "{0:13.5f}".format(error["force_mae"])
+            print("  mae_force:  ", force, "(eV/ang)", flush=True)
+
+        if error["stress_mae"] is not None:
+            stress = "{0:13.5f}".format(error["stress_mae"] * 1000)
+            print("  mae_stress: ", stress, "(meV/atom)", flush=True)
         return self
 
     def _compute_rmse(
@@ -161,13 +191,30 @@ class PolymlpEvalAccuracy:
 
         return (rmse(true, pred), true, pred)
 
+    def _compute_mae(
+        self,
+        true_values: np.ndarray,
+        pred_values: np.ndarray,
+        normalize: Optional[np.ndarray] = None,
+    ):
+        """Compute RMSE."""
+        if normalize is None:
+            true = true_values
+            pred = pred_values
+        else:
+            true = true_values / np.array(normalize)
+            pred = pred_values / np.array(normalize)
+
+        mae = np.mean(np.abs(true - pred))
+        return (mae, true, pred)
+
     def _generate_output_key(
         self,
         dataset_name: str,
         tag: str = Literal["train", "test"],
     ):
         """Generate key used for identify datasets."""
-        output_key = dataset_name.replace("*", "-").replace("." + ".", "")
+        output_key = dataset_name.replace("*", "-").replace("." + "./", "")
         output_key = output_key.replace(".", "-").replace("/", "-")
         output_key = tag + "-" + output_key
         output_key = output_key.replace("---", "-").replace("--", "-")
@@ -235,8 +282,8 @@ def write_error_yaml(
         print("  force:  eV/angstrom", file=f)
         print("  stress: meV/atom", file=f)
         print("", file=f)
+        print("prediction_errors:", file=f)
 
-    print("prediction_errors:", file=f)
     for key, dict1 in error.items():
         print("- dataset:", key, file=f)
         print("  rmse_energy: ", dict1["energy"] * 1000, file=f)
@@ -244,5 +291,12 @@ def write_error_yaml(
             print("  rmse_force:  ", dict1["force"], file=f)
         if dict1["stress"] is not None:
             print("  rmse_stress: ", dict1["stress"] * 1000, file=f)
+        print("", file=f)
+
+        print("  mae_energy:  ", dict1["energy_mae"] * 1000, file=f)
+        if dict1["force_mae"] is not None:
+            print("  mae_force:   ", dict1["force_mae"], file=f)
+        if dict1["stress_mae"] is not None:
+            print("  mae_stress:  ", dict1["stress_mae"] * 1000, file=f)
         print("", file=f)
     f.close()

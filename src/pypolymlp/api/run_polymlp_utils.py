@@ -59,6 +59,19 @@ def run():
         default=None,
         help="Automatic dataset division using " + "vasprun.xml files",
     )
+    parser.add_argument(
+        "--n_divide",
+        type=int,
+        default=3,
+        help="Number of groups to divide datasets",
+    )
+    parser.add_argument(
+        "--elements",
+        nargs="*",
+        type=str,
+        default=None,
+        help="Element strings.",
+    )
 
     parser.add_argument(
         "--atomic_energy_elements",
@@ -101,13 +114,6 @@ def run():
         default="polymlp.yaml",
         help="polymlp file",
     )
-    parser.add_argument(
-        "--supercell",
-        nargs=3,
-        type=int,
-        default=[4, 4, 4],
-        help="supercell size",
-    )
     parser.add_argument("--n_calc", type=int, default=20, help="number of calculations")
 
     """Pareto optimal search"""
@@ -136,6 +142,38 @@ def run():
     )
     parser.add_argument("--refine_cell", action="store_true", help="refine cell")
     parser.add_argument("--space_group", action="store_true", help="get space group")
+    parser.add_argument(
+        "--supercell",
+        nargs="*",
+        type=int,
+        default=None,
+        help="get supercell",
+    )
+
+    """Model generation"""
+    parser.add_argument(
+        "--generate_models",
+        action="store_true",
+        help="Generate polymlp candidate models.",
+    )
+    parser.add_argument(
+        "--generate_models_elements",
+        nargs="*",
+        type=str,
+        default=None,
+        help="Elements for model generation.",
+    )
+    parser.add_argument(
+        "--generate_models_system",
+        type=str,
+        default=None,
+        help="System for model generation.",
+    )
+    parser.add_argument(
+        "--enable_hybrid",
+        action="store_true",
+        help="Enable enumeration of hybrid models.",
+    )
 
     args = parser.parse_args()
     print_credit()
@@ -160,18 +198,37 @@ def run():
     elif args.vasprun_compress is not None:
         polymlp.compress_vaspruns(args.vasprun_compress, n_jobs=args.n_jobs)
     elif args.calc_cost:
+        if args.supercell is None:
+            size = (4, 4, 4)
+        elif len(args.supercell) == 3:
+            size = args.supercell
+        else:
+            raise RuntimeError("Option `--supercell` must have 3 elements.")
+
         polymlp.estimate_polymlp_comp_cost(
             pot=args.pot,
             path_pot=args.dirs,
             poscar=args.poscar,
-            supercell=args.supercell,
+            supercell=size,
             n_calc=args.n_calc,
         )
+
     elif args.find_optimal is not None:
         polymlp.find_optimal_mlps(args.find_optimal, args.key)
 
     elif args.auto_dataset is not None:
-        polymlp.divide_dataset(args.auto_dataset)
+        polymlp.divide_dataset(args.auto_dataset, args.elements, n_divide=args.n_divide)
+
+    elif args.supercell:
+        if len(args.supercell) == 9:
+            matrix = np.reshape(args.supercell, (3, 3))
+        elif len(args.supercell) == 3:
+            matrix = args.supercell
+        else:
+            raise RuntimeError("Option `--supercell` must have 3 or 9 elements.")
+        st = polymlp.generate_supercell(poscar=args.poscar, supercell_matrix=matrix)
+        polymlp.print_poscar(st)
+        polymlp.write_poscar_file(st, filename="sposcar_pypolymlp")
 
     elif args.refine_cell or args.space_group:
         polymlp.init_symmetry(poscar=args.poscar, symprec=args.symprec)
@@ -189,4 +246,18 @@ def run():
             elements=args.atomic_energy_elements,
             formula=args.atomic_energy_formula,
             functional=args.atomic_energy_functional,
+        )
+
+    elif args.generate_models is not None:
+        if args.elements is None and args.generate_models_system is None:
+            raise RuntimeError("Elements or system required.")
+        if args.generate_models_system is not None:
+            elements = args.generate_models_system.split("-")
+        else:
+            elements = args.elements
+
+        polymlp.enumerate_models(
+            elements=elements,
+            path="polymlps",
+            hybrid=args.enable_hybrid,
         )

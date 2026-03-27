@@ -5,8 +5,9 @@ from typing import Optional, Union
 import numpy as np
 
 from pypolymlp.calculator.compute_features import update_types
-from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
+from pypolymlp.core.data_format import PolymlpParamsSingle, PolymlpStructure
 from pypolymlp.core.io_polymlp import load_mlp
+from pypolymlp.core.params import PolymlpParams
 from pypolymlp.cxx.lib import libmlpcpp
 
 
@@ -57,7 +58,7 @@ class PropertiesSingle:
     def __init__(
         self,
         pot: Optional[str] = None,
-        params: Optional[PolymlpParams] = None,
+        params: Optional[PolymlpParamsSingle] = None,
         coeffs: Optional[np.ndarray] = None,
     ):
         """Init method.
@@ -198,9 +199,9 @@ class PropertiesHybrid:
 
     def __init__(
         self,
-        pot: str = None,
-        params: list[PolymlpParams] = None,
-        coeffs: list[np.ndarray] = None,
+        pot: Optional[list[str]] = None,
+        params: Optional[PolymlpParams] = None,
+        coeffs: Optional[list[np.ndarray]] = None,
     ):
         """Init method.
 
@@ -216,8 +217,6 @@ class PropertiesHybrid:
                 raise ValueError("Parameters in PropertiesHybrid must be lists.")
             self._props = [PropertiesSingle(pot=p) for p in pot]
         else:
-            if not isinstance(params, list) or not isinstance(coeffs, list):
-                raise ValueError("Parameters in PropertiesHybrid must be lists.")
             self._props = [
                 PropertiesSingle(params=p, coeffs=c) for p, c in zip(params, coeffs)
             ]
@@ -254,9 +253,9 @@ class Properties:
 
     def __init__(
         self,
-        pot: str = None,
-        params: Union[PolymlpParams, list[PolymlpParams]] = None,
-        coeffs: Union[np.ndarray, list[np.ndarray]] = None,
+        pot: Optional[Union[str, list]] = None,
+        params: Optional[PolymlpParams] = None,
+        coeffs: Optional[Union[np.ndarray, list[np.ndarray]]] = None,
     ):
         """Init method.
 
@@ -269,7 +268,9 @@ class Properties:
         Any one of pot and (params, coeffs) is needed.
         """
 
+        self._pot = None
         if pot is not None:
+            self._pot = pot
             if isinstance(pot, (list, tuple, np.ndarray)):
                 if len(pot) > 1:
                     self._prop = PropertiesHybrid(pot=pot)
@@ -278,15 +279,16 @@ class Properties:
             else:
                 self._prop = PropertiesSingle(pot=pot)
         else:
-            if isinstance(params, list) and isinstance(coeffs, list):
-                if len(params) > 1 and len(coeffs) > 1:
+            if isinstance(coeffs, list):
+                if len(coeffs) > 1:
                     self._prop = PropertiesHybrid(params=params, coeffs=coeffs)
                 else:
                     self._prop = PropertiesSingle(
-                        params_dict=params[0], coeffs=coeffs[0]
+                        params=params.params,
+                        coeffs=coeffs[0],
                     )
             else:
-                self._prop = PropertiesSingle(params=params, coeffs=coeffs)
+                self._prop = PropertiesSingle(params=params.params, coeffs=coeffs)
 
     def eval(self, st: PolymlpStructure, use_openmp: bool = True):
         """Evaluate properties for a single structure."""
@@ -356,8 +358,15 @@ class Properties:
         return self
 
     @property
+    def pot(self):
+        """Return potential path."""
+        return self._pot
+
+    @property
     def params(self):
         """Return parameters."""
+        if isinstance(self._prop.params, PolymlpParamsSingle):
+            return PolymlpParams(self._prop.params)
         return self._prop.params
 
     @property
@@ -381,30 +390,34 @@ class Properties:
         return convert_stresses_in_gpa(self._s, self._structures)
 
 
-def set_instance_properties(
-    pot: Union[str, list[str]] = None,
-    params: Union[PolymlpParams, list[PolymlpParams]] = None,
-    coeffs: Union[np.ndarray, list[np.ndarray]] = None,
+def initialize_polymlp_calculator(
+    pot: Optional[Union[str, list[str]]] = None,
+    params: Optional[PolymlpParams] = None,
+    coeffs: Optional[Union[np.ndarray, list[np.ndarray]]] = None,
     properties: Optional[Properties] = None,
-    require_mlp: bool = True,
+    return_none: bool = False,
 ):
-    """Set instance of Properties class.
+    """Initialize calculator of polymlp.
 
     Parameters
     ----------
     pot: polymlp file.
     params: Parameters for polymlp.
     coeffs: Polymlp coefficients.
-    properties: Properties instance.
+    properties: Properties object.
 
     Any one of pot, (params, coeffs), and properties is needed.
     """
-    if require_mlp:
-        if pot is None and params is None and properties is None:
-            raise RuntimeError("polymlp not defined.")
-
-    if properties is not None:
+    if all(x is None for x in (properties, pot, params, coeffs)):
+        if return_none:
+            return None
+        raise RuntimeError("Polymlp not provided.")
+    elif properties is not None:
         return properties
-    elif pot is not None or params is not None:
-        return Properties(pot=pot, params=params, coeffs=coeffs)
-    return None
+
+    if params is not None:
+        if coeffs is None:
+            raise RuntimeError("Coefficients not provided.")
+        if len(params) != len(coeffs):
+            raise RuntimeError("Length of params and coeffs not consistent.")
+    return Properties(pot=pot, params=params, coeffs=coeffs)

@@ -1,18 +1,18 @@
 """API Class for developing polymlp."""
 
-from typing import Literal, Optional, Union
+from typing import Literal, Optional
 
 import numpy as np
 
-from pypolymlp.core.data_format import PolymlpParams
 from pypolymlp.core.dataset import DatasetList
+from pypolymlp.core.params import PolymlpParams
 from pypolymlp.mlp_dev.core.data_sequential import calc_xtx_xty
 from pypolymlp.mlp_dev.core.data_standard import calc_xy
 from pypolymlp.mlp_dev.core.data_utils import PolymlpDataXY
 from pypolymlp.mlp_dev.core.dataclass import PolymlpDataMLP
 from pypolymlp.mlp_dev.core.eval_accuracy import PolymlpEvalAccuracy
 from pypolymlp.mlp_dev.core.features_attr import get_features_attr, get_num_features
-from pypolymlp.mlp_dev.core.utils import check_memory_size_in_regression, set_params
+from pypolymlp.mlp_dev.core.utils import check_memory_size_in_regression
 from pypolymlp.mlp_dev.core.utils_model_selection import (
     compute_rmse,
     get_best_model,
@@ -25,7 +25,7 @@ class PolymlpDevCore:
 
     def __init__(
         self,
-        params: Union[PolymlpParams, list[PolymlpParams]],
+        params: PolymlpParams,
         use_gradient: bool = False,
         verbose: bool = False,
     ):
@@ -36,10 +36,10 @@ class PolymlpDevCore:
         params: Parameters of polymlp.
         use_gradient: Use gradient method or not.
         """
-        self.params = params
+        self._params = params
+        self._n_features = None
         self._use_gradient = use_gradient
         self._verbose = verbose
-        self._n_features = None
 
     def calc_xy(
         self,
@@ -48,6 +48,7 @@ class PolymlpDevCore:
         scales: Optional[np.ndarray] = None,
         min_energy: Optional[float] = None,
         weight_stress: float = 0.1,
+        scale_threshold: float = 1e-10,
     ) -> PolymlpDataXY:
         """Calculate X and y data."""
         data_xy = calc_xy(
@@ -57,6 +58,7 @@ class PolymlpDevCore:
             scales=scales,
             min_energy=min_energy,
             weight_stress=weight_stress,
+            scale_threshold=scale_threshold,
             verbose=self._verbose,
         )
         return data_xy
@@ -69,6 +71,7 @@ class PolymlpDevCore:
         min_energy: Optional[float] = None,
         weight_stress: float = 0.1,
         batch_size: Optional[int] = None,
+        scale_threshold: float = 1e-10,
     ) -> PolymlpDataXY:
         """Calculate X.T @ X and X.T @ y data."""
         data_xy = calc_xtx_xty(
@@ -80,14 +83,18 @@ class PolymlpDevCore:
             weight_stress=weight_stress,
             batch_size=batch_size,
             use_gradient=self._use_gradient,
+            scale_threshold=scale_threshold,
             verbose=self._verbose,
         )
         return data_xy
 
     def get_features_attr(self, element_swap: bool = False):
         """Return feature attributes."""
+        if self.is_hybrid:
+            raise RuntimeError("get_features_attr available for single model.")
+
         features_attr, polynomial_attr, atomtype_pair_dict = get_features_attr(
-            self._params,
+            self._params.params,
             element_swap=element_swap,
         )
         return (features_attr, polynomial_attr, atomtype_pair_dict)
@@ -127,18 +134,17 @@ class PolymlpDevCore:
     ):
         """Return best polymlp model."""
         return get_best_model(
+            self._params,
             coefs,
             scales,
-            self._common_params.alphas,
             rmse_train,
             rmse_test,
-            self._params,
             cumulative_n_features,
         )
 
     def print_model_selection_log(self, rmse_train: np.ndarray, rmse_test: np.ndarray):
         """Print log from model selection."""
-        print_log(rmse_train, rmse_test, self._common_params.alphas)
+        print_log(self._params, rmse_train, rmse_test)
 
     @property
     def n_features(self):
@@ -148,26 +154,14 @@ class PolymlpDevCore:
         return self._n_features
 
     @property
-    def params(self) -> Union[PolymlpParams, list[PolymlpParams]]:
+    def params(self) -> PolymlpParams:
         """Return polymlp parameters."""
         return self._params
 
     @property
-    def common_params(self) -> PolymlpParams:
-        """Return common parameters in hybrid polymlp."""
-        return self._common_params
-
-    @params.setter
-    def params(self, params: Union[PolymlpParams, list[PolymlpParams]]):
-        """Set parameters."""
-        self._n_features = None
-        self._params, self._common_params, _ = set_params(params)
-        self._hybrid = True if isinstance(self._params, list) else False
-
-    @property
     def is_hybrid(self) -> bool:
         """Return whether hybrid model is used."""
-        return self._hybrid
+        return self._params.is_hybrid
 
 
 def eval_accuracy(

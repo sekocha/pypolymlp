@@ -1,19 +1,20 @@
 """Class of input parameter parser."""
 
-import copy
 from typing import Literal, Optional, Union
 
 import numpy as np
 
-from pypolymlp.core.data_format import PolymlpModelParams, PolymlpParams
+from pypolymlp.core.data_format import PolymlpModelParams, PolymlpParamsSingle
 from pypolymlp.core.dataset import Dataset, DatasetList
-from pypolymlp.core.parser_infile import InputParser
-from pypolymlp.core.polymlp_params import (
+from pypolymlp.core.params import PolymlpParams
+from pypolymlp.core.params_utils import (
     set_active_gaussian_params,
     set_gaussian_params,
     set_gtinv_params,
     set_regression_alphas,
 )
+from pypolymlp.core.parser_infile import InputParser
+from pypolymlp.core.units import HartreetoEV
 
 
 class ParamsParserSingle:
@@ -48,6 +49,7 @@ class ParamsParserSingle:
 
     def set_params(self):
         """Get parameters from file and set them."""
+        # TODO: Use set_all_params
         include_force, include_stress = self._get_force_tags()
         elements, n_type, atom_e = self._get_element_properties()
         alphas = self._get_regression_params()
@@ -59,7 +61,7 @@ class ParamsParserSingle:
         )
         element_order = elements if rearrange else None
 
-        self._params = PolymlpParams(
+        self._params = PolymlpParamsSingle(
             n_type=n_type,
             elements=elements,
             model=model,
@@ -79,6 +81,8 @@ class ParamsParserSingle:
                 "electron_property", default="free_energy", dtype=str
             )
             self._params.include_force = False
+            self._params.include_stress = False
+        elif dataset_type in ("phono3py", "sscha", "openmx"):
             self._params.include_stress = False
         return self._params
 
@@ -109,6 +113,7 @@ class ParamsParserSingle:
             return_array=True,
         )
         d_atom_e = [0.0 for i in range(n_type)]
+
         atom_e = self._parser.get_params(
             "atomic_energy",
             size=n_type,
@@ -116,6 +121,13 @@ class ParamsParserSingle:
             dtype=float,
             return_array=True,
         )
+        atom_e_unit = self._parser.get_params(
+            "atomic_energy_unit",
+            default="eV",
+            dtype=str,
+        )
+        if atom_e_unit in ("Hartree", "hartree"):
+            atom_e = [e * HartreetoEV for e in atom_e]
         return elements, n_type, tuple(atom_e)
 
     def _get_regression_params(self):
@@ -197,8 +209,18 @@ class ParamsParserSingle:
             dtype=float,
             return_array=True,
         )
+        n_gaussians = self._parser.get_params(
+            "n_gaussians",
+            default=None,
+            dtype=int,
+        )
         distance = self._parser.distance
-        pair_params = set_gaussian_params(params1, params2)
+        pair_params = set_gaussian_params(
+            params1=params1,
+            params2=params2,
+            n_gaussians=n_gaussians,
+            cutoff=cutoff,
+        )
         pair_params_active, cond = set_active_gaussian_params(
             pair_params,
             elements,
@@ -248,6 +270,10 @@ class ParamsParserSingle:
         self._test = DatasetList(test_set)
         not_split_data = DatasetList(not_split_set)
 
+        if dataset_type == "sscha":
+            self._train = self._train.split_imaginary(weight_imag=0.01)
+            self._test = self._test.split_imaginary(weight_imag=0.01)
+
         self._train.parse_files(self._params)
         self._test.parse_files(self._params)
         not_split_data.parse_files(self._params)
@@ -275,62 +301,6 @@ class ParamsParserSingle:
         return self._test
 
 
-def _get_variable_with_max_length(
-    multiple_params: list[PolymlpParams], key: str
-) -> list:
-    """Select variable with max length."""
-    array = []
-    for single in multiple_params:
-        single_dict = single.as_dict()
-        if len(single_dict[key]) > len(array):
-            array = single_dict[key]
-    return array
-
-
-def set_common_params(multiple_params: list[PolymlpParams]) -> PolymlpParams:
-    """Set common parameters of multiple PolymlpParams."""
-    keys = set()
-    for single in multiple_params:
-        for k in single.as_dict().keys():
-            keys.add(k)
-
-    common_params = copy.copy(multiple_params[0])
-    n_type = max([single.n_type for single in multiple_params])
-    elements = _get_variable_with_max_length(multiple_params, "elements")
-    atom_e = _get_variable_with_max_length(multiple_params, "atomic_energy")
-
-    bool_element_order = [
-        single.element_order for single in multiple_params
-    ] is not None
-    element_order = elements if bool_element_order else None
-
-    common_params.n_type = n_type
-    common_params.elements = elements
-    common_params.element_order = element_order
-    common_params.atomic_energy = atom_e
-    return common_params
-
-
-def _set_unique_types(
-    multiple_params: list[PolymlpParams],
-    common_params: PolymlpParams,
-):
-    """Set type indices for hybrid models."""
-    n_type = common_params.n_type
-    elements = common_params.elements
-    for single in multiple_params:
-        single.elements = sorted(single.elements, key=lambda x: elements.index(x))
-
-    for single in multiple_params:
-        if single.n_type == n_type:
-            single.type_full = True
-            single.type_indices = list(range(n_type))
-        else:
-            single.type_full = False
-            single.type_indices = [elements.index(ele) for ele in single.elements]
-    return multiple_params
-
-
 class ParamsParser:
     """Class of input parameter parser."""
 
@@ -340,33 +310,33 @@ class ParamsParser:
         train_ratio: float = 0.9,
         prefix_data_location: Optional[str] = None,
         parse_dft: bool = True,
+        verbose: bool = False,
     ):
         """Init method."""
         self._train_ratio = train_ratio
         self._prefix_data_location = prefix_data_location
         self._parse_dft = parse_dft
+        self._verbose = verbose
 
+        self._priority_file = None
         self._params = None
-        self._common_params = None
-        self._hybrid_params = None
         self._train = None
         self._test = None
 
         if isinstance(infiles, str):
             self._set_from_single_file(infiles)
         elif isinstance(infiles, (list, tuple, np.ndarray)):
-            if len(infiles) == 1:
-                self._set_from_single_file(infiles[0])
-            else:
-                self._set_from_multiple_files(infiles)
+            self._set_from_multiple_files(infiles)
         else:
             raise RuntimeError("Inappropriate format for input files.")
 
     def _set_from_single_file(self, infile: str):
         """Set parameters from single input file."""
         self._priority_file = infile
-        parser = ParamsParserSingle(infile)
+        parser = ParamsParserSingle(infile, verbose=self._verbose)
         parser.set_params()
+        self._params = PolymlpParams(parser.params)
+
         if self._parse_dft:
             parser.set_datasets(
                 train_ratio=self._train_ratio,
@@ -375,33 +345,17 @@ class ParamsParser:
             self._train = parser.train
             self._test = parser.test
 
-        self._params = self._common_params = parser.params
-        self._hybrid_params = None
         return self
 
     def _set_from_multiple_files(self, infiles: list):
         """Set parameters from multiple input files."""
-        self._priority_file = infiles[0]
-        parser = ParamsParserSingle(infiles[0])
-        parser.set_params()
-        if self._parse_dft:
-            parser.set_datasets(
-                train_ratio=self._train_ratio,
-                prefix_data_location=self._prefix_data_location,
-            )
-            self._train = parser.train
-            self._test = parser.test
+        self._set_from_single_file(infiles[0])
+        if len(infiles) == 1:
+            return self
 
-        self._hybrid_params = [parser.params]
         for infile in infiles[1:]:
-            params = ParamsParserSingle(infile).set_params()
-            self._hybrid_params.append(params)
-
-        self._common_params = set_common_params(self._hybrid_params)
-        self._hybrid_params = _set_unique_types(
-            self._hybrid_params, self._common_params
-        )
-        self._params = self._hybrid_params
+            params = ParamsParserSingle(infile, verbose=self._verbose).set_params()
+            self._params.append(params)
         return self
 
     @property
@@ -413,16 +367,6 @@ class ParamsParser:
     def params(self):
         """Return parameters."""
         return self._params
-
-    @property
-    def common_params(self):
-        """Return common parameters."""
-        return self._common_params
-
-    @property
-    def hybrid_params(self):
-        """Return parameters for hybrid models."""
-        return self._hybrid_params
 
     @property
     def train(self):

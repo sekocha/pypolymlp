@@ -5,14 +5,17 @@ from typing import List, Literal, Optional, Union
 
 import numpy as np
 
-from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
+from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.dataset_utils import DatasetDFT
+from pypolymlp.core.interface_openmx import set_dataset_from_openmx
 from pypolymlp.core.interface_vasp import set_dataset_from_vaspruns
 from pypolymlp.core.interface_yaml import (
     parse_electron_yamls,
     set_dataset_from_electron_yamls,
     set_dataset_from_sscha_yamls,
+    split_imaginary,
 )
+from pypolymlp.core.params import PolymlpParams
 from pypolymlp.core.utils import split_train_test, strtobool
 
 
@@ -21,7 +24,9 @@ class Dataset:
 
     def __init__(
         self,
-        dataset_type: Literal["vasp", "sscha", "electron", "phono3py"] = "vasp",
+        dataset_type: Literal[
+            "vasp", "sscha", "electron", "phono3py", "openmx"
+        ] = "vasp",
         files: Optional[Union[list, str]] = None,
         location: Optional[str] = None,
         include_force: bool = True,
@@ -153,6 +158,7 @@ class Dataset:
             weight=self._weight,
             name="Train_" + self._name,
             split=True,
+            verbose=self._verbose,
         )
         test = Dataset(
             dataset_type=self._dataset_type,
@@ -162,6 +168,7 @@ class Dataset:
             weight=self._weight,
             name="Test_" + self._name,
             split=True,
+            verbose=self._verbose,
         )
         return train, test
 
@@ -181,6 +188,7 @@ class Dataset:
             name=train_name,
             split=True,
             dft=train_dft,
+            verbose=self._verbose,
         )
         test_name = "Test_" + self._name
         test = Dataset(
@@ -192,6 +200,7 @@ class Dataset:
             name=test_name,
             split=True,
             dft=test_dft,
+            verbose=self._verbose,
         )
         return train, test
 
@@ -207,6 +216,7 @@ class Dataset:
             weight=self._weight,
             name=name,
             dft=dft,
+            verbose=self._verbose,
         )
         return data
 
@@ -222,6 +232,8 @@ class Dataset:
             self._parse_vasp()
         elif self._dataset_type == "phono3py":
             self._parse_phono3py()
+        elif self._dataset_type == "openmx":
+            self._parse_openmx()
         elif self._dataset_type == "sscha":
             self._parse_sscha()
         elif self._dataset_type == "electron":
@@ -237,6 +249,7 @@ class Dataset:
         self._dft = set_dataset_from_vaspruns(
             self._files,
             element_order=self._element_order,
+            verbose=self._verbose,
         )
         return self
 
@@ -266,6 +279,14 @@ class Dataset:
             yml_data,
             temperature=params.temperature,
             target=params.electron_property,
+            element_order=self._element_order,
+        )
+        return self
+
+    def _parse_openmx(self):
+        """Parse data from openmx log files."""
+        self._dft = set_dataset_from_openmx(
+            self._files,
             element_order=self._element_order,
         )
         return self
@@ -403,6 +424,32 @@ class Dataset:
             return None
         return self._dft.exist_stress
 
+    def split_imaginary(self, weight_imag: float = 0.01):
+        """Split structures with and without imaginary frequencies from SSCHA."""
+        files_no_imag, files_imag = split_imaginary(self._files)
+        no_imag, imag = None, None
+        if files_no_imag is not None:
+            no_imag = Dataset(
+                dataset_type=self._dataset_type,
+                files=files_no_imag,
+                include_force=self._include_force,
+                include_stress=self._include_stress,
+                weight=self._weight,
+                name=self._name + "_no_imag",
+                verbose=self._verbose,
+            )
+        if files_imag is not None:
+            imag = Dataset(
+                dataset_type=self._dataset_type,
+                files=files_imag,
+                include_force=self._include_force,
+                include_stress=self._include_stress,
+                weight=self._weight * weight_imag,
+                name=self._name + "_imag",
+                verbose=self._verbose,
+            )
+        return no_imag, imag
+
 
 class DatasetList:
     """Class for keeping multiple datasets for training or test data."""
@@ -454,6 +501,17 @@ class DatasetList:
             ds.subtract_atomic_energy(atomic_energy)
         return self
 
+    def split_imaginary(self, weight_imag: float = 0.01):
+        """Split structures with and without imaginary frequencies from SSCHA."""
+        datasets = []
+        for ds in self._datasets:
+            no_imag, imag = ds.split_imaginary(weight_imag=weight_imag)
+            if no_imag is not None:
+                datasets.append(no_imag)
+            if imag is not None:
+                datasets.append(imag)
+        return DatasetList(datasets)
+
     @property
     def datasets(self):
         """Return datasets."""
@@ -470,6 +528,7 @@ def set_datasets_from_multiple_filesets(
     train_files: Optional[list[list[str]]] = None,
     test_files: Optional[list[list[str]]] = None,
     weight: float = 1.0,
+    verbose: bool = False,
 ):
     """Set datasets from files and params."""
     train, test = [], []
@@ -482,6 +541,7 @@ def set_datasets_from_multiple_filesets(
                 include_force=params.include_force,
                 include_stress=params.include_stress,
                 weight=weight,
+                verbose=verbose,
             )
         )
     for i, files in enumerate(test_files):
@@ -493,6 +553,7 @@ def set_datasets_from_multiple_filesets(
                 include_force=params.include_force,
                 include_stress=params.include_stress,
                 weight=weight,
+                verbose=verbose,
             )
         )
     train = DatasetList(train)
@@ -509,6 +570,7 @@ def set_datasets_from_single_fileset(
     test_files: Optional[list[str]] = None,
     train_ratio: float = 0.9,
     weight: float = 1.0,
+    verbose: bool = False,
 ):
     """Set datasets from files and params."""
     parse_end = True
@@ -520,6 +582,7 @@ def set_datasets_from_single_fileset(
             include_force=params.include_force,
             include_stress=params.include_stress,
             weight=weight,
+            verbose=verbose,
         )
         test = Dataset(
             name="data2",
@@ -528,6 +591,7 @@ def set_datasets_from_single_fileset(
             include_force=params.include_force,
             include_stress=params.include_stress,
             weight=weight,
+            verbose=verbose,
         )
     else:
         if isinstance(files, str):
@@ -538,6 +602,7 @@ def set_datasets_from_single_fileset(
                 include_force=params.include_force,
                 include_stress=params.include_stress,
                 weight=weight,
+                verbose=verbose,
             )
             data.parse_files(params)
             train, test = data.split_dft(train_ratio=train_ratio)
@@ -551,12 +616,17 @@ def set_datasets_from_single_fileset(
                 include_force=params.include_force,
                 include_stress=params.include_stress,
                 weight=weight,
+                verbose=verbose,
             )
             train, test = data.split_files(train_ratio=train_ratio)
             train.name, test.name = "data1", "data2"
 
     train = DatasetList(train)
     test = DatasetList(test)
+    if params.dataset_type == "sscha":
+        train = train.split_imaginary(weight_imag=0.01)
+        test = test.split_imaginary(weight_imag=0.01)
+
     if parse_end:
         train.parse_files(params)
         test.parse_files(params)
@@ -582,6 +652,7 @@ def set_datasets_from_structures(
     test_stresses: Optional[np.ndarray] = None,
     train_ratio: float = 0.9,
     weight: float = 1.0,
+    verbose: bool = False,
 ):
     """Set datasets from files and params."""
     if structures is not None and energies is not None:
@@ -600,6 +671,7 @@ def set_datasets_from_structures(
             include_stress=params.include_stress,
             weight=weight,
             dft=dft,
+            verbose=verbose,
         )
         train, test = data.split_dft(train_ratio=train_ratio)
         train.name, test.name = "data1", "data2"
@@ -626,6 +698,7 @@ def set_datasets_from_structures(
             include_stress=params.include_stress,
             weight=weight,
             dft=train_dft,
+            verbose=verbose,
         )
         test = Dataset(
             name="data2",
@@ -635,6 +708,7 @@ def set_datasets_from_structures(
             include_stress=params.include_stress,
             weight=weight,
             dft=test_dft,
+            verbose=verbose,
         )
     train = DatasetList(train)
     test = DatasetList(test)

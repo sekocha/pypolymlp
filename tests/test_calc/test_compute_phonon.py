@@ -36,8 +36,10 @@ def _assert_qha(ph: PolymlpPhononQHA):
 
 def test_phonon_MgO(unitcell_pair_MgO):
     """Test EOS calculation."""
-    unitcell, pot = unitcell_pair_MgO
-    ph = PolymlpPhonon(unitcell=unitcell, supercell_matrix=np.diag([2, 2, 2]), pot=pot)
+    unitcell, pot, prop = unitcell_pair_MgO
+    ph = PolymlpPhonon(
+        unitcell=unitcell, supercell_matrix=np.diag([2, 2, 2]), properties=prop
+    )
     ph.produce_force_constants(distance=0.01)
     ph.compute_properties()
     _assert_phonon(ph)
@@ -45,7 +47,9 @@ def test_phonon_MgO(unitcell_pair_MgO):
 
 def test_phonon_qha_MgO(unitcell_pair_MgO):
     """Test EOS calculation."""
-    unitcell, pot = unitcell_pair_MgO
-    ph = PolymlpPhononQHA(unitcell=unitcell, supercell_matrix=np.eye(3), pot=pot)
+    unitcell, pot, prop = unitcell_pair_MgO
+    ph = PolymlpPhononQHA(
+        unitcell=unitcell, supercell_matrix=np.eye(3), properties=prop
+    )
     ph.run()
     _assert_qha(ph)

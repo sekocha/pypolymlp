@@ -1,14 +1,15 @@
 """Class for geometry optimization with symmetric constraint."""
 
 import copy
-from typing import Literal, Optional, Union
+from typing import Literal, Optional
 
 import numpy as np
 from scipy.optimize import NonlinearConstraint, minimize
 
+from pypolymlp.calculator._scipy._optimize import minimize_cg
 from pypolymlp.calculator.compute_features import update_types
 from pypolymlp.calculator.properties import Properties
-from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
+from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.units import EVtoGPa
 from pypolymlp.utils.spglib_utils import construct_basis_cell
 from pypolymlp.utils.structure_utils import refine_positions
@@ -22,15 +23,12 @@ class GeometryOptimization:
     def __init__(
         self,
         cell: PolymlpStructure,
+        properties: Properties,
         relax_cell: bool = False,
         relax_volume: bool = False,
         relax_positions: bool = True,
         with_sym: bool = True,
         pressure: float = 0.0,
-        pot: str = None,
-        params: Optional[Union[PolymlpParams, list[PolymlpParams]]] = None,
-        coeffs: Optional[np.ndarray] = None,
-        properties: Optional[Properties] = None,
         verbose: bool = False,
     ):
         """Init method.
@@ -38,24 +36,15 @@ class GeometryOptimization:
         Parameters
         ----------
         cell: Initial structure.
+        properties: Properties instance.
         relax_cell: Optimize cell shape.
         relax_volume: Optimize volume.
         relax_positions: Optimize atomic positions.
         with_sym: Consider symmetric properties.
         pressure: Pressure in GPa.
-        pot: polymlp file.
-        params: Parameters for polymlp.
-        coeffs: Polymlp coefficients.
-        properties: Properties instance.
-
-        Any one of pot, (params, coeffs), and properties is needed.
         """
-
-        if properties is not None:
-            self._prop = properties
-        else:
-            self._prop = Properties(pot=pot, params=params, coeffs=coeffs)
-
+        self._prop = properties
+        self._verbose = verbose
         params = self._prop.params
         if isinstance(params, list):
             elements = params[0].elements
@@ -71,7 +60,6 @@ class GeometryOptimization:
         self._relax_positions = relax_positions
         self._with_sym = with_sym
         self._pressure = pressure
-        self._verbose = verbose
 
         self._basis_axis, cell_update = self._set_basis_axis(cell)
         self.structure = cell_update
@@ -326,7 +314,21 @@ class GeometryOptimization:
                 constraints=[nlc],
             )
         else:
-            self._res = minimize(fun, self._x0, method=method, jac=jac, options=options)
+            use_test_scipy = False
+            if use_test_scipy and method == "CG":
+                self._res = minimize_cg(
+                    fun,
+                    self._x0,
+                    jac=jac,
+                    c1=c1,
+                    c2=c2,
+                    disp=self._verbose,
+                )
+            else:
+                self._res = minimize(
+                    fun, self._x0, method=method, jac=jac, options=options
+                )
+
         self._x0 = self._res.x
         return self
 

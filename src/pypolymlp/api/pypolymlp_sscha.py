@@ -4,13 +4,13 @@ from typing import Literal, Optional, Union
 
 import numpy as np
 
-from pypolymlp.calculator.properties import Properties
+from pypolymlp.calculator.properties import Properties, initialize_polymlp_calculator
 from pypolymlp.calculator.sscha.api_sscha import run_sscha
 from pypolymlp.calculator.sscha.sscha_data import SSCHAData
 from pypolymlp.calculator.sscha.sscha_params import SSCHAParams
 from pypolymlp.calculator.sscha.sscha_restart import Restart
-from pypolymlp.core.data_format import PolymlpParams
 from pypolymlp.core.interface_vasp import Poscar
+from pypolymlp.core.params import PolymlpParams
 from pypolymlp.utils.phonopy_utils import get_nac_params
 
 
@@ -58,14 +58,13 @@ class PypolymlpSSCHA:
 
         Any one of pot, (params, coeffs), and properties is needed.
         """
-        if pot is None and params is None and properties is None:
-            raise RuntimeError("polymlp not given.")
-
         self._pot = pot
-        if properties is None:
-            self._prop = Properties(pot=pot, params=params, coeffs=coeffs)
-        else:
-            self._prop = properties
+        self._prop = initialize_polymlp_calculator(
+            pot=pot,
+            params=params,
+            coeffs=coeffs,
+            properties=properties,
+        )
         return self
 
     def load_restart(
@@ -128,6 +127,7 @@ class PypolymlpSSCHA:
         use_temporal_cutoff: bool = False,
         path: str = "./sscha",
         write_pdos: bool = False,
+        use_mkl: bool = True,
     ):
         """Run SSCHA iterations.
 
@@ -187,12 +187,13 @@ class PypolymlpSSCHA:
 
         self._sscha = run_sscha(
             self._sscha_params,
-            properties=self._prop,
+            self._prop,
             fc2=self._fc2,
             precondition=precondition,
             use_temporal_cutoff=use_temporal_cutoff,
             path=path,
             write_pdos=write_pdos,
+            use_mkl=use_mkl,
             verbose=self._verbose,
         )
         self._fc2 = self._sscha.force_constants

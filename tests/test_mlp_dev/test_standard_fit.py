@@ -36,10 +36,14 @@ def test_fit_learning_curve(regdata_mp_149):
     """Test fit function for learning curve."""
     params, train = regdata_mp_149
     test = train
+
+    params.alphas = [1e2, 1e3, 1e4]
     log = fit_learning_curve(params, train, test)
+    params.alphas = [1e-3, 1e-2, 1e-1, 1e0, 1e1]
+
     nums = [l[0] for l in log]
     np.testing.assert_equal(nums, np.arange(1, 11) * 18)
 
-    assert log[-3][1]["energy"] == pytest.approx(5.849589779404497e-06, rel=1e-2)
-    assert log[-2][1]["energy"] == pytest.approx(5.841377969070585e-06, rel=1e-2)
-    assert log[-1][1]["energy"] == pytest.approx(5.843977160697607e-06, rel=1e-2)
+    assert log[-3][1]["energy"] == pytest.approx(2.806378176050595e-06, rel=1e-2)
+    assert log[-2][1]["energy"] == pytest.approx(2.7852516328822455e-06, rel=1e-2)
+    assert log[-1][1]["energy"] == pytest.approx(2.7604438411037103e-06, rel=1e-2)

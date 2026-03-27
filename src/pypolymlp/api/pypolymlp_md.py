@@ -28,8 +28,9 @@ from pypolymlp.calculator.utils.ase_utils import (
 )
 from pypolymlp.calculator.utils.fc_utils import load_fc2_hdf5
 from pypolymlp.calculator.utils.io_utils import print_pot
-from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
+from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.interface_vasp import Poscar
+from pypolymlp.core.params import PolymlpParams
 from pypolymlp.core.units import Avogadro, Kb
 from pypolymlp.utils.structure_utils import supercell
 
@@ -73,7 +74,7 @@ class PypolymlpMD:
     def _set_polymlp(
         self,
         pot: Union[str, list[str]] = None,
-        params: Union[PolymlpParams, list[PolymlpParams]] = None,
+        params: Union[PolymlpParams] = None,
         coeffs: Union[np.ndarray, list[np.ndarray]] = None,
         properties: Optional[Properties] = None,
     ):
@@ -109,7 +110,7 @@ class PypolymlpMD:
     def set_ase_calculator(
         self,
         pot: Union[str, list[str]] = None,
-        params: Union[PolymlpParams, list[PolymlpParams]] = None,
+        params: Union[PolymlpParams] = None,
         coeffs: Union[np.ndarray, list[np.ndarray]] = None,
         properties: Optional[Properties] = None,
     ):
@@ -136,7 +137,7 @@ class PypolymlpMD:
     def set_ase_calculator_with_fc2(
         self,
         pot: Union[str, list[str]] = None,
-        params: Union[PolymlpParams, list[PolymlpParams]] = None,
+        params: Union[PolymlpParams] = None,
         coeffs: Union[np.ndarray, list[np.ndarray]] = None,
         properties: Optional[Properties] = None,
         fc2hdf5: str = "fc2.hdf5",
@@ -173,11 +174,11 @@ class PypolymlpMD:
     def set_ase_calculator_with_reference(
         self,
         pot: Union[str, list[str]] = None,
-        params: Union[PolymlpParams, list[PolymlpParams]] = None,
+        params: Union[PolymlpParams] = None,
         coeffs: Union[np.ndarray, list[np.ndarray]] = None,
         properties: Optional[Properties] = None,
         pot_ref: Union[str, list[str]] = None,
-        params_ref: Union[PolymlpParams, list[PolymlpParams]] = None,
+        params_ref: Union[PolymlpParams] = None,
         coeffs_ref: Union[np.ndarray, list[np.ndarray]] = None,
         properties_ref: Optional[Properties] = None,
         alpha: float = 0.0,
@@ -214,11 +215,11 @@ class PypolymlpMD:
     def set_ase_calculator_with_general_reference(
         self,
         pot_final: Union[str, list[str]] = None,
-        params_final: Union[PolymlpParams, list[PolymlpParams]] = None,
+        params_final: Union[PolymlpParams] = None,
         coeffs_final: Union[np.ndarray, list[np.ndarray]] = None,
         properties_final: Optional[Properties] = None,
         pot_ref: Union[str, list[str]] = None,
-        params_ref: Union[PolymlpParams, list[PolymlpParams]] = None,
+        params_ref: Union[PolymlpParams] = None,
         coeffs_ref: Union[np.ndarray, list[np.ndarray]] = None,
         properties_ref: Optional[Properties] = None,
         fc2hdf5: str = "fc2.hdf5",

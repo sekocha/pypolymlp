@@ -6,6 +6,9 @@ import numpy as np
 import pytest
 
 from pypolymlp.core.interface_vasp import (
+    VaspErrorCheck,
+    Vasprun,
+    _is_convergent,
     check_vasprun_type,
     parse_energy_volume,
     parse_properties_from_vaspruns,
@@ -65,6 +68,23 @@ def test_functions_from_poscars():
     assert st.positions.shape == (3, 8)
     assert st.types == [0, 0, 0, 0, 1, 1, 1, 1]
     assert st.elements == ["Mg", "Mg", "Mg", "Mg", "O", "O", "O", "O"]
+
+
+def test_is_converget():
+    """Test is_convergent."""
+    vasprun = cwd / "./../files/vasprun-00001-Ti-full.xml"
+    assert _is_convergent(vasprun)
+    assert _is_convergent(Vasprun(vasprun))
+
+
+def test_VaspErrorCheck():
+    """Test VaspErrorCheck."""
+    vasprun = str(cwd / "./../files/vasprun-00001-Ti-full.xml")
+    error = VaspErrorCheck()
+    assert error.test_convergence(vasprun)
+    assert error.test_convergence([vasprun]) == [True]
+
+    assert error.test_no_errors(vasprun)
 
 
 # TODO: vasprun from MD, OUTCAR, DOSCAR

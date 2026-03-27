@@ -17,10 +17,10 @@ path_file = str(cwd) + "/files/"
 
 def test_harmonic_real(unitcell_mlp_Al):
     """Test HarmonicReal."""
-    unitcell, pot = unitcell_mlp_Al
+    unitcell, pot, prop = unitcell_mlp_Al
     size = (2, 2, 2)
     sscha_params = SSCHAParams(unitcell, size, pot=pot, temp=700, tol=0.003)
-    sscha = SSCHACore(sscha_params, pot=pot)
+    sscha = SSCHACore(sscha_params, prop)
 
     phonopy = sscha._phonopy
     supercell_polymlp = phonopy_cell_to_structure(phonopy.supercell)

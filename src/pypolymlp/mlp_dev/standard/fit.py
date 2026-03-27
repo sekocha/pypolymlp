@@ -1,16 +1,16 @@
 """Functions for estimating regression coefficients from datasets."""
 
-from typing import Optional, Union
+from typing import Optional
 
-from pypolymlp.core.data_format import PolymlpParams
 from pypolymlp.core.dataset import DatasetList
+from pypolymlp.core.params import PolymlpParams
 from pypolymlp.mlp_dev.core.api_mlpdev import PolymlpDevCore, eval_accuracy
 from pypolymlp.mlp_dev.standard.solvers import solver_ridge
 from pypolymlp.mlp_dev.standard.utils_learning_curve import print_learning_curve_log
 
 
 def fit(
-    params: Union[PolymlpParams, list[PolymlpParams]],
+    params: PolymlpParams,
     train: DatasetList,
     test: DatasetList,
     batch_size: Optional[int] = None,
@@ -34,7 +34,7 @@ def fit(
     coefs = solver_ridge(
         xtx=train_xy.xtx,
         xty=train_xy.xty,
-        alphas=polymlp.common_params.alphas,
+        alphas=params.alphas,
         verbose=verbose,
     )
     rmse_train = polymlp.compute_rmse(coefs, train_xy, check_singular=True)
@@ -64,7 +64,7 @@ def fit(
 
 
 def fit_standard(
-    params: Union[PolymlpParams, list[PolymlpParams]],
+    params: PolymlpParams,
     train: DatasetList,
     test: DatasetList,
     verbose: bool = False,
@@ -85,7 +85,7 @@ def fit_standard(
     coefs = solver_ridge(
         x=train_xy.x,
         y=train_xy.y,
-        alphas=polymlp.common_params.alphas,
+        alphas=params.alphas,
         verbose=verbose,
     )
     rmse_train = polymlp.compute_rmse(coefs, train_xy, check_singular=True)
@@ -113,7 +113,7 @@ def fit_standard(
 
 
 def fit_learning_curve(
-    params: Union[PolymlpParams, list[PolymlpParams]],
+    params: PolymlpParams,
     train: DatasetList,
     test: DatasetList,
     verbose: bool = False,
@@ -154,7 +154,7 @@ def fit_learning_curve(
         coefs = solver_ridge(
             x=x,
             y=y,
-            alphas=polymlp.common_params.alphas,
+            alphas=params.alphas,
             verbose=False,
         )
         rmse_train = polymlp.compute_rmse(coefs, x=x, y=y)

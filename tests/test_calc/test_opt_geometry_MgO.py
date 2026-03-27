@@ -11,10 +11,10 @@ from pypolymlp.calculator.opt_geometry import GeometryOptimization
 
 def test_opt1(unitcell_disp_pair_MgO):
     """Test optimization with pair polymlp in MgO."""
-    unitcell1, pot = unitcell_disp_pair_MgO
+    unitcell1, pot, prop = unitcell_disp_pair_MgO
     unitcell = copy.deepcopy(unitcell1)
     opt = GeometryOptimization(
-        pot=pot,
+        properties=prop,
         cell=unitcell,
         relax_cell=False,
         relax_volume=False,
@@ -43,10 +43,10 @@ def test_opt1(unitcell_disp_pair_MgO):
 
 def test_opt2(unitcell_disp_pair_MgO):
     """Test optimization with pair polymlp in MgO."""
-    unitcell1, pot = unitcell_disp_pair_MgO
+    unitcell1, pot, prop = unitcell_disp_pair_MgO
     unitcell = copy.deepcopy(unitcell1)
     opt = GeometryOptimization(
-        pot=pot,
+        properties=prop,
         cell=unitcell,
         relax_cell=True,
         relax_volume=True,
@@ -76,10 +76,10 @@ def test_opt2(unitcell_disp_pair_MgO):
 
 def test_opt3(unitcell_pair_MgO):
     """Test optimization with pair polymlp in MgO."""
-    unitcell1, pot = unitcell_pair_MgO
+    unitcell1, pot, prop = unitcell_pair_MgO
     unitcell = copy.deepcopy(unitcell1)
     opt = GeometryOptimization(
-        pot=pot,
+        properties=prop,
         cell=unitcell,
         relax_cell=True,
         relax_volume=True,

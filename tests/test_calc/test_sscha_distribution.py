@@ -14,7 +14,7 @@ path_file = str(cwd) + "/files/"
 
 def test_sscha_distribution(unitcell_mlp_Al):
     """Test SSCHADistribution."""
-    _, pot = unitcell_mlp_Al
+    _, pot, _ = unitcell_mlp_Al
     path_sscha = path_file + "others/sscha_restart/"
     yaml = path_sscha + "sscha_results.yaml"
     fc2hdf5 = path_sscha + "fc2.hdf5"

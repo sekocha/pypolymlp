@@ -10,10 +10,10 @@ from pypolymlp.calculator.sscha.sscha_params import SSCHAParams
 
 def test_harmonic_reciprocal(unitcell_mlp_Al):
     """Test HarmonicReciprocal."""
-    unitcell, pot = unitcell_mlp_Al
+    unitcell, pot, prop = unitcell_mlp_Al
     size = (2, 2, 2)
     sscha_params = SSCHAParams(unitcell, size, pot=pot, temp=700, tol=0.003)
-    sscha = SSCHACore(sscha_params, pot=pot)
+    sscha = SSCHACore(sscha_params, prop)
     rec = HarmonicReciprocal(sscha._phonopy, sscha._prop)
     energies, forces = rec.eval([unitcell, unitcell])
     np.testing.assert_allclose(energies, -13.71119227, atol=1e-7)

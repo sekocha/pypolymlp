@@ -1,7 +1,7 @@
 """Utility functions for plotting properties."""
 
 import os
-from typing import Literal, Optional
+from typing import Literal, Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -16,9 +16,10 @@ def plot_prototype_prediction(
     system: str,
     pot_id: str,
     path_output: str = "./",
+    filename_suffix: Optional[str] = None,
     dpi: int = 300,
     figsize: tuple = None,
-    fontsize: int = 10,
+    fontsize: Union[int, str] = "auto",
     use_eps: bool = False,
 ):
     """Plot errors between DFT and MLP for prototype structures.
@@ -32,6 +33,8 @@ def plot_prototype_prediction(
     system: System.
     pot_id: Potential ID.
     """
+    if fontsize == "auto":
+        fontsize = min(800 // data.shape[0], 12)
     os.makedirs(path_output, exist_ok=True)
     error = np.abs(data[:, 0].astype(float) - data[:, 1].astype(float)) * 1000
     tag = data[:, 2]
@@ -58,10 +61,15 @@ def plot_prototype_prediction(
     b.tick_params(axis="y", labelsize=fontsize)
 
     plt.tight_layout()
+    filename = path_output + "/polymlp_comparison"
+    if filename_suffix is not None:
+        filename += "_" + filename_suffix
     if use_eps:
-        plt.savefig(path_output + "/polymlp_comparison.eps", format="eps")
+        filename += ".eps"
+        plt.savefig(filename, format="eps")
     else:
-        plt.savefig(path_output + "/polymlp_comparison.png", format="png", dpi=dpi)
+        filename += ".png"
+        plt.savefig(filename, format="png", dpi=dpi)
     plt.clf()
     plt.close()
 
@@ -73,8 +81,8 @@ def _set_eos_minmax(
 ):
     """Set minimum and maximum values for EOS plot."""
     limmin_x, limmax_x, limmin_y, limmax_y = [], [], [], []
-    v_array = np.ravel([p.eos_mlp[:, 0] for p in prototypes])
-    e_array = np.ravel([p.eos_mlp[:, 1] for p in prototypes])
+    v_array = np.ravel([p.eos_mlp[:, 0] for p in prototypes if p.eos_mlp is not None])
+    e_array = np.ravel([p.eos_mlp[:, 1] for p in prototypes if p.eos_mlp is not None])
 
     vmin, vmax = np.min(v_array), np.max(v_array)
     emax = np.max(e_array)
@@ -169,7 +177,8 @@ def _sns_init(
     fontsize: int = 10,
 ):
     """Initialize seaborn subplot environment."""
-    n_rows = int(np.ceil(len(prototypes) / n_cols - 1e-10))
+    n_success = len([1 for p in prototypes if p.structure_eq is not None])
+    n_rows = int(np.ceil(n_success / n_cols - 1e-10))
     figsize = (figsize[0], figsize[1] * n_rows / 6)
 
     sns.set_context("paper", 1.0, {"lines.linewidth": 2})
@@ -202,14 +211,16 @@ def plot_eos_separate(
     fig, ax, n_rows = _sns_init(
         prototypes, suptitle, n_cols=n_cols, figsize=figsize, fontsize=8
     )
-    for i, prot in enumerate(prototypes):
+    i = 0
+    for prot in prototypes:
         st, ev = prot.name, prot.eos_mlp
         if ev is None:
             continue
 
         row = i // n_cols
         col = i % n_cols
-        ax[row][col].scatter(
+        ax_obj = ax[col] if n_rows == 1 else ax[row][col]
+        ax_obj.scatter(
             ev[:, 0],
             ev[:, 1],
             color="turquoise",
@@ -218,17 +229,20 @@ def plot_eos_separate(
             linewidths=0.1,
             edgecolors="k",
         )
-        ax[row][col].set_title(st, fontsize=fontsize, loc="left")
-        ax[row][col].set_xlim(limmin_x, limmax_x)
-        ax[row][col].set_ylim(limmin_y, limmax_y)
-        ax[row][col].tick_params(axis="both", labelsize=fontsize)
+        ax_obj.set_title(st, fontsize=fontsize, loc="left")
+        ax_obj.set_xlim(limmin_x, limmax_x)
+        ax_obj.set_ylim(limmin_y, limmax_y)
+        ax_obj.tick_params(axis="both", labelsize=fontsize)
+        i += 1
 
     for i in range(n_rows):
-        ax[i][0].set_ylabel("Energy (eV/atom)", fontsize=fontsize)
+        ax_obj = ax[0] if n_rows == 1 else ax[i][0]
+        ax_obj.set_ylabel("Energy (eV/atom)", fontsize=fontsize)
 
     for i in range(n_cols):
-        ax[-1][i].set_xlabel(r"Volume ($\mathrm{\AA}^3$/atom)", fontsize=fontsize)
-        ax[-1][i].tick_params(axis="both", labelsize=fontsize)
+        ax_obj = ax[i] if n_rows == 1 else ax[-1][i]
+        ax_obj.set_xlabel(r"Volume ($\mathrm{\AA}^3$/atom)", fontsize=fontsize)
+        ax_obj.tick_params(axis="both", labelsize=fontsize)
 
     plt.tight_layout()
     if use_eps:
@@ -241,8 +255,12 @@ def plot_eos_separate(
 
 def _set_phonon_minmax(prototypes: list[Prototype]):
     """Set minimum and maximum values for phonon DOS plot."""
-    freq_array = np.ravel([p.phonon_dos[:, 0] for p in prototypes])
-    dos_array = np.ravel([p.phonon_dos[:, 1] / p.n_atom for p in prototypes])
+    freq_array = np.ravel(
+        [p.phonon_dos[:, 0] for p in prototypes if p.phonon_dos is not None]
+    )
+    dos_array = np.ravel(
+        [p.phonon_dos[:, 1] / p.n_atom for p in prototypes if p.phonon_dos is not None]
+    )
 
     limmin_x = np.floor(np.min(freq_array))
     limmax_x = np.ceil(np.max(freq_array))
@@ -271,26 +289,29 @@ def plot_phonon(
     fig, ax, n_rows = _sns_init(
         prototypes, suptitle, n_cols=n_cols, figsize=figsize, fontsize=8
     )
-    for i, prot in enumerate(prototypes):
+    i = 0
+    for prot in prototypes:
         st, dos = prot.name, prot.phonon_dos
         if dos is None:
             continue
 
         row = i // n_cols
         col = i % n_cols
-        ax[row][col].plot(
-            dos[:, 0], dos[:, 1] / prot.n_atom, color="darkcyan", linewidth=1
-        )
-        ax[row][col].set_title(st, fontsize=fontsize, loc="left")
-        ax[row][col].set_xlim(limmin_x, limmax_x)
-        ax[row][col].set_ylim(limmin_y, limmax_y)
-        ax[row][col].tick_params(axis="both", labelsize=8)
+        ax_obj = ax[col] if n_rows == 1 else ax[row][col]
+        ax_obj.plot(dos[:, 0], dos[:, 1] / prot.n_atom, color="darkcyan", linewidth=1)
+        ax_obj.set_title(st, fontsize=fontsize, loc="left")
+        ax_obj.set_xlim(limmin_x, limmax_x)
+        ax_obj.set_ylim(limmin_y, limmax_y)
+        ax_obj.tick_params(axis="both", labelsize=8)
+        i += 1
 
     for i in range(n_rows):
-        ax[i][0].set_ylabel("DOS", fontsize=fontsize)
+        ax_obj = ax[0] if n_rows == 1 else ax[i][0]
+        ax_obj.set_ylabel("DOS", fontsize=fontsize)
     for i in range(n_cols):
-        ax[-1][i].set_xlabel("Frequency (THz)", fontsize=fontsize)
-        ax[-1][i].tick_params(axis="both", labelsize=8)
+        ax_obj = ax[i] if n_rows == 1 else ax[-1][i]
+        ax_obj.set_xlabel("Frequency (THz)", fontsize=fontsize)
+        ax_obj.tick_params(axis="both", labelsize=8)
 
     plt.tight_layout()
     if use_eps:
@@ -303,8 +324,12 @@ def plot_phonon(
 
 def _set_qha_minmax(prototypes: list[Prototype], attr: str):
     """Set minimum and maximum values for QHA plot."""
-    temp_array = np.ravel([p.temperatures for p in prototypes])
-    val_array = np.ravel([getattr(p, attr) for p in prototypes])
+    temp_array = np.ravel(
+        [p.temperatures for p in prototypes if p.temperatures is not None]
+    )
+    val_array = np.ravel(
+        [getattr(p, attr) for p in prototypes if getattr(p, attr) is not None]
+    )
 
     tstep = temp_array[1] - temp_array[0]
     limmin_x = np.min(temp_array)
@@ -352,7 +377,8 @@ def plot_qha(
     fig, ax, n_rows = _sns_init(
         prototypes_active, suptitle, n_cols=n_cols, figsize=figsize
     )
-    for i, prot in enumerate(prototypes_active):
+    i = 0
+    for prot in prototypes_active:
         st, temp, val = prot.name, prot.temperatures, getattr(prot, attr)
         if val is None:
             continue
@@ -367,6 +393,7 @@ def plot_qha(
         ax_obj.tick_params(axis="both", labelsize=8)
         ax_obj.yaxis.set_major_formatter(ScalarFormatter(useMathText=True))
         ax_obj.ticklabel_format(style="sci", axis="y", scilimits=(0, 0))
+        i += 1
 
     for i in range(n_rows):
         ax_obj = ax[0] if n_rows == 1 else ax[i][0]
@@ -392,7 +419,9 @@ def plot_energy_distribution(
     system: str,
     pot_id: str,
     path_output: str = "./",
+    filename_suffix: Optional[str] = None,
     use_eps: bool = False,
+    header="Energy distribution",
     dpi: int = 300,
 ):
     """Plot energy distribution."""
@@ -409,7 +438,7 @@ def plot_energy_distribution(
     sns.set_style("whitegrid", {"grid.linestyle": "--"})
 
     fig, ax = plt.subplots(2, 2, figsize=(5, 5))
-    fig.suptitle("Energy distribution (" + system + ", " + pot_id + ")", fontsize=10)
+    fig.suptitle(header + " (" + system + ", " + pot_id + ")", fontsize=10)
 
     for i in range(2):
         for j in range(2):
@@ -449,9 +478,14 @@ def plot_energy_distribution(
         ax[1][j].set_ylim(limmin - 0.05, limmin + 1.05)
 
     plt.tight_layout()
+    filename = path_output + "/polymlp_distribution"
+    if filename_suffix is not None:
+        filename += "_" + filename_suffix
     if use_eps:
-        plt.savefig(path_output + "/polymlp_distribution.eps", format="eps")
+        filename += ".eps"
+        plt.savefig(filename, format="eps")
     else:
-        plt.savefig(path_output + "/polymlp_distribution.png", format="png", dpi=dpi)
+        filename += ".png"
+        plt.savefig(filename, format="png", dpi=dpi)
     plt.clf()
     plt.close()

@@ -4,8 +4,9 @@ from typing import Optional, Union
 
 import numpy as np
 
-from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
-from pypolymlp.core.dataset import DatasetList
+from pypolymlp.core.data_format import PolymlpStructure
+from pypolymlp.core.dataset import Dataset, DatasetList
+from pypolymlp.core.params import PolymlpParams
 from pypolymlp.cxx.lib import libmlpcpp
 
 
@@ -44,12 +45,17 @@ def _multiple_dft_to_mlpcpp_obj(datasets: DatasetList):
 
 
 def _init_features(
-    datasets: DatasetList,
+    datasets: Union[DatasetList, Dataset],
     structures: list[PolymlpStructure],
     params: PolymlpParams,
 ):
     """Initialize structure attributes for passing them to mlpcpp."""
     if datasets is not None:
+        if isinstance(datasets, Dataset):
+            datasets_current = [datasets]
+        else:
+            datasets_current = datasets
+
         (
             axis_array,
             positions_c_array,
@@ -57,7 +63,7 @@ def _init_features(
             n_atoms_sum_array,
             n_st_dataset,
             force_dataset,
-        ) = _multiple_dft_to_mlpcpp_obj(datasets)
+        ) = _multiple_dft_to_mlpcpp_obj(datasets_current)
     else:
         n_st_dataset = [len(structures)]
         force_dataset = [params.include_force]
@@ -99,6 +105,9 @@ class Features:
         element_swap: bool = False,
     ):
         """Init method."""
+        if len(params) > 1:
+            raise RuntimeError("Use FeaturesHybrid for hybrid model.")
+
         (
             axis_array,
             positions_c_array,
@@ -167,7 +176,7 @@ class FeaturesHybrid:
 
     def __init__(
         self,
-        hybrid_params: list[PolymlpParams],
+        params: PolymlpParams,
         datasets: Optional[DatasetList] = None,
         structures: Optional[list[PolymlpStructure]] = None,
         print_memory: bool = True,
@@ -181,16 +190,12 @@ class FeaturesHybrid:
             n_atoms_sum_array,
             n_st_dataset,
             force_dataset,
-        ) = _init_features(datasets, structures, hybrid_params[0])
+        ) = _init_features(datasets, structures, params)
 
-        hybrid_params_dicts = []
-        for params in hybrid_params:
-            params.element_swap = element_swap
-            params.print_memory = print_memory
-            hybrid_params_dicts.append(params.as_dict())
-
+        params.element_swap = element_swap
+        params.print_memory = print_memory
         obj = libmlpcpp.PotentialHybridModel(
-            hybrid_params_dicts,
+            params.as_dict(),
             axis_array,
             positions_c_array,
             types_array,
@@ -243,8 +248,8 @@ class FeaturesHybrid:
 
 
 def compute_features(
-    params: Union[PolymlpParams, list[PolymlpParams]],
-    datasets: Optional[DatasetList] = None,
+    params: PolymlpParams,
+    datasets: Optional[Union[DatasetList, Dataset]] = None,
     structures: Optional[list[PolymlpStructure]] = None,
     element_swap: bool = False,
     verbose: bool = False,
@@ -257,7 +262,7 @@ def compute_features(
     datasets: Datasets.
     structures: Structures.
     """
-    if isinstance(params, (list, tuple, np.ndarray)):
+    if params.is_hybrid:
         features_class = FeaturesHybrid
     else:
         features_class = Features

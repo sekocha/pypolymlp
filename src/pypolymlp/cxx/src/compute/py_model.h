@@ -13,7 +13,7 @@
 #include "compute/neighbor.h"
 #include "compute/model.h"
 
-#include <Eigen/Core>
+#include <Eigen/Dense>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 

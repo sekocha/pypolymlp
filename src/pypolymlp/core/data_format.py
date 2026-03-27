@@ -81,6 +81,11 @@ class PolymlpStructure:
         st.elements = [map_elements[t] for t in types_reorder]
         return st
 
+    def composition(self, elements: tuple):
+        """Return composition."""
+        n_atoms = [np.count_nonzero(np.array(self.elements) == e) for e in elements]
+        return np.array(n_atoms) / sum(n_atoms)
+
 
 @dataclass
 class PolymlpGtinvParams:
@@ -168,8 +173,9 @@ class PolymlpModelParams:
     pair_conditional: bool = False
     pair_params: Optional[list[list[float]]] = None
     pair_params_conditional: Optional[dict] = None
-    pair_params_in1: Optional[tuple] = None
-    pair_params_in2: Optional[tuple] = None
+    n_gaussians: Optional[int] = None
+    # pair_params_in1: Optional[tuple] = None
+    # pair_params_in2: Optional[tuple] = None
 
     def __post_init__(self):
         self.check_errors()
@@ -182,7 +188,7 @@ class PolymlpModelParams:
         return model_dict
 
     def check_errors(self):
-        if self.pair_params_in1 is None:
+        if self.n_gaussians is None:
             if self.pair_params is None and self.pair_params_conditional is None:
                 raise KeyError(
                     "Either of pair_params or pair_params_conditional is required."
@@ -190,7 +196,7 @@ class PolymlpModelParams:
 
 
 @dataclass
-class PolymlpParams:
+class PolymlpParamsSingle:
     """Dataclass of input parameters for developing polymlp.
 
     Parameters

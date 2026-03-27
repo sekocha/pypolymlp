@@ -88,9 +88,63 @@ def test_auto_divide():
     """Test divide_dataset."""
     polymlp = PypolymlpUtils(verbose=True)
     files = [path_file + "vasprun-00001-MgO.xml", path_file + "vasprun-00002-MgO.xml"]
-    polymlp.divide_dataset(files)
-    shutil.rmtree("vaspruns")
-    os.remove("polymlp.in.append")
+    elements = ["Mg", "O"]
+    polymlp.divide_dataset(files, elements, n_divide=6)
+    shutil.rmtree("polymlp_datasets")
 
 
-# TODO: generate_kim_model
+def test_generate_kim_model():
+    """Test generate_kim_model."""
+    user_id = "b3113743-4f85-48da-86e1-85acf6bb3388"
+    author = "Seko"
+    citation1 = {
+        "article-number": "{011101}",
+        "author": "Seko, Atsuto",
+    }
+    citations = [citation1]
+
+    polymlp = PypolymlpUtils()
+    polymlp.generate_kim_model(
+        path_file + "polymlp.yaml.MgO",
+        author=author,
+        performance_level=1,
+        project_id=123,
+        project_version=2,
+        model_driver="Polymlp__MD_367995833009_000",
+        content_origin="pypolymlp",
+        contributor_id=user_id,
+        developer=[user_id],
+        maintainer_id=user_id,
+        citations=citations,
+    )
+    for d in glob.glob("Polymlp_Seko_*_MgO__MO_000000000123_002"):
+        shutil.rmtree(d)
+
+
+def test_enumerate_models():
+    """Test enumerate_models."""
+    polymlp = PypolymlpUtils()
+    polymlp.enumerate_models(elements=["Ag", "Au"], path="tmp")
+    shutil.rmtree("tmp")
+    polymlp.enumerate_models(elements=["Be"], path="tmp")
+    shutil.rmtree("tmp")
+    polymlp.enumerate_models(elements=["Be"], path="tmp", hybrid=True)
+    shutil.rmtree("tmp")
+
+    polymlp.enumerate_models(
+        elements=["Be"],
+        cutoffs=None,
+        nums_gaussians=None,
+        model_types=(2, 3, 4),
+        maxps=(2,),
+        gtinv=True,
+        gtinv_order_ub=3,
+        gtinv_maxl_ub=(16, 12),
+        gtinv_maxl_int=(8, 4),
+        include_force=True,
+        include_stress=True,
+        regression_alpha=(-4, 1, 6),
+        path="tmp",
+        hybrid=True,
+    )
+    shutil.rmtree("tmp")

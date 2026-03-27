@@ -29,13 +29,22 @@ pair_coeff * * polymlp.yaml.3 Ti Al
 ## ASE
 To use polynomial MLPs in ASE, generate a calculator instance as shown below.
 This calculator can be used for various calculations provided by ASE, in accordance with the ASE documentation.
+
 ```python
 from pypolymlp.calculator.utils.ase_calculator import PolymlpASECalculator
 
 calculator = PolymlpASECalculator(pot="polymlp.yaml")
 ```
 
+## OpenKIM
+A model driver for polynomial MLPs [PolyMLP model driver](https://openkim.org/id/PolyMLP__MD_367995833009_000) is available in OpenKIM.
+Many polynomial MLPs from the Polynomial MLP repository are also available in OpenKIM.
+
+To convert developed MLPs into portable models for OpenKIM, see [OpenKIM Portable Model for Polynomial MLP](utils_kim.md).
+
+
 ## Phonopy
+
 ```python
 from phonopy import Phonopy
 from pypolymlp.utils.phonopy_utils import phonopy_cell_to_structure

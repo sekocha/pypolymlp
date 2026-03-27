@@ -4,9 +4,10 @@ from typing import Optional
 
 import numpy as np
 
-from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
+from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.dataset_utils import replace_types
 from pypolymlp.core.io_polymlp import load_mlp
+from pypolymlp.core.params import PolymlpParams
 from pypolymlp.core.parser_polymlp_params import ParamsParser
 from pypolymlp.mlp_dev.core.features import Features
 
@@ -43,20 +44,26 @@ def compute_from_polymlp(
 
     Any one of pot and params is required.
     """
+    if pot is None and params is None:
+        raise RuntimeError("Polymlp file or parameters not found.")
+
     if pot is not None:
         if isinstance(pot, (list, tuple, np.ndarray)):
             if len(pot) > 1:
                 raise NotImplementedError("Only single polymlp file is available.")
-            params, coeffs = load_mlp(filename=pot[0])
+            params_single, coeffs = load_mlp(filename=pot[0])
         else:
-            params, coeffs = load_mlp(filename=pot)
+            params_single, coeffs = load_mlp(filename=pot)
+        params = PolymlpParams(params_single)
     else:
+        if len(params) > 1:
+            raise NotImplementedError("Only single polymlp file is available.")
         return_mlp_dict = False
 
     params.include_force = force
     params.include_stress = stress
-
     element_order = params.elements
+
     structures = update_types(structures, element_order)
     features = Features(params, structures=structures, print_memory=False)
 

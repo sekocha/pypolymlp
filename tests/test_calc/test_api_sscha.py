@@ -19,7 +19,7 @@ def test_sscha_Al():
     sscha = PypolymlpSSCHA(verbose=True)
     sscha.load_poscar(poscar, (2, 2, 2))
     sscha.set_polymlp(pot)
-    sscha.run(temp=700, tol=0.003, mixing=0.5, path="tmp")
+    sscha.run(temp=700, tol=0.003, mixing=0.5, path="tmp", use_mkl=False)
     _assert_Al(sscha)
     shutil.rmtree("tmp")
 
@@ -30,6 +30,6 @@ def test_sscha_Al_restart():
     yaml = path_sscha + "sscha_results.yaml"
     sscha = PypolymlpSSCHA(verbose=True)
     sscha.load_restart(yaml=yaml, parse_fc2=True, pot=pot)
-    sscha.run(temp=700, tol=0.003, mixing=0.5, path="tmp")
+    sscha.run(temp=700, tol=0.003, mixing=0.5, path="tmp", use_mkl=False)
     _assert_Al(sscha)
     shutil.rmtree("tmp")

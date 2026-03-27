@@ -1,14 +1,13 @@
 """Class for computing elastic constants."""
 
 import copy
-from typing import Optional
 
 import numpy as np
 import pymatgen as pmg
 from pymatgen.analysis.elasticity import DeformedStructureSet, diff_fit
 
 from pypolymlp.calculator.properties import Properties, convert_stresses_in_gpa
-from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
+from pypolymlp.core.data_format import PolymlpStructure
 
 
 class PolymlpElastic:
@@ -18,30 +17,18 @@ class PolymlpElastic:
         self,
         unitcell: PolymlpStructure,
         unitcell_poscar: str,
-        pot: Optional[str] = None,
-        params: Optional[PolymlpParams] = None,
-        coeffs: Optional[np.ndarray] = None,
-        properties: Optional[Properties] = None,
+        properties: Properties,
         verbose: bool = False,
     ):
         """Init method.
 
         Parameters
         ----------
-        unitcell: unitcell in PolymlpStructure format.
-        pot: polymlp file.
-        params: Parameters for polymlp.
-        coeffs: Polymlp coefficients.
-        properties: Properties object.
-
-        Any one of pot, (params, coeffs), and properties is needed.
+        unitcell: unitcell in PolymlpStructure.
+        unitcell_poscar: POSCAR file of unitcell.
+        properties: Properties instance.
         """
-
-        if properties is not None:
-            self._prop = properties
-        else:
-            self._prop = Properties(pot=pot, params=params, coeffs=coeffs)
-
+        self._prop = properties
         self._unitcell = unitcell
         self._verbose = verbose
         with open(unitcell_poscar) as f:

@@ -24,29 +24,17 @@ PyModel::PyModel(const py::dict& params_dict,
     vector1i xf_begin, xs_begin;
     set_index(n_st_dataset, force_dataset, n_atoms_all, xf_begin, xs_begin, force_st);
 
-    Neighbor neigh(axis[0], positions_c[0], types[0], fp.n_type, fp.cutoff);
     Model mod(fp);
-    vector1d xe_pre;
-    vector2d xf_pre, xs_pre;
-    mod.run(
-        neigh.get_dis_array(),
-        neigh.get_diff_array(),
-        neigh.get_atom2_array(),
-        types[0],
-        fp.force,
-        xe_pre, xf_pre, xs_pre
-    );
-
-    const int n_features = xe_pre.size();
     const int n_st = axis.size();
     const int total_n_data = n_data[0] + n_data[1] + n_data[2];
+    const int n_features = mod.get_n_features();
 
     if (print_memory == true){
         std::cout << " Matrix shape (X): ("
             << total_n_data << "," << n_features << ")" << std::endl;
         double mem = double(total_n_data) * double(n_features) * 8 * 1e-9;
-        std::cout << " Required memory for X: " << std::setprecision(5)
-            << mem << " (GB)" << std::endl;
+        std::cout << " Required memory for X: "
+            << std::setprecision(5) << mem << " (GB)" << std::endl;
     }
 
     x_all = Eigen::MatrixXd(total_n_data, n_features);
@@ -55,8 +43,8 @@ PyModel::PyModel(const py::dict& params_dict,
     #endif
     for (int i = 0; i < n_st; ++i){
         Neighbor neigh(axis[i], positions_c[i], types[i], fp.n_type, fp.cutoff);
-        vector1d xe;
-        vector2d xf, xs;
+        Eigen::VectorXd xe;
+        Eigen::MatrixXd xf, xs;
         mod.run(
             neigh.get_dis_array(),
             neigh.get_diff_array(),
@@ -65,20 +53,10 @@ PyModel::PyModel(const py::dict& params_dict,
             force_st[i],
             xe, xf, xs
         );
-
-        for (size_t j = 0; j < xe.size(); ++j) x_all(i,j) = xe[j];
-
-        if (force_st[i] == true){
-            for (size_t j = 0; j < xf.size(); ++j) {
-                for (size_t k = 0; k < xf[j].size(); ++k){
-                    x_all(xf_begin[i]+j, k) = xf[j][k];
-                }
-            }
-            for (size_t j = 0; j < xs.size(); ++j) {
-                for (size_t k = 0; k < xs[j].size(); ++k){
-                    x_all(xs_begin[i]+j, k) = xs[j][k];
-                }
-            }
+        x_all.row(i) = xe.transpose();
+        if (force_st[i]) {
+            x_all.block(xf_begin[i], 0, xf.rows(), xf.cols()) = xf;
+            x_all.block(xs_begin[i], 0, xs.rows(), xs.cols()) = xs;
         }
     }
 }

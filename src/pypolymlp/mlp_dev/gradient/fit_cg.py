@@ -1,11 +1,11 @@
 """Functions for estimating regression coefficients using CG."""
 
-from typing import Optional, Union
+from typing import Optional
 
 import numpy as np
 
-from pypolymlp.core.data_format import PolymlpParams
 from pypolymlp.core.dataset import DatasetList
+from pypolymlp.core.params import PolymlpParams
 from pypolymlp.mlp_dev.core.api_mlpdev import PolymlpDevCore
 from pypolymlp.mlp_dev.gradient.solvers_cg import solver_cg
 
@@ -20,7 +20,7 @@ def _check_use_xy(polymlp: PolymlpDevCore):
 
 
 def fit_cg(
-    params: Union[PolymlpParams, list[PolymlpParams]],
+    params: PolymlpParams,
     train: DatasetList,
     test: DatasetList,
     gtol: float = 1e-2,
@@ -40,7 +40,7 @@ def fit_cg(
         max_iter = max(polymlp.n_features * 3, 50000)
 
     coefs, coef0 = [], None
-    for alpha in reversed(polymlp.common_params.alphas):
+    for alpha in reversed(params.alphas):
         c = solver_cg(
             x=train_xy.x,
             y=train_xy.y,

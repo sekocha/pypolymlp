@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+"""Interface for parsing Bader charges."""
+
 import numpy as np
 
 

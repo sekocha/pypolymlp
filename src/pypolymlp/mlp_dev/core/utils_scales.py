@@ -24,6 +24,7 @@ def compute_scales(
     xe_sq_sum: np.ndarray,
     n_data: int,
     include_force: bool = True,
+    threshold: float = 1e-10,
 ):
     """Compute scales from xe_sum and xe_sq_sum."""
     if scales is None:
@@ -31,5 +32,9 @@ def compute_scales(
         variance[variance < 0.0] = 1.0
         scales = np.sqrt(variance)
 
-    scales, zero_ids = round_scales(scales, include_force=include_force)
+    scales, zero_ids = round_scales(
+        scales,
+        include_force=include_force,
+        threshold=threshold,
+    )
     return scales, zero_ids

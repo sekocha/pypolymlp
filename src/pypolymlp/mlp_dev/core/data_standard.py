@@ -1,11 +1,11 @@
 """Functions for computing X and y."""
 
-from typing import Optional, Union
+from typing import Optional
 
 import numpy as np
 
-from pypolymlp.core.data_format import PolymlpParams
 from pypolymlp.core.dataset import DatasetList
+from pypolymlp.core.params import PolymlpParams
 from pypolymlp.mlp_dev.core.data_utils import PolymlpDataXY
 from pypolymlp.mlp_dev.core.features import compute_features
 from pypolymlp.mlp_dev.core.utils import get_min_energy
@@ -14,12 +14,13 @@ from pypolymlp.mlp_dev.core.utils_weights import apply_weights
 
 
 def calc_xy(
-    params: Union[PolymlpParams, list[PolymlpParams]],
+    params: PolymlpParams,
     datasets: DatasetList,
     element_swap: bool = False,
     scales: Optional[np.ndarray] = None,
     min_energy: Optional[float] = None,
     weight_stress: float = 0.1,
+    scale_threshold: float = 1e-10,
     verbose: bool = False,
 ):
     """Calculate X and y data."""
@@ -43,7 +44,9 @@ def calc_xy(
     if scales is None:
         scales = np.std(x[:ne], axis=0)
 
-    scales, zero_ids = round_scales(scales, include_force=include_force)
+    scales, zero_ids = round_scales(
+        scales, include_force=include_force, threshold=scale_threshold
+    )
     x[:, zero_ids] = 0.0
     x /= scales
 

@@ -1,7 +1,6 @@
 """Class for computing EOS."""
 
 import io
-from typing import Optional
 
 import numpy as np
 
@@ -16,10 +15,7 @@ class PolymlpEOS:
     def __init__(
         self,
         unitcell: PolymlpStructure,
-        pot: Optional[str] = None,
-        params: Optional[PolymlpStructure] = None,
-        coeffs: Optional[np.ndarray] = None,
-        properties: Optional[Properties] = None,
+        properties: Properties,
         verbose: bool = False,
     ):
         """Init method.
@@ -27,22 +23,11 @@ class PolymlpEOS:
         Parameters
         ----------
         unitcell: unitcell in PolymlpStructure format
-        pot: polymlp file.
-        params: Parameters for polymlp.
-        coeffs: Polymlp coefficients.
-        properties: Properties object.
-
-        Any one of pot, (params, coeffs), and properties is needed.
+        properties: Properties instance.
         """
-
-        if properties is not None:
-            self._prop = properties
-        else:
-            self._prop = Properties(pot=pot, params=params, coeffs=coeffs)
-
+        self._prop = properties
         self._unitcell = unitcell
         self._verbose = verbose
-
         self._eos_data = None
         self._eos_fit_data = None
         self._b0 = None

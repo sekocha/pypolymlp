@@ -9,13 +9,13 @@ import yaml
 from pypolymlp.core.data_format import (
     PolymlpGtinvParams,
     PolymlpModelParams,
-    PolymlpParams,
+    PolymlpParamsSingle,
 )
 from pypolymlp.core.utils import mass_table
 
 
 def save_mlp_yaml(
-    params: PolymlpParams,
+    params: PolymlpParamsSingle,
     coeffs: np.ndarray,
     scales: np.ndarray,
     filename: bool = "polymlp.yaml",
@@ -82,7 +82,7 @@ def load_mlp_yaml(filename: Union[str, io.IOBase] = "polymlp.yaml"):
 
     Return
     ------
-    params: Parameters in PolymlpParams.
+    params: Parameters in PolymlpParamsSingle.
     coeffs: polymlp model coefficients.
 
     Usage
@@ -127,7 +127,7 @@ def load_mlp_yaml(filename: Union[str, io.IOBase] = "polymlp.yaml"):
         pair_params=yml["pair_params"],
         pair_params_conditional=pair_params_cond,
     )
-    params = PolymlpParams(
+    params = PolymlpParamsSingle(
         n_type=n_type,
         elements=elements,
         model=model,

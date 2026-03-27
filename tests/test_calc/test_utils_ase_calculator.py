@@ -9,7 +9,7 @@ from pypolymlp.calculator.utils.ase_calculator import PolymlpASECalculator
 
 def test_PolymlpASECalculator(unitcell_mlp_Al):
     """Test PolymlpASECalculator."""
-    _, pot = unitcell_mlp_Al
+    unitcell, pot, prop = unitcell_mlp_Al
     calc = PolymlpASECalculator(pot=pot)
     calc = PolymlpASECalculator(require_mlp=False)
     calc.set_calculator(pot=pot)

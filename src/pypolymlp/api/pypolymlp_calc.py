@@ -8,12 +8,14 @@ from pypolymlp.calculator.compute_features import (
     compute_from_infile,
     compute_from_polymlp,
 )
-from pypolymlp.calculator.properties import Properties
-from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
+from pypolymlp.calculator.compute_formation_energies import PolymlpFormationEnergies
+from pypolymlp.calculator.properties import Properties, initialize_polymlp_calculator
+from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.interface_vasp import (
     parse_structures_from_poscars,
     parse_structures_from_vaspruns,
 )
+from pypolymlp.core.params import PolymlpParams
 from pypolymlp.utils.structure_utils import supercell
 from pypolymlp.utils.vasp_utils import write_poscar_file
 
@@ -23,9 +25,9 @@ class PypolymlpCalc:
 
     def __init__(
         self,
-        pot: Union[str, list[str]] = None,
-        params: Union[PolymlpParams, list[PolymlpParams]] = None,
-        coeffs: Union[np.ndarray, list[np.ndarray]] = None,
+        pot: Optional[Union[str, list[str]]] = None,
+        params: Optional[PolymlpParams] = None,
+        coeffs: Optional[Union[np.ndarray, list[np.ndarray]]] = None,
         properties: Optional[Properties] = None,
         verbose: bool = False,
         require_mlp: bool = True,
@@ -41,17 +43,15 @@ class PypolymlpCalc:
 
         Any one of pot, (params, coeffs), and properties is needed.
         """
-        self._prop = None
-        if require_mlp:
-            if pot is None and params is None and properties is None:
-                raise RuntimeError("polymlp not defined.")
-
-            if properties is None:
-                self._prop = Properties(pot=pot, params=params, coeffs=coeffs)
-            else:
-                self._prop = properties
-
+        self._prop = initialize_polymlp_calculator(
+            pot=pot,
+            params=params,
+            coeffs=coeffs,
+            properties=properties,
+            return_none=not require_mlp,
+        )
         self._verbose = verbose
+
         self._structures = None
         self._unitcell = None
         self._poscar = None
@@ -63,6 +63,7 @@ class PypolymlpCalc:
         self._qha = None
         self._go = None
         self._fc = None
+        self._formation = None
 
         if self._verbose:
             np.set_printoptions(legacy="1.21")
@@ -130,7 +131,7 @@ class PypolymlpCalc:
         self,
         structures: Optional[Union[PolymlpStructure, list[PolymlpStructure]]] = None,
     ):
-        """Evaluate properties for a single structure.
+        """Evaluate properties for a single structure or multiple structures.
 
         Returns
         -------
@@ -141,6 +142,7 @@ class PypolymlpCalc:
         """
         if structures is not None:
             self.structures = structures
+
         return self._prop.eval_multiple(self.structures)
 
     def save_properties(self):
@@ -340,6 +342,8 @@ class PypolymlpCalc:
         with_pdos: Compute PDOS.
 
         """
+        if self._phonon is None:
+            raise RuntimeError("Phonon calculations not initialized.")
         self._phonon.produce_force_constants(distance=distance)
         self._phonon.compute_properties(
             mesh=mesh,
@@ -448,7 +452,7 @@ class PypolymlpCalc:
         try:
             self._go = GeometryOptimization(
                 init_str,
-                properties=self._prop,
+                self._prop,
                 relax_cell=relax_cell,
                 relax_volume=relax_volume,
                 relax_positions=relax_positions,
@@ -467,8 +471,8 @@ class PypolymlpCalc:
         method: Literal["BFGS", "CG", "L-BFGS-B", "SLSQP"] = "BFGS",
         gtol: float = 1e-4,
         maxiter: int = 1000,
-        c1: Optional[float] = None,
-        c2: Optional[float] = None,
+        c1: float = 1e-4,
+        c2: float = 0.99,
     ):
         """Run geometry optimization.
 
@@ -538,8 +542,8 @@ class PypolymlpCalc:
         sup = supercell(self.unitcell, size, use_phonopy=True)
 
         self._fc = PolymlpFC(
+            self._prop,
             supercell=sup,
-            properties=self._prop,
             cutoff=cutoff,
             verbose=self._verbose,
         )
@@ -575,6 +579,9 @@ class PypolymlpCalc:
         use_mkl: Use MKL in symfc.
 
         """
+        if self._fc is None:
+            raise RuntimeError("Force constant calculations not initialized.")
+
         if disps is None or forces is None:
             self._fc.sample(
                 n_samples=n_samples,
@@ -593,6 +600,66 @@ class PypolymlpCalc:
     def save_fc(self):
         """Save force constants."""
         self._fc.save_fc()
+
+    def init_formation_energy(
+        self,
+        end_structures: Optional[list[PolymlpStructure]] = None,
+        end_energies: Optional[np.ndarray] = None,
+    ):
+        """Initialize formation energy calculations.
+
+        End members are defined in this function.
+        For example, if Ag4 and Au8 are endmembers that are used to set end members
+        and define the composition, the numbers of atoms in end member structures
+        must be given as [[4, 0], [0, 8]]. If structures are not given, energies
+        are regarded as those per atom.
+        """
+        self._formation = PolymlpFormationEnergies(properties=self._prop)
+        self._formation.define_end_members(
+            structures=end_structures,
+            energies=end_energies,
+        )
+        return self
+
+    def run_formation_energy(
+        self,
+        structures: Optional[Union[PolymlpStructure, list[PolymlpStructure]]] = None,
+        energies: Optional[np.ndarray] = None,
+        structure_names: Optional[list] = None,
+        convex_hull: bool = False,
+    ):
+        """Evaluate formation energies of structures.
+
+        Return
+        ------
+        form_e: Compositions and formation energies of given structures.
+                shape: (n_data, n_element + 1).
+        convex: Compositions and formation energies of structures on convex hull.
+                shape: (n_convex, n_element + 1).
+        name:   Identifiers of structures on convex hull.
+                shape: (n_convex).
+
+        If convex_hull = False, only compositions and formation energies of
+        given structures are returned. Otherwise, convex hull data and their identifiers
+        are also returned.
+        """
+        if self._formation is None:
+            raise RuntimeError("Formation energy calculations not initialized.")
+
+        if structures is not None:
+            self.structures = structures
+
+        form_e = self._formation.compute(
+            self.structures,
+            energies=energies,
+            structure_names=structure_names,
+        )
+        if not convex_hull:
+            return form_e
+
+        convex = self._formation.convex_hull()
+        convex_names = self._formation.structure_names_convex
+        return (form_e, convex, convex_names)
 
     @property
     def instance_properties(self) -> Properties:

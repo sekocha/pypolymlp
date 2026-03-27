@@ -14,21 +14,16 @@ def test_parse_parameter_files():
     """Test parse_parameter_files."""
     parser = ParamsParser(str(cwd) + "/../files/polymlp.in")
     params = parser.params
-    common_params = parser.common_params
-    hybrid_params = parser.hybrid_params
-
-    assert params == common_params
-    assert hybrid_params is None
 
     assert params.n_type == 2
-    np.testing.assert_equal(common_params.elements, ["Mg", "O"])
-    model = params.model
+    np.testing.assert_equal(params.elements, ["Mg", "O"])
+    model = params.params.model
     assert model.cutoff == pytest.approx(8.0)
     assert model.model_type == 3
     assert model.max_p == 2
     assert model.max_l == 4
     assert model.feature_type == "gtinv"
-    gtinv = params.model.gtinv
+    gtinv = params.params.model.gtinv
     assert gtinv.order == 3
     np.testing.assert_equal(gtinv.max_l, (4, 4))
     assert len(gtinv.lm_seq) == 20
@@ -78,16 +73,11 @@ def test_parse_parameter_files_hybrid():
         [str(cwd) + "/../files/polymlp.in", str(cwd) + "/../files/polymlp.in.2"]
     )
     params = parser.params
-    common_params = parser.common_params
-    hybrid_params = parser.hybrid_params
 
-    assert params == hybrid_params
-    assert len(hybrid_params) == 2
-
-    assert common_params.n_type == 2
-    assert common_params.atomic_energy == (-0.0004, -1.85321219)
-    np.testing.assert_equal(common_params.elements, ["Mg", "O"])
-    np.testing.assert_equal(common_params.element_order, ["Mg", "O"])
+    assert params.n_type == 2
+    assert params.atomic_energy == (-0.0004, -1.85321219)
+    np.testing.assert_equal(params.elements, ["Mg", "O"])
+    np.testing.assert_equal(params.element_order, ["Mg", "O"])
 
     train = parser.train[0]
     assert train.files == []
@@ -109,16 +99,11 @@ def test_parse_parameter_files_hybrid2():
         parse_dft=False,
     )
     params = parser.params
-    common_params = parser.common_params
-    hybrid_params = parser.hybrid_params
 
-    assert params == hybrid_params
-    assert len(hybrid_params) == 2
-
-    assert common_params.n_type == 2
-    assert common_params.atomic_energy == (-0.0004, -1.85321219)
-    np.testing.assert_equal(common_params.elements, ["Mg", "O"])
-    np.testing.assert_equal(common_params.element_order, ["Mg", "O"])
+    assert params.n_type == 2
+    assert params.atomic_energy == (-0.0004, -1.85321219)
+    np.testing.assert_equal(params.elements, ["Mg", "O"])
+    np.testing.assert_equal(params.element_order, ["Mg", "O"])
 
 
 def test_parse_parameter_files2():
@@ -126,7 +111,7 @@ def test_parse_parameter_files2():
     parser = ParamsParser(str(cwd) + "/../files/polymlp.in.infiletest")
     params = parser.params
 
-    model = params.model
+    model = params.params.model
     assert model.pair_params_conditional[(0, 0)] == [1, 3, 8]
     assert model.pair_params_conditional[(0, 1)] == [2, 3, 4, 8]
     assert model.pair_params_conditional[(1, 1)] == [1, 2, 8]

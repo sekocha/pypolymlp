@@ -5,7 +5,7 @@ from typing import Literal, Optional, Union
 
 import numpy as np
 
-from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
+from pypolymlp.core.data_format import PolymlpParamsSingle, PolymlpStructure
 from pypolymlp.core.dataset import (
     set_datasets_from_multiple_filesets,
     set_datasets_from_single_fileset,
@@ -14,8 +14,9 @@ from pypolymlp.core.dataset import (
 from pypolymlp.core.displacements import get_structures_from_displacements
 from pypolymlp.core.interface_vasp import parse_structures_from_poscars
 from pypolymlp.core.io_polymlp import convert_to_yaml, load_mlp
+from pypolymlp.core.params import PolymlpParams
+from pypolymlp.core.params_utils import set_all_params
 from pypolymlp.core.parser_polymlp_params import ParamsParser
-from pypolymlp.core.polymlp_params import print_params, set_all_params
 from pypolymlp.core.utils import split_train_test
 from pypolymlp.mlp_dev.core.dataclass import PolymlpDataMLP
 from pypolymlp.mlp_dev.core.eval_accuracy import PolymlpEvalAccuracy, write_error_yaml
@@ -35,21 +36,15 @@ class Pypolymlp:
     def __init__(self, verbose: bool = False):
         """Init method."""
         self._verbose = verbose
-
         self._params = None
-        self._common_params = None
         self._train = None
         self._test = None
+        self._mlp_model = None
+        self._learning_log = None
 
         # TODO: For electrons.
         # self._train_yml = None
         # self._test_yml = None
-
-        # TODO: set_params is not available for hybrid models at this time.
-        self._hybrid = False
-
-        self._mlp_model = None
-        self._learning_log = None
 
         np.set_printoptions(legacy="1.21")
 
@@ -64,18 +59,14 @@ class Pypolymlp:
             file_params,
             train_ratio=train_ratio,
             prefix_data_location=prefix,
+            verbose=self._verbose,
         )
-        self._train, self._test = parser.train, parser.test
-        self._params = parser.params
-        self._common_params = parser.common_params
-        if not isinstance(self._params, PolymlpParams):
-            self._hybrid = True
-
+        self._params, self._train, self._test = parser.params, parser.train, parser.test
         return self
 
     def set_params(
         self,
-        params: Optional[PolymlpParams] = None,
+        params: Optional[PolymlpParamsSingle] = None,
         elements: tuple[str] = None,
         include_force: bool = True,
         include_stress: bool = True,
@@ -85,11 +76,13 @@ class Pypolymlp:
         feature_type: Literal["pair", "gtinv"] = "gtinv",
         gaussian_params1: tuple[float, float, int] = (1.0, 1.0, 1),
         gaussian_params2: tuple[float, float, int] = (0.0, 5.0, 7),
+        n_gaussians: Optional[int] = None,
         distance: Optional[dict] = None,
         reg_alpha_params: tuple[float, float, int] = (-3.0, 1.0, 5),
         gtinv_order: int = 3,
         gtinv_maxl: tuple[int] = (4, 4, 2, 1, 1),
         gtinv_version: Literal[1, 2] = 1,
+        atomic_energy_unit: Literal["eV", "Hartree"] = "eV",
         atomic_energy: tuple[float] = None,
         rearrange_by_elements: bool = True,
     ):
@@ -114,6 +107,9 @@ class Pypolymlp:
             Parameters are given as np.linspace(p[0], p[1], p[2]),
             where p[0], p[1], and p[2] are given by gaussian_params1
             and gaussian_params2.
+        n_gaussians: Number of Gaussian functions.
+                     Parameters of Gaussians are automatically determined
+                     by the cutoff radius and number of Gaussians.
         distance: Interatomic distances for element pairs.
             (e.g.) distance = {(Sr, Sr): [3.5, 4.8], (Ti, Ti): [2.5, 5.5]}
         reg_alpha_params: Parameters for penalty term in
@@ -126,10 +122,10 @@ class Pypolymlp:
         rearrange_by_elements: Set True if not developing special MLPs.
         """
         if params is not None:
-            self._params = self._common_params = params
+            self._params = PolymlpParams(params)
             return self
 
-        self._params = set_all_params(
+        params_single = set_all_params(
             elements=elements,
             include_force=include_force,
             include_stress=include_stress,
@@ -139,20 +135,109 @@ class Pypolymlp:
             feature_type=feature_type,
             gaussian_params1=gaussian_params1,
             gaussian_params2=gaussian_params2,
+            n_gaussians=n_gaussians,
             distance=distance,
             reg_alpha_params=reg_alpha_params,
             gtinv_order=gtinv_order,
             gtinv_maxl=gtinv_maxl,
             gtinv_version=gtinv_version,
+            atomic_energy_unit=atomic_energy_unit,
             atomic_energy=atomic_energy,
             rearrange_by_elements=rearrange_by_elements,
         )
-        self._common_params = self._params
+        self._params = PolymlpParams(params_single)
+        return self
+
+    def append_hybrid_params(
+        self,
+        params: Optional[PolymlpParamsSingle] = None,
+        elements: tuple[str] = None,
+        include_force: bool = True,
+        include_stress: bool = True,
+        cutoff: float = 6.0,
+        model_type: Literal[1, 2, 3, 4] = 4,
+        max_p: Literal[1, 2, 3] = 2,
+        feature_type: Literal["pair", "gtinv"] = "gtinv",
+        gaussian_params1: tuple[float, float, int] = (1.0, 1.0, 1),
+        gaussian_params2: tuple[float, float, int] = (0.0, 5.0, 7),
+        n_gaussians: Optional[int] = None,
+        distance: Optional[dict] = None,
+        reg_alpha_params: tuple[float, float, int] = (-3.0, 1.0, 5),
+        gtinv_order: int = 3,
+        gtinv_maxl: tuple[int] = (4, 4, 2, 1, 1),
+        gtinv_version: Literal[1, 2] = 1,
+        atomic_energy_unit: Literal["eV", "Hartree"] = "eV",
+        atomic_energy: tuple[float] = None,
+        rearrange_by_elements: bool = True,
+    ):
+        """Append parameters to hybrid models.
+
+        Parameters
+        ----------
+        elements: Element species, (e.g., ['Mg','O'])
+        include_force: Considering force entries
+        include_stress: Considering stress entries
+        cutoff: Cutoff radius
+        model_type: Polynomial function type
+            model_type = 1: Linear polynomial of polynomial invariants
+            model_type = 2: Polynomial of polynomial invariants
+            model_type = 3: Polynomial of pair invariants
+                            + linear polynomial of polynomial invariants
+            model_type = 4: Polynomial of pair and second-order invariants
+                            + linear polynomial of polynomial invariants
+        max_p: Order of polynomial function
+        feature_type: 'gtinv' or 'pair'
+        gaussian_params: Parameters for exp[- param1 * (r - param2)**2]
+            Parameters are given as np.linspace(p[0], p[1], p[2]),
+            where p[0], p[1], and p[2] are given by gaussian_params1
+            and gaussian_params2.
+        n_gaussians: Number of Gaussian functions.
+                     Parameters of Gaussians are automatically determined
+                     by the cutoff radius and number of Gaussians.
+        distance: Interatomic distances for element pairs.
+            (e.g.) distance = {(Sr, Sr): [3.5, 4.8], (Ti, Ti): [2.5, 5.5]}
+        reg_alpha_params: Parameters for penalty term in
+            linear ridge regression. Parameters are given as
+            np.linspace(p[0], p[1], p[2]).
+        gtinv_order: Maximum order of polynomial invariants.
+        gtinv_maxl: Maximum angular numbers of polynomial invariants.
+            [maxl for order=2, maxl for order=3, ...]
+        atomic_energy: Atomic energies.
+        rearrange_by_elements: Set True if not developing special MLPs.
+        """
+        if self._params is None:
+            print("Use set_params to set priority parameters at first.")
+
+        if params is not None:
+            self._params.append(params)
+            return self
+
+        params_append = set_all_params(
+            elements=elements,
+            include_force=include_force,
+            include_stress=include_stress,
+            cutoff=cutoff,
+            model_type=model_type,
+            max_p=max_p,
+            feature_type=feature_type,
+            gaussian_params1=gaussian_params1,
+            gaussian_params2=gaussian_params2,
+            n_gaussians=n_gaussians,
+            distance=distance,
+            reg_alpha_params=reg_alpha_params,
+            gtinv_order=gtinv_order,
+            gtinv_maxl=gtinv_maxl,
+            gtinv_version=gtinv_version,
+            atomic_energy_unit=atomic_energy_unit,
+            atomic_energy=atomic_energy,
+            rearrange_by_elements=rearrange_by_elements,
+        )
+        self._params.append(params_append)
         return self
 
     def print_params(self):
         """Print input parameters."""
-        print_params(self._params, self._common_params)
+        self._params.print_params()
         if self._train is not None:
             print("datasets:", flush=True)
             print("  train_data:", flush=True)
@@ -175,8 +260,8 @@ class Pypolymlp:
             raise RuntimeError("Set parameters and datasets before using fit.")
         return self
 
-    def _turn_off_derivative_flags(self, forces: list, stresses: np.ndarray):
-        """ """
+    def _disable_derivative_flags(self, forces: list, stresses: np.ndarray):
+        """Disable force and stress flags according to dataset entries."""
         if forces is None:
             self._params.include_force = False
             self._params.include_stress = False
@@ -216,6 +301,7 @@ class Pypolymlp:
             self._params,
             files=yamlfiles,
             train_ratio=train_ratio,
+            verbose=self._verbose,
         )
         return self
 
@@ -229,13 +315,13 @@ class Pypolymlp:
         """
         self._is_params_none()
         self._params.dataset_type = "sscha"
-        self._params.include_force = True
         self._params.include_stress = False
 
         self._train, self._test = set_datasets_from_single_fileset(
             self._params,
             files=yamlfiles,
             train_ratio=train_ratio,
+            verbose=self._verbose,
         )
         return self
 
@@ -263,12 +349,14 @@ class Pypolymlp:
                 self._params,
                 train_files=train_vaspruns,
                 test_files=test_vaspruns,
+                verbose=self._verbose,
             )
         else:
             self._train, self._test = set_datasets_from_single_fileset(
                 self._params,
                 files=vaspruns,
                 train_ratio=train_ratio,
+                verbose=self._verbose,
             )
         return self
 
@@ -290,6 +378,7 @@ class Pypolymlp:
             self._params,
             train_files=train_vaspruns,
             test_files=test_vaspruns,
+            verbose=self._verbose,
         )
         return self
 
@@ -308,6 +397,7 @@ class Pypolymlp:
             self._params,
             files=yaml,
             train_ratio=train_ratio,
+            verbose=self._verbose,
         )
         return self
 
@@ -332,7 +422,7 @@ class Pypolymlp:
         train_ratio: Ratio between training and entire data sizes.
         """
         self._is_params_none()
-        self._turn_off_derivative_flags(forces, stresses)
+        self._disable_derivative_flags(forces, stresses)
 
         self._train, self._test = set_datasets_from_structures(
             self._params,
@@ -341,6 +431,7 @@ class Pypolymlp:
             forces=forces,
             stresses=stresses,
             train_ratio=train_ratio,
+            verbose=self._verbose,
         )
         return self
 
@@ -369,8 +460,8 @@ class Pypolymlp:
         test_stresses: Stress tensors (test data), shape=(n_test, 3, 3) in eV/cell.
         """
         self._is_params_none()
-        self._turn_off_derivative_flags(train_forces, train_stresses)
-        self._turn_off_derivative_flags(test_forces, test_stresses)
+        self._disable_derivative_flags(train_forces, train_stresses)
+        self._disable_derivative_flags(test_forces, test_stresses)
 
         self._train, self._test = set_datasets_from_structures(
             self._params,
@@ -382,6 +473,7 @@ class Pypolymlp:
             test_forces=test_forces,
             train_stresses=train_stresses,
             test_stresses=test_stresses,
+            verbose=self._verbose,
         )
         return self
 
@@ -447,6 +539,7 @@ class Pypolymlp:
         if verbose is not None:
             self._verbose = verbose
 
+        self._is_params_none()
         self._is_data_none()
         self._mlp_model = fit(
             self._params,
@@ -462,6 +555,7 @@ class Pypolymlp:
         if verbose is not None:
             self._verbose = verbose
 
+        self._is_params_none()
         self._is_data_none()
         self._mlp_model = fit_standard(
             self._params,
@@ -487,6 +581,7 @@ class Pypolymlp:
         if verbose is not None:
             self._verbose = verbose
 
+        self._is_params_none()
         self._is_data_none()
         self._mlp_model = fit_cg(
             self._params,
@@ -505,6 +600,7 @@ class Pypolymlp:
         if verbose is not None:
             self._verbose = verbose
 
+        self._is_params_none()
         self._is_data_none()
         self._mlp_model = fit_sgd(
             self._params,
@@ -576,6 +672,7 @@ class Pypolymlp:
         if verbose is not None:
             self._verbose = verbose
 
+        self._is_params_none()
         self._is_data_none()
         self._learning_log = fit_learning_curve(
             self._params,
@@ -603,10 +700,15 @@ class Pypolymlp:
 
     def load_mlp(self, filename: Union[str, io.IOBase] = "polymlp.yaml"):
         """Load polynomial MLP from file."""
-        # TODO: hybrid is not available.
-        self._params, coeffs = load_mlp(filename)
+        if isinstance(filename, (list, tuple, np.ndarray)):
+            raise RuntimeError("load_mlp not available for hybrid model.")
+
+        params_single, coeffs = load_mlp(filename)
+        self._params = PolymlpParams(params_single)
         scales = np.ones(len(coeffs))
-        self._mlp_model = PolymlpDataMLP(coeffs=coeffs, scales=scales)
+        self._mlp_model = PolymlpDataMLP(
+            coeffs=coeffs, scales=scales, params=self._params
+        )
         return self
 
     def save_params(self, filename: str = "polymlp_params.yaml"):

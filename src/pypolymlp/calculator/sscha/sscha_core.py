@@ -14,7 +14,6 @@ from pypolymlp.calculator.sscha.harmonic_reciprocal import HarmonicReciprocal
 from pypolymlp.calculator.sscha.sscha_data import SSCHAData
 from pypolymlp.calculator.sscha.sscha_io import save_sscha_yaml
 from pypolymlp.calculator.sscha.sscha_params import SSCHAParams
-from pypolymlp.core.data_format import PolymlpParams
 from pypolymlp.utils.phonopy_utils import (
     phonopy_cell_to_structure,
     structure_to_phonopy_cell,
@@ -27,10 +26,8 @@ class SSCHACore:
     def __init__(
         self,
         sscha_params: SSCHAParams,
-        pot: Optional[str] = None,
-        params: Optional[PolymlpParams] = None,
-        coeffs: Optional[np.ndarray] = None,
-        properties: Optional[Properties] = None,
+        properties: Properties,
+        use_mkl: bool = False,
         verbose: bool = False,
     ):
         """Init method.
@@ -38,20 +35,12 @@ class SSCHACore:
         Parameters
         ----------
         sscha_params: Parameters for SSCHA and structures in SSCHAParams.
-        pot: polymlp file.
-        params: Parameters for polymlp.
-        coeffs: Polymlp coefficients.
         properties: Properties instance.
         verbose: Verbose mode.
-
-        Any one of pot, (params, coeffs), and properties is needed.
         """
-
+        self._prop = properties
         self._verbose = verbose
-        if properties is not None:
-            self._prop = properties
-        else:
-            self._prop = Properties(pot=pot, params=params, coeffs=coeffs)
+        self._use_mkl = use_mkl
 
         self._phonopy = Phonopy(
             structure_to_phonopy_cell(sscha_params.unitcell),
@@ -74,7 +63,12 @@ class SSCHACore:
         """Initialize Symfc instance."""
         cutoff = {2: cutoff_radius}
         sup = self._phonopy.supercell
-        self._symfc = Symfc(sup, cutoff=cutoff, use_mkl=True, log_level=self._verbose)
+        self._symfc = Symfc(
+            sup,
+            cutoff=cutoff,
+            use_mkl=self._use_mkl,
+            log_level=self._verbose,
+        )
         self._symfc.compute_basis_set(2)
 
         self._n_coeffs = self._symfc.basis_set[2].basis_set.shape[1]

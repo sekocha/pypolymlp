@@ -9,7 +9,7 @@ from phonopy import Phonopy, PhonopyQHA
 
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.utils.phonon_utils import is_imaginary
-from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
+from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.utils.phonopy_utils import (
     phonopy_cell_to_structure,
     structure_to_phonopy_cell,
@@ -24,10 +24,8 @@ class PolymlpPhonon:
         self,
         unitcell: PolymlpStructure,
         supercell_matrix: np.ndarray,
-        pot: Optional[str] = None,
-        params: Optional[PolymlpParams] = None,
-        coeffs: Optional[np.ndarray] = None,
-        properties: Optional[Properties] = None,
+        properties: Properties,
+        verbose: bool = False,
     ):
         """Init method.
 
@@ -35,19 +33,10 @@ class PolymlpPhonon:
         ----------
         unitcell: Unitcell in PolymlpStructure format
         supercell_matrix: Supercell matrix or diagonal three element vector.
-        pot: polymlp file.
-        params: Parameters for polymlp.
-        coeffs: Polymlp coefficients.
-        properties: Properties object.
-
-        Any one of pot, (params, coeffs), and properties is needed.
+        properties: Properties instance.
         """
-
-        if properties is not None:
-            self._prop = properties
-        else:
-            self._prop = Properties(pot=pot, params=params, coeffs=coeffs)
-
+        self._prop = properties
+        self._verbose = verbose
         unitcell = structure_to_phonopy_cell(unitcell)
         self._ph = Phonopy(unitcell, supercell_matrix)
         self._with_pdos = False
@@ -135,31 +124,20 @@ class PolymlpPhononQHA:
         self,
         unitcell: PolymlpStructure,
         supercell_matrix: np.ndarray,
-        pot: Optional[str] = None,
-        params: Optional[PolymlpParams] = None,
-        coeffs: Optional[np.ndarray] = None,
-        properties: Optional[Properties] = None,
+        properties: Properties,
+        verbose: bool = False,
     ):
         """Init method.
 
         Parameters
         ----------
         unitcell: unitcell in PolymlpStructure format
-        pot: polymlp file.
-        params: Parameters for polymlp.
-        coeffs: Polymlp coefficients.
-        properties: Properties object.
-
-        Any one of pot, (params, coeffs), and properties is needed.
+        properties: Properties instance.
         """
-
-        if properties is not None:
-            self._prop = properties
-        else:
-            self._prop = Properties(pot=pot, params=params, coeffs=coeffs)
-
+        self._prop = properties
         self._unitcell = unitcell
         self._supercell_matrix = supercell_matrix
+        self._verbose = verbose
 
     def run(
         self,

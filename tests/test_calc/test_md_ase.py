@@ -144,7 +144,7 @@ def _assert_GeneralRefASECalculator(itg: IntegratorASE):
 
 def test_IntegratorASE_PolymlpASECalculator(unitcell_mlp_Al):
     """Test IntegratorASE using PolymlpASECalculator."""
-    unitcell, pot = unitcell_mlp_Al
+    unitcell, pot, _ = unitcell_mlp_Al
     atoms_fcc = structure_to_ase_atoms(unitcell)
     calc = PolymlpASECalculator(pot=pot)
 
@@ -157,7 +157,7 @@ def test_IntegratorASE_PolymlpASECalculator(unitcell_mlp_Al):
 
 def test_IntegratorASE_PolymlpFC2ASECalculator(unitcell_mlp_Al):
     """Test IntegratorASE using PolymlpFC2ASECalculator."""
-    unitcell, pot = unitcell_mlp_Al
+    unitcell, pot, _ = unitcell_mlp_Al
     atoms_fcc = structure_to_ase_atoms(unitcell)
     calc = PolymlpFC2ASECalculator(fc2, unitcell, pot=pot, alpha=0.5)
 
@@ -171,7 +171,7 @@ def test_IntegratorASE_PolymlpFC2ASECalculator(unitcell_mlp_Al):
 
 def test_IntegratorASE_PolymlpRefASECalculator(unitcell_mlp_Al):
     """Test IntegratorASE using PolymlpFC2ASECalculator."""
-    unitcell, pot = unitcell_mlp_Al
+    unitcell, pot, _ = unitcell_mlp_Al
     atoms_fcc = structure_to_ase_atoms(unitcell)
     calc = PolymlpRefASECalculator(pot=pot, pot_ref=pot, alpha=0.5)
 
@@ -185,7 +185,7 @@ def test_IntegratorASE_PolymlpRefASECalculator(unitcell_mlp_Al):
 
 def test_IntegratorASE_PolymlpGeneralRefASECalculator(unitcell_mlp_Al):
     """Test IntegratorASE using PolymlpGeneralRefASECalculator."""
-    unitcell, pot = unitcell_mlp_Al
+    unitcell, pot, _ = unitcell_mlp_Al
     atoms_fcc = structure_to_ase_atoms(unitcell)
     calc = PolymlpGeneralRefASECalculator(
         fc2,

@@ -1,0 +1,37 @@
+system: Ag-Au
+
+unit:
+  cost:         msec/atom/step
+  rmse_energy:  meV/atom
+  rmse_force:   eV/ang.
+
+polymlps:
+- id:     mlp3
+  path:   /Users/seko/data/pypolymlp/auto/grid-Ag-Au/mlp3
+  cost_single: 0.4
+  cost_openmp: 0.4
+  rmse_energy: 8.47648057945598
+  rmse_force:  0.46714675881626255
+
+- id:     mlp2
+  path:   /Users/seko/data/pypolymlp/auto/grid-Ag-Au/mlp2
+  cost_single: 0.7939739618450403
+  cost_openmp: 0.796122676692903
+  rmse_energy: 5.47648057945598
+  rmse_force:  0.26714675881626254
+
+- id:     mlp5
+  path:   /Users/seko/data/pypolymlp/auto/grid-Ag-Au/mlp5
+  cost_single: 1.2939739618450403
+  cost_openmp: 1.296122676692903
+  rmse_energy: 3.47648057945598
+  rmse_force:  0.26714675881626254
+  mae_energy:  2.011023538061626
+  mae_force:   0.01696615663737684
+
+- id:     mlp4
+  path:   /Users/seko/data/pypolymlp/auto/grid-Ag-Au/mlp4
+  cost_single: 1.7939739618450403
+  cost_openmp: 1.796122676692903
+  rmse_energy: 2.47648057945598
+  rmse_force:  0.26714675881626254
