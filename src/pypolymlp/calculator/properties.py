@@ -250,7 +250,7 @@ class PropertiesHybrid:
     @property
     def params(self):
         """Return parameters for hybrid model."""
-        return [prop.params for prop in self._props]
+        return PolymlpParams([prop.params for prop in self._props])
 
 
 class Properties:
