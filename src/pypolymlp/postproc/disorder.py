@@ -9,8 +9,9 @@ import numpy as np
 
 from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
 from pypolymlp.api.pypolymlp_str import PypolymlpStructureGenerator
-from pypolymlp.core.data_format import PolymlpParams, PolymlpStructure
+from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.interface_vasp import Poscar
+from pypolymlp.core.params import PolymlpParams
 from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
 from pypolymlp.utils.structure_utils import sort_wrt_types, supercell_diagonal
 from pypolymlp.utils.yaml_utils import save_data
@@ -74,19 +75,22 @@ def _generate_disorder_params(params: PolymlpParams, occupancy: tuple):
 
 def check_occupancy(params: PolymlpParams, occupancy: tuple):
     """Check occupancy format."""
-    map_element_to_type = dict()
-    itype = 0
     for occ in occupancy:
         if not np.isclose(sum([v for _, v in occ]), 1.0):
             raise RuntimeError("Sum of occupancy != 1.0")
-
-        for ele, comp in occ:
+        for ele, _ in occ:
             if ele not in params.elements:
                 raise RuntimeError("Element", ele, "not found in polymlp.")
-            if ele not in map_element_to_type:
-                map_element_to_type[ele] = itype
-                itype += 1
-    return map_element_to_type
+
+    map_element_to_type = dict()
+    if params.enable_spins is None or np.all(params.enable_spins == False):
+        itype = 0
+        for occ in occupancy:
+            for ele, comp in occ:
+                if ele not in map_element_to_type:
+                    map_element_to_type[ele] = itype
+                    itype += 1
+        return map_element_to_type
 
 
 class PolymlpDisorder:
@@ -131,6 +135,7 @@ class PolymlpDisorder:
         self._stresses = None
 
         self._map_element_to_type = check_occupancy(self._params, self._occupancy)
+        print(self._map_element_to_type)
         self.load_lattice(filename=lattice, supercell_size=supercell_size)
 
         if self._verbose:
@@ -185,10 +190,10 @@ class PolymlpDisorder:
 
         return self
 
-    def set_displaced_lattice_from_poscar(self, filename: str = "POSCAR"):
-        """Set structure with atomic displacements from POSCAR."""
-        self._displaced_lattices = [Poscar(filename).structure]
-        return self
+    #     def set_displaced_lattice_from_poscar(self, filename: str = "POSCAR"):
+    #         """Set structure with atomic displacements from POSCAR."""
+    #         self._displaced_lattices = [Poscar(filename).structure]
+    #         return self
 
     def _set_replacements(self):
         """Set atom indices to replace elements randomly."""
