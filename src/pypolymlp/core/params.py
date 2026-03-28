@@ -93,22 +93,17 @@ class PolymlpParams:
         if len(self._params) == 1:
             return self
 
-        enable_spins_all = []
+        n_none = 0
         for p in self._params:
             if p.enable_spins is None:
-                enable_spins_all.append(None)
-            else:
-                if np.all(np.array(p.enable_spins) == False):
-                    enable_spins_all.append(None)
-                else:
-                    enable_spins_all.append(p.enable_spins)
+                n_none += 1
+            elif np.all(np.array(p.enable_spins) == False):
+                n_none += 1
 
-        # enable_spins_all = [p.enable_spins for p in self._params]
-        n_none = enable_spins_all.count(None)
-        if n_none == len(enable_spins_all):
+        if n_none == len(self._params):
             return self
 
-        if n_none != 0 and n_none != len(enable_spins_all):
+        if n_none != 0 and n_none != len(self._params):
             raise RuntimeError(
                 "enable_spins not consistent across all components of hybrid model."
             )
