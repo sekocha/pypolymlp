@@ -184,8 +184,8 @@ class AutoCalcDistribution(AutoCalcBase):
         if len(vaspruns) == 0:
             raise RuntimeError("Empty vasprun data.")
         structures, (energies, _, _) = parse_properties_from_vaspruns(vaspruns)
-        energies = self._apply_atomic_energies(structures, energies)
         n_atom = np.array([np.sum(st.n_atoms) for st in structures])
+        energies = self._apply_atomic_energies(structures, energies)
         return structures, energies, n_atom
 
     def _apply_atomic_energies(self, structures: list, energies: np.ndarray):
