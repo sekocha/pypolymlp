@@ -163,7 +163,7 @@ def copy_vaspruns(vaspruns: list, tag: str, path_output: str = "./", suffix: str
             print("  - id:  ", id1, file=f)
             print("    file:", infile, file=f)
 
-            outfile = "vaspruns-" + str(id1).zfill(5) + ".xml" + suffix
+            outfile = "vasprun-" + str(id1).zfill(5) + ".xml" + suffix
             shutil.copyfile(infile, path + outfile)
 
 

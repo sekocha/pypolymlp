@@ -131,6 +131,7 @@ The following calculations can be performed using **pypolymlp** with the polynom
   - [Lattice thermal conductivity](docs/calc_ltc.md)
   - [Polynomial invariants](docs/calc_features.md)
   - [Systematic property calculations](docs/calc_auto.md)
+  - [Repository entry generation](docs/calc_auto_rep.md)
 - Experimental features
   - [Self-consistent phonon calculations](docs/experimental/calc_sscha.md)
   - [Molecular dynamics](docs/experimental/calc_md.md)

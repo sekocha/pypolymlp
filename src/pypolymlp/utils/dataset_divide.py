@@ -90,7 +90,7 @@ def auto_divide_vaspruns(
 
     if atom_e is not None:
         print("n_type", len(atom_e), file=f)
-        print("atomic_enegy ", end="", file=f)
+        print("atomic_energy ", end="", file=f)
         for e in atom_e:
             print(e, end=" ", file=f)
         print(file=f)
