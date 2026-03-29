@@ -6,7 +6,7 @@ from collections import defaultdict
 
 import numpy as np
 
-from pypolymlp.api.polymlp_calc import PolymlpCalc
+from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.params import PolymlpParams
 from pypolymlp.utils.structure_utils import sort_wrt_types
@@ -157,7 +157,7 @@ def generate_substitutional_structures(
 
 
 def eval_substitutional_structures(
-    calc: PolymlpCalc,
+    calc: PypolymlpCalc,
     lattice: PolymlpStructure,
     occupancy: list,
     map_element_to_type: dict,
