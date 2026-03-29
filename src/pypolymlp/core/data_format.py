@@ -323,7 +323,8 @@ class PolymlpParamsSingle:
         self.elements = tuple(elements)
         self.atomic_energy = tuple(atomic_energy)
         self.enable_spins = tuple(enable_spins)
-        self.model.revise_params(map_types)
+        if self.model is not None:
+            self.model.revise_params(map_types)
         return self
 
     @property
