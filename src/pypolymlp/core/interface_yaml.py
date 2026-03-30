@@ -139,3 +139,19 @@ def set_dataset_from_electron_yamls(
         elements=elements,
     )
     return dft
+
+
+def parse_property_yamls(yamlfiles: list[str]):
+    """Parse polymlp_property.yaml files."""
+    energies, forces, stresses, structures = [], [], [], []
+    for yfile in yamlfiles:
+        yml = yaml.safe_load(open(yfile))
+        st = load_cell(yaml_data=yml, tag="structure")
+        st.name = yfile
+        structures.append(st)
+        energies.append(yml["energy"])
+        forces.append(np.array(yml["forces"]).T)
+        s = yml["stress"]
+        stress = np.array([[s[0], s[3], s[5]], [s[3], s[1], s[4]], [s[5], s[4], s[2]]])
+        stresses.append(stress)
+    return structures, np.array(energies), forces, np.array(stresses)
