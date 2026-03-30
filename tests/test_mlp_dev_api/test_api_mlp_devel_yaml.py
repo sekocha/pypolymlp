@@ -106,3 +106,39 @@ def test_mlp_devel_api_electron():
 
     assert error_test1["energy"] == pytest.approx(1.4650056622179602e-05, rel=1e-2)
     assert error_train1["energy"] == pytest.approx(4.567949042495626e-06, rel=1e-2)
+
+
+def test_mlp_devel_api_property():
+    """Test API to develop MLP for structure-property data."""
+    polymlp = Pypolymlp(verbose=True)
+    polymlp.set_params(
+        elements=["Fe"],
+        cutoff=6.0,
+        model_type=4,
+        max_p=2,
+        gtinv_order=4,
+        gtinv_maxl=[4, 4, 2],
+        n_gaussians=7,
+        atomic_energy=(0.0,),
+        reg_alpha_params=(-5, 5, 30),
+    )
+    yamlfiles = sorted(glob.glob(str(cwd) + "/data-property-Fe/polymlp_*.yaml"))
+    polymlp.set_datasets_property_yamls(yamlfiles)
+    polymlp.run()
+
+    error_train1 = polymlp.summary.error_train["data1"]
+    error_test1 = polymlp.summary.error_test["data2"]
+
+    assert error_test1["energy"] == pytest.approx(0.0002560833667860702, rel=1e-3)
+    assert error_test1["force"] == pytest.approx(0.008482385238389262, rel=1e-3)
+    assert error_test1["stress"] == pytest.approx(0.004448913897433715, rel=1e-3)
+    assert error_test1["energy_mae"] == pytest.approx(0.00022217991238910885, rel=1e-3)
+    assert error_test1["force_mae"] == pytest.approx(0.005292570615706396, rel=1e-3)
+    assert error_test1["stress_mae"] == pytest.approx(0.0023256012657868275, rel=1e-3)
+
+    assert error_train1["energy"] == pytest.approx(0.0002623360563275094, rel=1e-3)
+    assert error_train1["force"] == pytest.approx(0.005604626875704328, rel=1e-3)
+    assert error_train1["stress"] == pytest.approx(0.0028143770028250846, rel=1e-3)
+    assert error_train1["energy_mae"] == pytest.approx(0.00020672002983896932, rel=1e-3)
+    assert error_train1["force_mae"] == pytest.approx(0.004062774413274475, rel=1e-3)
+    assert error_train1["stress_mae"] == pytest.approx(0.0016552720514438478, rel=1e-3)

@@ -13,6 +13,7 @@ from pypolymlp.core.dataset import (
 )
 from pypolymlp.core.displacements import get_structures_from_displacements
 from pypolymlp.core.interface_vasp import parse_structures_from_poscars
+from pypolymlp.core.interface_yaml import parse_property_yamls
 from pypolymlp.core.io_polymlp import convert_to_yaml, load_mlp
 from pypolymlp.core.params import PolymlpParams
 from pypolymlp.core.params_utils import set_all_params
@@ -392,6 +393,29 @@ class Pypolymlp:
         self._train, self._test = set_datasets_from_single_fileset(
             self._params,
             files=yaml,
+            train_ratio=train_ratio,
+            verbose=self._verbose,
+        )
+        return self
+
+    def set_datasets_property_yamls(self, yamls: list, train_ratio: float = 0.9):
+        """Set single DFT dataset in property yaml format.
+
+        Parameters
+        ----------
+        yamls: Structures and properties in yaml files.
+        train_ratio: Ratio between training and entire data sizes.
+        """
+        self._is_params_none()
+        self._params.dataset_type = "vasp"
+
+        structures, energies, forces, stresses = parse_property_yamls(yamls)
+        self._train, self._test = set_datasets_from_structures(
+            self._params,
+            structures=structures,
+            energies=energies,
+            forces=forces,
+            stresses=stresses,
             train_ratio=train_ratio,
             verbose=self._verbose,
         )
