@@ -1,6 +1,6 @@
 # MLP Development for Substitutionally Disordered Structures
 
-> **Note**: Requires version 0.19.3 or later.
+> **Note**: Requires version 0.19.4 or later.
 
 ## 1. DFT Calculations for Substitutional Configurations on a Lattice with Random Structural Changes
 
