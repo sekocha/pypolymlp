@@ -13,7 +13,7 @@ from pypolymlp.core.params import PolymlpParams
 from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
 from pypolymlp.postproc.disorder_utils import (
     eval_substitutional_structures,
-    set_element_map,
+    set_full_occupancy,
 )
 from pypolymlp.utils.structure_utils import supercell_diagonal
 from pypolymlp.utils.yaml_utils import save_data
@@ -107,7 +107,7 @@ class PolymlpDisorder:
         self._polymlp = Pypolymlp()
         self._calc = PypolymlpCalc(pot=pot)
         self._params = self._calc.params
-        self._occupancy = occupancy
+        self._occupancy = set_full_occupancy(self._params, occupancy)
         self._verbose = verbose
 
         self._lattice = None
@@ -118,7 +118,6 @@ class PolymlpDisorder:
         self._forces = None
         self._stresses = None
 
-        self._map_element_to_type = set_element_map(self._params, self._occupancy)
         self.load_lattice(
             filename=lattice_poscar,
             structure=lattice_structure,
@@ -228,7 +227,6 @@ class PolymlpDisorder:
                 self._calc,
                 lattice,
                 self._occupancy,
-                self._map_element_to_type,
                 n_samples=n_samples,
             )
             energies_all.extend(energies)

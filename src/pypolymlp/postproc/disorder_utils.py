@@ -31,8 +31,8 @@ def _check_occupancy(params: PolymlpParams, occupancy: tuple):
                 raise RuntimeError("Broken occupancy format.")
 
 
-def set_element_map(params: PolymlpParams, occupancy: tuple):
-    """Set map between elements and atom types."""
+def set_full_occupancy(params: PolymlpParams, occupancy: tuple):
+    """Set occupancy list for generating disorder structures."""
     _check_occupancy(params, occupancy)
 
     map_element_to_type = dict()
@@ -53,7 +53,87 @@ def set_element_map(params: PolymlpParams, occupancy: tuple):
     for ele2 in map_element_to_type.keys():
         assert ele2 in ele_all
 
-    return map_element_to_type
+    occupancy_full = []
+    for occ in occupancy:
+        occ_sub = []
+        for ele, prob in occ:
+            if isinstance(ele, str):
+                ele_str = ele
+            elif isinstance(ele, tuple):
+                ele_str = ele[0]
+            occ_sub.append((ele_str, map_element_to_type[ele], prob))
+        occupancy_full.append(occ_sub)
+
+    return occupancy_full
+
+
+def _generate_substitutional_indices(lattice: PolymlpStructure, occupancy: list):
+    """Generate a set of substitutional indices for a substitutional structure."""
+    replace_ids = defaultdict(list)
+    atom_begin = 0
+    for occ, n in zip(occupancy, lattice.n_atoms, strict=True):
+        atom_end = atom_begin + n
+        cand = range(atom_begin, atom_end)
+        for ele, itype, prob in occ:
+            key = (ele, itype)
+            n_rep = int(round(n * prob))
+            samples = cand if len(cand) == n_rep else random.sample(cand, n_rep)
+            replace_ids[key].extend(samples)
+            cand = list(set(cand) - set(replace_ids[key]))
+        atom_begin = atom_end
+    return replace_ids
+
+
+def generate_substitutional_structures(
+    lattice: PolymlpStructure,
+    occupancy: list,
+    n_samples: int = 500,
+):
+    """Generate random substitutional structures."""
+
+    if lattice is None:
+        raise RuntimeError("Lattice not found.")
+
+    structures, atom_orders = [], []
+    for i in range(n_samples):
+        replace_ids = _generate_substitutional_indices(lattice, occupancy)
+
+        st = copy.deepcopy(lattice)
+        st.elements = np.array(st.elements)
+        st.types = np.array(st.types)
+        for (ele, itype), rep_ids in replace_ids.items():
+            st.elements[rep_ids] = ele
+            st.types[rep_ids] = itype
+
+        st, ids = sort_wrt_types(st, return_ids=True)
+        structures.append(st)
+        atom_orders.append(ids)
+    return structures, np.array(atom_orders)
+
+
+def _reorder(array: np.ndarray, order: np.ndarray):
+    """Reorder array with respect to the order of original array."""
+    array_reordered = np.zeros(array.shape)
+    array_reordered[:, order] = array
+    return array_reordered
+
+
+def eval_substitutional_structures(
+    calc: PypolymlpCalc,
+    lattice: PolymlpStructure,
+    occupancy: list,
+    n_samples: int = 500,
+):
+    """Evaluate properties of random substitutional structures."""
+    subs, atom_orders = generate_substitutional_structures(
+        lattice,
+        occupancy,
+        n_samples=n_samples,
+    )
+    energies, forces_sorted_order, stresses = calc.eval(subs)
+    zip_array = zip(forces_sorted_order, atom_orders, strict=True)
+    forces = [_reorder(f, ids) for f, ids in zip_array]
+    return energies, forces, stresses
 
 
 # def _check_params(params: PolymlpParams):
@@ -110,70 +190,3 @@ def set_element_map(params: PolymlpParams, occupancy: tuple):
 #         [(params.elements.index(ele), comp) for ele, comp in occ] for occ in occupancy
 #     ]
 #     return params_rand, occupancy_type
-
-
-def generate_substitutional_structures(
-    lattice: PolymlpStructure,
-    occupancy: list,
-    map_element_to_type: dict,
-    n_samples: int = 500,
-):
-    """Generate random substitutional structures."""
-
-    if lattice is None:
-        raise RuntimeError("Lattice not found.")
-
-    structures, atom_orders = [], []
-    for i in range(n_samples):
-        replace_ids = defaultdict(list)
-        atom_begin = 0
-        for occ, n in zip(occupancy, lattice.n_atoms, strict=True):
-            atom_end = atom_begin + n
-            cand = range(atom_begin, atom_end)
-            for ele, prob in occ:
-                n_replace = int(round(n * prob))
-                itype = map_element_to_type[ele]
-
-                ele_str = ele[0] if len(ele) == 2 else ele
-                if len(cand) == n_replace:
-                    replace_ids[(ele_str, itype)].extend(cand)
-                else:
-                    samples = random.sample(cand, n_replace)
-                    replace_ids[(ele_str, itype)].extend(samples)
-                    cand = list(set(cand) - set(replace_ids[(ele_str, itype)]))
-            atom_begin = atom_end
-
-        st = copy.deepcopy(lattice)
-        st.elements = np.array(st.elements)
-        st.types = np.array(st.types)
-        for (ele, itype), rep_ids in replace_ids.items():
-            st.elements[rep_ids] = ele
-            st.types[rep_ids] = itype
-
-        st, ids = sort_wrt_types(st, return_ids=True)
-        structures.append(st)
-        atom_orders.append(ids)
-    return structures, np.array(atom_orders)
-
-
-def eval_substitutional_structures(
-    calc: PypolymlpCalc,
-    lattice: PolymlpStructure,
-    occupancy: list,
-    map_element_to_type: dict,
-    n_samples: int = 500,
-):
-    """Evaluate properties of random substitutional structures."""
-    subs, atom_orders = generate_substitutional_structures(
-        lattice,
-        occupancy,
-        map_element_to_type,
-        n_samples=n_samples,
-    )
-    energies, forces_sorted_order, stresses = calc.eval(subs)
-    forces = []
-    for f, ids in zip(forces_sorted_order, atom_orders, strict=True):
-        f_reordered = np.zeros(f.shape)
-        f_reordered[:, ids] = f
-        forces.append(f_reordered)
-    return energies, forces, stresses
