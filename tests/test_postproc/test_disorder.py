@@ -1,5 +1,6 @@
 """Tests disorder.py."""
 
+import shutil
 from pathlib import Path
 
 from pypolymlp.postproc.disorder import PolymlpDisorder
@@ -34,3 +35,13 @@ def test_PolymlpDisorder():
         include_base_structure=True,
     )
     assert len(disorder.structures) == 3
+
+    disorder.eval_random_properties(n_samples=2, max_iter=1)
+
+    e, f, s = disorder.properties
+    assert e.shape == (3,)
+    assert f.shape == (3, 3, 64)
+    assert s.shape == (3, 6)
+
+    disorder.save_properties(path="tmp")
+    shutil.rmtree("tmp")

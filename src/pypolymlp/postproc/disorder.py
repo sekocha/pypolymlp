@@ -225,4 +225,8 @@ class PolymlpDisorder:
         stress: Stress tensor. shape=(n_str, 6), unit: eV/supercell
                 in the order of xx, yy, zz, xy, yz, zx.
         """
-        return self._energies, self._forces, self._stresses
+        return (
+            np.array(self._energies),
+            np.array(self._forces),
+            np.array(self._stresses),
+        )
