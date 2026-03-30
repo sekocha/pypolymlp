@@ -154,4 +154,4 @@ def parse_property_yamls(yamlfiles: list[str]):
         s = yml["stress"]
         stress = np.array([[s[0], s[3], s[5]], [s[3], s[1], s[4]], [s[5], s[4], s[2]]])
         stresses.append(stress)
-    return structures, energies, forces, stresses
+    return structures, np.array(energies), forces, np.array(stresses)

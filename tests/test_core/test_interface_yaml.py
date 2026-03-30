@@ -3,10 +3,12 @@
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 from pypolymlp.core.interface_yaml import (
     extract_electron_properties,
     parse_electron_yamls,
+    parse_property_yamls,
     parse_sscha_yamls,
     split_imaginary,
 )
@@ -64,3 +66,21 @@ def test_electron_yamls():
     np.testing.assert_allclose(
         props, [-0.00537118, -0.00520776, -0.00521567], atol=1e-6
     )
+
+
+def test_property_yamls():
+    """Test for parsing electron.yaml."""
+    yamls = [
+        cwd / "./../files/polymlp_disorder_00001.yaml",
+        cwd / "./../files/polymlp_disorder_00002.yaml",
+    ]
+    structures, energies, forces, stresses = parse_property_yamls(yamls)
+    assert len(structures) == 2
+    assert energies.shape == (2,)
+    assert len(forces) == 2
+    assert stresses.shape == (2, 3, 3)
+
+    np.testing.assert_allclose(energies, [-882.5106834, -882.44677351], rtol=1e-7)
+    assert np.sum(forces[0]) == pytest.approx(0.0, abs=1e-7)
+    assert np.sum(forces[1]) == pytest.approx(0.0, abs=1e-7)
+    assert np.sum(stresses) == pytest.approx(249.18128142477067, rel=1e-7)
