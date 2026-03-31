@@ -119,7 +119,7 @@ def generate_summary_txt(
 
         if d["active"]:
             txt_pred = ":doc:`predictions <predictions/" + id1 + "/prediction>`"
-            txt_mlp = ":download:`polymlp <polymlps/polymlp-" + id1 + ".tar.xz>`"
+            txt_mlp = ":download:`polymlp <polymlps/" + id1 + ".tar.xz>`"
             txt1 = ", ".join(
                 [txt_header, txt_cost, txt_rmse, txt_mae, txt_pred, txt_mlp]
             )
@@ -131,15 +131,15 @@ def generate_summary_txt(
 
     print("Units:", file=f)
     print(file=f)
-    print("* Time: [ms] (1core/36cores)", file=f)
-    print("* RMSE: [meV/atom]/[eV/ang.]", file=f)
-    print("* MAE:  [meV/atom]/[eV/ang.]", file=f)
+    print("* Time: [ms] (1core/32cores)", file=f)
+    print("* RMSE (Energy/Force): [meV/atom]/[eV/ang.]", file=f)
+    print("* MAE (Energy/Force):  [meV/atom]/[eV/ang.]", file=f)
     print(file=f)
     print(
         'Column "Time" shows the time required to compute the energy'
         " and forces for **1 MD step** and **1 atom**, which is"
         " estimated from 10 runs for a large structure using"
-        " a workstation with Intel(R) Xeon(R) CPU E5-2695 v4 @ 2.10GHz.",
+        " a workstation with two Intel(R) Xeon(R) CPU SILVER 4514Y CPUs.",
         file=f,
     )
     print(
@@ -326,7 +326,7 @@ def generate_predictions_txt(
                     elastic_constants,
                     subtitle="Elastic constants [" + st + "] (MLP)",
                     header="1, 2, 3, 4, 5, 6",
-                    widths=[12, 10, 10, 10, 8, 8, 8],
+                    widths=[10, 10, 10, 10, 10, 10],
                     file=f,
                 )
 
