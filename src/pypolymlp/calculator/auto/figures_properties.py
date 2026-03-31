@@ -35,6 +35,7 @@ def plot_prototype_prediction(
     """
     if fontsize == "auto":
         fontsize = min(800 // data.shape[0], 12)
+
     os.makedirs(path_output, exist_ok=True)
     error = np.abs(data[:, 0].astype(float) - data[:, 1].astype(float)) * 1000
     tag = data[:, 2]
@@ -350,7 +351,7 @@ def plot_qha(
     use_eps: bool = False,
     dpi: int = 300,
     n_cols: int = 3,
-    figsize: tuple = (8, 6),
+    figsize: tuple = (8, 10),
     fontsize: int = 8,
 ):
     """Plot thermal expansion for prototype structures separately."""
@@ -375,7 +376,11 @@ def plot_qha(
     )
 
     fig, ax, n_rows = _sns_init(
-        prototypes_active, suptitle, n_cols=n_cols, figsize=figsize
+        prototypes_active,
+        suptitle,
+        n_cols=n_cols,
+        figsize=figsize,
+        fontsize=8,
     )
     i = 0
     for prot in prototypes_active:

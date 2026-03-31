@@ -272,6 +272,8 @@ class ParamsParserSingle:
         if dataset_type == "sscha":
             self._train = self._train.split_imaginary(weight_imag=0.01)
             self._test = self._test.split_imaginary(weight_imag=0.01)
+            # self._train = self._train.split_imaginary(weight_imag=1e-8)
+            # self._test = self._test.split_imaginary(weight_imag=1e-8)
 
         self._train.parse_files(self._params)
         self._test.parse_files(self._params)
