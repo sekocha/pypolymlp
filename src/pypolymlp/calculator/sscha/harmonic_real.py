@@ -203,6 +203,7 @@ class HarmonicReal:
         N3 = self._fc2.shape[0] * self._fc2.shape[2]
         fc2 = self._fc2.transpose((0, 2, 1, 3)).reshape((N3, N3))
 
+        harmonic_tmp = []
         pot_harmonic, residual_f, residual_s = [], [], []
         for d in self._disps:
             energy, harmonic_forces, harmonic_stress_tensor = eval_properties_fc2(
@@ -211,6 +212,16 @@ class HarmonicReal:
             pot_harmonic.append(energy)
             residual_f.append(harmonic_forces + self._f0)
             residual_s.append(harmonic_stress_tensor + self._s0)
+            # print(harmonic_stress_tensor)
+            # print(self._s0)
+            harmonic_tmp.append(harmonic_stress_tensor)
+            # residual_s.append(self._s0)
+            # print(harmonic_stress_tensor)
+
+        for hs, fs in zip(harmonic_tmp, self._stress_tensors):
+            print("-----------")
+            print(hs)
+            print(fs - self._s0)
 
         pot_harmonic = np.array(pot_harmonic)
         residual_f = np.array(residual_f)
