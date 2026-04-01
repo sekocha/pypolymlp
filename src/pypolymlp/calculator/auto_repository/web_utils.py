@@ -131,15 +131,15 @@ def generate_summary_txt(
 
     print("Units:", file=f)
     print(file=f)
-    print("* Time: [ms] (1core/32cores)", file=f)
-    print("* RMSE (Energy/Force): [meV/atom]/[eV/ang.]", file=f)
-    print("* MAE (Energy/Force):  [meV/atom]/[eV/ang.]", file=f)
+    print("* Time (1core / 32cores): [ms]", file=f)
+    print("* RMSE (Energy / Force):  [meV/atom] / [eV/ang.]", file=f)
+    print("* MAE (Energy / Force):   [meV/atom] / [eV/ang.]", file=f)
     print(file=f)
     print(
         'Column "Time" shows the time required to compute the energy'
         " and forces for **1 MD step** and **1 atom**, which is"
         " estimated from 10 runs for a large structure using"
-        " a workstation with two Intel(R) Xeon(R) CPU SILVER 4514Y CPUs.",
+        " a workstation with two Intel(R) Xeon(R) SILVER 4514Y CPUs.",
         file=f,
     )
     print(

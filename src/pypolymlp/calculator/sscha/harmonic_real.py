@@ -5,6 +5,7 @@ from typing import Optional
 import numpy as np
 
 from pypolymlp.calculator.properties import Properties
+from pypolymlp.calculator.sscha.sscha_stress import compute_harmonic_stress
 from pypolymlp.calculator.utils.fc_utils import eval_properties_fc2
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.displacements import get_structures_from_displacements
@@ -49,6 +50,7 @@ class HarmonicReal:
         """
         self._supercell = supercell
         self._n_atom = len(supercell.elements)
+        self._cartesian_positions = self._supercell.axis @ self._supercell.positions
         self.force_constants = fc2
 
         if n_unitcells is not None:
@@ -203,26 +205,38 @@ class HarmonicReal:
         N3 = self._fc2.shape[0] * self._fc2.shape[2]
         fc2 = self._fc2.transpose((0, 2, 1, 3)).reshape((N3, N3))
 
-        harmonic_tmp = []
-        pot_harmonic, residual_f, residual_s = [], [], []
-        for d in self._disps:
-            energy, harmonic_forces, harmonic_stress_tensor = eval_properties_fc2(
-                fc2, d.T.reshape(-1)
-            )
-            pot_harmonic.append(energy)
-            residual_f.append(harmonic_forces + self._f0)
-            residual_s.append(harmonic_stress_tensor + self._s0)
-            # print(harmonic_stress_tensor)
-            # print(self._s0)
-            harmonic_tmp.append(harmonic_stress_tensor)
-            # residual_s.append(self._s0)
-            # print(harmonic_stress_tensor)
+        algo1 = True
+        # algo1 = False
+        np.set_printoptions(suppress=True)
+        if algo1:
+            pot_harmonic, residual_f, residual_s = [], [], []
+            for d in self._disps:
+                energy, harmonic_forces, harmonic_stress_tensor = eval_properties_fc2(
+                    fc2, d.T.reshape(-1)
+                )
+                pot_harmonic.append(energy)
+                residual_f.append(harmonic_forces + self._f0)
+                residual_s.append(harmonic_stress_tensor + self._s0)
+        else:
+            harmonic_stress_tensor2 = compute_harmonic_stress(self._supercell, fc2)
+            print(harmonic_stress_tensor2)
+            print(self._s0)
+            pot_harmonic, residual_f, residual_s = [], [], []
+            for d in self._disps:
+                energy, harmonic_forces, harmonic_stress_tensor = eval_properties_fc2(
+                    fc2, d.T.reshape(-1)
+                )
+                print(harmonic_stress_tensor)
+                pot_harmonic.append(energy)
+                residual_f.append(harmonic_forces + self._f0)
+                residual_s.append(harmonic_stress_tensor + self._s0)
 
-        for hs, fs in zip(harmonic_tmp, self._stress_tensors):
-            print("-----------")
-            print(hs)
-            print(fs - self._s0)
-
+        # harmonic_stress_tensor2 = compute_harmonic_stress(self._supercell, fc2)
+        #         for fs, hs in zip(self._stress_tensors, residual_s):
+        #             print("-----")
+        #             print(fs)
+        #             print(hs)
+        #
         pot_harmonic = np.array(pot_harmonic)
         residual_f = np.array(residual_f)
         residual_s = np.array(residual_s)

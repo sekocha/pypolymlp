@@ -352,11 +352,16 @@ class Properties:
         """Print properties for single structure calculation."""
         np.set_printoptions(suppress=True)
         print("Energy:", self.energies[0], "(eV/cell)", flush=True)
-        print("Forces:", flush=True)
+        print("Forces (eV/ang):", flush=True)
         for i, f in enumerate(self.forces[0].T):
             print("- atom", i, ":", f, flush=True)
+
+        stress = self.stresses[0]
+        print("Stress tensors (eV/cell):", flush=True)
+        print("- xx, yy, zz:", stress[0:3], flush=True)
+        print("- xy, yz, zx:", stress[3:6], flush=True)
         stress = self.stresses_gpa[0]
-        print("Stress tensors:", flush=True)
+        print("Stress tensors (GPa):", flush=True)
         print("- xx, yy, zz:", stress[0:3], flush=True)
         print("- xy, yz, zx:", stress[3:6], flush=True)
         print("---------", flush=True)
@@ -423,6 +428,6 @@ def initialize_polymlp_calculator(
     if params is not None:
         if coeffs is None:
             raise RuntimeError("Coefficients not provided.")
-        if len(params) != len(coeffs):
+        if len(params) > 1 and len(params) != len(coeffs):
             raise RuntimeError("Length of params and coeffs not consistent.")
     return Properties(pot=pot, params=params, coeffs=coeffs)
