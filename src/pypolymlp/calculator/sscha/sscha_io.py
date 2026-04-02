@@ -82,6 +82,10 @@ def save_sscha_yaml(
     print_array2d(properties.average_forces.T, "average_forces", f, indent_l=0)
     print("", file=f)
 
+    total = properties.average_forces + properties.static_forces
+    print_array2d(total.T, "total_average_forces", f, indent_l=0)
+    print("", file=f)
+
     s = properties.average_stress_tensor
     sigma = [
         [s[0], s[3], s[5]],
@@ -89,6 +93,15 @@ def save_sscha_yaml(
         [s[5], s[4], s[2]],
     ]
     print_array2d(np.array(sigma), "average_stress_tensor", f, indent_l=0)
+    print("", file=f)
+
+    total = properties.average_stress_tensor + properties.static_stress_tensor
+    sigma = [
+        [total[0], total[3], total[5]],
+        [total[3], total[1], total[4]],
+        [total[5], total[4], total[2]],
+    ]
+    print_array2d(np.array(sigma), "total_average_stress_tensor", f, indent_l=0)
     print("", file=f)
 
     print("logs:", file=f)

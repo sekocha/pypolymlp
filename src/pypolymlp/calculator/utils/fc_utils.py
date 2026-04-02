@@ -32,7 +32,8 @@ def eval_properties_fc2(fc2: np.ndarray, disps: np.ndarray):
     ------
     energy: Energy in eV.
     forces: Forces in eV/angstrom. shape=(3, N).
-    stress_tensor: Stress tensor in eV, shape=(6) in the order of xx, yy, zz, xy, yz, zx.
+    stress_tensor: Stress tensor in eV, shape=(6)
+                   in the order of xx, yy, zz, xy, yz, zx.
     """
     n_atom = fc2.shape[0] // 3
     disps_minus = -disps
