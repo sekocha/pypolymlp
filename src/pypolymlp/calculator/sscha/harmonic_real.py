@@ -235,6 +235,8 @@ class HarmonicReal:
         """Calculate harmonic potentials and properties."""
         if self._disps is None:
             return RuntimeError("Displacements not found.")
+        if self._fc2 is None:
+            return RuntimeError("Force constants not found.")
 
         N3 = self._fc2.shape[0] * self._fc2.shape[2]
         fc2 = self._fc2.transpose((0, 2, 1, 3)).reshape((N3, N3))
