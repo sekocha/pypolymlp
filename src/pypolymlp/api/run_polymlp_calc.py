@@ -77,7 +77,7 @@ def run():
         "--supercell",
         nargs=3,
         type=int,
-        default=(1, 1, 1),
+        default=(2, 2, 2),
         help="Supercell size (diagonal components)",
     )
     parser.add_argument(
