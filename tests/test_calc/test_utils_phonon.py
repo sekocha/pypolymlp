@@ -6,6 +6,8 @@ from pypolymlp.calculator.utils.phonon_utils import is_imaginary, load_phonon
 
 cwd = Path(__file__).parent
 
+path_files = str(cwd) + "/files/others/"
+
 
 def test_is_imaginary():
     """Test is_imaginary."""
@@ -24,4 +26,10 @@ def test_is_imaginary():
 
 def test_load_phonon():
     """Test load phonon."""
-    _ = load_phonon()
+    unitcell, supercell, fc2 = load_phonon(
+        path_files + "polymlp_phonon_Ti.yaml",
+        path_files + "fc2_Ti_222.hdf5",
+    )
+    assert len(unitcell.elements) == 2
+    assert len(supercell.elements) == 16
+    assert fc2.shape == (48, 48)
