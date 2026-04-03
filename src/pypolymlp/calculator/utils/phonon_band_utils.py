@@ -110,7 +110,18 @@ def calculate_phonon_bands(
     ] = "fcc",
     npoints: int = 101,
 ):
-    """Calculate band structure from force constants and structure."""
+    """Calculate band structure from force constants and structure.
+
+    How to use
+    ----------
+    from pypolymlp.calculator.utils.phonon_band_utils import calculate_phonon_bands
+
+    calculate_phonon_bands(
+        yamlfile="polymlp_phonon.yaml",
+        filefc2="fc2.hdf5",
+        structure_type="perovskite",
+    )
+    """
     primitive, path, labels = _get_band_attrs(structure_type)
     unitcell, supercell, fc2 = load_phonon(
         yamlfile=yamlfile,
