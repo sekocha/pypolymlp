@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from pypolymlp.calculator.utils.phonon_utils import is_imaginary
+from pypolymlp.calculator.utils.phonon_utils import is_imaginary, load_phonon
 
 cwd = Path(__file__).parent
 
@@ -20,3 +20,8 @@ def test_is_imaginary():
     freq = [-0.1, 0.1, 0.2]
     dos = [0.1, 0.3, 0.5]
     assert is_imaginary(freq, dos)
+
+
+def test_load_phonon():
+    """Test load phonon."""
+    _ = load_phonon()
