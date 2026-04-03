@@ -12,7 +12,7 @@ def load_phonon(
     yamlfile: str = "polymlp_phonon.yaml",
     filefc2: str = "fc2.hdf5",
     return_matrix: bool = True,
-    return_phonopy: bool = True,
+    return_phonopy: bool = False,
 ):
     """Load unitcell, supercell, and FC2.
 
