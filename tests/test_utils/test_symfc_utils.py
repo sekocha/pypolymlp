@@ -8,6 +8,7 @@ import numpy as np
 from pypolymlp.utils.symfc_utils import (
     construct_basis_cartesian,
     construct_basis_fractional_coordinates,
+    set_symfc_cutoffs,
     structure_to_symfc_cell,
 )
 
@@ -20,6 +21,14 @@ def test_structure_to_symfc_cell(structure_rocksalt):
     assert len(cell.numbers) == 8
     assert cell.cell.shape == (3, 3)
     assert cell.scaled_positions.shape == (8, 3)
+
+
+def test_symfc_cutoffs():
+    """Test set_symfc_cutoffs."""
+    cutoff = set_symfc_cutoffs(None, 8, None)
+    assert cutoff[2] is None
+    assert cutoff[3] == 8
+    assert cutoff[4] is None
 
 
 def test_basis(structure_rocksalt):

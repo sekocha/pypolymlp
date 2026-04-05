@@ -49,6 +49,7 @@ pypolymlp-autocalc = "pypolymlp.api.run_polymlp_autocalc:run"
 
 # For developers
 pypolymlp-symfc = "pypolymlp.api.developer.run_polymlp_symfc:run"
+pypolymlp-kim = "pypolymlp.api.developer.run_polymlp_kim:run"
 
 [tool.scikit-build]
 cmake.verbose = true

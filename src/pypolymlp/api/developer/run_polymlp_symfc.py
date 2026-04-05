@@ -6,10 +6,10 @@ import time
 
 import numpy as np
 from symfc import Symfc
-from symfc.utils.utils import SymfcAtoms
 
 from pypolymlp.core.interface_vasp import Poscar
 from pypolymlp.utils.structure_utils import supercell_diagonal
+from pypolymlp.utils.symfc_utils import set_symfc_cutoffs, structure_to_symfc_cell
 
 
 def run():
@@ -60,19 +60,23 @@ def run():
         action="store_true",
         help="Disable to use MKL.",
     )
+    parser.add_argument(
+        "--use_phonopy",
+        action="store_true",
+        help="Use phonopy to make supercell.",
+    )
+
     args = parser.parse_args()
     np.set_printoptions(legacy="1.21")
 
     unitcell = Poscar(args.poscar).structure
-    # If using phonopy
-    # supercell = phonopy_supercell(unitcell, np.diag(args.supercell))
-    supercell = supercell_diagonal(unitcell, args.supercell)
-    supercell = SymfcAtoms(
-        numbers=supercell.types,
-        cell=supercell.axis.T,
-        scaled_positions=supercell.positions.T,
+    supercell = supercell_diagonal(
+        unitcell,
+        args.supercell,
+        use_phonopy=args.use_phonopy,
     )
-    cutoff = {2: args.cutoff_fc2, 3: args.cutoff_fc3, 4: args.cutoff_fc4}
+    supercell = structure_to_symfc_cell(supercell)
+    cutoff = set_symfc_cutoffs(args.cutoff_fc2, args.cutoff_fc3, args.cutoff_fc4)
 
     t1 = time.time()
     symfc = Symfc(supercell, use_mkl=not args.disable_mkl, log_level=1, cutoff=cutoff)
