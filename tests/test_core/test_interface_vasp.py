@@ -11,6 +11,7 @@ from pypolymlp.core.interface_vasp import (
     _is_convergent,
     check_vasprun_type,
     parse_energy_volume,
+    parse_forces_displacements,
     parse_properties_from_vaspruns,
     parse_structures_from_poscars,
     parse_structures_from_vaspruns,
@@ -54,6 +55,11 @@ def test_functions_from_vaspruns():
     np.testing.assert_allclose(
         ev, [[612.13782226, -381.0917812], [612.13394808, -381.09122093]], atol=1e-6
     )
+
+    forces, displacements = parse_forces_displacements(vaspruns, strs[0])
+    assert forces.shape == (2, 3, 64)
+    assert displacements.shape == (2, 3, 64)
+    np.testing.assert_allclose(displacements[0], 0.0)
 
 
 def test_functions_from_poscars():
