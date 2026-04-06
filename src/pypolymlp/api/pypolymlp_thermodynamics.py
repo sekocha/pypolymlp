@@ -6,10 +6,10 @@ from typing import Optional
 import numpy as np
 
 from pypolymlp.calculator.thermodynamics.io_utils import load_thermodynamics_yaml
-from pypolymlp.calculator.thermodynamics.thermodynamics import (
+from pypolymlp.calculator.thermodynamics.thermodynamics import (  # load_yamls,
     Thermodynamics,
-    load_yamls,
 )
+from pypolymlp.calculator.thermodynamics.thermodynamics_parser import load_yamls
 from pypolymlp.calculator.thermodynamics.thermodynamics_utils import sum_matrix_data
 from pypolymlp.calculator.thermodynamics.transition import (
     compute_phase_boundary,

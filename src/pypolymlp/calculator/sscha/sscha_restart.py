@@ -37,7 +37,7 @@ class Restart:
         self._fc2 = None
 
         self._load_sscha_yaml()
-        self._unit_energy, self._unit_entropy = self._set_unit_conversion()
+        self._set_unit_conversion()
 
         if fc2hdf5 is not None:
             self._fc2 = read_fc2_from_hdf5(fc2hdf5)
@@ -87,13 +87,16 @@ class Restart:
         if self._unit == "kJ/mol":
             self._unit_energy = 1.0
             self._unit_entropy = 1.0
+            self._unit_volume = 1.0
         elif self._unit == "eV/cell":
             self._unit_energy = 1.0 / EVtoKJmol
             self._unit_entropy = 1.0 / (EVtoKJmol * 1000)
+            self._unit_volume = 1.0
         elif self._unit == "eV/atom":
             self._unit_energy = 1.0 / (EVtoKJmol * self._n_atom_unitcell)
             self._unit_entropy = 1.0 / (EVtoKJmol * 1000 * self._n_atom_unitcell)
-        return self._unit_energy, self._unit_entropy
+            self._unit_volume = 1.0 / self._n_atom_unitcell
+        return self
 
     @property
     def polymlp(self):
@@ -208,7 +211,7 @@ class Restart:
     @property
     def volume(self):
         """Return volume."""
-        return self._volume
+        return self._volume * self._unit_volume
 
     # def _unit_conversion(self, val):
     #     """Convert unit for free energy and potentials."""

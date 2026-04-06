@@ -42,8 +42,8 @@ class Thermodynamics:
     ):
         """Init method.
 
-        Units of input data
-        -------------------
+        Input data units
+        ----------------
         free_energy: eV/atom
         entropy: eV/K/atom
         heat_capacity: J/K/mol (/Avogadro's number of atoms)
