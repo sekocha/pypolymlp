@@ -6,7 +6,7 @@ from typing import Literal, Optional
 import numpy as np
 from phonopy.physical_units import get_physical_units
 
-from pypolymlp.calculator.sscha.sscha_utils import Restart
+from pypolymlp.calculator.sscha.sscha_restart import Restart
 from pypolymlp.core.units import EVtoJmol
 
 units = get_physical_units()

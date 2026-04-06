@@ -6,7 +6,7 @@ import numpy as np
 import yaml
 
 from pypolymlp.calculator.compute_phonon import calculate_harmonic_properties_from_fc2
-from pypolymlp.calculator.sscha.sscha_utils import Restart
+from pypolymlp.calculator.sscha.sscha_restart import Restart
 from pypolymlp.calculator.thermodynamics.init_ti import load_ti_yaml
 from pypolymlp.calculator.thermodynamics.thermodynamics_utils import GridPointData
 from pypolymlp.core.units import EVtoJmol, EVtoKJmol
@@ -33,7 +33,8 @@ def load_sscha_yamls(filenames: tuple[str]) -> list[GridPointData]:
             grid.free_energy = res.free_energy + res.static_potential
             grid.entropy = res.entropy
             grid.static_potential = res.static_potential
-            grid.harmonic_free_energy = res.free_energy - res.anharmonic_energy
+            # grid.harmonic_free_energy = res.free_energy - res.anharmonic_free_energy
+            grid.harmonic_free_energy = res.harmonic_free_energy
         else:
             grid.free_energy = None
             grid.entropy = None

@@ -27,13 +27,15 @@ def test_restart():
     static_potential = -1322.92893961425
     entropy = 185.9304364307951
     harmonic_heat_capacity = 97.9516453918095
+    harmonic_free_energy = -59.021848859536576
     anharmonic_free_energy = -2.1122313959897348
 
     assert res.free_energy == pytest.approx(free_energy)
     assert res.static_potential == pytest.approx(static_potential)
+    assert res.harmonic_free_energy == pytest.approx(harmonic_free_energy)
+    assert res.anharmonic_free_energy == pytest.approx(anharmonic_free_energy)
     assert res.entropy == pytest.approx(entropy)
     assert res.harmonic_heat_capacity == pytest.approx(harmonic_heat_capacity)
-    assert res.anharmonic_free_energy == pytest.approx(anharmonic_free_energy)
 
     assert len(res.logs["free_energy"]) == 4
     assert len(res.logs["harmonic_potential"]) == 4

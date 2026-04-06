@@ -160,13 +160,13 @@ class SSCHACore:
             harmonic_potential=self._ph_real.average_harmonic_potential,  # kJ/mol
             harmonic_free_energy=self._ph_recip.free_energy,  # kJ/mol
             average_potential=self._ph_real.average_full_potential,  # kJ/mol
-            anharmonic_free_energy=self._ph_real.average_anharmonic_potential,
+            anharmonic_free_energy=self._ph_real.average_anharmonic_potential,  # KJ/mol
             entropy=self._ph_recip.entropy,  # J/K/mol
             harmonic_heat_capacity=self._ph_recip.heat_capacity,  # J/K/mol
             static_forces=self._ph_real.static_forces,  # eV/ang
             average_forces=self._ph_real.average_forces,  # eV/ang
-            static_stress_tensor=self._ph_real.static_stress_tensor,  # eV/supercell
-            average_stress_tensor=self._ph_real.average_stress_tensor,  # eV/supercell
+            static_stress_tensor=self._ph_real.static_stress_tensor,  # eV/unitcell
+            average_stress_tensor=self._ph_real.average_stress_tensor,  # eV/unitcell
         )
         return data
 

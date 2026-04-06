@@ -39,6 +39,7 @@ For each volume, SSCHA calculations at multiple temperatures can be carried out 
 ```
 For more details, see [SSCHA calculations](calc_sscha.md).
 
+
 ### 4. (Optional) Calculate Electronic Free Energy from DFT
 
 > **Note**: Only available for VASP.
@@ -57,6 +58,7 @@ When estimating free energies and other finite-temperature properties from `vasp
 ```
 See also [Utilities](../utils.md).
 
+
 ### 5. (Optional) Thermodynamic Integration with MD Calculations at Various Volumes and Temperatures
 
 To evaluate thermodynamic properties beyond SSCHA calculations, thermodynamic integration based on molecular dynamics (MD) simulations is useful.
@@ -67,24 +69,39 @@ Thermodynamic integration at a single volume and temperature can be performed us
 > pypolymlp-md --ti --poscar POSCAR --pot polymlp.yaml --supercell_size 3 3 3 --temp 300 --n_eq 5000 --n_steps 20000 --n_samples 15 --fc2 ./sscha/300/fc2.hdf5
 
 # Calculate heat capacity from the variance of potential energy in MD simulation
-> pypolymlp-md --ti --heat_capacity --poscar POSCAR --pot polymlp.lammps --supercell_size 3 3 3 --temp 300 --n_eq 5 --n_steps 20 --n_samples 15 --fc2 ./sscha/300/fc2.hdf5
+> pypolymlp-md --ti --heat_capacity --poscar POSCAR --pot polymlp.lammps --supercell_size 3 3 3 --temp 300 --n_eq 5000 --n_steps 20000 --n_samples 15 --fc2 ./sscha/300/fc2.hdf5
 ```
-In this example, the converged states from SSCHA calculations are used as reference states.
+In this example, thermodynamic integration is performed using 15 molecular dynamics runs at 300 K.
+The numbers of equilibration steps and averaging steps are set to 5000 and 20000, respectively.
+The converged state from SSCHA calculations at 300 K is used as the reference state.
 A log file named `polymlp_ti.yaml` will be generated in the directory containing `fc2.hdf5`.
 
 For more details, see [Thermodynamic integration](calc_ti.md).
 
-### 6. Calculate thermodynamic properties from the precedent calculations.
+
+### 6. Calculate Thermodynamic Properties
+
+Once SSCHA calcutions (mandatory), electronic free energy calculations (optional), and thermodynamic integrations (optional) are performed at various volumes and temperatures, thermodynamic properties are calculated using the command `pypolymlp-thermodynamics`.
+The `--sscha` options can specify result files from SSCHA calculations as follows.
+
 ```shell
 > pypolymlp-thermodynamics --sscha ./runs/0*/sscha/*/sscha_results.yaml
+```
+A result file named `polymlp_thermodynamics.yaml` will be generated.
 
-# Include electronic contribution or thermodynamic integration contribution
+If including contributions from electronic free energy and thermodynamic integration beyond SSCHA, use the `--electron` and `--ti` options to specify the locations of their respective result files.
+
+```shell
 > pypolymlp-thermodynamics --sscha ./runs/*/sscha/*/sscha_results.yaml --electron electrons/*/electron.yaml --ti runs/*/sscha/*/polymlp_ti.yaml
 ```
 
-## Phase boundary estimation
-### Command line interface
-Files of thermodynamic properties for two phases is required for arguments of `--boundary` option.
+## Phase Boundary Estimation
+
+### Command-Line Interface
+
+If thermodynamic properties are computed for two phases, the phase boundary under pressure–temperature conditions can be determined using the `--boundary` option.
+Files containing thermodynamic properties for the two phases are required as inputs to the `--boundary` option.
+
 ```shell
 pypolymlp-thermodynamics --boundary polymlp_thermodynamics_total1.yaml polymlp_thermodynamics_total2.yaml
 ```
