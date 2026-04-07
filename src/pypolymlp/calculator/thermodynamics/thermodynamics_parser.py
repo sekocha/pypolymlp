@@ -41,7 +41,10 @@ def load_sscha_yamls(filenames: tuple[str]) -> list[GridPointData]:
         if res.converge and not res.imaginary:
             grid.static_potential = res.static_potential
             grid.free_energy = res.free_energy + res.static_potential
-            grid.harmonic_free_energy = res.harmonic_free_energy
+            try:
+                grid.harmonic_free_energy = res.harmonic_free_energy
+            except:
+                pass
             grid.entropy = res.entropy
         else:
             grid.free_energy = None
@@ -115,7 +118,7 @@ def _count_data_size(data: list, decimals: int = 3):
     count_temperatures = defaultdict(int)
     for d in data:
         vol = np.round(d.volume, decimals)
-        temp = np.round(d.temperature, decimals)
+        temp = int(np.rint(d.temperature))
         if d.free_energy is not None:
             count_volumes[vol] += 1
             count_temperatures[temp] += 1
@@ -124,19 +127,25 @@ def _count_data_size(data: list, decimals: int = 3):
 
 def _count_data_minimum_size(data_all: list, decimals: int = 3):
     """Count minimum number of data entries in multiple datasets."""
-    count_volumes, count_temperatures = dict(), dict()
+    num_data = 0
+    count_volumes, count_temperatures = None, None
     for data in data_all:
         if data is None:
             continue
         cvols, ctemps = _count_data_size(data, decimals=decimals)
-        for vol, n in cvols.items():
-            if vol in count_volumes and n > count_volumes[vol]:
-                continue
-            count_volumes[vol] = n
-        for temp, n in ctemps.items():
-            if vol in count_temperatures and n > count_temperatures[temp]:
-                continue
-            count_temperatures[temp] = n
+        if num_data == 0:
+            count_volumes = cvols
+            count_temperatures = ctemps
+        else:
+            for vol, n in cvols.items():
+                if vol not in count_volumes or n > count_volumes[vol]:
+                    continue
+                count_volumes[vol] = n
+            for temp, n in ctemps.items():
+                if temp not in count_temperatures or n > count_temperatures[temp]:
+                    continue
+                count_temperatures[temp] = n
+        num_data += 1
     return count_volumes, count_temperatures
 
 
@@ -204,7 +213,7 @@ def load_yamls(
         #     verbose=verbose,
         # )
 
-    data_all = [data_sscha, data_sscha, data_electron, data_ti]
+    data_all = [data_sscha, data_electron, data_ti]
 
     volumes, temps = _get_common_grid(data_all, decimals=decimals, n_require=n_require)
     grid_sscha = _get_grid_data(data_sscha, volumes, temps, decimals=decimals)

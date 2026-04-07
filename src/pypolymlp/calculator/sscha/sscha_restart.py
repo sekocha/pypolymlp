@@ -52,11 +52,19 @@ class Restart:
         properties = yaml_data["properties"]
         self._sscha_status = yaml_data["status"]
         self._sscha_logs = yaml_data["logs"]
+        if "harmonic_free_energy" in properties:
+            harmonic_free_energy = properties["harmonic_free_energy"]
+        else:
+            harmonic_free_energy = None
+        if "anharmonic_free_energy" in properties:
+            anharmonic_free_energy = properties["anharmonic_free_energy"]
+        else:
+            anharmonic_free_energy = None
         self._sscha_data = SSCHAData(
             temperature=self._sscha_params["temperature"],
             static_potential=properties["static_potential"],  # kJ/mol
-            harmonic_free_energy=properties["harmonic_free_energy"],  # kJ/mol
-            anharmonic_free_energy=properties["anharmonic_free_energy"],  # kJ/mol
+            harmonic_free_energy=harmonic_free_energy,  # kJ/mol
+            anharmonic_free_energy=anharmonic_free_energy,  # kJ/mol
             free_energy=properties["free_energy"],  # kJ/mol
             entropy=properties["entropy"],  # J/K/mol
             harmonic_heat_capacity=properties["harmonic_heat_capacity"],  # J/K/mol
