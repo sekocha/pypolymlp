@@ -1,129 +1,13 @@
 """Utility functions for initializing thermodynamic property calculation."""
 
-from typing import Literal, Optional
+from typing import Optional
 
 import numpy as np
-import yaml
 
 from pypolymlp.calculator.compute_phonon import calculate_harmonic_properties_from_fc2
 from pypolymlp.calculator.sscha.sscha_restart import Restart
-from pypolymlp.calculator.thermodynamics.init_ti import load_ti_yaml
 from pypolymlp.calculator.thermodynamics.thermodynamics_utils import GridPointData
 from pypolymlp.core.units import EVtoJmol, EVtoKJmol
-
-
-def load_sscha_yamls(filenames: tuple[str]) -> list[GridPointData]:
-    """Load sscha_results.yaml files."""
-    data = []
-    for yamlfile in filenames:
-        res = Restart(yamlfile, unit="eV/atom")
-        n_atom = len(res.unitcell.elements)
-        volume = np.round(res.volume, decimals=12) / n_atom
-        temp = np.round(res.temperature, decimals=3)
-        grid = GridPointData(
-            volume=volume,
-            temperature=temp,
-            data_type="sscha",
-            restart=res,
-            path_yaml=yamlfile,
-            path_fc2="/".join(yamlfile.split("/")[:-1]) + "/fc2.hdf5",
-        )
-
-        if res.converge and not res.imaginary:
-            grid.free_energy = res.free_energy + res.static_potential
-            grid.entropy = res.entropy
-            grid.static_potential = res.static_potential
-            # grid.harmonic_free_energy = res.free_energy - res.anharmonic_free_energy
-            grid.harmonic_free_energy = res.harmonic_free_energy
-        else:
-            grid.free_energy = None
-            grid.entropy = None
-        data.append(grid)
-
-    return data
-
-
-def load_electron_yamls(
-    filenames: tuple[str],
-    data_type: Literal["electron", "electron_ph"] = "electron",
-) -> list[GridPointData]:
-    """Load electron.yaml files."""
-    data = []
-    for yamlfile in filenames:
-        yml = yaml.safe_load(open(yamlfile))
-        n_atom = len(yml["structure"]["elements"])
-        volume = float(yml["structure"]["volume"]) / n_atom
-        for prop in yml["properties"]:
-            temp = float(prop["temperature"])
-            free_e = float(prop["free_energy"]) / n_atom
-            entropy = float(prop["entropy"]) / n_atom
-            # cv = float(prop["specific_heat"]) * EVtoJmol / n_atom
-            grid = GridPointData(
-                volume=volume,
-                temperature=temp,
-                data_type=data_type,
-                free_energy=free_e,
-                entropy=entropy,
-                path_yaml=yamlfile,
-            )
-            data.append(grid)
-    return data
-
-
-def load_ti_yamls(
-    filenames: tuple[str],
-    extrapolation: bool = False,
-    verbose: bool = False,
-) -> list[GridPointData]:
-    """Load polymlp_ti.yaml files."""
-    data = []
-    for yamlfile in filenames:
-        res = load_ti_yaml(
-            yamlfile,
-            extrapolation=extrapolation,
-            verbose=verbose,
-        )
-        if res is not None:
-            temp, volume, free_e, energy, entropy, cv = res
-            grid = GridPointData(
-                volume=volume,
-                temperature=temp,
-                data_type="ti",
-                free_energy=free_e,
-                entropy=entropy,
-                energy=energy,
-                heat_capacity=cv,
-                path_yaml=yamlfile,
-            )
-            data.append(grid)
-        else:
-            if verbose:
-                message = " was eliminated (failed or in a melting state)."
-                print(yamlfile + message, flush=True)
-    return data
-
-
-def compare_conditions(array1: np.ndarray, array2: np.ndarray):
-    """Return indices with the same values in two arrays"""
-    ids1, ids2 = [], []
-    for i1, val in enumerate(array1):
-        i2 = np.where(np.isclose(array2, val))[0]
-        if len(i2) > 0:
-            ids1.append(i1)
-            ids2.append(i2[0])
-    return np.array(ids1), np.array(ids2)
-
-
-def get_common_grid(
-    volumes1: np.ndarray,
-    volumes2: np.ndarray,
-    temperatures1: np.ndarray,
-    temperatures2: np.ndarray,
-):
-    """Return common grid for two conditions."""
-    ids1_v, ids2_v = compare_conditions(volumes1, volumes2)
-    ids1_t, ids2_t = compare_conditions(temperatures1, temperatures2)
-    return (ids1_v, ids1_t), (ids2_v, ids2_t)
 
 
 def _calculate_harmonic_properties(

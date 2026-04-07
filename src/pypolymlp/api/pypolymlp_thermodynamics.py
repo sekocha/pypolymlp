@@ -1,14 +1,16 @@
 """API class for thermodynamics calculations."""
 
-import copy
 from typing import Optional
 
 import numpy as np
 
 from pypolymlp.calculator.thermodynamics.api_thermodynamics import Thermodynamics
-from pypolymlp.calculator.thermodynamics.io_utils import load_thermodynamics_yaml
+from pypolymlp.calculator.thermodynamics.thermodynamics_io import (
+    load_thermodynamics_yaml,
+)
 from pypolymlp.calculator.thermodynamics.thermodynamics_parser import load_yamls
-from pypolymlp.calculator.thermodynamics.thermodynamics_utils import sum_matrix_data
+
+# from pypolymlp.calculator.thermodynamics.thermodynamics_utils import sum_matrix_data
 from pypolymlp.calculator.thermodynamics.transition import (
     compute_phase_boundary,
     find_transition,
@@ -47,27 +49,26 @@ class PypolymlpThermodynamics:
         if self._verbose:
             np.set_printoptions(legacy="1.21")
 
-    def _get_sum_properties(
-        self,
-        thermodynamics1: Thermodynamics,
-        thermodynamics2: Thermodynamics,
-    ):
-        """Calculate sums of properties."""
-        f1 = thermodynamics1.get_data(attr="free_energy")
-        s1 = thermodynamics1.get_data(attr="entropy")
-        f2 = thermodynamics2.get_data(attr="free_energy")
-        s2 = thermodynamics2.get_data(attr="entropy")
-        f_sum = sum_matrix_data(f1, f2)
-        s_sum = sum_matrix_data(s1, s2)
-        new = copy.deepcopy(thermodynamics1)
-        new.replace_free_energies(f_sum)
-        new.replace_entropies(s_sum)
-        return new
+    #    def _get_sum_properties(
+    #        self,
+    #        thermodynamics1: Thermodynamics,
+    #        thermodynamics2: Thermodynamics,
+    #    ):
+    #        """Calculate sums of properties."""
+    #        f1 = thermodynamics1.get_data(attr="free_energy")
+    #        s1 = thermodynamics1.get_data(attr="entropy")
+    #        f2 = thermodynamics2.get_data(attr="free_energy")
+    #        s2 = thermodynamics2.get_data(attr="entropy")
+    #        f_sum = sum_matrix_data(f1, f2)
+    #        s_sum = sum_matrix_data(s1, s2)
+    #        new = copy.deepcopy(thermodynamics1)
+    #        new.replace_free_energies(f_sum)
+    #        new.replace_entropies(s_sum)
+    #        return new
 
     def _run_standard(self, thermo: Thermodynamics, assign_fit_values: bool = False):
         """Use a standard fitting procedure."""
         thermo.fit_free_energy_volume()
-        thermo.eval_free_energy_equilibrium()
 
         # thermo.fit_entropy_volume(max_order=4, assign_fit_values=assign_fit_values)
         thermo.fit_entropy_volume(max_order=4)
@@ -89,41 +90,41 @@ class PypolymlpThermodynamics:
             print("# ----- SSCHA contribution ----- #", flush=True)
         self._sscha = self._run_standard(self._sscha, assign_fit_values=True)
 
-        if self._electron is not None:
-            if self._verbose:
-                print("# ----- Electronic contribution ----- #", flush=True)
-            self._sscha_el = self._get_sum_properties(self._sscha, self._electron)
-            self._sscha_el = self._run_standard(self._sscha_el, assign_fit_values=True)
-
-        if self._ti is not None:
-            if self._verbose:
-                print("# --- Thermodynamic integration contribution --- #", flush=True)
-
-            self._total = self._get_sum_properties(self._ti, self._ti_ref)
-            if self._electron is not None:
-                self._total = self._get_sum_properties(self._electron, self._total)
-
-            self._total = self._run_standard(self._total, assign_fit_values=True)
-
-            if self._electron_ph is not None:
-                if self._verbose:
-                    print(
-                        "# --- Include adiabatic ele-ph contribution --- #", flush=True
-                    )
-                self._total_ele_ph = self._get_sum_properties(self._ti, self._ti_ref)
-                self._total_ele_ph = self._get_sum_properties(
-                    self._total_ele_ph,
-                    self._electron,
-                )
-                self._total_ele_ph = self._get_sum_properties(
-                    self._total_ele_ph,
-                    self._electron_ph,
-                )
-                self._total_ele_ph = self._run_standard(
-                    self._total_ele_ph,
-                    assign_fit_values=True,
-                )
-
+        #        if self._electron is not None:
+        #            if self._verbose:
+        #                print("# ----- Electronic contribution ----- #", flush=True)
+        #            self._sscha_el = self._get_sum_properties(self._sscha, self._electron)
+        #            self._sscha_el = self._run_standard(self._sscha_el, assign_fit_values=True)
+        #
+        #        if self._ti is not None:
+        #            if self._verbose:
+        #                print("# --- Thermodynamic integration contribution --- #", flush=True)
+        #
+        #            self._total = self._get_sum_properties(self._ti, self._ti_ref)
+        #            if self._electron is not None:
+        #                self._total = self._get_sum_properties(self._electron, self._total)
+        #
+        #            self._total = self._run_standard(self._total, assign_fit_values=True)
+        #
+        #            if self._electron_ph is not None:
+        #                if self._verbose:
+        #                    print(
+        #                        "# --- Include adiabatic ele-ph contribution --- #", flush=True
+        #                    )
+        #                self._total_ele_ph = self._get_sum_properties(self._ti, self._ti_ref)
+        #                self._total_ele_ph = self._get_sum_properties(
+        #                    self._total_ele_ph,
+        #                    self._electron,
+        #                )
+        #                self._total_ele_ph = self._get_sum_properties(
+        #                    self._total_ele_ph,
+        #                    self._electron_ph,
+        #                )
+        #                self._total_ele_ph = self._run_standard(
+        #                    self._total_ele_ph,
+        #                    assign_fit_values=True,
+        #                )
+        #
         return self
 
     def save_sscha(self, filename: str = "polymlp_thermodynamics_sscha.yaml"):

@@ -169,13 +169,6 @@ class Polyfit:
         y_rmse = rmse(y, y_pred)
         return (coeffs, y_pred, y_rmse), X
 
-    def print_predictions(self, x: np.ndarray, y: np.ndarray, decimals: int = 3):
-        """Print prediction and observation values."""
-        pred = self.eval(x)
-        for x1, f1, f2 in zip(x, y, pred):
-            print(np.round(x1, decimals), f1, f2, flush=True)
-        return
-
     @property
     def coeffs(self):
         """Return regression coefficients."""

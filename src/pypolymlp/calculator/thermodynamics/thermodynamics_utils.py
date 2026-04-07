@@ -55,48 +55,38 @@ class FittedModels:
         cv = self.cv_fits[itemp] if self.cv_fits is not None else None
         return fv, sv, cv
 
-    def eval_eq_free_energy(self, itemp: int):
-        """Evaluate entropy at equilibrium volume."""
+    def _check_errors(self, itemp: int):
+        """Check volume and bulk modulus values."""
         if self.fv_fits is None:
             raise RuntimeError("F-V functions not found.")
         if self.fv_fits[itemp] is None:
-            return None
-
+            return True
         if self.fv_fits[itemp].v0 > self.volume_threshold:
-            return None
+            return True
         if self.fv_fits[itemp].b0 / EVAngstromToGPa < self.bm_threshold:
-            return None
-
-        return self.fv_fits[itemp].eval(self.fv_fits[itemp].v0)
+            return True
+        return False
 
     def eval_eq_entropy(self, itemp: int):
         """Evaluate entropy at equilibrium volume."""
-        if self.fv_fits is None:
-            raise RuntimeError("F-V functions not found.")
-        if self.sv_fits is None:
-            raise RuntimeError("S-V functions not found.")
-        if self.fv_fits[itemp] is None or self.sv_fits[itemp] is None:
+        if self._check_errors(itemp):
             return None
 
-        if self.fv_fits[itemp].v0 > self.volume_threshold:
-            return None
-        if self.fv_fits[itemp].b0 / EVAngstromToGPa < self.bm_threshold:
+        if self.sv_fits is None:
+            raise RuntimeError("S-V functions not found.")
+        if self.sv_fits[itemp] is None:
             return None
 
         return self.sv_fits[itemp].eval(self.fv_fits[itemp].v0)
 
     def eval_eq_cv(self, itemp: int):
         """Evaluate Cv contribution at equilibrium volume."""
-        if self.fv_fits is None:
-            raise RuntimeError("F-V functions not found.")
-        if self.cv_fits is None:
-            raise RuntimeError("Cv-V functions not found.")
-        if self.fv_fits[itemp] is None or self.cv_fits[itemp] is None:
+        if self._check_errors(itemp):
             return None
 
-        if self.fv_fits[itemp].v0 > self.volume_threshold:
-            return None
-        if self.fv_fits[itemp].b0 / EVAngstromToGPa < self.bm_threshold:
+        if self.cv_fits is None:
+            raise RuntimeError("Cv-V functions not found.")
+        if self.cv_fits[itemp] is None:
             return None
 
         return self.cv_fits[itemp].eval(self.fv_fits[itemp].v0)
@@ -178,11 +168,11 @@ class FittedModels:
         return np.array([fv.eval_gibbs_pressure(volumes) for fv in self.fv_fits])
 
 
-def sum_matrix_data(matrix1: np.ndarray, matrix2: np.ndarray):
-    """Calculate sum of two matrices."""
-    if matrix1.shape != matrix2.shape:
-        raise RuntimeError("Inconsistent matrix shape.")
-    res = np.full(matrix1.shape, None)
-    mask = np.equal(matrix1, None) | np.equal(matrix2, None)
-    res[~mask] = matrix1[~mask] + matrix2[~mask]
-    return res
+# def sum_matrix_data(matrix1: np.ndarray, matrix2: np.ndarray):
+#     """Calculate sum of two matrices."""
+#     if matrix1.shape != matrix2.shape:
+#         raise RuntimeError("Inconsistent matrix shape.")
+#     res = np.full(matrix1.shape, None)
+#     mask = np.equal(matrix1, None) | np.equal(matrix2, None)
+#     res[~mask] = matrix1[~mask] + matrix2[~mask]
+#     return res

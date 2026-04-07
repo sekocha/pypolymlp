@@ -19,7 +19,6 @@ from pypolymlp.calculator.thermodynamics.thermodynamics_grid import (
 #     calculate_reference,
 # )
 
-# from pypolymlp.calculator.thermodynamics.io_utils import save_thermodynamics_yaml
 # from pypolymlp.calculator.thermodynamics.thermodynamics_utils import (
 #     sum_matrix_data,
 # )
