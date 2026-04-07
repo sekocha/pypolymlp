@@ -38,17 +38,18 @@ class Polyfit:
             val += self._coeffs[0] * np.power(x, 0.5)
         return val
 
-    def eval_derivative(self, x: float):
+    def eval_derivative(self, x: np.ndarray):
         """Evaluate derivative of fitted polynomial at given x."""
+        x = np.array(x)
         coeffs = self._coeffs[1:] if self._add_sqrt else self._coeffs
         deriv = coeffs * np.arange(len(coeffs) - 1, -1, -1, dtype=int)
         deriv = deriv[:-1]
         val = np.polyval(deriv, x)
         if self._add_sqrt:
-            ids = np.where(np.abs(x) < 1e-10)[0]
-            x[ids] = 1.0
+            match = np.abs(x) < 1e-10
+            x[match] = 1.0
             val += 0.5 * self._coeffs[0] * np.power(x, -0.5)
-            x[ids] = 0.0
+            x[match] = 0.0
         return val
 
     def fit(
@@ -167,6 +168,13 @@ class Polyfit:
         y_pred = X @ coeffs
         y_rmse = rmse(y, y_pred)
         return (coeffs, y_pred, y_rmse), X
+
+    def print_predictions(self, x: np.ndarray, y: np.ndarray, decimals: int = 3):
+        """Print prediction and observation values."""
+        pred = self.eval(x)
+        for x1, f1, f2 in zip(x, y, pred):
+            print(np.round(x1, decimals), f1, f2, flush=True)
+        return
 
     @property
     def coeffs(self):

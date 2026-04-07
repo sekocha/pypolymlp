@@ -5,10 +5,8 @@ from typing import Optional
 
 import numpy as np
 
+from pypolymlp.calculator.thermodynamics.api_thermodynamics import Thermodynamics
 from pypolymlp.calculator.thermodynamics.io_utils import load_thermodynamics_yaml
-from pypolymlp.calculator.thermodynamics.thermodynamics import (  # load_yamls,
-    Thermodynamics,
-)
 from pypolymlp.calculator.thermodynamics.thermodynamics_parser import load_yamls
 from pypolymlp.calculator.thermodynamics.thermodynamics_utils import sum_matrix_data
 from pypolymlp.calculator.thermodynamics.transition import (
@@ -34,20 +32,18 @@ class PypolymlpThermodynamics:
         if yamls_electron is None and yamls_electron_phonon is not None:
             raise RuntimeError("Specify path of electron.yaml files")
 
-        (self._sscha, self._electron, self._ti, self._ti_ref, self._electron_ph) = (
-            load_yamls(
-                yamls_sscha=yamls_sscha,
-                yamls_electron=yamls_electron,
-                yamls_ti=yamls_ti,
-                yamls_electron_phonon=yamls_electron_phonon,
-                extrapolation_ti=extrapolation_ti,
-                verbose=verbose,
-            )
+        grid_sscha, grid_electron, grid_ti = load_yamls(
+            yamls_sscha=yamls_sscha,
+            yamls_electron=yamls_electron,
+            yamls_ti=yamls_ti,
+            # yamls_electron_phonon=yamls_electron_phonon,
+            # extrapolation_ti=extrapolation_ti,
         )
-        self._verbose = verbose
-        self._sscha_el = None
-        self._total = None
+        self._sscha = Thermodynamics(grid_sscha, verbose=verbose)
+        self._electron = None
+        self._ti = None
 
+        self._verbose = verbose
         if self._verbose:
             np.set_printoptions(legacy="1.21")
 
@@ -71,7 +67,10 @@ class PypolymlpThermodynamics:
     def _run_standard(self, thermo: Thermodynamics, assign_fit_values: bool = False):
         """Use a standard fitting procedure."""
         thermo.fit_free_energy_volume()
-        thermo.fit_entropy_volume(max_order=4, assign_fit_values=assign_fit_values)
+        thermo.eval_free_energy_equilibrium()
+
+        # thermo.fit_entropy_volume(max_order=4, assign_fit_values=assign_fit_values)
+        thermo.fit_entropy_volume(max_order=4)
         thermo.eval_entropy_equilibrium()
 
         thermo.fit_entropy_temperature(max_order=4)

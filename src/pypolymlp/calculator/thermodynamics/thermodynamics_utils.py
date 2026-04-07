@@ -1,77 +1,15 @@
 """Utility functions for calculating thermodynamic properties."""
 
 from dataclasses import dataclass
-from typing import Literal, Optional
+from typing import Optional
 
 import numpy as np
 from phonopy.physical_units import get_physical_units
 
-from pypolymlp.calculator.sscha.sscha_restart import Restart
 from pypolymlp.core.units import EVtoJmol
 
 units = get_physical_units()
 EVAngstromToGPa = units.EVAngstromToGPa
-
-
-@dataclass
-class GridPointData:
-    """Dataclass for properties on a volume-temperature grid point."""
-
-    volume: float
-    temperature: float
-    data_type: Optional[Literal["sscha", "ti", "electron"]] = None
-    restart: Optional[Restart] = None
-
-    free_energy: Optional[float] = None
-    entropy: Optional[float] = None
-    heat_capacity: Optional[float] = None
-
-    energy: Optional[float] = None
-    static_potential: Optional[float] = None
-    harmonic_free_energy: Optional[float] = None
-
-    reference_free_energy: Optional[float] = None
-    reference_entropy: Optional[float] = None
-    reference_heat_capacity: Optional[float] = None
-
-    path_yaml: Optional[float] = None
-    path_fc2: Optional[float] = None
-
-    def copy_reference(self, grid_point):
-        """Copy reference data."""
-        if grid_point is not None:
-            self.reference_free_energy = grid_point.reference_free_energy
-            self.reference_entropy = grid_point.reference_entropy
-            self.reference_heat_capacity = grid_point.reference_heat_capacity
-        return self
-
-    def reset_reference(self):
-        """Reset reference data."""
-        self.reference_free_energy = None
-        self.reference_entropy = None
-        self.reference_heat_capacity = None
-        return self
-
-    def add(self, gp_data):
-        """Add data."""
-        if self.free_energy is not None and gp_data.free_energy is not None:
-            self.free_energy += gp_data.free_energy
-        else:
-            self.free_energy = None
-        if self.entropy is not None and gp_data.entropy is not None:
-            self.entropy += gp_data.entropy
-        else:
-            self.entropy = None
-        if self.heat_capacity is not None and gp_data.heat_capacity is not None:
-            self.heat_capacity += gp_data.heat_capacity
-        else:
-            self.heat_capacity = None
-        if self.restart is None:
-            self.restart = gp_data.restart
-        if self.path_fc2 is None:
-            self.path_fc2 = gp_data.path_fc2
-        self.reset_reference()
-        return self
 
 
 @dataclass
@@ -116,6 +54,20 @@ class FittedModels:
         sv = self.sv_fits[itemp] if self.sv_fits is not None else None
         cv = self.cv_fits[itemp] if self.cv_fits is not None else None
         return fv, sv, cv
+
+    def eval_eq_free_energy(self, itemp: int):
+        """Evaluate entropy at equilibrium volume."""
+        if self.fv_fits is None:
+            raise RuntimeError("F-V functions not found.")
+        if self.fv_fits[itemp] is None:
+            return None
+
+        if self.fv_fits[itemp].v0 > self.volume_threshold:
+            return None
+        if self.fv_fits[itemp].b0 / EVAngstromToGPa < self.bm_threshold:
+            return None
+
+        return self.fv_fits[itemp].eval(self.fv_fits[itemp].v0)
 
     def eval_eq_entropy(self, itemp: int):
         """Evaluate entropy at equilibrium volume."""

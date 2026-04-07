@@ -2,7 +2,6 @@
 
 # import copy
 from collections import defaultdict
-from dataclasses import dataclass
 from typing import Literal, Optional
 
 import numpy as np
@@ -10,6 +9,10 @@ import yaml
 
 # from pypolymlp.calculator.thermodynamics.init_ti import load_ti_yaml
 from pypolymlp.calculator.sscha.sscha_restart import Restart
+from pypolymlp.calculator.thermodynamics.thermodynamics_grid import (
+    GridPointData,
+    GridVT,
+)
 
 # from pypolymlp.calculator.thermodynamics.init import (
 #     calculate_harmonic_free_energies,
@@ -20,80 +23,6 @@ from pypolymlp.calculator.sscha.sscha_restart import Restart
 # from pypolymlp.calculator.thermodynamics.thermodynamics_utils import (
 #     sum_matrix_data,
 # )
-
-
-@dataclass
-class GridPointData:
-    """Dataclass for properties on a volume-temperature grid point."""
-
-    volume: float
-    temperature: float
-    data_type: Optional[Literal["sscha", "ti", "electron"]] = None
-    restart: Optional[Restart] = None
-
-    free_energy: Optional[float] = None
-    entropy: Optional[float] = None
-    heat_capacity: Optional[float] = None
-
-    energy: Optional[float] = None
-    static_potential: Optional[float] = None
-    harmonic_free_energy: Optional[float] = None
-
-    reference_free_energy: Optional[float] = None
-    reference_entropy: Optional[float] = None
-    reference_heat_capacity: Optional[float] = None
-
-    path_yaml: Optional[float] = None
-    path_fc2: Optional[float] = None
-
-    def copy_reference(self, grid_point):
-        """Copy reference data."""
-        if grid_point is not None:
-            self.reference_free_energy = grid_point.reference_free_energy
-            self.reference_entropy = grid_point.reference_entropy
-            self.reference_heat_capacity = grid_point.reference_heat_capacity
-        return self
-
-    def reset_reference(self):
-        """Reset reference data."""
-        self.reference_free_energy = None
-        self.reference_entropy = None
-        self.reference_heat_capacity = None
-        return self
-
-    def add(self, gp_data):
-        """Add data."""
-        if self.free_energy is not None and gp_data.free_energy is not None:
-            self.free_energy += gp_data.free_energy
-        else:
-            self.free_energy = None
-        if self.entropy is not None and gp_data.entropy is not None:
-            self.entropy += gp_data.entropy
-        else:
-            self.entropy = None
-        if self.heat_capacity is not None and gp_data.heat_capacity is not None:
-            self.heat_capacity += gp_data.heat_capacity
-        else:
-            self.heat_capacity = None
-        if self.restart is None:
-            self.restart = gp_data.restart
-        if self.path_fc2 is None:
-            self.path_fc2 = gp_data.path_fc2
-        self.reset_reference()
-        return self
-
-
-@dataclass
-class GridVT:
-    """Dataclass for 2D array of GridPointData."""
-
-    volumes: np.ndarray
-    temperatures: np.ndarray
-    data: np.ndarray[GridPointData]
-
-
-#    def get_property(self, attr: str):
-#        """Return property array."""
 
 
 def load_sscha_yamls(filenames: tuple[str]) -> list[GridPointData]:
@@ -119,7 +48,6 @@ def load_sscha_yamls(filenames: tuple[str]) -> list[GridPointData]:
             grid.free_energy = None
             grid.entropy = None
         data.append(grid)
-
     return data
 
 
@@ -286,6 +214,9 @@ def load_yamls(
     print(grid_sscha)
     print(grid_electron)
     print(grid_ti)
+    print(grid_sscha.volumes)
+
+    return (grid_sscha, grid_electron, grid_ti)
 
 
 #    # Set reference
