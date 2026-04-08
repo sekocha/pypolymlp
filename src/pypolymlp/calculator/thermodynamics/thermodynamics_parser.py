@@ -219,11 +219,6 @@ def load_yamls(
     grid_sscha = _get_grid_data(data_sscha, volumes, temps, decimals=decimals)
     grid_electron = _get_grid_data(data_electron, volumes, temps, decimals=decimals)
     grid_ti = _get_grid_data(data_ti, volumes, temps, decimals=decimals)
-    print(grid_sscha)
-    print(grid_electron)
-    print(grid_ti)
-    print(grid_sscha.volumes)
-
     return (grid_sscha, grid_electron, grid_ti)
 
 

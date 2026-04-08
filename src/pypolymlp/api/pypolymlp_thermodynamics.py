@@ -5,12 +5,11 @@ from typing import Optional
 import numpy as np
 
 from pypolymlp.calculator.thermodynamics.api_thermodynamics import Thermodynamics
+from pypolymlp.calculator.thermodynamics.thermodynamics_grid import sum_grids
 from pypolymlp.calculator.thermodynamics.thermodynamics_io import (
     load_thermodynamics_yaml,
 )
 from pypolymlp.calculator.thermodynamics.thermodynamics_parser import load_yamls
-
-# from pypolymlp.calculator.thermodynamics.thermodynamics_utils import sum_matrix_data
 from pypolymlp.calculator.thermodynamics.transition import (
     compute_phase_boundary,
     find_transition,
@@ -42,59 +41,43 @@ class PypolymlpThermodynamics:
             # extrapolation_ti=extrapolation_ti,
         )
         self._sscha = Thermodynamics(grid_sscha, verbose=verbose)
-        self._electron = None
+        self._sscha_el = None
         self._ti = None
+
+        if grid_electron is not None:
+            grid_sscha_el = sum_grids([grid_sscha, grid_electron])
+            self._sscha_el = Thermodynamics(grid_sscha_el, verbose=verbose)
+
+        if grid_ti is not None:
+            pass
 
         self._verbose = verbose
         if self._verbose:
             np.set_printoptions(legacy="1.21")
 
-    #    def _get_sum_properties(
-    #        self,
-    #        thermodynamics1: Thermodynamics,
-    #        thermodynamics2: Thermodynamics,
-    #    ):
-    #        """Calculate sums of properties."""
-    #        f1 = thermodynamics1.get_data(attr="free_energy")
-    #        s1 = thermodynamics1.get_data(attr="entropy")
-    #        f2 = thermodynamics2.get_data(attr="free_energy")
-    #        s2 = thermodynamics2.get_data(attr="entropy")
-    #        f_sum = sum_matrix_data(f1, f2)
-    #        s_sum = sum_matrix_data(s1, s2)
-    #        new = copy.deepcopy(thermodynamics1)
-    #        new.replace_free_energies(f_sum)
-    #        new.replace_entropies(s_sum)
-    #        return new
-
-    def _run_standard(self, thermo: Thermodynamics, assign_fit_values: bool = False):
+    def _run_standard(self, thermo: Thermodynamics):
         """Use a standard fitting procedure."""
         thermo.fit_free_energy_volume()
-
-        # thermo.fit_entropy_volume(max_order=4, assign_fit_values=assign_fit_values)
         thermo.fit_entropy_volume(max_order=4)
         thermo.eval_entropy_equilibrium()
+        thermo.eval_cp_numerical()
 
-        thermo.fit_entropy_temperature(max_order=4)
-        try:
-            thermo.fit_cv_volume(max_order=4)
-            thermo.eval_cp_equilibrium()
-        except:
-            if self._verbose:
-                print("ERROR: Volume-Cv fit failed.", flush=True)
-            return None
+        # thermo.fit_entropy_temperature(max_order=4)
+        # thermo.fit_cv_volume(max_order=4)
+        # thermo.eval_cp_equilibrium()
         return thermo
 
     def run(self):
         """Fit results and evalulate equilibrium properties."""
         if self._verbose:
-            print("# ----- SSCHA contribution ----- #", flush=True)
-        self._sscha = self._run_standard(self._sscha, assign_fit_values=True)
+            print("# ------- SSCHA ------- #", flush=True)
+        self._sscha = self._run_standard(self._sscha)
 
-        #        if self._electron is not None:
-        #            if self._verbose:
-        #                print("# ----- Electronic contribution ----- #", flush=True)
-        #            self._sscha_el = self._get_sum_properties(self._sscha, self._electron)
-        #            self._sscha_el = self._run_standard(self._sscha_el, assign_fit_values=True)
+        if self._sscha_el is not None:
+            if self._verbose:
+                print("# ----- SSCHA + Electron ----- #", flush=True)
+            self._sscha_el = self._run_standard(self._sscha_el)
+
         #
         #        if self._ti is not None:
         #            if self._verbose:

@@ -1,5 +1,7 @@
 """Classes for data on volume-temperature grid."""
 
+import copy
+import itertools
 from dataclasses import dataclass
 from typing import Literal, Optional
 
@@ -50,25 +52,28 @@ class GridPointData:
         self.ref_heat_capacity = None
         return self
 
+    def _add_single(self, gp_data, attr: str):
+        """Add value to single attribute."""
+        if getattr(self, attr) is not None and getattr(gp_data, attr) is not None:
+            return getattr(self, attr) + getattr(gp_data, attr)
+        return None
+
     def add(self, gp_data):
         """Add data."""
-        if self.free_energy is not None and gp_data.free_energy is not None:
-            self.free_energy += gp_data.free_energy
-        else:
-            self.free_energy = None
-        if self.entropy is not None and gp_data.entropy is not None:
-            self.entropy += gp_data.entropy
-        else:
-            self.entropy = None
-        if self.heat_capacity is not None and gp_data.heat_capacity is not None:
-            self.heat_capacity += gp_data.heat_capacity
-        else:
-            self.heat_capacity = None
-        if self.restart is None:
-            self.restart = gp_data.restart
-        if self.path_fc2 is None:
-            self.path_fc2 = gp_data.path_fc2
+        attrs = [
+            "free_energy",
+            "entropy",
+            "heat_capacity",
+            "energy",
+            "static_potential",
+            "harmonic_free_energy",
+        ]
+        for attr in attrs:
+            setattr(self, attr, self._add_single(gp_data, attr))
+
         self.reset_reference()
+        self.restart = self.restart or gp_data.restart
+        self.path_fc2 = self.path_fc2 or gp_data.path_fc2
         return self
 
     def exist_attr(self, attr: str = "free_energy"):
@@ -197,7 +202,8 @@ class GridVT:
                 polyfit.fit(
                     max_order=max_order,
                     intercept=False,
-                    add_sqrt=True,
+                    # add_sqrt=True,
+                    add_sqrt=False,
                     weight_begin=False,
                     weight_end=True,
                 )
@@ -205,7 +211,8 @@ class GridVT:
                 polyfit.fit(
                     max_order=max_order,
                     intercept=True,
-                    add_sqrt=True,
+                    # add_sqrt=True,
+                    add_sqrt=False,
                     weight_begin=True,
                     weight_end=True,
                 )
@@ -245,3 +252,25 @@ class GridVT:
             else:
                 print("  -", x1print, f"{f1: .3f}", f"{f2: .3f}", flush=True)
         return self
+
+
+def sum_grids(grid_list: list):
+    """Calculate sum of grid data."""
+    if len(grid_list) == 1:
+        return grid_list[0]
+
+    for grid in grid_list[1:]:
+        if not np.allclose(grid.volumes, grid_list[0].volumes):
+            raise RuntimeError("Volumes not consistent.")
+        if not np.allclose(grid.temperatures, grid_list[0].temperatures):
+            raise RuntimeError("Temperatures not consistent.")
+
+    grid_sum = copy.deepcopy(grid_list[0])
+    for grid in grid_list[1:]:
+        for i, j in itertools.product(
+            range(grid_sum.data.shape[0]),
+            range(grid_sum.data.shape[1]),
+        ):
+            grid_sum.data[i, j].add(grid.data[i, j])
+
+    return grid_sum

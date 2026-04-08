@@ -166,13 +166,3 @@ class FittedModels:
         if self.fv_fits is None:
             raise RuntimeError("F-V functions not found.")
         return np.array([fv.eval_gibbs_pressure(volumes) for fv in self.fv_fits])
-
-
-# def sum_matrix_data(matrix1: np.ndarray, matrix2: np.ndarray):
-#     """Calculate sum of two matrices."""
-#     if matrix1.shape != matrix2.shape:
-#         raise RuntimeError("Inconsistent matrix shape.")
-#     res = np.full(matrix1.shape, None)
-#     mask = np.equal(matrix1, None) | np.equal(matrix2, None)
-#     res[~mask] = matrix1[~mask] + matrix2[~mask]
-#     return res
