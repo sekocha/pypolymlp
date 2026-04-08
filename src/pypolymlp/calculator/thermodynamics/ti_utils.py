@@ -1,5 +1,6 @@
 """Functions for extracting properties from thermodynamic integration."""
 
+from dataclasses import dataclass
 from typing import Literal
 
 import numpy as np
@@ -100,11 +101,49 @@ def _get_energy(log_active: list, extrapolation: bool = False, verbose: bool = F
     return energy - energy0
 
 
-def load_ti_yaml(
-    filename: str = "polymlp_ti.yaml",
+def _get_properties(
+    log_active: list,
+    temperature: float,
+    n_atom: int,
     extrapolation: bool = False,
     verbose: bool = False,
 ):
+    """Get free energy, energy, and entropy."""
+    free_energy = _get_free_energy(
+        log_active,
+        extrapolation=extrapolation,
+        method="simpson",
+        verbose=verbose,
+    )
+    free_energy /= n_atom
+
+    energy = _get_energy(
+        log_active,
+        extrapolation=extrapolation,
+        verbose=verbose,
+    )
+    energy /= n_atom
+
+    if np.isclose(temperature, 0.0):
+        entropy = 0.0
+    else:
+        entropy = (energy - free_energy) / temperature
+
+    return (free_energy, energy, entropy)
+
+
+@dataclass
+class DataTI:
+    """Dataclass for thermodynamic integration at each condition."""
+
+    volume: float
+    temperature: float
+    free_energy: float
+    energy: float
+    entropy: float
+
+
+def load_ti_yaml(filename: str = "polymlp_ti.yaml", verbose: bool = False):
     """Load results of thermodynamic integration.
 
     Extrapolated properties to alpha = 1.0 are returned.
@@ -127,45 +166,57 @@ def load_ti_yaml(
     e_ref = float(log[0]["energy"])
     energy = (float(log[-1]["energy"]) - e_ref) / n_atom
     if not _is_success(energy):
+        if verbose:
+            print(filename, "was eliminated (failed).", flush=True)
         return None
 
     disps = [float(l["displacement"]) for l in log]
     is_melt = _check_melting(disps)
-    if np.count_nonzero(is_melt) > len(is_melt) / 5:
-        return None
-    if is_melt[-1] and is_melt[-2] and is_melt[-3]:
-        return None
+    if np.any(is_melt):
+        if np.count_nonzero(is_melt) > len(is_melt) / 5:
+            if verbose:
+                print(filename, "was eliminated (melting).", flush=True)
+            return None
+        if np.all(is_melt[-3:], True):
+            if verbose:
+                print(filename, "was eliminated (melting).", flush=True)
+            return None
+
+        if verbose:
+            print("In", filename, flush=True)
+            for l1, bool1 in zip(log, is_melt):
+                if bool1:
+                    print(" alpha:", l1["alpha"], "was eliminated.", flush=True)
 
     log_active = [l1 for l1, bool1 in zip(log, is_melt) if not bool1]
-    free_energy = _get_free_energy(
+
+    free_energy, energy, entropy = _get_properties(
         log_active,
-        extrapolation=extrapolation,
-        method="simpson",
+        temperature,
+        n_atom,
+        extrapolation=True,
         verbose=verbose,
     )
-    free_energy /= n_atom
-    energy = _get_energy(
+    properties_ext = DataTI(
+        volume=volume,
+        temperature=temperature,
+        free_energy=free_energy,
+        energy=energy,
+        entropy=entropy,
+    )
+
+    free_energy, energy, entropy = _get_properties(
         log_active,
-        extrapolation=extrapolation,
+        temperature,
+        n_atom,
+        extrapolation=False,
         verbose=verbose,
     )
-    energy /= n_atom
-
-    if np.isclose(temperature, 0.0):
-        entropy = 0.0
-    else:
-        entropy = (energy - free_energy) / temperature
-
-    if data["properties"]["delta_heat_capacity"] == "None":
-        heat_capacity = None
-    else:
-        heat_capacity = float(data["properties"]["delta_heat_capacity"])
-
-    if verbose:
-        if np.any(is_melt):
-            print("In", filename, flush=True)
-        for l1, bool1 in zip(log, is_melt):
-            if bool1:
-                print(" alpha:", l1["alpha"], "was eliminated.", flush=True)
-
-    return (temperature, volume, free_energy, energy, entropy, heat_capacity)
+    properties = DataTI(
+        volume=volume,
+        temperature=temperature,
+        free_energy=free_energy,
+        energy=energy,
+        entropy=entropy,
+    )
+    return (properties, properties_ext)

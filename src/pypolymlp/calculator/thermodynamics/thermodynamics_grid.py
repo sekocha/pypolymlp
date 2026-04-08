@@ -54,6 +54,8 @@ class GridPointData:
 
     def _add_single(self, gp_data, attr: str):
         """Add value to single attribute."""
+        if gp_data is None:
+            return None
         if getattr(self, attr) is not None and getattr(gp_data, attr) is not None:
             return getattr(self, attr) + getattr(gp_data, attr)
         return None
@@ -202,8 +204,7 @@ class GridVT:
                 polyfit.fit(
                     max_order=max_order,
                     intercept=False,
-                    # add_sqrt=True,
-                    add_sqrt=False,
+                    add_sqrt=True,
                     weight_begin=False,
                     weight_end=True,
                 )
@@ -211,8 +212,7 @@ class GridVT:
                 polyfit.fit(
                     max_order=max_order,
                     intercept=True,
-                    # add_sqrt=True,
-                    add_sqrt=False,
+                    add_sqrt=True,
                     weight_begin=True,
                     weight_end=True,
                 )

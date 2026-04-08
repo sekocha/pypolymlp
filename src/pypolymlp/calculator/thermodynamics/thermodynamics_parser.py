@@ -7,12 +7,12 @@ from typing import Literal, Optional
 import numpy as np
 import yaml
 
-# from pypolymlp.calculator.thermodynamics.init_ti import load_ti_yaml
 from pypolymlp.calculator.sscha.sscha_restart import Restart
 from pypolymlp.calculator.thermodynamics.thermodynamics_grid import (
     GridPointData,
     GridVT,
 )
+from pypolymlp.calculator.thermodynamics.ti_utils import load_ti_yaml
 
 # from pypolymlp.calculator.thermodynamics.init import (
 #     calculate_harmonic_free_energies,
@@ -79,37 +79,34 @@ def load_electron_yamls(
     return data
 
 
-# def load_ti_yamls(
-#     filenames: tuple[str],
-#     extrapolation: bool = False,
-#     verbose: bool = False,
-# ) -> list[GridPointData]:
-#     """Load polymlp_ti.yaml files."""
-#     data = []
-#     for yamlfile in filenames:
-#         res = load_ti_yaml(
-#             yamlfile,
-#             extrapolation=extrapolation,
-#             verbose=verbose,
-#         )
-#         if res is not None:
-#             temp, volume, free_e, energy, entropy, cv = res
-#             grid = GridPointData(
-#                 volume=volume,
-#                 temperature=temp,
-#                 data_type="ti",
-#                 free_energy=free_e,
-#                 entropy=entropy,
-#                 energy=energy,
-#                 heat_capacity=cv,
-#                 path_yaml=yamlfile,
-#             )
-#             data.append(grid)
-#         else:
-#             if verbose:
-#                 message = " was eliminated (failed or in a melting state)."
-#                 print(yamlfile + message, flush=True)
-#     return data
+def load_ti_yamls(filenames: tuple[str], verbose: bool = False) -> list[GridPointData]:
+    """Load polymlp_ti.yaml files."""
+    data, data_ext = [], []
+    for yamlfile in filenames:
+        res = load_ti_yaml(yamlfile, verbose=verbose)
+        if res is None:
+            continue
+
+        data_ti, data_ti_ext = res
+        grid = GridPointData(
+            volume=data_ti.volume,
+            temperature=data_ti.temperature,
+            free_energy=data_ti.free_energy,
+            entropy=data_ti.entropy,
+            energy=data_ti.energy,
+            path_yaml=yamlfile,
+        )
+        data.append(grid)
+        grid = GridPointData(
+            volume=data_ti_ext.volume,
+            temperature=data_ti_ext.temperature,
+            free_energy=data_ti_ext.free_energy,
+            entropy=data_ti_ext.entropy,
+            energy=data_ti_ext.energy,
+            path_yaml=yamlfile,
+        )
+        data_ext.append(grid)
+    return data, data_ext
 
 
 def _count_data_size(data: list, decimals: int = 3):
@@ -133,19 +130,41 @@ def _count_data_minimum_size(data_all: list, decimals: int = 3):
         if data is None:
             continue
         cvols, ctemps = _count_data_size(data, decimals=decimals)
+        print(cvols)
+        print(ctemps)
         if num_data == 0:
             count_volumes = cvols
             count_temperatures = ctemps
         else:
-            for vol, n in cvols.items():
-                if vol not in count_volumes or n > count_volumes[vol]:
+            for vol, n1 in count_volumes.items():
+                if vol not in cvols:
+                    del count_volumes[vol]
+                    # count_volumes[vol] = None
                     continue
-                count_volumes[vol] = n
-            for temp, n in ctemps.items():
-                if temp not in count_temperatures or n > count_temperatures[temp]:
+                elif n1 < cvols[vol]:
                     continue
-                count_temperatures[temp] = n
+                count_volumes[vol] = cvols[vol]
+
+            for temp, n1 in count_temperatures.items():
+                if temp not in ctemps:
+                    count_temperatures[temp] = None
+                    # del count_temperatures[temp]
+                    continue
+                elif n1 < ctemps[temp]:
+                    continue
+                count_temperatures[temp] = ctemps[temp]
         num_data += 1
+
+    keys = list(count_volumes.keys())
+    for k in keys:
+        if count_volumes[k] is None:
+            del count_volumes[k]
+
+    keys = list(count_temperatures.keys())
+    for k in keys:
+        if count_temperatures[k] is None:
+            del count_temperatures[k]
+    print(count_temperatures)
     return count_volumes, count_temperatures
 
 
@@ -207,15 +226,12 @@ def load_yamls(
     if yamls_ti is not None:
         if verbose:
             print("Loading ti.yaml files.", flush=True)
-        # data3 = load_ti_yamls(
-        #     yamls_ti,
-        #     extrapolation=extrapolation_ti,
-        #     verbose=verbose,
-        # )
+        data_ti, data_ti_ext = load_ti_yamls(yamls_ti, verbose=verbose)
 
     data_all = [data_sscha, data_electron, data_ti]
-
     volumes, temps = _get_common_grid(data_all, decimals=decimals, n_require=n_require)
+    print(volumes, temps)
+
     grid_sscha = _get_grid_data(data_sscha, volumes, temps, decimals=decimals)
     grid_electron = _get_grid_data(data_electron, volumes, temps, decimals=decimals)
     grid_ti = _get_grid_data(data_ti, volumes, temps, decimals=decimals)
