@@ -41,15 +41,16 @@ class PypolymlpThermodynamics:
             # extrapolation_ti=extrapolation_ti,
         )
         self._sscha = Thermodynamics(grid_sscha, verbose=verbose)
+
         self._sscha_el = None
-        self._ti = None
-
         if grid_electron is not None:
-            grid_sscha_el = sum_grids([grid_sscha, grid_electron])
-            self._sscha_el = Thermodynamics(grid_sscha_el, verbose=verbose)
+            grid = sum_grids([grid_sscha, grid_electron])
+            self._sscha_el = Thermodynamics(grid, verbose=verbose)
 
+        self._sscha_el_ti = None
         if grid_ti is not None:
-            pass
+            grid = sum_grids([grid_sscha, grid_electron, grid_ti])
+            self._sscha_el_ti = Thermodynamics(grid, verbose=verbose)
 
         self._verbose = verbose
         if self._verbose:
@@ -57,7 +58,7 @@ class PypolymlpThermodynamics:
 
     def _run_standard(self, thermo: Thermodynamics):
         """Use a standard fitting procedure."""
-        thermo.fit_free_energy_volume()
+        thermo.fit_free_energy_volume(max_order=4)
         thermo.fit_entropy_volume(max_order=4)
         thermo.eval_entropy_equilibrium()
         thermo.eval_cp_numerical()
@@ -78,35 +79,20 @@ class PypolymlpThermodynamics:
                 print("# ----- SSCHA + Electron ----- #", flush=True)
             self._sscha_el = self._run_standard(self._sscha_el)
 
-        #
-        #        if self._ti is not None:
-        #            if self._verbose:
-        #                print("# --- Thermodynamic integration contribution --- #", flush=True)
-        #
-        #            self._total = self._get_sum_properties(self._ti, self._ti_ref)
-        #            if self._electron is not None:
-        #                self._total = self._get_sum_properties(self._electron, self._total)
-        #
-        #            self._total = self._run_standard(self._total, assign_fit_values=True)
-        #
-        #            if self._electron_ph is not None:
-        #                if self._verbose:
-        #                    print(
-        #                        "# --- Include adiabatic ele-ph contribution --- #", flush=True
-        #                    )
-        #                self._total_ele_ph = self._get_sum_properties(self._ti, self._ti_ref)
-        #                self._total_ele_ph = self._get_sum_properties(
-        #                    self._total_ele_ph,
-        #                    self._electron,
-        #                )
-        #                self._total_ele_ph = self._get_sum_properties(
-        #                    self._total_ele_ph,
-        #                    self._electron_ph,
-        #                )
-        #                self._total_ele_ph = self._run_standard(
-        #                    self._total_ele_ph,
-        #                    assign_fit_values=True,
-        #                )
+        if self._sscha_el_ti is not None:
+            if self._verbose:
+                print("# --- SSCHA + TI + Electron --- #", flush=True)
+            self._sscha_el_ti = self._run_standard(self._sscha_el_ti)
+
+        # if self._electron_ph is not None:
+        #     if self._verbose:
+        #         print(
+        #             "# --- Include adiabatic ele-ph contribution --- #", flush=True
+        #         )
+        #     self._total_ele_ph = self._run_standard(
+        #         self._total_ele_ph,
+        #         assign_fit_values=True,
+        #     )
         #
         return self
 
