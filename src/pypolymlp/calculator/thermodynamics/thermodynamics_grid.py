@@ -152,7 +152,7 @@ class GridVT:
                 print("- temperature:", temp, flush=True)
                 header = "  model_rmse: "
                 print(header, polyfit.best_model, f"{polyfit.error: .3e}", flush=True)
-                self.print_predictions(polyfit, volumes, properties)
+                # self.print_predictions(polyfit, volumes, properties)
         return sv_fits
 
     def fit_cv_volume(self, max_order: int = 4):

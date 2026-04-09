@@ -74,11 +74,13 @@ class PypolymlpThermodynamics:
             grid = sum_grids([grid_ref, grid_electron, grid_ti_ext])
             self._sscha_el_ti_ext = Thermodynamics(grid, verbose=verbose)
 
-        self._ti_el_ph = None
+        self._ti_el_ph, self._ti_el_ph_ext = None, None
         if grid is not None:
             if grid_ti is not None:
                 grid = sum_grids([grid_ref, grid_electron, grid_ti, grid_ele_ph])
                 self._ti_el_ph = Thermodynamics(grid, verbose=verbose)
+                grid = sum_grids([grid_ref, grid_electron, grid_ti_ext, grid_ele_ph])
+                self._ti_el_ph_ext = Thermodynamics(grid, verbose=verbose)
             else:
                 pass
 
@@ -147,16 +149,20 @@ class PypolymlpThermodynamics:
             self._sscha_el_ti = self._run_standard(self._sscha_el_ti)
 
             if self._verbose:
-                print(
-                    "# --- SSCHA + TI + Electron (Using extrapolation) --- #",
-                    flush=True,
-                )
+                print("# --- SSCHA + TI (Extrapolation) + Electron --- #", flush=True)
             self._sscha_el_ti_ext = self._run_standard(self._sscha_el_ti_ext)
 
         if self._ti_el_ph is not None:
             if self._verbose:
                 print("# --- SSCHA + TI + Electron + ele-ph --- #", flush=True)
             self._ti_el_ph = self._run_standard(self._ti_el_ph)
+
+            if self._verbose:
+                print(
+                    "# --- SSCHA + TI (Extraplation) + Electron + ele-ph --- #",
+                    flush=True,
+                )
+            self._ti_el_ph_ext = self._run_standard(self._ti_el_ph_ext)
 
         return self
 
@@ -186,6 +192,8 @@ class PypolymlpThermodynamics:
         """Save fitted SSCHA + electronic + TI + ele-ph properties."""
         if self._ti_el_ph is not None:
             self._ti_el_ph.save_thermodynamics_yaml(filename=filename)
+            filename1 = filename.replace(".yaml", "_ext.yaml")
+            self._ti_el_ph_ext.save_thermodynamics_yaml(filename=filename1)
         return self
 
 
