@@ -41,12 +41,21 @@ class PypolymlpThermodynamics:
         if self._verbose:
             np.set_printoptions(legacy="1.21")
 
-        grid_sscha, grid_electron, grid_ti, grid_ti_ext = load_yamls(
+        (
+            grid_sscha,
+            grid_electron,
+            grid_ti,
+            grid_ti_ext,
+            grid_ele_ph,
+            grid_ref,
+        ) = self._load_grid_data(
             yamls_sscha=yamls_sscha,
             yamls_electron=yamls_electron,
             yamls_ti=yamls_ti,
-            # yamls_electron_phonon=yamls_electron_phonon,
+            yamls_electron_phonon=yamls_electron_phonon,
+            ref_fc2=ref_fc2,
         )
+
         self._sscha = Thermodynamics(grid_sscha, verbose=verbose)
 
         self._sscha_el = None
@@ -56,10 +65,6 @@ class PypolymlpThermodynamics:
 
         self._sscha_el_ti, self._sscha_el_ti_ext = None, None
         if grid_ti is not None:
-            grid_ti = set_reference_paths(grid_ti, ref_fc2)
-            grid_ti = copy_reference_states(grid_sscha, grid_ti)
-            grid_ref = calculate_reference_grid(grid_ti)
-
             grid = sum_grids([grid_ref, grid_electron, grid_ti])
             self._sscha_el_ti = Thermodynamics(grid, verbose=verbose)
 
@@ -68,6 +73,44 @@ class PypolymlpThermodynamics:
 
             grid = sum_grids([grid_ref, grid_electron, grid_ti_ext])
             self._sscha_el_ti_ext = Thermodynamics(grid, verbose=verbose)
+
+        self._ti_el_ph = None
+        if grid is not None:
+            if grid_ti is not None:
+                grid = sum_grids([grid_ref, grid_electron, grid_ti, grid_ele_ph])
+                self._ti_el_ph = Thermodynamics(grid, verbose=verbose)
+            else:
+                pass
+
+    def _load_grid_data(
+        self,
+        yamls_sscha: list[str],
+        yamls_electron: Optional[list[str]] = None,
+        yamls_ti: Optional[list[str]] = None,
+        yamls_electron_phonon: Optional[list[str]] = None,
+        ref_fc2: Optional[list] = None,
+    ):
+        """Load yaml files and set grid data."""
+        grid_sscha, grid_electron, grid_ti, grid_ti_ext, grid_ele_ph = load_yamls(
+            yamls_sscha=yamls_sscha,
+            yamls_electron=yamls_electron,
+            yamls_ti=yamls_ti,
+            yamls_electron_phonon=yamls_electron_phonon,
+        )
+        grid_ref = None
+        if grid_ti is not None:
+            grid_ti = set_reference_paths(grid_ti, ref_fc2)
+            grid_ti = copy_reference_states(grid_sscha, grid_ti)
+            grid_ref = calculate_reference_grid(grid_ti)
+
+        return (
+            grid_sscha,
+            grid_electron,
+            grid_ti,
+            grid_ti_ext,
+            grid_ele_ph,
+            grid_ref,
+        )
 
     def _run_standard(self, thermo: Thermodynamics):
         """Use a standard fitting procedure."""
@@ -110,16 +153,11 @@ class PypolymlpThermodynamics:
                 )
             self._sscha_el_ti_ext = self._run_standard(self._sscha_el_ti_ext)
 
-        # if self._electron_ph is not None:
-        #     if self._verbose:
-        #         print(
-        #             "# --- Include adiabatic ele-ph contribution --- #", flush=True
-        #         )
-        #     self._total_ele_ph = self._run_standard(
-        #         self._total_ele_ph,
-        #         assign_fit_values=True,
-        #     )
-        #
+        if self._ti_el_ph is not None:
+            if self._verbose:
+                print("# --- SSCHA + TI + Electron + ele-ph --- #", flush=True)
+            self._ti_el_ph = self._run_standard(self._ti_el_ph)
+
         return self
 
     def save_sscha(self, filename: str = "polymlp_thermodynamics_sscha.yaml"):
@@ -146,8 +184,8 @@ class PypolymlpThermodynamics:
         self, filename: str = "polymlp_thermodynamics_total_ele_ph.yaml"
     ):
         """Save fitted SSCHA + electronic + TI + ele-ph properties."""
-        if self._total_ele_ph is not None:
-            self._total_ele_ph.save_thermodynamics_yaml(filename=filename)
+        if self._ti_el_ph is not None:
+            self._ti_el_ph.save_thermodynamics_yaml(filename=filename)
         return self
 
 

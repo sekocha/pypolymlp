@@ -187,20 +187,19 @@ def load_yamls(
             print("Loading ti.yaml files.", flush=True)
         data_ti, data_ti_ext = load_ti_yamls(yamls_ti, verbose=verbose)
 
-    data_all = [data_sscha, data_electron, data_ti]
+    data_ele_ph = None
+    if yamls_electron_phonon is not None:
+        if verbose:
+            print("Loading electron.yaml files for ele-ph.", flush=True)
+        data_ele_ph = load_electron_yamls(yamls_electron_phonon)
+
+    data_all = [data_sscha, data_electron, data_ti, data_ele_ph]
     volumes, temps = _get_common_grid(data_all, decimals=decimals, n_require=n_require)
 
     grid_sscha = _get_grid_data(data_sscha, volumes, temps, decimals=decimals)
     grid_electron = _get_grid_data(data_electron, volumes, temps, decimals=decimals)
     grid_ti = _get_grid_data(data_ti, volumes, temps, decimals=decimals)
     grid_ti_ext = _get_grid_data(data_ti_ext, volumes, temps, decimals=decimals)
-    return (grid_sscha, grid_electron, grid_ti, grid_ti_ext)
+    grid_ele_ph = _get_grid_data(data_ele_ph, volumes, temps, decimals=decimals)
 
-
-#    if yamls_electron_phonon is not None:
-#        if verbose:
-#            print("Loading electron.yaml (sscha) files.", flush=True)
-#        data4 = load_electron_yamls(yamls_electron_phonon, data_type="electron_ph")
-#        electron_ph = Thermodynamics(
-#            data=data4, data_type="electron_ph", verbose=verbose
-#        )
+    return (grid_sscha, grid_electron, grid_ti, grid_ti_ext, grid_ele_ph)
