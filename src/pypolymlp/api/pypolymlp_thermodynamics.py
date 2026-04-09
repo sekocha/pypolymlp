@@ -41,7 +41,7 @@ class PypolymlpThermodynamics:
         if self._verbose:
             np.set_printoptions(legacy="1.21")
 
-        grid_sscha, grid_electron, grid_ti = load_yamls(
+        grid_sscha, grid_electron, grid_ti, grid_ti_ext = load_yamls(
             yamls_sscha=yamls_sscha,
             yamls_electron=yamls_electron,
             yamls_ti=yamls_ti,
@@ -54,7 +54,7 @@ class PypolymlpThermodynamics:
             grid = sum_grids([grid_sscha, grid_electron])
             self._sscha_el = Thermodynamics(grid, verbose=verbose)
 
-        self._sscha_el_ti = None
+        self._sscha_el_ti, self._sscha_el_ti_ext = None, None
         if grid_ti is not None:
             grid_ti = set_reference_paths(grid_ti, ref_fc2)
             grid_ti = copy_reference_states(grid_sscha, grid_ti)
@@ -63,16 +63,28 @@ class PypolymlpThermodynamics:
             grid = sum_grids([grid_ref, grid_electron, grid_ti])
             self._sscha_el_ti = Thermodynamics(grid, verbose=verbose)
 
+            grid_ti_ext = set_reference_paths(grid_ti_ext, ref_fc2)
+            grid_ti_ext = copy_reference_states(grid_sscha, grid_ti_ext)
+
+            grid = sum_grids([grid_ref, grid_electron, grid_ti_ext])
+            self._sscha_el_ti_ext = Thermodynamics(grid, verbose=verbose)
+
     def _run_standard(self, thermo: Thermodynamics):
         """Use a standard fitting procedure."""
         thermo.fit_free_energy_volume()
         thermo.fit_entropy_volume(max_order=6)
         thermo.eval_entropy_equilibrium()
         thermo.eval_cp_numerical()
+        return thermo
 
-        # thermo.fit_entropy_temperature(max_order=4)
-        # thermo.fit_cv_volume(max_order=4)
-        # thermo.eval_cp_equilibrium()
+    def _run_deprecated(self, thermo: Thermodynamics):
+        """Use a standard but deprecated fitting procedure."""
+        thermo.fit_free_energy_volume()
+        thermo.fit_entropy_volume(max_order=6)
+        thermo.eval_entropy_equilibrium()
+        thermo.fit_entropy_temperature(max_order=4)
+        thermo.fit_cv_volume(max_order=4)
+        thermo.eval_cp_equilibrium()
         return thermo
 
     def run(self):
@@ -90,6 +102,13 @@ class PypolymlpThermodynamics:
             if self._verbose:
                 print("# --- SSCHA + TI + Electron --- #", flush=True)
             self._sscha_el_ti = self._run_standard(self._sscha_el_ti)
+
+            if self._verbose:
+                print(
+                    "# --- SSCHA + TI + Electron (Using extrapolation) --- #",
+                    flush=True,
+                )
+            self._sscha_el_ti_ext = self._run_standard(self._sscha_el_ti_ext)
 
         # if self._electron_ph is not None:
         #     if self._verbose:
@@ -115,10 +134,12 @@ class PypolymlpThermodynamics:
             self._sscha_el.save_thermodynamics_yaml(filename=filename)
         return self
 
-    def save_total(self, filename: str = "polymlp_thermodynamics_total.yaml"):
+    def save_total(self, filename: str = "polymlp_thermodynamics_sscha_ele_ti.yaml"):
         """Save fitted SSCHA + electronic + TI properties."""
         if self._sscha_el_ti is not None:
             self._sscha_el_ti.save_thermodynamics_yaml(filename=filename)
+            filename1 = filename.replace(".yaml", "_ext.yaml")
+            self._sscha_el_ti_ext.save_thermodynamics_yaml(filename=filename1)
         return self
 
     def save_total_ele_ph(

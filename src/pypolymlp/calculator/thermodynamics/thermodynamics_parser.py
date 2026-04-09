@@ -1,8 +1,7 @@
 """Functions for loading thermodynamic properties."""
 
-# import copy
 from collections import defaultdict
-from typing import Literal, Optional
+from typing import Optional
 
 import numpy as np
 import yaml
@@ -14,15 +13,6 @@ from pypolymlp.calculator.thermodynamics.thermodynamics_grid import (
 )
 from pypolymlp.calculator.thermodynamics.ti_utils import load_ti_yaml
 
-# from pypolymlp.calculator.thermodynamics.init import (
-#     calculate_harmonic_free_energies,
-#     calculate_reference,
-# )
-
-# from pypolymlp.calculator.thermodynamics.thermodynamics_utils import (
-#     sum_matrix_data,
-# )
-
 
 def load_sscha_yamls(filenames: tuple[str]) -> list[GridPointData]:
     """Load sscha_results.yaml files."""
@@ -31,9 +21,8 @@ def load_sscha_yamls(filenames: tuple[str]) -> list[GridPointData]:
         fc2file = "/".join(yamlfile.split("/")[:-1]) + "/fc2.hdf5"
         res = Restart(yamlfile, unit="eV/atom")
         grid = GridPointData(
-            volume=np.round(res.volume, decimals=12),
-            temperature=np.round(res.temperature, decimals=3),
-            data_type="sscha",
+            volume=res.volume,
+            temperature=res.temperature,
             restart=res,
             path_yaml=yamlfile,
             path_fc2=fc2file,
@@ -41,22 +30,12 @@ def load_sscha_yamls(filenames: tuple[str]) -> list[GridPointData]:
         if res.converge and not res.imaginary:
             grid.static_potential = res.static_potential
             grid.free_energy = res.free_energy + res.static_potential
-            try:
-                grid.harmonic_free_energy = res.harmonic_free_energy
-            except:
-                pass
             grid.entropy = res.entropy
-        else:
-            grid.free_energy = None
-            grid.entropy = None
         data.append(grid)
     return data
 
 
-def load_electron_yamls(
-    filenames: tuple[str],
-    data_type: Literal["electron", "electron_ph"] = "electron",
-) -> list[GridPointData]:
+def load_electron_yamls(filenames: tuple[str]) -> list[GridPointData]:
     """Load electron.yaml files."""
     data = []
     for yamlfile in filenames:
@@ -70,7 +49,6 @@ def load_electron_yamls(
             grid = GridPointData(
                 volume=volume,
                 temperature=temp,
-                data_type=data_type,
                 free_energy=free_e,
                 entropy=entropy,
                 path_yaml=yamlfile,
@@ -129,37 +107,24 @@ def _count_data_minimum_size(data_all: list, decimals: int = 3):
     for data in data_all:
         if data is None:
             continue
+
         cvols, ctemps = _count_data_size(data, decimals=decimals)
         if num_data == 0:
             count_volumes = cvols
             count_temperatures = ctemps
         else:
-            for vol, n1 in count_volumes.items():
+            for vol in list(count_volumes.keys()):
                 if vol not in cvols:
-                    count_volumes[vol] = None
-                    continue
-                elif n1 < cvols[vol]:
-                    continue
-                count_volumes[vol] = cvols[vol]
+                    del count_volumes[vol]
+                elif count_volumes[vol] > cvols[vol]:
+                    count_volumes[vol] = cvols[vol]
 
-            for temp, n1 in count_temperatures.items():
+            for temp in list(count_temperatures.keys()):
                 if temp not in ctemps:
-                    count_temperatures[temp] = None
-                    continue
-                elif n1 < ctemps[temp]:
-                    continue
-                count_temperatures[temp] = ctemps[temp]
+                    del count_temperatures[temp]
+                elif count_temperatures[temp] > ctemps[temp]:
+                    count_temperatures[temp] = ctemps[temp]
         num_data += 1
-
-    keys = list(count_volumes.keys())
-    for k in keys:
-        if count_volumes[k] is None:
-            del count_volumes[k]
-
-    keys = list(count_temperatures.keys())
-    for k in keys:
-        if count_temperatures[k] is None:
-            del count_temperatures[k]
     return count_volumes, count_temperatures
 
 
@@ -201,7 +166,6 @@ def load_yamls(
     yamls_electron: Optional[list[str]] = None,
     yamls_ti: Optional[list[str]] = None,
     yamls_electron_phonon: Optional[list[str]] = None,
-    extrapolation_ti: bool = False,
     decimals: int = 3,
     n_require: int = 10,
     verbose: bool = False,
@@ -217,7 +181,7 @@ def load_yamls(
             print("Loading electron.yaml files.", flush=True)
         data_electron = load_electron_yamls(yamls_electron)
 
-    data_ti = None
+    data_ti, data_ti_ext = None, None
     if yamls_ti is not None:
         if verbose:
             print("Loading ti.yaml files.", flush=True)
@@ -229,7 +193,8 @@ def load_yamls(
     grid_sscha = _get_grid_data(data_sscha, volumes, temps, decimals=decimals)
     grid_electron = _get_grid_data(data_electron, volumes, temps, decimals=decimals)
     grid_ti = _get_grid_data(data_ti, volumes, temps, decimals=decimals)
-    return (grid_sscha, grid_electron, grid_ti)
+    grid_ti_ext = _get_grid_data(data_ti_ext, volumes, temps, decimals=decimals)
+    return (grid_sscha, grid_electron, grid_ti, grid_ti_ext)
 
 
 #    if yamls_electron_phonon is not None:
@@ -239,13 +204,3 @@ def load_yamls(
 #        electron_ph = Thermodynamics(
 #            data=data4, data_type="electron_ph", verbose=verbose
 #        )
-#        sscha, electron_ph = _adjust_to_common_grid(sscha, electron_ph)
-#        if yamls_electron is not None:
-#            electron, electron_ph = _adjust_to_common_grid(electron, electron_ph)
-#        if yamls_ti is not None:
-#            ti, electron_ph = _adjust_to_common_grid(ti, electron_ph)
-#            ti_ref, electron_ph = _adjust_to_common_grid(ti_ref, electron_ph)
-#    else:
-#        electron_ph = None
-#
-#    return sscha, electron, ti, ti_ref, electron_ph

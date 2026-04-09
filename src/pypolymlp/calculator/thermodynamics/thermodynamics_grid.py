@@ -3,7 +3,7 @@
 import copy
 import itertools
 from dataclasses import dataclass
-from typing import Literal, Optional
+from typing import Optional
 
 import numpy as np
 
@@ -19,7 +19,6 @@ class GridPointData:
 
     volume: float
     temperature: float
-    data_type: Optional[Literal["sscha", "ti", "electron"]] = None
     restart: Optional[Restart] = None
 
     free_energy: Optional[float] = None
@@ -28,29 +27,9 @@ class GridPointData:
 
     energy: Optional[float] = None
     static_potential: Optional[float] = None
-    harmonic_free_energy: Optional[float] = None
-
-    ref_free_energy: Optional[float] = None
-    ref_entropy: Optional[float] = None
-    ref_heat_capacity: Optional[float] = None
 
     path_yaml: Optional[float] = None
     path_fc2: Optional[float] = None
-
-    def copy_reference(self, grid_point):
-        """Copy reference data."""
-        if grid_point is not None:
-            self.ref_free_energy = grid_point.ref_free_energy
-            self.ref_entropy = grid_point.ref_entropy
-            self.ref_heat_capacity = grid_point.ref_heat_capacity
-        return self
-
-    def reset_reference(self):
-        """Reset reference data."""
-        self.ref_free_energy = None
-        self.ref_entropy = None
-        self.ref_heat_capacity = None
-        return self
 
     def _add_single(self, gp_data, attr: str):
         """Add value to single attribute."""
@@ -68,12 +47,10 @@ class GridPointData:
             "heat_capacity",
             "energy",
             "static_potential",
-            "harmonic_free_energy",
         ]
         for attr in attrs:
             setattr(self, attr, self._add_single(gp_data, attr))
 
-        self.reset_reference()
         self.restart = self.restart or gp_data.restart
         self.path_fc2 = self.path_fc2 or gp_data.path_fc2
         return self
@@ -193,10 +170,10 @@ class GridVT:
         return cv_fits
 
     def fit_entropy_temperature(self, max_order: int = 4):
-        """Fit temperature-entropy data using polynomial."""
-        # for vol, temps, props in self.get_temperatures_properties("ref_entropy"):
-        #     print(props)
+        """Fit temperature-entropy data using polynomial.
 
+        Deprecated.
+        """
         st_fits = []
         data = self.get_temperatures_properties("entropy")
         for ivol, (vol, temps, properties, indices) in enumerate(data):
@@ -227,11 +204,6 @@ class GridVT:
             cv = temps * polyfit.eval_derivative(temps) * EVtoJmol
             for itemp, val in zip(indices, cv):
                 self._data[ivol, itemp].heat_capacity = val
-
-            # # Cv calculations
-            # points = self._data
-            # for p, val in zip(points, cv):
-            #     p.heat_capacity = p.reference_heat_capacity + val * EVtoJmol
 
         return st_fits
 
