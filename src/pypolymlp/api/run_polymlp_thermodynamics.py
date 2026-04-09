@@ -51,6 +51,14 @@ def run():
         type=str,
         help="Find phase boundary.",
     )
+    parser.add_argument(
+        "--ref_fc2",
+        nargs="*",
+        type=str,
+        default=None,
+        help="FC2 files used for reference harmonic state.",
+    )
+
     args = parser.parse_args()
 
     np.set_printoptions(legacy="1.21")
@@ -77,6 +85,7 @@ def run():
             args.electron,
             args.ti,
             args.electron_phonon,
+            ref_fc2=args.ref_fc2,
             verbose=True,
         )
         thermo.run()

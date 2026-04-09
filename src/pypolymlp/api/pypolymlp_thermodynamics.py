@@ -10,6 +10,11 @@ from pypolymlp.calculator.thermodynamics.thermodynamics_io import (
     load_thermodynamics_yaml,
 )
 from pypolymlp.calculator.thermodynamics.thermodynamics_parser import load_yamls
+from pypolymlp.calculator.thermodynamics.thermodynamics_ref import (
+    calculate_reference_grid,
+    copy_reference_states,
+    set_reference_paths,
+)
 from pypolymlp.calculator.thermodynamics.transition import (
     compute_phase_boundary,
     find_transition,
@@ -25,11 +30,16 @@ class PypolymlpThermodynamics:
         yamls_electron: Optional[list[str]] = None,
         yamls_ti: Optional[list[str]] = None,
         yamls_electron_phonon: Optional[list[str]] = None,
+        ref_fc2: Optional[list] = None,
         verbose: bool = False,
     ):
         """Init method."""
         if yamls_electron is None and yamls_electron_phonon is not None:
             raise RuntimeError("Specify path of electron.yaml files")
+
+        self._verbose = verbose
+        if self._verbose:
+            np.set_printoptions(legacy="1.21")
 
         grid_sscha, grid_electron, grid_ti = load_yamls(
             yamls_sscha=yamls_sscha,
@@ -46,15 +56,12 @@ class PypolymlpThermodynamics:
 
         self._sscha_el_ti = None
         if grid_ti is not None:
-            # TODO: Calculate reference grid.
-            # grid = sum_grids([grid_ref, grid_electron, grid_ti])
+            grid_ti = set_reference_paths(grid_ti, ref_fc2)
+            grid_ti = copy_reference_states(grid_sscha, grid_ti)
+            grid_ref = calculate_reference_grid(grid_ti)
 
-            grid = sum_grids([grid_sscha, grid_electron, grid_ti])
+            grid = sum_grids([grid_ref, grid_electron, grid_ti])
             self._sscha_el_ti = Thermodynamics(grid, verbose=verbose)
-
-        self._verbose = verbose
-        if self._verbose:
-            np.set_printoptions(legacy="1.21")
 
     def _run_standard(self, thermo: Thermodynamics):
         """Use a standard fitting procedure."""

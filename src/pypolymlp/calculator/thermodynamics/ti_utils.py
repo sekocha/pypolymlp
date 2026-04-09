@@ -177,7 +177,7 @@ def load_ti_yaml(filename: str = "polymlp_ti.yaml", verbose: bool = False):
             if verbose:
                 print(filename, "was eliminated (melting).", flush=True)
             return None
-        if np.all(is_melt[-3:], True):
+        if np.all(is_melt[-3:]):
             if verbose:
                 print(filename, "was eliminated (melting).", flush=True)
             return None

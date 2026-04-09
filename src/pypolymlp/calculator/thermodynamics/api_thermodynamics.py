@@ -83,7 +83,10 @@ class Thermodynamics:
         return self._eq_cp
 
     def fit_entropy_temperature(self, max_order: int = 4):
-        """Fit temperature-entropy data using polynomial."""
+        """Fit temperature-entropy data using polynomial.
+
+        Deprecated.
+        """
         if self._verbose:
             print("Temperature-Entropy fitting.", flush=True)
 
@@ -91,7 +94,10 @@ class Thermodynamics:
         return self
 
     def eval_cp_equilibrium(self):
-        """Evaluate Cp from S and Cv functions."""
+        """Evaluate Cp from S and Cv functions.
+
+        Deprecated.
+        """
         self._eq_cp = np.array(
             [self._models.eval_eq_cp(i) for i, _ in enumerate(self._temperatures)]
         )
@@ -182,32 +188,3 @@ class Thermodynamics:
     def fitted_models(self):
         """Return fitted models."""
         return self._models
-
-
-#     def calculate_reference(self):
-#         """Calculate reference properties."""
-#         if self._verbose:
-#             print("Calculate reference properties.", flush=True)
-#
-#         for g in self._grid:
-#             g = calculate_reference(g, self._temperatures)
-#         return self
-#
-#     def copy_reference(self, grid: np.ndarray):
-#         """Copy reference properties."""
-#         for g1, g2 in zip(grid, self._grid):
-#             for p, q in zip(g1, g2):
-#                 if q is not None:
-#                     q.copy_reference(p)
-#         return self
-#
-#     def calculate_harmonic_free_energies(self):
-#         """Calculate harmonic free energies."""
-#         if self._verbose:
-#             print("Calculate harmonic free energies.", flush=True)
-#
-#         for g, vol in zip(self._grid, self._volumes):
-#             if self._verbose:
-#                 print("- Volume:", np.round(vol, 3), flush=True)
-#             g = calculate_harmonic_free_energies(g)
-#         return self

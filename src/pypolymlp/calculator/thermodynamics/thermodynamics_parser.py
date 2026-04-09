@@ -130,16 +130,13 @@ def _count_data_minimum_size(data_all: list, decimals: int = 3):
         if data is None:
             continue
         cvols, ctemps = _count_data_size(data, decimals=decimals)
-        print(cvols)
-        print(ctemps)
         if num_data == 0:
             count_volumes = cvols
             count_temperatures = ctemps
         else:
             for vol, n1 in count_volumes.items():
                 if vol not in cvols:
-                    del count_volumes[vol]
-                    # count_volumes[vol] = None
+                    count_volumes[vol] = None
                     continue
                 elif n1 < cvols[vol]:
                     continue
@@ -148,7 +145,6 @@ def _count_data_minimum_size(data_all: list, decimals: int = 3):
             for temp, n1 in count_temperatures.items():
                 if temp not in ctemps:
                     count_temperatures[temp] = None
-                    # del count_temperatures[temp]
                     continue
                 elif n1 < ctemps[temp]:
                     continue
@@ -164,7 +160,6 @@ def _count_data_minimum_size(data_all: list, decimals: int = 3):
     for k in keys:
         if count_temperatures[k] is None:
             del count_temperatures[k]
-    print(count_temperatures)
     return count_volumes, count_temperatures
 
 
@@ -230,7 +225,6 @@ def load_yamls(
 
     data_all = [data_sscha, data_electron, data_ti]
     volumes, temps = _get_common_grid(data_all, decimals=decimals, n_require=n_require)
-    print(volumes, temps)
 
     grid_sscha = _get_grid_data(data_sscha, volumes, temps, decimals=decimals)
     grid_electron = _get_grid_data(data_electron, volumes, temps, decimals=decimals)
@@ -238,35 +232,6 @@ def load_yamls(
     return (grid_sscha, grid_electron, grid_ti)
 
 
-#    # Set reference
-#    sscha.calculate_reference()
-#    if electron is not None:
-#        electron.copy_reference(sscha.grid)
-#    if ti is not None:
-#        ti.copy_reference(sscha.grid)
-#
-#    # Set reference term for TI (multiple reference states)
-#    # if ti is not None:
-#    #     ti_ref = copy.deepcopy(sscha)
-#    #     f1 = sscha.get_data(attr="harmonic_free_energy")
-#    #     ti_ref.replace_free_energies(f1)
-#    #     ti_ref.fit_free_energy_temperature(max_order=4, intercept=True)
-#
-#    #     f1 = sscha.get_data(attr="static_potential")
-#    #     f2 = ti_ref.get_data(attr="free_energy")
-#    #     f_sum = sum_matrix_data(f1, f2)
-#    #     ti_ref.replace_free_energies(f_sum)
-#
-#    # Set reference term for TI (single reference state)
-#    if ti is not None:
-#        ti_ref = copy.deepcopy(sscha)
-#        f1 = sscha.get_data(attr="reference_free_energy")
-#        s1 = sscha.get_data(attr="reference_entropy")
-#        f2 = sscha.get_data(attr="static_potential")
-#        f_sum = sum_matrix_data(f1, f2)
-#        ti_ref.replace_free_energies(f_sum)
-#        ti_ref.replace_entropies(s1)
-#
 #    if yamls_electron_phonon is not None:
 #        if verbose:
 #            print("Loading electron.yaml (sscha) files.", flush=True)
