@@ -6,10 +6,14 @@ from typing import Optional
 
 import numpy as np
 
+from pypolymlp.calculator.thermodynamics.thermodynamics_grid import GridVT, sum_grids
+from pypolymlp.calculator.thermodynamics.thermodynamics_io import (
+    load_thermodynamics_yaml as load_thermodynamics,
+)
 from pypolymlp.calculator.thermodynamics.thermodynamics_io import (
     save_thermodynamics_yaml,
 )
-from pypolymlp.calculator.thermodynamics.thermodynamics_parser import GridVT
+from pypolymlp.calculator.thermodynamics.thermodynamics_parser import load_yamls as load
 from pypolymlp.calculator.thermodynamics.thermodynamics_utils import FittedModels
 from pypolymlp.core.units import EVtoJmol
 
@@ -313,3 +317,34 @@ class ThermodynamicsData:
         if self.ti_ext_el_ph is not None:
             name = path + "/ti_ext_el_ph.yaml"
             self.ti_ext_el_ph.save_thermodynamics_yaml(filename=name)
+
+
+def load_yamls(
+    yamls_sscha: list[str],
+    yamls_electron: Optional[list[str]] = None,
+    yamls_ti: Optional[list[str]] = None,
+    yamls_electron_phonon: Optional[list[str]] = None,
+    decimals: int = 3,
+    n_require: int = 10,
+    verbose: bool = False,
+):
+    """Load yaml files needed for calculating thermodynamics."""
+    return load(
+        yamls_sscha=yamls_sscha,
+        yamls_electron=yamls_electron,
+        yamls_ti=yamls_ti,
+        yamls_electron_phonon=yamls_electron_phonon,
+        decimals=decimals,
+        n_require=n_require,
+        verbose=verbose,
+    )
+
+
+def load_thermodynamics_yaml(filename: str = "polymlp_thermodynamics.yaml"):
+    """Load thermodynamics.yaml."""
+    return load_thermodynamics(filename)
+
+
+def compute_grid_sum(grid_list: list):
+    """Calculate sum of grid data."""
+    return sum_grids(grid_list)

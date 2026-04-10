@@ -7,9 +7,7 @@ import numpy as np
 from pypolymlp.calculator.thermodynamics.api_thermodynamics import (
     Thermodynamics,
     ThermodynamicsData,
-)
-from pypolymlp.calculator.thermodynamics.thermodynamics_grid import sum_grids
-from pypolymlp.calculator.thermodynamics.thermodynamics_io import (
+    compute_grid_sum,
     load_thermodynamics_yaml,
 )
 from pypolymlp.calculator.thermodynamics.thermodynamics_parser import load_yamls
@@ -80,7 +78,7 @@ class PypolymlpThermodynamics:
 
     def _get_thermodynamics(self, grid_list: list):
         """Get thermodynamics instance from list of grids."""
-        grid = sum_grids(grid_list)
+        grid = compute_grid_sum(grid_list)
         return Thermodynamics(grid, verbose=self._verbose)
 
     def _calculate_grid_sums(self, grids: tuple):
