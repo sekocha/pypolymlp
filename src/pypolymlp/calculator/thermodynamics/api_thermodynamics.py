@@ -1,5 +1,9 @@
 """API Class for calculating properties from datasets on grid points."""
 
+import os
+from dataclasses import dataclass
+from typing import Optional
+
 import numpy as np
 
 from pypolymlp.calculator.thermodynamics.thermodynamics_io import (
@@ -188,3 +192,121 @@ class Thermodynamics:
     def fitted_models(self):
         """Return fitted models."""
         return self._models
+
+
+@dataclass
+class ThermodynamicsData:
+    """Dataclass for Thermodynamics instances."""
+
+    sscha: Thermodynamics
+    sscha_el: Optional[Thermodynamics] = None
+    sscha_el_ph: Optional[Thermodynamics] = None
+    ti: Optional[Thermodynamics] = None
+    ti_el: Optional[Thermodynamics] = None
+    ti_el_ph: Optional[Thermodynamics] = None
+    ti_ext: Optional[Thermodynamics] = None
+    ti_ext_el: Optional[Thermodynamics] = None
+    ti_ext_el_ph: Optional[Thermodynamics] = None
+
+    def _run_standard(self, th: Thermodynamics):
+        """Use a standard fitting procedure."""
+        th.fit_free_energy_volume()
+        th.fit_entropy_volume(max_order=6)
+        th.eval_entropy_equilibrium()
+        th.eval_cp_numerical()
+        return th
+
+    def _run_deprecated(self, th: Thermodynamics):
+        """Use a standard but deprecated fitting procedure."""
+        th.fit_free_energy_volume()
+        th.fit_entropy_volume(max_order=6)
+        th.eval_entropy_equilibrium()
+        th.fit_entropy_temperature(max_order=4)
+        th.fit_cv_volume(max_order=4)
+        th.eval_cp_equilibrium()
+        return th
+
+    def run(self, verbose: bool = False):
+        """Run thermodynamic property estimation."""
+        if verbose:
+            print("# ------- SSCHA ------- #", flush=True)
+        self.sscha = self._run_standard(self.sscha)
+
+        if self.sscha_el is not None:
+            if verbose:
+                print("# ------- SSCHA ------- #", flush=True)
+            self.sscha_el = self._run_standard(self.sscha_el)
+
+        if self.sscha_el_ph is not None:
+            if verbose:
+                print("# ------- SSCHA ------- #", flush=True)
+            self.sscha_el_ph = self._run_standard(self.sscha_el_ph)
+
+        if self.ti is not None:
+            if verbose:
+                print("# ------- SSCHA ------- #", flush=True)
+            self.ti = self._run_standard(self.ti)
+
+        if self.ti_el is not None:
+            if verbose:
+                print("# ------- SSCHA ------- #", flush=True)
+            self.ti_el = self._run_standard(self.ti_el)
+
+        if self.ti_el_ph is not None:
+            if verbose:
+                print("# ------- SSCHA ------- #", flush=True)
+            self.ti_el_ph = self._run_standard(self.ti_el_ph)
+
+        if self.ti_ext is not None:
+            if verbose:
+                print("# ------- SSCHA ------- #", flush=True)
+            self.ti_ext = self._run_standard(self.ti_ext)
+
+        if self.ti_ext_el is not None:
+            if verbose:
+                print("# ------- SSCHA ------- #", flush=True)
+            self.ti_ext_el = self._run_standard(self.ti_ext_el)
+
+        if self.ti_ext_el_ph is not None:
+            if verbose:
+                print("# ------- SSCHA ------- #", flush=True)
+            self.ti_ext_el_ph = self._run_standard(self.ti_ext_el_ph)
+        return self
+
+    def save(self, path: str = "polymlp_thermodynamics"):
+        """Save properties."""
+        os.makedirs(path, exist_ok=True)
+        name = path + "/sscha.yaml"
+        self.sscha.save_thermodynamics_yaml(filename=name)
+
+        if self.sscha_el is not None:
+            name = path + "/sscha_el.yaml"
+            self.sscha_el.save_thermodynamics_yaml(filename=name)
+
+        if self.sscha_el_ph is not None:
+            name = path + "/sscha_el_ph.yaml"
+            self.sscha_el_ph.save_thermodynamics_yaml(filename=name)
+
+        if self.ti is not None:
+            name = path + "/ti.yaml"
+            self.ti.save_thermodynamics_yaml(filename=name)
+
+        if self.ti_el is not None:
+            name = path + "/ti_el.yaml"
+            self.ti_el.save_thermodynamics_yaml(filename=name)
+
+        if self.ti_el_ph is not None:
+            name = path + "/ti_el_ph.yaml"
+            self.ti_el_ph.save_thermodynamics_yaml(filename=name)
+
+        if self.ti_ext is not None:
+            name = path + "/ti_ext.yaml"
+            self.ti_ext.save_thermodynamics_yaml(filename=name)
+
+        if self.ti_ext_el is not None:
+            name = path + "/ti_ext_el.yaml"
+            self.ti_ext_el.save_thermodynamics_yaml(filename=name)
+
+        if self.ti_ext_el_ph is not None:
+            name = path + "/ti_ext_el_ph.yaml"
+            self.ti_ext_el_ph.save_thermodynamics_yaml(filename=name)

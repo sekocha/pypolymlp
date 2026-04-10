@@ -4,7 +4,10 @@ from typing import Optional
 
 import numpy as np
 
-from pypolymlp.calculator.thermodynamics.api_thermodynamics import Thermodynamics
+from pypolymlp.calculator.thermodynamics.api_thermodynamics import (
+    Thermodynamics,
+    ThermodynamicsData,
+)
 from pypolymlp.calculator.thermodynamics.thermodynamics_grid import sum_grids
 from pypolymlp.calculator.thermodynamics.thermodynamics_io import (
     load_thermodynamics_yaml,
@@ -41,48 +44,45 @@ class PypolymlpThermodynamics:
         if self._verbose:
             np.set_printoptions(legacy="1.21")
 
-        (
-            grid_sscha,
-            grid_electron,
-            grid_ti,
-            grid_ti_ext,
-            grid_ele_ph,
-            grid_ref,
-        ) = self._load_grid_data(
+        grids = self._load_grid_data(
             yamls_sscha=yamls_sscha,
             yamls_electron=yamls_electron,
             yamls_ti=yamls_ti,
             yamls_electron_phonon=yamls_electron_phonon,
             ref_fc2=ref_fc2,
         )
+        grid_sscha, grid_el, grid_ti, grid_ti_ext, grid_el_ph, grid_ref = grids
 
-        self._sscha = Thermodynamics(grid_sscha, verbose=verbose)
+        sscha = Thermodynamics(grid_sscha, verbose=verbose)
+        self._thermo = ThermodynamicsData(sscha)
 
-        self._sscha_el = None
-        if grid_electron is not None:
-            grid = sum_grids([grid_sscha, grid_electron])
-            self._sscha_el = Thermodynamics(grid, verbose=verbose)
+        if grid_el is not None:
+            glist = [grid_sscha, grid_el]
+            self._thermo.sscha_el = self._get_thermodynamics(glist)
+            if grid_el_ph is not None:
+                glist = [grid_sscha, grid_el, grid_el_ph]
+                self._thermo.sscha_el_ph = self._get_thermodynamics(glist)
 
-        self._sscha_el_ti, self._sscha_el_ti_ext = None, None
         if grid_ti is not None:
-            grid = sum_grids([grid_ref, grid_electron, grid_ti])
-            self._sscha_el_ti = Thermodynamics(grid, verbose=verbose)
+            glist = [grid_ref, grid_ti]
+            self._thermo.ti = self._get_thermodynamics(glist)
+            glist = [grid_ref, grid_ti_ext]
+            self._thermo.ti_ext = self._get_thermodynamics(glist)
+            if grid_el is not None:
+                glist = [grid_ref, grid_ti, grid_el]
+                self._thermo.ti_el = self._get_thermodynamics(glist)
+                glist = [grid_ref, grid_ti_ext, grid_el]
+                self._thermo.ti_ext_el = self._get_thermodynamics(glist)
+                if grid_el_ph is not None:
+                    glist = [grid_ref, grid_ti, grid_el, grid_el_ph]
+                    self._thermo.ti_el_ph = self._get_thermodynamics(glist)
+                    glist = [grid_ref, grid_ti_ext, grid_el, grid_el_ph]
+                    self._thermo.ti_ext_el_ph = self._get_thermodynamics(glist)
 
-            grid_ti_ext = set_reference_paths(grid_ti_ext, ref_fc2)
-            grid_ti_ext = copy_reference_states(grid_sscha, grid_ti_ext)
-
-            grid = sum_grids([grid_ref, grid_electron, grid_ti_ext])
-            self._sscha_el_ti_ext = Thermodynamics(grid, verbose=verbose)
-
-        self._ti_el_ph, self._ti_el_ph_ext = None, None
-        if grid is not None:
-            if grid_ti is not None:
-                grid = sum_grids([grid_ref, grid_electron, grid_ti, grid_ele_ph])
-                self._ti_el_ph = Thermodynamics(grid, verbose=verbose)
-                grid = sum_grids([grid_ref, grid_electron, grid_ti_ext, grid_ele_ph])
-                self._ti_el_ph_ext = Thermodynamics(grid, verbose=verbose)
-            else:
-                pass
+    def _get_thermodynamics(self, grid_list: list):
+        """Get thermodynamics instance from list of grids."""
+        grid = sum_grids(grid_list)
+        return Thermodynamics(grid, verbose=self._verbose)
 
     def _load_grid_data(
         self,
@@ -93,107 +93,31 @@ class PypolymlpThermodynamics:
         ref_fc2: Optional[list] = None,
     ):
         """Load yaml files and set grid data."""
-        grid_sscha, grid_electron, grid_ti, grid_ti_ext, grid_ele_ph = load_yamls(
+        grid_sscha, grid_el, grid_ti, grid_ti_ext, grid_el_ph = load_yamls(
             yamls_sscha=yamls_sscha,
             yamls_electron=yamls_electron,
             yamls_ti=yamls_ti,
             yamls_electron_phonon=yamls_electron_phonon,
         )
-        grid_ref = None
         if grid_ti is not None:
             grid_ti = set_reference_paths(grid_ti, ref_fc2)
             grid_ti = copy_reference_states(grid_sscha, grid_ti)
+            grid_ti_ext = set_reference_paths(grid_ti_ext, ref_fc2)
+            grid_ti_ext = copy_reference_states(grid_sscha, grid_ti_ext)
             grid_ref = calculate_reference_grid(grid_ti)
+        else:
+            grid_ref = None
 
-        return (
-            grid_sscha,
-            grid_electron,
-            grid_ti,
-            grid_ti_ext,
-            grid_ele_ph,
-            grid_ref,
-        )
-
-    def _run_standard(self, thermo: Thermodynamics):
-        """Use a standard fitting procedure."""
-        thermo.fit_free_energy_volume()
-        thermo.fit_entropy_volume(max_order=6)
-        thermo.eval_entropy_equilibrium()
-        thermo.eval_cp_numerical()
-        return thermo
-
-    def _run_deprecated(self, thermo: Thermodynamics):
-        """Use a standard but deprecated fitting procedure."""
-        thermo.fit_free_energy_volume()
-        thermo.fit_entropy_volume(max_order=6)
-        thermo.eval_entropy_equilibrium()
-        thermo.fit_entropy_temperature(max_order=4)
-        thermo.fit_cv_volume(max_order=4)
-        thermo.eval_cp_equilibrium()
-        return thermo
+        return (grid_sscha, grid_el, grid_ti, grid_ti_ext, grid_el_ph, grid_ref)
 
     def run(self):
         """Fit results and evalulate equilibrium properties."""
-        if self._verbose:
-            print("# ------- SSCHA ------- #", flush=True)
-        self._sscha = self._run_standard(self._sscha)
-
-        if self._sscha_el is not None:
-            if self._verbose:
-                print("# ----- SSCHA + Electron ----- #", flush=True)
-            self._sscha_el = self._run_standard(self._sscha_el)
-
-        if self._sscha_el_ti is not None:
-            if self._verbose:
-                print("# --- SSCHA + TI + Electron --- #", flush=True)
-            self._sscha_el_ti = self._run_standard(self._sscha_el_ti)
-
-            if self._verbose:
-                print("# --- SSCHA + TI (Extrapolation) + Electron --- #", flush=True)
-            self._sscha_el_ti_ext = self._run_standard(self._sscha_el_ti_ext)
-
-        if self._ti_el_ph is not None:
-            if self._verbose:
-                print("# --- SSCHA + TI + Electron + ele-ph --- #", flush=True)
-            self._ti_el_ph = self._run_standard(self._ti_el_ph)
-
-            if self._verbose:
-                print(
-                    "# --- SSCHA + TI (Extraplation) + Electron + ele-ph --- #",
-                    flush=True,
-                )
-            self._ti_el_ph_ext = self._run_standard(self._ti_el_ph_ext)
-
+        self._thermo.run(verbose=self._verbose)
         return self
 
-    def save_sscha(self, filename: str = "polymlp_thermodynamics_sscha.yaml"):
-        """Save fitted SSCHA properties."""
-        if self._sscha is not None:
-            self._sscha.save_thermodynamics_yaml(filename=filename)
-        return self
-
-    def save_sscha_ele(self, filename: str = "polymlp_thermodynamics_sscha_ele.yaml"):
-        """Save fitted SSCHA + electronic properties."""
-        if self._sscha_el is not None:
-            self._sscha_el.save_thermodynamics_yaml(filename=filename)
-        return self
-
-    def save_total(self, filename: str = "polymlp_thermodynamics_sscha_ele_ti.yaml"):
-        """Save fitted SSCHA + electronic + TI properties."""
-        if self._sscha_el_ti is not None:
-            self._sscha_el_ti.save_thermodynamics_yaml(filename=filename)
-            filename1 = filename.replace(".yaml", "_ext.yaml")
-            self._sscha_el_ti_ext.save_thermodynamics_yaml(filename=filename1)
-        return self
-
-    def save_total_ele_ph(
-        self, filename: str = "polymlp_thermodynamics_total_ele_ph.yaml"
-    ):
-        """Save fitted SSCHA + electronic + TI + ele-ph properties."""
-        if self._ti_el_ph is not None:
-            self._ti_el_ph.save_thermodynamics_yaml(filename=filename)
-            filename1 = filename.replace(".yaml", "_ext.yaml")
-            self._ti_el_ph_ext.save_thermodynamics_yaml(filename=filename1)
+    def save(self, path: str = "polymlp_thermodynamics"):
+        """Save fitted and equilibrium properties."""
+        self._thermo.save(path=path)
         return self
 
 

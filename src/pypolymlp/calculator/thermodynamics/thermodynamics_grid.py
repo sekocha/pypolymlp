@@ -1,7 +1,6 @@
 """Classes for data on volume-temperature grid."""
 
 import copy
-import itertools
 from dataclasses import dataclass
 from typing import Optional
 
@@ -61,6 +60,11 @@ class GridPointData:
             return True
         return False
 
+    @property
+    def is_empty(self):
+        """Return whether the grid point is empty or not."""
+        return self.volume is None
+
 
 class GridVT:
     """Dataclass for 2D array of GridPointData."""
@@ -77,6 +81,22 @@ class GridVT:
         self._temperatures = temperatures
         self._data = data
         self._verbose = verbose
+
+    def __iter__(self):
+        """Iter method."""
+        for i, d1 in enumerate(self._data):
+            for j, d2 in enumerate(d1):
+                yield (i, j, d2)
+
+    def __getitem__(self, key: tuple):
+        """Get data item."""
+        i, j = key
+        return self._data[i][j]
+
+    def __setitem__(self, key: tuple, value: float):
+        """Set data item."""
+        i, j = key
+        self._data[i][j] = value
 
     @property
     def volumes(self):
@@ -96,20 +116,18 @@ class GridVT:
     def get_properties(self, attr: str = "free_energy"):
         """Return property data."""
         arr = np.full(self._data.shape, None, dtype=object)
-        for i, d1 in enumerate(self._data):
-            for j, d2 in enumerate(d1):
-                if d2 is not None and d2.exist_attr(attr):
-                    arr[i, j] = getattr(d2, attr)
+        for i, j, d in self:
+            if d.exist_attr(attr):
+                arr[i, j] = getattr(d, attr)
         return arr
 
     def get_volumes_properties(self, attr: str = "free_energy"):
         """Return volume-property data."""
         volumes = [
-            [d2.volume for d2 in d1 if d2 is not None and d2.exist_attr(attr)]
-            for d1 in self._data.T
+            [d2.volume for d2 in d1 if d2.exist_attr(attr)] for d1 in self._data.T
         ]
         properties = [
-            [getattr(d2, attr) for d2 in d1 if d2 is not None and d2.exist_attr(attr)]
+            [getattr(d2, attr) for d2 in d1 if d2.exist_attr(attr)]
             for d1 in self._data.T
         ]
         return zip(self._temperatures, volumes, properties)
@@ -117,16 +135,13 @@ class GridVT:
     def get_temperatures_properties(self, attr: str = "free_energy"):
         """Return temperature-property data."""
         temperatures = [
-            [d2.temperature for d2 in d1 if d2 is not None and d2.exist_attr(attr)]
-            for d1 in self._data
+            [d2.temperature for d2 in d1 if d2.exist_attr(attr)] for d1 in self._data
         ]
         properties = [
-            [getattr(d2, attr) for d2 in d1 if d2 is not None and d2.exist_attr(attr)]
-            for d1 in self._data
+            [getattr(d2, attr) for d2 in d1 if d2.exist_attr(attr)] for d1 in self._data
         ]
         indices = [
-            [i for i, d2 in enumerate(d1) if d2 is not None and d2.exist_attr(attr)]
-            for d1 in self._data
+            [i for i, d2 in enumerate(d1) if d2.exist_attr(attr)] for d1 in self._data
         ]
         return zip(self._volumes, temperatures, properties, indices)
 
@@ -152,7 +167,6 @@ class GridVT:
                 print("- temperature:", temp, flush=True)
                 header = "  model_rmse: "
                 print(header, polyfit.best_model, f"{polyfit.error: .3e}", flush=True)
-                # self.print_predictions(polyfit, volumes, properties)
         return sv_fits
 
     def fit_cv_volume(self, max_order: int = 4):
@@ -240,10 +254,7 @@ def sum_grids(grid_list: list):
 
     grid_sum = copy.deepcopy(grid_list[0])
     for grid in grid_list[1:]:
-        for i, j in itertools.product(
-            range(grid_sum.data.shape[0]),
-            range(grid_sum.data.shape[1]),
-        ):
-            grid_sum.data[i, j].add(grid.data[i, j])
+        for i, j, g in grid:
+            grid_sum[i, j].add(g)
 
     return grid_sum

@@ -1,5 +1,6 @@
 """Utility functions for initializing thermodynamic property calculation."""
 
+import copy
 import os
 from typing import Optional
 
@@ -31,15 +32,16 @@ def set_reference_paths(
             vol = np.round(vol / n_atom, decimals)
             path_fc2_dict[vol] = fc2hdf5
 
-    for i, d1 in enumerate(grid_ti.data):
-        for j, d2 in enumerate(d1):
-            vol = np.round(d2.volume, decimals)
-            cwd = "/".join(d2.path_yaml.split("/")[:-1])
-            fc2hdf5 = cwd + "/fc2.hdf5"
-            if os.path.exists(fc2hdf5):
-                d2.path_fc2 = fc2hdf5
-            elif vol in path_fc2_dict:
-                d2.path_fc2 = path_fc2_dict[vol]
+    for i, j, d in grid_ti:
+        if d.is_empty:
+            continue
+        vol = np.round(d.volume, decimals)
+        cwd = "/".join(d.path_yaml.split("/")[:-1])
+        fc2hdf5 = cwd + "/fc2.hdf5"
+        if os.path.exists(fc2hdf5):
+            d.path_fc2 = fc2hdf5
+        elif vol in path_fc2_dict:
+            d.path_fc2 = path_fc2_dict[vol]
     return grid_ti
 
 
@@ -47,10 +49,12 @@ def copy_reference_states(grid_sscha: GridVT, grid_ti: GridVT):
     """Copy reference states"""
     if grid_sscha.data.shape != grid_ti.data.shape:
         raise RuntimeError("Shapes mismatch.")
-    for i, d1 in enumerate(grid_ti.data):
-        for j, d2 in enumerate(d1):
-            d2.restart = grid_sscha.data[i, j].restart
-            d2.static_potential = d2.restart.static_potential
+
+    for i, j, d in grid_ti:
+        if d.is_empty:
+            continue
+        d.restart = grid_sscha[i, j].restart
+        d.static_potential = d.restart.static_potential
     return grid_ti
 
 
@@ -85,38 +89,32 @@ def calculate_reference_grid(
     at the lowest temperature are used as reference free energy, reference entropy,
     and reference heat capacity to fit properties with respect to temperature.
     """
-    data = np.full(grid_ti.data.shape, None, dtype=object)
-    for i, d1 in enumerate(grid_ti.data):
-        for j, d2 in enumerate(d1):
-            # paths = [d2.path_fc2 for d2 in d1]
-            # if paths[0] != "fc2.hdf5" and np.all(paths == paths[0]):
-            # else:
-            if d2 is None:
-                continue
+    grid_ref = copy.deepcopy(grid_ti)
+    for i, j, d in grid_ti:
+        if d.is_empty:
+            continue
 
-            tp_dict = _calculate_harmonic_properties(
-                d2.restart,
-                d2.path_fc2,
-                temperatures=d2.temperature,
-            )
-            n_atom = len(d2.restart.unitcell.elements)
-            free_energy = tp_dict["free_energy"][0] / EVtoKJmol / n_atom
-            free_energy += d2.static_potential
-            entropy = tp_dict["entropy"][0] / EVtoJmol / n_atom
-            heat_capacity = tp_dict["heat_capacity"][0] / n_atom
-            grid_point = GridPointData(
-                volume=d2.volume,
-                temperature=d2.temperature,
-                free_energy=free_energy,
-                entropy=entropy,
-                heat_capacity=heat_capacity,
-            )
-            data[i, j] = grid_point
+        # paths = [d2.path_fc2 for d2 in d1]
+        # if paths[0] != "fc2.hdf5" and np.all(paths == paths[0]):
+        # else:
+        tp_dict = _calculate_harmonic_properties(
+            d.restart,
+            d.path_fc2,
+            temperatures=d.temperature,
+        )
+        n_atom = len(d.restart.unitcell.elements)
+        free_energy = tp_dict["free_energy"][0] / EVtoKJmol / n_atom
+        free_energy += d.static_potential
+        entropy = tp_dict["entropy"][0] / EVtoJmol / n_atom
+        heat_capacity = tp_dict["heat_capacity"][0] / n_atom
 
-    grid = GridVT(
-        volumes=grid_ti.volumes,
-        temperatures=grid_ti.temperatures,
-        data=data,
-        verbose=grid_ti._verbose,
-    )
-    return grid
+        grid_point = GridPointData(
+            volume=d.volume,
+            temperature=d.temperature,
+            free_energy=free_energy,
+            entropy=entropy,
+            heat_capacity=heat_capacity,
+        )
+        grid_ref[i, j] = grid_point
+
+    return grid_ref

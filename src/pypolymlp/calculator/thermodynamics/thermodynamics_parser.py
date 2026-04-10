@@ -157,6 +157,7 @@ def _get_grid_data(
         except:
             pass
 
+    arr[np.equal(arr, None)] = GridPointData(volume=None, temperature=None)
     grid = GridVT(volumes, temperatures, arr)
     return grid
 
