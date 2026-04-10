@@ -132,7 +132,7 @@ def _get_common_grid(data_all: list, decimals: int = 3, n_require: int = 10):
     """Get common grid points of volumes and temperatures."""
     count_vols, count_temps = _count_data_minimum_size(data_all, decimals=decimals)
     volumes = sorted([vol for vol, n in count_vols.items() if n >= n_require])
-    temperatures = sorted([t for t, n in count_temps.items() if n >= n_require])
+    temperatures = sorted([t for t, n in count_temps.items()])
     return np.array(volumes), np.array(temperatures)
 
 
