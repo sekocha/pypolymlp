@@ -8,6 +8,7 @@ import pytest
 from pypolymlp.calculator.thermodynamics.api_thermodynamics import (
     calculate_reference_grid,
     compute_grid_sum,
+    load_thermodynamics_yaml,
     set_reference_paths,
 )
 
@@ -45,3 +46,20 @@ def test_compute_grid_sum(thermodynamics_grids_Cu):
     grid_s = compute_grid_sum([grid1, grid2])
     assert grid_s[1, 2].free_energy == pytest.approx(-4.028855095413766)
     assert grid_s[1, 2].entropy == pytest.approx(0.00020649367346735925)
+
+
+def test_load_thermodynamics_yaml():
+    """Test load_thermodynamics_yaml."""
+    data = load_thermodynamics_yaml(path_file + "sscha.yaml")
+    assert len(data.temperatures) == 16
+    assert len(data.eq_volumes) == 16
+    assert len(data.bm) == 16
+    assert len(data.eq_helmholtz) == 16
+    assert len(data.eq_entropy) == 16
+    assert len(data.eq_cp) == 16
+    assert len(data.eos_data) == 16
+    assert len(data.eos_fit_data) == 16
+    assert len(data.gibbs) == 16
+
+    data1 = data.get_T_F()
+    assert data1.shape == (16, 2)
