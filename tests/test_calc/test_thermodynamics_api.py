@@ -7,6 +7,7 @@ import pytest
 
 from pypolymlp.calculator.thermodynamics.api_thermodynamics import (
     calculate_reference_grid,
+    compute_grid_sum,
     set_reference_paths,
 )
 
@@ -36,3 +37,11 @@ def test_calculate_reference_grid(thermodynamics_grids_Cu):
     grid_ref = calculate_reference_grid(tmp)
     assert grid_ref.shape == grid_ti.shape
     assert grid_ref[0, 5].free_energy == pytest.approx(-4.117530994299927)
+
+
+def test_compute_grid_sum(thermodynamics_grids_Cu):
+    """Test compute_grid_sum."""
+    grid1, grid2, _, _, _ = thermodynamics_grids_Cu
+    grid_s = compute_grid_sum([grid1, grid2])
+    assert grid_s[1, 2].free_energy == pytest.approx(-4.028855095413766)
+    assert grid_s[1, 2].entropy == pytest.approx(0.00020649367346735925)
