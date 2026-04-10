@@ -15,7 +15,6 @@ from pypolymlp.calculator.thermodynamics.thermodynamics_io import (
 from pypolymlp.calculator.thermodynamics.thermodynamics_parser import load_yamls
 from pypolymlp.calculator.thermodynamics.thermodynamics_ref import (
     calculate_reference_grid,
-    copy_reference_states,
     set_reference_paths,
 )
 from pypolymlp.calculator.thermodynamics.transition import (
@@ -51,9 +50,44 @@ class PypolymlpThermodynamics:
             yamls_electron_phonon=yamls_electron_phonon,
             ref_fc2=ref_fc2,
         )
+        self._thermo = self._calculate_grid_sums(grids)
+
+    def _load_grid_data(
+        self,
+        yamls_sscha: list[str],
+        yamls_electron: Optional[list[str]] = None,
+        yamls_ti: Optional[list[str]] = None,
+        yamls_electron_phonon: Optional[list[str]] = None,
+        ref_fc2: Optional[list] = None,
+    ):
+        """Load yaml files and set grid data."""
+        grid_sscha, grid_el, grid_ti, grid_ti_ext, grid_el_ph = load_yamls(
+            yamls_sscha=yamls_sscha,
+            yamls_electron=yamls_electron,
+            yamls_ti=yamls_ti,
+            yamls_electron_phonon=yamls_electron_phonon,
+        )
+        if grid_ti is not None:
+            grid_ti = set_reference_paths(grid_ti, ref_fc2)
+            grid_ti.copy_static_data(grid_sscha)
+            grid_ti_ext = set_reference_paths(grid_ti_ext, ref_fc2)
+            grid_ti_ext.copy_static_data(grid_sscha)
+            grid_ref = calculate_reference_grid(grid_ti)
+        else:
+            grid_ref = None
+
+        return (grid_sscha, grid_el, grid_ti, grid_ti_ext, grid_el_ph, grid_ref)
+
+    def _get_thermodynamics(self, grid_list: list):
+        """Get thermodynamics instance from list of grids."""
+        grid = sum_grids(grid_list)
+        return Thermodynamics(grid, verbose=self._verbose)
+
+    def _calculate_grid_sums(self, grids: tuple):
+        """Calculate sums of properties on grid and set Thermodynamics instance."""
         grid_sscha, grid_el, grid_ti, grid_ti_ext, grid_el_ph, grid_ref = grids
 
-        sscha = Thermodynamics(grid_sscha, verbose=verbose)
+        sscha = Thermodynamics(grid_sscha, verbose=self._verbose)
         self._thermo = ThermodynamicsData(sscha)
 
         if grid_el is not None:
@@ -78,37 +112,7 @@ class PypolymlpThermodynamics:
                     self._thermo.ti_el_ph = self._get_thermodynamics(glist)
                     glist = [grid_ref, grid_ti_ext, grid_el, grid_el_ph]
                     self._thermo.ti_ext_el_ph = self._get_thermodynamics(glist)
-
-    def _get_thermodynamics(self, grid_list: list):
-        """Get thermodynamics instance from list of grids."""
-        grid = sum_grids(grid_list)
-        return Thermodynamics(grid, verbose=self._verbose)
-
-    def _load_grid_data(
-        self,
-        yamls_sscha: list[str],
-        yamls_electron: Optional[list[str]] = None,
-        yamls_ti: Optional[list[str]] = None,
-        yamls_electron_phonon: Optional[list[str]] = None,
-        ref_fc2: Optional[list] = None,
-    ):
-        """Load yaml files and set grid data."""
-        grid_sscha, grid_el, grid_ti, grid_ti_ext, grid_el_ph = load_yamls(
-            yamls_sscha=yamls_sscha,
-            yamls_electron=yamls_electron,
-            yamls_ti=yamls_ti,
-            yamls_electron_phonon=yamls_electron_phonon,
-        )
-        if grid_ti is not None:
-            grid_ti = set_reference_paths(grid_ti, ref_fc2)
-            grid_ti = copy_reference_states(grid_sscha, grid_ti)
-            grid_ti_ext = set_reference_paths(grid_ti_ext, ref_fc2)
-            grid_ti_ext = copy_reference_states(grid_sscha, grid_ti_ext)
-            grid_ref = calculate_reference_grid(grid_ti)
-        else:
-            grid_ref = None
-
-        return (grid_sscha, grid_el, grid_ti, grid_ti_ext, grid_el_ph, grid_ref)
+        return self._thermo
 
     def run(self):
         """Fit results and evalulate equilibrium properties."""

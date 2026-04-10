@@ -8,7 +8,6 @@ import numpy as np
 import yaml
 
 from pypolymlp.calculator.compute_phonon import calculate_harmonic_properties_from_fc2
-from pypolymlp.calculator.sscha.sscha_restart import Restart
 from pypolymlp.calculator.thermodynamics.thermodynamics_grid import (
     GridPointData,
     GridVT,
@@ -45,39 +44,6 @@ def set_reference_paths(
     return grid_ti
 
 
-def copy_reference_states(grid_sscha: GridVT, grid_ti: GridVT):
-    """Copy reference states"""
-    if grid_sscha.data.shape != grid_ti.data.shape:
-        raise RuntimeError("Shapes mismatch.")
-
-    for i, j, d in grid_ti:
-        if d.is_empty:
-            continue
-        d.restart = grid_sscha[i, j].restart
-        d.static_potential = d.restart.static_potential
-    return grid_ti
-
-
-def _calculate_harmonic_properties(
-    res: Restart,
-    path_fc2: str,
-    mesh: tuple = (10, 10, 10),
-    temperatures: Optional[np.ndarray] = None,
-):
-    """Calculate harmonic thermodynamic properties."""
-    if temperatures is None:
-        temperatures = [res.temperature]
-
-    tp_dict = calculate_harmonic_properties_from_fc2(
-        res.unitcell,
-        res.supercell_matrix,
-        path_fc2=path_fc2,
-        mesh=mesh,
-        temperatures=temperatures,
-    )
-    return tp_dict
-
-
 def calculate_reference_grid(
     grid_ti: GridVT,
     mesh: tuple = (10, 10, 10),
@@ -97,11 +63,14 @@ def calculate_reference_grid(
         # paths = [d2.path_fc2 for d2 in d1]
         # if paths[0] != "fc2.hdf5" and np.all(paths == paths[0]):
         # else:
-        tp_dict = _calculate_harmonic_properties(
-            d.restart,
-            d.path_fc2,
+        tp_dict = calculate_harmonic_properties_from_fc2(
+            d.unitcell,
+            d.supercell_matrix,
+            path_fc2=d.path_fc2,
+            mesh=mesh,
             temperatures=d.temperature,
         )
+
         n_atom = len(d.restart.unitcell.elements)
         free_energy = tp_dict["free_energy"][0] / EVtoKJmol / n_atom
         free_energy += d.static_potential

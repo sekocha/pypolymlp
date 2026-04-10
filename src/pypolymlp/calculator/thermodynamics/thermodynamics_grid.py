@@ -65,6 +65,20 @@ class GridPointData:
         """Return whether the grid point is empty or not."""
         return self.volume is None
 
+    @property
+    def unitcell(self):
+        """Return unitcell."""
+        if self.restart is None:
+            return None
+        return self.restart.unitcell
+
+    @property
+    def supercell_matrix(self):
+        """Return supercell matrix."""
+        if self.restart is None:
+            return None
+        return self.restart.supercell_matrix
+
 
 class GridVT:
     """Dataclass for 2D array of GridPointData."""
@@ -112,6 +126,23 @@ class GridVT:
     def data(self):
         """Return 2D data."""
         return self._data
+
+    @property
+    def shape(self):
+        """Return shape of 2D data."""
+        return self._data.shape
+
+    def copy_static_data(self, grid):
+        """Copy static properties and structure."""
+        if grid.shape != self.shape:
+            raise RuntimeError("Shapes mismatch.")
+
+        for i, j, d in self:
+            if d.is_empty:
+                continue
+            d.restart = grid[i, j].restart
+            d.static_potential = d.restart.static_potential
+        return self
 
     def get_properties(self, attr: str = "free_energy"):
         """Return property data."""

@@ -234,42 +234,45 @@ class ThermodynamicsData:
 
         if self.sscha_el is not None:
             if verbose:
-                print("# ------- SSCHA ------- #", flush=True)
+                print("# ------- SSCHA + Electron ------- #", flush=True)
             self.sscha_el = self._run_standard(self.sscha_el)
 
         if self.sscha_el_ph is not None:
             if verbose:
-                print("# ------- SSCHA ------- #", flush=True)
+                print("# ------- SSCHA + Electron + Ele-Ph ------- #", flush=True)
             self.sscha_el_ph = self._run_standard(self.sscha_el_ph)
 
         if self.ti is not None:
             if verbose:
-                print("# ------- SSCHA ------- #", flush=True)
+                print("# ------- TI ------- #", flush=True)
             self.ti = self._run_standard(self.ti)
 
         if self.ti_el is not None:
             if verbose:
-                print("# ------- SSCHA ------- #", flush=True)
+                print("# ------- TI + Electron ------- #", flush=True)
             self.ti_el = self._run_standard(self.ti_el)
 
         if self.ti_el_ph is not None:
             if verbose:
-                print("# ------- SSCHA ------- #", flush=True)
+                print("# ------- TI + Electron + Ele-Ph ------- #", flush=True)
             self.ti_el_ph = self._run_standard(self.ti_el_ph)
 
         if self.ti_ext is not None:
             if verbose:
-                print("# ------- SSCHA ------- #", flush=True)
+                print("# ------- TI (extraplation) ------- #", flush=True)
             self.ti_ext = self._run_standard(self.ti_ext)
 
         if self.ti_ext_el is not None:
             if verbose:
-                print("# ------- SSCHA ------- #", flush=True)
+                print("# ------- TI (extraplation) + Electron ------- #", flush=True)
             self.ti_ext_el = self._run_standard(self.ti_ext_el)
 
         if self.ti_ext_el_ph is not None:
             if verbose:
-                print("# ------- SSCHA ------- #", flush=True)
+                print(
+                    "# ------- TI (extraplation) + Electron + Ele-Ph ------- #",
+                    flush=True,
+                )
             self.ti_ext_el_ph = self._run_standard(self.ti_ext_el_ph)
         return self
 
