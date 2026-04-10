@@ -107,7 +107,7 @@ class GridVT:
         i, j = key
         return self._data[i][j]
 
-    def __setitem__(self, key: tuple, value: float):
+    def __setitem__(self, key: tuple, value: GridPointData):
         """Set data item."""
         i, j = key
         self._data[i][j] = value
