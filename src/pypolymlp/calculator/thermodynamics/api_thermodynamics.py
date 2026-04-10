@@ -13,7 +13,15 @@ from pypolymlp.calculator.thermodynamics.thermodynamics_io import (
 from pypolymlp.calculator.thermodynamics.thermodynamics_io import (
     save_thermodynamics_yaml,
 )
-from pypolymlp.calculator.thermodynamics.thermodynamics_parser import load_yamls as load
+from pypolymlp.calculator.thermodynamics.thermodynamics_parser import (
+    load_yamls as load_calc_yamls,
+)
+from pypolymlp.calculator.thermodynamics.thermodynamics_ref import (
+    calculate_reference_grid as calculate_reference,
+)
+from pypolymlp.calculator.thermodynamics.thermodynamics_ref import (
+    set_reference_paths as set_ref_paths,
+)
 from pypolymlp.calculator.thermodynamics.thermodynamics_utils import FittedModels
 from pypolymlp.core.units import EVtoJmol
 
@@ -329,7 +337,7 @@ def load_yamls(
     verbose: bool = False,
 ):
     """Load yaml files needed for calculating thermodynamics."""
-    return load(
+    return load_calc_yamls(
         yamls_sscha=yamls_sscha,
         yamls_electron=yamls_electron,
         yamls_ti=yamls_ti,
@@ -340,11 +348,34 @@ def load_yamls(
     )
 
 
-def load_thermodynamics_yaml(filename: str = "polymlp_thermodynamics.yaml"):
-    """Load thermodynamics.yaml."""
-    return load_thermodynamics(filename)
+def set_reference_paths(
+    grid_ti: GridVT,
+    ref_fc2: Optional[list] = None,
+    decimals: int = 3,
+):
+    """Set paths of reference FC2 states."""
+    return set_ref_paths(grid_ti, ref_fc2=ref_fc2, decimals=decimals)
+
+
+def calculate_reference_grid(
+    grid_ti: GridVT,
+    mesh: tuple = (10, 10, 10),
+    decimals: int = 3,
+):
+    """Return reference properties.
+
+    Harmonic phonon properties calculated with SSCHA FC2 and SSCHA frequencies
+    at the lowest temperature are used as reference free energy, reference entropy,
+    and reference heat capacity to fit properties with respect to temperature.
+    """
+    return calculate_reference(grid_ti, mesh=mesh, decimals=decimals)
 
 
 def compute_grid_sum(grid_list: list):
     """Calculate sum of grid data."""
     return sum_grids(grid_list)
+
+
+def load_thermodynamics_yaml(filename: str = "polymlp_thermodynamics.yaml"):
+    """Load thermodynamics.yaml."""
+    return load_thermodynamics(filename)

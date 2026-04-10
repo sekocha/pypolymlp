@@ -7,12 +7,10 @@ import numpy as np
 from pypolymlp.calculator.thermodynamics.api_thermodynamics import (
     Thermodynamics,
     ThermodynamicsData,
+    calculate_reference_grid,
     compute_grid_sum,
     load_thermodynamics_yaml,
-)
-from pypolymlp.calculator.thermodynamics.thermodynamics_parser import load_yamls
-from pypolymlp.calculator.thermodynamics.thermodynamics_ref import (
-    calculate_reference_grid,
+    load_yamls,
     set_reference_paths,
 )
 from pypolymlp.calculator.thermodynamics.transition import (
