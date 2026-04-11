@@ -85,7 +85,7 @@ def _get_free_energy(
     """Calculate free energy from log."""
     data_de = np.array([[float(l["alpha"]), float(l["delta_e"])] for l in log_active])
     if extrapolation:
-        de1 = _extrapolate_data(data_de, threshold=0.8, max_order=3, verbose=verbose)
+        de1 = _extrapolate_data(data_de, verbose=verbose)
         data_de = np.vstack((data_de, [1.0, de1]))
     return integrate(data_de, method=method)
 
@@ -95,7 +95,7 @@ def _get_energy(log_active: list, extrapolation: bool = False, verbose: bool = F
     data_e = np.array([[float(l["alpha"]), float(l["energy"])] for l in log_active])
     energy0 = data_e[0, 1]
     if extrapolation:
-        energy = _extrapolate_data(data_e, threshold=0.8, max_order=3, verbose=verbose)
+        energy = _extrapolate_data(data_e, verbose=verbose)
     else:
         energy = data_e[-1, 1]
     return energy - energy0

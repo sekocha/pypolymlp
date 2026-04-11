@@ -62,6 +62,7 @@ class PypolymlpThermodynamics:
             yamls_electron=yamls_electron,
             yamls_ti=yamls_ti,
             yamls_electron_phonon=yamls_electron_phonon,
+            verbose=False,
         )
         if grid_ti is not None:
             grid_ti = set_reference_paths(grid_ti, ref_fc2)

@@ -102,6 +102,7 @@ class PolymlpPhonon:
         if self._with_pdos:
             self._ph.write_projected_dos(filename=path_output + "phonon_proj_dos.dat")
 
+        print(self._supercell)
         save_cells(
             self._unitcell,
             self._supercell,

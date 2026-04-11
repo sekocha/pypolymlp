@@ -85,7 +85,7 @@ class Restart:
     def unit(self, unit_in: Literal["kJ/mol", "eV/cell", "eV/atom"]):
         """Set unit."""
         self._unit = unit_in
-        self._unit_energy, self._unit_entropy = self._set_unit_conversion()
+        self._set_unit_conversion()
 
     def _set_unit_conversion(self):
         """Set unit conversion values."""
@@ -220,23 +220,3 @@ class Restart:
     def volume(self):
         """Return volume."""
         return self._volume * self._unit_volume
-
-    # def _unit_conversion(self, val):
-    #     """Convert unit for free energy and potentials."""
-    #     if self._unit == "kJ/mol":
-    #         return val
-    #     elif self._unit == "eV/cell":
-    #         return val / EVtoKJmol
-    #     elif self._unit == "eV/atom":
-    #         return val / EVtoKJmol / self._n_atom_unitcell
-    #     raise RuntimeError("Unit must be kJ/mol, eV/cell, or eV/atom")
-
-    # def _unit_conversion_entropy(self, val):
-    #     """Convert unit for entropy and heat capacity."""
-    #     if self._unit == "kJ/mol":
-    #         return val
-    #     elif self._unit == "eV/cell":
-    #         return val / EVtoKJmol / 1000
-    #     elif self._unit == "eV/atom":
-    #         return val / EVtoKJmol / 1000 / self._n_atom_unitcell
-    #     raise RuntimeError("Unit must be kJ/mol, eV/cell, or eV/atom")

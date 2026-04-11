@@ -94,6 +94,21 @@ If including contributions from electronic free energy and thermodynamic integra
 ```shell
 > pypolymlp-thermodynamics --sscha ./runs/*/sscha/*/sscha_results.yaml --electron electrons/*/electron.yaml --ti runs/*/sscha/*/polymlp_ti.yaml
 ```
+At each volume and temperature, the force constant file `fc2.hdf5`, used as the reference state for thermodynamic integration, is assumed to be located in the same directory as the `polymlp_ti.yaml` file.
+For MD-based thermodynamic integration in version 0.19.6 or later, the force constant files are expected to be copied into the corresponding directories.
+If the locations of the reference force constants are explicitly specified, use the `--ref_fc2` option as follows.
+
+```shell
+--ref_fc2 runs/000*/sscha/0/fc2.hdf5
+```
+
+The electronic free energy contribution can sometimes depend on the atomic configuration.
+In `pypolymlp`, the difference between the electronic free energy for the equilibrium structure at 0 K and the average electronic free energy over sampled structures obtained from the density matrix in SSCHA can be included.
+The temperature-dependent free energy differences and entropy differences must be provided in the `electron.yaml` files for each volume, using the same format as for the electronic free energy.
+The `--electron_phonon` option is used to specify the location of these files.
+```shell
+--electron_phonon electrons_sscha/*/electron.yaml
+```
 
 ## Phase Boundary Estimation
 
