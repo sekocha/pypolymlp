@@ -41,14 +41,14 @@ def _check_melting(disps: np.ndarray, threshold: float = 0.05):
 
 def integrate(
     data: np.ndarray,
-    method: Literal["trapezoid", "simpson", "romb"] = "trapezoid",
+    method: Literal["trapezoid", "simpson"] = "simpson",
 ):
     """Integrate delta energy from TI."""
     if method == "trapezoid":
-        free_energy = scipy.integrate.trapezoid(data[:, 1], data[:, 0])
+        return scipy.integrate.trapezoid(data[:, 1], data[:, 0])
     elif method == "simpson":
-        free_energy = scipy.integrate.simpson(data[:, 1], x=data[:, 0])
-    return free_energy
+        return scipy.integrate.simpson(data[:, 1], x=data[:, 0])
+    raise RuntimeError("No available method.")
 
 
 def _extrapolate_data(
@@ -79,7 +79,7 @@ def _extrapolate_data(
 def _get_free_energy(
     log_active: list,
     extrapolation: bool = False,
-    method: Literal["trapezoid", "simpson", "romb"] = "trapezoid",
+    method: Literal["trapezoid", "simpson"] = "simpson",
     verbose: bool = False,
 ):
     """Calculate free energy from log."""
@@ -141,6 +141,7 @@ class DataTI:
     free_energy: float
     energy: float
     entropy: float
+    log: list
 
 
 def load_ti_yaml(filename: str = "polymlp_ti.yaml", verbose: bool = False):
@@ -203,6 +204,7 @@ def load_ti_yaml(filename: str = "polymlp_ti.yaml", verbose: bool = False):
         free_energy=free_energy,
         energy=energy,
         entropy=entropy,
+        log=log_active,
     )
 
     free_energy, energy, entropy = _get_properties(
@@ -218,5 +220,6 @@ def load_ti_yaml(filename: str = "polymlp_ti.yaml", verbose: bool = False):
         free_energy=free_energy,
         energy=energy,
         entropy=entropy,
+        log=log_active,
     )
     return (properties, properties_ext)
