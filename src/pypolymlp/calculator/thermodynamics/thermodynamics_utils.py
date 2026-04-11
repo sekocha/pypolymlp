@@ -21,32 +21,11 @@ class FittedModels:
     fv_fits: Optional[list] = None
     sv_fits: Optional[list] = None
     cv_fits: Optional[list] = None
-    ft_fits: Optional[list] = None
-    st_fits: Optional[list] = None
-    et_fits: Optional[list] = None
 
     def __post_init__(self):
         """Post init method."""
         self.volume_threshold = max(self.volumes) * 1.2
         self.bm_threshold = 1e-3
-
-    def reshape(self, ix_v: np.ndarray, ix_t: np.ndarray):
-        """Reshape objects with common grid."""
-        self.volumes = self.volumes[ix_v]
-        self.temperatures = self.temperatures[ix_t]
-        if self.fv_fits is not None:
-            self.fv_fits = [self.fv_fits[i] for i in ix_t]
-        if self.sv_fits is not None:
-            self.sv_fits = [self.sv_fits[i] for i in ix_t]
-        if self.cv_fits is not None:
-            self.cv_fits = [self.cv_fits[i] for i in ix_t]
-        if self.ft_fits is not None:
-            self.ft_fits = [self.ft_fits[i] for i in ix_v]
-        if self.st_fits is not None:
-            self.st_fits = [self.st_fits[i] for i in ix_v]
-        if self.et_fits is not None:
-            self.et_fits = [self.et_fits[i] for i in ix_v]
-        return self
 
     def extract(self, itemp: int):
         """Retrun fitted functions for at a temperature index."""
@@ -66,6 +45,13 @@ class FittedModels:
         if self.fv_fits[itemp].b0 / EVAngstromToGPa < self.bm_threshold:
             return True
         return False
+
+    def eval_eq_free_energy(self, itemp: int):
+        """Evaluate free energy at equilibrium volume."""
+        if self._check_errors(itemp):
+            return None
+
+        return self.fv_fits[itemp].e0
 
     def eval_eq_entropy(self, itemp: int):
         """Evaluate entropy at equilibrium volume."""

@@ -25,3 +25,6 @@ def test_load_thermodynamics_yaml():
 
     data1 = data.get_T_F()
     assert data1.shape == (16, 2)
+
+
+# save_thermodynamics_yaml is tested in other functions.
