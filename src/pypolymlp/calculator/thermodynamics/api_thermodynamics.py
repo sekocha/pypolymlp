@@ -74,6 +74,16 @@ class Thermodynamics:
         self._models.cv_fits = self._grid.fit_cv_volume(max_order=max_order)
         return self
 
+    def eval_free_energy_equilibrium(self):
+        """Evaluate free energies at equilibrium volumes."""
+        self._eq_free_energies = np.array(
+            [
+                self._models.eval_eq_free_energy(i)
+                for i, _ in enumerate(self._temperatures)
+            ]
+        )
+        return self._eq_free_energies
+
     def eval_entropy_equilibrium(self):
         """Evaluate entropies at equilibrium volumes."""
         self._eq_entropies = np.array(
