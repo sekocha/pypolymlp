@@ -8,6 +8,7 @@ import scipy
 import yaml
 
 from pypolymlp.calculator.utils.fit_utils import Polyfit
+from pypolymlp.mlp_dev.standard.solvers import solver_ridge
 
 
 def _is_success(eng: float, threshold: float = -100):
@@ -51,19 +52,14 @@ def integrate(
     raise RuntimeError("No available method.")
 
 
-def _extrapolate_data(
+def _extrapolate_data_polynomial(
     data: np.ndarray,
-    max_order: int = 4,
-    threshold: float = 0.7,
+    max_order: int = 3,
+    n_points: int = 7,
     verbose: bool = False,
 ):
     """Extrapolate TI data to alpha = 1.0 using polynomial fitting."""
-    res = []
-    for i in range(data.shape[0]):
-        alpha = data[i, 0]
-        if alpha > threshold:
-            res.append([alpha, data[i, 1]])
-    res = np.array(res)
+    res = np.array(data[-n_points:])
 
     polyfit = Polyfit(res[:, 0], res[:, 1])
     polyfit.fit(max_order=max_order)
@@ -74,6 +70,21 @@ def _extrapolate_data(
         for alpha, true_d, pred_d in zip(res[:, 0], res[:, 1], pred):
             print(alpha, true_d, pred_d, flush=True)
     return polyfit.eval(1.0)
+
+
+def _extrapolate_data(data: np.ndarray, n_points: int = 5, verbose: bool = False):
+    """Extrapolate TI data to alpha = 1.0 using linar fitting."""
+    res = data[-n_points:]
+    X = np.ones((res.shape[0], 2))
+    X[:, 1] = res[:, 0]
+    y = res[:, 1]
+    coeffs = solver_ridge(x=X, y=y, alphas=(1e-10,))[:, 0]
+    if verbose:
+        pred = X @ coeffs
+        print("alpha, TI calculated, fitted", flush=True)
+        for alpha, true_d, pred_d in zip(res[:, 0], res[:, 1], pred):
+            print(alpha, true_d, pred_d, flush=True)
+    return np.sum(coeffs)
 
 
 def _get_free_energy(
