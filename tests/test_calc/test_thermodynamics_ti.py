@@ -53,16 +53,16 @@ def test_property_functions():
     assert E / n_atom == pytest.approx(-0.001229930604749909)
 
     F, E, S = _get_properties(log, temp, n_atom, extrapolation=True)
-    assert F == pytest.approx(-0.00022588635710226365)
-    assert E == pytest.approx(-0.0013240537335495563)
-    assert S == pytest.approx(-1.0981673764472929e-06)
+    assert F == pytest.approx(-0.00023027647986425759)
+    assert E == pytest.approx(8.679046497714236e-06)
+    assert S == pytest.approx(2.389555263619718e-07)
 
     F = _get_free_energy(log, extrapolation=True, method="trapezoid")
-    assert F / n_atom == pytest.approx(-0.0005464876501016688)
+    assert F / n_atom == pytest.approx(-0.0005526420052976206)
     F = _get_free_energy(log, extrapolation=True, method="simpson")
-    assert F / n_atom == pytest.approx(-0.00022588635710226365)
+    assert F / n_atom == pytest.approx(-0.00023027647986425759)
     E = _get_energy(log, extrapolation=True)
-    assert E / n_atom == pytest.approx(-0.0013240537335495563)
+    assert E / n_atom == pytest.approx(8.679046497714236e-06)
 
 
 def test_local_functions():
@@ -80,11 +80,7 @@ def test_local_functions():
 
     log = properties.log
     data_de = np.array([[float(l["alpha"]), float(l["delta_e"])] for l in log])
-    val1 = _extrapolate_data(data_de, max_order=4, threshold=0.7)
-    assert val1 == pytest.approx(-4.722074464741127)
-    val1 = _extrapolate_data(data_de, max_order=6, threshold=0.7)
-    assert val1 == pytest.approx(-4.722074464741127)
-    val1 = _extrapolate_data(data_de, max_order=4, threshold=0.5)
-    assert val1 == pytest.approx(-4.7046040517376895)
-    val1 = _extrapolate_data(data_de, max_order=6, threshold=0.5)
-    assert val1 == pytest.approx(-4.7046040517376895)
+    val1 = _extrapolate_data(data_de, n_points=3)
+    assert val1 == pytest.approx(-4.714184352965251)
+    val1 = _extrapolate_data(data_de, n_points=5)
+    assert val1 == pytest.approx(-4.539516029525858)

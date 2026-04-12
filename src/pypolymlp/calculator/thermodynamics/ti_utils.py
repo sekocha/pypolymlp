@@ -72,7 +72,7 @@ def _extrapolate_data_polynomial(
     return polyfit.eval(1.0)
 
 
-def _extrapolate_data(data: np.ndarray, n_points: int = 5, verbose: bool = False):
+def _extrapolate_data(data: np.ndarray, n_points: int = 3, verbose: bool = False):
     """Extrapolate TI data to alpha = 1.0 using linar fitting."""
     res = data[-n_points:]
     X = np.ones((res.shape[0], 2))
