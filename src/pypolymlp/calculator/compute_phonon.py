@@ -100,15 +100,17 @@ class PolymlpPhonon:
             filename=path_output + "/phonon_thermal_properties.yaml"
         )
         if self._with_pdos:
-            self._ph.write_projected_dos(filename=path_output + "phonon_proj_dos.dat")
+            self._ph.write_projected_dos(filename=path_output + "/phonon_proj_dos.dat")
 
-        print(self._supercell)
         save_cells(
             self._unitcell,
             self._supercell,
-            file=path_output + "polymlp_phonon.yaml",
+            file=path_output + "/polymlp_phonon.yaml",
         )
-        write_force_constants_to_hdf5(self._ph.force_constants, filename="fc2.hdf5")
+        write_force_constants_to_hdf5(
+            self._ph.force_constants,
+            filename=path_output + "/fc2.hdf5",
+        )
 
     @property
     def phonopy(self) -> Phonopy:
