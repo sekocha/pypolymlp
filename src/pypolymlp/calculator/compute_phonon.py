@@ -87,7 +87,7 @@ class PolymlpPhonon:
             self._ph.run_projected_dos()
         return self
 
-    def write_properties(self, path_output: str = "./"):
+    def write_properties(self, path_output: str = "./", write_fc2: bool = True):
         """Save properties."""
         os.makedirs(path_output, exist_ok=True)
         np.savetxt(
@@ -107,10 +107,11 @@ class PolymlpPhonon:
             self._supercell,
             file=path_output + "/polymlp_phonon.yaml",
         )
-        write_force_constants_to_hdf5(
-            self._ph.force_constants,
-            filename=path_output + "/fc2.hdf5",
-        )
+        if write_fc2:
+            write_force_constants_to_hdf5(
+                self._ph.force_constants,
+                filename=path_output + "/fc2.hdf5",
+            )
 
     @property
     def phonopy(self) -> Phonopy:

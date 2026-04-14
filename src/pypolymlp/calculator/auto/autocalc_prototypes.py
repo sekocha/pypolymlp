@@ -186,7 +186,9 @@ class AutoCalcPrototypes(AutoCalcBase):
         supercell_matrix = np.diag(prototype.phonon_supercell)
         self._calc.init_phonon(supercell_matrix=supercell_matrix)
         self._calc.run_phonon(distance=0.01)
-        self._calc.write_phonon(path=self._path_header + prototype.name)
+        self._calc.write_phonon(
+            path=self._path_header + prototype.name, write_fc2=False
+        )
         prototype.phonon_dos = self._calc.phonon_dos
         return prototype
 

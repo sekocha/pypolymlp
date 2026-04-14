@@ -356,9 +356,9 @@ class PypolymlpCalc:
         )
         return self
 
-    def write_phonon(self, path: str = "./"):
+    def write_phonon(self, path: str = "./", write_fc2: bool = True):
         """Save results from phonon calculations."""
-        self._phonon.write_properties(path_output=path)
+        self._phonon.write_properties(path_output=path, write_fc2=write_fc2)
         return self
 
     def run_qha(
