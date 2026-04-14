@@ -9,6 +9,7 @@ from pypolymlp.calculator.sscha.api_sscha import run_sscha
 from pypolymlp.calculator.sscha.sscha_data import SSCHAData
 from pypolymlp.calculator.sscha.sscha_params import SSCHAParams
 from pypolymlp.calculator.sscha.sscha_restart import Restart
+from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.interface_vasp import Poscar
 from pypolymlp.core.params import PolymlpParams
 from pypolymlp.utils.phonopy_utils import get_nac_params
@@ -198,6 +199,26 @@ class PypolymlpSSCHA:
         )
         self._fc2 = self._sscha.force_constants
         return self
+
+    @property
+    def unitcell(self):
+        """Return unit cell."""
+        return self._unitcell
+
+    @unitcell.setter
+    def unitcell(self, cell: PolymlpStructure):
+        """Setter of unit cell."""
+        self._unitcell = cell
+
+    @property
+    def supercell_matrix(self):
+        """Return supercell_matrix."""
+        return self._supercell_matrix
+
+    @supercell_matrix.setter
+    def supercell_matrix(self, matrix: np.ndarray):
+        """Setter of unit cell."""
+        self._supercell_matrix = matrix
 
     @property
     def sscha_params(self) -> SSCHAParams:
