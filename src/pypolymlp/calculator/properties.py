@@ -260,7 +260,7 @@ class Properties:
         self,
         pot: Optional[Union[str, list]] = None,
         params: Optional[PolymlpParams] = None,
-        coeffs: Optional[Union[np.ndarray, list[np.ndarray]]] = None,
+        coeffs: Optional[list[np.ndarray]] = None,
     ):
         """Init method.
 
@@ -284,16 +284,18 @@ class Properties:
             else:
                 self._prop = PropertiesSingle(pot=pot)
         else:
-            if isinstance(coeffs, list):
-                if len(coeffs) > 1:
-                    self._prop = PropertiesHybrid(params=params, coeffs=coeffs)
+            self._pot = "Coefficients"
+            if len(params) == 1:
+                if len(coeffs) != 1:
+                    self._prop = PropertiesSingle(params=params.params, coeffs=coeffs)
                 else:
                     self._prop = PropertiesSingle(
-                        params=params.params,
-                        coeffs=coeffs[0],
+                        params=params.params, coeffs=coeffs[0]
                     )
             else:
-                self._prop = PropertiesSingle(params=params.params, coeffs=coeffs)
+                if len(params) != len(coeffs):
+                    raise RuntimeError("Length of params and coeffs not consistent.")
+                self._prop = PropertiesHybrid(params=params, coeffs=coeffs)
 
     def eval(self, st: PolymlpStructure, use_openmp: bool = True):
         """Evaluate properties for a single structure."""
@@ -403,7 +405,7 @@ class Properties:
 def initialize_polymlp_calculator(
     pot: Optional[Union[str, list[str]]] = None,
     params: Optional[PolymlpParams] = None,
-    coeffs: Optional[Union[np.ndarray, list[np.ndarray]]] = None,
+    coeffs: Optional[list[np.ndarray]] = None,
     properties: Optional[Properties] = None,
     return_none: bool = False,
 ):

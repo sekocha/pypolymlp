@@ -13,8 +13,8 @@ class SSCHAParams:
 
     def __init__(
         self,
-        unitcell: PolymlpStructure,
-        supercell_matrix: np.ndarray,
+        unitcell: Optional[PolymlpStructure] = None,
+        supercell_matrix: Optional[np.ndarray] = None,
         supercell: Optional[PolymlpStructure] = None,
         pot: Optional[Union[str, Sequence[str]]] = None,
         temperatures: Optional[Union[Sequence[float], np.ndarray]] = None,
@@ -32,8 +32,10 @@ class SSCHAParams:
         mesh: tuple = (10, 10, 10),
         init_fc_algorithm: Literal["harmonic", "const", "random", "file"] = "harmonic",
         init_fc_file: Optional[str] = None,
+        fc2: Optional[np.ndarray] = None,
         nac_params: Optional[dict] = None,
         cutoff_radius: Optional[float] = None,
+        use_mkl: bool = True,
     ):
         """Init method.
 
@@ -58,15 +60,15 @@ class SSCHAParams:
         mesh: q-point mesh for computing harmonic properties using effective FC2.
         init_fc_algorithm: Algorithm for generating initial FCs.
         init_fc_file: If algorithm = "file", coefficients are read from given fc2.hdf5.
+        fc2: Force constants in Numpy array, shape=(N, N, 3, 3).
         nac_params: Parameters for non-analytic correction in phonon calculations.
+        cutoff_radius: Cutoff radius for FC2.
+        use_mkl: Use MKL or not.
         """
 
         self._unitcell = unitcell
-        if np.array(supercell_matrix).size == 3:
-            self._supercell_matrix = np.diag(supercell_matrix)
-        else:
-            self._supercell_matrix = supercell_matrix
 
+        self.supercell_matrix = supercell_matrix
         self._supercell = supercell
         self._pot = pot
         self._n_samples_init = n_samples_init
@@ -77,8 +79,10 @@ class SSCHAParams:
         self._mesh = mesh
         self._init_fc_algorithm = init_fc_algorithm
         self._init_fc_file = init_fc_file
+        self._fc2 = fc2
         self._nac_params = nac_params
         self._cutoff_radius = cutoff_radius
+        self._use_mkl = use_mkl
 
         self._temperatures = (
             np.array(temperatures) if temperatures is not None else None
@@ -92,8 +96,8 @@ class SSCHAParams:
         if self._temperatures is None:
             self.set_temperatures()
 
-        self._n_unitcells = int(round(np.linalg.det(self._supercell_matrix)))
-        self._n_atom = len(unitcell.elements) * self._n_unitcells
+        # self._n_unitcells = int(round(np.linalg.det(self._supercell_matrix)))
+        # self._n_atom = len(unitcell.elements) * self._n_unitcells
 
     def _round_temperature(self, temp: float):
         """Round a temperature to int when it is very close to an integer."""
@@ -215,10 +219,38 @@ class SSCHAParams:
         """Return the stored unitcell (PolymlpStructure-like object)."""
         return self._unitcell
 
+    @unitcell.setter
+    def unitcell(self, cell: PolymlpStructure):
+        """Setter of the stored unitcell (PolymlpStructure-like object)."""
+        if cell is None:
+            self._unitcell = None
+            return
+        self._unitcell = cell
+        self._supercell_matrix = None
+
     @property
     def supercell_matrix(self) -> np.ndarray:
         """Return the 3x3 supercell matrix."""
         return self._supercell_matrix
+
+    @supercell_matrix.setter
+    def supercell_matrix(self, matrix: np.ndarray):
+        """Setter of supercell matrix."""
+        if matrix is None:
+            self._supercell_matrix = None
+            self._n_unitcells = None
+            self._n_atom = None
+            return
+
+        if self._unitcell is None:
+            raise RuntimeError("Set unitcell first.")
+
+        if np.array(matrix).size == 3:
+            self._supercell_matrix = np.diag(matrix)
+        else:
+            self._supercell_matrix = np.array(matrix)
+        self._n_unitcells = int(round(np.linalg.det(self._supercell_matrix)))
+        self._n_atom = len(self._unitcell.elements) * self._n_unitcells
 
     @property
     def supercell(self) -> Optional[PolymlpStructure]:
@@ -347,6 +379,16 @@ class SSCHAParams:
         return self._init_fc_file
 
     @property
+    def fc2(self) -> Optional[np.ndarray]:
+        """Force constant array."""
+        return self._fc2
+
+    @fc2.setter
+    def fc2(self, value: np.ndarray):
+        """Set FC2, shape=(N, N, 3, 3)."""
+        self._fc2 = value
+
+    @property
     def nac_params(self) -> Optional[dict]:
         """Parameters for non-analytic corrections in phonon calculations."""
         return self._nac_params
@@ -365,6 +407,16 @@ class SSCHAParams:
     def cutoff_radius(self, value: Optional[float]):
         """Set cutoff_radius (float or None)."""
         self._cutoff_radius = None if value is None else float(value)
+
+    @property
+    def use_mkl(self) -> bool:
+        """Return whether MKL is used or not."""
+        return self._use_mkl
+
+    @use_mkl.setter
+    def use_mkl(self, value: bool):
+        """Set whether MKL is used or not."""
+        self._use_mkl = value
 
     @property
     def n_unitcells(self) -> int:

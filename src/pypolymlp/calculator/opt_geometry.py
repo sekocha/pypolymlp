@@ -45,6 +45,7 @@ class GeometryOptimization:
         """
         self._prop = properties
         self._verbose = verbose
+
         params = self._prop.params
         if isinstance(params, list):
             elements = params[0].elements

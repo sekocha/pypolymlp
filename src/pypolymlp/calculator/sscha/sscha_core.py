@@ -27,7 +27,6 @@ class SSCHACore:
         self,
         sscha_params: SSCHAParams,
         properties: Properties,
-        use_mkl: bool = False,
         verbose: bool = False,
     ):
         """Init method.
@@ -40,7 +39,7 @@ class SSCHACore:
         """
         self._prop = properties
         self._verbose = verbose
-        self._use_mkl = use_mkl
+        self._use_mkl = sscha_params.use_mkl
 
         self._phonopy = Phonopy(
             structure_to_phonopy_cell(sscha_params.unitcell),
