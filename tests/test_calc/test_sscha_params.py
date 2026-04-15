@@ -29,6 +29,7 @@ def test_params1(unitcell_mlp_Al):
     assert params.mixing == pytest.approx(0.5)
     assert params.init_fc_algorithm == "harmonic"
     assert params.init_fc_file is None
+    assert params.fc2 is None
 
     params.set_n_samples_from_basis(n_basis=1000)
     assert params.n_samples_init == 79550
@@ -37,6 +38,9 @@ def test_params1(unitcell_mlp_Al):
     params.print_params()
 
     # Test setters
+    params.unitcell = params.unitcell
+    params.supercell_matrix = size
+    params.supercell_matrix = params.supercell_matrix
     params.supercell = unitcell
     params.pot = pot
     params.temperatures = temperatures_true

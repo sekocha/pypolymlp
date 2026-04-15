@@ -1,6 +1,5 @@
 """Tests of phonon calculations using API."""
 
-import os
 import shutil
 from pathlib import Path
 
@@ -23,10 +22,8 @@ def test_phonon_MgO():
     polymlp.run_phonon()
     _assert_phonon(polymlp._phonon)
 
-    polymlp.write_phonon()
-    os.remove("phonon_mesh_qpoints.txt")
-    os.remove("phonon_thermal_properties.yaml")
-    os.remove("phonon_total_dos.dat")
+    polymlp.write_phonon(path="tmp")
+    shutil.rmtree("tmp")
 
 
 def test_qha_MgO():
