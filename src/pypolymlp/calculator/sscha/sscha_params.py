@@ -226,7 +226,6 @@ class SSCHAParams:
             self._unitcell = None
             return
         self._unitcell = cell
-        self._supercell_matrix = None
 
     @property
     def supercell_matrix(self) -> np.ndarray:
