@@ -21,6 +21,8 @@ def test_sscha_distribution(unitcell_mlp_Al):
 
     distrib = SSCHADistribution(yamlfile=yaml, fc2file=fc2hdf5, pot=pot, verbose=True)
     distrib.run_structure_distribution(n_samples=100)
+    assert len(distrib.unitcell.elements) == 4
+    assert len(distrib.supercell.elements) == 32
     assert distrib.displacements.shape == (100, 3, 32)
     assert distrib.forces.shape == (100, 3, 32)
     assert distrib.energies.shape == (100,)

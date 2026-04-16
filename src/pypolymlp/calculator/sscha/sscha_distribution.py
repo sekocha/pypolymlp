@@ -27,6 +27,9 @@ class SSCHADistribution:
         Load sscha_results.yaml and effective FC2.
         """
         self._res = Restart(yamlfile, fc2hdf5=fc2file, pot=pot)
+        self._unitcell = self._res.unitcell
+        self._supercell = self._res.supercell
+
         prop = Properties(pot=self._res.polymlp)
         self._ph_real = HarmonicReal(
             self._res.supercell,
@@ -103,6 +106,16 @@ class SSCHADistribution:
         if self._verbose:
             print("POSCARs are generated in", path_poscars, flush=True)
         return self
+
+    @property
+    def unitcell(self):
+        """Return supercell without displacements."""
+        return self._unitcell
+
+    @property
+    def supercell(self):
+        """Return supercell without displacements."""
+        return self._supercell
 
     @property
     def displacements(self):
