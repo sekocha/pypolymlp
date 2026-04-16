@@ -9,6 +9,7 @@ from pypolymlp.calculator.sscha.sscha_params import SSCHAParams
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.units import EVtoKJmol
 from pypolymlp.utils.phonopy_utils import phonopy_supercell
+from pypolymlp.utils.tensor_utils import compute_tensor_basis_O2
 
 
 class PropertiesSSCHA:
@@ -38,8 +39,11 @@ class PropertiesSSCHA:
         if self._sscha_params.supercell_matrix is None:
             self._sscha_params.supercell_matrix = np.eye(3, dtype=int)
 
-    def _get_projector(self):
-        """Set projector of supercell forces onto unitcell forces."""
+        self._proj_force = None
+        self._proj_stress = None
+
+    def _get_projector_force(self):
+        """Set projector onto symmetrized supercell forces."""
         supercell = phonopy_supercell(
             self._sscha_params.unitcell,
             supercell_matrix=self._sscha_params.supercell_matrix,
@@ -55,6 +59,31 @@ class PropertiesSSCHA:
             three_n = len(supercell.symbols) * 3
             return np.zeros((three_n, three_n))
 
+    def _get_projector_stress(self):
+        """Set projector onto symmetrized stress tensor."""
+        proj = compute_tensor_basis_O2(self._sscha_params.unitcell)
+        return proj
+
+    def _symmetrize_properties(self, forces: np.ndarray, stress: np.ndarray):
+        """Symmetrize forces and stress."""
+        if self._proj_force is None:
+            raise RuntimeError("Projector of forces not found.")
+        if self._proj_stress is None:
+            raise RuntimeError("Projector of stress not found.")
+
+        n_supercell = int(round(np.linalg.det(self._sscha_params.supercell_matrix)))
+        n_atom_supercell = forces.shape[1]
+
+        forces_sym = (self._proj_force @ forces.T.reshape(-1)).reshape((-1, 3)).T
+        unitcell_reps = np.arange(n_atom_supercell) % n_supercell == 0
+        forces_sym = forces_sym[:, unitcell_reps]
+
+        order = [0, 3, 5, 3, 1, 4, 5, 4, 2]
+        stress_sym = self._proj_stress @ stress[order]
+        order = [0, 4, 8, 1, 5, 6]
+        stress_sym = stress_sym[order]
+        return forces_sym, stress_sym
+
     def eval(self, structure: PolymlpStructure):
         """Evaluate free energy, forces, and virial stress tensor.
 
@@ -67,7 +96,8 @@ class PropertiesSSCHA:
         stress: Virial stress tensor in eV/unitcell, shape=(6) for xx, yy, zz, xy, yz, zx.
         """
         self._sscha_params.unitcell = structure
-        proj = self._get_projector()
+        self._proj_force = self._get_projector_force()
+        self._proj_stress = self._get_projector_stress()
 
         self._sscha = run_sscha(self._sscha_params, self._prop, verbose=self._verbose)
 
@@ -79,15 +109,12 @@ class PropertiesSSCHA:
         average_forces = self._sscha.properties.average_forces
         forces = static_forces + average_forces
 
-        n_supercell = int(round(np.linalg.det(self._sscha_params.supercell_matrix)))
-        n_atom_supercell = forces.shape[1]
-        forces = (proj @ forces.T.reshape(-1)).reshape((-1, 3)).T
-        unitcell_reps = np.arange(n_atom_supercell) % n_supercell == 0
-        forces = forces[:, unitcell_reps]
-
         static_stress = self._sscha.properties.static_stress_tensor
         average_stress = self._sscha.properties.average_stress_tensor
         stress = static_stress + average_stress
+
+        forces, stress = self._symmetrize_properties(forces, stress)
+
         return free_energy, forces, stress
 
     @property
