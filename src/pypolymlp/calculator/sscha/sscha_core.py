@@ -44,8 +44,8 @@ class SSCHACore:
         self._phonopy = Phonopy(
             structure_to_phonopy_cell(sscha_params.unitcell),
             sscha_params.supercell_matrix,
-            nac_params=sscha_params.nac_params,
         )
+        self._phonopy.nac_params = sscha_params.nac_params
         self._sscha_params = sscha_params
         self._n_atom = sscha_params.n_atom
         self._n_unitcells = sscha_params.n_unitcells
