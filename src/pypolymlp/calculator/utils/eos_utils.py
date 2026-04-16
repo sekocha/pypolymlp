@@ -17,7 +17,7 @@ class EOS:
 
     def eval(self, volumes: np.array):
         """Evaluate energy values for given volumes."""
-        return self._bm._eos(volumes, *self._bm.get_parameters())
+        return self._bm._eos(volumes, self._bm.get_parameters())
 
     def eval_gibbs_pressure(self, volumes: np.ndarray, eps: float = 1e-4):
         """Transform Helmholtz free energy to Gibbs free energy.

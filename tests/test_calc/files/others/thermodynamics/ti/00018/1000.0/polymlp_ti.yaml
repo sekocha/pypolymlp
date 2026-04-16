@@ -1,0 +1,158 @@
+system: Cu108
+
+units:
+  volume:         angstrom3
+  temperature:    K
+  time_step:      fs
+  energy:         eV/supercell
+  entropy:        eV/K/supercell
+  heat_capacity:  J/K/mol (/Avogadro's number of atoms)
+
+conditions:
+  n_atom:      108
+  volume:      1245.9703497253709
+  temperature: 1000.0
+  time_step:   1.0
+  n_steps_eq:  5000
+  n_steps:     80000
+  references:  /LARGE0/gr10488/seko/thermodynamics_rerun/PBEsol/Cu_fcc/runs/00018/sscha/0/fc2.hdf5
+
+properties:
+  free_energy:          -0.027347436347188052
+  entropy:              -2.6955952324354e-05
+  average_energy:       -425.1131371192757
+  average_total_energy: -411.0963081565082
+  delta_heat_capacity:  None
+
+  delta_energies:
+  - alpha:        0.0
+    delta_e:      0.0
+    energy:       -425.05883373060414
+    total_energy: -411.1313049310692
+    displacement: 0.12841
+
+  - alpha:        0.0033669863993034954
+    delta_e:      4.497457228493666
+    energy:       -425.025056539025
+    total_energy: -411.0412822642974
+    displacement: 0.12827
+
+  - alpha:        0.017653755633822266
+    delta_e:      4.165558919529556
+    energy:       -425.0567337750894
+    total_energy: -411.11729908718274
+    displacement: 0.12759
+
+  - alpha:        0.04300513015685031
+    delta_e:      3.7169842046753847
+    energy:       -425.1850747185173
+    total_energy: -411.29667133304525
+    displacement: 0.12602
+
+  - alpha:        0.07883268380711272
+    delta_e:      3.0889127899547266
+    energy:       -425.14620156738715
+    total_energy: -411.18226811666733
+    displacement: 0.12488
+
+  - alpha:        0.12429736583452611
+    delta_e:      2.516904264790053
+    energy:       -425.23026184165184
+    total_energy: -411.3200025843
+    displacement: 0.12356
+
+  - alpha:        0.1783336964440077
+    delta_e:      2.1359792288637824
+    energy:       -425.2427591131932
+    total_energy: -411.31171634921924
+    displacement: 0.12225
+
+  - alpha:        0.23967516904409475
+    delta_e:      1.5446572770094844
+    energy:       -425.20835757213234
+    total_energy: -411.2068509527165
+    displacement: 0.12162
+
+  - alpha:        0.3068840165294444
+    delta_e:      0.9951479045171162
+    energy:       -425.35164871764835
+    total_energy: -411.4511702944028
+    displacement: 0.12055
+
+  - alpha:        0.37838493294059394
+    delta_e:      0.5419178888637141
+    energy:       -425.3126153377254
+    total_energy: -411.3597605092734
+    displacement: 0.12038
+
+  - alpha:        0.45250200464458634
+    delta_e:      0.1861326414086699
+    energy:       -425.26967369706995
+    total_energy: -411.2475281047083
+    displacement: 0.12028
+
+  - alpha:        0.5274979953554136
+    delta_e:      -0.3297043296201936
+    energy:       -425.28346629439966
+    total_energy: -411.33865299542697
+    displacement: 0.1211
+
+  - alpha:        0.601615067059406
+    delta_e:      -0.6932795999046147
+    energy:       -425.24213564870934
+    total_energy: -411.2076509459512
+    displacement: 0.12193
+
+  - alpha:        0.6731159834705556
+    delta_e:      -1.170815003603914
+    energy:       -425.3823953286398
+    total_energy: -411.4720609273643
+    displacement: 0.12178
+
+  - alpha:        0.7403248309559052
+    delta_e:      -1.675984976619644
+    energy:       -425.197438507876
+    total_energy: -411.14192741668705
+    displacement: 0.12406
+
+  - alpha:        0.8016663035559923
+    delta_e:      -2.100179161077927
+    energy:       -425.2591872005213
+    total_energy: -411.29606209252375
+    displacement: 0.12525
+
+  - alpha:        0.8557026341654739
+    delta_e:      -2.572921749603404
+    energy:       -425.30413294198263
+    total_energy: -411.4201571231173
+    displacement: 0.12636
+
+  - alpha:        0.9011673161928873
+    delta_e:      -3.052777254446055
+    energy:       -425.17285042903137
+    total_energy: -411.16688968557673
+    displacement: 0.1288
+
+  - alpha:        0.9369948698431496
+    delta_e:      -3.5335467423626064
+    energy:       -425.1772359468404
+    total_energy: -411.20585843250313
+    displacement: 0.13049
+
+  - alpha:        0.9623462443661777
+    delta_e:      -3.8716508285056577
+    energy:       -425.1641795079043
+    total_energy: -411.2016600749496
+    displacement: 0.13166
+
+  - alpha:        0.9766330136006964
+    delta_e:      -4.15711561406504
+    energy:       -425.14410570756854
+    total_energy: -411.17928174826307
+    displacement: 0.13277
+
+  - alpha:        0.98
+    delta_e:      -4.2043635571846
+    energy:       -425.1131371192757
+    total_energy: -411.0963081565082
+    displacement: 0.13313

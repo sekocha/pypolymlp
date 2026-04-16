@@ -27,7 +27,6 @@ class SSCHACore:
         self,
         sscha_params: SSCHAParams,
         properties: Properties,
-        use_mkl: bool = False,
         verbose: bool = False,
     ):
         """Init method.
@@ -40,13 +39,13 @@ class SSCHACore:
         """
         self._prop = properties
         self._verbose = verbose
-        self._use_mkl = use_mkl
+        self._use_mkl = sscha_params.use_mkl
 
         self._phonopy = Phonopy(
             structure_to_phonopy_cell(sscha_params.unitcell),
             sscha_params.supercell_matrix,
-            nac_params=sscha_params.nac_params,
         )
+        self._phonopy.nac_params = sscha_params.nac_params
         self._sscha_params = sscha_params
         self._n_atom = sscha_params.n_atom
         self._n_unitcells = sscha_params.n_unitcells
@@ -160,13 +159,13 @@ class SSCHACore:
             harmonic_potential=self._ph_real.average_harmonic_potential,  # kJ/mol
             harmonic_free_energy=self._ph_recip.free_energy,  # kJ/mol
             average_potential=self._ph_real.average_full_potential,  # kJ/mol
-            anharmonic_free_energy=self._ph_real.average_anharmonic_potential,
+            anharmonic_free_energy=self._ph_real.average_anharmonic_potential,  # KJ/mol
             entropy=self._ph_recip.entropy,  # J/K/mol
             harmonic_heat_capacity=self._ph_recip.heat_capacity,  # J/K/mol
             static_forces=self._ph_real.static_forces,  # eV/ang
             average_forces=self._ph_real.average_forces,  # eV/ang
-            static_stress_tensor=self._ph_real.static_stress_tensor,  # eV/supercell
-            average_stress_tensor=self._ph_real.average_stress_tensor,  # eV/supercell
+            static_stress_tensor=self._ph_real.static_stress_tensor,  # eV/unitcell
+            average_stress_tensor=self._ph_real.average_stress_tensor,  # eV/unitcell
         )
         return data
 

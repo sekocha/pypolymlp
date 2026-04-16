@@ -9,6 +9,7 @@ from pypolymlp.calculator.sscha.api_sscha import run_sscha
 from pypolymlp.calculator.sscha.sscha_data import SSCHAData
 from pypolymlp.calculator.sscha.sscha_params import SSCHAParams
 from pypolymlp.calculator.sscha.sscha_restart import Restart
+from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.interface_vasp import Poscar
 from pypolymlp.core.params import PolymlpParams
 from pypolymlp.utils.phonopy_utils import get_nac_params
@@ -121,7 +122,6 @@ class PypolymlpSSCHA:
         mesh: tuple = (10, 10, 10),
         init_fc_algorithm: Literal["harmonic", "const", "random", "file"] = "harmonic",
         init_fc_file: Optional[str] = None,
-        fc2: Optional[np.ndarray] = None,
         precondition: bool = True,
         cutoff_radius: Optional[float] = None,
         use_temporal_cutoff: bool = False,
@@ -152,13 +152,14 @@ class PypolymlpSSCHA:
         mesh: q-point mesh for computing harmonic properties using effective FC2.
         init_fc_algorithm: Algorithm for generating initial FCs.
         init_fc_file: If algorithm = "file", coefficients are read from init_fc_file.
-        fc2: FC2 used for initial force constants if it is not None.
         cutoff_radius: Cutoff radius used for estimating FC2.
         """
         if self._prop is None:
             raise RuntimeError("Set polymlp.")
         if self._unitcell is None:
             raise RuntimeError("Set structure.")
+        if self._supercell_matrix is None:
+            raise RuntimeError("Set supercell matrix.")
 
         self._sscha_params = SSCHAParams(
             unitcell=self._unitcell,
@@ -178,8 +179,10 @@ class PypolymlpSSCHA:
             mesh=mesh,
             init_fc_algorithm=init_fc_algorithm,
             init_fc_file=init_fc_file,
+            fc2=self._fc2,
             nac_params=self._nac_params,
             cutoff_radius=cutoff_radius,
+            use_mkl=use_mkl,
         )
         if self._verbose:
             self._sscha_params.print_params()
@@ -188,16 +191,34 @@ class PypolymlpSSCHA:
         self._sscha = run_sscha(
             self._sscha_params,
             self._prop,
-            fc2=self._fc2,
             precondition=precondition,
             use_temporal_cutoff=use_temporal_cutoff,
             path=path,
             write_pdos=write_pdos,
-            use_mkl=use_mkl,
             verbose=self._verbose,
         )
         self._fc2 = self._sscha.force_constants
         return self
+
+    @property
+    def unitcell(self):
+        """Return unit cell."""
+        return self._unitcell
+
+    @unitcell.setter
+    def unitcell(self, cell: PolymlpStructure):
+        """Setter of unit cell."""
+        self._unitcell = cell
+
+    @property
+    def supercell_matrix(self):
+        """Return supercell_matrix."""
+        return self._supercell_matrix
+
+    @supercell_matrix.setter
+    def supercell_matrix(self, matrix: np.ndarray):
+        """Setter of unit cell."""
+        self._supercell_matrix = matrix
 
     @property
     def sscha_params(self) -> SSCHAParams:

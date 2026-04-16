@@ -1,6 +1,5 @@
 """Tests of phonon calculation."""
 
-import os
 import shutil
 
 import numpy as np
@@ -19,10 +18,8 @@ def _assert_phonon(ph: PolymlpPhonon):
     assert "entropy" in keys
     assert "heat_capacity" in keys
 
-    ph.write_properties()
-    os.remove("phonon_mesh_qpoints.txt")
-    os.remove("phonon_thermal_properties.yaml")
-    os.remove("phonon_total_dos.dat")
+    ph.write_properties(path_output="tmp")
+    shutil.rmtree("tmp")
 
 
 def _assert_qha(ph: PolymlpPhononQHA):

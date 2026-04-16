@@ -1,5 +1,7 @@
 """Utility functions for symfc."""
 
+from typing import Optional
+
 import numpy as np
 from symfc.basis_sets.basis_sets_O1 import FCBasisSetO1
 from symfc.utils.utils import SymfcAtoms
@@ -53,3 +55,13 @@ def _basis_cartesian_to_fractional_coordinates(
     basis_f = basis_f.transpose((1, 0, 2)).reshape(-1, n_basis)
     basis_f, _, _ = np.linalg.svd(basis_f, full_matrices=False)
     return basis_f
+
+
+def set_symfc_cutoffs(
+    cutoff_fc2: Optional[float] = None,
+    cutoff_fc3: Optional[float] = None,
+    cutoff_fc4: Optional[float] = None,
+):
+    """Set cutoffs used in symfc."""
+    cutoff = {2: cutoff_fc2, 3: cutoff_fc3, 4: cutoff_fc4}
+    return cutoff

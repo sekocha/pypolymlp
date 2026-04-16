@@ -8,6 +8,7 @@ import numpy as np
 
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.dataset_utils import DatasetDFT
+from pypolymlp.core.displacements import convert_positions_to_disps
 from pypolymlp.core.units import EVtoKbar
 
 
@@ -473,7 +474,7 @@ def read_doscar(name):
     return np.array(dos)
 
 
-def parse_energy_volume(vaspruns):
+def parse_energy_volume(vaspruns: list):
     """Parse energy-volume data from vaspruns."""
     ev_data = []
     for vasprun_file in vaspruns:
@@ -482,6 +483,14 @@ def parse_energy_volume(vaspruns):
         vol = vasp.structure.volume
         ev_data.append([vol, energy])
     return np.array(ev_data)
+
+
+def parse_forces_displacements(vaspruns: list, structure_origin: PolymlpStructure):
+    """Parse forces and displacements data from vaspruns."""
+    strs, properties = parse_properties_from_vaspruns(vaspruns)
+    disps = np.array([convert_positions_to_disps(st, structure_origin) for st in strs])
+    forces = np.array(properties[1])
+    return forces, disps
 
 
 def _exist_no_errors(logfile: str):

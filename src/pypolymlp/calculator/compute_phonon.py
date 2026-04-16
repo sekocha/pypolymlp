@@ -4,8 +4,8 @@ import os
 from typing import Optional
 
 import numpy as np
-from phono3py.file_IO import read_fc2_from_hdf5
 from phonopy import Phonopy, PhonopyQHA
+from phonopy.file_IO import read_force_constants_hdf5, write_force_constants_to_hdf5
 
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.utils.phonon_utils import is_imaginary
@@ -15,6 +15,7 @@ from pypolymlp.utils.phonopy_utils import (
     structure_to_phonopy_cell,
 )
 from pypolymlp.utils.structure_utils import isotropic_volume_change
+from pypolymlp.utils.yaml_utils import save_cells
 
 
 class PolymlpPhonon:
@@ -36,9 +37,13 @@ class PolymlpPhonon:
         properties: Properties instance.
         """
         self._prop = properties
+        self._unitcell = unitcell
         self._verbose = verbose
-        unitcell = structure_to_phonopy_cell(unitcell)
-        self._ph = Phonopy(unitcell, supercell_matrix)
+
+        unitcell_ph = structure_to_phonopy_cell(unitcell)
+        self._ph = Phonopy(unitcell_ph, supercell_matrix)
+        self._supercell = phonopy_cell_to_structure(self._ph.supercell)
+        self._supercell.supercell_matrix = supercell_matrix
         self._with_pdos = False
 
         self._qha = None
@@ -82,7 +87,7 @@ class PolymlpPhonon:
             self._ph.run_projected_dos()
         return self
 
-    def write_properties(self, path_output: str = "./"):
+    def write_properties(self, path_output: str = "./", write_fc2: bool = True):
         """Save properties."""
         os.makedirs(path_output, exist_ok=True)
         np.savetxt(
@@ -95,7 +100,18 @@ class PolymlpPhonon:
             filename=path_output + "/phonon_thermal_properties.yaml"
         )
         if self._with_pdos:
-            self._ph.write_projected_dos(filename=path_output + "phonon_proj_dos.dat")
+            self._ph.write_projected_dos(filename=path_output + "/phonon_proj_dos.dat")
+
+        save_cells(
+            self._unitcell,
+            self._supercell,
+            file=path_output + "/polymlp_phonon.yaml",
+        )
+        if write_fc2:
+            write_force_constants_to_hdf5(
+                self._ph.force_constants,
+                filename=path_output + "/fc2.hdf5",
+            )
 
     @property
     def phonopy(self) -> Phonopy:
@@ -233,7 +249,7 @@ def calculate_harmonic_properties_from_fc2(
         raise RuntimeError("Both path_fc2 and fc2 are None.")
 
     if path_fc2 is not None:
-        fc2 = read_fc2_from_hdf5(path_fc2)
+        fc2 = read_force_constants_hdf5(path_fc2)
 
     unitcell_ph = structure_to_phonopy_cell(unitcell)
     ph = Phonopy(unitcell_ph, supercell_matrix)

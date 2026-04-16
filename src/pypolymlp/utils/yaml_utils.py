@@ -52,8 +52,12 @@ def save_cell(
     if tag == "supercell":
         if cell.n_unitcells is not None:
             print("  n_unitcells: ", cell.n_unitcells, file=fstream)
+        if np.array(cell.supercell_matrix).size == 3:
+            supercell_matrix = np.diag(cell.supercell_matrix)
+        else:
+            supercell_matrix = np.array(cell.supercell_matrix)
         print_array2d(
-            cell.supercell_matrix,
+            supercell_matrix,
             "supercell_matrix",
             fstream,
             indent_l=2,

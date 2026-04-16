@@ -1,7 +1,6 @@
 """Class for performing SSCHA."""
 
 import copy
-from typing import Optional
 
 import numpy as np
 
@@ -13,12 +12,10 @@ from pypolymlp.calculator.sscha.sscha_params import SSCHAParams
 def run_sscha(
     sscha_params: SSCHAParams,
     properties: Properties,
-    fc2: Optional[np.ndarray] = None,
     precondition: bool = True,
     use_temporal_cutoff: bool = False,
     path: str = "./sscha",
     write_pdos: bool = False,
-    use_mkl: bool = True,
     verbose: bool = False,
 ):
     """Run sscha iterations for multiple temperatures.
@@ -32,22 +29,18 @@ def run_sscha(
         sscha = run_sscha_large_system(
             sscha_params,
             properties,
-            fc2=fc2,
             precondition=precondition,
             path=path,
             write_pdos=write_pdos,
-            use_mkl=use_mkl,
             verbose=verbose,
         )
     else:
         sscha = run_sscha_standard(
             sscha_params,
             properties,
-            fc2=fc2,
             precondition=precondition,
             path=path,
             write_pdos=write_pdos,
-            use_mkl=use_mkl,
             verbose=verbose,
         )
     return sscha
@@ -56,11 +49,9 @@ def run_sscha(
 def run_sscha_standard(
     sscha_params: SSCHAParams,
     properties: Properties,
-    fc2: Optional[np.ndarray] = None,
     precondition: bool = True,
     path: str = "./sscha",
     write_pdos: bool = False,
-    use_mkl: bool = True,
     verbose: bool = False,
 ):
     """Run sscha iterations for multiple temperatures.
@@ -70,13 +61,8 @@ def run_sscha_standard(
     sscha_params: Parameters for SSCHA in SSCHAParams.
     properties: Properties instance.
     """
-    sscha = SSCHACore(
-        sscha_params,
-        properties,
-        use_mkl=use_mkl,
-        verbose=verbose,
-    )
-    sscha.set_initial_force_constants(fc2=fc2)
+    sscha = SSCHACore(sscha_params, properties, verbose=verbose)
+    sscha.set_initial_force_constants(fc2=sscha_params.fc2)
     if verbose:
         freq = sscha.run_frequencies()
         print("Frequency (min):      ", np.round(np.min(freq), 5), flush=True)
@@ -94,11 +80,9 @@ def run_sscha_standard(
 def run_sscha_large_system(
     sscha_params: SSCHAParams,
     properties: Properties,
-    fc2: Optional[np.ndarray] = None,
     precondition: bool = True,
     path: str = "./sscha",
     write_pdos: bool = False,
-    use_mkl: bool = True,
     verbose: bool = False,
 ):
     """Run sscha iterations for multiple temperatures using cutoff temporarily.
@@ -115,13 +99,8 @@ def run_sscha_large_system(
     else:
         rerun = False
 
-    sscha = SSCHACore(
-        sscha_params,
-        properties,
-        use_mkl=use_mkl,
-        verbose=verbose,
-    )
-    sscha.set_initial_force_constants(fc2=fc2)
+    sscha = SSCHACore(sscha_params, properties, verbose=verbose)
+    sscha.set_initial_force_constants(fc2=sscha_params.fc2)
     if verbose:
         freq = sscha.run_frequencies()
         print("Frequency (min):      ", np.round(np.min(freq), 5), flush=True)
@@ -140,12 +119,7 @@ def run_sscha_large_system(
         fc2_rerun = sscha.force_constants
         sscha_params.cutoff_radius = sscha_params_target.cutoff_radius
 
-        sscha = SSCHACore(
-            sscha_params_target,
-            properties,
-            use_mkl=use_mkl,
-            verbose=verbose,
-        )
+        sscha = SSCHACore(sscha_params_target, properties, verbose=verbose)
         sscha.set_initial_force_constants(fc2=fc2_rerun)
 
     if verbose:

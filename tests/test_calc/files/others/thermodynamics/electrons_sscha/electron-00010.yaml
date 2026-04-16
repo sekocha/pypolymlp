@@ -1,0 +1,143 @@
+structure:
+  axis:
+   - [3.494702323330114, 0.0, 0.0]
+   - [0.0, 3.494702323330114, 0.0]
+   - [0.0, 0.0, 3.494702323330114]
+  positions:
+   - [0.0, 0.0, 0.0]
+   - [0.0, 0.5, 0.5]
+   - [0.5, 0.0, 0.5]
+   - [0.5, 0.5, 0.0]
+  n_atoms:   [4]
+  types:     [0, 0, 0, 0]
+  elements:  ['Cu', 'Cu', 'Cu', 'Cu']
+  volume:    42.680604920170424
+
+unit:
+  free_energy   : eV/cell
+  entropy       : eV/K/cell
+
+properties:
+- temperature: 0.0
+  free_energy: 0.0
+  entropy:     -0.0
+
+- temperature: 50.0
+  free_energy: -4.5641418947929956e-08
+  entropy:     1.2836699308994222e-07
+
+- temperature: 100.0
+  free_energy: -2.0130656540156014e-07
+  entropy:     1.788988886195223e-07
+
+- temperature: 150.0
+  free_energy: -3.060415939287399e-07
+  entropy:     1.6848992353144635e-07
+
+- temperature: 200.0
+  free_energy: -3.8487454748238914e-07
+  entropy:     1.1257268686939868e-07
+
+- temperature: 250.0
+  free_energy: -1.07830694852019e-06
+  entropy:     2.5118119778041606e-08
+
+- temperature: 300.0
+  free_energy: -1.0743882488954745e-06
+  entropy:     -8.136448449698411e-08
+
+- temperature: 350.0
+  free_energy: 1.943962540538944e-06
+  entropy:     -1.9582748060905983e-07
+
+- temperature: 400.0
+  free_energy: 6.567057668319124e-06
+  entropy:     -3.0868487111058854e-07
+
+- temperature: 450.0
+  free_energy: 1.2919806020289926e-05
+  entropy:     -4.1181230645299516e-07
+
+- temperature: 500.0
+  free_energy: 2.0783167790574092e-05
+  entropy:     -4.98547084986726e-07
+
+- temperature: 550.0
+  free_energy: 2.9735356807397768e-05
+  entropy:     -5.636881529612503e-07
+
+- temperature: 600.0
+  free_energy: 4.00001038481181e-05
+  entropy:     -6.034961045250578e-07
+
+- temperature: 650.0
+  free_energy: 5.0959125807126074e-05
+  entropy:     -6.156931817256614e-07
+
+- temperature: 700.0
+  free_energy: 6.317699924999669e-05
+  entropy:     -5.994632745095936e-07
+
+- temperature: 750.0
+  free_energy: 0.00020210162961706174
+  entropy:     -5.554519207224112e-07
+
+- temperature: 800.0
+  free_energy: 0.00023451832973645233
+  entropy:     -4.857663061086915e-07
+
+- temperature: 850.0
+  free_energy: 0.00026773974099929363
+  entropy:     -3.9397526431203414e-07
+
+- temperature: 900.0
+  free_energy: 0.0003027465199299928
+  entropy:     -2.851092768750611e-07
+
+- temperature: 950.0
+  free_energy: 0.0003373196737473195
+  entropy:     -1.6566047323941506e-07
+
+- temperature: 1000.0
+  free_energy: 0.00037165532205749794
+  entropy:     -4.3582630745760704e-08
+
+- temperature: 1050.0
+  free_energy: 0.00015797838201202387
+  entropy:     7.170882536621808e-08
+
+- temperature: 1100.0
+  free_energy: 0.00017142833072635323
+  entropy:     1.6933682195780658e-07
+
+- temperature: 1150.0
+  free_energy: 0.00018525059793320892
+  entropy:     2.3696263799128087e-07
+
+- temperature: 1200.0
+  free_energy: 0.000199053411347295
+  entropy:     2.6078590452988095e-07
+
+- temperature: 1250.0
+  free_energy: 0.00021246538062743068
+  entropy:     2.2554460473784192e-07
+
+- temperature: 1300.0
+  free_energy: 0.00022476327491575902
+  entropy:     1.1451507388035795e-07
+
+- temperature: 1350.0
+  free_energy: 0.00023810712724506056
+  entropy:     -9.04880006763789e-08
+
+- temperature: 1400.0
+  free_energy: 0.00025102529937623684
+  entropy:     -4.091115794652119e-07
+
+- temperature: 1450.0
+  free_energy: 0.00026326898049321466
+  entropy:     -8.62464270918005e-07
+
+- temperature: 1500.0
+  free_energy: 0.0002751899525180239
+  entropy:     -1.4731163313656387e-06

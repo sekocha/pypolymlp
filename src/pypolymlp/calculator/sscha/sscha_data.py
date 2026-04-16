@@ -29,11 +29,11 @@ class SSCHAData:
     """
 
     temperature: float
-    static_potential: float
-    harmonic_potential: float
-    harmonic_free_energy: float
-    average_potential: float
-    anharmonic_free_energy: float
+    static_potential: Optional[float] = None
+    harmonic_potential: Optional[float] = None
+    harmonic_free_energy: Optional[float] = None
+    average_potential: Optional[float] = None
+    anharmonic_free_energy: Optional[float] = None
     free_energy: Optional[float] = None
 
     entropy: Optional[float] = None
@@ -50,6 +50,9 @@ class SSCHAData:
 
     def __post_init__(self):
         """Post init method."""
+        if self.free_energy is not None:
+            return
+
         if self.harmonic_free_energy is None:
             self.free_energy = None
             return

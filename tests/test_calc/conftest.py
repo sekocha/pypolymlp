@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import glob
 import shutil
 from pathlib import Path
 
@@ -9,6 +10,7 @@ import pytest
 
 from pypolymlp.api.pypolymlp_autocalc import PypolymlpAutoCalc
 from pypolymlp.calculator.properties import Properties
+from pypolymlp.calculator.thermodynamics.api_thermodynamics import load_yamls
 from pypolymlp.core.interface_vasp import PolymlpStructure, Poscar
 
 cwd = Path(__file__).parent
@@ -100,3 +102,18 @@ def prototypes_Ag():
     prototypes = api.prototypes
     shutil.rmtree("tmp")
     return prototypes
+
+
+@pytest.fixture(scope="session")
+def thermodynamics_grids_Cu():
+    path = str(cwd) + "/files/others/thermodynamics/"
+    files_sscha = sorted(glob.glob(path + "sscha/*.yaml"))
+    files_el = sorted(glob.glob(path + "electrons/*.yaml"))
+    files_ti = sorted(glob.glob(path + "ti/*/*/polymlp_ti.yaml"))
+    grids = load_yamls(
+        yamls_sscha=files_sscha,
+        yamls_electron=files_el,
+        yamls_ti=files_ti,
+        n_require=5,
+    )
+    return grids
