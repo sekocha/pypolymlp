@@ -36,9 +36,6 @@ class PropertiesSSCHA:
         self._prop = properties
         self._verbose = verbose
 
-        if self._sscha_params.supercell_matrix is None:
-            self._sscha_params.supercell_matrix = np.eye(3, dtype=int)
-
         self._proj_force = None
         self._proj_stress = None
 
@@ -114,7 +111,6 @@ class PropertiesSSCHA:
         stress = static_stress + average_stress
 
         forces, stress = self._symmetrize_properties(forces, stress)
-
         return free_energy, forces, stress
 
     @property

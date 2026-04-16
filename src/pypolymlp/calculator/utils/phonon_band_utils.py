@@ -142,8 +142,8 @@ def calculate_phonon_bands(
             unitcell_ph,
             supercell_matrix=supercell.supercell_matrix,
             primitive_matrix=primitive,
-            nac_params=nac_params,
         )
+        phonopy.nac_params = nac_params
         phonopy.force_constants = fc2
 
     qpoints, connections = get_band_qpoints_and_path_connections(path, npoints=npoints)
