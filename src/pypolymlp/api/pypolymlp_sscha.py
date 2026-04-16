@@ -222,7 +222,7 @@ class PypolymlpSSCHA:
         method: Literal["BFGS", "CG", "L-BFGS-B", "SLSQP"] = "BFGS",
         gtol: float = 1e-2,
         maxiter: int = 1000,
-        #        pressure: float = 0.0,
+        pressure: float = 0.0,
     ):
         """Run geometry optimization using SSCHA.
 
@@ -241,8 +241,18 @@ class PypolymlpSSCHA:
         init_fc_algorithm: Algorithm for generating initial FCs.
         init_fc_file: If algorithm = "file", coefficients are read from init_fc_file.
         cutoff_radius: Cutoff radius used for estimating FC2.
+
+        (For geometry optimization)
+        with_sym: Consider symmetry.
+        relax_cell: Relax cell.
+        relax_volume: Relax volume.
+        relax_positions: Relax atomic positions.
+        method: Optimization method, CG, BFGS, L-BFGS-B, or SLSQP.
+                If relax_volume = False, SLSQP is automatically used.
+        gtol: Tolerance for gradients.
+        maxiter: Maximum iteration in scipy optimization.
+        pressure: Pressure in GPa.
         """
-        # TODO: Implement pressure.
         if self._prop is None:
             raise RuntimeError("Set polymlp.")
         if self._unitcell is None:
@@ -284,12 +294,13 @@ class PypolymlpSSCHA:
             relax_volume=relax_volume,
             relax_positions=relax_positions,
             with_sym=with_sym,
+            pressure=pressure,
             verbose=self._verbose,
         )
         opt.run(method=method, gtol=gtol, maxiter=maxiter)
         opt.print_structure()
         opt.write_poscar()
-        # self._fc2 = self._sscha.force_constants
+        self._fc2 = prop_sscha.force_constants
         return self
 
     @property
@@ -320,11 +331,15 @@ class PypolymlpSSCHA:
     @property
     def properties(self) -> SSCHAData:
         """Return SSCHA properties at the final temperature."""
+        if self._sscha is None:
+            return None
         return self._sscha.properties
 
     @property
     def logs(self) -> list[SSCHAData]:
         """Return logs of SSCHA properties at the final temperature."""
+        if self._sscha is None:
+            return None
         return self._sscha.logs
 
     @property
@@ -333,7 +348,7 @@ class PypolymlpSSCHA:
 
         shape=(n_atom, n_atom, 3, 3).
         """
-        return self._sscha.force_constants
+        return self._fc2
 
     @property
     def sscha_properties(self) -> SSCHAData:
@@ -341,6 +356,8 @@ class PypolymlpSSCHA:
 
         Deprecated.
         """
+        if self._sscha is None:
+            return None
         return self._sscha.properties
 
     @property
@@ -349,4 +366,6 @@ class PypolymlpSSCHA:
 
         Deprecated.
         """
+        if self._sscha is None:
+            return None
         return self._sscha.logs

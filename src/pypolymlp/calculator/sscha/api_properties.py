@@ -38,6 +38,8 @@ class PropertiesSSCHA:
 
         self._proj_force = None
         self._proj_stress = None
+        self._sscha = None
+        self._fc2 = None
 
     def _get_projector_force(self):
         """Set projector onto symmetrized supercell forces."""
@@ -92,12 +94,12 @@ class PropertiesSSCHA:
         force: Forces including static forces in eV/angstrom, shape=(3, n_atom).
         stress: Virial stress tensor in eV/unitcell, shape=(6) for xx, yy, zz, xy, yz, zx.
         """
-        # TODO: Implement pressure.
         self._sscha_params.unitcell = structure
         self._proj_force = self._get_projector_force()
         self._proj_stress = self._get_projector_stress()
 
         self._sscha = run_sscha(self._sscha_params, self._prop, verbose=self._verbose)
+        self._fc2 = self._sscha.force_constants
 
         static_energy = self._sscha.properties.static_potential
         sscha_free_energy = self._sscha.properties.free_energy
@@ -118,3 +120,8 @@ class PropertiesSSCHA:
     def params(self):
         """Parameters of polymlp."""
         return self._prop.params
+
+    @property
+    def force_constants(self):
+        """Force constants at final SSCHA iteration."""
+        return self._fc2
