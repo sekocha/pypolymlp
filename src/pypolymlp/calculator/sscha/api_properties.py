@@ -92,6 +92,7 @@ class PropertiesSSCHA:
         force: Forces including static forces in eV/angstrom, shape=(3, n_atom).
         stress: Virial stress tensor in eV/unitcell, shape=(6) for xx, yy, zz, xy, yz, zx.
         """
+        # TODO: Implement pressure.
         self._sscha_params.unitcell = structure
         self._proj_force = self._get_projector_force()
         self._proj_stress = self._get_projector_stress()
