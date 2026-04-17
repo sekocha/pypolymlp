@@ -64,7 +64,7 @@ class GeometryOptimization:
 
         self._basis_axis, cell_update = self._set_basis_axis(cell)
         self.structure = cell_update
-        self._basis_f = self._set_basis_positions(cell)
+        self._basis_f = self._set_basis_positions(cell_update)
 
         if not self._relax_cell and not self._relax_volume:
             if not self._relax_positions:

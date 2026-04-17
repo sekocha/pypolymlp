@@ -1,12 +1,16 @@
 """Utility functions for input/output results of SSCHA."""
 
+import io
 import os
 
 import numpy as np
 
 from pypolymlp.calculator.sscha.sscha_data import SSCHAData
 from pypolymlp.calculator.sscha.sscha_params import SSCHAParams
+from pypolymlp.calculator.sscha.sscha_utils import symmetrize_properties
 from pypolymlp.core.units import EVtoKJmol
+from pypolymlp.utils.symfc_utils import compute_projector_cartesian
+from pypolymlp.utils.tensor_utils import compute_spg_projector_O2
 from pypolymlp.utils.yaml_utils import print_array1d, print_array2d, save_cell
 
 
@@ -14,6 +18,7 @@ def save_sscha_yaml(
     sscha_params: SSCHAParams,
     sscha_log: list[SSCHAData],
     filename: str = "sscha_results.yaml",
+    symmetrize: bool = True,
 ):
     """Write SSCHA results to a file."""
 
@@ -72,37 +77,42 @@ def save_sscha_yaml(
     print("", file=f)
 
     save_cell(sscha_params.unitcell, tag="unitcell", file=f)
-    print("supercell_matrix:", file=f)
-    print(" -", list(sscha_params.supercell_matrix[0].astype(int)), file=f)
-    print(" -", list(sscha_params.supercell_matrix[1].astype(int)), file=f)
-    print(" -", list(sscha_params.supercell_matrix[2].astype(int)), file=f)
-    print("", file=f)
+    supercell_matrix = sscha_params.supercell_matrix.astype(int)
+    print_array2d(supercell_matrix, "supercell_matrix", f, indent_l=0)
+    print(file=f)
     save_cell(sscha_params.supercell, tag="supercell", file=f)
 
-    print_array2d(properties.average_forces.T, "average_forces", f, indent_l=0)
-    print("", file=f)
+    _print_forces(properties.average_forces, "average_forces", file=f)
+    _print_stress(properties.average_stress_tensor, "average_stress_tensor", file=f)
 
-    total = properties.average_forces + properties.static_forces
-    print_array2d(total.T, "total_average_forces", f, indent_l=0)
-    print("", file=f)
+    total_f = properties.average_forces + properties.static_forces
+    total_s = properties.average_stress_tensor + properties.static_stress_tensor
+    _print_forces(total_f, "total_forces", file=f)
+    _print_stress(total_s, "total_stress_tensor", file=f)
 
-    s = properties.average_stress_tensor
-    sigma = [
-        [s[0], s[3], s[5]],
-        [s[3], s[1], s[4]],
-        [s[5], s[4], s[2]],
-    ]
-    print_array2d(np.array(sigma), "average_stress_tensor", f, indent_l=0)
-    print("", file=f)
+    if symmetrize:
+        proj_f = compute_projector_cartesian(sscha_params.supercell)
+        proj_s = compute_spg_projector_O2(sscha_params.unitcell)
 
-    total = properties.average_stress_tensor + properties.static_stress_tensor
-    sigma = [
-        [total[0], total[3], total[5]],
-        [total[3], total[1], total[4]],
-        [total[5], total[4], total[2]],
-    ]
-    print_array2d(np.array(sigma), "total_average_stress_tensor", f, indent_l=0)
-    print("", file=f)
+        forces_sym, stress_sym = symmetrize_properties(
+            properties.average_forces,
+            properties.average_stress_tensor,
+            proj_f,
+            proj_s,
+            sscha_params.n_unitcells,
+        )
+        _print_forces(forces_sym, "symmetrized_average_forces", file=f)
+        _print_stress(stress_sym, "symmetrized_average_stress_tensor", file=f)
+
+        forces_sym, stress_sym = symmetrize_properties(
+            total_f,
+            total_s,
+            proj_f,
+            proj_s,
+            sscha_params.n_unitcells,
+        )
+        _print_forces(forces_sym, "symmetrized_total_forces", file=f)
+        _print_stress(stress_sym, "symmetrized_total_stress_tensor", file=f)
 
     print("logs:", file=f)
     print_array1d([log.free_energy for log in sscha_log], "free_energy", f, indent_l=2)
@@ -121,3 +131,20 @@ def save_sscha_yaml(
     print("", file=f)
 
     f.close()
+
+
+def _print_forces(forces: np.ndarray, tag: str, file: io.IOBase):
+    """Print forces."""
+    print_array2d(forces.T, tag, file, indent_l=0)
+    print(file=file)
+
+
+def _print_stress(stress: np.ndarray, tag: str, file: io.IOBase):
+    """Print stress tensor."""
+    sigma = [
+        [stress[0], stress[3], stress[5]],
+        [stress[3], stress[1], stress[4]],
+        [stress[5], stress[4], stress[2]],
+    ]
+    print_array2d(np.array(sigma), tag, file, indent_l=0)
+    print(file=file)

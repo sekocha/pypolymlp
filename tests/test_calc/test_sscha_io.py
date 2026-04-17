@@ -40,5 +40,5 @@ def test_save_sscha_yaml(unitcell_mlp_Al):
     )
     params.supercell = unitcell
     params.supercell.supercell_matrix = params.supercell_matrix
-    save_sscha_yaml(params, [data], filename="tmp.yaml")
+    save_sscha_yaml(params, [data], filename="tmp.yaml", symmetrize=False)
     os.remove("tmp.yaml")

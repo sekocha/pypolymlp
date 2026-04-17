@@ -152,6 +152,7 @@ class SSCHACore:
         qmesh = self._sscha_params.mesh
         self._ph_recip.force_constants = self._fc2
         self._ph_recip.compute_thermal_properties(temp=temp, qmesh=qmesh)
+        imaginary = self._is_imaginary(freq=self._ph_recip.frequencies)
 
         data = SSCHAData(
             temperature=temp,
@@ -166,7 +167,9 @@ class SSCHACore:
             average_forces=self._ph_real.average_forces,  # eV/ang
             static_stress_tensor=self._ph_real.static_stress_tensor,  # eV/unitcell
             average_stress_tensor=self._ph_real.average_stress_tensor,  # eV/unitcell
+            imaginary=imaginary,
         )
+
         return data
 
     def _run_solver_fc2(self):
@@ -213,9 +216,10 @@ class SSCHACore:
         self._sscha_log.append(self._data_current)
         return self
 
-    def _is_imaginary(self, tol: float = -0.01):
+    def _is_imaginary(self, freq: Optional[np.ndarray] = None, tol: float = -0.01):
         """Check if imaginary frequencies exist only using frequency data."""
-        freq = self.run_frequencies(qmesh=self._sscha_params.mesh)
+        if freq is None:
+            freq = self.run_frequencies(qmesh=self._sscha_params.mesh)
         n_imag = np.count_nonzero(freq < tol)
         return (n_imag / freq.size) > 1e-5
 
@@ -235,6 +239,8 @@ class SSCHACore:
         print("displacements:")
         print("- average disp. (Ang.):", np.round(np.mean(disp_norms), 6), flush=True)
         print("- max disp. (Ang.):    ", np.round(np.max(disp_norms), 6), flush=True)
+        if data.imaginary is not None:
+            print("imaginary:             ", data.imaginary, flush=True)
 
         print("thermodynamic_properties:", flush=True)
         prefix = "- free energy (harmonic, kJ/mol):   "
@@ -243,6 +249,12 @@ class SSCHACore:
         print(prefix, "{:.6f}".format(data.anharmonic_free_energy), flush=True)
         prefix = "- free energy (sscha, kJ/mol):      "
         print(prefix, "{:.6f}".format(data.free_energy), flush=True)
+
+        print(
+            "Free energy (+ static potential, kJ/mol):",
+            "{:.6f}".format(data.free_energy + data.static_potential),
+            flush=True,
+        )
 
     def precondition(
         self,
