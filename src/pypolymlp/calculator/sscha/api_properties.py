@@ -1,14 +1,15 @@
 """Class for calculating SSCHA properties."""
 
 import numpy as np
-from symfc.basis_sets.basis_sets_O1 import FCBasisSetO1
 
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.sscha.api_sscha import run_sscha
 from pypolymlp.calculator.sscha.sscha_params import SSCHAParams
+from pypolymlp.calculator.sscha.sscha_utils import symmetrize_properties
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.units import EVtoKJmol
-from pypolymlp.utils.phonopy_utils import phonopy_supercell
+from pypolymlp.utils.structure_utils import supercell
+from pypolymlp.utils.symfc_utils import compute_projector_cartesian
 from pypolymlp.utils.tensor_utils import compute_spg_projector_O2
 
 
@@ -44,20 +45,13 @@ class PropertiesSSCHA:
 
     def _get_projector_force(self):
         """Set projector onto symmetrized supercell forces."""
-        supercell = phonopy_supercell(
+        sup = supercell(
             self._sscha_params.unitcell,
-            supercell_matrix=self._sscha_params.supercell_matrix,
+            self._sscha_params.supercell_matrix,
+            use_phonopy=True,
         )
-        try:
-            basis = FCBasisSetO1(supercell, use_mkl=False).run()
-            basis_matrix = basis.full_basis_set.toarray()
-            if len(basis_matrix) == 0:
-                three_n = len(supercell.symbols) * 3
-                return np.zeros((three_n, three_n))
-            return basis_matrix @ basis_matrix.T
-        except:
-            three_n = len(supercell.symbols) * 3
-            return np.zeros((three_n, three_n))
+        proj = compute_projector_cartesian(sup)
+        return proj
 
     def _get_projector_stress(self):
         """Set projector onto symmetrized stress tensor."""
@@ -71,17 +65,13 @@ class PropertiesSSCHA:
         if self._proj_stress is None:
             raise RuntimeError("Projector of stress not found.")
 
-        n_supercell = int(round(np.linalg.det(self._sscha_params.supercell_matrix)))
-        n_atom_supercell = forces.shape[1]
-
-        forces_sym = (self._proj_force @ forces.T.reshape(-1)).reshape((-1, 3)).T
-        unitcell_reps = np.arange(n_atom_supercell) % n_supercell == 0
-        forces_sym = forces_sym[:, unitcell_reps]
-
-        order = [0, 3, 5, 3, 1, 4, 5, 4, 2]
-        stress_sym = self._proj_stress @ stress[order]
-        order = [0, 4, 8, 1, 5, 6]
-        stress_sym = stress_sym[order]
+        forces_sym, stress_sym = symmetrize_properties(
+            forces,
+            stress,
+            self._proj_force,
+            self._proj_stress,
+            self._sscha_params.n_unitcells,
+        )
         return forces_sym, stress_sym
 
     def eval(self, structure: PolymlpStructure):

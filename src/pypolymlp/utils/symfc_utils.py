@@ -23,7 +23,7 @@ def construct_basis_cartesian(cell: PolymlpStructure) -> np.ndarray:
     """Generate a basis set for atomic positions in Cartesian coordinates."""
     cell_symfc = structure_to_symfc_cell(cell)
     try:
-        fc_basis = FCBasisSetO1(cell_symfc).run()
+        fc_basis = FCBasisSetO1(cell_symfc, use_mkl=False).run()
     except ValueError:
         return None
     return fc_basis.full_basis_set.toarray()
@@ -55,6 +55,18 @@ def _basis_cartesian_to_fractional_coordinates(
     basis_f = basis_f.transpose((1, 0, 2)).reshape(-1, n_basis)
     basis_f, _, _ = np.linalg.svd(basis_f, full_matrices=False)
     return basis_f
+
+
+def compute_projector_cartesian(cell: PolymlpStructure) -> np.ndarray:
+    """Compute projector for cartesian components."""
+    three_n = len(cell.elements) * 3
+    try:
+        basis = construct_basis_cartesian(cell)
+        if len(basis) == 0:
+            return np.zeros((three_n, three_n))
+        return basis @ basis.T
+    except:
+        return np.zeros((three_n, three_n))
 
 
 def set_symfc_cutoffs(
