@@ -250,6 +250,12 @@ class SSCHACore:
         prefix = "- free energy (sscha, kJ/mol):      "
         print(prefix, "{:.6f}".format(data.free_energy), flush=True)
 
+        print(
+            "Free energy with static potential (kJ/mol):",
+            "{:.6f}".format(data.free_energy + data.static_potential),
+            flush=True,
+        )
+
     def precondition(
         self,
         temp: float = 1000,
