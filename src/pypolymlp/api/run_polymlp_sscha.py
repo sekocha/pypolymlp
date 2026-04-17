@@ -181,6 +181,12 @@ def run():
         default="BFGS",
         help="Algorithm for geometry optimization",
     )
+    parser.add_argument(
+        "--gtol",
+        type=float,
+        default=0.01,
+        help="Tolerance parameter for gradients",
+    )
 
     args = parser.parse_args()
 
@@ -232,6 +238,7 @@ def run():
             relax_volume=relax_volume,
             relax_positions=not args.fix_atom,
             pressure=args.pressure,
+            gtol=args.gtol,
         )
     else:
         sscha.run(
