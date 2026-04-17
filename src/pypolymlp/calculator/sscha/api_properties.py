@@ -9,7 +9,7 @@ from pypolymlp.calculator.sscha.sscha_params import SSCHAParams
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.units import EVtoKJmol
 from pypolymlp.utils.phonopy_utils import phonopy_supercell
-from pypolymlp.utils.tensor_utils import compute_tensor_basis_O2
+from pypolymlp.utils.tensor_utils import compute_spg_projector_O2
 
 
 class PropertiesSSCHA:
@@ -39,6 +39,9 @@ class PropertiesSSCHA:
         self._proj_force = None
         self._proj_stress = None
 
+        self._sscha = None
+        self._fc2 = None
+
     def _get_projector_force(self):
         """Set projector onto symmetrized supercell forces."""
         supercell = phonopy_supercell(
@@ -58,7 +61,7 @@ class PropertiesSSCHA:
 
     def _get_projector_stress(self):
         """Set projector onto symmetrized stress tensor."""
-        proj = compute_tensor_basis_O2(self._sscha_params.unitcell)
+        proj = compute_spg_projector_O2(self._sscha_params.unitcell)
         return proj
 
     def _symmetrize_properties(self, forces: np.ndarray, stress: np.ndarray):
@@ -90,7 +93,8 @@ class PropertiesSSCHA:
         ------
         free_energy: SSCHA free energy in eV/unitcell.
         force: Forces including static forces in eV/angstrom, shape=(3, n_atom).
-        stress: Virial stress tensor in eV/unitcell, shape=(6) for xx, yy, zz, xy, yz, zx.
+        stress: Virial stress tensor in eV/unitcell,
+                shape=(6) for xx, yy, zz, xy, yz, zx.
         """
         self._sscha_params.unitcell = structure
         self._proj_force = self._get_projector_force()
@@ -116,4 +120,34 @@ class PropertiesSSCHA:
     @property
     def params(self):
         """Parameters of polymlp."""
+        if self._prop is None:
+            return None
         return self._prop.params
+
+    @property
+    def properties(self):
+        """Return SSCHA results."""
+        if self._sscha is None:
+            return None
+        return self._sscha.properties
+
+    @property
+    def logs(self):
+        """Return SSCHA progress."""
+        if self._sscha is None:
+            return None
+        return self._sscha.logs
+
+    @property
+    def force_constants(self):
+        """Force constants at final SSCHA iteration."""
+        if self._sscha is None:
+            return None
+        return self._sscha.force_constants
+
+    @property
+    def delta(self):
+        """Return convergence delta."""
+        if self._sscha is None:
+            return None
+        return self._sscha.delta

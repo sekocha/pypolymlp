@@ -1,6 +1,7 @@
 """Utilities to calculate tensor properties."""
 
 import numpy as np
+from symfc.api_symfc import eigh
 from symfc.spg_reps.spg_reps_base import SpgRepsBase
 from symfc.utils.utils import SymfcAtoms
 
@@ -14,8 +15,8 @@ def _set_sgp_reps(st: PolymlpStructure):
     return spgrep
 
 
-def compute_tensor_basis_O2(st: PolymlpStructure):
-    """Compute basis set for O2 tensor."""
+def compute_spg_projector_O2(st: PolymlpStructure):
+    """Compute projector for O2 tensor."""
     spgrep = _set_sgp_reps(st)
     proj = np.zeros((9, 9))
     for r in spgrep._unique_rotations:
@@ -24,3 +25,10 @@ def compute_tensor_basis_O2(st: PolymlpStructure):
 
     proj /= len(spgrep._unique_rotations)
     return proj
+
+
+def compute_tensor_basis_O2(st: PolymlpStructure):
+    """Compute basis set for O2 tensor."""
+    proj = compute_spg_projector_O2(st)
+    eigvecs = eigh(proj)
+    return eigvecs
