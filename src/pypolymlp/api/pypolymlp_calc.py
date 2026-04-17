@@ -503,18 +503,9 @@ class PypolymlpCalc:
         self._go.run(method=method, gtol=gtol, maxiter=maxiter, c1=c1, c2=c2)
         self.structures = self._go.structure
         if self._verbose:
-            if not self._go._relax_cell:
-                print("Residuals (force):", flush=True)
-                print(self._go.residual_forces.T, flush=True)
-            else:
-                res_f, res_s = self._go.residual_forces
-                print("Residuals (force):", flush=True)
-                print(res_f.T, flush=True)
-                print("Residuals (stress):", flush=True)
-                print(res_s, flush=True)
+            self._go.print_residuals()
             print("Final structure", flush=True)
             self._go.print_structure()
-
         return (self._go.energy, self._go.n_iter, self._go.success)
 
     def init_fc(

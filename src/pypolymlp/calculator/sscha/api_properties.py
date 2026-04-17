@@ -90,7 +90,11 @@ class PropertiesSSCHA:
         self._proj_force = self._get_projector_force()
         self._proj_stress = self._get_projector_stress()
 
-        self._sscha = run_sscha(self._sscha_params, self._prop, verbose=self._verbose)
+        self._sscha = run_sscha(
+            self._sscha_params,
+            self._prop,
+            verbose=self._verbose,
+        )
 
         static_energy = self._sscha.properties.static_potential
         sscha_free_energy = self._sscha.properties.free_energy

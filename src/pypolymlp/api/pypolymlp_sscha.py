@@ -298,7 +298,11 @@ class PypolymlpSSCHA:
             verbose=self._verbose,
         )
         opt.run(method=method, gtol=gtol, maxiter=maxiter)
-        opt.print_structure()
+        if self._verbose:
+            opt.print_residuals()
+            print("Final structure", flush=True)
+            opt.print_structure()
+
         opt.write_poscar()
         self._fc2 = prop_sscha.force_constants
         return self

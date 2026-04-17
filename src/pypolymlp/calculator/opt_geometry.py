@@ -275,7 +275,7 @@ class GeometryOptimization:
             print("Using", method, "method", flush=True)
             print("Relax cell shape:       ", self._relax_cell, flush=True)
             print("Relax volume:           ", self._relax_volume, flush=True)
-            print("Relax atomic positions:", self._relax_positions, flush=True)
+            print("Relax atomic positions: ", self._relax_positions, flush=True)
 
         if method == "SLSQP":
             options = {"ftol": gtol, "disp": True}
@@ -396,12 +396,26 @@ class GeometryOptimization:
     def print_structure(self):
         """Print structure."""
         structure = self.structure
+        np.set_printoptions(suppress=True)
         print("Axis basis vectors:", flush=True)
         for a in structure.axis.T:
-            print(" -", list(a), flush=True)
+            print("-", list(a), flush=True)
         print("Fractional coordinates:", flush=True)
         for p, e in zip(structure.positions.T, structure.elements):
-            print(" -", e, list(p), flush=True)
+            print("-", e, list(p), flush=True)
+        return self
+
+    def print_residuals(self):
+        """Print force and stress residuals."""
+        print("Residuals (force):", flush=True)
+        if not self._relax_cell:
+            print(self.residual_forces.T, flush=True)
+        else:
+            res_f, res_s = self.residual_forces
+            print(res_f.T, flush=True)
+            print("Residuals (stress):", flush=True)
+            print(res_s, flush=True)
+        return self
 
     def write_poscar(self, filename: str = "POSCAR_eqm"):
         """Save structure to a POSCAR file."""
