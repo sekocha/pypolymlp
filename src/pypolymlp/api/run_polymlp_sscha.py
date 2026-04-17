@@ -142,6 +142,46 @@ def run():
         help="Disable to use MKL in Symfc.",
     )
 
+    # Options for finite-temperature geometry optimization using SSCHA free energy
+    parser.add_argument(
+        "--geometry_optimization",
+        action="store_true",
+        help="Perform geometry optimization using SSCHA free energy.",
+    )
+    parser.add_argument(
+        "--pressure",
+        type=float,
+        default=0.0,
+        help="Pressure (in GPa)",
+    )
+    parser.add_argument(
+        "--no_symmetry",
+        action="store_true",
+        help="Ignore symmetric properties in geometry optimization",
+    )
+    parser.add_argument(
+        "--fix_cell",
+        action="store_true",
+        help="Fix cell shape and volume in geometry optimization",
+    )
+    parser.add_argument(
+        "--fix_volume",
+        action="store_true",
+        help="Fix cell volume in geometry optimization",
+    )
+    parser.add_argument(
+        "--fix_atom",
+        action="store_true",
+        help="Fix atomic positions in geometry optimization",
+    )
+    parser.add_argument(
+        "--method",
+        type=str,
+        choices=["BFGS", "CG", "L-BFGS-B", "SLSQP"],
+        default="BFGS",
+        help="Algorithm for geometry optimization",
+    )
+
     args = parser.parse_args()
 
     np.set_printoptions(legacy="1.21")
@@ -151,6 +191,8 @@ def run():
         sscha.load_poscar(args.poscar, np.diag(args.supercell))
     elif args.yaml is not None:
         sscha.load_restart(yaml=args.yaml, parse_fc2=True)
+    else:
+        raise RuntimeError("Structure not found. Use --poscar or --yaml option.")
 
     if args.pot is not None:
         sscha.set_polymlp(args.pot)
@@ -158,28 +200,57 @@ def run():
         sscha.set_nac_params(args.born_vasprun)
 
     if args.n_samples is None:
-        n_samples_init = None
-        n_samples_final = None
+        n_samples_init, n_samples_final = None, None
     else:
         n_samples_init, n_samples_final = args.n_samples
 
-    sscha.run(
-        temp=args.temp,
-        temp_min=args.temp_min,
-        temp_max=args.temp_max,
-        temp_step=args.temp_step,
-        n_temp=args.n_temp,
-        ascending_temp=args.ascending_temp,
-        n_samples_init=n_samples_init,
-        n_samples_final=n_samples_final,
-        tol=args.tol,
-        max_iter=args.max_iter,
-        mixing=args.mixing,
-        mesh=args.mesh,
-        init_fc_algorithm=args.init,
-        init_fc_file=args.init_file,
-        cutoff_radius=args.cutoff_fc2,
-        use_temporal_cutoff=args.use_temporal_cutoff,
-        write_pdos=args.write_pdos,
-        use_mkl=not args.disable_mkl,
-    )
+    if args.geometry_optimization:
+        if args.temp is None:
+            raise RuntimeError("Temperature required. Use --temp option.")
+
+        relax_cell, relax_volume = True, True
+        if args.fix_cell:
+            relax_cell = False
+            relax_volume = False
+        if args.fix_volume:
+            relax_volume = False
+
+        sscha.run_geometry_optimization(
+            temp=args.temp,
+            n_samples_init=n_samples_init,
+            n_samples_final=n_samples_final,
+            tol=args.tol,
+            max_iter=args.max_iter,
+            mixing=args.mixing,
+            mesh=args.mesh,
+            init_fc_algorithm=args.init,
+            init_fc_file=args.init_file,
+            cutoff_radius=args.cutoff_fc2,
+            use_mkl=not args.disable_mkl,
+            with_sym=not args.no_symmetry,
+            relax_cell=relax_cell,
+            relax_volume=relax_volume,
+            relax_positions=not args.fix_atom,
+            pressure=args.pressure,
+        )
+    else:
+        sscha.run(
+            temp=args.temp,
+            temp_min=args.temp_min,
+            temp_max=args.temp_max,
+            temp_step=args.temp_step,
+            n_temp=args.n_temp,
+            ascending_temp=args.ascending_temp,
+            n_samples_init=n_samples_init,
+            n_samples_final=n_samples_final,
+            tol=args.tol,
+            max_iter=args.max_iter,
+            mixing=args.mixing,
+            mesh=args.mesh,
+            init_fc_algorithm=args.init,
+            init_fc_file=args.init_file,
+            cutoff_radius=args.cutoff_fc2,
+            use_temporal_cutoff=args.use_temporal_cutoff,
+            write_pdos=args.write_pdos,
+            use_mkl=not args.disable_mkl,
+        )
