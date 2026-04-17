@@ -18,6 +18,7 @@ def save_sscha_yaml(
     sscha_params: SSCHAParams,
     sscha_log: list[SSCHAData],
     filename: str = "sscha_results.yaml",
+    symmetrize: bool = True,
 ):
     """Write SSCHA results to a file."""
 
@@ -89,28 +90,29 @@ def save_sscha_yaml(
     _print_forces(total_f, "total_forces", file=f)
     _print_stress(total_s, "total_stress_tensor", file=f)
 
-    proj_f = compute_projector_cartesian(sscha_params.supercell)
-    proj_s = compute_spg_projector_O2(sscha_params.unitcell)
+    if symmetrize:
+        proj_f = compute_projector_cartesian(sscha_params.supercell)
+        proj_s = compute_spg_projector_O2(sscha_params.unitcell)
 
-    forces_sym, stress_sym = symmetrize_properties(
-        properties.average_forces,
-        properties.average_stress_tensor,
-        proj_f,
-        proj_s,
-        sscha_params.n_unitcells,
-    )
-    _print_forces(forces_sym, "symmetrized_average_forces", file=f)
-    _print_stress(stress_sym, "symmetrized_average_stress_tensor", file=f)
+        forces_sym, stress_sym = symmetrize_properties(
+            properties.average_forces,
+            properties.average_stress_tensor,
+            proj_f,
+            proj_s,
+            sscha_params.n_unitcells,
+        )
+        _print_forces(forces_sym, "symmetrized_average_forces", file=f)
+        _print_stress(stress_sym, "symmetrized_average_stress_tensor", file=f)
 
-    forces_sym, stress_sym = symmetrize_properties(
-        total_f,
-        total_s,
-        proj_f,
-        proj_s,
-        sscha_params.n_unitcells,
-    )
-    _print_forces(forces_sym, "symmetrized_total_forces", file=f)
-    _print_stress(stress_sym, "symmetrized_total_stress_tensor", file=f)
+        forces_sym, stress_sym = symmetrize_properties(
+            total_f,
+            total_s,
+            proj_f,
+            proj_s,
+            sscha_params.n_unitcells,
+        )
+        _print_forces(forces_sym, "symmetrized_total_forces", file=f)
+        _print_stress(stress_sym, "symmetrized_total_stress_tensor", file=f)
 
     print("logs:", file=f)
     print_array1d([log.free_energy for log in sscha_log], "free_energy", f, indent_l=2)
