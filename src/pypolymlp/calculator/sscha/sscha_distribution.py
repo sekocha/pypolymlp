@@ -27,7 +27,6 @@ class SSCHADistribution:
         Load sscha_results.yaml and effective FC2.
         """
         self._res = Restart(yamlfile, fc2hdf5=fc2file, pot=pot)
-        self._unitcell = self._res.unitcell
         self._supercell = self._res.supercell
 
         prop = Properties(pot=self._res.polymlp)
@@ -110,12 +109,62 @@ class SSCHADistribution:
     @property
     def unitcell(self):
         """Return supercell without displacements."""
-        return self._unitcell
+        return self._res.unitcell
 
     @property
     def supercell(self):
         """Return supercell without displacements."""
-        return self._supercell
+        return self._res.supercell
+
+    @property
+    def supercell_matrix(self) -> np.ndarray:
+        """Return supercell matrix."""
+        return self._res.supercell_matrix
+
+    @property
+    def volume(self):
+        """Return volume."""
+        return self._res.volume
+
+    @property
+    def polymlp(self):
+        """Return MLP file name."""
+        return self._res.polymlp
+
+    @property
+    def temperature(self):
+        """Return temperature."""
+        return self._res.temperature
+
+    @property
+    def parameters(self):
+        """Return simulation parameters."""
+        return self._res.parameters
+
+    @property
+    def logs(self):
+        """Return logs."""
+        return self._res.logs
+
+    @property
+    def delta_fc(self):
+        """Return FC difference between the last two iterations."""
+        return self._res.delta_fc
+
+    @property
+    def converge(self):
+        """Return convergence tag."""
+        return self._res.converge
+
+    @property
+    def imaginary(self):
+        """Return imaginary tag."""
+        return self._res.imaginary
+
+    @property
+    def force_constants(self):
+        """Return effective FC2."""
+        return self._res.force_constants
 
     @property
     def displacements(self):

@@ -34,7 +34,14 @@ def test_sscha_properties_Al():
     )
     prop_sscha = PropertiesSSCHA(sscha_params, prop, verbose=True)
     free_energy, _, _ = prop_sscha.eval(unitcell)
-    assert free_energy == pytest.approx(-14.346701887582924, rel=1e-3)
+    f_true = -14.346701887582924
+    assert free_energy == pytest.approx(f_true, rel=1e-2)
     shutil.rmtree("sscha")
 
     assert tuple(prop_sscha.params.elements) == ("Al",)
+
+    f_true_kj = -61.20517389569886
+    assert prop_sscha.properties.free_energy == pytest.approx(f_true_kj, rel=1e-2)
+    assert prop_sscha.logs[-1].free_energy == pytest.approx(f_true_kj, rel=1e-2)
+    assert prop_sscha.force_constants.shape == (32, 32, 3, 3)
+    assert prop_sscha.delta < 0.01

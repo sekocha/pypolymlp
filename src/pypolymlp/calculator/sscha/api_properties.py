@@ -38,6 +38,7 @@ class PropertiesSSCHA:
 
         self._proj_force = None
         self._proj_stress = None
+
         self._sscha = None
         self._fc2 = None
 
@@ -92,14 +93,14 @@ class PropertiesSSCHA:
         ------
         free_energy: SSCHA free energy in eV/unitcell.
         force: Forces including static forces in eV/angstrom, shape=(3, n_atom).
-        stress: Virial stress tensor in eV/unitcell, shape=(6) for xx, yy, zz, xy, yz, zx.
+        stress: Virial stress tensor in eV/unitcell,
+                shape=(6) for xx, yy, zz, xy, yz, zx.
         """
         self._sscha_params.unitcell = structure
         self._proj_force = self._get_projector_force()
         self._proj_stress = self._get_projector_stress()
 
         self._sscha = run_sscha(self._sscha_params, self._prop, verbose=self._verbose)
-        self._fc2 = self._sscha.force_constants
 
         static_energy = self._sscha.properties.static_potential
         sscha_free_energy = self._sscha.properties.free_energy
@@ -119,9 +120,34 @@ class PropertiesSSCHA:
     @property
     def params(self):
         """Parameters of polymlp."""
+        if self._prop is None:
+            return None
         return self._prop.params
+
+    @property
+    def properties(self):
+        """Return SSCHA results."""
+        if self._sscha is None:
+            return None
+        return self._sscha.properties
+
+    @property
+    def logs(self):
+        """Return SSCHA progress."""
+        if self._sscha is None:
+            return None
+        return self._sscha.logs
 
     @property
     def force_constants(self):
         """Force constants at final SSCHA iteration."""
-        return self._fc2
+        if self._sscha is None:
+            return None
+        return self._sscha.force_constants
+
+    @property
+    def delta(self):
+        """Return convergence delta."""
+        if self._sscha is None:
+            return None
+        return self._sscha.delta

@@ -33,3 +33,16 @@ def test_sscha_distribution(unitcell_mlp_Al):
 
     distrib.save_structure_distribution(path="tmp")
     shutil.rmtree("tmp")
+
+    assert distrib.polymlp.split("/")[-1] == "polymlp.yaml.gtinv.Al"
+    assert distrib.temperature == 700
+    assert distrib.parameters["temperature"] == 700
+    assert len(distrib.logs) == 4
+    assert distrib.delta_fc < 0.01
+    assert distrib.converge
+    assert not distrib.imaginary
+    assert distrib.force_constants.shape == (32, 32, 3, 3)
+    assert len(distrib.unitcell.elements) == 4
+    assert len(distrib.supercell.elements) == 32
+    np.testing.assert_equal(distrib.supercell_matrix, np.diag((2, 2, 2)))
+    assert distrib.volume == pytest.approx(65.77091478008525)
