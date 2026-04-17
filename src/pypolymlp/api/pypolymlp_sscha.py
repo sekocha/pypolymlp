@@ -220,8 +220,10 @@ class PypolymlpSSCHA:
         relax_volume: bool = False,
         relax_positions: bool = True,
         method: Literal["BFGS", "CG", "L-BFGS-B", "SLSQP"] = "BFGS",
-        gtol: float = 1e-2,
+        gtol: float = 2e-2,
         maxiter: int = 1000,
+        c1: float = 1e-3,
+        c2: float = 0.5,
         pressure: float = 0.0,
     ):
         """Run geometry optimization using SSCHA.
@@ -251,6 +253,8 @@ class PypolymlpSSCHA:
                 If relax_volume = False, SLSQP is automatically used.
         gtol: Tolerance for gradients.
         maxiter: Maximum iteration in scipy optimization.
+        c1: c1 parameter in scipy optimization.
+        c2: c2 parameter in scipy optimization.
         pressure: Pressure in GPa.
         """
         if self._prop is None:
@@ -297,7 +301,7 @@ class PypolymlpSSCHA:
             pressure=pressure,
             verbose=self._verbose,
         )
-        opt.run(method=method, gtol=gtol, maxiter=maxiter)
+        opt.run(method=method, gtol=gtol, maxiter=maxiter, c1=c1, c2=c2)
         if self._verbose:
             opt.print_residuals()
             print("Final structure", flush=True)
