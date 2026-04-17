@@ -217,7 +217,8 @@ class GeometryOptimization:
 
         return self._structure
 
-    def _to_volume(self, x):
+    def _to_volume(self, x: np.ndarray):
+        """Calculate volume from variable vector."""
         _, x_cells = self.split(x)
         axis = self._basis_axis @ x_cells
         axis = axis.reshape((3, 3))
@@ -335,34 +336,41 @@ class GeometryOptimization:
 
     @property
     def relax_cell(self):
+        """Return whether cell parameters are relaxed."""
         return self._relax_cell
 
     @property
     def relax_volume(self):
+        """Return whether volume is changed."""
         return self._relax_volume
 
     @property
     def relax_positions(self):
+        """Return whether atomic positions are relaxed."""
         return self._relax_positions
 
     @property
     def structure(self):
+        """Return structure."""
         self._structure = refine_positions(self._structure)
         return self._structure
 
     @structure.setter
     def structure(self, st: PolymlpStructure):
+        """Setter of structure."""
         self._structure = refine_positions(st)
         self._structure.axis_inv = np.linalg.inv(self._structure.axis)
         self._structure.volume = np.linalg.det(self._structure.axis)
 
     def _change_axis(self, axis: np.ndarray):
+        """Change axis."""
         self._structure.axis = axis
         self._structure.volume = np.linalg.det(axis)
         self._structure.axis_inv = np.linalg.inv(axis)
         return self
 
     def _change_positions(self, positions: np.ndarray):
+        """Change positions."""
         self._structure.positions = positions
         self._structure = refine_positions(self._structure)
         return self
