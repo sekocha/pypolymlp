@@ -251,7 +251,7 @@ class SSCHACore:
         print(prefix, "{:.6f}".format(data.free_energy), flush=True)
 
         print(
-            "Free energy with static potential (kJ/mol):",
+            "Free energy (+ static potential, kJ/mol):",
             "{:.6f}".format(data.free_energy + data.static_potential),
             flush=True,
         )
