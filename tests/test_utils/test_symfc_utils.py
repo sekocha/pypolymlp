@@ -6,6 +6,7 @@ from pathlib import Path
 import numpy as np
 
 from pypolymlp.utils.symfc_utils import (
+    compute_projector_cartesian,
     construct_basis_cartesian,
     construct_basis_fractional_coordinates,
     set_symfc_cutoffs,
@@ -53,3 +54,7 @@ def test_basis(structure_rocksalt):
         ],
         atol=1e-6,
     )
+
+    proj = compute_projector_cartesian(st)
+    np.testing.assert_allclose(proj, proj_c)
+    assert proj.shape == (24, 24)
