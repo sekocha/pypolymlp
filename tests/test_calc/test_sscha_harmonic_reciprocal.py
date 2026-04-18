@@ -32,3 +32,14 @@ def test_harmonic_reciprocal(unitcell_mlp_Al):
     assert rec.heat_capacity == pytest.approx(98.1658064023755)
     assert np.sum(rec.frequencies) == pytest.approx(2571.1278302298824)
     assert rec.phonopy_instance is not None
+
+    f_true = -63.73642039036109
+    f1, f2 = rec.compute_thermal_properties(temp=700, hide_imaginary=True)
+    assert f1 == pytest.approx(f_true)
+    assert f2 == pytest.approx(f_true)
+
+    freq_true = 1.4693383503562443
+    assert rec.frequencies[0, 2] == pytest.approx(freq_true)
+    assert rec.mesh_dict["frequencies"][0, 2] == pytest.approx(freq_true)
+    assert rec.tp_dict["free_energy"][0] == pytest.approx(f_true)
+    assert not rec.is_imaginary

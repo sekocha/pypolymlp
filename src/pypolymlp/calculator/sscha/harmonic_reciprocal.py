@@ -37,6 +37,9 @@ class HarmonicReciprocal:
         self._tp_dict = dict()
         self._mesh_dict = dict()
 
+        self._frequencies = None
+        self._is_imaginary = None
+
     def eval(self, structures: list[PolymlpStructure]):
         """Compute energies and forces of structures.
 
@@ -62,21 +65,43 @@ class HarmonicReciprocal:
         self._fc2 = self._ph.force_constants
         return self._fc2
 
-    def compute_thermal_properties(
-        self, temp: float = 1000, qmesh: tuple = (10, 10, 10)
-    ):
-        """Compute thermal properties."""
-        self._ph.run_mesh(qmesh)
-        self._ph.run_thermal_properties(t_step=10, t_max=temp, t_min=temp)
-        self._tp_dict = self._ph.get_thermal_properties_dict()
-        return self
+    def _hide_imaginary_modes(self, freq: np.ndarray, freq_threshold: float = -0.001):
+        """Mask branches with imaginary frequencies."""
+        freq_rev = np.array(freq)
+        match1 = np.where(freq_rev < freq_threshold)
+        freq_rev[match1] = np.abs(freq_rev[match1]) * 10.0
+        return freq_rev
 
     def compute_mesh_properties(self, qmesh: tuple = (10, 10, 10)):
         """Compute mesh properties."""
         self._ph.run_mesh(qmesh)
+        self._frequencies = self._ph._mesh.frequencies
+
         self._ph.run_total_dos()
         self._mesh_dict = self._ph.get_mesh_dict()
         return self
+
+    def compute_thermal_properties(
+        self,
+        temp: float = 1000,
+        qmesh: tuple = (10, 10, 10),
+        hide_imaginary: bool = False,
+    ):
+        """Compute thermal properties."""
+        self._ph.run_mesh(qmesh)
+        self._frequencies = self._ph._mesh.frequencies
+        self._ph.run_thermal_properties(t_step=10, t_max=temp, t_min=temp)
+        self._tp_dict = self._ph.get_thermal_properties_dict()
+        free_energy_raw = self._tp_dict["free_energy"][0]
+
+        free_energy_rev = None
+        if hide_imaginary:
+            freq = self._ph._mesh._frequencies
+            self._ph._mesh._frequencies = self._hide_imaginary_modes(freq)
+            self._ph.run_thermal_properties(t_step=10, t_max=temp, t_min=temp)
+            self._tp_dict = self._ph.get_thermal_properties_dict()
+            free_energy_rev = self._tp_dict["free_energy"][0]
+        return free_energy_raw, free_energy_rev
 
     @property
     def force_constants(self):
@@ -130,3 +155,23 @@ class HarmonicReciprocal:
     def phonopy_instance(self):
         """Return phonopy instance."""
         return self._ph
+
+    @property
+    def mesh_dict(self):
+        """Return mesh dict."""
+        return self._mesh_dict
+
+    @property
+    def tp_dict(self):
+        """Return thermodynamic properties in dict."""
+        return self._tp_dict
+
+    @property
+    def is_imaginary(self):
+        """Return whether frequencies show imaginary."""
+        if self._frequencies is None:
+            raise RuntimeError("Frequencies not found.")
+
+        tol = -0.01
+        n_imag = np.count_nonzero(self._frequencies < tol)
+        return (n_imag / self._frequencies.size) > 1e-5

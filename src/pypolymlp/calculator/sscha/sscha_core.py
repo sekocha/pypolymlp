@@ -61,9 +61,8 @@ class SSCHACore:
     def _set_symfc(self, cutoff_radius: Optional[float] = None):
         """Initialize Symfc instance."""
         cutoff = {2: cutoff_radius}
-        sup = self._phonopy.supercell
         self._symfc = Symfc(
-            sup,
+            self._phonopy.supercell,
             cutoff=cutoff,
             use_mkl=self._use_mkl,
             log_level=self._verbose,
@@ -139,10 +138,10 @@ class SSCHACore:
 
         if qmesh is None:
             qmesh = self._sscha_params.mesh
-        self._phonopy.force_constants = self._fc2
-        self._phonopy.run_mesh(qmesh)
-        mesh_dict = self._phonopy.get_mesh_dict()
-        return mesh_dict["frequencies"]
+
+        self._ph_recip.force_constants = self._fc2
+        self._ph_recip.compute_mesh_properties(qmesh=qmesh)
+        return self._ph_recip.frequencies
 
     def _compute_sscha_properties(self, temp: float = 1000):
         """Compute SSCHA properties using FC2."""
@@ -151,8 +150,15 @@ class SSCHACore:
 
         qmesh = self._sscha_params.mesh
         self._ph_recip.force_constants = self._fc2
-        self._ph_recip.compute_thermal_properties(temp=temp, qmesh=qmesh)
-        imaginary = self._is_imaginary(freq=self._ph_recip.frequencies)
+        f_raw, f_rev = self._ph_recip.compute_thermal_properties(
+            temp=temp,
+            qmesh=qmesh,
+            hide_imaginary=True,
+        )
+        if self._verbose and f_rev is not None:
+            print("Harmonic free energy has been changed.", flush=True)
+            print("  Original:", np.round(f_raw, 6), flush=True)
+            print("  Corrected", np.round(f_rev, 6), flush=True)
 
         data = SSCHAData(
             temperature=temp,
@@ -167,7 +173,7 @@ class SSCHACore:
             average_forces=self._ph_real.average_forces,  # eV/ang
             static_stress_tensor=self._ph_real.static_stress_tensor,  # eV/unitcell
             average_stress_tensor=self._ph_real.average_stress_tensor,  # eV/unitcell
-            imaginary=imaginary,
+            imaginary=self._ph_recip.is_imaginary,
         )
 
         return data
@@ -215,13 +221,6 @@ class SSCHACore:
         self._data_current = self._compute_sscha_properties(temp=temp)
         self._sscha_log.append(self._data_current)
         return self
-
-    def _is_imaginary(self, freq: Optional[np.ndarray] = None, tol: float = -0.01):
-        """Check if imaginary frequencies exist only using frequency data."""
-        if freq is None:
-            freq = self.run_frequencies(qmesh=self._sscha_params.mesh)
-        n_imag = np.count_nonzero(freq < tol)
-        return (n_imag / freq.size) > 1e-5
 
     def _print_separator(self, n_iter: int):
         """Print separator between SSCHA iterations."""
@@ -329,7 +328,8 @@ class SSCHACore:
         self._final_iter(temp=temp, n_samples=self._sscha_params.n_samples_final)
         self._data_current.converge = converge
         self._data_current.delta = delta
-        self._data_current.imaginary = self._is_imaginary()
+        self._data_current.imaginary = self._ph_recip.is_imaginary
+
         if self._verbose:
             self._print_progress()
 
