@@ -471,8 +471,10 @@ class PypolymlpCalc:
         method: Literal["BFGS", "CG", "L-BFGS-B", "SLSQP"] = "BFGS",
         gtol: float = 1e-4,
         maxiter: int = 1000,
-        c1: float = 1e-3,
-        c2: float = 0.5,
+        # c1: float = 1e-3,
+        # c2: float = 0.5,
+        c1: float = 0.1,
+        c2: float = 0.999,
     ):
         """Run geometry optimization.
 

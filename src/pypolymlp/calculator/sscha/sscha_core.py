@@ -153,7 +153,8 @@ class SSCHACore:
         f_raw, f_rev = self._ph_recip.compute_thermal_properties(
             temp=temp,
             qmesh=qmesh,
-            hide_imaginary=True,
+            hide_imaginary=False,
+            # hide_imaginary=True,
         )
         if self._verbose and f_rev is not None:
             print("Harmonic free energy has been changed.", flush=True)
