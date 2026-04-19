@@ -13,10 +13,13 @@ from pypolymlp.utils.yaml_utils import load_cell
 def set_dataset_from_sscha_yamls(
     yamlfiles: list[str],
     elements: Optional[tuple] = None,
+    symmetrized: bool = True,
 ) -> DatasetDFT:
     """Return DFT dataset by loading sscha_results.yaml files."""
-    structures, free_energies, forces, stress_tensors = parse_sscha_yamls(yamlfiles)
-
+    structures, free_energies, forces, stress_tensors = parse_sscha_yamls(
+        yamlfiles,
+        symmetrized=symmetrized,
+    )
     dft = DatasetDFT(
         structures,
         free_energies,
@@ -27,7 +30,7 @@ def set_dataset_from_sscha_yamls(
     return dft
 
 
-def parse_sscha_yamls(yamlfiles: list[str]):
+def parse_sscha_yamls(yamlfiles: list[str], symmetrized: bool = True):
     """Parse sscha_results.yaml files."""
     free_energies, structures, forces, stress_tensors = [], [], [], []
     for yfile in yamlfiles:
@@ -41,13 +44,33 @@ def parse_sscha_yamls(yamlfiles: list[str]):
         if "average_stress_tensor" not in yml:
             continue
 
-        res = _get_sscha_properties(yml, yfile)
+        res = _get_sscha_properties(yml, yfile, symmetrized=symmetrized)
         structures.append(res[0])
         free_energies.append(res[1])
         forces.append(res[2])
         stress_tensors.append(res[3])
 
     return (structures, np.array(free_energies), forces, stress_tensors)
+
+
+def _get_sscha_properties(yml: dict, name: str, symmetrized: bool = True):
+    """Get SSCHA properties from a single yaml data."""
+    fvib = float(yml["properties"]["free_energy"])
+    if symmetrized:
+        unitcell = load_cell(yaml_data=yml, tag="unitcell")
+        unitcell.name = name
+        free_energy = fvib / EVtoKJmol
+        force = np.array(yml["symmetrized_average_forces"]).T
+        stress_tensor = np.array(yml["symmetrized_average_stress_tensor"])
+        return unitcell, free_energy, force, stress_tensor
+    else:
+        supercell = load_cell(yaml_data=yml, tag="supercell")
+        supercell.name = name
+        n_cells = int(yml["supercell"]["n_unitcells"])
+        free_energy = fvib * n_cells / EVtoKJmol  # kJ/mol->eV/supercell
+        force = np.array(yml["average_forces"]).T
+        stress_tensor = np.array(yml["average_stress_tensor"]) * n_cells
+        return supercell, free_energy, force, stress_tensor
 
 
 def split_imaginary(yamlfiles: list[str]):
@@ -67,18 +90,6 @@ def split_imaginary(yamlfiles: list[str]):
         imag = None
 
     return no_imag, imag
-
-
-def _get_sscha_properties(yml: dict, name: str):
-    """Get SSCHA properties from a single yaml data."""
-    supercell = load_cell(yaml_data=yml, tag="supercell")
-    supercell.name = name
-    n_cells = int(yml["supercell"]["n_unitcells"])
-    fvib = float(yml["properties"]["free_energy"])
-    free_energy = fvib * n_cells / EVtoKJmol  # kJ/mol->eV/supercell
-    force = np.array(yml["average_forces"]).T
-    stress_tensor = np.array(yml["average_stress_tensor"]) * n_cells
-    return supercell, free_energy, force, stress_tensor
 
 
 def parse_electron_yamls(yamlfiles: list[str]):
