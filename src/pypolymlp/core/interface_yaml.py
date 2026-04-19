@@ -55,6 +55,9 @@ def parse_sscha_yamls(yamlfiles: list[str], symmetrized: bool = True):
 
 def _get_sscha_properties(yml: dict, name: str, symmetrized: bool = True):
     """Get SSCHA properties from a single yaml data."""
+    if "symmetrized_average_forces" not in yml:
+        symmetrized = False
+
     fvib = float(yml["properties"]["free_energy"])
     if symmetrized:
         unitcell = load_cell(yaml_data=yml, tag="unitcell")
