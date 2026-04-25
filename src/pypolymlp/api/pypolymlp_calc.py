@@ -4,6 +4,7 @@ from typing import Literal, Optional, Union
 
 import numpy as np
 
+from pypolymlp.calculator.compute_elastic import PolymlpElastic
 from pypolymlp.calculator.compute_features import (
     compute_from_infile,
     compute_from_polymlp,
@@ -214,7 +215,6 @@ class PypolymlpCalc:
         -------
         elastic_constants: Elastic constants in GPa. shape=(6,6).
         """
-        from pypolymlp.calculator.compute_elastic import PolymlpElastic
 
         if poscar is not None:
             self.load_poscars(poscar)
@@ -224,7 +224,6 @@ class PypolymlpCalc:
 
         self._elastic = PolymlpElastic(
             unitcell=self.unitcell,
-            unitcell_poscar=self._poscar,
             properties=self._prop,
             verbose=self._verbose,
         )
