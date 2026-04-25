@@ -130,3 +130,18 @@ def run():
         if symfc.force_constants[3] is not None:
             print("Writing fc3.hdf5", flush=True)
             write_fc3_to_hdf5(symfc.force_constants[3])
+
+        import phono3py
+
+        ph3 = phono3py.load(
+            unitcell_filename=args.poscar,
+            supercell_matrix=args.supercell,
+            primitive_matrix="auto",
+            log_level=True,
+        )
+        ph3.mesh_numbers = (19, 19, 19)
+        ph3.init_phph_interaction()
+        ph3.run_thermal_conductivity(
+            temperatures=range(0, 1001, 10),
+            write_kappa=True,
+        )
