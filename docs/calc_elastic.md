@@ -13,8 +13,6 @@ from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
 
 """Run elastic constant calculations.
 
-pymatgen is required.
-
 Returns
 -------
 elastic_constants: Elastic constants in GPa. shape=(6,6).

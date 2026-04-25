@@ -7,7 +7,8 @@ import numpy as np
 from pypolymlp.calculator.opt_geometry import GeometryOptimization
 from pypolymlp.calculator.properties import Properties, convert_stresses_in_gpa
 from pypolymlp.core.data_format import PolymlpStructure
-from pypolymlp.utils.tensor_utils import compute_spg_projector_O4
+
+# from pypolymlp.utils.tensor_utils import compute_spg_projector_O4
 
 
 class PolymlpElastic:
@@ -51,7 +52,7 @@ class PolymlpElastic:
         _, _, stress = self._prop.eval(self._unitcell)
         self._eq_stress = stress[self._to_voidt_order]
 
-        self._proj4 = compute_spg_projector_O4(self._unitcell)
+        # self._proj4 = compute_spg_projector_O4(self._unitcell)
 
     def eval(self, structures: list[PolymlpStructure]):
         """Evaluate stress tensors.
@@ -82,8 +83,8 @@ class PolymlpElastic:
                 cauchy_deformation[j, i] += mag
                 st.axis = cauchy_deformation @ st.axis
                 structures.append(st)
-            stresses = self.eval(structures)
 
+            stresses = self.eval(structures)
             X = magnitudes * 2.0
             X = X[:, np.newaxis]
             for voidt2 in range(6):
