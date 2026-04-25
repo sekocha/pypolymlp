@@ -96,9 +96,6 @@ class SSCHAParams:
         if self._temperatures is None:
             self.set_temperatures()
 
-        # self._n_unitcells = int(round(np.linalg.det(self._supercell_matrix)))
-        # self._n_atom = len(unitcell.elements) * self._n_unitcells
-
     def _round_temperature(self, temp: float):
         """Round a temperature to int when it is very close to an integer."""
         if np.isclose(temp, round(temp)):

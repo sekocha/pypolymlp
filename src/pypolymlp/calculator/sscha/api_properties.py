@@ -111,6 +111,26 @@ class PropertiesSSCHA:
         forces, stress = self._symmetrize_properties(forces, stress)
         return free_energy, forces, stress
 
+    def eval_multiple(self, structures: list):
+        """Evaluate properties of multiple structures.
+
+        Properties are composed of SSCHA and static contributions.
+
+        Return
+        ------
+        free_energy: List of SSCHA free energy in eV/unitcell.
+        force: List of forces including static forces in eV/angstrom, shape=(3, n_atom).
+        stress: List of virial stress tensor in eV/unitcell,
+                shape=(6) for xx, yy, zz, xy, yz, zx.
+        """
+        free_energy_all, forces_all, stress_all = [], [], []
+        for st in structures:
+            free_energy, forces, stress = self.eval(st)
+            free_energy_all.append(free_energy)
+            forces_all.append(forces)
+            stress_all.append(stress)
+        return np.array(free_energy_all), forces_all, np.array(stress_all)
+
     @property
     def params(self):
         """Parameters of polymlp."""

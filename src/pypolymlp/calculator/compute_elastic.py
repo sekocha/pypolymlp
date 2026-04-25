@@ -7,8 +7,7 @@ import numpy as np
 from pypolymlp.calculator.opt_geometry import GeometryOptimization
 from pypolymlp.calculator.properties import Properties, convert_stresses_in_gpa
 from pypolymlp.core.data_format import PolymlpStructure
-
-# from pypolymlp.utils.tensor_utils import compute_spg_projector_O4
+from pypolymlp.utils.tensor_utils import compute_spg_projector_O4
 
 
 class PolymlpElastic:
@@ -19,6 +18,7 @@ class PolymlpElastic:
         unitcell: PolymlpStructure,
         properties: Properties,
         geometry_optimization: bool = True,
+        gtol: float = 1e-3,
         verbose: bool = False,
     ):
         """Init method.
@@ -46,13 +46,14 @@ class PolymlpElastic:
                 with_sym=True,
                 pressure=0.0,
                 verbose=verbose,
-            ).run(gtol=1e-3)
+            ).run(gtol=gtol)
             self._unitcell = geometry.structure
 
         _, _, stress = self._prop.eval(self._unitcell)
         self._eq_stress = stress[self._to_voidt_order]
 
-        # self._proj4 = compute_spg_projector_O4(self._unitcell)
+        # TODO: Symmetrized including permutation.
+        self._proj = compute_spg_projector_O4(self._unitcell)
 
     def eval(self, structures: list[PolymlpStructure]):
         """Evaluate stress tensors.
@@ -67,6 +68,22 @@ class PolymlpElastic:
         stresses -= self._eq_stress
         stresses = convert_stresses_in_gpa(stresses, structures)
         return stresses
+
+    def _symmetrize(self, elastic_constants: np.ndarray):
+        """Symmetrize elastic constants."""
+        el_full = np.zeros((3, 3, 3, 3))
+        for voidt1, (i, j) in enumerate(self._voidt):
+            for voidt2, (k, l) in enumerate(self._voidt):
+                el_full[i, j, k, l] = elastic_constants[voidt1, voidt2]
+                el_full[i, j, l, k] = elastic_constants[voidt1, voidt2]
+                el_full[j, i, k, l] = elastic_constants[voidt1, voidt2]
+                el_full[j, i, l, k] = elastic_constants[voidt1, voidt2]
+        el_full = (self._proj @ el_full.reshape(-1)).reshape((3, 3, 3, 3))
+
+        for voidt1, (i, j) in enumerate(self._voidt):
+            for voidt2, (k, l) in enumerate(self._voidt):
+                elastic_constants[voidt1, voidt2] = el_full[i, j, k, l]
+        return elastic_constants
 
     def run(self, n_samples: int = 7, eps: float = 1e-4):
         """Run elastic constant calculation."""
@@ -92,14 +109,23 @@ class PolymlpElastic:
                 slope, _, _, _ = np.linalg.lstsq(X, y, rcond=None)
                 elastic_consts[voidt1, voidt2] = slope[0]
                 elastic_consts[voidt2, voidt1] = slope[0]
-        self._elastic_constants = elastic_consts
+
+        self._elastic_constants = self._symmetrize(elastic_consts)
         return self
 
     def write_elastic_constants(self, filename: str = "polymlp_elastic.yaml"):
         """Save elastic constants."""
         with open(filename, "w") as f:
+            try:
+                params = self._prop._sscha_params
+                print("temperature:", params.temperatures[0], file=f)
+                print(file=f)
+            except:
+                pass
+
+            print("unit: GPa", file=f)
+            print(file=f)
             print("elastic_constants:", file=f)
-            print("  unit: GPa", file=f)
 
             ids = [
                 (1, 1),
