@@ -40,7 +40,6 @@ A polynomial MLP represents the potential energy as a polynomial function of lin
 - symfc
 - sparse_dot_mkl
 - spglib
-- pymatgen
 - ase
 - joblib
 - matplotlib, seaborn
