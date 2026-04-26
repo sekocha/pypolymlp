@@ -389,16 +389,19 @@ class PypolymlpSSCHA:
             gtol=gtol,
             verbose=self._verbose,
         )
-        el.run(eps=0.01)
-        el.write_elastic_constants(filename="polymlp_elastic_sscha.yaml")
 
         try:
             el._geometry.write_poscar()
             if self._verbose:
+                print("---------------------", flush=True)
                 print("Equilibrium structure", flush=True)
                 el._geometry.print_structure()
+                print("---------------------", flush=True)
         except:
             pass
+
+        el.run(eps=0.01)
+        el.write_elastic_constants(filename="polymlp_elastic_sscha.yaml")
 
         return self
 
