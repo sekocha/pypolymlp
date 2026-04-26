@@ -93,7 +93,11 @@ class SSCHACore:
         supercell_polymlp.n_unitcells = self._n_unitcells
         self._sscha_params.supercell = supercell_polymlp
 
-        self._ph_real = HarmonicReal(supercell_polymlp, self._prop)
+        self._ph_real = HarmonicReal(
+            supercell_polymlp,
+            self._prop,
+            verbose=self._verbose,
+        )
         self._ph_recip = HarmonicReciprocal(self._phonopy, self._prop)
         return self._ph_real, self._ph_recip
 
