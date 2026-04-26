@@ -326,6 +326,7 @@ class PypolymlpSSCHA:
         cutoff_radius: Optional[float] = None,
         use_mkl: bool = True,
         gtol: float = 1e-2,
+        verbose_sscha: bool = False,
     ):
         """Run elastic constant calculations using SSCHA.
 
@@ -380,7 +381,7 @@ class PypolymlpSSCHA:
         prop_sscha = PropertiesSSCHA(
             self._sscha_params,
             self._prop,
-            verbose=self._verbose,
+            verbose=verbose_sscha,
         )
         el = PolymlpElastic(
             unitcell=self._unitcell,
@@ -389,7 +390,7 @@ class PypolymlpSSCHA:
             verbose=self._verbose,
         )
         el.run(eps=0.01)
-        el.write_elastic_constants(filename="polymlp_elastic_sscha.yaml" + str(temp))
+        el.write_elastic_constants(filename="polymlp_elastic_sscha.yaml")
 
         try:
             el._geometry.write_poscar()

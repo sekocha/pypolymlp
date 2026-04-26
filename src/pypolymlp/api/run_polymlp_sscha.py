@@ -216,6 +216,7 @@ def run():
         n_samples_init, n_samples_final = args.n_samples
 
     if args.geometry_optimization:
+        print("Mode: SSCHA geometry optimization", flush=True)
         if args.temp is None:
             raise RuntimeError("Temperature required. Use --temp option.")
 
@@ -244,10 +245,12 @@ def run():
             relax_positions=not args.fix_atom,
             pressure=args.pressure,
             gtol=args.gtol,
+            verbose_sscha=True,
         )
     elif args.elastic:
         if args.temp is None:
             raise RuntimeError("Temperature required. Use --temp option.")
+        print("Mode: SSCHA elastic constant calculation", flush=True)
         sscha.run_elastic(
             temp=args.temp,
             n_samples_init=n_samples_init,
@@ -261,8 +264,10 @@ def run():
             cutoff_radius=args.cutoff_fc2,
             use_mkl=not args.disable_mkl,
             gtol=args.gtol,
+            verbose_sscha=False,
         )
     else:
+        print("Mode: SSCHA calculation", flush=True)
         sscha.run(
             temp=args.temp,
             temp_min=args.temp_min,
@@ -282,4 +287,5 @@ def run():
             use_temporal_cutoff=args.use_temporal_cutoff,
             write_pdos=args.write_pdos,
             use_mkl=not args.disable_mkl,
+            verbose_sscha=True,
         )

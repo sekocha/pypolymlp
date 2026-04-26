@@ -91,6 +91,8 @@ class PolymlpElastic:
 
         elastic_consts = np.zeros((6, 6))
         for voidt1, (i, j) in enumerate(self._voidt):
+            if self._verbose:
+                print("- Strain", (i, j), flush=True)
             structures = []
             for mag in magnitudes:
                 st = copy.deepcopy(self._unitcell)
