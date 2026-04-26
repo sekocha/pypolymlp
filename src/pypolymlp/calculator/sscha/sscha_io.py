@@ -10,7 +10,7 @@ from pypolymlp.calculator.sscha.sscha_params import SSCHAParams
 from pypolymlp.calculator.sscha.sscha_utils import symmetrize_properties
 from pypolymlp.core.units import EVtoKJmol
 from pypolymlp.utils.symfc_utils import compute_projector_cartesian
-from pypolymlp.utils.tensor_utils import compute_spg_projector_O2
+from pypolymlp.utils.tensor_utils_O2 import compute_projector_O2
 from pypolymlp.utils.yaml_utils import print_array1d, print_array2d, save_cell
 
 
@@ -92,7 +92,7 @@ def save_sscha_yaml(
 
     if symmetrize:
         proj_f = compute_projector_cartesian(sscha_params.supercell)
-        proj_s = compute_spg_projector_O2(sscha_params.unitcell)
+        proj_s = compute_projector_O2(sscha_params.unitcell)
 
         forces_sym, stress_sym = symmetrize_properties(
             properties.average_forces,

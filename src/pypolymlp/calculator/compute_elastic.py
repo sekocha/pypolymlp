@@ -7,7 +7,7 @@ import numpy as np
 from pypolymlp.calculator.opt_geometry import GeometryOptimization
 from pypolymlp.calculator.properties import Properties, convert_stresses_in_gpa
 from pypolymlp.core.data_format import PolymlpStructure
-from pypolymlp.utils.tensor_utils import compute_spg_projector_O4
+from pypolymlp.utils.tensor_utils_O4 import compute_projector_O4
 
 
 class PolymlpElastic:
@@ -51,9 +51,7 @@ class PolymlpElastic:
 
         _, _, stress = self._prop.eval(self._unitcell)
         self._eq_stress = stress[self._to_voidt_order]
-
-        # TODO: Symmetrized including permutation.
-        self._proj = compute_spg_projector_O4(self._unitcell)
+        self._proj = compute_projector_O4(self._unitcell)
 
     def eval(self, structures: list[PolymlpStructure]):
         """Evaluate stress tensors.

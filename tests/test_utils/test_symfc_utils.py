@@ -9,6 +9,7 @@ from pypolymlp.utils.symfc_utils import (
     compute_projector_cartesian,
     construct_basis_cartesian,
     construct_basis_fractional_coordinates,
+    set_spg_reps,
     set_symfc_cutoffs,
     structure_to_symfc_cell,
 )
@@ -58,3 +59,9 @@ def test_basis(structure_rocksalt):
     proj = compute_projector_cartesian(st)
     np.testing.assert_allclose(proj, proj_c)
     assert proj.shape == (24, 24)
+
+
+def test_spg_reps(structure_rocksalt):
+    """Test compute_spg_projector_O2."""
+    spg_reps = set_spg_reps(structure_rocksalt)
+    assert len(spg_reps._unique_rotations) == 48

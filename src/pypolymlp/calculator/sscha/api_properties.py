@@ -10,7 +10,7 @@ from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.units import EVtoKJmol
 from pypolymlp.utils.structure_utils import supercell
 from pypolymlp.utils.symfc_utils import compute_projector_cartesian
-from pypolymlp.utils.tensor_utils import compute_spg_projector_O2
+from pypolymlp.utils.tensor_utils_O2 import compute_projector_O2
 
 
 class PropertiesSSCHA:
@@ -55,7 +55,7 @@ class PropertiesSSCHA:
 
     def _get_projector_stress(self):
         """Set projector onto symmetrized stress tensor."""
-        proj = compute_spg_projector_O2(self._sscha_params.unitcell)
+        proj = compute_projector_O2(self._sscha_params.unitcell)
         return proj
 
     def _symmetrize_properties(self, forces: np.ndarray, stress: np.ndarray):
