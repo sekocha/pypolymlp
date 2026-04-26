@@ -188,6 +188,11 @@ def run():
         help="Tolerance parameter for gradients",
     )
 
+    parser.add_argument(
+        "--elastic",
+        action="store_true",
+        help="Elastic constant calculation using SSCHA free energy.",
+    )
     args = parser.parse_args()
 
     np.set_printoptions(legacy="1.21")
@@ -238,6 +243,23 @@ def run():
             relax_volume=relax_volume,
             relax_positions=not args.fix_atom,
             pressure=args.pressure,
+            gtol=args.gtol,
+        )
+    elif args.elastic:
+        if args.temp is None:
+            raise RuntimeError("Temperature required. Use --temp option.")
+        sscha.run_elastic(
+            temp=args.temp,
+            n_samples_init=n_samples_init,
+            n_samples_final=n_samples_final,
+            tol=args.tol,
+            max_iter=args.max_iter,
+            mixing=args.mixing,
+            mesh=args.mesh,
+            init_fc_algorithm=args.init,
+            init_fc_file=args.init_file,
+            cutoff_radius=args.cutoff_fc2,
+            use_mkl=not args.disable_mkl,
             gtol=args.gtol,
         )
     else:

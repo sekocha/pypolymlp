@@ -4,6 +4,7 @@ from typing import Literal, Optional, Union
 
 import numpy as np
 
+from pypolymlp.calculator.compute_elastic import PolymlpElastic
 from pypolymlp.calculator.opt_geometry import GeometryOptimization
 from pypolymlp.calculator.properties import Properties, initialize_polymlp_calculator
 from pypolymlp.calculator.sscha.api_properties import PropertiesSSCHA
@@ -309,6 +310,95 @@ class PypolymlpSSCHA:
             opt.print_structure()
 
         self._fc2 = prop_sscha.force_constants
+        return self
+
+    def run_elastic(
+        self,
+        temp: float = 1000,
+        n_samples_init: Optional[int] = None,
+        n_samples_final: Optional[int] = None,
+        tol: float = 0.005,
+        max_iter: int = 50,
+        mixing: float = 0.5,
+        mesh: tuple = (10, 10, 10),
+        init_fc_algorithm: Literal["harmonic", "const", "random", "file"] = "harmonic",
+        init_fc_file: Optional[str] = None,
+        cutoff_radius: Optional[float] = None,
+        use_mkl: bool = True,
+        gtol: float = 1e-2,
+    ):
+        """Run elastic constant calculations using SSCHA.
+
+        Parameters
+        ----------
+        temp: Single simulation temperature.
+        n_samples_init: Number of samples in first loop of SSCHA iterations.
+                        If None, the number of samples is automatically determined.
+        n_samples_final: Number of samples in second loop of SSCHA iterations.
+                        If None, the number of samples is automatically determined.
+        tol: Convergence tolerance for FCs.
+        max_iter: Maximum number of iterations.
+        mixing: Mixing parameter.
+                FCs are updated by FC2 = FC2(new) * mixing + FC2(old) * (1-mixing).
+        mesh: q-point mesh for computing harmonic properties using effective FC2.
+        init_fc_algorithm: Algorithm for generating initial FCs.
+        init_fc_file: If algorithm = "file", coefficients are read from init_fc_file.
+        cutoff_radius: Cutoff radius used for estimating FC2.
+
+        (For elastic constant calculations)
+        gtol: Tolerance for gradients.
+        """
+        if self._prop is None:
+            raise RuntimeError("Set polymlp.")
+        if self._unitcell is None:
+            raise RuntimeError("Set structure.")
+        if self._supercell_matrix is None:
+            raise RuntimeError("Set supercell matrix.")
+
+        self._sscha_params = SSCHAParams(
+            unitcell=self._unitcell,
+            supercell_matrix=self._supercell_matrix,
+            pot=self._pot,
+            temp=temp,
+            n_samples_init=n_samples_init,
+            n_samples_final=n_samples_final,
+            tol=tol,
+            max_iter=max_iter,
+            mixing=mixing,
+            mesh=mesh,
+            init_fc_algorithm=init_fc_algorithm,
+            init_fc_file=init_fc_file,
+            fc2=self._fc2,
+            nac_params=self._nac_params,
+            cutoff_radius=cutoff_radius,
+            use_mkl=use_mkl,
+        )
+        if self._verbose:
+            self._sscha_params.print_params()
+            self._sscha_params.print_unitcell()
+
+        prop_sscha = PropertiesSSCHA(
+            self._sscha_params,
+            self._prop,
+            verbose=self._verbose,
+        )
+        el = PolymlpElastic(
+            unitcell=self._unitcell,
+            properties=prop_sscha,
+            gtol=gtol,
+            verbose=self._verbose,
+        )
+        el.run(eps=0.01)
+        el.write_elastic_constants(filename="polymlp_elastic_sscha.yaml" + str(temp))
+
+        try:
+            el._geometry.write_poscar()
+            if self._verbose:
+                print("Equilibrium structure", flush=True)
+                el._geometry.print_structure()
+        except:
+            pass
+
         return self
 
     @property

@@ -36,8 +36,9 @@ class PolymlpElastic:
         self._to_voidt_order = [0, 1, 2, 4, 5, 3]
         self._elastic_constants = None
 
+        self._geometry = None
         if geometry_optimization:
-            geometry = GeometryOptimization(
+            self._geometry = GeometryOptimization(
                 unitcell,
                 properties,
                 relax_cell=True,
@@ -47,7 +48,7 @@ class PolymlpElastic:
                 pressure=0.0,
                 verbose=verbose,
             ).run(gtol=gtol)
-            self._unitcell = geometry.structure
+            self._unitcell = self._geometry.structure
 
         _, _, stress = self._prop.eval(self._unitcell)
         self._eq_stress = stress[self._to_voidt_order]
@@ -167,3 +168,15 @@ class PolymlpElastic:
                            (1: xx, 2: yy, 3: zz, 4: yz, 5: zx, 6: xy)
         """
         return self._elastic_constants
+
+    @property
+    def unitcell(self):
+        """Return unit cell.
+
+        If geometry optimization is performed, equilibrium unit cell is returned.
+
+        Return
+        ------
+        unitcell: unitcell
+        """
+        return self._unitcell

@@ -1,5 +1,7 @@
 # Elastic Constant Calculation
 
+> **Note**: Requires `symfc`.
+
 The `--elastic` option activates the calculation of elastic constants for a structure using a given polynomial MLP.
 
 ## Using command-line interface
