@@ -36,6 +36,7 @@ class PropertiesSSCHA:
         self._sscha_params = sscha_params
         self._prop = properties
         self._verbose = verbose
+        self._temperature = self._sscha_params.temperatures[0]
 
         self._proj_force = None
         self._proj_stress = None
@@ -132,6 +133,19 @@ class PropertiesSSCHA:
         return np.array(free_energy_all), forces_all, np.array(stress_all)
 
     @property
+    def entropy(self):
+        """Return entropy.
+
+        Return
+        ------
+        entropy: Entropy in eV/K/unitcell.
+        """
+        if self._sscha is None:
+            return None
+        entropy = self._sscha.properties.entropy / (EVtoKJmol * 1000)
+        return entropy
+
+    @property
     def params(self):
         """Parameters of polymlp."""
         if self._prop is None:
@@ -165,3 +179,14 @@ class PropertiesSSCHA:
         if self._sscha is None:
             return None
         return self._sscha.delta
+
+    @property
+    def temperature(self):
+        """Return temperature."""
+        return self._temperature
+
+    @temperature.setter
+    def temperature(self, val: float):
+        """Setter of temperature."""
+        self._temperature = val
+        self._sscha_params.temperatures = [val]

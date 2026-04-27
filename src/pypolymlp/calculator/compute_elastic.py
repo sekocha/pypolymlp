@@ -7,6 +7,7 @@ import numpy as np
 from pypolymlp.calculator.opt_geometry import GeometryOptimization
 from pypolymlp.calculator.properties import Properties, convert_stresses_in_gpa
 from pypolymlp.core.data_format import PolymlpStructure
+from pypolymlp.core.units import EVtoGPa
 from pypolymlp.utils.tensor_utils_O4 import compute_projector_O4
 
 
@@ -35,8 +36,10 @@ class PolymlpElastic:
         self._voidt = [(0, 0), (1, 1), (2, 2), (1, 2), (0, 2), (0, 1)]
         self._to_voidt_order = [0, 1, 2, 4, 5, 3]
         self._elastic_constants = None
-
+        self._elastic_constants_adiabatic = None
         self._geometry = None
+        self._temperature = None
+
         if geometry_optimization:
             self._geometry = GeometryOptimization(
                 unitcell,
@@ -59,14 +62,31 @@ class PolymlpElastic:
 
         Return
         ------
-        Stress tensor in the order of Voigt notation.
-        (1: xx, 2: yy, 3: zz, 4: yz, 5: zx, 6: xy)
+        stresses: Array of stress tensors (GPa) in the order of Voigt notation.
+                (1: xx, 2: yy, 3: zz, 4: yz, 5: zx, 6: xy)
         """
         _, _, stresses = self._prop.eval_multiple(structures)
         stresses = stresses[:, self._to_voidt_order]
         stresses -= self._eq_stress
         stresses = convert_stresses_in_gpa(stresses, structures)
         return stresses
+
+    def eval_adiabatic(self):
+        """Evaluate stress tensors and entropy for unitcell.
+
+        Return
+        ------
+        stress: Stress tensor (GPa) in the order of Voigt notation.
+                (1: xx, 2: yy, 3: zz, 4: yz, 5: zx, 6: xy)
+        entropy: Entropy value.
+        """
+        _, _, stress = self._prop.eval(self._unitcell)
+        stress = stress[self._to_voidt_order]
+        stress -= self._eq_stress
+        stress = convert_stresses_in_gpa([stress], [self._unitcell])[0]
+
+        entropy = self._prop.entropy
+        return stress, entropy
 
     def _symmetrize(self, elastic_constants: np.ndarray):
         """Symmetrize elastic constants."""
@@ -112,6 +132,38 @@ class PolymlpElastic:
                 elastic_consts[voidt2, voidt1] = slope[0]
 
         self._elastic_constants = self._symmetrize(elastic_consts)
+        return self
+
+    def run_adiabatic(self, n_samples: int = 7, eps: float = 30.0):
+        """Run adiabatic contribution."""
+        if isinstance(self._prop, Properties):
+            raise RuntimeError("Adiabatic calculation requires SSCHA properties.")
+
+        self._temperature = self._prop.temperature
+        temperatures = np.linspace(-eps, eps, n_samples) + self._temperature
+
+        stress_all, entropy_all = [], []
+        for temp in temperatures:
+            if self._verbose:
+                print("- temperature", temp, flush=True)
+            self._prop.temperature = temp
+            stress, entropy = self.eval_adiabatic()
+            entropy = entropy * EVtoGPa / self._unitcell.volume
+            stress_all.append(stress)
+            entropy_all.append(entropy)
+
+        stress_all = np.array(stress_all)
+        entropy_all = np.array(entropy_all)
+
+        stress_deriv = np.zeros(6)
+        for voidt1 in range(6):
+            slope, intercept = np.polyfit(temperatures, stress_all[:, voidt1], 1)
+            stress_deriv[voidt1] = slope
+        entropy_deriv, _ = np.polyfit(temperatures, entropy_all, 1)
+
+        self._adiabatic_correction = (
+            np.outer(stress_deriv, stress_deriv) / entropy_deriv
+        )
         return self
 
     def write_elastic_constants(self, filename: str = "polymlp_elastic.yaml"):
@@ -170,6 +222,21 @@ class PolymlpElastic:
                            (1: xx, 2: yy, 3: zz, 4: yz, 5: zx, 6: xy)
         """
         return self._elastic_constants
+
+    @property
+    def elastic_constants_adiabatic(self):
+        """Return adabatic elastic constants.
+
+        Return
+        ------
+        elastic_constants: Adiabatic elastic constants in Voigt notation.
+                           (1: xx, 2: yy, 3: zz, 4: yz, 5: zx, 6: xy)
+        """
+        if self._elastic_constants is None:
+            return None
+        if self._adiabatic_correction is None:
+            return None
+        return self._elastic_constants + self._adiabatic_correction
 
     @property
     def unitcell(self):
