@@ -36,7 +36,7 @@ class PolymlpElastic:
         self._voidt = [(0, 0), (1, 1), (2, 2), (1, 2), (0, 2), (0, 1)]
         self._to_voidt_order = [0, 1, 2, 4, 5, 3]
         self._elastic_constants = None
-        self._elastic_constants_adiabatic = None
+        self._adiabatic_correction = None
         self._geometry = None
         self._temperature = None
 
@@ -164,6 +164,7 @@ class PolymlpElastic:
         self._adiabatic_correction = (
             np.outer(stress_deriv, stress_deriv) / entropy_deriv
         )
+        print(self._adiabatic_correction)
         return self
 
     def write_elastic_constants(self, filename: str = "polymlp_elastic.yaml"):
