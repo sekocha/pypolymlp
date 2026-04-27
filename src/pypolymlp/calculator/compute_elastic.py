@@ -184,9 +184,10 @@ class PolymlpElastic:
         """Run adiabatic contribution."""
         if isinstance(self._prop, Properties):
             raise RuntimeError("Adiabatic calculation requires SSCHA properties.")
+        if self._verbose:
+            print("Calculating adiabatic correction", flush=True)
 
         temperatures = np.linspace(-eps, eps, n_samples) + self._temperature
-
         stress_all, entropy_all = [], []
         for temp in temperatures:
             if self._verbose:
@@ -204,7 +205,19 @@ class PolymlpElastic:
         for voidt1 in range(6):
             slope, intercept = np.polyfit(temperatures, stress_all[:, voidt1], 1)
             stress_deriv[voidt1] = slope
-        entropy_deriv, _ = np.polyfit(temperatures, entropy_all, 1)
+            if self._verbose:
+                pred = slope * temperatures + intercept
+                true = stress_all[:, voidt1]
+                print("Prediction of dstress/dT for Voidt", voidt1, flush=True)
+                for temp, val1, val2 in zip(temperatures, true, pred):
+                    print("", temp, np.round(val1, 5), np.round(val2, 5), flush=True)
+
+        entropy_deriv, intercept = np.polyfit(temperatures, entropy_all, 1)
+        if self._verbose:
+            pred = entropy_deriv * temperatures + intercept
+            print("Prediction of dS/dT", flush=True)
+            for temp, val1, val2 in zip(temperatures, entropy_all, pred):
+                print("", temp, np.round(val1, 5), np.round(val2, 5), flush=True)
 
         self._adiabatic_correction = (
             np.outer(stress_deriv, stress_deriv) / entropy_deriv
@@ -230,6 +243,7 @@ class PolymlpElastic:
                 tag="elastic_constants",
             )
             if self._adiabatic_correction is not None:
+                print(file=f)
                 write_elastic_constants(
                     self._elastic_constants + self._adiabatic_correction,
                     file=f,
