@@ -134,7 +134,7 @@ class PolymlpElastic:
         self._elastic_constants = self._symmetrize(elastic_consts)
         return self
 
-    def run_adiabatic(self, n_samples: int = 7, eps: float = 30.0):
+    def run_adiabatic(self, n_samples: int = 7, eps: float = 60.0):
         """Run adiabatic contribution."""
         if isinstance(self._prop, Properties):
             raise RuntimeError("Adiabatic calculation requires SSCHA properties.")

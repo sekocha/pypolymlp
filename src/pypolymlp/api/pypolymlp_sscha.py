@@ -402,7 +402,7 @@ class PypolymlpSSCHA:
             pass
 
         #        el.run(eps=0.01)
-        el.run_adiabatic(eps=30)
+        el.run_adiabatic(eps=60)
         el.write_elastic_constants(filename="polymlp_elastic_sscha.yaml")
 
         return self
