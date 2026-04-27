@@ -1,6 +1,7 @@
 """Class for computing elastic constants."""
 
 import copy
+import io
 
 import numpy as np
 
@@ -9,6 +10,47 @@ from pypolymlp.calculator.properties import Properties, convert_stresses_in_gpa
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.units import EVtoGPa
 from pypolymlp.utils.tensor_utils_O4 import compute_projector_O4
+
+
+def write_elastic_constants(
+    elastic_constants: np.ndarray,
+    file: io.IOBase,
+    tag: str = "elastic_constants",
+):
+    """Save elastic constants to a file."""
+    ids = [
+        (1, 1),
+        (2, 2),
+        (3, 3),
+        (1, 2),
+        (1, 3),
+        (2, 3),
+        (4, 4),
+        (5, 5),
+        (6, 6),
+        (1, 4),
+        (1, 5),
+        (1, 6),
+        (2, 4),
+        (2, 5),
+        (2, 6),
+        (3, 4),
+        (3, 5),
+        (3, 6),
+        (4, 5),
+        (4, 6),
+        (5, 6),
+    ]
+
+    print(tag + ":", file=file)
+    for i, j in ids:
+        prefix = "  c_" + str(i) + str(j) + ":"
+        if elastic_constants[i - 1][j - 1] > 1e-8:
+            str1 = "{:.3f}".format(elastic_constants[i - 1][j - 1])
+            print(prefix, str1, file=file)
+        else:
+            print(prefix, "0", file=file)
+    return file
 
 
 class PolymlpElastic:
@@ -36,9 +78,12 @@ class PolymlpElastic:
         self._voidt = [(0, 0), (1, 1), (2, 2), (1, 2), (0, 2), (0, 1)]
         self._to_voidt_order = [0, 1, 2, 4, 5, 3]
         self._elastic_constants = None
-        self._adiabatic_correction = None
         self._geometry = None
+
+        self._adiabatic_correction = None
         self._temperature = None
+        if not isinstance(self._prop, Properties):
+            self._temperature = self._prop.temperature
 
         if geometry_optimization:
             self._geometry = GeometryOptimization(
@@ -55,7 +100,8 @@ class PolymlpElastic:
 
         _, _, stress = self._prop.eval(self._unitcell)
         self._eq_stress = stress[self._to_voidt_order]
-        self._proj = compute_projector_O4(self._unitcell)
+
+        self._sym_proj = compute_projector_O4(self._unitcell)
 
     def eval(self, structures: list[PolymlpStructure]):
         """Evaluate stress tensors.
@@ -78,7 +124,7 @@ class PolymlpElastic:
         ------
         stress: Stress tensor (GPa) in the order of Voigt notation.
                 (1: xx, 2: yy, 3: zz, 4: yz, 5: zx, 6: xy)
-        entropy: Entropy value.
+        entropy: Entropy value in eV/K/unitcell.
         """
         _, _, stress = self._prop.eval(self._unitcell)
         stress = stress[self._to_voidt_order]
@@ -97,7 +143,7 @@ class PolymlpElastic:
                 el_full[i, j, l, k] = elastic_constants[voidt1, voidt2]
                 el_full[j, i, k, l] = elastic_constants[voidt1, voidt2]
                 el_full[j, i, l, k] = elastic_constants[voidt1, voidt2]
-        el_full = (self._proj @ el_full.reshape(-1)).reshape((3, 3, 3, 3))
+        el_full = (self._sym_proj @ el_full.reshape(-1)).reshape((3, 3, 3, 3))
 
         for voidt1, (i, j) in enumerate(self._voidt):
             for voidt2, (k, l) in enumerate(self._voidt):
@@ -139,7 +185,6 @@ class PolymlpElastic:
         if isinstance(self._prop, Properties):
             raise RuntimeError("Adiabatic calculation requires SSCHA properties.")
 
-        self._temperature = self._prop.temperature
         temperatures = np.linspace(-eps, eps, n_samples) + self._temperature
 
         stress_all, entropy_all = [], []
@@ -164,53 +209,32 @@ class PolymlpElastic:
         self._adiabatic_correction = (
             np.outer(stress_deriv, stress_deriv) / entropy_deriv
         )
-        print(self._adiabatic_correction)
         return self
 
     def write_elastic_constants(self, filename: str = "polymlp_elastic.yaml"):
         """Save elastic constants."""
+        if self._elastic_constants is None:
+            return None
+
         with open(filename, "w") as f:
-            try:
-                params = self._prop._sscha_params
-                print("temperature:", params.temperatures[0], file=f)
+            if self._temperature is not None:
+                print("temperature:", self._temperature, file=f)
                 print(file=f)
-            except:
-                pass
 
             print("unit: GPa", file=f)
             print(file=f)
-            print("elastic_constants:", file=f)
 
-            ids = [
-                (1, 1),
-                (2, 2),
-                (3, 3),
-                (1, 2),
-                (1, 3),
-                (2, 3),
-                (4, 4),
-                (5, 5),
-                (6, 6),
-                (1, 4),
-                (1, 5),
-                (1, 6),
-                (2, 4),
-                (2, 5),
-                (2, 6),
-                (3, 4),
-                (3, 5),
-                (3, 6),
-                (4, 5),
-                (4, 6),
-                (5, 6),
-            ]
-            for i, j in ids:
-                prefix = "  c_" + str(i) + str(j) + ":"
-                if self._elastic_constants[i - 1][j - 1] > 1e-8:
-                    str1 = "{:.3f}".format(self._elastic_constants[i - 1][j - 1])
-                    print(prefix, str1, file=f)
-                else:
-                    print(prefix, "0", file=f)
+            write_elastic_constants(
+                self._elastic_constants,
+                file=f,
+                tag="elastic_constants",
+            )
+            if self._adiabatic_correction is not None:
+                write_elastic_constants(
+                    self._elastic_constants + self._adiabatic_correction,
+                    file=f,
+                    tag="elastic_constants_adiabatic",
+                )
         return self
 
     @property
