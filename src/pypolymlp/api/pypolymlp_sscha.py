@@ -382,7 +382,6 @@ class PypolymlpSSCHA:
             self._sscha_params,
             self._prop,
             verbose=verbose_sscha,
-            # verbose=True,
         )
         el = PolymlpElastic(
             unitcell=self._unitcell,
@@ -401,8 +400,8 @@ class PypolymlpSSCHA:
         except:
             pass
 
-        el.run(eps=0.01)
-        el.run_adiabatic(eps=60)
+        el.run(n_samples=7, eps=0.01)
+        el.run_adiabatic(n_samples=7, eps=60)
         el.write_elastic_constants(filename="polymlp_elastic_sscha.yaml")
 
         return self
