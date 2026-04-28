@@ -287,5 +287,4 @@ def run():
             use_temporal_cutoff=args.use_temporal_cutoff,
             write_pdos=args.write_pdos,
             use_mkl=not args.disable_mkl,
-            verbose_sscha=True,
         )

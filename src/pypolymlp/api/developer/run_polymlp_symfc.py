@@ -111,7 +111,10 @@ def run():
     print("Elapsed time (Basis sets):", "{:.3f}".format(t2 - t1), flush=True)
     for order in args.orders:
         prefix = "Number of FC basis vectors (order " + str(order) + "):"
-        print(prefix, symfc.basis_set[order].blocked_basis_set.shape[1], flush=True)
+        try:
+            print(prefix, symfc.basis_set[order].blocked_basis_set.shape[1], flush=True)
+        except:
+            pass
 
     if args.vaspruns is not None:
         forces, disps = parse_forces_displacements(args.vaspruns, supercell)
