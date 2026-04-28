@@ -116,7 +116,7 @@ Several procedures for generating structures used in DFT calculations are also s
 ## Using pypolymlp for Polynomial MLP Calculations
 
 In version 0.8.0 and earlier, polymlp files are generated in plain text format as `polymlp.lammps`.
-Many polynomial MLPs distributed in the Polynomial MLP repository are also provided in this plain text format.
+Many polynomial MLPs distributed in the [Polynomial MLP Repository](http://cms.mtl.kyoto-u.ac.jp/seko/mlp-repository/index.html) are also provided in this plain text format.
 Starting from version 0.9.0, polymlp files are generated in YAML format as `polymlp.yaml`.
 Both formats are supported by the command-line interface and the Python API.
 
