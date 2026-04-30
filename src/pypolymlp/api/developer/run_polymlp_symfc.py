@@ -126,11 +126,11 @@ def run():
         symfc.forces = forces.transpose((0, 2, 1))
         symfc.displacements = disps.transpose((0, 2, 1))
         symfc.solve(orders=args.orders, batch_size=args.batch_size, is_compact_fc=True)
-        if symfc.force_constants[2] is not None:
+        if 2 in symfc.force_constants:
             print("Writing fc2.hdf5", flush=True)
             write_fc2_to_hdf5(symfc.force_constants[2])
 
-        if symfc.force_constants[3] is not None:
+        if 3 in symfc.force_constants:
             print("Writing fc3.hdf5", flush=True)
             write_fc3_to_hdf5(symfc.force_constants[3])
 
