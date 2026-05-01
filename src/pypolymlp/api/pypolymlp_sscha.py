@@ -222,7 +222,7 @@ class PypolymlpSSCHA:
         relax_positions: bool = True,
         method: Literal["BFGS", "CG", "L-BFGS-B", "SLSQP"] = "BFGS",
         gtol: float = 2e-2,
-        maxiter: int = 1000,
+        go_maxiter: int = 1000,
         c1: float = 1e-3,
         c2: float = 0.5,
         pressure: float = 0.0,
@@ -302,7 +302,7 @@ class PypolymlpSSCHA:
             pressure=pressure,
             verbose=self._verbose,
         )
-        opt.run(method=method, gtol=gtol, maxiter=maxiter, c1=c1, c2=c2)
+        opt.run(method=method, gtol=gtol, maxiter=go_maxiter, c1=c1, c2=c2)
         opt.write_poscar()
         if self._verbose:
             opt.print_residuals()
