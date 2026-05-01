@@ -203,7 +203,7 @@ class PolymlpFC:
         )
         t2 = time.time()
         if self._verbose:
-            print("Time (Symfc basis and solver)", t2 - t1, flush=True)
+            print("Time (Symfc basis and solver)", np.round(t2 - t1, 3), flush=True)
             for order in orders:
                 shape = self._symfc.basis_set[order].blocked_basis_set.shape
                 if order == 2:
