@@ -6,7 +6,7 @@ import numpy as np
 
 from pypolymlp.calculator.sscha.sscha_utils import symmetrize_properties
 from pypolymlp.utils.symfc_utils import compute_projector_cartesian
-from pypolymlp.utils.tensor_utils import compute_spg_projector_O2
+from pypolymlp.utils.tensor_utils_O2 import compute_projector_O2
 
 
 def test_symmetrize_properties(structure_rocksalt):
@@ -15,7 +15,7 @@ def test_symmetrize_properties(structure_rocksalt):
     st.positions[0, 0] += 0.01
 
     proj_f = compute_projector_cartesian(st)
-    proj_s = compute_spg_projector_O2(st)
+    proj_s = compute_projector_O2(st)
 
     forces = np.zeros((3, 8))
     forces[0, 0] = 0.1

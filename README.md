@@ -25,7 +25,7 @@ A polynomial MLP represents the potential energy as a polynomial function of lin
 
 ## Required libraries and python modules
 
-- python >= 3.9
+- python >= 3.10
 - numpy != 2.0.*
 - scipy
 - pyyaml
@@ -39,7 +39,6 @@ A polynomial MLP represents the potential energy as a polynomial function of lin
 - symfc
 - sparse_dot_mkl
 - spglib
-- pymatgen
 - ase
 - joblib
 - matplotlib, seaborn
@@ -78,9 +77,8 @@ pip install . -vvv
 ```
 Building C++ codes in pypolymlp may require a significant amount of time.
 
-## How to use pypolymlp
+## Using pypolymlp for Polynomial MLP Development
 
-### Polynomial MLP development
 To develop polynomial MLPs from datasets obtained from DFT calculations, both the command-line interface and the Python API are available.
 Several procedures for generating structures used in DFT calculations are also supported.
 
@@ -88,6 +86,7 @@ Several procedures for generating structures used in DFT calculations are also s
   1. [Development of a single on-the-fly MLP](docs/tutorial_onthefly.md)
   2. Development of a single general-purpose MLP
   3. [Development of convex hull (Pareto-optimal) MLPs](docs/utils_grid.md)
+
 - MLP Developments
   - [VASP (Command line interface)](docs/mlpdev_command.md)
   - [VASP (Python API)](docs/mlpdev_api.md)
@@ -113,11 +112,14 @@ Several procedures for generating structures used in DFT calculations are also s
   - [Spin-dependent model](docs/experimental/mlpdev_spin.md)
 
 
-### Calculations using polynomial MLP
-In version 0.8.0 or earlier, polymlp files are generated in a plain text format as `polymlp.lammps`.
-Starting from version 0.9.0, the files are generated in YAML format as `polymlp.yaml`.
+## Using pypolymlp for Polynomial MLP Calculations
+
+In version 0.8.0 and earlier, polymlp files are generated in plain text format as `polymlp.lammps`.
+Many polynomial MLPs distributed in the [Polynomial MLP Repository](http://cms.mtl.kyoto-u.ac.jp/seko/mlp-repository/index.html) are also provided in this plain text format.
+Starting from version 0.9.0, polymlp files are generated in YAML format as `polymlp.yaml`.
 Both formats are supported by the command-line interface and the Python API.
-The following calculations can be performed using **pypolymlp** with the polynomial MLP files `polymlp.yaml` or `polymlp.lammps`.
+
+The following calculations can be performed using `pypolymlp` with either `polymlp.yaml` or `polymlp.lammps` files.
 
 - [Notes on hybrid polynomial MLPs](docs/calc_hybrid.md)
 - Property calculations and simulation
@@ -132,14 +134,15 @@ The following calculations can be performed using **pypolymlp** with the polynom
   - [Polynomial invariants](docs/calc_features.md)
   - [Systematic property calculations](docs/calc_auto.md)
   - [Repository entry generation](docs/calc_auto_rep.md)
+
 - Experimental features
   - [Self-consistent phonon calculations](docs/experimental/calc_sscha.md)
+  - [Finite-temperature local geometry optimization](docs/experimental/calc_geometry_temperature.md)
+  - [Finite-temperature elastic constants](docs/experimental/calc_elastic_temperature.md)
   - [Molecular dynamics](docs/experimental/calc_md.md)
   - [Thermodynamic integration using molecular dynamics](docs/experimental/calc_ti.md)
   - [Thermodynamic property calculation](docs/experimental/calc_thermodynamics.md)
   - Evaluation of atomic-configuration-dependent electronic free energy
-  - Global structure optimization
-  - Structure optimization at finite temperatures
 
 - [How to use polymlp in other calculator tools](docs/api_other_calc.md)
   - LAMMPS

@@ -188,6 +188,11 @@ def run():
         help="Tolerance parameter for gradients",
     )
 
+    parser.add_argument(
+        "--elastic",
+        action="store_true",
+        help="Elastic constant calculation using SSCHA free energy.",
+    )
     args = parser.parse_args()
 
     np.set_printoptions(legacy="1.21")
@@ -211,6 +216,7 @@ def run():
         n_samples_init, n_samples_final = args.n_samples
 
     if args.geometry_optimization:
+        print("Mode: SSCHA geometry optimization", flush=True)
         if args.temp is None:
             raise RuntimeError("Temperature required. Use --temp option.")
 
@@ -239,8 +245,29 @@ def run():
             relax_positions=not args.fix_atom,
             pressure=args.pressure,
             gtol=args.gtol,
+            verbose_sscha=True,
+        )
+    elif args.elastic:
+        if args.temp is None:
+            raise RuntimeError("Temperature required. Use --temp option.")
+        print("Mode: SSCHA elastic constant calculation", flush=True)
+        sscha.run_elastic(
+            temp=args.temp,
+            n_samples_init=n_samples_init,
+            n_samples_final=n_samples_final,
+            tol=args.tol,
+            max_iter=args.max_iter,
+            mixing=args.mixing,
+            mesh=args.mesh,
+            init_fc_algorithm=args.init,
+            init_fc_file=args.init_file,
+            cutoff_radius=args.cutoff_fc2,
+            use_mkl=not args.disable_mkl,
+            gtol=args.gtol,
+            verbose_sscha=False,
         )
     else:
+        print("Mode: SSCHA calculation", flush=True)
         sscha.run(
             temp=args.temp,
             temp_min=args.temp_min,

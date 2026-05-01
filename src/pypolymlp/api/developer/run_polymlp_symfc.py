@@ -111,7 +111,10 @@ def run():
     print("Elapsed time (Basis sets):", "{:.3f}".format(t2 - t1), flush=True)
     for order in args.orders:
         prefix = "Number of FC basis vectors (order " + str(order) + "):"
-        print(prefix, symfc.basis_set[order].blocked_basis_set.shape[1], flush=True)
+        try:
+            print(prefix, symfc.basis_set[order].blocked_basis_set.shape[1], flush=True)
+        except:
+            pass
 
     if args.vaspruns is not None:
         forces, disps = parse_forces_displacements(args.vaspruns, supercell)
@@ -123,10 +126,25 @@ def run():
         symfc.forces = forces.transpose((0, 2, 1))
         symfc.displacements = disps.transpose((0, 2, 1))
         symfc.solve(orders=args.orders, batch_size=args.batch_size, is_compact_fc=True)
-        if symfc.force_constants[2] is not None:
+        if 2 in symfc.force_constants:
             print("Writing fc2.hdf5", flush=True)
             write_fc2_to_hdf5(symfc.force_constants[2])
 
-        if symfc.force_constants[3] is not None:
+        if 3 in symfc.force_constants:
             print("Writing fc3.hdf5", flush=True)
             write_fc3_to_hdf5(symfc.force_constants[3])
+
+        import phono3py
+
+        ph3 = phono3py.load(
+            unitcell_filename=args.poscar,
+            supercell_matrix=args.supercell,
+            primitive_matrix="auto",
+            log_level=True,
+        )
+        ph3.mesh_numbers = (19, 19, 19)
+        ph3.init_phph_interaction()
+        ph3.run_thermal_conductivity(
+            temperatures=range(0, 1001, 10),
+            write_kappa=True,
+        )

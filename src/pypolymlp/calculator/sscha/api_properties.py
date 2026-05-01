@@ -10,7 +10,7 @@ from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.units import EVtoKJmol
 from pypolymlp.utils.structure_utils import supercell
 from pypolymlp.utils.symfc_utils import compute_projector_cartesian
-from pypolymlp.utils.tensor_utils import compute_spg_projector_O2
+from pypolymlp.utils.tensor_utils_O2 import compute_projector_O2
 
 
 class PropertiesSSCHA:
@@ -36,6 +36,7 @@ class PropertiesSSCHA:
         self._sscha_params = sscha_params
         self._prop = properties
         self._verbose = verbose
+        self._temperature = self._sscha_params.temperatures[0]
 
         self._proj_force = None
         self._proj_stress = None
@@ -55,7 +56,7 @@ class PropertiesSSCHA:
 
     def _get_projector_stress(self):
         """Set projector onto symmetrized stress tensor."""
-        proj = compute_spg_projector_O2(self._sscha_params.unitcell)
+        proj = compute_projector_O2(self._sscha_params.unitcell)
         return proj
 
     def _symmetrize_properties(self, forces: np.ndarray, stress: np.ndarray):
@@ -90,7 +91,11 @@ class PropertiesSSCHA:
         self._proj_force = self._get_projector_force()
         self._proj_stress = self._get_projector_stress()
 
-        self._sscha = run_sscha(self._sscha_params, self._prop, verbose=self._verbose)
+        self._sscha = run_sscha(
+            self._sscha_params,
+            self._prop,
+            verbose=self._verbose,
+        )
 
         static_energy = self._sscha.properties.static_potential
         sscha_free_energy = self._sscha.properties.free_energy
@@ -106,6 +111,39 @@ class PropertiesSSCHA:
 
         forces, stress = self._symmetrize_properties(forces, stress)
         return free_energy, forces, stress
+
+    def eval_multiple(self, structures: list):
+        """Evaluate properties of multiple structures.
+
+        Properties are composed of SSCHA and static contributions.
+
+        Return
+        ------
+        free_energy: List of SSCHA free energy in eV/unitcell.
+        force: List of forces including static forces in eV/angstrom, shape=(3, n_atom).
+        stress: List of virial stress tensor in eV/unitcell,
+                shape=(6) for xx, yy, zz, xy, yz, zx.
+        """
+        free_energy_all, forces_all, stress_all = [], [], []
+        for st in structures:
+            free_energy, forces, stress = self.eval(st)
+            free_energy_all.append(free_energy)
+            forces_all.append(forces)
+            stress_all.append(stress)
+        return np.array(free_energy_all), forces_all, np.array(stress_all)
+
+    @property
+    def entropy(self):
+        """Return entropy.
+
+        Return
+        ------
+        entropy: Entropy in eV/K/unitcell.
+        """
+        if self._sscha is None:
+            return None
+        entropy = self._sscha.properties.entropy / (EVtoKJmol * 1000)
+        return entropy
 
     @property
     def params(self):
@@ -141,3 +179,14 @@ class PropertiesSSCHA:
         if self._sscha is None:
             return None
         return self._sscha.delta
+
+    @property
+    def temperature(self):
+        """Return temperature."""
+        return self._temperature
+
+    @temperature.setter
+    def temperature(self, val: float):
+        """Setter of temperature."""
+        self._temperature = val
+        self._sscha_params.temperatures = [val]

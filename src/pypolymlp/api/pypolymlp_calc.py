@@ -4,6 +4,7 @@ from typing import Literal, Optional, Union
 
 import numpy as np
 
+from pypolymlp.calculator.compute_elastic import PolymlpElastic
 from pypolymlp.calculator.compute_features import (
     compute_from_infile,
     compute_from_polymlp,
@@ -214,7 +215,6 @@ class PypolymlpCalc:
         -------
         elastic_constants: Elastic constants in GPa. shape=(6,6).
         """
-        from pypolymlp.calculator.compute_elastic import PolymlpElastic
 
         if poscar is not None:
             self.load_poscars(poscar)
@@ -224,7 +224,6 @@ class PypolymlpCalc:
 
         self._elastic = PolymlpElastic(
             unitcell=self.unitcell,
-            unitcell_poscar=self._poscar,
             properties=self._prop,
             verbose=self._verbose,
         )
@@ -471,10 +470,10 @@ class PypolymlpCalc:
         method: Literal["BFGS", "CG", "L-BFGS-B", "SLSQP"] = "BFGS",
         gtol: float = 1e-4,
         maxiter: int = 1000,
-        # c1: float = 1e-4,
-        # c2: float = 0.99,
-        c1: float = 1e-3,
-        c2: float = 0.5,
+        # c1: float = 1e-3,
+        # c2: float = 0.5,
+        c1: float = 0.1,
+        c2: float = 0.999,
     ):
         """Run geometry optimization.
 
@@ -503,18 +502,9 @@ class PypolymlpCalc:
         self._go.run(method=method, gtol=gtol, maxiter=maxiter, c1=c1, c2=c2)
         self.structures = self._go.structure
         if self._verbose:
-            if not self._go._relax_cell:
-                print("Residuals (force):", flush=True)
-                print(self._go.residual_forces.T, flush=True)
-            else:
-                res_f, res_s = self._go.residual_forces
-                print("Residuals (force):", flush=True)
-                print(res_f.T, flush=True)
-                print("Residuals (stress):", flush=True)
-                print(res_s, flush=True)
+            self._go.print_residuals()
             print("Final structure", flush=True)
             self._go.print_structure()
-
         return (self._go.energy, self._go.n_iter, self._go.success)
 
     def init_fc(

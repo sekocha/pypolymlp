@@ -1,6 +1,6 @@
 # Elastic Constant Calculation
 
-> **Note**: Requires `pymatgen`.
+> **Note**: Requires `symfc`.
 
 The `--elastic` option activates the calculation of elastic constants for a structure using a given polynomial MLP.
 
@@ -14,8 +14,6 @@ The `--elastic` option activates the calculation of elastic constants for a stru
 from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
 
 """Run elastic constant calculations.
-
-pymatgen is required.
 
 Returns
 -------

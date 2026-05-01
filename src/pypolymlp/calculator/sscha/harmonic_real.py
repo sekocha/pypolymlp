@@ -36,7 +36,7 @@ class HarmonicReal:
         properties: Properties,
         n_unitcells: Optional[int] = None,
         fc2: Optional[np.ndarray] = None,
-        verbose: bool = True,
+        verbose: bool = False,
     ):
         """Init method.
 

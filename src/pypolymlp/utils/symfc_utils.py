@@ -4,6 +4,7 @@ from typing import Optional
 
 import numpy as np
 from symfc.basis_sets.basis_sets_O1 import FCBasisSetO1
+from symfc.spg_reps.spg_reps_base import SpgRepsBase
 from symfc.utils.utils import SymfcAtoms
 
 from pypolymlp.core.data_format import PolymlpStructure
@@ -77,3 +78,10 @@ def set_symfc_cutoffs(
     """Set cutoffs used in symfc."""
     cutoff = {2: cutoff_fc2, 3: cutoff_fc3, 4: cutoff_fc4}
     return cutoff
+
+
+def set_spg_reps(st: PolymlpStructure):
+    """Set SpgRepsBase instance."""
+    symfc_cell = SymfcAtoms(st.types, st.positions.T, st.axis.T)
+    spgrep = SpgRepsBase(symfc_cell)
+    return spgrep

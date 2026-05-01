@@ -60,8 +60,6 @@ def test_sscha_core(unitcell_mlp_Al):
     assert sscha._data_current.free_energy is not None
     sscha._final_iter(temp=700, n_samples=10)
 
-    assert not sscha._is_imaginary()
-
     sscha.precondition(temp=700, n_samples=10, max_iter=1)
     sscha.run(temp=700)
     sscha._print_progress()

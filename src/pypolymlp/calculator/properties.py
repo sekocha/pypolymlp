@@ -8,6 +8,7 @@ from pypolymlp.calculator.compute_features import update_types
 from pypolymlp.core.data_format import PolymlpParamsSingle, PolymlpStructure
 from pypolymlp.core.io_polymlp import load_mlp
 from pypolymlp.core.params import PolymlpParams
+from pypolymlp.core.units import EVtoGPa
 from pypolymlp.cxx.lib import libmlpcpp
 
 
@@ -49,10 +50,12 @@ def find_active_atoms(
 
 def convert_stresses_in_gpa(stresses: np.ndarray, structures: list[PolymlpStructure]):
     """Calculate stress tensor values in GPa."""
+    if not isinstance(stresses, np.ndarray):
+        stresses = np.array(stresses)
     volumes = np.array([st.volume for st in structures])
     stresses_gpa = np.zeros(stresses.shape)
     for i in range(6):
-        stresses_gpa[:, i] = stresses[:, i] / volumes * 160.21766208
+        stresses_gpa[:, i] = stresses[:, i] / volumes * EVtoGPa
     return stresses_gpa
 
 
