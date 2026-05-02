@@ -8,14 +8,6 @@ import yaml
 from ase.calculators.calculator import Calculator
 
 from pypolymlp.calculator.md.ase_md import IntegratorASE
-
-# from pypolymlp.calculator.md.md_utils import (
-#     calc_integral,
-#     calculate_fc2_free_energy,
-#     find_reference,
-#     get_p_roots,
-#     save_thermodynamic_integration_yaml,
-# )
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.utils.ase_calculator import PolymlpASECalculator
 from pypolymlp.calculator.utils.ase_calculator_ref import (
@@ -30,15 +22,15 @@ from pypolymlp.calculator.utils.ase_utils import (
 from pypolymlp.calculator.utils.fc_utils import load_fc2_hdf5
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.interface_vasp import Poscar
-
-# from pypolymlp.core.units import Avogadro, Kb
 from pypolymlp.utils.structure_utils import supercell
 
+# from pypolymlp.core.units import Avogadro, Kb
 
-# TODO: Implement Nose-Hoover-chain thermostat.
+
 class PolymlpMD:
     """API Class for performing MD simulations."""
 
+    # TODO: Implement Nose-Hoover-chain thermostat.
     def __init__(self, verbose: bool = False):
         """Init method."""
         self._verbose = verbose
@@ -345,6 +337,75 @@ class PolymlpMD:
             )
         return self
 
+    def run_free_energy_perturbation(
+        self,
+        thermostat: Literal["Nose-Hoover", "Langevin"] = "Langevin",
+        temperature: int = 300,
+        time_step: float = 1.0,
+        ttime: float = 20.0,
+        friction: float = 0.01,
+        n_eq: int = 5000,
+        n_steps: int = 20000,
+    ):
+        """Run free energy perturbation.
+
+        Calculate two perturbed values of free energy using ensemble with alpha.
+        free_energy:
+            delta F = - (1 / beta) * ln [<exp(- beta * (E - E_alpha))>_alpha].
+        free_energy_order1:
+            delta F = <E - E_alpha>_alpha.
+
+        Parameters
+        ----------
+        thermostat: Thermostat.
+        temperature : int
+            Target temperature (K).
+        time_step : float
+            Time step for MD (fs).
+        ttime : float
+            Timescale of the Nose-Hoover thermostat (fs).
+        friction : float
+            Friction coefficient for Langevin thermostat (1/fs).
+        n_eq : int
+            Number of equilibration steps.
+        n_steps : int
+            Number of production steps.
+
+        Return
+        ------
+        free_energy: Free energy difference in exact form from state alpha.
+        free_energy_order1: First-order free energy difference from state alpha.
+        """
+        if not self._use_reference:
+            raise RuntimeError("Reference state not defined.")
+
+        if self._verbose:
+            print("Run free energy perturbation.", flush=True)
+
+        self.run_md_nvt(
+            thermostat=thermostat,
+            temperature=temperature,
+            time_step=time_step,
+            ttime=ttime,
+            friction=friction,
+            n_eq=n_eq,
+            n_steps=n_steps,
+            interval_log=None,
+            logfile=None,
+        )
+        free_energy = self.free_energy_perturb
+        free_energy_order1 = self.average_delta_energy_1a
+
+        if self._verbose:
+            print("-------------------------------------------", flush=True)
+            print("Free energy perturbation:", flush=True)
+            np.set_printoptions(suppress=True)
+            print("  free_energy:       ", free_energy, flush=True)
+            print("  free_energy_order1:", free_energy_order1, flush=True)
+            print("-------------------------------------------", flush=True)
+
+        return (free_energy, free_energy_order1)
+
     def _check_requisites(self):
         """Check requisites for MD simulations."""
         if self._supercell_ase is None:
@@ -361,6 +422,11 @@ class PolymlpMD:
         """Save properties to yaml file."""
         self._integrator.save_yaml(filename=filename)
         return self
+
+    @property
+    def use_reference(self):
+        """Return whether reference state is used in calculator."""
+        return self._use_reference
 
     @property
     def unitcell(self):
@@ -383,6 +449,13 @@ class PolymlpMD:
         """Set supercell."""
         self._supercell = cell
         self._supercell_ase = structure_to_ase_atoms(self._supercell)
+
+    @property
+    def final_structure(self):
+        """Return structure at the final step."""
+        if self._integrator is None:
+            return None
+        return ase_atoms_to_structure(self._supercell_ase)
 
     @property
     def calculator(self):
@@ -504,10 +577,3 @@ class PolymlpMD:
         if self._integrator is None:
             return None
         return self._integrator.free_energy_perturb
-
-    @property
-    def final_structure(self):
-        """Return structure at the final step."""
-        if self._integrator is None:
-            return None
-        return ase_atoms_to_structure(self._supercell_ase)

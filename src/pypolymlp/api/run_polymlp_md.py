@@ -17,11 +17,6 @@ def run():
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--ti",
-        action="store_true",
-        help="Run thermodynamics integration",
-    )
-    parser.add_argument(
         "--pot", nargs="*", type=str, default="polymlp.yaml", help="polymlp file."
     )
     parser.add_argument(
@@ -71,7 +66,32 @@ def run():
     )
     parser.add_argument("--n_steps", type=int, default=20000, help="Number of steps.")
 
+    # for free energy perturbation
+    parser.add_argument(
+        "--perturb",
+        action="store_true",
+        help="Run free energy perturbation.",
+    )
+    parser.add_argument(
+        "--alpha",
+        type=float,
+        default=0.0,
+        help="Alpha value for reference state.",
+    )
+
+    parser.add_argument(
+        "--fc2",
+        type=str,
+        default=None,
+        help="Force constant HDF5 file.",
+    )
+
     # for TI
+    parser.add_argument(
+        "--ti",
+        action="store_true",
+        help="Run thermodynamics integration.",
+    )
     parser.add_argument(
         "--n_samples", type=int, default=15, help="Number of MD simulations for TI."
     )
@@ -79,27 +99,10 @@ def run():
         "--max_alpha", type=float, default=1.0, help="Maximum alpha value for TI."
     )
     parser.add_argument(
-        "--fc2",
-        type=str,
-        default=None,
-        help="Force constant HDF5 file.",
-    )
-    parser.add_argument(
         "--fc2_path",
         type=str,
         default=None,
         help="Directory path for automatically finding reference FC2 state.",
-    )
-    parser.add_argument(
-        "--alpha",
-        type=float,
-        default=0.0,
-        help="Alpha value for TI.",
-    )
-    parser.add_argument(
-        "--heat_capacity",
-        action="store_true",
-        help="Calculate heat capacity in TI.",
     )
     parser.add_argument(
         "--output",
@@ -112,7 +115,33 @@ def run():
     print_credit()
     np.set_printoptions(legacy="1.21")
 
-    if args.ti:
+    if args.perturb:
+        if args.fc2 is None:
+            raise RuntimeError("Free energy perturbation requires FC2.")
+
+        print("Run free energy perturbation.", flush=True)
+        print("Polymlp:      ", args.pot, flush=True)
+        print("Reference FC2:", args.fc2, flush=True)
+
+        md = PypolymlpMD(verbose=True)
+        md.load_poscar(args.poscar)
+        md.set_supercell(args.supercell_size)
+        md.set_ase_calculator_with_fc2(
+            pot=args.pot,
+            fc2hdf5=args.fc2,
+            alpha=args.alpha,
+        )
+        free_energy, free_energy_order1 = md.run_free_energy_perturbation(
+            thermostat=args.thermostat,
+            temperature=args.temp,
+            time_step=args.time_step,
+            friction=args.friction,
+            ttime=args.ttime,
+            n_eq=args.n_eq,
+            n_steps=args.n_steps,
+        )
+
+    elif args.ti:
         print("Run thermodynamic integration.", flush=True)
         path = "/".join(os.path.abspath(args.poscar).split("/")[:-1])
         path += "/ti/" + str(args.temp)

@@ -6,24 +6,11 @@ import numpy as np
 from ase.calculators.calculator import Calculator
 
 from pypolymlp.calculator.md.api_md import PolymlpMD
-
-# from pypolymlp.calculator.md.ase_md import IntegratorASE
-# from pypolymlp.calculator.md.md_utils import (
-#     calc_integral,
-#     calculate_fc2_free_energy,
-#     find_reference,
-#     get_p_roots,
-#     save_thermodynamic_integration_yaml,
-# )
 from pypolymlp.calculator.properties import Properties, initialize_polymlp_calculator
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.params import PolymlpParams
 
-# from pypolymlp.core.units import Avogadro, Kb
-# from pypolymlp.utils.structure_utils import supercell
 
-
-# TODO: Implement Nose-Hoover-chain thermostat.
 class PypolymlpMD:
     """API Class for performing MD simulations."""
 
@@ -34,25 +21,15 @@ class PypolymlpMD:
         self._verbose = verbose
         self._properties = None
 
-        self._unitcell = None
-        self._supercell = None
-        self._unitcell_ase = None
-        self._supercell_ase = None
-        self._supercell_matrix = None
-        self._integrator = None
-
         self._use_reference = False
         self._fc2file = None
 
         # self._log_ti = None
-
         # self._free_energy = None
         # self._free_energy_order1 = None
         # self._delta_heat_capacity = None
-
         # self._total_free_energy = None
         # self._total_free_energy_order1 = None
-
         # self._ref_free_energy = None
 
         if self._verbose:
@@ -126,12 +103,13 @@ class PypolymlpMD:
         alpha: Mixing parameter. E = alpha * E_polymlp + (1 - alpha) * E_fc2
         fc2hdf5: HDF5 file for second-order force constants.
         """
-        if self._supercell is None:
-            raise RuntimeError("Supercell not found.")
-
         self._use_reference = True
         self._properties = self._set_polymlp(pot, params, coeffs, properties)
-        self._md.set_ase_calculator_with_fc2(fc2hdf5=fc2hdf5, alpha=alpha)
+        self._md.set_ase_calculator_with_fc2(
+            properties=self._properties,
+            fc2hdf5=fc2hdf5,
+            alpha=alpha,
+        )
         return self
 
     def set_ase_calculator_with_reference(
@@ -209,9 +187,6 @@ class PypolymlpMD:
         alpha: Mixing parameter.
             E = alpha * E_final + (1 - alpha) * E_ref
         """
-        if self._supercell is None:
-            raise RuntimeError("Supercell not found.")
-
         self._use_reference = True
         self._properties = self._set_polymlp(
             pot_final, params_final, coeffs_final, properties_final
@@ -305,6 +280,59 @@ class PypolymlpMD:
                 initialize=initialize,
             )
         return self
+
+    def run_free_energy_perturbation(
+        self,
+        thermostat: Literal["Nose-Hoover", "Langevin"] = "Langevin",
+        temperature: int = 300,
+        time_step: float = 1.0,
+        ttime: float = 20.0,
+        friction: float = 0.01,
+        n_eq: int = 5000,
+        n_steps: int = 20000,
+    ):
+        """Run free energy perturbation.
+
+        Calculate two perturbed values of free energy using ensemble with alpha.
+        free_energy:
+            delta F = - (1 / beta) * ln [<exp(- beta * (E - E_alpha))>_alpha].
+        free_energy_order1:
+            delta F = <E - E_alpha>_alpha.
+
+        Parameters
+        ----------
+        thermostat: Thermostat.
+        temperature : int
+            Target temperature (K).
+        time_step : float
+            Time step for MD (fs).
+        ttime : float
+            Timescale of the Nose-Hoover thermostat (fs).
+        friction : float
+            Friction coefficient for Langevin thermostat (1/fs).
+        n_eq : int
+            Number of equilibration steps.
+        n_steps : int
+            Number of production steps.
+
+        Return
+        ------
+        free_energy: Free energy difference in exact form from state alpha.
+        free_energy_order1: First-order free energy difference from state alpha.
+        """
+        if self._verbose:
+            print("Run free energy perturbation.", flush=True)
+
+        free_energy, free_energy_order1 = self._md.run_free_energy_perturbation(
+            thermostat=thermostat,
+            temperature=temperature,
+            time_step=time_step,
+            ttime=ttime,
+            friction=friction,
+            n_eq=n_eq,
+            n_steps=n_steps,
+        )
+        return free_energy, free_energy_order1
 
     def save_yaml(self, filename: str = "polymlp_md.yaml"):
         """Save properties to yaml file."""
