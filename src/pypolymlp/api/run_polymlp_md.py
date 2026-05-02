@@ -6,7 +6,8 @@ import signal
 
 import numpy as np
 
-from pypolymlp.api.pypolymlp_md import PypolymlpMD, run_thermodynamic_integration
+# from pypolymlp.api.pypolymlp_md import PypolymlpMD, run_thermodynamic_integration
+from pypolymlp.api.pypolymlp_md import PypolymlpMD
 from pypolymlp.core.utils import print_credit
 
 
@@ -125,25 +126,25 @@ def run():
             fc2 = md.find_reference(args.fc2_path, args.temp)
         print("Reference state:", fc2, flush=True)
 
-        run_thermodynamic_integration(
-            pot=args.pot,
-            pot_ref=args.pot_ref,
-            poscar=args.poscar,
-            supercell_size=args.supercell_size,
-            fc2hdf5=fc2,
-            thermostat=args.thermostat,
-            n_alphas=args.n_samples,
-            max_alpha=args.max_alpha,
-            temperature=args.temp,
-            time_step=args.time_step,
-            ttime=args.ttime,
-            friction=args.friction,
-            n_eq=args.n_eq,
-            n_steps=args.n_steps,
-            heat_capacity=args.heat_capacity,
-            filename=path + "/polymlp_ti.yaml",
-            verbose=True,
-        )
+        # run_thermodynamic_integration(
+        #     pot=args.pot,
+        #     pot_ref=args.pot_ref,
+        #     poscar=args.poscar,
+        #     supercell_size=args.supercell_size,
+        #     fc2hdf5=fc2,
+        #     thermostat=args.thermostat,
+        #     n_alphas=args.n_samples,
+        #     max_alpha=args.max_alpha,
+        #     temperature=args.temp,
+        #     time_step=args.time_step,
+        #     ttime=args.ttime,
+        #     friction=args.friction,
+        #     n_eq=args.n_eq,
+        #     n_steps=args.n_steps,
+        #     heat_capacity=args.heat_capacity,
+        #     filename=path + "/polymlp_ti.yaml",
+        #     verbose=True,
+        # )
     else:
         print("Run molecular dynamics with NVT thermostat.", flush=True)
         path = "/".join(os.path.abspath(args.poscar).split("/")[:-1])
