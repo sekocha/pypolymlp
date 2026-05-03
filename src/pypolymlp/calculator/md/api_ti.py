@@ -6,9 +6,8 @@ from typing import Literal
 import numpy as np
 
 from pypolymlp.calculator.md.api_md import PolymlpMD
-from pypolymlp.calculator.md.md_utils import (  # calculate_fc2_free_energy,
+from pypolymlp.calculator.md.md_utils import (
     calc_integral,
-    find_reference,
     get_p_roots,
     save_thermodynamic_integration_yaml,
 )
@@ -181,11 +180,8 @@ class PolymlpTI:
         entropy = (energy - self._free_energy) / self._temperature
         return energy, entropy
 
-    def save_thermodynamic_integration_yaml(self, filename: str = "polymlp_ti.yaml"):
+    def save_ti_yaml(self, filename: str = "polymlp_ti.yaml"):
         """Save results of thermodynamic integration."""
-        if not self._use_reference:
-            raise RuntimeError("Reference state not found in Calculator.")
-
         reference = {
             "unitcell": self._unitcell,
             "supercell_matrix": self._supercell_matrix,
@@ -194,19 +190,15 @@ class PolymlpTI:
             "free_energy": self._ref_free_energy,
         }
         save_thermodynamic_integration_yaml(
-            self._integrator,
-            self._total_free_energy,
+            self._md.integrator,
             self._free_energy,
+            self._energy,
+            self._entropy,
             self._log_ti,
             reference,
-            delta_heat_capacity=self._delta_heat_capacity,
             filename=filename,
         )
         return self
-
-    def find_reference(self, path_fc2: str, target_temperature: float):
-        """Find reference FC2 automatically."""
-        return find_reference(path_fc2, target_temperature)
 
     @property
     def alpha(self):
@@ -239,87 +231,6 @@ class PolymlpTI:
         return self._log_ti
 
 
-#     def _set_reference_free_energy(self):
-#         """Set reference free energy."""
-#         if self._total_free_energy is None:
-#             self._total_free_energy = self._integrator.static_energy
-#             if self._fc2file is not None:
-#                 self._ref_free_energy = calculate_fc2_free_energy(
-#                     self._unitcell,
-#                     self._supercell_matrix,
-#                     self._fc2file,
-#                     self._integrator._temperature,
-#                 )
-#                 self._total_free_energy += self._ref_free_energy
-#                 self._total_free_energy_order1 = self._total_free_energy
-#             else:
-#                 raise RuntimeError("Reference free energy not given.")
-#         return self
-
-# def run_thermodynamic_integration(
-#     pot: str = "polymlp.yaml",
-#     pot_ref: Optional[str] = None,
-#     poscar: str = "POSCAR",
-#     supercell_size: tuple = (1, 1, 1),
-#     thermostat: Literal["Nose-Hoover", "Langevin"] = "Langevin",
-#     n_alphas: int = 15,
-#     max_alpha: float = 1.0,
-#     fc2hdf5: str = "fc2.hdf5",
-#     temperature: float = 300.0,
-#     time_step: float = 1.0,
-#     ttime: float = 20.0,
-#     friction: float = 0.01,
-#     n_eq: int = 2000,
-#     n_steps: int = 20000,
-#     filename: str = "polymlp_ti.yaml",
-#     heat_capacity: bool = False,
-#     verbose: bool = False,
-# ):
-#     """Run thermodynamic integration.
-#
-#     Parameters
-#     ----------
-#     pot: polymlp file.
-#     pot_ref: polymlp file for intermediate reference state.
-#     poscar: Structure in POSCAR format.
-#     supercell_size: Diagonal supercell size.
-#     thermostat: Thermostat.
-#     n_alphas: Number of sample points for thermodynamic integration
-#               using Gaussian quadrature.
-#     fc2hdf5: HDF5 file for second-order force constants.
-#     temperature : int
-#         Target temperature (K).
-#     time_step : float
-#         Time step for MD (fs).
-#     ttime : float
-#         Timescale of the Nose-Hoover thermostat (fs).
-#     friction : float
-#         Friction coefficient for Langevin thermostat (1/fs).
-#     n_eq : int
-#         Number of equilibration steps.
-#     n_steps : int
-#         Number of production steps.
-#     """
-#     pot1 = pot if pot_ref is None else pot_ref
-#
-#     md = PypolymlpMD(verbose=verbose)
-#     md.load_poscar(poscar)
-#     md.set_supercell(supercell_size)
-#     md.set_ase_calculator_with_fc2(pot=pot1, fc2hdf5=fc2hdf5, alpha=0.0)
-#     md.run_thermodynamic_integration(
-#         thermostat=thermostat,
-#         n_alphas=n_alphas,
-#         max_alpha=max_alpha,
-#         temperature=temperature,
-#         time_step=time_step,
-#         ttime=ttime,
-#         friction=friction,
-#         n_eq=n_eq,
-#         n_steps=n_steps,
-#         heat_capacity=heat_capacity,
-#     )
-#     md.save_thermodynamic_integration_yaml(filename=filename)
-#
 #     if pot_ref is not None:
 #         # Path: pot_ref (max_alpha) -> pot (max_alpha) -> pot (1.0)
 #         if verbose:
