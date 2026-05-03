@@ -1,34 +1,37 @@
 """API Class for performing thermodynamic integration."""
 
-# import os
+from dataclasses import dataclass
 from typing import Literal
 
 import numpy as np
 
 from pypolymlp.calculator.md.api_md import PolymlpMD
-
-# from pypolymlp.calculator.md.ase_md import IntegratorASE
-from pypolymlp.calculator.md.md_utils import (
+from pypolymlp.calculator.md.md_utils import (  # calculate_fc2_free_energy,
     calc_integral,
-    calculate_fc2_free_energy,
     find_reference,
     get_p_roots,
     save_thermodynamic_integration_yaml,
 )
 
-# import yaml
-# from ase.calculators.calculator import Calculator
 
+@dataclass
+class PropertiesTI:
+    """Dataclass of properties for thermodynamic integration step.
 
-# from pypolymlp.calculator.properties import Properties
+    Parameters
+    ----------
+    average_energy_from_alpha0: <E - E_ref0>_alpha
+    free_energy_perturb: - (1/beta) * ln [<exp(- beta * (E - E_alpha))>_alpha]
+    free_energy_perturb_order1: <E - E_alpha>_alpha
+    """
 
-# from pypolymlp.calculator.utils.fc_utils import load_fc2_hdf5
-# from pypolymlp.calculator.utils.io_utils import print_pot
-# from pypolymlp.core.data_format import PolymlpStructure
-# from pypolymlp.core.interface_vasp import Poscar
-# from pypolymlp.core.params import PolymlpParams
-# from pypolymlp.core.units import Avogadro, Kb
-# from pypolymlp.utils.structure_utils import supercell
+    alpha: float
+    average_energy: float
+    average_total_energy: float
+    average_displacement: float
+    average_energy_from_alpha0: float
+    free_energy_perturb: float
+    free_energy_perturb_order1: float
 
 
 class PolymlpTI:
@@ -40,16 +43,11 @@ class PolymlpTI:
         self._verbose = verbose
         self._check_md_instance()
 
-        # self._fc2file = None
         self._log_ti = None
         self._free_energy = None
-        self._free_energy_order1 = None
-        self._delta_heat_capacity = None
-
-        self._total_free_energy = None
-        self._total_free_energy_order1 = None
-
-        self._ref_free_energy = None
+        self._energy = None
+        self._entropy = None
+        self._temperature = None
 
         if self._verbose:
             np.set_printoptions(legacy="1.21")
@@ -95,104 +93,80 @@ class PolymlpTI:
             Number of equilibration steps.
         n_steps : int
             Number of production steps.
-        heat_capacity: bool
-            Calculate heat capacity.
         """
-        alphas, weights = get_p_roots(n=n_alphas, a=0.0, b=max_alpha)
-        log_ti = []
-        for alpha in alphas:
+
+        def _run(alpha, const_steps: int = 1):
             self.alpha = alpha
-            self.run_md_nvt(
+            self._md.run_md_nvt(
                 thermostat=thermostat,
                 temperature=temperature,
                 time_step=time_step,
                 ttime=ttime,
                 friction=friction,
                 n_eq=n_eq,
-                n_steps=n_steps,
+                n_steps=n_steps * const_steps,
                 interval_log=None,
                 logfile=None,
             )
-            log_append = self._get_log(alpha)
-            log_ti.append(log_append)
+            return self._get_log()
 
-        self._log_ti = log_ti = np.array(log_ti)
-        de = log_ti[:, 1]
+        self._temperature = temperature
+        alphas, weights = get_p_roots(n=n_alphas, a=0.0, b=max_alpha)
+        self._log_ti = [_run(alpha) for alpha in alphas]
+
+        de = np.array([log.average_energy_from_alpha0 for log in self._log_ti])
         self._free_energy = calc_integral(weights, de, a=0.0, b=max_alpha)
 
-        self._set_reference_free_energy()
-        self._total_free_energy += self._free_energy
-        self._total_free_energy_order1 += self._free_energy
-
-        self.alpha = 0.0
-        self.run_md_nvt(
-            thermostat=thermostat,
-            temperature=temperature,
-            time_step=time_step,
-            ttime=ttime,
-            friction=friction,
-            n_eq=n_eq,
-            n_steps=n_steps * 3,
-            interval_log=None,
-            logfile=None,
-        )
-        log_prepend = self._get_log(self.alpha)
-
-        self.alpha = max_alpha
-        self.run_md_nvt(
-            thermostat=thermostat,
-            temperature=temperature,
-            time_step=time_step,
-            ttime=ttime,
-            friction=friction,
-            n_eq=n_eq,
-            n_steps=n_steps * 3,
-            interval_log=None,
-            logfile=None,
-        )
-        log_append = self._get_log(self.alpha)
-        self._log_ti = np.vstack([log_prepend, self._log_ti, log_append])
+        log_prepend = _run(0.0, const_steps=3)
+        log_append = _run(max_alpha, const_steps=3)
+        self._log_ti = [log_prepend, *self._log_ti, log_append]
+        self._energy, self._entropy = self._calc_energy_entropy()
 
         if self._verbose:
-            print("-------------------------------------------", flush=True)
-            print("Results (TI):", flush=True)
-            np.set_printoptions(suppress=True)
-            print("  free_energy:", self._free_energy, flush=True)
-            print("  energies (E - E_ref):", flush=True)
-            print(log_ti[:, [0, 1]])
-            print("-------------------------------------------", flush=True)
-
+            self._print_log_ti()
         return self
 
-    def _set_reference_free_energy(self):
-        """Set reference free energy."""
-        if self._total_free_energy is None:
-            self._total_free_energy = self._integrator.static_energy
-            if self._fc2file is not None:
-                self._ref_free_energy = calculate_fc2_free_energy(
-                    self._unitcell,
-                    self._supercell_matrix,
-                    self._fc2file,
-                    self._integrator._temperature,
-                )
-                self._total_free_energy += self._ref_free_energy
-                self._total_free_energy_order1 = self._total_free_energy
-            else:
-                raise RuntimeError("Reference free energy not given.")
+    def _print_log_ti(self):
+        """Print log from integration."""
+        print("-------------------------------------------", flush=True)
+        print("Results (Thermodynamic integration):", flush=True)
+        np.set_printoptions(suppress=True)
+        print("  unit_energy:  eV/supercell", flush=True)
+        print("  unit_entropy: eV/K/supercell", flush=True)
+        print("  free_energy:", self._free_energy, flush=True)
+        print("  energy:     ", self._energy, flush=True)
+        print("  entropy:    ", self._entropy, flush=True)
+        print("  de/dalpha <E_max_alpha - E_alpha=0>_alpha:", flush=True)
+        for log in self._log_ti:
+            alpha = np.round(log.alpha, 7)
+            e_alpha0 = np.round(log.average_energy_from_alpha0, 7)
+            print("   -", f"{alpha:12}", f"{e_alpha0:12}", flush=True)
+        print("-------------------------------------------", flush=True)
         return self
 
-    def _get_log(self, alpha: float):
+    def _get_log(self):
         """Set log array."""
-        log_alpha = [
-            alpha,
-            self.average_delta_energy_10,
-            self.average_energy,
-            self.average_total_energy,
-            self.average_displacement,
-            self.average_delta_energy_1a,
-            self.free_energy_perturb,
-        ]
-        return np.array(log_alpha)
+        log = PropertiesTI(
+            alpha=self.alpha,
+            average_energy=self._md.average_energy,
+            average_total_energy=self._md.average_total_energy,
+            average_displacement=self._md.average_displacement,
+            free_energy_perturb=self._md.free_energy_perturb,
+            free_energy_perturb_order1=self._md.average_delta_energy_1a,
+            average_energy_from_alpha0=self._md.average_delta_energy_10,
+        )
+        return log
+
+    def _calc_energy_entropy(self):
+        """Calculate energy and entropy."""
+        if np.isclose(self._temperature, 0.0):
+            return 0.0, 0.0
+
+        e_final = self._log_ti[-1].average_energy
+        e_ref = self._log_ti[0].average_energy
+        energy = e_final - e_ref
+        entropy = (energy - self._free_energy) / self._temperature
+        return energy, entropy
 
     def save_thermodynamic_integration_yaml(self, filename: str = "polymlp_ti.yaml"):
         """Save results of thermodynamic integration."""
@@ -221,71 +195,53 @@ class PolymlpTI:
         """Find reference FC2 automatically."""
         return find_reference(path_fc2, target_temperature)
 
+    @property
+    def alpha(self):
+        """Return mixing parameter for two states."""
+        return self._md.alpha
 
-#    @property
-#    def delta_energies_10(self):
-#        """Return potential energies from reference state."""
-#        return self._integrator.delta_energies_10
-#
-#    @property
-#    def delta_energies_1a(self):
-#        """Return potential energies from alpha state."""
-#        return self._integrator.delta_energies_1a
-#
-#    @property
-#    def average_delta_energy_10(self):
-#        """Return avarage delta energy.
-#
-#        Return <E - E_ref>_alpha.
-#        """
-#        return self._integrator.average_delta_energy_10
-#
-#    @property
-#    def average_delta_energy_1a(self):
-#        """Return avarage delta energy from state alpha.
-#
-#        Return delta F = <E - E_alpha>_alpha.
-#        """
-#        return self._integrator.average_delta_energy_1a
-#
-#    @property
-#    def free_energy_perturb(self):
-#        """Return delta free energy from FE perturbation.
-#
-#        Return delta F = - (1/beta) * ln [<exp(- beta * (E - E_alpha))>_alpha].
-#        """
-#        return self._integrator.free_energy_perturb
-#
-#    @property
-#    def total_free_energy(self):
-#        """Return total free energy (static + reference + TI)."""
-#        return self._total_free_energy
-#
-#    @property
-#    def total_free_energy_order1(self):
-#        """Return total free energy (static + ref. + TI + 1st-order perturbation)."""
-#        return self._total_free_energy_order1
-#
-#    @property
-#    def reference_free_energy(self):
-#        """Return reference free energy."""
-#        return self._ref_free_energy
-#
-#    @property
-#    def free_energy(self):
-#        """Return difference of free energy from reference state."""
-#        return self._free_energy
-#
-#    @property
-#    def free_energy_order1(self):
-#        """Return 1st order difference of free energy from reference state."""
-#        return self._free_energy_order1
-#
-#    @property
-#    def delta_heat_capacity(self):
-#        """Return difference of heat capacity from reference state."""
-#        return self._delta_heat_capacity
+    @alpha.setter
+    def alpha(self, val_alpha: float):
+        """Setter of alpha."""
+        self._md.alpha = val_alpha
 
+    @property
+    def free_energy(self):
+        """Return free energy in eV/supercell."""
+        return self._free_energy
+
+    @property
+    def energy(self):
+        """Return energy in eV/supercell."""
+        return self._energy
+
+    @property
+    def entropy(self):
+        """Return entropy in eV/K/supercell."""
+        return self._entropy
+
+    @property
+    def logs(self):
+        """Return properties from each alpha."""
+        return self._log_ti
+
+
+#     def _set_reference_free_energy(self):
+#         """Set reference free energy."""
+#         if self._total_free_energy is None:
+#             self._total_free_energy = self._integrator.static_energy
+#             if self._fc2file is not None:
+#                 self._ref_free_energy = calculate_fc2_free_energy(
+#                     self._unitcell,
+#                     self._supercell_matrix,
+#                     self._fc2file,
+#                     self._integrator._temperature,
+#                 )
+#                 self._total_free_energy += self._ref_free_energy
+#                 self._total_free_energy_order1 = self._total_free_energy
+#             else:
+#                 raise RuntimeError("Reference free energy not given.")
+#         return self
 
 # def run_thermodynamic_integration(
 #     pot: str = "polymlp.yaml",
@@ -417,72 +373,3 @@ class PolymlpTI:
 #             print("    total_free_energy:  ", md.total_free_energy_order1, file=f)
 #
 #     return md
-
-#    def run_free_energy_perturbation(
-#        self,
-#        thermostat: Literal["Nose-Hoover", "Langevin"] = "Langevin",
-#        temperature: int = 300,
-#        time_step: float = 1.0,
-#        ttime: float = 20.0,
-#        friction: float = 0.01,
-#        n_eq: int = 5000,
-#        n_steps: int = 20000,
-#    ):
-#        """Run free energy perturbation.
-#
-#        Calculate two perturbed values of free energy using ensemble with alpha.
-#        free_energy:
-#            delta F = - (1 / beta) * ln [<exp(- beta * (E - E_alpha))>_alpha].
-#        free_energy_order1:
-#            delta F = <E - E_alpha>_alpha.
-#
-#        Parameters
-#        ----------
-#        thermostat: Thermostat.
-#        temperature : int
-#            Target temperature (K).
-#        time_step : float
-#            Time step for MD (fs).
-#        ttime : float
-#            Timescale of the Nose-Hoover thermostat (fs).
-#        friction : float
-#            Friction coefficient for Langevin thermostat (1/fs).
-#        n_eq : int
-#            Number of equilibration steps.
-#        n_steps : int
-#            Number of production steps.
-#        heat_capacity: bool
-#            Calculate heat capacity.
-#        """
-#        if self._verbose:
-#            print("Run free energy perturbation.", flush=True)
-#
-#        self.run_md_nvt(
-#            thermostat=thermostat,
-#            temperature=temperature,
-#            time_step=time_step,
-#            ttime=ttime,
-#            friction=friction,
-#            n_eq=n_eq,
-#            n_steps=n_steps,
-#            interval_log=None,
-#            logfile=None,
-#        )
-#        self._set_reference_free_energy()
-#        self._free_energy = self.free_energy_perturb
-#        self._free_energy_order1 = self.average_delta_energy_1a
-#        self._total_free_energy += self._free_energy
-#        self._total_free_energy_order1 += self._free_energy_order1
-#
-#        if self._verbose:
-#            print("-------------------------------------------", flush=True)
-#            print("Results (Free energy perturbation):", flush=True)
-#            np.set_printoptions(suppress=True)
-#            print("  free_energy:       ", self._free_energy, flush=True)
-#            print("  free_energy_order1:", self._free_energy_order1, flush=True)
-#            print("-------------------------------------------", flush=True)
-#
-#        return self
-#
-#
-#

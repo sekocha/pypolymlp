@@ -8,6 +8,7 @@ import yaml
 from ase.calculators.calculator import Calculator
 
 from pypolymlp.calculator.md.ase_md import IntegratorASE
+from pypolymlp.calculator.md.md_utils import find_reference
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.utils.ase_calculator import PolymlpASECalculator
 from pypolymlp.calculator.utils.ase_calculator_ref import (
@@ -23,8 +24,6 @@ from pypolymlp.calculator.utils.fc_utils import load_fc2_hdf5
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.interface_vasp import Poscar
 from pypolymlp.utils.structure_utils import supercell
-
-# from pypolymlp.core.units import Avogadro, Kb
 
 
 class PolymlpMD:
@@ -574,3 +573,11 @@ class PolymlpMD:
         if self._integrator is None:
             return None
         return self._integrator.free_energy_perturb
+
+    def find_reference(self, path_fc2: str, target_temperature: float):
+        """Find reference FC2 state automatically.
+
+        The FC2 state at the lowest temperature is regareded as
+        the reference state used as reference state for free energy calculations.
+        """
+        return find_reference(path_fc2, target_temperature)

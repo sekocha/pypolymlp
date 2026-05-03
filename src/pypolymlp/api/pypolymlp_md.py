@@ -6,6 +6,7 @@ import numpy as np
 from ase.calculators.calculator import Calculator
 
 from pypolymlp.calculator.md.api_md import PolymlpMD
+from pypolymlp.calculator.md.api_ti import PolymlpTI
 from pypolymlp.calculator.properties import Properties, initialize_polymlp_calculator
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.params import PolymlpParams
@@ -18,11 +19,12 @@ class PypolymlpMD:
         """Init method."""
 
         self._md = PolymlpMD(verbose=verbose)
+        self._ti = None
         self._verbose = verbose
         self._properties = None
 
-        self._use_reference = False
-        self._fc2file = None
+        # self._use_reference = False
+        # self._fc2file = None
 
         # self._log_ti = None
         # self._free_energy = None
@@ -103,7 +105,7 @@ class PypolymlpMD:
         alpha: Mixing parameter. E = alpha * E_polymlp + (1 - alpha) * E_fc2
         fc2hdf5: HDF5 file for second-order force constants.
         """
-        self._use_reference = True
+        # self._use_reference = True
         self._properties = self._set_polymlp(pot, params, coeffs, properties)
         self._md.set_ase_calculator_with_fc2(
             properties=self._properties,
@@ -138,7 +140,7 @@ class PypolymlpMD:
         properties_ref: Properties object for reference state.
         alpha: Mixing parameter. E = alpha * E_polymlp + (1 - alpha) * E_polymlp_ref
         """
-        self._use_reference = True
+        # self._use_reference = True
         self._properties = self._set_polymlp(pot, params, coeffs, properties)
         properties_ref = self._set_polymlp(
             pot_ref, params_ref, coeffs_ref, properties_ref
@@ -187,7 +189,7 @@ class PypolymlpMD:
         alpha: Mixing parameter.
             E = alpha * E_final + (1 - alpha) * E_ref
         """
-        self._use_reference = True
+        # self._use_reference = True
         self._properties = self._set_polymlp(
             pot_final, params_final, coeffs_final, properties_final
         )
@@ -334,6 +336,57 @@ class PypolymlpMD:
     def save_yaml(self, filename: str = "polymlp_md.yaml"):
         """Save properties to yaml file."""
         self._md.save_yaml(filename=filename)
+        return self
+
+    def find_reference(self, path_fc2: str, target_temperature: float):
+        """Find reference FC2 automatically."""
+        return self._md.find_reference(path_fc2, target_temperature)
+
+    def run_thermodynamic_integration(
+        self,
+        thermostat: Literal["Nose-Hoover", "Langevin"] = "Langevin",
+        n_alphas: int = 15,
+        max_alpha: float = 1.0,
+        temperature: int = 300,
+        time_step: float = 1.0,
+        ttime: float = 20.0,
+        friction: float = 0.01,
+        n_eq: int = 5000,
+        n_steps: int = 20000,
+    ):
+        """Run thermodynamic integration.
+
+        Parameters
+        ----------
+        thermostat: Thermostat.
+        n_alphas: Number of sample points for thermodynamic integration
+                  using Gaussian quadrature.
+        temperature : int
+            Target temperature (K).
+        time_step : float
+            Time step for MD (fs).
+        ttime : float
+            Timescale of the Nose-Hoover thermostat (fs).
+        friction : float
+            Friction coefficient for Langevin thermostat (1/fs).
+        n_eq : int
+            Number of equilibration steps.
+        n_steps : int
+            Number of production steps.
+        """
+        self._ti = PolymlpTI(self._md, verbose=self._verbose)
+        self._ti.run_thermodynamic_integration(
+            thermostat=thermostat,
+            n_alphas=n_alphas,
+            max_alpha=max_alpha,
+            temperature=temperature,
+            time_step=time_step,
+            ttime=ttime,
+            friction=friction,
+            n_eq=n_eq,
+            n_steps=n_steps,
+        )
+
         return self
 
     #     def _set_reference_free_energy(self):

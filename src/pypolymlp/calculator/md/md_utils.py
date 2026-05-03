@@ -8,12 +8,44 @@ import numpy as np
 import yaml
 from scipy.special import p_roots
 
-from pypolymlp.calculator.compute_phonon import calculate_harmonic_properties_from_fc2
 from pypolymlp.calculator.md.ase_md import IntegratorASE
 from pypolymlp.calculator.utils.io_utils import print_pot
-from pypolymlp.core.data_format import PolymlpStructure
-from pypolymlp.core.units import EVtoKJmol
-from pypolymlp.utils.supercell_utils import get_supercell_size
+
+
+def find_reference(path_fc2: str, target_temperature: float):
+    """Find reference FC2 automatically.
+
+    The FC2 state at the lowest temperature is regareded as
+    the reference state used as reference state for free energy calculations.
+    """
+    reference = None
+    temp_min = 1e10
+    for fc2hdf5 in sorted(glob.glob(path_fc2 + "/*/fc2.hdf5")):
+        path = "/".join(fc2hdf5.split("/")[:-1])
+        yamlname = path + "/sscha_results.yaml"
+        data = yaml.safe_load(open(yamlname))
+        converge = data["status"]["converge"]
+        if not converge:
+            continue
+        imaginary = data["status"]["imaginary"]
+        if imaginary:
+            continue
+
+        temp = float(data["parameters"]["temperature"])
+        if np.isclose(temp, 0.0):
+            temp_min = 0.0
+            reference = fc2hdf5
+            break
+        else:
+            if temp < temp_min:
+                temp_min = temp
+                reference = fc2hdf5
+
+    if reference is None:
+        raise RuntimeError("No reference state found.")
+    if target_temperature + 1e-8 < temp_min:
+        raise RuntimeError("Target temperature is lower than reference temperature.")
+    return reference
 
 
 def get_p_roots(n: int = 10, a: float = -1.0, b: float = 1.0):
@@ -33,31 +65,6 @@ def calc_integral(
     return (0.5 * (b - a)) * w @ np.array(f)
 
 
-def calculate_fc2_free_energy(
-    unitcell: PolymlpStructure,
-    supercell_matrix: np.ndarray,
-    fc2file: str,
-    temperature: float,
-    mesh: tuple = (10, 10, 10),
-):
-    """Calculate reference free energy using FC2.
-
-    Return
-    ------
-    free_energy: Reference free energy in eV/supercell.
-    """
-    tp_dict = calculate_harmonic_properties_from_fc2(
-        unitcell=unitcell,
-        supercell_matrix=supercell_matrix,
-        path_fc2=fc2file,
-        mesh=mesh,
-        temperatures=temperature,
-    )
-    n_unitcell = get_supercell_size(supercell_matrix)
-    ref_free_energy = tp_dict["free_energy"][0] * n_unitcell / EVtoKJmol
-    return ref_free_energy
-
-
 def save_thermodynamic_integration_yaml(
     integrator: IntegratorASE,
     total_free_energy: float,
@@ -69,17 +76,6 @@ def save_thermodynamic_integration_yaml(
 ):
     """Save results of thermodynamic integration."""
     np.set_printoptions(legacy="1.21")
-
-    # tp_dict = calculate_harmonic_properties_from_fc2(
-    #     unitcell=reference["unitcell"],
-    #     supercell_matrix=reference["supercell_matrix"],
-    #     path_fc2=reference["fc2_file"],
-    #     mesh=(10, 10, 10),
-    #     temperatures=[integrator._temperature],
-    # )
-    # n_unitcell = np.linalg.det(reference["supercell_matrix"])
-    # ref_free_energy = tp_dict["free_energy"][0] * n_unitcell / EVtoKJmol
-    # total_free_energy = integrator.static_energy + ref_free_energy + delta_free_energy
 
     with open(filename, "w") as f:
         print("system:", integrator._atoms.symbols, file=f)
@@ -205,36 +201,3 @@ def load_thermodynamic_integration_yaml(filename: str = "polymlp_ti.yaml"):
         energy,
         np.array(log),
     )
-
-
-def find_reference(path_fc2: str, target_temperature: float):
-    """Find reference FC2 automatically.
-
-    The FC2 state at the lowest temperature is searched for.
-    This state will be used as reference state for free energy calculations.
-    """
-    reference = None
-    temp_min = 1e10
-    for fc2hdf5 in sorted(glob.glob(path_fc2 + "/*/fc2.hdf5")):
-        path = "/".join(fc2hdf5.split("/")[:-1])
-        yamlname = path + "/sscha_results.yaml"
-        data = yaml.safe_load(open(yamlname))
-        temp = float(data["parameters"]["temperature"])
-        converge = data["status"]["converge"]
-        imaginary = data["status"]["imaginary"]
-        success = True if converge and not imaginary else False
-        if success:
-            if np.isclose(temp, 0.0):
-                temp_min = 0.0
-                reference = fc2hdf5
-                break
-            else:
-                if temp < temp_min:
-                    temp_min = temp
-                    reference = fc2hdf5
-
-    if reference is None:
-        raise RuntimeError("No reference state found.")
-    if target_temperature + 1e-8 < temp_min:
-        raise RuntimeError("Target temperature is lower than reference temperature.")
-    return reference

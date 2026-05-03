@@ -2,6 +2,7 @@
 
 import argparse
 import os
+import shutil
 import signal
 
 import numpy as np
@@ -115,16 +116,15 @@ def run():
     print_credit()
     np.set_printoptions(legacy="1.21")
 
-    print("Polymlp:      ", args.pot, flush=True)
-    if args.fc2 is not None:
-        print("Reference FC2:", args.fc2, flush=True)
-
     path = "/".join(os.path.abspath(args.poscar).split("/")[:-1])
     if args.perturb:
         if args.fc2 is None:
             raise RuntimeError("Free energy perturbation requires FC2.")
 
         print("Run free energy perturbation.", flush=True)
+        print("Polymlp:      ", args.pot, flush=True)
+        print("Reference FC2:", args.fc2, flush=True)
+
         md = PypolymlpMD(verbose=True)
         md.load_poscar(args.poscar)
         md.set_supercell(args.supercell_size)
@@ -146,38 +146,41 @@ def run():
 
     elif args.ti:
         print("Run thermodynamic integration.", flush=True)
+
         path += "/ti/" + str(args.temp)
         os.makedirs(path, exist_ok=True)
+        md = PypolymlpMD(verbose=True)
+        md.load_poscar(args.poscar)
+        md.set_supercell(args.supercell_size)
 
-        if args.fc2 is not None:
-            # Deprecated option.
-            fc2 = args.fc2
-        else:
-            md = PypolymlpMD(verbose=True)
+        if args.fc2_path is not None:
             fc2 = md.find_reference(args.fc2_path, args.temp)
-        print("Reference state:", fc2, flush=True)
+        else:
+            fc2 = args.fc2
+        print("Polymlp:      ", args.pot, flush=True)
+        print("Reference FC2:", fc2, flush=True)
 
-        # run_thermodynamic_integration(
-        #     pot=args.pot,
-        #     pot_ref=args.pot_ref,
-        #     poscar=args.poscar,
-        #     supercell_size=args.supercell_size,
-        #     fc2hdf5=fc2,
-        #     thermostat=args.thermostat,
-        #     n_alphas=args.n_samples,
-        #     max_alpha=args.max_alpha,
-        #     temperature=args.temp,
-        #     time_step=args.time_step,
-        #     ttime=args.ttime,
-        #     friction=args.friction,
-        #     n_eq=args.n_eq,
-        #     n_steps=args.n_steps,
-        #     heat_capacity=args.heat_capacity,
+        md.set_ase_calculator_with_fc2(pot=args.pot, fc2hdf5=fc2)
+        shutil.copy(fc2, path + "/fc2_ref.hdf5")
+
+        md.run_thermodynamic_integration(
+            thermostat=args.thermostat,
+            n_alphas=args.n_samples,
+            max_alpha=args.max_alpha,
+            temperature=args.temp,
+            time_step=args.time_step,
+            ttime=args.ttime,
+            friction=args.friction,
+            n_eq=args.n_eq,
+            n_steps=args.n_steps,
+        )
         #     filename=path + "/polymlp_ti.yaml",
-        #     verbose=True,
-        # )
     else:
         print("Run molecular dynamics with NVT thermostat.", flush=True)
+        print("Polymlp:      ", args.pot, flush=True)
+        if args.fc2 is not None:
+            print("Reference FC2:", args.fc2, flush=True)
+
         md = PypolymlpMD(verbose=True)
         md.load_poscar(args.poscar)
         md.set_supercell(args.supercell_size)
