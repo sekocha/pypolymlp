@@ -320,9 +320,6 @@ class PypolymlpMD:
         free_energy: Free energy difference in exact form from state alpha.
         free_energy_order1: First-order free energy difference from state alpha.
         """
-        if self._verbose:
-            print("Run free energy perturbation.", flush=True)
-
         free_energy, free_energy_order1 = self._md.run_free_energy_perturbation(
             thermostat=thermostat,
             temperature=temperature,

@@ -115,14 +115,16 @@ def run():
     print_credit()
     np.set_printoptions(legacy="1.21")
 
+    print("Polymlp:      ", args.pot, flush=True)
+    if args.fc2 is not None:
+        print("Reference FC2:", args.fc2, flush=True)
+
+    path = "/".join(os.path.abspath(args.poscar).split("/")[:-1])
     if args.perturb:
         if args.fc2 is None:
             raise RuntimeError("Free energy perturbation requires FC2.")
 
         print("Run free energy perturbation.", flush=True)
-        print("Polymlp:      ", args.pot, flush=True)
-        print("Reference FC2:", args.fc2, flush=True)
-
         md = PypolymlpMD(verbose=True)
         md.load_poscar(args.poscar)
         md.set_supercell(args.supercell_size)
@@ -140,10 +142,10 @@ def run():
             n_eq=args.n_eq,
             n_steps=args.n_steps,
         )
+        md.save_yaml(filename=path + "/" + args.output)
 
     elif args.ti:
         print("Run thermodynamic integration.", flush=True)
-        path = "/".join(os.path.abspath(args.poscar).split("/")[:-1])
         path += "/ti/" + str(args.temp)
         os.makedirs(path, exist_ok=True)
 
@@ -176,21 +178,18 @@ def run():
         # )
     else:
         print("Run molecular dynamics with NVT thermostat.", flush=True)
-        path = "/".join(os.path.abspath(args.poscar).split("/")[:-1])
         md = PypolymlpMD(verbose=True)
         md.load_poscar(args.poscar)
         md.set_supercell(args.supercell_size)
+
         if args.fc2 is None:
-            print("Potential:", args.pot, flush=True)
             md.set_ase_calculator(pot=args.pot)
         else:
-            print("Potential:", args.fc2, flush=True)
             md.set_ase_calculator_with_fc2(
                 pot=args.pot,
                 fc2hdf5=args.fc2,
                 alpha=args.alpha,
             )
-
         md.run_md_nvt(
             thermostat=args.thermostat,
             temperature=args.temp,

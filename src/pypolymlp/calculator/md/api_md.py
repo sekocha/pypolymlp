@@ -379,9 +379,6 @@ class PolymlpMD:
         if not self._use_reference:
             raise RuntimeError("Reference state not defined.")
 
-        if self._verbose:
-            print("Run free energy perturbation.", flush=True)
-
         self.run_md_nvt(
             thermostat=thermostat,
             temperature=temperature,

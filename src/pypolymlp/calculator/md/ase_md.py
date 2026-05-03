@@ -271,8 +271,6 @@ class IntegratorASE:
         if self._energies is not None:
             energies_slice = self._energies[n_eq:]
             self._average_energy = np.average(energies_slice)
-            energies_slice = self._total_energies[n_eq:]
-            self._average_total_energy = np.average(energies_slice)
 
             if np.isclose(self._temperature, 0.0):
                 self._heat_capacity_eV = 0.0
@@ -282,6 +280,9 @@ class IntegratorASE:
                 self._heat_capacity_eV = var / KbEV / self._temperature**2
                 prod = EVtoJ * Avogadro / len(self._atoms.numbers)
                 self._heat_capacity = self._heat_capacity_eV * prod
+
+            energies_slice = self._total_energies[n_eq:]
+            self._average_total_energy = np.average(energies_slice)
 
         if self._displacements is not None:
             self._average_displacement = np.average(self._displacements[n_eq:])
@@ -346,16 +347,6 @@ class IntegratorASE:
             return None
 
     @property
-    def heat_capacity(self):
-        """Return heat capacity in J/K/mol."""
-        return self._heat_capacity
-
-    @property
-    def heat_capacity_eV(self):
-        """Return heat capacity in eV."""
-        return self._heat_capacity_eV
-
-    @property
     def average_energy(self):
         """Return average energy in eV/supercell."""
         return self._average_energy
@@ -364,6 +355,16 @@ class IntegratorASE:
     def average_total_energy(self):
         """Return average total energy in eV/supercell."""
         return self._average_total_energy
+
+    @property
+    def heat_capacity(self):
+        """Return heat capacity in J/K/mol."""
+        return self._heat_capacity
+
+    @property
+    def heat_capacity_eV(self):
+        """Return heat capacity in eV."""
+        return self._heat_capacity_eV
 
     @property
     def average_displacement(self):
@@ -425,6 +426,7 @@ class IntegratorASE:
             print("  average_energy:   eV/supercell", file=f)
             print("  heat_capacity_eV: eV/K/supercell", file=f)
             print("  heat_capacity:    J/K/mol (/Avogadro's number of atoms)", file=f)
+            print("  displacementy:    angstroms", file=f)
             print(file=f)
 
             print("conditions:", file=f)
@@ -440,15 +442,19 @@ class IntegratorASE:
             print(file=f)
 
             print("properties:", file=f)
-            print("  average_potential_energy:", self._average_energy, file=f)
-            print("  average_total_energy:    ", self._average_total_energy, file=f)
-            print("  heat_capacity_eV:        ", self._heat_capacity_eV, file=f)
-            print("  heat_capacity:           ", self._heat_capacity, file=f)
+            print("  static_energy:             ", self.static_energy, file=f)
+            print("  average_potential_energy:  ", self._average_energy, file=f)
+            print("  average_total_energy:      ", self._average_total_energy, file=f)
+            print("  heat_capacity_eV:          ", self._heat_capacity_eV, file=f)
+            print("  heat_capacity:             ", self._heat_capacity, file=f)
+            print("  avarage_displacements:     ", self._average_displacement, file=f)
             if self._use_reference:
+                print(file=f)
+                print("perturbation_from_ref:", file=f)
+                print("  free_energy_order1:   ", self._average_delta_energy_1a, file=f)
+                print("  free_energy:          ", self._free_energy_perturb, file=f)
+
+                print(file=f)
+                print("for_thermodynamic_integration:", file=f)
                 delta_e = self._average_delta_energy_10
-                print("  energy1_from_ref:        ", delta_e, file=f)
-                print("  perturbation:", file=f)
-                delta_e = self._average_delta_energy_1a
-                print("    energy_from_alpha:       ", delta_e, file=f)
-                delta_f = self._free_energy_perturb
-                print("    free_energy_from_alpha:  ", delta_f, file=f)
+                print("  average_energy_from_alpha0:", delta_e, file=f)
