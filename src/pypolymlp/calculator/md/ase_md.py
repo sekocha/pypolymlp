@@ -402,7 +402,7 @@ class IntegratorASE:
 
     def write_conditions(self):
         """Write input conditions as standard output."""
-        print("--- Input conditions for MD calculation ---", flush=True)
+        print("----------- Input conditions for MD calculation -----------", flush=True)
         print("N atoms:           ", len(self._atoms.numbers), flush=True)
         print("Volume (ang.3):    ", np.round(self._atoms.get_volume(), 5), flush=True)
         print("Thermostat:        ", self._thermostat, flush=True)
@@ -410,7 +410,7 @@ class IntegratorASE:
         print("Time step (fs):    ", self._time_step, flush=True)
         if hasattr(self.calculator, "_alpha"):
             print("alpha_ref:         ", self.calculator._alpha, flush=True)
-        print("-------------------------------------------", flush=True)
+        print("-----------------------------------------------------------", flush=True)
         return self
 
     def save_yaml(self, filename: str = "polymlp_md.yaml"):

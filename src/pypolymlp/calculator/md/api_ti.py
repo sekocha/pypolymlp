@@ -47,6 +47,10 @@ class PolymlpTI:
         self._free_energy = None
         self._energy = None
         self._entropy = None
+
+        self._free_energy_perturb = None
+        self._free_energy_perturb_order1 = None
+
         self._temperature = None
 
         if self._verbose:
@@ -122,15 +126,18 @@ class PolymlpTI:
         self._log_ti = [log_prepend, *self._log_ti, log_append]
         self._energy, self._entropy = self._calc_energy_entropy()
 
+        self._free_energy_perturb = log_append.free_energy_perturb
+        self._free_energy_perturb_order1 = log_append.free_energy_perturb_order1
+
         if self._verbose:
             self._print_log_ti()
         return self
 
     def _print_log_ti(self):
         """Print log from integration."""
-        print("-------------------------------------------", flush=True)
-        print("Results (Thermodynamic integration):", flush=True)
         np.set_printoptions(suppress=True)
+        print("-----------------------------------------------------------", flush=True)
+        print("Results (Thermodynamic integration):", flush=True)
         print("  unit_energy:  eV/supercell", flush=True)
         print("  unit_entropy: eV/K/supercell", flush=True)
         print("  free_energy:", self._free_energy, flush=True)
@@ -141,7 +148,13 @@ class PolymlpTI:
             alpha = np.round(log.alpha, 7)
             e_alpha0 = np.round(log.average_energy_from_alpha0, 7)
             print("   -", f"{alpha:12}", f"{e_alpha0:12}", flush=True)
-        print("-------------------------------------------", flush=True)
+
+        print("-----------------------------------------------------------", flush=True)
+        print("Results (Free energy perturbation):", flush=True)
+        print("  free_energy (max_alpha -- 1):", self._free_energy_perturb, flush=True)
+        val = self._free_energy_perturb_order1
+        print("  free_energy (max_alpha -- 1, 1st order):", val, flush=True)
+        print("-----------------------------------------------------------", flush=True)
         return self
 
     def _get_log(self):
