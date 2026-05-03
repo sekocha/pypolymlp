@@ -1,16 +1,14 @@
 """API Class for performing thermodynamic integration."""
 
+import os
 from dataclasses import dataclass
 from typing import Literal
 
 import numpy as np
 
 from pypolymlp.calculator.md.api_md import PolymlpMD
-from pypolymlp.calculator.md.md_utils import (
-    calc_integral,
-    get_p_roots,
-    save_thermodynamic_integration_yaml,
-)
+from pypolymlp.calculator.md.md_utils import calc_integral, get_p_roots
+from pypolymlp.calculator.utils.io_utils import print_pot
 
 
 @dataclass
@@ -180,26 +178,6 @@ class PolymlpTI:
         entropy = (energy - self._free_energy) / self._temperature
         return energy, entropy
 
-    def save_ti_yaml(self, filename: str = "polymlp_ti.yaml"):
-        """Save results of thermodynamic integration."""
-        reference = {
-            "unitcell": self._unitcell,
-            "supercell_matrix": self._supercell_matrix,
-            "polymlp": self._pot,
-            "fc2_file": self._fc2file,
-            "free_energy": self._ref_free_energy,
-        }
-        save_thermodynamic_integration_yaml(
-            self._md.integrator,
-            self._free_energy,
-            self._energy,
-            self._entropy,
-            self._log_ti,
-            reference,
-            filename=filename,
-        )
-        return self
-
     @property
     def alpha(self):
         """Return mixing parameter for two states."""
@@ -229,6 +207,75 @@ class PolymlpTI:
     def logs(self):
         """Return properties from each alpha."""
         return self._log_ti
+
+    def save_ti_yaml(self, filename: str = "polymlp_ti.yaml"):
+        """Save results of thermodynamic integration."""
+        #     "unitcell": self._md.unitcell,
+        #     "supercell_matrix": self._md.supercell_matrix,
+        integrator = self._md.integrator
+        calculator = self._md.calculator
+        np.set_printoptions(legacy="1.21")
+        with open(filename, "w") as f:
+            print("system:", integrator._atoms.symbols, file=f)
+            print(file=f)
+
+            print("units:", file=f)
+            print("  volume:       angstrom3", file=f)
+            print("  temperature:  K", file=f)
+            print("  time_step:    fs", file=f)
+            print("  energy:       eV/supercell", file=f)
+            print("  entropy:      eV/K/supercell", file=f)
+            print(file=f)
+
+            print("conditions:", file=f)
+            print("  n_atom:     ", len(integrator._atoms.numbers), file=f)
+            print("  volume:     ", integrator._atoms.get_volume(), file=f)
+            print("  temperature:", integrator._temperature, file=f)
+            print("  time_step:  ", integrator._time_step, file=f)
+            print("  n_steps_eq: ", integrator._n_eq, file=f)
+            print("  n_steps:    ", integrator._n_steps, file=f)
+            print("  references: ", os.path.abspath(self._md.fc2file), file=f)
+
+            print_pot(calculator._prop.pot, tag="polymlp", indent=2, file=f)
+            print(file=f)
+
+            print("properties:", file=f)
+            max_alpha = self._log_ti[-1].alpha
+            print("  alpha:                   ", max_alpha, file=f)
+            print("  free_energy:             ", self._free_energy, file=f)
+            print("  entropy:                 ", self._entropy, file=f)
+            print("  energy:                  ", self._energy, file=f)
+            print(file=f)
+
+            print("  delta_energies:", file=f)
+            for log in self._log_ti:
+                print("  - alpha:             ", log.alpha, file=f)
+                print("    delta_e:           ", log.average_energy_from_alpha0, file=f)
+                print("    energy:            ", log.average_energy, file=f)
+                print("    total_energy:      ", log.average_total_energy, file=f)
+                disp = np.round(log.average_displacement, 5)
+                print("    displacement:      ", disp, file=f)
+                print("    free_energy_perturb:", log.free_energy_perturb, file=f)
+                print(
+                    "    free_energy_perturb_order1:",
+                    log.free_energy_perturb_order1,
+                    file=f,
+                )
+                print(file=f)
+
+            # print("free_energy_perturbation:", file=f)
+            # de_perturb = log_ti[-1][6]
+            # de_perturb1 = log_ti[-1][5]
+            # print("  alpha:               ", 1.0, file=f)
+            # print("  free_energy_perturb: ", de_perturb, file=f)
+            # print("  free_energy:         ", delta_free_energy + de_perturb, file=f)
+            # print("  total_free_energy:   ", total_free_energy + de_perturb, file=f)
+            # print("  first order:", file=f)
+            # print("    free_energy_perturb: ", de_perturb1, file=f)
+            # print("    free_energy:         ", delta_free_energy + de_perturb1, file=f)
+            # print("    total_free_energy:   ", total_free_energy + de_perturb1, file=f)
+
+        return self
 
 
 #     if pot_ref is not None:

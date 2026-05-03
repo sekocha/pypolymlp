@@ -174,7 +174,7 @@ def run():
             n_eq=args.n_eq,
             n_steps=args.n_steps,
         )
-        #     filename=path + "/polymlp_ti.yaml",
+        md.save_ti_yaml(filename=path + "/polymlp_ti.yaml")
     else:
         print("Run molecular dynamics with NVT thermostat.", flush=True)
         print("Polymlp:      ", args.pot, flush=True)

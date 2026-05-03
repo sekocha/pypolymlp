@@ -466,6 +466,16 @@ class PolymlpMD:
             self._integrator.calculator = calc
 
     @property
+    def integrator(self):
+        """Return integrator."""
+        return self._integrator
+
+    @property
+    def fc2file(self):
+        """Return reference fc2 file."""
+        return self._fc2file
+
+    @property
     def alpha(self):
         """Return mixing parameter for two states."""
         try:
