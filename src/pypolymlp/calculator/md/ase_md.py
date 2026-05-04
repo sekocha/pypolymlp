@@ -451,6 +451,7 @@ class IntegratorASE:
             if self._average_displacement is not None:
                 disp = self._average_displacement
                 print("  avarage_displacements:     ", disp, file=f)
+
             if self._use_reference:
                 print(file=f)
                 print("perturbation_from_ref:", file=f)

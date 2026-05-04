@@ -6,13 +6,6 @@ import numpy as np
 import yaml
 from scipy.special import p_roots
 
-# import os
-# from typing import Optional
-
-
-# from pypolymlp.calculator.md.ase_md import IntegratorASE
-# from pypolymlp.calculator.utils.io_utils import print_pot
-
 
 def find_reference(path_fc2: str, target_temperature: float):
     """Find reference FC2 automatically.
