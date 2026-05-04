@@ -337,72 +337,6 @@ class PolymlpMD:
             )
         return self
 
-    def run_free_energy_perturbation(
-        self,
-        thermostat: Literal["Nose-Hoover", "Langevin"] = "Langevin",
-        temperature: int = 300,
-        time_step: float = 1.0,
-        ttime: float = 20.0,
-        friction: float = 0.01,
-        n_eq: int = 5000,
-        n_steps: int = 20000,
-    ):
-        """Run free energy perturbation.
-
-        Calculate two perturbed values of free energy using ensemble with alpha.
-        free_energy:
-            delta F = - (1 / beta) * ln [<exp(- beta * (E - E_alpha))>_alpha].
-        free_energy_order1:
-            delta F = <E - E_alpha>_alpha.
-
-        Parameters
-        ----------
-        thermostat: Thermostat.
-        temperature : int
-            Target temperature (K).
-        time_step : float
-            Time step for MD (fs).
-        ttime : float
-            Timescale of the Nose-Hoover thermostat (fs).
-        friction : float
-            Friction coefficient for Langevin thermostat (1/fs).
-        n_eq : int
-            Number of equilibration steps.
-        n_steps : int
-            Number of production steps.
-
-        Return
-        ------
-        free_energy: Free energy difference in exact form from state alpha.
-        free_energy_order1: First-order free energy difference from state alpha.
-        """
-        if not self._use_reference:
-            raise RuntimeError("Reference state not defined.")
-
-        self.run_md_nvt(
-            thermostat=thermostat,
-            temperature=temperature,
-            time_step=time_step,
-            ttime=ttime,
-            friction=friction,
-            n_eq=n_eq,
-            n_steps=n_steps,
-            interval_log=None,
-            logfile=None,
-        )
-        free_energy = self.free_energy_perturb
-        free_energy_order1 = self.average_delta_energy_1a
-
-        if self._verbose:
-            print("-------------------------------------------", flush=True)
-            print("Free energy perturbation:", flush=True)
-            np.set_printoptions(suppress=True)
-            print("  free_energy:       ", free_energy, flush=True)
-            print("  free_energy_order1:", free_energy_order1, flush=True)
-            print("-------------------------------------------", flush=True)
-
-        return (free_energy, free_energy_order1)
-
     def _check_requisites(self):
         """Check requisites for MD simulations."""
         if self._supercell_ase is None:
@@ -595,6 +529,16 @@ class PolymlpMD:
         if self._integrator is None:
             return None
         return self._integrator.free_energy_perturb
+
+    @property
+    def free_energy_perturb_order1(self):
+        """Return 1st-order delta free energy from FE perturbation.
+
+        Return delta F = <E - E_alpha>_alpha.
+        """
+        if self._integrator is None:
+            return None
+        return self._integrator.average_delta_energy_1a
 
     def find_reference(self, path_fc2: str, target_temperature: float):
         """Find reference FC2 state automatically.

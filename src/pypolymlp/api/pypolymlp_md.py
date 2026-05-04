@@ -269,56 +269,6 @@ class PypolymlpMD:
             )
         return self
 
-    def run_free_energy_perturbation(
-        self,
-        thermostat: Literal["Nose-Hoover", "Langevin"] = "Langevin",
-        temperature: int = 300,
-        time_step: float = 1.0,
-        ttime: float = 20.0,
-        friction: float = 0.01,
-        n_eq: int = 5000,
-        n_steps: int = 20000,
-    ):
-        """Run free energy perturbation.
-
-        Calculate two perturbed values of free energy using ensemble with alpha.
-        free_energy:
-            delta F = - (1 / beta) * ln [<exp(- beta * (E - E_alpha))>_alpha].
-        free_energy_order1:
-            delta F = <E - E_alpha>_alpha.
-
-        Parameters
-        ----------
-        thermostat: Thermostat.
-        temperature : int
-            Target temperature (K).
-        time_step : float
-            Time step for MD (fs).
-        ttime : float
-            Timescale of the Nose-Hoover thermostat (fs).
-        friction : float
-            Friction coefficient for Langevin thermostat (1/fs).
-        n_eq : int
-            Number of equilibration steps.
-        n_steps : int
-            Number of production steps.
-
-        Return
-        ------
-        free_energy: Free energy difference in exact form from state alpha.
-        free_energy_order1: First-order free energy difference from state alpha.
-        """
-        free_energy, free_energy_order1 = self._md.run_free_energy_perturbation(
-            thermostat=thermostat,
-            temperature=temperature,
-            time_step=time_step,
-            ttime=ttime,
-            friction=friction,
-            n_eq=n_eq,
-            n_steps=n_steps,
-        )
-        return free_energy, free_energy_order1
-
     def save_yaml(self, filename: str = "polymlp_md.yaml"):
         """Save properties to yaml file."""
         self._md.save_yaml(filename=filename)
@@ -449,3 +399,19 @@ class PypolymlpMD:
     def average_displacement(self):
         """Return avarage energy."""
         return self._md.average_displacement
+
+    @property
+    def free_energy_perturb(self):
+        """Return delta free energy from FE perturbation.
+
+        Return delta F = - (1/beta) * ln [<exp(- beta * (E - E_alpha))>_alpha].
+        """
+        return self._md.free_energy_perturb
+
+    @property
+    def free_energy_perturb_order1(self):
+        """Return 1st-order delta free energy from FE perturbation.
+
+        Return delta F = <E - E_alpha>_alpha.
+        """
+        return self._md.free_energy_perturb_order1

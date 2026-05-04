@@ -5,11 +5,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from pypolymlp.calculator.md.md_utils import (
-    calc_integral,
-    calculate_fc2_free_energy,
-    get_p_roots,
-)
+from pypolymlp.calculator.md.md_utils import calc_integral, find_reference, get_p_roots
 
 cwd = Path(__file__).parent
 path_file = str(cwd) + "/files/"
@@ -32,14 +28,7 @@ def test_calc_integral():
     assert val == pytest.approx(1 / 3)
 
 
-def test_calculate_fc2_free_energy(unitcell_mlp_Al):
-    """Test calculate_fc2_free_energy."""
-    unitcell, pot, _ = unitcell_mlp_Al
-    fc2 = path_file + "others/fc2_Al_111.hdf5"
-    free_energy = calculate_fc2_free_energy(unitcell, (1, 1, 1), fc2, temperature=700)
-    assert free_energy == pytest.approx(-0.5991411348114344)
-
-
-# TODO: Add tests for thermodynamic integration
-#    atoms_fcc = structure_to_ase_atoms(unitcell)
-#    calc = PolymlpASECalculator(pot=pot)
+def test_find_reference():
+    """Test find_reference."""
+    fc2file = find_reference(path_file + "others", 1000)
+    assert fc2file.split("/")[-1] == "fc2.hdf5"
