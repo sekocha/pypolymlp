@@ -9,6 +9,7 @@ import numpy as np
 from pypolymlp.calculator.md.api_md import PolymlpMD
 from pypolymlp.calculator.md.md_utils import calc_integral, get_p_roots
 from pypolymlp.calculator.utils.io_utils import print_pot
+from pypolymlp.utils.yaml_utils import print_array2d, save_cell
 
 
 @dataclass
@@ -210,8 +211,6 @@ class PolymlpTI:
 
     def save_ti_yaml(self, filename: str = "polymlp_ti.yaml"):
         """Save results of thermodynamic integration."""
-        #     "unitcell": self._md.unitcell,
-        #     "supercell_matrix": self._md.supercell_matrix,
         integrator = self._md.integrator
         calculator = self._md.calculator
         np.set_printoptions(legacy="1.21")
@@ -219,8 +218,13 @@ class PolymlpTI:
             print("system:", integrator._atoms.symbols, file=f)
             print(file=f)
 
+            save_cell(self._md.unitcell, tag="unitcell", file=f)
+            if self._md.supercell_matrix is not None:
+                print_array2d(self._md.supercell_matrix, "supercell_matrix", f)
+                print(file=f)
+
             print("units:", file=f)
-            print("  volume:       angstrom3", file=f)
+            print("  volume:       angstrom3/supercell", file=f)
             print("  temperature:  K", file=f)
             print("  time_step:    fs", file=f)
             print("  energy:       eV/supercell", file=f)
@@ -241,39 +245,35 @@ class PolymlpTI:
 
             print("properties:", file=f)
             max_alpha = self._log_ti[-1].alpha
-            print("  alpha:                   ", max_alpha, file=f)
-            print("  free_energy:             ", self._free_energy, file=f)
-            print("  entropy:                 ", self._entropy, file=f)
-            print("  energy:                  ", self._energy, file=f)
+            print("  alpha:           ", max_alpha, file=f)
+            print("  free_energy:     ", self._free_energy, file=f)
+            print("  entropy:         ", self._entropy, file=f)
+            print("  energy:          ", self._energy, file=f)
+            print("  static_energy:   ", integrator.static_energy, file=f)
             print(file=f)
 
-            print("  delta_energies:", file=f)
-            for log in self._log_ti:
-                print("  - alpha:             ", log.alpha, file=f)
-                print("    delta_e:           ", log.average_energy_from_alpha0, file=f)
-                print("    energy:            ", log.average_energy, file=f)
-                print("    total_energy:      ", log.average_total_energy, file=f)
-                disp = np.round(log.average_displacement, 5)
-                print("    displacement:      ", disp, file=f)
-                print("    free_energy_perturb:", log.free_energy_perturb, file=f)
-                print(
-                    "    free_energy_perturb_order1:",
-                    log.free_energy_perturb_order1,
-                    file=f,
-                )
-                print(file=f)
+            log = self._log_ti[-1]
+            print("free_energy_perturbation:", file=f)
+            print("  alpha:             ", 1.0, file=f)
+            free_energy = self._free_energy + log.free_energy_perturb
+            print("  free_energy:       ", free_energy, file=f)
+            free_energy = self._free_energy + log.free_energy_perturb_order1
+            print("  free_energy_order1:", free_energy, file=f)
+            print("  F_perturb:         ", log.free_energy_perturb, file=f)
+            print("  F_perturb_order1:  ", log.free_energy_perturb, file=f)
+            print(file=f)
 
-            # print("free_energy_perturbation:", file=f)
-            # de_perturb = log_ti[-1][6]
-            # de_perturb1 = log_ti[-1][5]
-            # print("  alpha:               ", 1.0, file=f)
-            # print("  free_energy_perturb: ", de_perturb, file=f)
-            # print("  free_energy:         ", delta_free_energy + de_perturb, file=f)
-            # print("  total_free_energy:   ", total_free_energy + de_perturb, file=f)
-            # print("  first order:", file=f)
-            # print("    free_energy_perturb: ", de_perturb1, file=f)
-            # print("    free_energy:         ", delta_free_energy + de_perturb1, file=f)
-            # print("    total_free_energy:   ", total_free_energy + de_perturb1, file=f)
+            print("sampling_point_properties:", file=f)
+            for log in self._log_ti:
+                print("- alpha:           ", log.alpha, file=f)
+                print("  delta_e:         ", log.average_energy_from_alpha0, file=f)
+                print("  energy:          ", log.average_energy, file=f)
+                print("  total_energy:    ", log.average_total_energy, file=f)
+                print("  F_perturb:       ", log.free_energy_perturb, file=f)
+                print("  F_perturb_order1:", log.free_energy_perturb_order1, file=f)
+                disp = np.round(log.average_displacement, 5)
+                print("  displacement:    ", disp, file=f)
+                print(file=f)
 
         return self
 

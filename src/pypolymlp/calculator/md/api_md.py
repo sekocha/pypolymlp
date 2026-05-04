@@ -24,6 +24,7 @@ from pypolymlp.calculator.utils.fc_utils import load_fc2_hdf5
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.interface_vasp import Poscar
 from pypolymlp.utils.structure_utils import supercell
+from pypolymlp.utils.yaml_utils import print_array2d, save_cell
 
 
 class PolymlpMD:
@@ -416,7 +417,13 @@ class PolymlpMD:
 
     def save_yaml(self, filename: str = "polymlp_md.yaml"):
         """Save properties to yaml file."""
-        self._integrator.save_yaml(filename=filename)
+        with open(filename, "w") as f:
+            save_cell(self.unitcell, tag="unitcell", file=f)
+            if self.supercell_matrix is not None:
+                print_array2d(self.supercell_matrix, "supercell_matrix", f)
+                print(file=f)
+
+        self._integrator.save_yaml(filename=filename, mode="a")
         return self
 
     @property
@@ -445,6 +452,11 @@ class PolymlpMD:
         """Set supercell."""
         self._supercell = cell
         self._supercell_ase = structure_to_ase_atoms(self._supercell)
+
+    @property
+    def supercell_matrix(self):
+        """Return supercell matrix."""
+        return self._supercell_matrix
 
     @property
     def final_structure(self):

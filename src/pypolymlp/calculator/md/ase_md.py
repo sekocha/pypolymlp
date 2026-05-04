@@ -413,9 +413,9 @@ class IntegratorASE:
         print("-----------------------------------------------------------", flush=True)
         return self
 
-    def save_yaml(self, filename: str = "polymlp_md.yaml"):
+    def save_yaml(self, filename: str = "polymlp_md.yaml", mode: str = "w"):
         """Save properties to yaml file."""
-        with open(filename, "w") as f:
+        with open(filename, mode) as f:
             print("system:", self._atoms.symbols, file=f)
             print(file=f)
 
@@ -442,12 +442,15 @@ class IntegratorASE:
             print(file=f)
 
             print("properties:", file=f)
-            print("  static_energy:             ", self.static_energy, file=f)
+            if self.static_energy is not None:
+                print("  static_energy:             ", self.static_energy, file=f)
             print("  average_potential_energy:  ", self._average_energy, file=f)
             print("  average_total_energy:      ", self._average_total_energy, file=f)
             print("  heat_capacity_eV:          ", self._heat_capacity_eV, file=f)
             print("  heat_capacity:             ", self._heat_capacity, file=f)
-            print("  avarage_displacements:     ", self._average_displacement, file=f)
+            if self._average_displacement is not None:
+                disp = self._average_displacement
+                print("  avarage_displacements:     ", disp, file=f)
             if self._use_reference:
                 print(file=f)
                 print("perturbation_from_ref:", file=f)
