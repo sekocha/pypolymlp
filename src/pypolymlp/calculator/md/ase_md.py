@@ -10,6 +10,7 @@ from ase.md.langevin import Langevin
 from ase.md.npt import NPT
 from ase.md.velocitydistribution import MaxwellBoltzmannDistribution, Stationary
 
+from pypolymlp.calculator.utils.io_utils import print_pot
 from pypolymlp.core.units import Avogadro, EVtoJ, KbEV
 
 
@@ -439,6 +440,21 @@ class IntegratorASE:
             print("  n_steps:    ", self._n_steps, file=f)
             if hasattr(self.calculator, "_alpha"):
                 print("  alpha_fc2:  ", self.calculator._alpha, file=f)
+            print(file=f)
+
+            calc = self.calculator
+            try:
+                print_pot(calc._prop.pot, tag="polymlp", indent=2, file=f)
+            except:
+                pass
+            try:
+                print_pot(calc._prop_final.pot, tag="polymlp", indent=2, file=f)
+            except:
+                pass
+            try:
+                print_pot(calc._prop_ref.pot, tag="polymlp_ref", indent=2, file=f)
+            except:
+                pass
             print(file=f)
 
             print("properties:", file=f)

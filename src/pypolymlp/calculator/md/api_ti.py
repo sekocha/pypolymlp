@@ -260,7 +260,7 @@ class PolymlpTI:
             free_energy = self._free_energy + log.free_energy_perturb_order1
             print("  free_energy_order1:", free_energy, file=f)
             print("  F_perturb:         ", log.free_energy_perturb, file=f)
-            print("  F_perturb_order1:  ", log.free_energy_perturb, file=f)
+            print("  F_perturb_order1:  ", log.free_energy_perturb_order1, file=f)
             print(file=f)
 
             print("sampling_point_properties:", file=f)
