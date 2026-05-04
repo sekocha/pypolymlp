@@ -438,23 +438,17 @@ class IntegratorASE:
             print("  time_step:  ", self._time_step, file=f)
             print("  n_steps_eq: ", self._n_eq, file=f)
             print("  n_steps:    ", self._n_steps, file=f)
-            if hasattr(self.calculator, "_alpha"):
-                print("  alpha_fc2:  ", self.calculator._alpha, file=f)
             print(file=f)
 
             calc = self.calculator
-            try:
+            if hasattr(calc, "_alpha"):
+                print("  alpha:      ", calc._alpha, file=f)
+            if hasattr(calc, "_prop"):
                 print_pot(calc._prop.pot, tag="polymlp", indent=2, file=f)
-            except:
-                pass
-            try:
+            if hasattr(calc, "_prop_final"):
                 print_pot(calc._prop_final.pot, tag="polymlp", indent=2, file=f)
-            except:
-                pass
-            try:
+            if hasattr(calc, "_prop_ref"):
                 print_pot(calc._prop_ref.pot, tag="polymlp_ref", indent=2, file=f)
-            except:
-                pass
             print(file=f)
 
             print("properties:", file=f)
