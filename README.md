@@ -34,11 +34,10 @@ A polynomial MLP represents the potential energy as a polynomial function of lin
 - openmp (recommended)
 
 [Optional]
-- phonopy
-- phono3py
+- phonopy, phono3py
+- spglib
 - symfc
 - sparse_dot_mkl
-- spglib
 - ase
 - joblib
 - matplotlib, seaborn
