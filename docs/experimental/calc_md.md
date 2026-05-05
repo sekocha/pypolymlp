@@ -14,6 +14,7 @@ When using the command-line interface, the `pypolymlp-md` command performs molec
 ```shell
 > pypolymlp-md --poscar POSCAR --pot polymlp.yaml --supercell_size 3 3 3 --temp 300 --n_eq 5000 --n_steps 20000
 ```
+The calculated properties are stored in the `polymlp_md.yaml` file.
 
 The available options are as follows:
 ```
