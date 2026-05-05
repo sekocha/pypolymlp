@@ -128,14 +128,35 @@ Other main parameters that can be specified via options are as follows.
  --write_pdos           Save projected DOS.
 ```
 
-## Generation of Random Structures from Converged Effective Force Constants
-Random structures are generated based on the density matrix determined by the given effective force constants. The energy and force values for these structures are then calculated using the provided MLP.
+## Volume- and Temperature-dependent SSCHA calculations
+
+Thanks to the low computational cost of polynomial MLPs, volume-dependent SSCHA calculations can be performed efficiently.
+Thermal expansion, as well as pressure- and temperature-dependent thermodynamic properties, can be evaluated by carrying out SSCHA calculations at multiple volumes.
+See [Thermodynamic Calculations](calc_thermodynamics.md) for more details.
+
+
+## Random Structure Generation from Converged Effective Force Constants
+
+Once the converged effecitive force constants are obtained, random structures and their properties (energy, forces, and virial stress tensor) according to the effective force constants can be evaluated using the given polynomial MLP.
+The command `pypolymlp-sscha-post` with the `--distribution` option evaluates these properties of randomly generated structures, which can be regarded as real space atomic distribution of the effective harmonic Hamiltonian described by the converged force constants.
+To parse the result of the SSCHA calculation, two files of `sscha_results.yaml` and `fc2.hdf5` are needed.
+By specifying the number of sample structures using the `--n_samples` option, the structures and their properties will be calculated:
+
+Once the converged effective force constants are obtained, random structures and their properties (energy, forces, and virial stress tensor) can be evaluated using the given polynomial MLP, based on the distribution defined by the effective force constants.
+The `pypolymlp-sscha-post` command with the `--distribution` option evaluates these properties for randomly generated structures.
+These structures can be regarded as real-space atomic configurations sampled from the effective harmonic Hamiltonian defined by the converged force constants.
+
+To process the results of the SSCHA calculation, the files `sscha_results.yaml` and `fc2.hdf5` are required.
+By specifying the number of sample structures using the `--n_samples` option, the structures and their properties are computed accordingly:
+
 ```shell
 pypolymlp-sscha-post --distribution --yaml sscha_results.yaml --fc2 fc2.hdf5 --n_samples 20 --pot polymlp.yaml
 ```
 
-## Using Python API
-### Single SSCHA calculation
+## Single SSCHA Calculation Using the Python API
+
+SSCHA calculations with polynomial MLPs can also be performed using the Python API in `pypolymlp`:
+
 ```python
 import numpy as np
 from pypolymlp.api.pypolymlp_sscha import PypolymlpSSCHA
@@ -173,10 +194,10 @@ force_constants: FC2 at the final temperature, shape=(n_atom, n_atom, 3, 3).
 fc2 = sscha.force_constants
 ```
 
-### Generation of random structures from SSCHA force constants
+## Random Structure Generation from Converged Effective Force Constants Using the Python API
 
-Random stuctures can be sampled from a converged force constants as follows.
-The energy and force values of these random structures are also evaluated using a given polynomial MLP.
+Random structures can be sampled using the Python API.
+An example of how to generate structures from the converged force constants is shown below.
 
 ```python
 from pypolymlp.api.pypolymlp_sscha_post import PypolymlpSSCHAPost
