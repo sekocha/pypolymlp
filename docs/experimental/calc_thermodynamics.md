@@ -74,10 +74,8 @@ Thermodynamic integration at a single volume and temperature can be performed us
 ```shell
 > cd runs/00001
 > pypolymlp-md --ti --poscar POSCAR --pot polymlp.yaml --supercell_size 3 3 3 --temp 300 --n_eq 5000 --n_steps 20000 --n_samples 15 --fc2 ./sscha/300/fc2.hdf5
-
-# Calculate heat capacity from the variance of potential energy in MD simulation
-> pypolymlp-md --ti --heat_capacity --poscar POSCAR --pot polymlp.lammps --supercell_size 3 3 3 --temp 300 --n_eq 5000 --n_steps 20000 --n_samples 15 --fc2 ./sscha/300/fc2.hdf5
 ```
+
 In this example, thermodynamic integration is performed using 15 molecular dynamics runs at 300 K.
 The numbers of equilibration steps and averaging steps are set to 5000 and 20000, respectively.
 The converged state from SSCHA calculations at 300 K is used as the reference state.
