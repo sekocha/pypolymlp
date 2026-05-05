@@ -36,7 +36,7 @@ def set_reference_paths(
             continue
         vol = np.round(d.volume, decimals)
         cwd = "/".join(d.path_yaml.split("/")[:-1])
-        fc2hdf5 = cwd + "/fc2.hdf5"
+        fc2hdf5 = cwd + "/fc2_ref.hdf5"
         if os.path.exists(fc2hdf5):
             d.path_fc2 = fc2hdf5
         elif vol in path_fc2_dict:

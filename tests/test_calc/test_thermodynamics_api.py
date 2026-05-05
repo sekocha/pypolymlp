@@ -77,7 +77,7 @@ def test_set_reference_paths(thermodynamics_grids_Cu):
     _, _, grid_ti, _, _ = thermodynamics_grids_Cu
     grid_ti = set_reference_paths(grid_ti)
     for i, j, d in grid_ti:
-        fc2hdf5 = "/".join(d.path_yaml.split("/")[:-1]) + "/fc2.hdf5"
+        fc2hdf5 = "/".join(d.path_yaml.split("/")[:-1]) + "/fc2_ref.hdf5"
         assert d.path_fc2 == fc2hdf5
 
 

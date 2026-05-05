@@ -2,11 +2,12 @@
 
 import argparse
 import os
+import shutil
 import signal
 
 import numpy as np
 
-from pypolymlp.api.pypolymlp_md import PypolymlpMD, run_thermodynamic_integration
+from pypolymlp.api.pypolymlp_md import PypolymlpMD
 from pypolymlp.core.utils import print_credit
 
 
@@ -16,19 +17,7 @@ def run():
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--ti",
-        action="store_true",
-        help="Run thermodynamics integration",
-    )
-    parser.add_argument(
         "--pot", nargs="*", type=str, default="polymlp.yaml", help="polymlp file."
-    )
-    parser.add_argument(
-        "--pot_ref",
-        nargs="*",
-        type=str,
-        default=None,
-        help="polymlp file for intermediate reference.",
     )
     parser.add_argument(
         "-p",
@@ -70,7 +59,33 @@ def run():
     )
     parser.add_argument("--n_steps", type=int, default=20000, help="Number of steps.")
 
+    # for free energy perturbation and MD simulations for mixed state.
+    parser.add_argument(
+        "--alpha",
+        type=float,
+        default=0.0,
+        help="Alpha value for reference state.",
+    )
+    parser.add_argument(
+        "--fc2",
+        type=str,
+        default=None,
+        help="Force constant HDF5 file for reference state.",
+    )
+    parser.add_argument(
+        "--pot_ref",
+        nargs="*",
+        type=str,
+        default=None,
+        help="Reference polymlp state.",
+    )
+
     # for TI
+    parser.add_argument(
+        "--ti",
+        action="store_true",
+        help="Run thermodynamics integration.",
+    )
     parser.add_argument(
         "--n_samples", type=int, default=15, help="Number of MD simulations for TI."
     )
@@ -78,59 +93,38 @@ def run():
         "--max_alpha", type=float, default=1.0, help="Maximum alpha value for TI."
     )
     parser.add_argument(
-        "--fc2",
-        type=str,
-        default=None,
-        help="Force constant HDF5 file.",
-    )
-    parser.add_argument(
         "--fc2_path",
         type=str,
         default=None,
         help="Directory path for automatically finding reference FC2 state.",
     )
-    parser.add_argument(
-        "--alpha",
-        type=float,
-        default=0.0,
-        help="Alpha value for TI.",
-    )
-    parser.add_argument(
-        "--heat_capacity",
-        action="store_true",
-        help="Calculate heat capacity in TI.",
-    )
-    parser.add_argument(
-        "--output",
-        type=str,
-        default="polymlp_md.yaml",
-        help="Output filename.",
-    )
+
     args = parser.parse_args()
 
     print_credit()
     np.set_printoptions(legacy="1.21")
 
+    path = "/".join(os.path.abspath(args.poscar).split("/")[:-1])
     if args.ti:
-        print("Run thermodynamic integration.", flush=True)
-        path = "/".join(os.path.abspath(args.poscar).split("/")[:-1])
+        print("Run TI from FC2 reference state.", flush=True)
+
         path += "/ti/" + str(args.temp)
         os.makedirs(path, exist_ok=True)
+        md = PypolymlpMD(verbose=True)
+        md.load_poscar(args.poscar)
+        md.set_supercell(args.supercell_size)
 
-        if args.fc2 is not None:
-            # Deprecated option.
-            fc2 = args.fc2
-        else:
-            md = PypolymlpMD(verbose=True)
+        if args.fc2_path is not None:
             fc2 = md.find_reference(args.fc2_path, args.temp)
-        print("Reference state:", fc2, flush=True)
+        else:
+            fc2 = args.fc2
+        print("Polymlp:      ", args.pot, flush=True)
+        print("Reference FC2:", fc2, flush=True)
 
-        run_thermodynamic_integration(
-            pot=args.pot,
-            pot_ref=args.pot_ref,
-            poscar=args.poscar,
-            supercell_size=args.supercell_size,
-            fc2hdf5=fc2,
+        md.set_ase_calculator_with_fc2(pot=args.pot, fc2hdf5=fc2)
+        shutil.copy(fc2, path + "/fc2_ref.hdf5")
+
+        md.run_thermodynamic_integration(
             thermostat=args.thermostat,
             n_alphas=args.n_samples,
             max_alpha=args.max_alpha,
@@ -140,24 +134,29 @@ def run():
             friction=args.friction,
             n_eq=args.n_eq,
             n_steps=args.n_steps,
-            heat_capacity=args.heat_capacity,
-            filename=path + "/polymlp_ti.yaml",
-            verbose=True,
         )
+        md.save_ti_yaml(filename=path + "/polymlp_ti.yaml")
     else:
-        print("Run molecular dynamics with NVT thermostat.", flush=True)
-        path = "/".join(os.path.abspath(args.poscar).split("/")[:-1])
+        print("Run MD with NVT thermostat.", flush=True)
+        print("Polymlp:      ", args.pot, flush=True)
         md = PypolymlpMD(verbose=True)
         md.load_poscar(args.poscar)
         md.set_supercell(args.supercell_size)
-        if args.fc2 is None:
-            print("Potential:", args.pot, flush=True)
+
+        if args.fc2 is None and args.pot_ref is None:
             md.set_ase_calculator(pot=args.pot)
-        else:
-            print("Potential:", args.fc2, flush=True)
+        elif args.fc2 is not None:
+            print("Reference FC2:", args.fc2, flush=True)
             md.set_ase_calculator_with_fc2(
                 pot=args.pot,
                 fc2hdf5=args.fc2,
+                alpha=args.alpha,
+            )
+        else:
+            print("Reference Polymlp:", args.pot_ref, flush=True)
+            md.set_ase_calculator_with_reference(
+                pot=args.pot,
+                pot_ref=args.pot_ref,
                 alpha=args.alpha,
             )
 
@@ -174,4 +173,4 @@ def run():
             interval_log=1,
             logfile=path + "/polymlp_md_log.dat",
         )
-        md.save_yaml(filename=path + "/" + args.output)
+        md.save_yaml(filename=path + "/polymlp_md.yaml")

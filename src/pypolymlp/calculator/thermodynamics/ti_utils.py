@@ -173,10 +173,19 @@ def load_ti_yaml(filename: str = "polymlp_ti.yaml", verbose: bool = False):
     n_atom = int(data["conditions"]["n_atom"])
     temperature = float(data["conditions"]["temperature"])
     volume = float(data["conditions"]["volume"]) / n_atom
-    log = data["properties"]["delta_energies"]
 
-    e_ref = float(log[0]["energy"])
-    energy = (float(log[-1]["energy"]) - e_ref) / n_atom
+    if "delta_energies" in data["properties"]:
+        log = data["properties"]["delta_energies"]
+    elif "delta_energies" in data["sampling_point_properties"]:
+        log = data["sampling_point_properties"]
+    else:
+        raise RuntimeError("Data for sampling points not found.")
+
+    try:
+        energy = data["properties"]["energy"]
+    except:
+        e_ref = float(log[0]["energy"])
+        energy = (float(log[-1]["energy"]) - e_ref) / n_atom
     if not _is_success(energy):
         if verbose:
             print(filename, "was eliminated (failed).", flush=True)

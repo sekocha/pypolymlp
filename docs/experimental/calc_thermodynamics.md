@@ -15,7 +15,14 @@ In the following, we consider thermodynamic property calculations for a single t
 
 ### 1. MLP Development
 
-General-purpose polynomial MLPs or on-the-fly polynomial MLPs that enable successful SSCHA calculations and molecular dynamics simulations across target structures, volumes, and temperatures are required.
+To perform accurate SSCHA calculations and free energy calculations using thermodynamic integration for target compounds and structures across a range of volumes and temperatures, it is necessary to use either general-purpose polynomial MLPs or on-the-fly polynomial MLPs.
+These models should enable accurate property evaluations for structures with large atomic displacements appeared in SSCHA calculations and molecular dynamics simulations.
+
+When thermodynamic calculations are performed for many target structures using a single MLP, it is preferable to use a general-purpose MLP with high predictive power across a wide range of structures.
+In contrast, when thermodynamic calculations are carried out for a single compound under a specific condition or across a range of volumes and temperatures, developing an on-the-fly MLP can be a suitable option, as it can provide higher accuracy for the target system than a general-purpose MLP.
+
+See [Development of On-the-fly MLP](../tutorial_onthefly.md) for more details.
+
 
 ### 2. Generate Structures with Various Volumes
 

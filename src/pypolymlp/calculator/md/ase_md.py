@@ -10,6 +10,7 @@ from ase.md.langevin import Langevin
 from ase.md.npt import NPT
 from ase.md.velocitydistribution import MaxwellBoltzmannDistribution, Stationary
 
+from pypolymlp.calculator.utils.io_utils import print_pot
 from pypolymlp.core.units import Avogadro, EVtoJ, KbEV
 
 
@@ -271,8 +272,6 @@ class IntegratorASE:
         if self._energies is not None:
             energies_slice = self._energies[n_eq:]
             self._average_energy = np.average(energies_slice)
-            energies_slice = self._total_energies[n_eq:]
-            self._average_total_energy = np.average(energies_slice)
 
             if np.isclose(self._temperature, 0.0):
                 self._heat_capacity_eV = 0.0
@@ -282,6 +281,9 @@ class IntegratorASE:
                 self._heat_capacity_eV = var / KbEV / self._temperature**2
                 prod = EVtoJ * Avogadro / len(self._atoms.numbers)
                 self._heat_capacity = self._heat_capacity_eV * prod
+
+            energies_slice = self._total_energies[n_eq:]
+            self._average_total_energy = np.average(energies_slice)
 
         if self._displacements is not None:
             self._average_displacement = np.average(self._displacements[n_eq:])
@@ -346,16 +348,6 @@ class IntegratorASE:
             return None
 
     @property
-    def heat_capacity(self):
-        """Return heat capacity in J/K/mol."""
-        return self._heat_capacity
-
-    @property
-    def heat_capacity_eV(self):
-        """Return heat capacity in eV."""
-        return self._heat_capacity_eV
-
-    @property
     def average_energy(self):
         """Return average energy in eV/supercell."""
         return self._average_energy
@@ -364,6 +356,16 @@ class IntegratorASE:
     def average_total_energy(self):
         """Return average total energy in eV/supercell."""
         return self._average_total_energy
+
+    @property
+    def heat_capacity(self):
+        """Return heat capacity in J/K/mol."""
+        return self._heat_capacity
+
+    @property
+    def heat_capacity_eV(self):
+        """Return heat capacity in eV."""
+        return self._heat_capacity_eV
 
     @property
     def average_displacement(self):
@@ -401,7 +403,7 @@ class IntegratorASE:
 
     def write_conditions(self):
         """Write input conditions as standard output."""
-        print("--- Input conditions for MD calculation ---", flush=True)
+        print("----------- Input conditions for MD calculation -----------", flush=True)
         print("N atoms:           ", len(self._atoms.numbers), flush=True)
         print("Volume (ang.3):    ", np.round(self._atoms.get_volume(), 5), flush=True)
         print("Thermostat:        ", self._thermostat, flush=True)
@@ -409,12 +411,12 @@ class IntegratorASE:
         print("Time step (fs):    ", self._time_step, flush=True)
         if hasattr(self.calculator, "_alpha"):
             print("alpha_ref:         ", self.calculator._alpha, flush=True)
-        print("-------------------------------------------", flush=True)
+        print("-----------------------------------------------------------", flush=True)
         return self
 
-    def save_yaml(self, filename: str = "polymlp_md.yaml"):
+    def save_yaml(self, filename: str = "polymlp_md.yaml", mode: str = "w"):
         """Save properties to yaml file."""
-        with open(filename, "w") as f:
+        with open(filename, mode) as f:
             print("system:", self._atoms.symbols, file=f)
             print(file=f)
 
@@ -425,6 +427,7 @@ class IntegratorASE:
             print("  average_energy:   eV/supercell", file=f)
             print("  heat_capacity_eV: eV/K/supercell", file=f)
             print("  heat_capacity:    J/K/mol (/Avogadro's number of atoms)", file=f)
+            print("  displacementy:    angstroms", file=f)
             print(file=f)
 
             print("conditions:", file=f)
@@ -435,20 +438,37 @@ class IntegratorASE:
             print("  time_step:  ", self._time_step, file=f)
             print("  n_steps_eq: ", self._n_eq, file=f)
             print("  n_steps:    ", self._n_steps, file=f)
-            if hasattr(self.calculator, "_alpha"):
-                print("  alpha_fc2:  ", self.calculator._alpha, file=f)
+            print(file=f)
+
+            calc = self.calculator
+            if hasattr(calc, "_alpha"):
+                print("  alpha:      ", calc._alpha, file=f)
+            if hasattr(calc, "_prop"):
+                print_pot(calc._prop.pot, tag="polymlp", indent=2, file=f)
+            if hasattr(calc, "_prop_final"):
+                print_pot(calc._prop_final.pot, tag="polymlp", indent=2, file=f)
+            if hasattr(calc, "_prop_ref"):
+                print_pot(calc._prop_ref.pot, tag="polymlp_ref", indent=2, file=f)
             print(file=f)
 
             print("properties:", file=f)
-            print("  average_potential_energy:", self._average_energy, file=f)
-            print("  average_total_energy:    ", self._average_total_energy, file=f)
-            print("  heat_capacity_eV:        ", self._heat_capacity_eV, file=f)
-            print("  heat_capacity:           ", self._heat_capacity, file=f)
+            if self.static_energy is not None:
+                print("  static_energy:             ", self.static_energy, file=f)
+            print("  average_potential_energy:  ", self._average_energy, file=f)
+            print("  average_total_energy:      ", self._average_total_energy, file=f)
+            print("  heat_capacity_eV:          ", self._heat_capacity_eV, file=f)
+            print("  heat_capacity:             ", self._heat_capacity, file=f)
+            if self._average_displacement is not None:
+                disp = self._average_displacement
+                print("  avarage_displacements:     ", disp, file=f)
+
             if self._use_reference:
+                print(file=f)
+                print("perturbation_from_ref:", file=f)
+                print("  free_energy_order1:   ", self._average_delta_energy_1a, file=f)
+                print("  free_energy:          ", self._free_energy_perturb, file=f)
+
+                print(file=f)
+                print("for_thermodynamic_integration:", file=f)
                 delta_e = self._average_delta_energy_10
-                print("  energy1_from_ref:        ", delta_e, file=f)
-                print("  perturbation:", file=f)
-                delta_e = self._average_delta_energy_1a
-                print("    energy_from_alpha:       ", delta_e, file=f)
-                delta_f = self._free_energy_perturb
-                print("    free_energy_from_alpha:  ", delta_f, file=f)
+                print("  average_energy_from_alpha0:", delta_e, file=f)
