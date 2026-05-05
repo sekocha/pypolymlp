@@ -10,6 +10,19 @@ $$
 \Delta F = F_{\rm MLP} - F_{\rm FC2} = \int_0^1 \langle U_{\rm MLP} - U_{\rm FC2} \rangle_\alpha \, d\alpha.
 $$
 
+
+## MLP for Thermodynamic Integration
+
+To perform accurate MD simulations for target compounds and structures across a range of volumes and temperatures, it is necessary to use either general-purpose polynomial MLPs or on-the-fly polynomial MLPs.
+These models should enable accurate property evaluations for atomic configurations encountered during MD simulations.
+
+When MD simulations are performed for many target structures using a single MLP, particularly for systems with lattice defects or liquid structures with diverse local environments, it is preferable to use a general-purpose MLP with high predictive power across a wide range of structures.
+
+In contrast, when MD simulations are carried out for a single compound under a specific condition or across a range of volumes and temperatures, developing an on-the-fly MLP can be a suitable option, as it can provide higher accuracy for the target system than a general-purpose MLP.
+
+See [Development of On-the-fly MLP](../tutorial_onthefly.md) for more details.
+
+
 ## Using the Command-Line Interface
 
 Thermodynamic integration can be performed using the `pypolymlp-md` command with the `--ti` option.

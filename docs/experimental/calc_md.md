@@ -7,6 +7,19 @@ When using the command-line interface, the `pypolymlp-md` command performs molec
 Molecular dynamics simulations can be performed using algorithms implemented in ASE.
 ASE calculators for the polynomial MLP are provided in `pypolymlp` and is used to compute the properties required for molecular dynamics simulations.
 
+
+## MLP for Molecular Dynamics
+
+To perform accurate MD simulations for target compounds and structures across a range of volumes and temperatures, it is necessary to use either general-purpose polynomial MLPs or on-the-fly polynomial MLPs.
+These models should enable accurate property evaluations for atomic configurations encountered during MD simulations.
+
+When MD simulations are performed for many target structures using a single MLP, particularly for systems with lattice defects or liquid structures with diverse local environments, it is preferable to use a general-purpose MLP with high predictive power across a wide range of structures.
+
+In contrast, when MD simulations are carried out for a single compound under a specific condition or across a range of volumes and temperatures, developing an on-the-fly MLP can be a suitable option, as it can provide higher accuracy for the target system than a general-purpose MLP.
+
+See [Development of On-the-fly MLP](../tutorial_onthefly.md) for more details.
+
+
 ## Standard MD Using the Command-Line Interface
 
 When using the command-line interface, the `pypolymlp-md` command performs molecular dynamics simulations in the NVT ensemble, as shown in the example below.
