@@ -121,7 +121,7 @@ In this example, 3000 and 6000 structures are used to obtain the converged effec
 
 Other main parameters that can be specified via options are as follows.
 
-```shell
+```
  --mesh MESH MESH MESH  q-mesh for reciprocal space calculation
  --born_vasprun BORN_VASPRUN  vasprun.xml file for parsing born effective charges
  --cutoff_fc2 CUTOFF_FC2  Cutoff radius for effective force constants.
