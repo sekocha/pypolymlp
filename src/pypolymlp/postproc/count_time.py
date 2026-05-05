@@ -56,6 +56,7 @@ class PolymlpCost:
             raise RuntimeError("polymlp potential files not found.")
 
         params, _ = load_mlps(pot_elements)
+
         self._elements = params.elements
         self._system = "-".join(self._elements)
         return self._elements

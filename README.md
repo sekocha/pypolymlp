@@ -29,7 +29,6 @@ A polynomial MLP represents the potential energy as a polynomial function of lin
 - numpy != 2.0.*
 - scipy
 - pyyaml
-- setuptools
 - eigen3
 - pybind11
 - openmp (recommended)
