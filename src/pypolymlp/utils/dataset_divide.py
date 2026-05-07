@@ -112,7 +112,7 @@ def auto_divide_vaspruns(
             tag = "test" + str(i + 1)
             files = path + tag + "/*.xml"
             copy_vaspruns(vaspruns[attr.test], tag, path_output=path)
-            print("test_data", files, str(force), str(weight), file=f)
+            print("test_data ", files, str(force), str(weight), file=f)
             if verbose:
-                print("test_data", files, str(force), str(weight), flush=True)
+                print("test_data ", files, str(force), str(weight), flush=True)
     f.close()
