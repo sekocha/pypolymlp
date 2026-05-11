@@ -9,6 +9,33 @@ from pypolymlp.utils.structure_utils import supercell_diagonal
 from pypolymlp.utils.vasp_utils import write_poscar_file
 
 
+def find_supercell_size_nearly_isotropic(
+    unitcell,
+    natom_lb: int = 48,
+    natom_ub: int = 150,
+):
+    """Find a diagonal supercell size enabling nearly-isotropic supercell."""
+    axis = unitcell.axis
+    total_n_atoms = sum(unitcell.n_atoms)
+
+    len_axis = [np.linalg.norm(axis[:, i]) for i in range(3)]
+    ratio1 = len_axis[0] / len_axis[1]
+    ratio2 = len_axis[0] / len_axis[2]
+    ratio = np.array([1, ratio1, ratio2])
+
+    cand = np.arange(1, 11)
+    size = [1, 1, 1]
+    for c in cand:
+        size_trial = np.maximum(np.round(ratio * c).astype(int), [1, 1, 1])
+        n_total = total_n_atoms * np.prod(size_trial)
+        if n_total >= natom_lb:
+            if n_total <= natom_ub:
+                size = size_trial
+            break
+        size = size_trial
+    return size
+
+
 def write_structures(
     structures: list[PolymlpStructure],
     base_info: list[dict[str]],
@@ -111,7 +138,7 @@ class StructureGenerator:
         return self._supercell
 
     def _find_supercell_size_nearly_isotropic(self) -> list[int]:
-        """Find a diagonal supercell size enabling nealy-isotropic supercell."""
+        """Find a diagonal supercell size enabling nearly-isotropic supercell."""
         axis = self._unitcell.axis
         total_n_atoms = sum(self._unitcell.n_atoms)
 
