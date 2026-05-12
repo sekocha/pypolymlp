@@ -141,6 +141,11 @@ def run():
         action="store_true",
         help="Disable to use MKL in Symfc.",
     )
+    parser.add_argument(
+        "--disable_precondition",
+        action="store_true",
+        help="Disable to use precondition steps.",
+    )
 
     # Options for finite-temperature geometry optimization using SSCHA free energy
     parser.add_argument(
@@ -285,6 +290,7 @@ def run():
             init_fc_file=args.init_file,
             cutoff_radius=args.cutoff_fc2,
             use_temporal_cutoff=args.use_temporal_cutoff,
+            precondition=not args.disable_precondition,
             write_pdos=args.write_pdos,
             use_mkl=not args.disable_mkl,
         )
