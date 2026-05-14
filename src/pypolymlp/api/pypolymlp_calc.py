@@ -511,7 +511,7 @@ class PypolymlpCalc:
         self,
         unitcell: [PolymlpStructure] = None,
         supercell_matrix: np.ndarray = ((1, 0, 0), (0, 1, 0), (0, 0, 1)),
-        cutoff: float = None,
+        cutoff: dict = None,
     ):
         """Initialize force constant calculations.
 
@@ -522,7 +522,7 @@ class PypolymlpCalc:
         unitcell: Unit cell of equilibrium structure.
         supercell_matrix: Supercell matrix. (Only diagonal elements are valid.)
         cutoff: Cutoff distance for force constant calculation.
-
+                Example: {2: None, 3: None, 4: 6.0}
         """
         from pypolymlp.calculator.fc import PolymlpFC
 

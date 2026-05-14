@@ -6,7 +6,6 @@ from typing import Optional
 import numpy as np
 from phono3py.file_IO import write_fc2_to_hdf5, write_fc3_to_hdf5
 from symfc import Symfc
-from symfc.utils.cutoff_tools import FCCutoff
 
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.core.data_format import PolymlpStructure
@@ -30,7 +29,7 @@ class PolymlpFC:
         supercell: Optional[PolymlpStructure] = None,
         phono3py_yaml: Optional[str] = None,
         use_phonon_dataset: bool = False,
-        cutoff: float = None,
+        cutoff: Optional[dict] = None,
         verbose: bool = False,
     ):
         """Init method.
@@ -51,12 +50,7 @@ class PolymlpFC:
             phono3py_yaml=phono3py_yaml,
             use_phonon_dataset=use_phonon_dataset,
         )
-        if cutoff is not None:
-            # TODO: Implement order dependence of cutoff
-            self.cutoff = cutoff
-        else:
-            self._cutoff = None
-            self._fc_cutoff = None
+        self._cutoff = cutoff
 
         self._fc2 = None
         self._fc3 = None
@@ -140,15 +134,9 @@ class PolymlpFC:
         if self._forces is None:
             RuntimeError("Forces not found.")
 
-        cutoff = None
-        if self._cutoff is not None:
-            cutoff = dict()
-            for order in orders:
-                cutoff[order] = self._cutoff
-
         self._symfc = Symfc(
             self._supercell_ph,
-            cutoff=cutoff,
+            cutoff=self._cutoff,
             use_mkl=use_mkl,
             log_level=self._verbose,
         )
@@ -312,4 +300,3 @@ class PolymlpFC:
         if self._verbose:
             print("Cutoff radius:", value, "(ang.)", flush=True)
         self._cutoff = value
-        self._fc_cutoff = FCCutoff(self._supercell_ph, cutoff=value)

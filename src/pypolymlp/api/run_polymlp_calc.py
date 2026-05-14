@@ -148,10 +148,22 @@ def run():
         help="Batch size for FC solver.",
     )
     parser.add_argument(
-        "--cutoff",
+        "--cutoff_fc2",
         type=float,
         default=None,
-        help="Cutoff radius for setting zero elements.",
+        help="Cutoff radius for FC2 to set zero elements.",
+    )
+    parser.add_argument(
+        "--cutoff_fc3",
+        type=float,
+        default=None,
+        help="Cutoff radius for FC3 to set zero elements.",
+    )
+    parser.add_argument(
+        "--cutoff_fc4",
+        type=float,
+        default=None,
+        help="Cutoff radius for FC4 to set zero elements.",
     )
     parser.add_argument(
         "--fc_orders",
@@ -227,7 +239,8 @@ def run():
             )
             polymlp.run_geometry_optimization()
 
-        polymlp.init_fc(supercell_matrix=supercell_matrix, cutoff=args.cutoff)
+        cutoff = {2: args.cutoff_fc2, 3: args.cutoff_fc3, 4: args.cutoff_fc4}
+        polymlp.init_fc(supercell_matrix=supercell_matrix, cutoff=cutoff)
         polymlp.run_fc(
             n_samples=args.fc_n_samples,
             distance=args.disp,
