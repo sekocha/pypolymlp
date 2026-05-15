@@ -250,7 +250,6 @@ def run():
             relax_positions=not args.fix_atom,
             pressure=args.pressure,
             gtol=args.gtol,
-            verbose_sscha=True,
         )
     elif args.elastic:
         if args.temp is None:
