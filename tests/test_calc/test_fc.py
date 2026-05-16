@@ -14,7 +14,7 @@ def test_fc_AlN(unitcell_wz_AlN):
     """Test FC calculation."""
     unitcell, pot, prop = unitcell_wz_AlN
     sup = supercell(unitcell, (3, 3, 2), use_phonopy=True)
-    fc = PolymlpFC(prop, supercell=sup, cutoff=3.0, verbose=True)
+    fc = PolymlpFC(prop, supercell=sup, cutoff={3: 3.0}, verbose=True)
     fc.sample(n_samples=100, displacements=0.01)
     fc.run(orders=(2, 3), write_fc=False, use_mkl=False)
 
@@ -31,7 +31,7 @@ def test_fc_AlN(unitcell_wz_AlN):
     assert len(fc.structures) == 100
     fc.displacements = fc.displacements
     fc.forces = fc.forces
-    assert fc.cutoff == pytest.approx(3.0)
+    assert fc.cutoff[3] == pytest.approx(3.0)
     assert isinstance(fc.supercell, PolymlpStructure)
 
 
@@ -39,7 +39,7 @@ def test_fc_MgO(unitcell_pair_MgO):
     """Test FC calculation."""
     unitcell, pot, prop = unitcell_pair_MgO
     sup = supercell(unitcell, (2, 2, 2), use_phonopy=True)
-    fc = PolymlpFC(prop, supercell=sup, cutoff=3.0, verbose=True)
+    fc = PolymlpFC(prop, supercell=sup, cutoff={3: 3.0}, verbose=True)
     fc.sample(n_samples=100, displacements=0.01)
     fc.run(orders=(2, 3), write_fc=False, use_mkl=False)
 
