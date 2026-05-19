@@ -61,7 +61,10 @@ def load_ti_yamls(filenames: tuple[str], verbose: bool = False) -> list[GridPoin
     """Load polymlp_ti.yaml files."""
     data, data_ext = [], []
     for yamlfile in filenames:
-        res = load_ti_yaml(yamlfile, verbose=verbose)
+        try:
+            res = load_ti_yaml(yamlfile, verbose=verbose)
+        except:
+            res = None
         if res is None:
             continue
 

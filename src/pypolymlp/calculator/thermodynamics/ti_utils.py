@@ -176,7 +176,7 @@ def load_ti_yaml(filename: str = "polymlp_ti.yaml", verbose: bool = False):
 
     if "delta_energies" in data["properties"]:
         log = data["properties"]["delta_energies"]
-    elif "delta_energies" in data["sampling_point_properties"]:
+    elif "sampling_point_properties" in data:
         log = data["sampling_point_properties"]
     else:
         raise RuntimeError("Data for sampling points not found.")
