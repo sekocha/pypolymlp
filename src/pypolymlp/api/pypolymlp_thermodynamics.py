@@ -69,6 +69,8 @@ class PypolymlpThermodynamics:
             grid_ti.copy_static_data(grid_sscha)
             grid_ti_ext = set_reference_paths(grid_ti_ext, ref_fc2)
             grid_ti_ext.copy_static_data(grid_sscha)
+            if self._verbose:
+                print("Calculating reference free energy.", flush=True)
             grid_ref = calculate_reference_grid(grid_ti)
         else:
             grid_ref = None
