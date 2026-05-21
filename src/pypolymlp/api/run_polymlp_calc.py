@@ -93,7 +93,7 @@ def run():
     parser.add_argument(
         "--disp",
         type=float,
-        default=0.001,
+        default=0.01,
         help="Displacement (in Angstrom)",
     )
     parser.add_argument(
