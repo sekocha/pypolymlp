@@ -126,6 +126,7 @@ class PolymlpFC:
         batch_size: int = 100,
         use_mkl: bool = True,
         is_compact_fc: bool = True,
+        use_gradient_solver: bool = False,
     ):
         """Construct fc basis and solve FCs."""
         if self._disps is None:
@@ -146,6 +147,7 @@ class PolymlpFC:
             orders=orders,
             batch_size=batch_size,
             is_compact_fc=is_compact_fc,
+            use_gradient_solver=use_gradient_solver,
         )
         for order in orders:
             if order == 2:
@@ -165,6 +167,7 @@ class PolymlpFC:
         write_fc: bool = True,
         use_mkl: bool = True,
         is_compact_fc: bool = True,
+        use_gradient_solver: bool = False,
     ):
         """Calculate forces using polymlp and estimate FCs."""
 
@@ -188,6 +191,7 @@ class PolymlpFC:
             batch_size=batch_size,
             is_compact_fc=is_compact_fc,
             use_mkl=use_mkl,
+            use_gradient_solver=use_gradient_solver,
         )
         t2 = time.time()
         if self._verbose:

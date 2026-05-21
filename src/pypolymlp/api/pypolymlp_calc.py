@@ -552,6 +552,7 @@ class PypolymlpCalc:
         batch_size: int = 100,
         is_compact_fc: bool = True,
         use_mkl: bool = True,
+        use_gradient_solver: bool = False,
     ):
         """Run force constant calculations.
 
@@ -569,7 +570,7 @@ class PypolymlpCalc:
         batch_size: Batch size for force constant regression.
         is_compact_fc: Generate compact forms of force constants.
         use_mkl: Use MKL in symfc.
-
+        use_gradient_solver: Use gradient-based solver in symfc.
         """
         if self._fc is None:
             raise RuntimeError("Force constant calculations not initialized.")
@@ -587,6 +588,7 @@ class PypolymlpCalc:
             write_fc=False,
             is_compact_fc=is_compact_fc,
             use_mkl=use_mkl,
+            use_gradient_solver=use_gradient_solver,
         )
 
     def save_fc(self):

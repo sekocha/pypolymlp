@@ -172,6 +172,11 @@ def run():
         default=(2, 3),
         help="FC orders.",
     )
+    parser.add_argument(
+        "--use_gradient_solver",
+        action="store_true",
+        help="Use gradient-based solver in force-constant estimation.",
+    )
 
     parser.add_argument("--run_ltc", action="store_true", help="Run LTC calculations")
     parser.add_argument(
@@ -249,6 +254,7 @@ def run():
             batch_size=args.batch_size,
             is_compact_fc=True,
             use_mkl=True,
+            use_gradient_solver=args.use_gradient_solver,
         )
         polymlp.save_fc()
 
