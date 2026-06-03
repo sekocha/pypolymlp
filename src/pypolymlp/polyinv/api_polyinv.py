@@ -54,14 +54,14 @@ def solve(lcomb: list, lproj: int = 0, verbose: bool = False):
     mcomb_all = get_m_combs(lcomb, lproj=lproj)
     # for mproj in range(-lproj, lproj + 1):
     mproj = 0
-
     if verbose:
         print("lcomb:", lcomb, flush=True)
         print("- lp_mp:", [lproj, mproj], flush=True)
         print("Building projector.", flush=True)
 
-    proj = build_projector(lcomb, mcomb_all)
+    proj, lm_indices = build_projector(lcomb, mcomb_all)
     if verbose:
+        print(lm_indices.shape)
         print("Solving projector.")
-    eigvecs = eigsh(proj)
+    eigvecs = eigsh(proj, log_level=verbose)
     print(eigvecs.shape)
