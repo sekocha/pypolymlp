@@ -29,6 +29,7 @@ def save_polyinv_coeffs(
     mode: str = "a",
 ):
     """Save coefficients of polynomial invariants."""
+    np.set_printoptions(legacy="1.21")
     if isinstance(filename, io.IOBase):
         f = filename
     else:

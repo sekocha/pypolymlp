@@ -10,9 +10,12 @@
 *****************************************************************************/
 
 #include "projector.h"
+#include <mutex>
 
 Projector::Projector(){}
 Projector::~Projector(){}
+
+std::mutex mtx;
 
 
 void Projector::build_projector(const vector1i& l_list){
@@ -195,6 +198,9 @@ void Projector::order4_pre(const vector1i& l_list, std::map<int, int>& map_indic
     const int l3 = l_list[2];
 
     std::set<int> nonzero_indices;
+    #ifdef _OPENMP
+    #pragma omp parallel for collapse(6) schedule(dynamic)
+    #endif
     for (int m1=-l1; m1<=l1; ++m1)
     for (int m1p=-l1; m1p<=l1; ++m1p)
     for (int m2=-l2; m2<=l2; ++m2)
@@ -209,6 +215,7 @@ void Projector::order4_pre(const vector1i& l_list, std::map<int, int>& map_indic
         if (!nonzero)
             continue;
 
+        std::lock_guard<std::mutex> lock(mtx);
         nonzero_indices.insert(index);
         nonzero_indices.insert(index_p);
     }
@@ -271,6 +278,9 @@ void Projector::order5_pre(const vector1i& l_list, std::map<int, int>& map_indic
     const int l4 = l_list[3];
 
     std::set<int> nonzero_indices;
+    #ifdef _OPENMP
+    #pragma omp parallel for collapse(8) schedule(dynamic)
+    #endif
     for (int m1=-l1; m1<=l1; ++m1)
     for (int m1p=-l1; m1p<=l1; ++m1p)
     for (int m2=-l2; m2<=l2; ++m2)
@@ -287,6 +297,7 @@ void Projector::order5_pre(const vector1i& l_list, std::map<int, int>& map_indic
         if (!nonzero)
             continue;
 
+        std::lock_guard<std::mutex> lock(mtx);
         nonzero_indices.insert(index);
         nonzero_indices.insert(index_p);
     }

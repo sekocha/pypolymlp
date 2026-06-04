@@ -7,7 +7,7 @@ from symfc.eig_solvers.eig_tools_recursive import eigsh_projector_division
 
 def eigh(
     p: NDArray,
-    atol: float = 1e-8,
+    atol: float = 1e-7,
     rtol: float = 0.0,
     size_threshold: int = 500,
     log_level: int = 0,
