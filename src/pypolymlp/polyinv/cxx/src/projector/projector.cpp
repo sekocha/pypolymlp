@@ -133,6 +133,9 @@ void Projector::order3_pre(const vector1i& l_list, std::map<int, int>& map_indic
     const int l2 = l_list[1];
 
     std::set<int> nonzero_indices;
+    #ifdef _OPENMP
+    #pragma omp parallel for collapse(4) schedule(dynamic)
+    #endif
     for (int m1=-l1; m1<=l1; ++m1)
     for (int m1p=-l1; m1p<=l1; ++m1p)
     for (int m2=-l2; m2<=l2; ++m2)
@@ -145,6 +148,7 @@ void Projector::order3_pre(const vector1i& l_list, std::map<int, int>& map_indic
         if (!nonzero)
             continue;
 
+        std::lock_guard<std::mutex> lock(mtx);
         nonzero_indices.insert(index);
         nonzero_indices.insert(index_p);
     }
@@ -368,6 +372,9 @@ void Projector::order6_pre(const vector1i& l_list, std::map<int, int>& map_indic
     const int l5 = l_list[4];
 
     std::set<int> nonzero_indices;
+    #ifdef _OPENMP
+    #pragma omp parallel for collapse(10) schedule(dynamic)
+    #endif
     for (int m1=-l1; m1<=l1; ++m1)
     for (int m1p=-l1; m1p<=l1; ++m1p)
     for (int m2=-l2; m2<=l2; ++m2)
@@ -386,6 +393,7 @@ void Projector::order6_pre(const vector1i& l_list, std::map<int, int>& map_indic
         if (!nonzero)
             continue;
 
+        std::lock_guard<std::mutex> lock(mtx);
         nonzero_indices.insert(index);
         nonzero_indices.insert(index_p);
     }
