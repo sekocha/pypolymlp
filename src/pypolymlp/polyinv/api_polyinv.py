@@ -4,7 +4,7 @@ import numpy as np
 from symfc.api_symfc import eigsh
 
 # from pypolymlp.polyinv.polyinv_io import save_polyinv_lcombs
-from pypolymlp.polyinv.polyinv_utils import get_l_combs, get_m_combs
+from pypolymlp.polyinv.polyinv_utils import get_l_combs  # , get_m_combs
 from pypolymlp.polyinv.projector import build_projector
 
 
@@ -51,14 +51,16 @@ def solve(lcomb: list, lproj: int = 0, verbose: bool = False):
     """Solve projector."""
     if lproj != 0:
         raise RuntimeError("Function solve is available only for lproj = 0.")
-    mcomb_all = get_m_combs(lcomb, lproj=lproj)
+    # mcomb_all = get_m_combs(lcomb, lproj=lproj)
     # for mproj in range(-lproj, lproj + 1):
     mproj = 0
     if verbose:
         print("lcomb:", lcomb, flush=True)
         print("- lp_mp:", [lproj, mproj], flush=True)
         print("Building projector.", flush=True)
+    # print(np.array(mcomb_all).shape)
 
+    mcomb_all = [[]]
     proj, lm_indices = build_projector(lcomb, mcomb_all)
     if verbose:
         print(lm_indices.shape)

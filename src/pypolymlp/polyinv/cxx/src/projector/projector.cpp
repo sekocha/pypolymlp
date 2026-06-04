@@ -1,6 +1,6 @@
 /****************************************************************************
 
-        Copyright (C) 2017 Atsuto Seko
+        Copyright (C) 2026 Atsuto Seko
                 seko@cms.mtl.kyoto-u.ac.jp
 
 	    Main program for building projector for group-theoretic invariants
@@ -17,20 +17,65 @@ Projector::~Projector(){}
 void Projector::build_projector
 (const vector1i& l_list, const vector2i& m_list){
 
-    vector2i m_list_nonzero = mlist_nonzero(l_list, m_list);
     int order = l_list.size();
-    if (order == 2)
+    if (order == 2){
+        vector2i m_list_nonzero = mlist_nonzero(l_list, m_list);
         order2(l_list, m_list_nonzero);
-    else if (order == 3)
+    }
+    else if (order == 3){
+        vector2i m_list_nonzero = mlist_nonzero(l_list, m_list);
         order3(l_list, m_list_nonzero);
-    else if (order == 4)
-        order4(l_list, m_list_nonzero);
-    else if (order == 5)
+    }
+    else if (order == 4){
+        order4(l_list);
+    }
+    else if (order == 5){
+        vector2i m_list_nonzero = mlist_nonzero(l_list, m_list);
         order5(l_list, m_list_nonzero);
-    else if (order == 6)
+    }
+    else if (order == 6){
+        vector2i m_list_nonzero = mlist_nonzero(l_list, m_list);
         order6(l_list, m_list_nonzero);
+    }
 
 }
+
+bool Projector::check_m_nonzero(
+    const vector1i& l_list,
+    vector1i& mv1,
+    vector1i& mv2,
+    int& index,
+    int& index_p){
+
+    // mv1.clear();
+    // for (int j = 0; j < m_list.size(); ++j){
+    //     if (j % 2 == 0)
+    //         mv1.emplace_back(m_list[j]);
+    // }
+    int mf = - std::accumulate(mv1.begin(), mv1.end(), 0);
+    if (abs(mf) > l_list[l_list.size()-1])
+        return false;
+
+    // mv2.clear();
+    // for (int j = 0; j < m_list.size(); ++j){
+    //     if (j % 2 != 0)
+    //         mv2.emplace_back(m_list[j]);
+    // }
+    int mfp = - std::accumulate(mv2.begin(), mv2.end(), 0);
+    if (abs(mfp) > l_list[l_list.size()-1])
+        return false;
+
+    mv1.push_back(mf);
+    mv2.push_back(mfp);
+    index = lm_to_matrix_index(l_list, mv1);
+    index_p = lm_to_matrix_index(l_list, mv2);
+    if (index > index_p)
+        return false;
+
+    // std::copy(mv2.begin(), mv2.end(), std::back_inserter(mv1));
+    return true;
+}
+
 
 vector2i Projector::mlist_nonzero
 (const vector1i& l_list, const vector2i& m_list){
@@ -121,6 +166,7 @@ void Projector::order3
     #ifdef _OPENMP
     #pragma omp parallel for shared(l1, l2, l3)
     #endif
+
     for (int i = 0; i < m_list.size(); ++i){
         int m1, m2, m3, m1p, m2p, m3p, index, index_p;
         m1 = m_list[i][0]; m2 = m_list[i][1]; m3 = m_list[i][2];
@@ -150,49 +196,72 @@ void Projector::order3
     }
 }
 
-void Projector::order4
-(const vector1i& l_list, const vector2i& m_list){
+void Projector::order4(const vector1i& l_list){
 
-    array_initialize(m_list);
+    row.clear();
+    col.clear();
+    data.clear();
 
     int l1, l2, l3, l4;
     l1 = l_list[0]; l2 = l_list[1]; l3 = l_list[2]; l4 = l_list[3];
+
+    int nt = omp_get_max_threads();
+    vector2i rows(nt), cols(nt);
+    vector2d vals(nt);
     #ifdef _OPENMP
-    #pragma omp parallel for shared(l1, l2, l3, l4)
+    #pragma omp parallel
     #endif
-    for (int i = 0; i < m_list.size(); ++i){
-        int m1, m2, m3, m4, m1p, m2p, m3p, m4p, index, index_p;
-        m1 = m_list[i][0]; m2 = m_list[i][1];
-        m3 = m_list[i][2]; m4 = m_list[i][3];
-        m1p = m_list[i][4]; m2p = m_list[i][5];
-        m3p = m_list[i][6]; m4p = m_list[i][7];
-        vector1i mv1, mv2;
-        for (int j = 0; j < m_list[i].size()/2; ++j)
-            mv1.push_back(m_list[i][j]);
-        for (int j = m_list[i].size()/2; j < m_list[i].size(); ++j)
-            mv2.push_back(m_list[i][j]);
+    {
+        int tid = omp_get_thread_num();
 
-        double num(0);
-        for (int l = abs(l1-l2); l < l1+l2+1; ++l){
-            num += clebsch_gordan(l1, l2, l, m1, m2, -m3-m4)
-                * clebsch_gordan(l1, l2, l, m1p, m2p, -m3p-m4p)
-                * clebsch_gordan(l3, l, l4, m3, -m3-m4, -m4)
-                * clebsch_gordan(l3, l, l4, m3p, -m3p-m4p, -m4p);
+        #ifdef _OPENMP
+        #pragma omp for collapse(6) schedule(dynamic)
+        #endif
+        for (int m1=-l1; m1<=l1; ++m1)
+        for (int m1p=-l1; m1p<=l1; ++m1p)
+        for (int m2=-l2; m2<=l2; ++m2)
+        for (int m2p=-l2; m2p<=l2; ++m2p)
+        for (int m3=-l3; m3<=l3; ++m3)
+        for (int m3p=-l3; m3p<=l3; ++m3p)
+        {
+            int index, index_p;
+            vector1i mv1 = {m1, m2, m3};
+            vector1i mv2 = {m1p, m2p, m3p};
+            bool nonzero = check_m_nonzero(l_list, mv1, mv2, index, index_p);
+            if (!nonzero)
+                continue;
+
+            int m4 = mv1[3], m4p = mv2[3];
+            double num(0);
+            for (int l = abs(l1-l2); l < l1+l2+1; ++l){
+                num += clebsch_gordan(l1, l2, l, m1, m2, -m3-m4)
+                    * clebsch_gordan(l1, l2, l, m1p, m2p, -m3p-m4p)
+                    * clebsch_gordan(l3, l, l4, m3, -m3-m4, -m4)
+                    * clebsch_gordan(l3, l, l4, m3p, -m3p-m4p, -m4p);
+            }
+            num *= pow(-1, abs(m4-m4p))/(2*l4+1);
+
+            rows[tid].emplace_back(index);
+            cols[tid].emplace_back(index_p);
+            vals[tid].emplace_back(num);
+            if (index != index_p){
+                rows[tid].emplace_back(index_p);
+                cols[tid].emplace_back(index);
+                vals[tid].emplace_back(num);
+            }
         }
-        num *= pow(-1, abs(m4-m4p))/(2*l4+1);
-
-        index = lm_to_matrix_index(l_list, mv1);
-        index_p = lm_to_matrix_index(l_list, mv2);
-
-        row[i*2] = index;
-        col[i*2] = index_p;
-        data[i*2] = num;
-        row[i*2+1] = index_p;
-        col[i*2+1] = index;
-        if (index != index_p)
-            data[i*2+1] = num;
-        else
-            data[i*2+1] = 0.0;
+    }
+    for (int t = 0; t < nt; ++t){
+        row.insert(row.end(), rows[t].begin(), rows[t].end());
+        vector1i().swap(rows[t]);
+    }
+    for (int t = 0; t < nt; ++t){
+        col.insert(col.end(), cols[t].begin(), cols[t].end());
+        vector1i().swap(cols[t]);
+    }
+    for (int t = 0; t < nt; ++t){
+        data.insert(data.end(), vals[t].begin(), vals[t].end());
+        vector1d().swap(vals[t]);
     }
 }
 

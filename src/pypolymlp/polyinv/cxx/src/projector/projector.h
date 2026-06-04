@@ -1,6 +1,6 @@
 /****************************************************************************
 
-        Copyright (C) 2024 Atsuto Seko
+        Copyright (C) 2026 Atsuto Seko
                 seko@cms.mtl.kyoto-u.ac.jp
 
 ****************************************************************************/
@@ -9,6 +9,7 @@
 #define __PROJECTOR
 
 #include <gsl/gsl_sf_coupling.h>
+#include <omp.h>
 
 #include "mlpcpp.h"
 
@@ -19,11 +20,21 @@ class Projector{
 
     int lm_to_matrix_index(const vector1i& l_list, const vector1i& m_array);
 
+    //vector1i check_m_nonzero(const vector1i& l_list, const vector1i& m_list);
+    bool check_m_nonzero(
+        const vector1i& l_list,
+        vector1i& mv1,
+        vector1i& mv2,
+        int& index,
+        int& index_p);
+
+
     vector2i mlist_nonzero(const vector1i& l_list, const vector2i& m_list);
 
     void order2(const vector1i& l_list, const vector2i& m_list);
     void order3(const vector1i& l_list, const vector2i& m_list);
-    void order4(const vector1i& l_list, const vector2i& m_list);
+    //void order4(const vector1i& l_list, const vector2i& m_list);
+    void order4(const vector1i& l_list);
     void order5(const vector1i& l_list, const vector2i& m_list);
     void order6(const vector1i& l_list, const vector2i& m_list);
 
