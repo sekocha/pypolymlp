@@ -1,10 +1,13 @@
 """API functions for enumerating polynomial invariants."""
 
+import io
+
 import numpy as np
+from numpy.typing import NDArray
 
 from pypolymlp.polyinv.eig_solver import eigh
-from pypolymlp.polyinv.polyinv_io import save_polyinv_lcombs
-from pypolymlp.polyinv.polyinv_utils import get_l_combs  # , get_m_combs
+from pypolymlp.polyinv.polyinv_io import save_polyinv_coeffs, save_polyinv_lcombs
+from pypolymlp.polyinv.polyinv_utils import get_l_combs
 from pypolymlp.polyinv.projector import build_projector
 
 
@@ -14,7 +17,8 @@ def run_enum(
     minl: int | None = None,
     eliminate_odd: bool = True,
     lproj: int = 0,
-    filename: str = "polyinv_angular.yaml",
+    filename_l: str = "polyinv_angular.yaml",
+    filename_coeffs: str = "polyinv_coeffs.yaml",
     verbose: bool = False,
 ):
     """Enumerate polynomial invariants."""
@@ -22,7 +26,18 @@ def run_enum(
         raise RuntimeError("Orders must be lower than or equal to 6.")
 
     for order in orders:
-        run_enum_single_order(order, maxl, minl, eliminate_odd, lproj, verbose=verbose)
+        filename1 = filename_l.replace(".yaml", "_" + str(order) + ".yaml")
+        filename2 = filename_coeffs.replace(".yaml", "_" + str(order) + ".yaml")
+        run_enum_single_order(
+            order=order,
+            maxl=maxl,
+            minl=minl,
+            eliminate_odd=eliminate_odd,
+            lproj=lproj,
+            filename_l=filename1,
+            filename_coeffs=filename2,
+            verbose=verbose,
+        )
 
 
 def run_enum_single_order(
@@ -32,6 +47,7 @@ def run_enum_single_order(
     eliminate_odd: bool = True,
     lproj: int = 0,
     filename_l: str = "polyinv_angular.yaml",
+    filename_coeffs: str = "polyinv_coeffs.yaml",
     verbose: bool = False,
 ):
     """Enumerate polynomial invariants for single order."""
@@ -50,14 +66,11 @@ def run_enum_single_order(
     n_list = n_list[match]
     save_polyinv_lcombs(lcomb_all, n_list, lproj, filename=filename_l)
 
-    for lcomb in lcomb_all:
-        eigvecs, lm_indices = solve(lcomb, lproj, verbose=verbose)
-        print(eigvecs.shape, lm_indices.shape)
-        for i, eig in enumerate(eigvecs.T):
-            print("basis", i)
-            for c, lm in zip(eig, lm_indices):
-                print(c)
-                print("-", list(lm[:, 1]))
+    with open(filename_coeffs, "w") as f:
+        print("invariants:", file=f)
+        for lcomb in lcomb_all:
+            eigvecs, lm_indices = solve(lcomb, lproj, verbose=verbose)
+            save_polyinv_coeffs(eigvecs, lm_indices, filename=f)
 
 
 def solve(lcomb: list, lproj: int = 0, verbose: bool = False):
@@ -76,4 +89,16 @@ def solve(lcomb: list, lproj: int = 0, verbose: bool = False):
         print("- Core projector shape:", proj.shape, flush=True)
 
     eigvecs = eigh(proj, log_level=verbose)
+    if verbose:
+        print("- Basis shape:         ", eigvecs.shape, flush=True)
     return (eigvecs, lm_indices)
+
+
+def save_coeffs(
+    eigvecs: NDArray,
+    lm_indices: NDArray,
+    filename: str | io.IOBase = "polyinv_coeffs.yaml",
+    mode: str = "a",
+):
+    """Save coefficients of polynomial invariants."""
+    save_polyinv_coeffs(eigvecs, lm_indices, filename, mode)
