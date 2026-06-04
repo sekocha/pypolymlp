@@ -13,14 +13,13 @@
 
 #include "mlpcpp.h"
 
+
 class Projector{
 
     vector1i row, col;
     vector1d data;
 
     int lm_to_matrix_index(const vector1i& l_list, const vector1i& m_array);
-
-    //vector1i check_m_nonzero(const vector1i& l_list, const vector1i& m_list);
     bool check_m_nonzero(
         const vector1i& l_list,
         vector1i& mv1,
@@ -28,29 +27,33 @@ class Projector{
         int& index,
         int& index_p);
 
-
-    vector2i mlist_nonzero(const vector1i& l_list, const vector2i& m_list);
-
-    void order2(const vector1i& l_list, const vector2i& m_list);
-    void order3(const vector1i& l_list, const vector2i& m_list);
-    //void order4(const vector1i& l_list, const vector2i& m_list);
+    void order2(const vector1i& l_list);
+    void order3(const vector1i& l_list);
     void order4(const vector1i& l_list);
-    void order5(const vector1i& l_list, const vector2i& m_list);
-    void order6(const vector1i& l_list, const vector2i& m_list);
+    void order5(const vector1i& l_list);
+    void order6(const vector1i& l_list);
 
-    void array_initialize(const vector2i& m_list);
+    void add(
+        const int index,
+        const int index_p,
+        const double num,
+        vector1i& row_vec,
+        vector1i& col_vec,
+        vector1d& data_vec);
+
+    void collect(vector2i& rows, vector2i& cols, vector2d& vals);
+    void array_initialize();
+
+    double clebsch_gordan
+        (const int& l1, const int& l2, const int& l,
+         const int& m1, const int& m2, const int& m);
 
     public:
 
     Projector();
     ~Projector();
 
-    void build_projector(const vector1i& l_list, const vector2i& m_list);
-
-    double clebsch_gordan
-        (const int& l1, const int& l2, const int& l,
-         const int& m1, const int& m2, const int& m);
-
+    void build_projector(const vector1i& l_list);
     const vector1i& get_row() const;
     const vector1i& get_col() const;
     const vector1d& get_data() const;
