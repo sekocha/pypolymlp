@@ -53,21 +53,3 @@ def matrix_index_to_lm(index: int, l_list: list):
         n = n // (2 * l1 + 1)
     i_list = reversed(i_list)
     return np.array([(l, i - l) for i, l in zip(i_list, l_list)])
-
-
-# def get_m_combs(lcomb: list | NDArray, lproj: int = 0):
-#    """Calculate all combinations of m values.
-#
-#    m_array = [range(-l,l+1) for l in lcomb]
-#    m_all = [mcomb for mcomb in itertools.product(*m_array)
-#             if abs(sum(mcomb)) <= lproj]
-#    """
-#    if lproj > 0:
-#        return []
-#
-#    m_array = []
-#    for l1 in lcomb[:-1]:
-#        m_array.append(range(-l1, l1 + 1))
-#        m_array.append(range(-l1, l1 + 1))
-#    m_all = list(itertools.product(*m_array))
-#    return m_all

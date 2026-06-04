@@ -1,18 +1,12 @@
 """Utility functions for enumerating polynomial invariants."""
 
-import argparse
-import itertools
-import os
-# from math import pi, sin
-
 import numpy as np
 from numpy.typing import NDArray
-from scipy.integrate import quad
 
 
 def save_polyinv_lcombs(
-    lcomb_all: NDArray, 
-    n_list: NDArray, 
+    lcomb_all: NDArray,
+    n_list: NDArray,
     lproj: int = 0,
     filename: str = "polyinv_angular.yaml",
 ):
