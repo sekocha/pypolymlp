@@ -2,8 +2,8 @@
 
 import numpy as np
 
-# from pypolymlp.polyinv.polyinv_io import save_polyinv_lcombs
 from pypolymlp.polyinv.eig_solver import eigh
+from pypolymlp.polyinv.polyinv_io import save_polyinv_lcombs
 from pypolymlp.polyinv.polyinv_utils import get_l_combs  # , get_m_combs
 from pypolymlp.polyinv.projector import build_projector
 
@@ -12,6 +12,7 @@ def run_enum(
     orders: list,
     maxl: int = 10,
     minl: int | None = None,
+    eliminate_odd: bool = True,
     lproj: int = 0,
     filename: str = "polyinv_angular.yaml",
     verbose: bool = False,
@@ -21,14 +22,16 @@ def run_enum(
         raise RuntimeError("Orders must be lower than or equal to 6.")
 
     for order in orders:
-        run_enum_single_order(order, maxl, minl, lproj, verbose=verbose)
+        run_enum_single_order(order, maxl, minl, eliminate_odd, lproj, verbose=verbose)
 
 
 def run_enum_single_order(
     order: int,
     maxl: int = 10,
     minl: int | None = None,
+    eliminate_odd: bool = True,
     lproj: int = 0,
+    filename_l: str = "polyinv_angular.yaml",
     verbose: bool = False,
 ):
     """Enumerate polynomial invariants for single order."""
@@ -39,19 +42,28 @@ def run_enum_single_order(
         match2 = np.any(lcomb_all >= minl, axis=1)
         match = match & match2
 
+    if eliminate_odd:
+        match2 = np.sum(lcomb_all, axis=1) % 2 == 0
+        match = match & match2
+
     lcomb_all = lcomb_all[match]
     n_list = n_list[match]
-    # save_polyinv_lcombs(lcomb_all, n_list, lproj, filename=filename)
-    # print(lcomb_all)
+    save_polyinv_lcombs(lcomb_all, n_list, lproj, filename=filename_l)
+
     for lcomb in lcomb_all:
-        solve(lcomb, lproj, verbose=verbose)
+        eigvecs, lm_indices = solve(lcomb, lproj, verbose=verbose)
+        print(eigvecs.shape, lm_indices.shape)
+        for i, eig in enumerate(eigvecs.T):
+            print("basis", i)
+            for c, lm in zip(eig, lm_indices):
+                print(c)
+                print("-", list(lm[:, 1]))
 
 
 def solve(lcomb: list, lproj: int = 0, verbose: bool = False):
     """Solve projector."""
     if lproj != 0:
         # for mproj in range(-lproj, lproj + 1):
-        # mproj = 0
         raise RuntimeError("Function solve is available only for lproj = 0.")
 
     if verbose:
