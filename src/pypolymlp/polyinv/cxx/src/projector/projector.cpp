@@ -51,19 +51,56 @@ bool Projector::check_m_nonzero(
 }
 
 
-void Projector::array_initialize(){
+void Projector::precalc_common(
+    const std::set<int>& nonzero_indices,
+    std::map<int, int>& map_indices){
 
-    row.clear();
-    col.clear();
-    data.clear();
+    const int core_size = nonzero_indices.size();
+    row = vector1i(core_size);
+
+    int seq = 0;
+    for (int idx: nonzero_indices) {
+        map_indices[idx] = seq;
+        row[seq] = idx;
+        ++seq;
+    }
 }
+
+
+void Projector::order2_pre(const vector1i& l_list, std::map<int, int>& map_indices){
+
+    const int l1 = l_list[0];
+    const int l2 = l_list[1];
+
+    std::set<int> nonzero_indices;
+    for (int m1=-l1; m1<=l1; ++m1)
+    for (int m1p=-l1; m1p<=l1; ++m1p){
+        int index, index_p;
+        vector1i mv1 = {m1};
+        vector1i mv2 = {m1p};
+        bool nonzero = check_m_nonzero(l_list, mv1, mv2, index, index_p);
+        if (!nonzero)
+            continue;
+
+        nonzero_indices.insert(index);
+        nonzero_indices.insert(index_p);
+    }
+    precalc_common(nonzero_indices, map_indices);
+
+}
+
 
 void Projector::order2(const vector1i& l_list){
 
-    array_initialize();
+    const int l1 = l_list[0];
+    const int l2 = l_list[1];
 
-    int l1, l2;
-    l1 = l_list[0]; l2 = l_list[1];
+    std::map<int, int> map_indices;
+    order2_pre(l_list, map_indices);
+
+    const int core_size = map_indices.size();
+    core = Eigen::MatrixXd::Zero(core_size, core_size);
+
     for (int m1=-l1; m1<=l1; ++m1)
     for (int m1p=-l1; m1p<=l1; ++m1p){
         int index, index_p;
@@ -79,248 +116,331 @@ void Projector::order2(const vector1i& l_list){
             num = pow(-1, abs(m2 - m2p)) / (2 * l2 + 1);
         }
         else num = 0.0;
-        add(index, index_p, num, row, col, data);
+
+        core(map_indices[index], map_indices[index_p]) = num;
+        if (index != index_p){
+            core(map_indices[index_p], map_indices[index]) = num;
+        }
     }
+}
+
+void Projector::order3_pre(const vector1i& l_list, std::map<int, int>& map_indices){
+
+    const int l1 = l_list[0];
+    const int l2 = l_list[1];
+
+    std::set<int> nonzero_indices;
+    for (int m1=-l1; m1<=l1; ++m1)
+    for (int m1p=-l1; m1p<=l1; ++m1p)
+    for (int m2=-l2; m2<=l2; ++m2)
+    for (int m2p=-l2; m2p<=l2; ++m2p)
+    {
+        int index, index_p;
+        vector1i mv1 = {m1, m2};
+        vector1i mv2 = {m1p, m2p};
+        bool nonzero = check_m_nonzero(l_list, mv1, mv2, index, index_p);
+        if (!nonzero)
+            continue;
+
+        nonzero_indices.insert(index);
+        nonzero_indices.insert(index_p);
+    }
+    precalc_common(nonzero_indices, map_indices);
 }
 
 
 void Projector::order3(const vector1i& l_list){
 
-    array_initialize();
+    const int l1 = l_list[0];
+    const int l2 = l_list[1];
+    const int l3 = l_list[2];
 
-    int l1, l2, l3;
-    l1 = l_list[0]; l2 = l_list[1]; l3 = l_list[2];
+    std::map<int, int> map_indices;
+    order3_pre(l_list, map_indices);
 
-    int nt = omp_get_max_threads();
-    vector2i rows(nt), cols(nt);
-    vector2d vals(nt);
+    const int core_size = map_indices.size();
+    core = Eigen::MatrixXd::Zero(core_size, core_size);
+
     #ifdef _OPENMP
-    #pragma omp parallel
+    #pragma omp parallel for collapse(4) schedule(dynamic)
     #endif
+    for (int m1=-l1; m1<=l1; ++m1)
+    for (int m1p=-l1; m1p<=l1; ++m1p)
+    for (int m2=-l2; m2<=l2; ++m2)
+    for (int m2p=-l2; m2p<=l2; ++m2p)
     {
-        int tid = omp_get_thread_num();
+        int index, index_p;
+        vector1i mv1 = {m1, m2};
+        vector1i mv2 = {m1p, m2p};
+        bool nonzero = check_m_nonzero(l_list, mv1, mv2, index, index_p);
+        if (!nonzero)
+            continue;
 
-        #ifdef _OPENMP
-        #pragma omp for collapse(4) schedule(dynamic)
-        #endif
-        for (int m1=-l1; m1<=l1; ++m1)
-        for (int m1p=-l1; m1p<=l1; ++m1p)
-        for (int m2=-l2; m2<=l2; ++m2)
-        for (int m2p=-l2; m2p<=l2; ++m2p)
-        {
-            int index, index_p;
-            vector1i mv1 = {m1, m2};
-            vector1i mv2 = {m1p, m2p};
-            bool nonzero = check_m_nonzero(l_list, mv1, mv2, index, index_p);
-            if (!nonzero)
-                continue;
+        int m3 = mv1[2], m3p = mv2[2];
+        double num = pow(-1, abs(m3-m3p))/(2*l3+1)
+              * clebsch_gordan(l1, l2, l3, m1, m2, -m3)
+              * clebsch_gordan(l1, l2, l3, m1p, m2p, -m3p);
 
-            int m3 = mv1[2], m3p = mv2[2];
-            double num = pow(-1, abs(m3-m3p))/(2*l3+1)
-                  * clebsch_gordan(l1, l2, l3, m1, m2, -m3)
-                  * clebsch_gordan(l1, l2, l3, m1p, m2p, -m3p);
-            add(index, index_p, num, rows[tid], cols[tid], vals[tid]);
+        core(map_indices[index], map_indices[index_p]) = num;
+        if (index != index_p){
+            core(map_indices[index_p], map_indices[index]) = num;
         }
     }
-    collect(rows, cols, vals);
+}
+
+void Projector::order4_pre(const vector1i& l_list, std::map<int, int>& map_indices){
+
+    const int l1 = l_list[0];
+    const int l2 = l_list[1];
+    const int l3 = l_list[2];
+
+    std::set<int> nonzero_indices;
+    for (int m1=-l1; m1<=l1; ++m1)
+    for (int m1p=-l1; m1p<=l1; ++m1p)
+    for (int m2=-l2; m2<=l2; ++m2)
+    for (int m2p=-l2; m2p<=l2; ++m2p)
+    for (int m3=-l3; m3<=l3; ++m3)
+    for (int m3p=-l3; m3p<=l3; ++m3p)
+    {
+        int index, index_p;
+        vector1i mv1 = {m1, m2, m3};
+        vector1i mv2 = {m1p, m2p, m3p};
+        bool nonzero = check_m_nonzero(l_list, mv1, mv2, index, index_p);
+        if (!nonzero)
+            continue;
+
+        nonzero_indices.insert(index);
+        nonzero_indices.insert(index_p);
+    }
+    precalc_common(nonzero_indices, map_indices);
 }
 
 
 void Projector::order4(const vector1i& l_list){
 
-    array_initialize();
+    const int l1 = l_list[0];
+    const int l2 = l_list[1];
+    const int l3 = l_list[2];
+    const int l4 = l_list[3];
 
-    int l1, l2, l3, l4;
-    l1 = l_list[0]; l2 = l_list[1]; l3 = l_list[2]; l4 = l_list[3];
+    std::map<int, int> map_indices;
+    order4_pre(l_list, map_indices);
 
-    int nt = omp_get_max_threads();
-    vector2i rows(nt), cols(nt);
-    vector2d vals(nt);
+    const int core_size = map_indices.size();
+    core = Eigen::MatrixXd::Zero(core_size, core_size);
+
     #ifdef _OPENMP
-    #pragma omp parallel
+    #pragma omp parallel for collapse(6) schedule(dynamic)
     #endif
+    for (int m1=-l1; m1<=l1; ++m1)
+    for (int m1p=-l1; m1p<=l1; ++m1p)
+    for (int m2=-l2; m2<=l2; ++m2)
+    for (int m2p=-l2; m2p<=l2; ++m2p)
+    for (int m3=-l3; m3<=l3; ++m3)
+    for (int m3p=-l3; m3p<=l3; ++m3p)
     {
-        int tid = omp_get_thread_num();
+        int index, index_p;
+        vector1i mv1 = {m1, m2, m3};
+        vector1i mv2 = {m1p, m2p, m3p};
+        bool nonzero = check_m_nonzero(l_list, mv1, mv2, index, index_p);
+        if (!nonzero)
+            continue;
 
-        #ifdef _OPENMP
-        #pragma omp for collapse(6) schedule(dynamic)
-        #endif
-        for (int m1=-l1; m1<=l1; ++m1)
-        for (int m1p=-l1; m1p<=l1; ++m1p)
-        for (int m2=-l2; m2<=l2; ++m2)
-        for (int m2p=-l2; m2p<=l2; ++m2p)
-        for (int m3=-l3; m3<=l3; ++m3)
-        for (int m3p=-l3; m3p<=l3; ++m3p)
-        {
-            int index, index_p;
-            vector1i mv1 = {m1, m2, m3};
-            vector1i mv2 = {m1p, m2p, m3p};
-            bool nonzero = check_m_nonzero(l_list, mv1, mv2, index, index_p);
-            if (!nonzero)
-                continue;
+        int m4 = mv1[3], m4p = mv2[3];
+        double num(0);
+        for (int l = abs(l1-l2); l < l1+l2+1; ++l){
+            num += clebsch_gordan(l1, l2, l, m1, m2, -m3-m4)
+                * clebsch_gordan(l1, l2, l, m1p, m2p, -m3p-m4p)
+                * clebsch_gordan(l3, l, l4, m3, -m3-m4, -m4)
+                * clebsch_gordan(l3, l, l4, m3p, -m3p-m4p, -m4p);
+        }
+        num *= pow(-1, abs(m4-m4p))/(2*l4+1);
 
-            int m4 = mv1[3], m4p = mv2[3];
-            double num(0);
-            for (int l = abs(l1-l2); l < l1+l2+1; ++l){
-                num += clebsch_gordan(l1, l2, l, m1, m2, -m3-m4)
-                    * clebsch_gordan(l1, l2, l, m1p, m2p, -m3p-m4p)
-                    * clebsch_gordan(l3, l, l4, m3, -m3-m4, -m4)
-                    * clebsch_gordan(l3, l, l4, m3p, -m3p-m4p, -m4p);
-            }
-            num *= pow(-1, abs(m4-m4p))/(2*l4+1);
-            add(index, index_p, num, rows[tid], cols[tid], vals[tid]);
+        core(map_indices[index], map_indices[index_p]) = num;
+        if (index != index_p){
+            core(map_indices[index_p], map_indices[index]) = num;
         }
     }
-    collect(rows, cols, vals);
 }
+
+void Projector::order5_pre(const vector1i& l_list, std::map<int, int>& map_indices){
+
+    const int l1 = l_list[0];
+    const int l2 = l_list[1];
+    const int l3 = l_list[2];
+    const int l4 = l_list[3];
+
+    std::set<int> nonzero_indices;
+    for (int m1=-l1; m1<=l1; ++m1)
+    for (int m1p=-l1; m1p<=l1; ++m1p)
+    for (int m2=-l2; m2<=l2; ++m2)
+    for (int m2p=-l2; m2p<=l2; ++m2p)
+    for (int m3=-l3; m3<=l3; ++m3)
+    for (int m3p=-l3; m3p<=l3; ++m3p)
+    for (int m4=-l4; m4<=l4; ++m4)
+    for (int m4p=-l4; m4p<=l4; ++m4p)
+    {
+        int index, index_p;
+        vector1i mv1 = {m1, m2, m3, m4};
+        vector1i mv2 = {m1p, m2p, m3p, m4p};
+        bool nonzero = check_m_nonzero(l_list, mv1, mv2, index, index_p);
+        if (!nonzero)
+            continue;
+
+        nonzero_indices.insert(index);
+        nonzero_indices.insert(index_p);
+    }
+    precalc_common(nonzero_indices, map_indices);
+}
+
 
 void Projector::order5(const vector1i& l_list){
 
-    array_initialize();
-    int l1, l2, l3, l4, l5;
-    l1 = l_list[0]; l2 = l_list[1]; l3 = l_list[2]; l4 = l_list[3]; l5 = l_list[4];
+    const int l1 = l_list[0];
+    const int l2 = l_list[1];
+    const int l3 = l_list[2];
+    const int l4 = l_list[3];
+    const int l5 = l_list[4];
 
-    int nt = omp_get_max_threads();
-    vector2i rows(nt), cols(nt);
-    vector2d vals(nt);
+    std::map<int, int> map_indices;
+    order5_pre(l_list, map_indices);
+
+    const int core_size = map_indices.size();
+    core = Eigen::MatrixXd::Zero(core_size, core_size);
+
     #ifdef _OPENMP
-    #pragma omp parallel
+    #pragma omp parallel for collapse(8) schedule(dynamic)
     #endif
+    for (int m1=-l1; m1<=l1; ++m1)
+    for (int m1p=-l1; m1p<=l1; ++m1p)
+    for (int m2=-l2; m2<=l2; ++m2)
+    for (int m2p=-l2; m2p<=l2; ++m2p)
+    for (int m3=-l3; m3<=l3; ++m3)
+    for (int m3p=-l3; m3p<=l3; ++m3p)
+    for (int m4=-l4; m4<=l4; ++m4)
+    for (int m4p=-l4; m4p<=l4; ++m4p)
     {
-        int tid = omp_get_thread_num();
+        int index, index_p;
+        vector1i mv1 = {m1, m2, m3, m4};
+        vector1i mv2 = {m1p, m2p, m3p, m4p};
+        bool nonzero = check_m_nonzero(l_list, mv1, mv2, index, index_p);
+        if (!nonzero)
+            continue;
 
-        #ifdef _OPENMP
-        #pragma omp for collapse(8) schedule(dynamic)
-        #endif
-        for (int m1=-l1; m1<=l1; ++m1)
-        for (int m1p=-l1; m1p<=l1; ++m1p)
-        for (int m2=-l2; m2<=l2; ++m2)
-        for (int m2p=-l2; m2p<=l2; ++m2p)
-        for (int m3=-l3; m3<=l3; ++m3)
-        for (int m3p=-l3; m3p<=l3; ++m3p)
-        for (int m4=-l4; m4<=l4; ++m4)
-        for (int m4p=-l4; m4p<=l4; ++m4p)
-        {
-            int index, index_p;
-            vector1i mv1 = {m1, m2, m3, m4};
-            vector1i mv2 = {m1p, m2p, m3p, m4p};
-            bool nonzero = check_m_nonzero(l_list, mv1, mv2, index, index_p);
-            if (!nonzero)
-                continue;
+        int m5 = mv1[4], m5p = mv2[4];
+        double num(0);
+        for (int lq1 = abs(l1-l2); lq1 < l1+l2+1; ++lq1){
+            for (int lq2 = abs(l3-lq1); lq2 < l3+lq1+1; ++lq2){
+                num += clebsch_gordan(l1,l2,lq1,m1,m2,m1+m2)
+                    * clebsch_gordan(l1,l2,lq1,m1p,m2p,m1p+m2p)
+                    * clebsch_gordan(l3,lq1,lq2,m3,m1+m2,m1+m2+m3)
+                    * clebsch_gordan(l3,lq1,lq2,m3p,m1p+m2p,m1p+m2p+m3p)
+                    * clebsch_gordan(l4,lq2,l5,m4,m1+m2+m3,-m5)
+                    * clebsch_gordan(l4,lq2,l5,m4p,m1p+m2p+m3p,-m5p);
+            }
+        }
+        num *= pow(-1, abs(m5-m5p))/(2*l5+1);
 
-            int m5 = mv1[4], m5p = mv2[4];
-            double num(0);
-            for (int lq1 = abs(l1-l2); lq1 < l1+l2+1; ++lq1){
-                for (int lq2 = abs(l3-lq1); lq2 < l3+lq1+1; ++lq2){
+        core(map_indices[index], map_indices[index_p]) = num;
+        if (index != index_p){
+            core(map_indices[index_p], map_indices[index]) = num;
+        }
+    }
+}
+
+void Projector::order6_pre(const vector1i& l_list, std::map<int, int>& map_indices){
+
+    const int l1 = l_list[0];
+    const int l2 = l_list[1];
+    const int l3 = l_list[2];
+    const int l4 = l_list[3];
+    const int l5 = l_list[4];
+
+    std::set<int> nonzero_indices;
+    for (int m1=-l1; m1<=l1; ++m1)
+    for (int m1p=-l1; m1p<=l1; ++m1p)
+    for (int m2=-l2; m2<=l2; ++m2)
+    for (int m2p=-l2; m2p<=l2; ++m2p)
+    for (int m3=-l3; m3<=l3; ++m3)
+    for (int m3p=-l3; m3p<=l3; ++m3p)
+    for (int m4=-l4; m4<=l4; ++m4)
+    for (int m4p=-l4; m4p<=l4; ++m4p)
+    for (int m5=-l5; m5<=l5; ++m5)
+    for (int m5p=-l5; m5p<=l5; ++m5p)
+    {
+        int index, index_p;
+        vector1i mv1 = {m1, m2, m3, m4, m5};
+        vector1i mv2 = {m1p, m2p, m3p, m4p, m5p};
+        bool nonzero = check_m_nonzero(l_list, mv1, mv2, index, index_p);
+        if (!nonzero)
+            continue;
+
+        nonzero_indices.insert(index);
+        nonzero_indices.insert(index_p);
+    }
+    precalc_common(nonzero_indices, map_indices);
+}
+
+
+void Projector::order6(const vector1i& l_list){
+
+    const int l1 = l_list[0];
+    const int l2 = l_list[1];
+    const int l3 = l_list[2];
+    const int l4 = l_list[3];
+    const int l5 = l_list[4];
+    const int l6 = l_list[5];
+
+    std::map<int, int> map_indices;
+    order6_pre(l_list, map_indices);
+
+    const int core_size = map_indices.size();
+    core = Eigen::MatrixXd::Zero(core_size, core_size);
+
+    #ifdef _OPENMP
+    #pragma omp parallel for collapse(10) schedule(dynamic)
+    #endif
+    for (int m1=-l1; m1<=l1; ++m1)
+    for (int m1p=-l1; m1p<=l1; ++m1p)
+    for (int m2=-l2; m2<=l2; ++m2)
+    for (int m2p=-l2; m2p<=l2; ++m2p)
+    for (int m3=-l3; m3<=l3; ++m3)
+    for (int m3p=-l3; m3p<=l3; ++m3p)
+    for (int m4=-l4; m4<=l4; ++m4)
+    for (int m4p=-l4; m4p<=l4; ++m4p)
+    for (int m5=-l5; m5<=l5; ++m5)
+    for (int m5p=-l5; m5p<=l5; ++m5p)
+    {
+        int index, index_p;
+        vector1i mv1 = {m1, m2, m3, m4, m5};
+        vector1i mv2 = {m1p, m2p, m3p, m4p, m5p};
+        bool nonzero = check_m_nonzero(l_list, mv1, mv2, index, index_p);
+        if (!nonzero)
+            continue;
+
+        int m6 = mv1[5], m6p = mv2[5];
+        double num(0);
+        for (int lq1 = abs(l1-l2); lq1 < l1+l2+1; ++lq1){
+            for (int lq2 = abs(l3-lq1); lq2 < l3+lq1+1; ++lq2){
+                for (int lq3 = abs(l4-lq2); lq3 < l4+lq2+1; ++lq3){
                     num += clebsch_gordan(l1,l2,lq1,m1,m2,m1+m2)
                         * clebsch_gordan(l1,l2,lq1,m1p,m2p,m1p+m2p)
                         * clebsch_gordan(l3,lq1,lq2,m3,m1+m2,m1+m2+m3)
                         * clebsch_gordan(l3,lq1,lq2,m3p,m1p+m2p,m1p+m2p+m3p)
-                        * clebsch_gordan(l4,lq2,l5,m4,m1+m2+m3,-m5)
-                        * clebsch_gordan(l4,lq2,l5,m4p,m1p+m2p+m3p,-m5p);
+                        * clebsch_gordan(l4,lq2,lq3,m4,m1+m2+m3,m1+m2+m3+m4)
+                        * clebsch_gordan
+                            (l4,lq2,lq3,m4p,m1p+m2p+m3p,m1p+m2p+m3p+m4p)
+                        * clebsch_gordan(l5,lq3,l6,m5,m1+m2+m3+m4,-m6)
+                        * clebsch_gordan(l5,lq3,l6,m5p,m1p+m2p+m3p+m4p,-m6p);
                 }
             }
-            num *= pow(-1, abs(m5-m5p))/(2*l5+1);
-            add(index, index_p, num, rows[tid], cols[tid], vals[tid]);
         }
-    }
-    collect(rows, cols, vals);
-}
+        num *= pow(-1, abs(m6-m6p))/(2*l6+1);
 
-void Projector::order6(const vector1i& l_list){
-
-    array_initialize();
-    int l1, l2, l3, l4, l5, l6;
-    l1 = l_list[0]; l2 = l_list[1]; l3 = l_list[2];
-    l4 = l_list[3]; l5 = l_list[4]; l6 = l_list[5];
-
-    int nt = omp_get_max_threads();
-    vector2i rows(nt), cols(nt);
-    vector2d vals(nt);
-    #ifdef _OPENMP
-    #pragma omp parallel
-    #endif
-    {
-        int tid = omp_get_thread_num();
-
-        #ifdef _OPENMP
-        #pragma omp for collapse(10) schedule(dynamic)
-        #endif
-        for (int m1=-l1; m1<=l1; ++m1)
-        for (int m1p=-l1; m1p<=l1; ++m1p)
-        for (int m2=-l2; m2<=l2; ++m2)
-        for (int m2p=-l2; m2p<=l2; ++m2p)
-        for (int m3=-l3; m3<=l3; ++m3)
-        for (int m3p=-l3; m3p<=l3; ++m3p)
-        for (int m4=-l4; m4<=l4; ++m4)
-        for (int m4p=-l4; m4p<=l4; ++m4p)
-        for (int m5=-l5; m5<=l5; ++m5)
-        for (int m5p=-l5; m5p<=l5; ++m5p)
-        {
-            int index, index_p;
-            vector1i mv1 = {m1, m2, m3, m4, m5};
-            vector1i mv2 = {m1p, m2p, m3p, m4p, m5p};
-            bool nonzero = check_m_nonzero(l_list, mv1, mv2, index, index_p);
-            if (!nonzero)
-                continue;
-
-            int m6 = mv1[5], m6p = mv2[5];
-            double num(0);
-            for (int lq1 = abs(l1-l2); lq1 < l1+l2+1; ++lq1){
-                for (int lq2 = abs(l3-lq1); lq2 < l3+lq1+1; ++lq2){
-                    for (int lq3 = abs(l4-lq2); lq3 < l4+lq2+1; ++lq3){
-                        num += clebsch_gordan(l1,l2,lq1,m1,m2,m1+m2)
-                            * clebsch_gordan(l1,l2,lq1,m1p,m2p,m1p+m2p)
-                            * clebsch_gordan(l3,lq1,lq2,m3,m1+m2,m1+m2+m3)
-                            * clebsch_gordan(l3,lq1,lq2,m3p,m1p+m2p,m1p+m2p+m3p)
-                            * clebsch_gordan(l4,lq2,lq3,m4,m1+m2+m3,m1+m2+m3+m4)
-                            * clebsch_gordan
-                                (l4,lq2,lq3,m4p,m1p+m2p+m3p,m1p+m2p+m3p+m4p)
-                            * clebsch_gordan(l5,lq3,l6,m5,m1+m2+m3+m4,-m6)
-                            * clebsch_gordan(l5,lq3,l6,m5p,m1p+m2p+m3p+m4p,-m6p);
-                    }
-                }
-            }
-            num *= pow(-1, abs(m6-m6p))/(2*l6+1);
-            add(index, index_p, num, rows[tid], cols[tid], vals[tid]);
+        core(map_indices[index], map_indices[index_p]) = num;
+        if (index != index_p){
+            core(map_indices[index_p], map_indices[index]) = num;
         }
-    }
-    collect(rows, cols, vals);
-}
-
-
-void Projector::add(
-    const int index,
-    const int index_p,
-    const double num,
-    vector1i& row_vec,
-    vector1i& col_vec,
-    vector1d& data_vec){
-
-    row_vec.emplace_back(index);
-    col_vec.emplace_back(index_p);
-    data_vec.emplace_back(num);
-    if (index != index_p){
-        row_vec.emplace_back(index_p);
-        col_vec.emplace_back(index);
-        data_vec.emplace_back(num);
-    }
-}
-
-
-void Projector::collect(vector2i& rows, vector2i& cols, vector2d& vals){
-    const int nt = rows.size();
-    for (int t = 0; t < nt; ++t){
-        row.insert(row.end(), rows[t].begin(), rows[t].end());
-        vector1i().swap(rows[t]);
-    }
-    for (int t = 0; t < nt; ++t){
-        col.insert(col.end(), cols[t].begin(), cols[t].end());
-        vector1i().swap(cols[t]);
-    }
-    for (int t = 0; t < nt; ++t){
-        data.insert(data.end(), vals[t].begin(), vals[t].end());
-        vector1d().swap(vals[t]);
     }
 }
 
@@ -354,6 +474,5 @@ double Projector::clebsch_gordan
 
 }
 
+Eigen::MatrixXd& Projector::get_core(){ return core; }
 const vector1i& Projector::get_row() const{ return row; }
-const vector1i& Projector::get_col() const{ return col; }
-const vector1d& Projector::get_data() const{ return data; }

@@ -8,16 +8,20 @@
 #ifndef __PROJECTOR
 #define __PROJECTOR
 
-#include <gsl/gsl_sf_coupling.h>
+#include <set>
+#include <map>
 #include <omp.h>
+
+#include <gsl/gsl_sf_coupling.h>
+#include <Eigen/Dense>
 
 #include "mlpcpp.h"
 
 
 class Projector{
 
-    vector1i row, col;
-    vector1d data;
+    Eigen::MatrixXd core;
+    vector1i row;
 
     int lm_to_matrix_index(const vector1i& l_list, const vector1i& m_array);
     bool check_m_nonzero(
@@ -33,16 +37,15 @@ class Projector{
     void order5(const vector1i& l_list);
     void order6(const vector1i& l_list);
 
-    void add(
-        const int index,
-        const int index_p,
-        const double num,
-        vector1i& row_vec,
-        vector1i& col_vec,
-        vector1d& data_vec);
+    void precalc_common(
+        const std::set<int>& nonzero_indices,
+        std::map<int, int>& map_indices);
 
-    void collect(vector2i& rows, vector2i& cols, vector2d& vals);
-    void array_initialize();
+    void order2_pre(const vector1i& l_list, std::map<int, int>& map_indices);
+    void order3_pre(const vector1i& l_list, std::map<int, int>& map_indices);
+    void order4_pre(const vector1i& l_list, std::map<int, int>& map_indices);
+    void order5_pre(const vector1i& l_list, std::map<int, int>& map_indices);
+    void order6_pre(const vector1i& l_list, std::map<int, int>& map_indices);
 
     double clebsch_gordan
         (const int& l1, const int& l2, const int& l,
@@ -54,9 +57,8 @@ class Projector{
     ~Projector();
 
     void build_projector(const vector1i& l_list);
+    Eigen::MatrixXd& get_core();
     const vector1i& get_row() const;
-    const vector1i& get_col() const;
-    const vector1d& get_data() const;
 };
 
 #endif

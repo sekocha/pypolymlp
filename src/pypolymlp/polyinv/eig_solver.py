@@ -36,6 +36,4 @@ def eigh(
             verbose=verbose,
         )
         eigvecs = res.eigvecs.recover()
-    print(eigvecs.shape)
-    print(type(eigvecs))
     return eigvecs

@@ -1,11 +1,9 @@
 """API functions for enumerating polynomial invariants."""
 
 import numpy as np
-from symfc.api_symfc import eigsh as eigsh_symfc
-
-from pypolymlp.polyinv.eig_solver import eigsh
 
 # from pypolymlp.polyinv.polyinv_io import save_polyinv_lcombs
+from pypolymlp.polyinv.eig_solver import eigh
 from pypolymlp.polyinv.polyinv_utils import get_l_combs  # , get_m_combs
 from pypolymlp.polyinv.projector import build_projector
 
@@ -63,10 +61,7 @@ def solve(lcomb: list, lproj: int = 0, verbose: bool = False):
     proj, lm_indices = build_projector(lcomb)
     if verbose:
         print("Solving projector.", flush=True)
-        print("- Projector shape:", proj.shape, flush=True)
-    eigvecs = eigsh_symfc(proj, log_level=verbose)
-    print(eigvecs.shape)
+        print("- Core projector shape:", proj.shape, flush=True)
 
-    eigvecs = eigsh(proj, log_level=verbose)
-    print(eigvecs.shape)
+    eigvecs = eigh(proj, log_level=verbose)
     return (eigvecs, lm_indices)
