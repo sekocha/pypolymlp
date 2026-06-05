@@ -10,7 +10,7 @@
 *****************************************************************************/
 
 #include "projector.h"
-#include <mutex>
+#include <tuple>
 
 Projector::Projector(){}
 Projector::~Projector(){}
@@ -237,6 +237,19 @@ void Projector::order4(const vector1i& l_list){
     std::map<int, int> map_indices;
     order4_pre(l_list, map_indices);
 
+    for (int l = abs(l1-l2); l < l1+l2+1; ++l){
+        for (int m1=-l1; m1<=l1; ++m1){
+            for (int m2=-l2; m2<=l2; ++m2){
+                double val = clebsch_gordan(l1, l2, l, m1, m2, m1+m2);
+                cleb[{l1, l2, l, m1, m2, m1+m2}] = val;
+                for (int m3=-l3; m3<=l3; ++m3){
+                    val = clebsch_gordan(l3, l, l4, m3, m1+m2, m1+m2+m3);
+                    cleb[{l3, l, l4, m3, m1+m2, m1+m2+m3}] = val;
+                }
+            }
+        }
+    }
+
     const int core_size = map_indices.size();
     core = Eigen::MatrixXd::Zero(core_size, core_size);
 
@@ -260,10 +273,10 @@ void Projector::order4(const vector1i& l_list){
         int m4 = mv1[3], m4p = mv2[3];
         double num(0);
         for (int l = abs(l1-l2); l < l1+l2+1; ++l){
-            num += clebsch_gordan(l1, l2, l, m1, m2, -m3-m4)
-                * clebsch_gordan(l1, l2, l, m1p, m2p, -m3p-m4p)
-                * clebsch_gordan(l3, l, l4, m3, -m3-m4, -m4)
-                * clebsch_gordan(l3, l, l4, m3p, -m3p-m4p, -m4p);
+            num += cleb[{l1, l2, l, m1, m2, -m3-m4}]
+                 * cleb[{l1, l2, l, m1p, m2p, -m3p-m4p}]
+                 * cleb[{l3, l, l4, m3, -m3-m4, -m4}]
+                 * cleb[{l3, l, l4, m3p, -m3p-m4p, -m4p}];
         }
         num *= pow(-1, abs(m4-m4p))/(2*l4+1);
 

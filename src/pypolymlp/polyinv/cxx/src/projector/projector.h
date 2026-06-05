@@ -10,6 +10,7 @@
 
 #include <set>
 #include <map>
+#include <mutex>
 #include <omp.h>
 
 #include <gsl/gsl_sf_coupling.h>
@@ -22,6 +23,8 @@ class Projector{
 
     Eigen::MatrixXd core;
     vector1i row;
+
+    std::map<std::tuple<int, int, int, int, int, int>, double> cleb;
 
     int lm_to_matrix_index(const vector1i& l_list, const vector1i& m_array);
     bool check_m_nonzero(
