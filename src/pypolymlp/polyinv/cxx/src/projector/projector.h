@@ -10,6 +10,7 @@
 
 #include <set>
 #include <map>
+#include <tuple>
 #include <mutex>
 #include <omp.h>
 
@@ -24,7 +25,8 @@ class Projector{
     Eigen::MatrixXd core;
     vector1i row;
 
-    std::map<std::tuple<int, int, int, int, int, int>, double> cleb;
+    vector2i m_list;
+    vector1i index_list;
 
     int lm_to_matrix_index(const vector1i& l_list, const vector1i& m_array);
     bool check_m_nonzero(
