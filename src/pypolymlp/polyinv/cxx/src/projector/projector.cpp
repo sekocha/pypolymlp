@@ -35,7 +35,6 @@ bool Projector::check_m_nonzero(
     int& index,
     int& index_p
 ){
-/*
     int mf = - std::accumulate(mv1.begin(), mv1.end(), 0);
     if (abs(mf) > l_list[l_list.size()-1])
         return false;
@@ -46,12 +45,11 @@ bool Projector::check_m_nonzero(
 
     mv1.emplace_back(mf);
     mv2.emplace_back(mfp);
-    */
-    index = lm_to_matrix_index(l_list, mv1);
-    index_p = lm_to_matrix_index(l_list, mv2);
+    //index = lm_to_matrix_index(l_list, mv1);
+    //index_p = lm_to_matrix_index(l_list, mv2);
 
-    if (index > index_p)
-        return false;
+    //if (index > index_p)
+    //    return false;
     return true;
 }
 
@@ -335,7 +333,9 @@ void Projector::order5_pre(const vector1i& l_list, std::map<int, int>& map_indic
     const int l4 = l_list[3];
     const int l5 = l_list[4];
 
-    m_list.clear();
+    //m_list.clear();
+
+    map_m_to_index.clear();
     for (int m1=-l1; m1<=l1; ++m1)
     for (int m2=-l2; m2<=l2; ++m2)
     for (int m3=-l3; m3<=l3; ++m3)
@@ -343,8 +343,9 @@ void Projector::order5_pre(const vector1i& l_list, std::map<int, int>& map_indic
         vector1i mv1 = {m1, m2, m3, m4};
         int mf = - std::accumulate(mv1.begin(), mv1.end(), 0);
         if (abs(mf) <= l5){
-            mv1.emplace_back(mf);
             m_list.emplace_back(mv1);
+            int index = lm_to_matrix_index(l_list, mv1);
+            map_m_to_index[{m1, m2, m3, m4}] = index;
         }
     }
 
@@ -353,9 +354,9 @@ void Projector::order5_pre(const vector1i& l_list, std::map<int, int>& map_indic
     #pragma omp parallel for collapse(2) schedule(dynamic)
     #endif
     for (const auto& mv1: m_list){
-        int index = lm_to_matrix_index(l_list, mv1);
+        int index = map_m_to_index[{mv1[0],mv1[1],mv1[2],mv1[3]}];
         for (const auto& mv2: m_list){
-            int index_p = lm_to_matrix_index(l_list, mv2);
+            int index_p = map_m_to_index[{mv2[0],mv2[1],mv2[2],mv2[3]}];
             if (index > index_p)
                 continue;
 
@@ -384,7 +385,6 @@ void Projector::order5(const vector1i& l_list){
     }
     num *= pow(-1, abs(m5-m5p))/(2*l5+1);
 */
-
     const int l1 = l_list[0];
     const int l2 = l_list[1];
     const int l3 = l_list[2];
@@ -418,60 +418,75 @@ void Projector::order5(const vector1i& l_list){
     core = Eigen::MatrixXd::Zero(core_size, core_size);
 
     #ifdef _OPENMP
-    #pragma omp parallel for schedule(dynamic)
+    #pragma omp parallel for collapse(4) schedule(dynamic)
     #endif
-    for (const auto& mv1: m_list){
-        int index = lm_to_matrix_index(l_list, mv1);
-
-        const int m1 = mv1[0];
-        const int m2 = mv1[1];
-        const int m3 = mv1[2];
-        const int m4 = mv1[3];
-        const int m5 = mv1[4];
-
+    for (int m1=-l1; m1<=l1; ++m1){
+    for (int m1p=-l1; m1p<=l1; ++m1p){
+    for (int m2=-l2; m2<=l2; ++m2){
+    for (int m2p=-l2; m2p<=l2; ++m2p){
         vector1d prod_lq1;
         for (int lq1 = abs(l1-l2); lq1 < l1+l2+1; ++lq1){
             double cg1 = cleb1[{lq1,m1,m2}];
+            double cg2 = cleb1[{lq1,m1p,m2p}];
+            double prod = cg1 * cg2;
+            prod_lq1.emplace_back(prod);
+        }
+    for (int m3=-l3; m3<=l3; ++m3){
+    for (int m3p=-l3; m3p<=l3; ++m3p){
+        vector1d prod_lq2;
+        int cnt(0);
+        for (int lq1 = abs(l1-l2); lq1 < l1+l2+1; ++lq1){
+            double prod1 = prod_lq1[cnt];
             for (int lq2 = abs(l3-lq1); lq2 < l3+lq1+1; ++lq2){
                 double cg3 = cleb2[{lq1,lq2,m3,m1+m2}];
+                double cg4 = cleb2[{lq1,lq2,m3p,m1p+m2p}];
+                double prod2 = prod1 * cg3 * cg4;
+                prod_lq2.emplace_back(prod2);
+            }
+            ++cnt;
+        }
+    for (int m4=-l4; m4<=l4; ++m4){
+        vector1i mv1 = {m1, m2, m3, m4};
+    for (int m4p=-l4; m4p<=l4; ++m4p)
+    {
+        int tmpi, tmpj;
+        vector1i mv2 = {m1p, m2p, m3p, m4p};
+        bool nonzero = check_m_nonzero(l_list, mv1, mv2, tmpi, tmpj);
+        if (!nonzero)
+            continue;
+        int index = map_m_to_index[{mv1[0],mv1[1],mv1[2],mv1[3]}];
+        int index_p = map_m_to_index[{mv2[0],mv2[1],mv2[2],mv2[3]}];
+        if (index > index_p)
+            continue;
+
+        int m5 = mv1[4], m5p = mv2[4];
+        double sign = ((abs(m5 - m5p) & 1) == 0) ? 1.0 : -1.0;
+        double inv_norm = sign / (2*l5+1);
+
+        double num(0.0);
+        int cnt2(0);
+        for (int lq1 = abs(l1-l2); lq1 < l1+l2+1; ++lq1){
+            for (int lq2 = abs(l3-lq1); lq2 < l3+lq1+1; ++lq2){
+                double prod2 = prod_lq2[cnt2];
                 double cg5 = cleb3[{lq2,m4,m1+m2+m3}];
-                double prod = cg1 * cg3 * cg5;
-                prod_lq1.emplace_back(prod);
+                double cg6 = cleb3[{lq2,m4p,m1p+m2p+m3p}];
+                num += prod2 * cg5 * cg6;
+                ++cnt2;
             }
         }
-        for (const auto& mv2: m_list){
-            int index_p = lm_to_matrix_index(l_list, mv2);
-            if (index > index_p)
-                continue;
+        num *= inv_norm;
 
-            const int m1p = mv2[0];
-            const int m2p = mv2[1];
-            const int m3p = mv2[2];
-            const int m4p = mv2[3];
-            const int m5p = mv2[4];
-
-            double sign = ((abs(m5 - m5p) & 1) == 0) ? 1.0 : -1.0;
-            double inv_norm = sign / (2*l5+1);
-
-            double num = 0.0;
-            int cnt(0);
-            for (int lq1 = abs(l1-l2); lq1 < l1+l2+1; ++lq1){
-                double cg2 = cleb1[{lq1,m1p,m2p}];
-                for (int lq2 = abs(l3-lq1); lq2 < l3+lq1+1; ++lq2){
-                    double prod1 = prod_lq1[cnt];
-                    double cg4 = cleb2[{lq1,lq2,m3p,m1p+m2p}];
-                    double cg6 = cleb3[{lq2,m4p,m1p+m2p+m3p}];
-                    num += prod1 * cg2 * cg4 * cg6;
-                    ++cnt;
-                }
-            }
-            num *= inv_norm;
-
-            core(map_indices[index], map_indices[index_p]) = num;
-            if (index != index_p){
-                core(map_indices[index_p], map_indices[index]) = num;
-            }
+        core(map_indices[index], map_indices[index_p]) = num;
+        if (index != index_p){
+            core(map_indices[index_p], map_indices[index]) = num;
         }
+    }
+    }
+    }
+    }
+    }
+    }
+    }
     }
 }
 

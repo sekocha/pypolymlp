@@ -28,6 +28,9 @@ class Projector{
     vector2i m_list;
     vector1i index_list;
 
+    std::map<std::tuple<int, int, int, int>, int> map_m_to_index;
+
+
     int lm_to_matrix_index(const vector1i& l_list, const vector1i& m_array);
     bool check_m_nonzero(
         const vector1i& l_list,
