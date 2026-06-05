@@ -25,10 +25,12 @@ def run_enum(
     if np.any(np.array(orders) > 6):
         raise RuntimeError("Orders must be lower than or equal to 6.")
 
+    eigvecs_all = []
+    lm_indices_all = []
     for order in orders:
         filename1 = filename_l.replace(".yaml", "_" + str(order) + ".yaml")
         filename2 = filename_coeffs.replace(".yaml", "_" + str(order) + ".yaml")
-        run_enum_single_order(
+        eigvecs, lm_indices = run_enum_single_order(
             order=order,
             maxl=maxl,
             minl=minl,
@@ -38,6 +40,9 @@ def run_enum(
             filename_coeffs=filename2,
             verbose=verbose,
         )
+        eigvecs_all.extend(eigvecs)
+        lm_indices_all.extend(lm_indices)
+    return eigvecs_all, lm_indices_all
 
 
 def run_enum_single_order(
@@ -66,11 +71,15 @@ def run_enum_single_order(
     n_list = n_list[match]
     save_polyinv_lcombs(lcomb_all, n_list, lproj, filename=filename_l)
 
+    eigvecs_all, lm_indices_all = [], []
     with open(filename_coeffs, "w") as f:
         print("invariants:", file=f)
         for lcomb in lcomb_all:
             eigvecs, lm_indices = solve(lcomb, lproj, verbose=verbose)
             save_polyinv_coeffs(eigvecs, lm_indices, filename=f)
+            eigvecs_all.append(eigvecs)
+            lm_indices_all.append(lm_indices_all)
+    return eigvecs_all, lm_indices_all
 
 
 def solve(lcomb: list, lproj: int = 0, verbose: bool = False):
