@@ -1,5 +1,6 @@
 """Eigenvalue problem solver."""
 
+import numpy as np
 from numpy.typing import NDArray
 from symfc.eig_solvers.eig_tools_core import eigh_projector
 from symfc.eig_solvers.eig_tools_recursive import eigsh_projector_division
@@ -25,5 +26,6 @@ def eigh(
         return_cmplt=False,
         verbose=verbose,
     )
-    eigvecs = res.eigvecs.recover()
-    return eigvecs
+    if isinstance(res.eigvecs, np.ndarray):
+        return res.eigvecs
+    return res.eigvecs.recover()
