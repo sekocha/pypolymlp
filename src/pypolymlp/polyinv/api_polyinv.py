@@ -90,7 +90,7 @@ def solve(lcomb: list, lproj: int = 0, verbose: bool = False):
 
     eigvecs = eigh(proj, log_level=verbose)
     if verbose:
-        print("- Basis shape:         ", eigvecs.shape, flush=True)
+        print("- Basis shape: ", eigvecs.shape, flush=True)
     return (eigvecs, lm_indices)
 
 
@@ -99,6 +99,7 @@ def save_coeffs(
     lm_indices: NDArray,
     filename: str | io.IOBase = "polyinv_coeffs.yaml",
     mode: str = "a",
+    tag: str | None = None,
 ):
     """Save coefficients of polynomial invariants."""
-    save_polyinv_coeffs(eigvecs, lm_indices, filename, mode)
+    save_polyinv_coeffs(eigvecs, lm_indices, filename, mode, tag)

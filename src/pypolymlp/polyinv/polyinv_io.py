@@ -27,6 +27,7 @@ def save_polyinv_coeffs(
     lm_indices: NDArray,
     filename: str | io.IOBase = "polyinv_coeffs.yaml",
     mode: str = "a",
+    tag: str | None = None,
 ):
     """Save coefficients of polynomial invariants."""
     np.set_printoptions(legacy="1.21")
@@ -34,6 +35,9 @@ def save_polyinv_coeffs(
         f = filename
     else:
         f = open(filename, mode)
+
+    if tag is not None:
+        print(tag + ":", file=f)
 
     lcomb = lm_indices[0][:, 0]
     for i, eig in enumerate(eigvecs.T):

@@ -29,7 +29,8 @@ def run():
 
     parser.add_argument("--maxl", type=int, default=10, help="Maximum l value.")
     parser.add_argument(
-        "--l",
+        "-l",
+        "--ang",
         nargs="*",
         type=int,
         default=None,
@@ -41,6 +42,12 @@ def run():
 
     if args.orders:
         run_enum(args.orders, args.maxl, args.minl, lproj=0, verbose=True)
-    elif args.l:
-        eigvecs, lm_indices = solve(args.l, lproj=0, verbose=True)
-        save_coeffs(eigvecs, lm_indices, filename="polyinv_coeffs.yaml", mode="w")
+    elif args.ang:
+        eigvecs, lm_indices = solve(args.ang, lproj=0, verbose=True)
+        save_coeffs(
+            eigvecs,
+            lm_indices,
+            filename="polyinv_coeffs.yaml",
+            mode="w",
+            tag="invarints",
+        )
