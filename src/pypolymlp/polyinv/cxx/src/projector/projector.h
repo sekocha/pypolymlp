@@ -32,7 +32,7 @@ class Projector{
     std::map<std::tuple<int, int, int, int, int>, int> map_m_to_index6;
 
     int lm_to_matrix_index(const vector1i& l_list, const vector1i& m_array);
-    bool check_sum(const vector1i& l_list, const vector1i& m, int& mf);
+    bool check_sum(const vector1i& m, const int lmax, int& mf);
 
     double clebsch_gordan(
         const int& l1, const int& l2, const int& l,
