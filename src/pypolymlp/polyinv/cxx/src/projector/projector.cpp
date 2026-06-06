@@ -36,51 +36,24 @@ bool Projector::check_sum(const vector1i& l_list, const vector1i& m, int& mf){
 }
 
 
-void Projector::precalc_common(
-    const std::set<int>& nonzero_indices,
-    std::map<int, int>& map_indices){
-
-    const int core_size = nonzero_indices.size();
-    row = vector1i(core_size);
-
-    int seq = 0;
-    for (int idx: nonzero_indices) {
-        map_indices[idx] = seq;
-        row[seq] = idx;
-        ++seq;
-    }
-}
-
-
-void Projector::order2_pre(const vector1i& l_list, std::map<int, int>& map_indices){
+void Projector::order2_pre(const vector1i& l_list){
 
     const int l1 = l_list[0];
 
+    row.clear();
     map_m_to_index2.clear();
-    vector2i m_list;
+    int seq(0);
     for (int m1=-l1; m1<=l1; ++m1){
         vector1i mv1 = {m1};
         int m2;
         if (check_sum(l_list, mv1, m2)){
-            m_list.emplace_back(mv1);
             mv1.emplace_back(m2);
-            map_m_to_index2[m1] = lm_to_matrix_index(l_list, mv1);
+            int index = lm_to_matrix_index(l_list, mv1);
+            row.emplace_back(index);
+            map_m_to_index2[m1] = seq;
+            ++seq;
         }
     }
-
-    std::set<int> nonzero_indices;
-    for (const auto& mv1: m_list){
-        int index = map_m_to_index2[mv1[0]];
-        for (const auto& mv2: m_list){
-            int index_p = map_m_to_index2[mv2[0]];
-            if (index > index_p)
-                continue;
-
-            nonzero_indices.insert(index);
-            nonzero_indices.insert(index_p);
-        }
-    }
-    precalc_common(nonzero_indices, map_indices);
 }
 
 
@@ -89,10 +62,9 @@ void Projector::order2(const vector1i& l_list){
     const int l1 = l_list[0];
     const int l2 = l_list[1];
 
-    std::map<int, int> map_indices;
-    order2_pre(l_list, map_indices);
+    order2_pre(l_list);
 
-    const int core_size = map_indices.size();
+    const int core_size = row.size();
     core = Eigen::MatrixXd::Zero(core_size, core_size);
 
     for (int m1=-l1; m1<=l1; ++m1){
@@ -118,49 +90,34 @@ void Projector::order2(const vector1i& l_list){
             }
             else num = 0.0;
 
-            core(map_indices[index], map_indices[index_p]) = num;
+            core(index, index_p) = num;
             if (index != index_p){
-                core(map_indices[index_p], map_indices[index]) = num;
+                core(index_p, index) = num;
             }
         }
     }
 }
 
-void Projector::order3_pre(const vector1i& l_list, std::map<int, int>& map_indices){
+void Projector::order3_pre(const vector1i& l_list){
 
     const int l1 = l_list[0];
     const int l2 = l_list[1];
 
+    row.clear();
     map_m_to_index3.clear();
-    vector2i m_list;
+    int seq(0);
     for (int m1=-l1; m1<=l1; ++m1)
     for (int m2=-l2; m2<=l2; ++m2){
         vector1i mv1 = {m1, m2};
         int m3;
         if (check_sum(l_list, mv1, m3)){
-            m_list.emplace_back(mv1);
             mv1.emplace_back(m3);
-            map_m_to_index3[{m1, m2}] = lm_to_matrix_index(l_list, mv1);
+            int index = lm_to_matrix_index(l_list, mv1);
+            row.emplace_back(index);
+            map_m_to_index3[{m1, m2}] = seq;
+            ++seq;
         }
     }
-
-    std::set<int> nonzero_indices;
-    #ifdef _OPENMP
-    #pragma omp parallel for schedule(dynamic)
-    #endif
-    for (const auto& mv1: m_list){
-        int index = map_m_to_index3[{mv1[0],mv1[1]}];
-        for (const auto& mv2: m_list){
-            int index_p = map_m_to_index3[{mv2[0],mv2[1]}];
-            if (index > index_p)
-                continue;
-
-            std::lock_guard<std::mutex> lock(mtx);
-            nonzero_indices.insert(index);
-            nonzero_indices.insert(index_p);
-        }
-    }
-    precalc_common(nonzero_indices, map_indices);
 }
 
 
@@ -170,8 +127,7 @@ void Projector::order3(const vector1i& l_list){
     const int l2 = l_list[1];
     const int l3 = l_list[2];
 
-    std::map<int, int> map_indices;
-    order3_pre(l_list, map_indices);
+    order3_pre(l_list);
 
     std::map<std::tuple<int, int>, double> cleb1;
     for (int m1=-l1; m1<=l1; ++m1)
@@ -179,7 +135,7 @@ void Projector::order3(const vector1i& l_list){
         cleb1[{m1, m2}] = clebsch_gordan(l1, l2, l3, m1, m2, m1+m2);
     }
 
-    const int core_size = map_indices.size();
+    const int core_size = row.size();
     core = Eigen::MatrixXd::Zero(core_size, core_size);
 
     #ifdef _OPENMP
@@ -211,55 +167,41 @@ void Projector::order3(const vector1i& l_list){
             double cg2 = cleb1[{m1p, m2p}];
             double num = cg1 * cg2 * inv_norm;
 
-            core(map_indices[index], map_indices[index_p]) = num;
+            core(index, index_p) = num;
             if (index != index_p){
-                core(map_indices[index_p], map_indices[index]) = num;
+                core(index_p, index) = num;
             }
         }
     }
 }
 
-void Projector::order4_pre(const vector1i& l_list, std::map<int, int>& map_indices){
+void Projector::order4_pre(const vector1i& l_list){
 
     const int l1 = l_list[0];
     const int l2 = l_list[1];
     const int l3 = l_list[2];
 
+    row.clear();
     map_m_to_index4.clear();
-    vector2i m_list;
+    int seq(0);
     for (int m1=-l1; m1<=l1; ++m1)
     for (int m2=-l2; m2<=l2; ++m2)
     for (int m3=-l3; m3<=l3; ++m3){
         vector1i mv1 = {m1, m2, m3};
         int m4;
         if (check_sum(l_list, mv1, m4)){
-            m_list.emplace_back(mv1);
             mv1.emplace_back(m4);
-            map_m_to_index4[{m1, m2, m3}] = lm_to_matrix_index(l_list, mv1);
+            int index = lm_to_matrix_index(l_list, mv1);
+            row.emplace_back(index);
+            map_m_to_index4[{m1, m2, m3}] = seq;
+            ++seq;
         }
     }
-
-    std::set<int> nonzero_indices;
-    #ifdef _OPENMP
-    #pragma omp parallel for schedule(dynamic)
-    #endif
-    for (const auto& mv1: m_list){
-        int index = map_m_to_index4[{mv1[0],mv1[1],mv1[2]}];
-        for (const auto& mv2: m_list){
-            int index_p = map_m_to_index4[{mv2[0],mv2[1],mv2[2]}];
-            if (index > index_p)
-                continue;
-
-            std::lock_guard<std::mutex> lock(mtx);
-            nonzero_indices.insert(index);
-            nonzero_indices.insert(index_p);
-        }
-    }
-    precalc_common(nonzero_indices, map_indices);
 }
 
 void Projector::order4(const vector1i& l_list){
-/*
+/***************************************************************
+
     Given l_list and (m1, m2, m3, m1p, m2p, m3p),
     the following quantity is calculated.
 
@@ -270,15 +212,15 @@ void Projector::order4(const vector1i& l_list){
              * cleb[{l3, l, l4, m3, -m3-m4, -m4}]
              * cleb[{l3, l, l4, m3p, -m3p-m4p, -m4p}];
     num *= pow(-1, abs(m4-m4p))/(2*l4+1);
-*/
+
+****************************************************************/
 
     const int l1 = l_list[0];
     const int l2 = l_list[1];
     const int l3 = l_list[2];
     const int l4 = l_list[3];
 
-    std::map<int, int> map_indices;
-    order4_pre(l_list, map_indices);
+    order4_pre(l_list);
 
     std::map<std::tuple<int, int, int>, double> cleb1, cleb2;
     for (int l = abs(l1-l2); l < l1+l2+1; ++l)
@@ -290,7 +232,7 @@ void Projector::order4(const vector1i& l_list){
         }
     }
 
-    const int core_size = map_indices.size();
+    const int core_size = row.size();
     core = Eigen::MatrixXd::Zero(core_size, core_size);
 
     #ifdef _OPENMP
@@ -337,24 +279,25 @@ void Projector::order4(const vector1i& l_list){
                 }
                 num *= inv_norm;
 
-                core(map_indices[index], map_indices[index_p]) = num;
+                core(index, index_p) = num;
                 if (index != index_p){
-                    core(map_indices[index_p], map_indices[index]) = num;
+                    core(index_p, index) = num;
                 }
             }
         }
     }
 }
 
-void Projector::order5_pre(const vector1i& l_list, std::map<int, int>& map_indices){
+void Projector::order5_pre(const vector1i& l_list){
 
     const int l1 = l_list[0];
     const int l2 = l_list[1];
     const int l3 = l_list[2];
     const int l4 = l_list[3];
 
+    row.clear();
     map_m_to_index5.clear();
-    vector2i m_list;
+    int seq(0);
     for (int m1=-l1; m1<=l1; ++m1)
     for (int m2=-l2; m2<=l2; ++m2)
     for (int m3=-l3; m3<=l3; ++m3)
@@ -362,33 +305,18 @@ void Projector::order5_pre(const vector1i& l_list, std::map<int, int>& map_indic
         vector1i mv1 = {m1, m2, m3, m4};
         int m5;
         if (check_sum(l_list, mv1, m5)){
-            m_list.emplace_back(mv1);
             mv1.emplace_back(m5);
-            map_m_to_index5[{m1, m2, m3, m4}] = lm_to_matrix_index(l_list, mv1);
+            int index = lm_to_matrix_index(l_list, mv1);
+            row.emplace_back(index);
+            map_m_to_index5[{m1, m2, m3, m4}] = seq;
+            ++seq;
         }
     }
-
-    std::set<int> nonzero_indices;
-    #ifdef _OPENMP
-    #pragma omp parallel for schedule(dynamic)
-    #endif
-    for (const auto& mv1: m_list){
-        int index = map_m_to_index5[{mv1[0],mv1[1],mv1[2],mv1[3]}];
-        for (const auto& mv2: m_list){
-            int index_p = map_m_to_index5[{mv2[0],mv2[1],mv2[2],mv2[3]}];
-            if (index > index_p)
-                continue;
-
-            std::lock_guard<std::mutex> lock(mtx);
-            nonzero_indices.insert(index);
-            nonzero_indices.insert(index_p);
-        }
-    }
-    precalc_common(nonzero_indices, map_indices);
 }
 
 void Projector::order5(const vector1i& l_list){
-/*
+/*******************************************************************
+
     Given l_list and (m1, m2, m3, m4, m1p, m2p, m3p, m4p),
     the following quantity is calculated.
 
@@ -403,15 +331,16 @@ void Projector::order5(const vector1i& l_list){
         }
     }
     num *= pow(-1, abs(m5-m5p))/(2*l5+1);
-*/
+
+**********************************************************************/
+
     const int l1 = l_list[0];
     const int l2 = l_list[1];
     const int l3 = l_list[2];
     const int l4 = l_list[3];
     const int l5 = l_list[4];
 
-    std::map<int, int> map_indices;
-    order5_pre(l_list, map_indices);
+    order5_pre(l_list);
 
     std::map<std::tuple<int, int, int>, double> cleb1, cleb3;
     std::map<std::tuple<int, int, int, int>, double> cleb2;
@@ -430,7 +359,7 @@ void Projector::order5(const vector1i& l_list){
         }
     }
 
-    const int core_size = map_indices.size();
+    const int core_size = row.size();
     core = Eigen::MatrixXd::Zero(core_size, core_size);
 
     #ifdef _OPENMP
@@ -496,9 +425,9 @@ void Projector::order5(const vector1i& l_list){
                     }
                     num *= inv_norm;
 
-                    core(map_indices[index], map_indices[index_p]) = num;
+                    core(index, index_p) = num;
                     if (index != index_p){
-                        core(map_indices[index_p], map_indices[index]) = num;
+                        core(index_p, index) = num;
                     }
                 }
             }
@@ -507,7 +436,7 @@ void Projector::order5(const vector1i& l_list){
 }
 
 
-void Projector::order6_pre(const vector1i& l_list, std::map<int, int>& map_indices){
+void Projector::order6_pre(const vector1i& l_list){
 
     const int l1 = l_list[0];
     const int l2 = l_list[1];
@@ -515,8 +444,9 @@ void Projector::order6_pre(const vector1i& l_list, std::map<int, int>& map_indic
     const int l4 = l_list[3];
     const int l5 = l_list[4];
 
+    row.clear();
     map_m_to_index6.clear();
-    vector2i m_list;
+    int seq(0);
     for (int m1=-l1; m1<=l1; ++m1)
     for (int m2=-l2; m2<=l2; ++m2)
     for (int m3=-l3; m3<=l3; ++m3)
@@ -525,34 +455,19 @@ void Projector::order6_pre(const vector1i& l_list, std::map<int, int>& map_indic
         vector1i mv1 = {m1, m2, m3, m4, m5};
         int m6;
         if (check_sum(l_list, mv1, m6)){
-            m_list.emplace_back(mv1);
             mv1.emplace_back(m6);
-            map_m_to_index6[{m1, m2, m3, m4 ,m5}] = lm_to_matrix_index(l_list, mv1);
+            int index = lm_to_matrix_index(l_list, mv1);
+            row.emplace_back(index);
+            map_m_to_index6[{m1, m2, m3, m4, m5}] = seq;
+            ++seq;
         }
     }
-
-    std::set<int> nonzero_indices;
-    #ifdef _OPENMP
-    #pragma omp parallel for schedule(dynamic)
-    #endif
-    for (const auto& mv1: m_list){
-        int index = map_m_to_index6[{mv1[0],mv1[1],mv1[2],mv1[3],mv1[4]}];
-        for (const auto& mv2: m_list){
-            int index_p = map_m_to_index6[{mv2[0],mv2[1],mv2[2],mv2[3],mv2[4]}];
-            if (index > index_p)
-                continue;
-
-            std::lock_guard<std::mutex> lock(mtx);
-            nonzero_indices.insert(index);
-            nonzero_indices.insert(index_p);
-        }
-    }
-    precalc_common(nonzero_indices, map_indices);
 }
 
 
 void Projector::order6(const vector1i& l_list){
-/*
+/*******************************************************************
+
     Given l_list and (m1, m2, m3, m4, m5, m1p, m2p, m3p, m4p, m5p),
     the following quantity is calculated.
 
@@ -573,7 +488,8 @@ void Projector::order6(const vector1i& l_list){
         }
     }
     num *= pow(-1, abs(m6-m6p))/(2*l6+1);
-*/
+
+**********************************************************************/
 
     const int l1 = l_list[0];
     const int l2 = l_list[1];
@@ -582,8 +498,7 @@ void Projector::order6(const vector1i& l_list){
     const int l5 = l_list[4];
     const int l6 = l_list[5];
 
-    std::map<int, int> map_indices;
-    order6_pre(l_list, map_indices);
+    order6_pre(l_list);
 
     std::map<std::tuple<int, int, int>, double> cleb1, cleb4;
     std::map<std::tuple<int, int, int, int>, double> cleb2, cleb3;
@@ -607,7 +522,7 @@ void Projector::order6(const vector1i& l_list){
         }
     }
 
-    const int core_size = map_indices.size();
+    const int core_size = row.size();
     core = Eigen::MatrixXd::Zero(core_size, core_size);
 
     #ifdef _OPENMP
@@ -690,9 +605,9 @@ void Projector::order6(const vector1i& l_list){
                         }
                         num *= inv_norm;
 
-                        core(map_indices[index], map_indices[index_p]) = num;
+                        core(index, index_p) = num;
                         if (index != index_p){
-                            core(map_indices[index_p], map_indices[index]) = num;
+                            core(index_p, index) = num;
                         }
                     }
                 }

@@ -34,10 +34,6 @@ class Projector{
     int lm_to_matrix_index(const vector1i& l_list, const vector1i& m_array);
     bool check_sum(const vector1i& l_list, const vector1i& m, int& mf);
 
-    void precalc_common(
-        const std::set<int>& nonzero_indices,
-        std::map<int, int>& map_indices);
-
     double clebsch_gordan(
         const int& l1, const int& l2, const int& l,
         const int& m1, const int& m2, const int& m);
@@ -48,11 +44,11 @@ class Projector{
     void order5(const vector1i& l_list);
     void order6(const vector1i& l_list);
 
-    void order2_pre(const vector1i& l_list, std::map<int, int>& map_indices);
-    void order3_pre(const vector1i& l_list, std::map<int, int>& map_indices);
-    void order4_pre(const vector1i& l_list, std::map<int, int>& map_indices);
-    void order5_pre(const vector1i& l_list, std::map<int, int>& map_indices);
-    void order6_pre(const vector1i& l_list, std::map<int, int>& map_indices);
+    void order2_pre(const vector1i& l_list);
+    void order3_pre(const vector1i& l_list);
+    void order4_pre(const vector1i& l_list);
+    void order5_pre(const vector1i& l_list);
+    void order6_pre(const vector1i& l_list);
 
     public:
 
