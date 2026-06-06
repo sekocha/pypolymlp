@@ -461,6 +461,8 @@ void Projector::order5(const vector1i& l_list){
                 }
                 ++cnt;
             }
+            int sum123 = m1+m2+m3;
+            int sum123p = m1p+m2p+m3p;
             for (int m4=-l4; m4<=l4; ++m4){
                 vector1i mv1 = {m1, m2, m3, m4};
                 int m5;
@@ -486,8 +488,8 @@ void Projector::order5(const vector1i& l_list){
                     for (int lq1 = abs(l1-l2); lq1 < l1+l2+1; ++lq1){
                         for (int lq2 = abs(l3-lq1); lq2 < l3+lq1+1; ++lq2){
                             double prod2 = prod_lq2[cnt2];
-                            double cg5 = cleb3[{lq2,m4,m1+m2+m3}];
-                            double cg6 = cleb3[{lq2,m4p,m1p+m2p+m3p}];
+                            double cg5 = cleb3[{lq2,m4,sum123}];
+                            double cg6 = cleb3[{lq2,m4p,sum123p}];
                             num += prod2 * cg5 * cg6;
                             ++cnt2;
                         }
@@ -697,25 +699,6 @@ void Projector::order6(const vector1i& l_list){
             }
         }
     }
-/*
-        double num(0);
-        for (int lq1 = abs(l1-l2); lq1 < l1+l2+1; ++lq1){
-            for (int lq2 = abs(l3-lq1); lq2 < l3+lq1+1; ++lq2){
-                for (int lq3 = abs(l4-lq2); lq3 < l4+lq2+1; ++lq3){
-                    num += clebsch_gordan(l1,l2,lq1,m1,m2,m1+m2)
-                        * clebsch_gordan(l1,l2,lq1,m1p,m2p,m1p+m2p)
-                        * clebsch_gordan(l3,lq1,lq2,m3,m1+m2,m1+m2+m3)
-                        * clebsch_gordan(l3,lq1,lq2,m3p,m1p+m2p,m1p+m2p+m3p)
-                        * clebsch_gordan(l4,lq2,lq3,m4,m1+m2+m3,m1+m2+m3+m4)
-                        * clebsch_gordan
-                            (l4,lq2,lq3,m4p,m1p+m2p+m3p,m1p+m2p+m3p+m4p)
-                        * clebsch_gordan(l5,lq3,l6,m5,m1+m2+m3+m4,-m6)
-                        * clebsch_gordan(l5,lq3,l6,m5p,m1p+m2p+m3p+m4p,-m6p);
-                }
-            }
-        }
-        num *= pow(-1, abs(m6-m6p))/(2*l6+1);
-    */
 }
 
 int Projector::lm_to_matrix_index(const vector1i& l_list, const vector1i& m_array) {
