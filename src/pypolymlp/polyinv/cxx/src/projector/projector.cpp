@@ -384,7 +384,11 @@ void Projector::order5(const vector1i& l_list){
     for (int m2p=-l2; m2p<=l2; ++m2p){
         vector1d prod_lq1;
         vector1i list_lq1;
+        //int M1 = abs(m1 + m2);
+        //int M2 = abs(m1p + m2p);
+        //int lq_min = std::max({abs(l1-l2), M1, M2});
         for (int lq1 = abs(l1-l2); lq1 < l1+l2+1; ++lq1){
+        //for (int lq1 = lq_min; lq1 < l1+l2+1; ++lq1){
             if (abs(m1+m2) > lq1)
                 continue;
             if (abs(m1p+m2p) > lq1)
@@ -612,7 +616,6 @@ void Projector::order6(const vector1i& l_list){
                     }
                     ++cnt2;
                 }
-
                 for (int m5=-l5; m5<=l5; ++m5){
                     vector1i mv1 = {m1, m2, m3, m4, m5};
                     int m6;
