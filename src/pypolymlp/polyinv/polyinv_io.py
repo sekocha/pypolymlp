@@ -38,7 +38,7 @@ def save_polyinv_coeffs_multiple_l(
 ):
     """Save coefficients of polynomial invariants for multiple l combinations."""
     with open(filename, "w") as f:
-        print("invariance:", file=f)
+        print("invariants:", file=f)
         for eig, lm in zip(eigvecs, lm_indices):
             save_polyinv_coeffs(eig, lm, filename=f, mode="a")
 
