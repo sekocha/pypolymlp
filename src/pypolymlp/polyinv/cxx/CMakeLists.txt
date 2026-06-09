@@ -22,28 +22,25 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
 find_package(pybind11 REQUIRED)
 find_package(Eigen3 REQUIRED)
+message(STATUS "Eigen3 include dir: ${EIGEN3_INCLUDE_DIR}")
 find_package(GSL REQUIRED)
-message(STATUS ${EIGEN3_INCLUDE_DIR})
-message(STATUS ${GSL_INCLUDE_DIR})
+message(STATUS "GSL include dir: ${GSL_INCLUDE_DIR}")
 
-set(PYBIND11_PYTHON_VERSION
-    3.9 3.10 3.11
-)
 
-#add_library(libprojcpp SHARED ${SRC_FILES})
 pybind11_add_module(libprojcpp ${SRC_FILES})
-
 
 target_include_directories(libprojcpp
   PUBLIC ${CMAKE_SOURCE_DIR}/src
-  PUBLIC ${pybind11_INCLUDE_DIRS}
   PUBLIC ${EIGEN3_INCLUDE_DIR}
   PUBLIC ${GSL_INCLUDE_DIR}
 )
 
 target_link_libraries(libprojcpp
+    
     PUBLIC ${OpenMP_CXX_LIBRARIES}
     GSL::gsl GSL::gslcblas
+    PRIVATE pybind11::module
+    PRIVATE Eigen3::Eigen
 )
 
 
