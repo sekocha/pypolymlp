@@ -45,11 +45,13 @@ def write_elastic_constants(
     print(tag + ":", file=file)
     for i, j in ids:
         prefix = "  c_" + str(i) + str(j) + ":"
-        if elastic_constants[i - 1][j - 1] > 1e-8:
-            str1 = "{:.3f}".format(elastic_constants[i - 1][j - 1])
-            print(prefix, str1, file=file)
-        else:
-            print(prefix, "0", file=file)
+        str1 = "{:.3f}".format(elastic_constants[i - 1][j - 1])
+        print(prefix, str1, file=file)
+        # if elastic_constants[i - 1][j - 1] > 1e-8:
+        #     str1 = "{:.3f}".format(elastic_constants[i - 1][j - 1])
+        #     print(prefix, str1, file=file)
+        # else:
+        #     print(prefix, "0", file=file)
     return file
 
 
