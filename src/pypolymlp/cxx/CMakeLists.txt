@@ -97,14 +97,12 @@ if(OpenMP_CXX_FOUND)
       PRIVATE OpenMP::OpenMP_CXX
       PRIVATE Eigen3::Eigen
       PRIVATE pybind11::module
-      # PRIVATE ${CMAKE_DL_LIBS}
   )
 else()
   target_link_libraries(
       libmlpcpp
       PRIVATE Eigen3::Eigen
       PRIVATE pybind11::module
-      # PRIVATE ${CMAKE_DL_LIBS}
   )
   message(WARNING "OpenMP not found. It runs on single thread.")
 endif()
@@ -118,4 +116,5 @@ install(
 install(
     FILES src/polymlp/polymlp_gtinv_data_v2_order2.bin DESTINATION ${CMAKE_SOURCE_DIR}/lib
     FILES src/polymlp/polymlp_gtinv_data_v2_order3.bin DESTINATION ${CMAKE_SOURCE_DIR}/lib
+    FILES src/polymlp/polymlp_gtinv_data_v2_order4.bin DESTINATION ${CMAKE_SOURCE_DIR}/lib
 )
