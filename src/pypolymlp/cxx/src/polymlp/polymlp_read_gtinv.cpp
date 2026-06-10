@@ -114,12 +114,12 @@ void Readgtinv::screening_v2(
         if (order != 1) {
             data_v2.parse(order);
         }
-        const auto& l_array_all = (order == 1) ? get_l_array(order)
-            : data_v2.get_l_array();
-        const auto& m_array_all = (order == 1) ? get_m_array(order)
-            : data_v2.get_m_array();
-        const auto& coeffs_all  = (order == 1) ? get_coeffs(order)
-            : data_v2.get_coeffs();
+        const auto& l_array_all = (order == 1) ? 
+            get_l_array(order) : data_v2.get_l_array();
+        const auto& m_array_all = (order == 1) ? 
+            get_m_array(order) : data_v2.get_m_array();
+        const auto& coeffs_all  = (order == 1) ? 
+            get_coeffs(order) : data_v2.get_coeffs();
 
         int maxl(0);
         if (order > 1) maxl = gtinv_maxl[order-2];
