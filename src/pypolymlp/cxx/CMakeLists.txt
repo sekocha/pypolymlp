@@ -83,59 +83,8 @@ set(SRC_FILES
     src/polymlp/polymlp_gtinv_data_order4.cpp
     src/polymlp/polymlp_gtinv_data_order5.cpp
     src/polymlp/polymlp_gtinv_data_order6.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order1.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order2_l0.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order2_l1.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order2_l2.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order2_l3.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order2_l4.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order2_l5.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order2_l6.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order2_l7.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order2_l8.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order2_l9.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order2_l10.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order2_l11.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order2_l12.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order2_l13.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order2_l14.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order2_l15.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order2_l16.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order2_l17.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order2_l18.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order2_l19.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order2_l20.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order2_l21.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order2_l22.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order2_l23.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order2_l24.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order2_l25.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order2_l26.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order2_l27.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order2_l28.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order2_l29.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order2_l30.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order3_l0.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order3_l1.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order3_l2.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order3_l3.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order3_l4.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order3_l5.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order3_l6.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order3_l7.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order3_l8.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order3_l9.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order3_l10.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order3_l11.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order3_l12.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order3_l13.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order3_l14.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order3_l15.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order3_l16.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order3_l17.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order3_l18.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order3_l19.cpp
-    src/polymlp/polymlp_gtinv_data_v2_order3_l20.cpp
+    src/polymlp/polymlp_gtinv_data_v2.cpp
+    src/polymlp/polymlp_gtinv_binary.cpp
 )
 
 pybind11_add_module(libmlpcpp ${SRC_FILES})
@@ -148,18 +97,25 @@ if(OpenMP_CXX_FOUND)
       PRIVATE OpenMP::OpenMP_CXX
       PRIVATE Eigen3::Eigen
       PRIVATE pybind11::module
+      # PRIVATE ${CMAKE_DL_LIBS}
   )
 else()
   target_link_libraries(
       libmlpcpp
       PRIVATE Eigen3::Eigen
       PRIVATE pybind11::module
+      # PRIVATE ${CMAKE_DL_LIBS}
   )
   message(WARNING "OpenMP not found. It runs on single thread.")
 endif()
+
 
 install(
     TARGETS libmlpcpp
     COMPONENT python
     LIBRARY DESTINATION ${CMAKE_SOURCE_DIR}/lib
+)
+install(
+    FILES src/polymlp/polymlp_gtinv_data_v2_order2.bin DESTINATION ${CMAKE_SOURCE_DIR}/lib
+    FILES src/polymlp/polymlp_gtinv_data_v2_order3.bin DESTINATION ${CMAKE_SOURCE_DIR}/lib
 )

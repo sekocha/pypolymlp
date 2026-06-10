@@ -8,27 +8,32 @@
 #ifndef __POLYMLP_GTINV_DATA_VER2
 #define __POLYMLP_GTINV_DATA_VER2
 
+#include "polymlp_gtinv_binary.h"
 #include "polymlp_mlpcpp.h"
 
 
-#pragma once
+#include <filesystem>
 
-template<int Order, int L>
+#if defined(__linux__) || defined(__APPLE__)
+#include <dlfcn.h>
+#endif
+
+
 class GtinvDataVer2 {
 
-    static const vector2i L_ARRAY_ALL;
-    static const vector3i M_ARRAY_ALL;
-    static const vector2d COEFFS_ALL;
+    vector2i32 l_array_all;
+    vector2d coeffs_all;
+    vector3i32 m_array_all;
 
     public:
 
-    GtinvDataVer2() = default;
-    ~GtinvDataVer2() = default;
+    GtinvDataVer2();
+    ~GtinvDataVer2();
+    void parse(const int order);
 
-    static const vector2i& get_static_l_array() { return L_ARRAY_ALL; }
-    static const vector3i& get_static_m_array() { return M_ARRAY_ALL; }
-    static const vector2d& get_static_coeffs() { return COEFFS_ALL; }
+    const vector2i32& get_l_array() const;
+    const vector3i32& get_m_array() const;
+    const vector2d& get_coeffs() const;
 };
-
 
 #endif
