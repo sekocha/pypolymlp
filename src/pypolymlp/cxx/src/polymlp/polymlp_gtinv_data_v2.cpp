@@ -36,7 +36,7 @@ GtinvDataVer2::~GtinvDataVer2(){}
 void GtinvDataVer2::parse(const int order){
 
     if (order < 2) throw std::invalid_argument("Invalid order");
-    if (order > 5) throw std::invalid_argument("Invalid order");
+    if (order > 6) throw std::invalid_argument("Invalid order");
 
     auto libdir = get_library_directory();
     std::filesystem::path binfile =

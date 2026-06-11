@@ -118,4 +118,5 @@ install(
     FILES src/polymlp/polymlp_gtinv_data_v2_order3.bin DESTINATION ${CMAKE_SOURCE_DIR}/lib
     FILES src/polymlp/polymlp_gtinv_data_v2_order4.bin DESTINATION ${CMAKE_SOURCE_DIR}/lib
     FILES src/polymlp/polymlp_gtinv_data_v2_order5.bin DESTINATION ${CMAKE_SOURCE_DIR}/lib
+    FILES src/polymlp/polymlp_gtinv_data_v2_order6.bin DESTINATION ${CMAKE_SOURCE_DIR}/lib
 )
