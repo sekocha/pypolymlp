@@ -9,6 +9,7 @@
 #define __POLYMLP_GTINV_DATA_BINARY
 
 #include <cstdint>
+#include <cstring>
 #include "polymlp_mlpcpp.h"
 
 typedef std::vector<std::vector<int32_t> > vector2i32;
