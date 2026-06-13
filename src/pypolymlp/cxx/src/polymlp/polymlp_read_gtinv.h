@@ -21,7 +21,6 @@ class Readgtinv {
     void screening(
         const int gtinv_order,
         const vector1i& gtinv_maxl,
-        const int n_type,
         const int version);
 
     public:
@@ -30,8 +29,6 @@ class Readgtinv {
     Readgtinv(
         const int gtinv_order,
         const vector1i& gtinv_maxl,
-        const std::vector<bool>& gtinv_sym,
-        const int n_type,
         const int version);
    ~Readgtinv();
 

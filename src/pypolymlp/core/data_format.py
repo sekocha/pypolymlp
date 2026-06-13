@@ -8,7 +8,7 @@ from typing import Literal, Optional, Union
 
 import numpy as np
 
-from pypolymlp.cxx.lib import libmlpcpp
+from pypolymlp.cxx.api_cxx import get_gtinv_attrs
 
 
 @dataclass
@@ -130,16 +130,11 @@ class PolymlpGtinvParams:
 
     def get_invariants(self):
         """Read polynomial invariants."""
-        rgi = libmlpcpp.Readgtinv(
+        self.l_comb, self.lm_seq, self.lm_coeffs = get_gtinv_attrs(
             self.order,
             self.max_l,
-            self.sym,
-            self.n_type,
             self.version,
         )
-        self.lm_seq = rgi.get_lm_seq()
-        self.l_comb = rgi.get_l_comb()
-        self.lm_coeffs = rgi.get_lm_coeffs()
 
 
 @dataclass

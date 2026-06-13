@@ -12,11 +12,9 @@ Readgtinv::Readgtinv(){}
 Readgtinv::Readgtinv(
     const int gtinv_order,
     const vector1i& gtinv_maxl,
-    const std::vector<bool>& gtinv_sym,
-    const int n_type,
     const int version){
 
-    screening(gtinv_order, gtinv_maxl, n_type, version);
+    screening(gtinv_order, gtinv_maxl, version);
 }
 
 Readgtinv::~Readgtinv(){}
@@ -25,7 +23,6 @@ Readgtinv::~Readgtinv(){}
 void Readgtinv::screening(
     const int gtinv_order,
     const vector1i& gtinv_maxl,
-    const int n_type,
     const int version){
 
     auto data_v2 = GtinvData();
