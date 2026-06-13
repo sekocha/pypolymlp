@@ -46,8 +46,20 @@ def convert_stresses_in_gpa(stresses: np.ndarray, structures: list[PolymlpStruct
     """Calculate stress tensor values in GPa."""
     if not isinstance(stresses, np.ndarray):
         stresses = np.array(stresses)
-    volumes = np.array([st.volume for st in structures])
-    stresses_gpa = np.zeros(stresses.shape)
-    for i in range(6):
-        stresses_gpa[:, i] = stresses[:, i] / volumes * EVtoGPa
+
+    if stresses.ndim == 1:
+        volume = (
+            structures.volume
+            if isinstance(structures, PolymlpStructure)
+            else structures[0].volume
+        )
+        stresses_gpa = stresses * EVtoGPa / volume
+
+    elif stresses.ndim == 2:
+        assert len(structures) == stresses.shape[0]
+
+        volumes = np.array([st.volume for st in structures])
+        stresses_gpa = stresses * EVtoGPa / volumes[:, None]
+    else:
+        raise RuntimeError("Stress shape must be 1 or 2.")
     return stresses_gpa
