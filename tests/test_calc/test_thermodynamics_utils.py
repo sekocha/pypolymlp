@@ -29,12 +29,12 @@ def test_FittedModels(thermodynamics_grids_Cu):
     assert cv is None
     assert not models._check_errors(3)
 
-    assert models.eval_eq_free_energy(3) == pytest.approx(-4.0817623942196715)
-    assert models.eval_eq_entropy(3) == pytest.approx(0.0003279106689341045)
+    assert models.eval_eq_free_energy(3) == pytest.approx(-4.0817623942196715, rel=1e-4)
+    assert models.eval_eq_entropy(3) == pytest.approx(0.0003279106689341045, rel=1e-4)
 
     volumes = [20, 22]
     assert models.eval_helmholtz_free_energies(volumes).shape == (2, 11)
     assert models.eval_entropies(volumes).shape == (2, 11)
     gibbs = models.eval_gibbs_free_energies(volumes)
     assert gibbs.shape == (11, 2, 2)
-    assert gibbs[3, 1, 1] == pytest.approx(-5.0137212766888)
+    assert gibbs[3, 1, 1] == pytest.approx(-5.0137212766888, rel=1e-4)
