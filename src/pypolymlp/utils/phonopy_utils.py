@@ -56,7 +56,7 @@ def phonopy_supercell(
         supercell_matrix = np.diag(supercell_diag)
 
     unitcell = structure_to_phonopy_cell(structure)
-    supercell = Phonopy(unitcell, supercell_matrix).supercell
+    supercell = Phonopy(unitcell, supercell_matrix, primitive_matrix="P").supercell
     if return_phonopy:
         return supercell
 

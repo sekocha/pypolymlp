@@ -83,13 +83,8 @@ set(SRC_FILES
     src/polymlp/polymlp_gtinv_data_order4.cpp
     src/polymlp/polymlp_gtinv_data_order5.cpp
     src/polymlp/polymlp_gtinv_data_order6.cpp
-    # src/polymlp/polymlp_gtinv_data_ver2.cpp
-    # src/polymlp/polymlp_gtinv_data_ver2_order1.cpp
-    # src/polymlp/polymlp_gtinv_data_ver2_order2.cpp
-    # src/polymlp/polymlp_gtinv_data_ver2_order3.cpp
-    # src/polymlp/polymlp_gtinv_data_ver2_order4.cpp
-    # src/polymlp/polymlp_gtinv_data_ver2_order5.cpp
-    # src/polymlp/polymlp_gtinv_data_ver2_order6.cpp
+    src/polymlp/polymlp_gtinv_data_v2.cpp
+    src/polymlp/polymlp_gtinv_binary.cpp
 )
 
 pybind11_add_module(libmlpcpp ${SRC_FILES})
@@ -112,8 +107,16 @@ else()
   message(WARNING "OpenMP not found. It runs on single thread.")
 endif()
 
+
 install(
     TARGETS libmlpcpp
     COMPONENT python
     LIBRARY DESTINATION ${CMAKE_SOURCE_DIR}/lib
+)
+install(
+    FILES src/polymlp/polymlp_gtinv_data_v2_order2.bin DESTINATION ${CMAKE_SOURCE_DIR}/lib
+    FILES src/polymlp/polymlp_gtinv_data_v2_order3.bin DESTINATION ${CMAKE_SOURCE_DIR}/lib
+    FILES src/polymlp/polymlp_gtinv_data_v2_order4.bin DESTINATION ${CMAKE_SOURCE_DIR}/lib
+    FILES src/polymlp/polymlp_gtinv_data_v2_order5.bin DESTINATION ${CMAKE_SOURCE_DIR}/lib
+    FILES src/polymlp/polymlp_gtinv_data_v2_order6.bin DESTINATION ${CMAKE_SOURCE_DIR}/lib
 )

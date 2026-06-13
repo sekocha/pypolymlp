@@ -28,3 +28,9 @@ pypolymlp-symfc --poscar POSCAR --supercell 2 2 2 --orders 2 3 --disable_mkl --v
 ```shell
 pypolymlp-kim --pot polymlp.yaml
 ```
+
+## Enumeration of polynomial invariants
+```shell
+pypolymlp-invariant -l 3 3 3 3 3 3
+pypolymlp-invariant --orders 2 3 4 --maxl 5
+```
