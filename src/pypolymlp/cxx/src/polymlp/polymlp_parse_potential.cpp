@@ -175,12 +175,6 @@ const int ParsePolymlpYaml::get_gtinv_version(){
 const vector1i ParsePolymlpYaml::get_gtinv_maxl(){
     return transform_vector1i(params["gtinv_maxl"]);
 }
-const vector1b ParsePolymlpYaml::get_gtinv_sym(){
-    auto sym = transform_vector1i(params["gtinv_sym"]);
-    vector1b sym_b;
-    for (auto& s: sym) sym_b.emplace_back(static_cast<bool>(s));
-    return sym_b;
-}
 const vector1d ParsePolymlpYaml::get_mass(){
     return transform_vector1d(params["mass"]);
 }
@@ -226,7 +220,6 @@ void parse_polymlp(
 ){
 
     fp.force = true;
-    // auto yaml = ParsePolymlpYaml("polymlp.yaml");
     auto yaml = ParsePolymlpYaml(file);
 
     ele = yaml.get_elements();
@@ -241,12 +234,10 @@ void parse_polymlp(
     if (fp.feature_type == "gtinv"){
         int gtinv_order = yaml.get_gtinv_order();
         auto gtinv_maxl = yaml.get_gtinv_maxl();
-        std::vector<bool> gtinv_sym = yaml.get_gtinv_sym();
         int version = yaml.get_gtinv_version();
         if (version != 2) version = 1;
 
-        // version must be implemented.
-        Readgtinv rgt(gtinv_order, gtinv_maxl, gtinv_sym, ele.size(), version);
+        Readgtinv rgt(gtinv_order, gtinv_maxl, version);
         fp.lm_array = rgt.get_lm_seq();
         fp.l_comb = rgt.get_l_comb();
         fp.lm_coeffs = rgt.get_lm_coeffs();

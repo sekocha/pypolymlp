@@ -119,12 +119,11 @@ def load_mlp_yaml(filename: Union[str, io.IOBase] = "polymlp.yaml"):
         gtinv = PolymlpGtinvParams(
             order=yml["gtinv_order"],
             max_l=yml["gtinv_maxl"],
-            sym=yml["gtinv_sym"],
             n_type=n_type,
             version=yml["gtinv_version"],
         )
     else:
-        gtinv = PolymlpGtinvParams(order=0, max_l=[], sym=[], n_type=n_type)
+        gtinv = PolymlpGtinvParams(order=0, max_l=[], n_type=n_type)
 
     pair_params_cond = dict()
     for tp in yml["type_pairs"]:

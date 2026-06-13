@@ -170,7 +170,7 @@ void parse_polymlp_legacy(
         if (version != 2) version = 1;
 
         // version must be implemented.
-        Readgtinv rgt(gtinv_order, gtinv_maxl, gtinv_sym, ele.size(), version);
+        Readgtinv rgt(gtinv_order, gtinv_maxl, version);
         fp.lm_array = rgt.get_lm_seq();
         fp.l_comb = rgt.get_l_comb();
         fp.lm_coeffs = rgt.get_lm_coeffs();

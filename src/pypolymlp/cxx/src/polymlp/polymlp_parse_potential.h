@@ -52,7 +52,6 @@ class ParsePolymlpYaml {
     const int get_gtinv_order();
     const int get_gtinv_version();
     const vector1i get_gtinv_maxl();
-    const vector1b get_gtinv_sym();
 
     const vector1d get_mass();
     const vector1d get_coeffs();
