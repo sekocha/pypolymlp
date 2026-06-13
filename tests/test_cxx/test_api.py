@@ -16,3 +16,5 @@ def test_get_ylm():
         azimuthal=1.2,
         lmax=10,
     )
+    print(ylm)
+    assert 1 == 0
