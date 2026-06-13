@@ -22,7 +22,7 @@
 #include "polymlp/polymlp_read_gtinv.h"
 
 // For tests
-#include "polymlp/polymlp_gtinv_data.h"
+#include "polymlp/polymlp_mlipkk_spherical_harmonics.h"
 
 namespace py = pybind11;
 

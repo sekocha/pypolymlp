@@ -109,4 +109,36 @@ PYBIND11_MODULE(libmlpcpp, m) {
                 py::return_value_policy::reference_internal)
         ;
 
+
+    m.def("get_ylm",
+        [](double r,
+           double polar,
+           double azimuthal,
+           int lmax){
+            vector1dc ylm;
+            vector1dc ylm_dx;
+            vector1dc ylm_dy;
+            vector1dc ylm_dz;
+
+            get_ylm_(
+                r,
+                polar,
+                azimuthal,
+                lmax,
+                ylm,
+                ylm_dx,
+                ylm_dy,
+                ylm_dz);
+
+            return py::make_tuple(
+                ylm,
+                ylm_dx,
+                ylm_dy,
+                ylm_dz);
+        },
+        py::arg("r"),
+        py::arg("polar"),
+        py::arg("azimuthal"),
+        py::arg("lmax")
+    );
 }
