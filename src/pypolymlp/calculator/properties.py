@@ -32,6 +32,7 @@ class Properties(PropertiesBase):
         Any one of pot and (params, coeffs) is needed.
         """
 
+        super().__init__()
         self._pot = None
         if pot is not None:
             self._pot = pot
@@ -131,6 +132,8 @@ class Properties(PropertiesBase):
     @property
     def elements(self):
         """Return elements."""
+        if self._prop is None:
+            return None
         return self._prop.elements
 
     @property

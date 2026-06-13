@@ -46,11 +46,7 @@ class GeometryOptimization:
         self._prop = properties
         self._verbose = verbose
 
-        params = self._prop.params
-        if isinstance(params, list):
-            elements = params[0].elements
-        else:
-            elements = params.elements
+        elements = self._prop.elements
         cell = update_types(cell, elements)
 
         if not relax_cell and not relax_volume and not relax_positions:

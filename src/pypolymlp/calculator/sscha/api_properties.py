@@ -6,6 +6,7 @@ from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.sscha.api_sscha import run_sscha
 from pypolymlp.calculator.sscha.sscha_params import SSCHAParams
 from pypolymlp.calculator.sscha.sscha_utils import symmetrize_properties
+from pypolymlp.calculator.utils.properties_base import PropertiesBase
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.units import EVtoKJmol
 from pypolymlp.utils.structure_utils import supercell
@@ -13,7 +14,7 @@ from pypolymlp.utils.symfc_utils import compute_projector_cartesian
 from pypolymlp.utils.tensor_utils_O2 import compute_projector_O2
 
 
-class PropertiesSSCHA:
+class PropertiesSSCHA(PropertiesBase):
     """Class for calculating SSCHA properties."""
 
     def __init__(
@@ -33,6 +34,7 @@ class PropertiesSSCHA:
         sscha_params: SSCHA parameters in SSCHAParams class.
         properties: Properties instance.
         """
+        super().__init__()
         self._sscha_params = sscha_params
         self._prop = properties
         self._verbose = verbose
@@ -144,6 +146,13 @@ class PropertiesSSCHA:
             return None
         entropy = self._sscha.properties.entropy / (EVtoKJmol * 1000)
         return entropy
+
+    @property
+    def elements(self):
+        """Return elements."""
+        if self._prop is None:
+            return None
+        return self._prop.elements
 
     @property
     def params(self):

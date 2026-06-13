@@ -30,6 +30,7 @@ class PropertiesSingle(PropertiesBase):
         coeffs: Polymlp coefficients.
         """
 
+        super().__init__()
         if pot is not None:
             self._params, self._coeffs = load_mlp(filename=pot)
         else:

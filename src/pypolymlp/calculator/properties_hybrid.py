@@ -27,7 +27,7 @@ class PropertiesHybrid(PropertiesBase):
         params: Parameters for polymlp.
         coeffs: Polymlp coefficients.
         """
-
+        super().__init__()
         if pot is not None:
             if not isinstance(pot, list):
                 raise ValueError("Parameters in PropertiesHybrid must be lists.")
