@@ -9,6 +9,8 @@ from pypolymlp.polyinv.api_polyinv import (
     run_enum,
     run_enum_single_order,
     save_coeffs,
+    save_coeffs_multiple_l,
+    save_l,
     solve,
 )
 
@@ -18,14 +20,9 @@ def test_run_enum():
     eigvecs_all, lm_indices_all = run_enum(
         orders=[2, 3, 4, 5, 6],
         maxl=1,
-        filename_l="tmp.yaml",
-        filename_coeffs="tmp2.yaml",
     )
     assert len(eigvecs_all) == 14
     assert len(lm_indices_all) == 14
-    for i in range(2, 7):
-        os.remove("tmp_" + str(i) + ".yaml")
-        os.remove("tmp2_" + str(i) + ".yaml")
 
 
 def test_run_enum_single_order():
@@ -34,8 +31,6 @@ def test_run_enum_single_order():
         order=2,
         maxl=5,
         minl=None,
-        filename_l="tmp.yaml",
-        filename_coeffs="tmp2.yaml",
     )
     assert len(eigvecs_all) == 6
     assert len(lm_indices_all) == 6
@@ -44,13 +39,9 @@ def test_run_enum_single_order():
         order=3,
         maxl=5,
         minl=None,
-        filename_l="tmp.yaml",
-        filename_coeffs="tmp2.yaml",
     )
     assert len(eigvecs_all) == 20
     assert len(lm_indices_all) == 20
-    os.remove("tmp.yaml")
-    os.remove("tmp2.yaml")
 
 
 def test_solve_2():
@@ -124,4 +115,18 @@ def test_save_coeffs():
     """Test save_coeffs."""
     eigvecs, lm_indices = solve([3, 3], lproj=0, verbose=True)
     save_coeffs(eigvecs, lm_indices, filename="tmp.yaml", mode="w", tag="inv")
+    os.remove("tmp.yaml")
+
+
+def test_save_coeffs_multiple_l():
+    """Test save_coeffs_multiple_l."""
+    eigvecs, lm_indices = solve([3, 3], lproj=0, verbose=True)
+    save_coeffs_multiple_l([eigvecs], [lm_indices], filename="tmp.yaml")
+    os.remove("tmp.yaml")
+
+
+def test_save_l():
+    """Test save_coeffs."""
+    eigvecs, lm_indices = solve([3, 3], lproj=0, verbose=True)
+    save_l([[0, 0], [0, 1]], [2, 1], filename="tmp.yaml")
     os.remove("tmp.yaml")

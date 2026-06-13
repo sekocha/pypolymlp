@@ -41,7 +41,7 @@ class PolymlpPhonon:
         self._verbose = verbose
 
         unitcell_ph = structure_to_phonopy_cell(unitcell)
-        self._ph = Phonopy(unitcell_ph, supercell_matrix)
+        self._ph = Phonopy(unitcell_ph, supercell_matrix, primitive_matrix="P")
         self._supercell = phonopy_cell_to_structure(self._ph.supercell)
         self._supercell.supercell_matrix = supercell_matrix
         self._with_pdos = False
@@ -252,7 +252,7 @@ def calculate_harmonic_properties_from_fc2(
         fc2 = read_force_constants_hdf5(path_fc2)
 
     unitcell_ph = structure_to_phonopy_cell(unitcell)
-    ph = Phonopy(unitcell_ph, supercell_matrix)
+    ph = Phonopy(unitcell_ph, supercell_matrix, primitive_matrix="P")
     ph.force_constants = fc2
     ph.run_mesh(mesh)
     ph.run_thermal_properties(temperatures=temperatures)

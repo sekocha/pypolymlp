@@ -31,7 +31,7 @@ def load_phonon(
 
     fc2 = load_fc2_hdf5(filefc2=filefc2, return_matrix=False)
     unitcell_ph = structure_to_phonopy_cell(unitcell)
-    ph = Phonopy(unitcell_ph, supercell.supercell_matrix)
+    ph = Phonopy(unitcell_ph, supercell.supercell_matrix, primitive_matrix="P")
     ph.force_constants = fc2
     return (unitcell, supercell, ph)
 
