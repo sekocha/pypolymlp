@@ -6,7 +6,8 @@ import io
 import numpy as np
 
 from pypolymlp.calculator.opt_geometry import GeometryOptimization
-from pypolymlp.calculator.properties import Properties, convert_stresses_in_gpa
+from pypolymlp.calculator.properties import Properties
+from pypolymlp.calculator.utils.properties_utils import convert_stresses_in_gpa
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.units import EVtoGPa
 from pypolymlp.utils.tensor_utils_O4 import compute_projector_O4

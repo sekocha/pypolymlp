@@ -5,8 +5,8 @@ import os
 import numpy as np
 import pytest
 
-from pypolymlp.calculator.properties import (
-    Properties,
+from pypolymlp.calculator.properties import Properties
+from pypolymlp.calculator.utils.properties_utils import (
     convert_stresses_in_gpa,
     find_active_atoms,
 )

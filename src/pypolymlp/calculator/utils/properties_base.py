@@ -22,8 +22,8 @@ class PropertiesBase(ABC):
         """Evaluate properties for multiple structures."""
         pass
 
-    @abstractmethod
     @property
+    @abstractmethod
     def elements(self):
         """Return elements."""
         pass

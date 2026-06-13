@@ -5,7 +5,8 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from pypolymlp.calculator.properties import Properties, convert_stresses_in_gpa
+from pypolymlp.calculator.properties import Properties
+from pypolymlp.calculator.utils.properties_utils import convert_stresses_in_gpa
 from pypolymlp.core.interface_vasp import Poscar
 
 cwd = Path(__file__).parent

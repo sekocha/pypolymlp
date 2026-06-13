@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from pypolymlp.calculator.properties import convert_stresses_in_gpa
+from pypolymlp.calculator.utils.properties_utils import convert_stresses_in_gpa
 
 
 def test_eval1(unitcell_disp_pair_MgO):
