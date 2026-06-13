@@ -21,6 +21,9 @@
 #include "compute/neighbor.h"
 #include "polymlp/polymlp_read_gtinv.h"
 
+// For tests
+#include "polymlp/polymlp_gtinv_data.h"
+
 namespace py = pybind11;
 
 #endif
