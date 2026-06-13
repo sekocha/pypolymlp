@@ -72,6 +72,7 @@ def save_all(v_int2d: list, v_double2d: list, v_int3d: list, path: str):
 def convert_polyinv_yaml_binary(
     order: int = 3,
     filename: str = "polyinv_coeffs.yaml",
+    version: int = 2,
 ):
     """Convert polyinv_coeff.yaml file into binary data file.
 
@@ -88,5 +89,5 @@ def convert_polyinv_yaml_binary(
     m_all = [d["m"] for d in data]
     c_all = [d["coeffs"] for d in data]
 
-    binary_file = "polymlp_gtinv_data_v2_order" + str(order) + ".bin"
+    binary_file = "polymlp_gtinv_data_v" + str(version) + "_order" + str(order) + ".bin"
     save_all(l_all, c_all, m_all, binary_file)

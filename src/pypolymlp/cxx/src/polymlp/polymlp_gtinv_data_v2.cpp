@@ -29,8 +29,7 @@ std::string get_library_directory() {
 #endif
 }
 
-GtinvDataVer2::GtinvDataVer2(){
-}
+GtinvDataVer2::GtinvDataVer2(){}
 GtinvDataVer2::~GtinvDataVer2(){}
 
 void GtinvDataVer2::parse(const int order){

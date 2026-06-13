@@ -79,11 +79,11 @@ set(SRC_FILES
     src/compute/model.cpp
     src/python/pybind11_mlp.cpp
     src/polymlp/polymlp_gtinv_data.cpp
-    src/polymlp/polymlp_gtinv_data_order3.cpp
-    src/polymlp/polymlp_gtinv_data_order4.cpp
-    src/polymlp/polymlp_gtinv_data_order5.cpp
-    src/polymlp/polymlp_gtinv_data_order6.cpp
-    src/polymlp/polymlp_gtinv_data_v2.cpp
+    # src/polymlp/polymlp_gtinv_data_order3.cpp
+    # src/polymlp/polymlp_gtinv_data_order4.cpp
+    # src/polymlp/polymlp_gtinv_data_order5.cpp
+    # src/polymlp/polymlp_gtinv_data_order6.cpp
+    # src/polymlp/polymlp_gtinv_data_v2.cpp
     src/polymlp/polymlp_gtinv_binary.cpp
 )
 
@@ -113,7 +113,15 @@ install(
     COMPONENT python
     LIBRARY DESTINATION ${CMAKE_SOURCE_DIR}/lib
 )
+
 install(
+    FILES src/polymlp/polymlp_gtinv_data_v1_order1.bin DESTINATION ${CMAKE_SOURCE_DIR}/lib
+    FILES src/polymlp/polymlp_gtinv_data_v1_order2.bin DESTINATION ${CMAKE_SOURCE_DIR}/lib
+    FILES src/polymlp/polymlp_gtinv_data_v1_order3.bin DESTINATION ${CMAKE_SOURCE_DIR}/lib
+    FILES src/polymlp/polymlp_gtinv_data_v1_order4.bin DESTINATION ${CMAKE_SOURCE_DIR}/lib
+    FILES src/polymlp/polymlp_gtinv_data_v1_order5.bin DESTINATION ${CMAKE_SOURCE_DIR}/lib
+    FILES src/polymlp/polymlp_gtinv_data_v1_order6.bin DESTINATION ${CMAKE_SOURCE_DIR}/lib
+    FILES src/polymlp/polymlp_gtinv_data_v2_order1.bin DESTINATION ${CMAKE_SOURCE_DIR}/lib
     FILES src/polymlp/polymlp_gtinv_data_v2_order2.bin DESTINATION ${CMAKE_SOURCE_DIR}/lib
     FILES src/polymlp/polymlp_gtinv_data_v2_order3.bin DESTINATION ${CMAKE_SOURCE_DIR}/lib
     FILES src/polymlp/polymlp_gtinv_data_v2_order4.bin DESTINATION ${CMAKE_SOURCE_DIR}/lib

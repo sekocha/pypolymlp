@@ -1,6 +1,6 @@
 /****************************************************************************
 
-        Copyright (C) 2024 Atsuto Seko
+        Copyright (C) 2026 Atsuto Seko
                 seko@cms.mtl.kyoto-u.ac.jp
 
 ****************************************************************************/
@@ -8,27 +8,32 @@
 #ifndef __POLYMLP_GTINV_DATA
 #define __POLYMLP_GTINV_DATA
 
+#include "polymlp_gtinv_binary.h"
 #include "polymlp_mlpcpp.h"
 
 
-#pragma once
+#include <filesystem>
 
-template<int Order>
+#if defined(__linux__) || defined(__APPLE__)
+#include <dlfcn.h>
+#endif
+
+
 class GtinvData {
 
-    static const vector2i L_ARRAY_ALL;
-    static const vector3i M_ARRAY_ALL;
-    static const vector2d COEFFS_ALL;
+    vector2i32 l_array_all;
+    vector2d coeffs_all;
+    vector3i32 m_array_all;
 
     public:
 
-    GtinvData() = default;
-    ~GtinvData() = default;
+    GtinvData();
+    ~GtinvData();
+    void parse(const int order, const int version);
 
-    static const vector2i& get_static_l_array() { return L_ARRAY_ALL; }
-    static const vector3i& get_static_m_array() { return M_ARRAY_ALL; }
-    static const vector2d& get_static_coeffs() { return COEFFS_ALL; }
+    const vector2i32& get_l_array() const;
+    const vector3i32& get_m_array() const;
+    const vector2d& get_coeffs() const;
 };
-
 
 #endif
