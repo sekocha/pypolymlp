@@ -9,7 +9,7 @@ from pypolymlp.calculator.utils.properties_utils import convert_stresses_in_gpa
 def test_eval1(unitcell_disp_pair_MgO):
     """Test properties with pair polymlp in MgO."""
     unitcell, pot, prop = unitcell_disp_pair_MgO
-    energy, forces, stresses = prop.eval(unitcell)
+    energy, forces, stresses = prop.eval(unitcell, use_openmp=True)
 
     energy_true = -40.22469744315832
     forces_true = [
@@ -36,11 +36,18 @@ def test_eval1(unitcell_disp_pair_MgO):
     stresses = convert_stresses_in_gpa(np.array([stresses]), [unitcell])[0]
     np.testing.assert_allclose(stresses, stresses_true, atol=1e-5)
 
+    energy, forces, stresses = prop.eval(unitcell, use_openmp=False)
+
+    assert energy == pytest.approx(energy_true, rel=1e-8)
+    np.testing.assert_allclose(forces.T, forces_true, atol=1e-6)
+    stresses = convert_stresses_in_gpa(np.array([stresses]), [unitcell])[0]
+    np.testing.assert_allclose(stresses, stresses_true, atol=1e-5)
+
 
 def test_eval2(unitcell_disp_gtinv_MgO):
     """Test properties with polymlp in MgO."""
     unitcell, pot, prop = unitcell_disp_gtinv_MgO
-    energy, forces, stresses = prop.eval(unitcell)
+    energy, forces, stresses = prop.eval(unitcell, use_openmp=True)
 
     energy_true = -40.223320043232334
     forces_true = [
@@ -62,6 +69,12 @@ def test_eval2(unitcell_disp_gtinv_MgO):
         8.83338671e-05,
     ]
 
+    assert energy == pytest.approx(energy_true, rel=1e-8)
+    np.testing.assert_allclose(forces.T, forces_true, atol=1e-6)
+    stresses = convert_stresses_in_gpa(np.array([stresses]), [unitcell])[0]
+    np.testing.assert_allclose(stresses, stresses_true, atol=1e-5)
+
+    energy, forces, stresses = prop.eval(unitcell, use_openmp=True)
     assert energy == pytest.approx(energy_true, rel=1e-8)
     np.testing.assert_allclose(forces.T, forces_true, atol=1e-6)
     stresses = convert_stresses_in_gpa(np.array([stresses]), [unitcell])[0]
