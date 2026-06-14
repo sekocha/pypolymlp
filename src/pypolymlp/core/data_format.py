@@ -8,7 +8,7 @@ from typing import Literal, Optional, Union
 
 import numpy as np
 
-from pypolymlp.cxx.api_cxx import get_gtinv_attrs
+from pypolymlp.cxx.api_gtinv_list import get_gtinv_attrs
 
 
 @dataclass
