@@ -59,17 +59,30 @@ class Neighbor:
 class NeighborHalf:
     """Calculate a half list of neighbor atoms."""
 
-    def __init__(self, structure: PolymlpStructure, cutoff: float = 6.0):
+    def __init__(
+        self,
+        structure: PolymlpStructure,
+        cutoff: float = 6.0,
+        use_openmp: bool = True,
+    ):
         """Init method."""
         if structure.positions_cartesian is None:
             structure.positions_cartesian = structure.axis @ structure.positions
 
-        self._obj = libmlpcpp.NeighborHalf(
-            structure.axis,
-            structure.positions_cartesian,
-            structure.types,
-            cutoff,
-        )
+        if use_openmp:
+            self._obj = libmlpcpp.NeighborHalfOpenMP(
+                structure.axis,
+                structure.positions_cartesian,
+                structure.types,
+                cutoff,
+            )
+        else:
+            self._obj = libmlpcpp.NeighborHalf(
+                structure.axis,
+                structure.positions_cartesian,
+                structure.types,
+                cutoff,
+            )
 
     @property
     def differences(self):
