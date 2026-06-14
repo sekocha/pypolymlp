@@ -107,6 +107,16 @@ PYBIND11_MODULE(libmlpcpp, m) {
                 py::return_value_policy::reference_internal)
         ;
 
+    py::class_<NeighborHalf>(m, "NeighborHalf")
+        .def(py::init<const vector2d&,
+                      const vector2d&,
+                      const vector1i&,
+                      const double&>())
+        .def("get_differences", &NeighborHalf::get_diff_list,
+                py::return_value_policy::reference_internal)
+        .def("get_neighbor_indices", &NeighborHalf::get_half_list,
+                py::return_value_policy::reference_internal)
+        ;
 
     m.def("get_ylm",
         [](double r,

@@ -54,3 +54,42 @@ class Neighbor:
           Array indices correspond to (central atom i, atom type of neighboring atom j).
         """
         return self._obj.get_neighbor_indices()
+
+
+class NeighborHalf:
+    """Calculate a half list of neighbor atoms."""
+
+    def __init__(self, structure: PolymlpStructure, cutoff: float = 6.0):
+        """Init method."""
+        if structure.positions_cartesian is None:
+            structure.positions_cartesian = structure.axis @ structure.positions
+
+        self._obj = libmlpcpp.NeighborHalf(
+            structure.axis,
+            structure.positions_cartesian,
+            structure.types,
+            cutoff,
+        )
+
+    @property
+    def differences(self):
+        """Return Cartesian vector between atom and neighbor atom.
+
+        Return
+        ------
+        Cartesian difference vector. shape=(n_atom, n_type, n_neighbor_i, 3).
+          Calculate positions[j] - positions[i] for central atom i and neighbor atom j.
+          Array indices correspond to (central atom i, atom type of neighboring atom j).
+        """
+        return self._obj.get_differences()
+
+    @property
+    def neighbor_atoms(self):
+        """Return neighbor atom indices.
+
+        Return
+        ------
+        Neighbor atom indices. shape=(n_atom, n_type, n_neighbor).
+          Array indices correspond to (central atom i, atom type of neighboring atom j).
+        """
+        return self._obj.get_neighbor_indices()

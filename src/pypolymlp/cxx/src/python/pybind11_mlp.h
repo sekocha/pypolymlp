@@ -22,6 +22,7 @@
 #include "polymlp/polymlp_read_gtinv.h"
 
 // For tests
+#include "compute/neighbor_half.h"
 #include "polymlp/polymlp_mlipkk_spherical_harmonics.h"
 
 namespace py = pybind11;

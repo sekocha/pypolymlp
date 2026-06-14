@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from pypolymlp.cxx.api_neighbor import Neighbor
+from pypolymlp.cxx.api_neighbor import Neighbor, NeighborHalf
 
 
 def test_compute_neighbor_list(structure_rocksalt):
@@ -52,3 +52,39 @@ def test_compute_neighbor_list(structure_rocksalt):
     assert np.sum(neighbor_atoms[6][1]) == 300
     assert np.sum(neighbor_atoms[7][0]) == 60
     assert np.sum(neighbor_atoms[7][1]) == 306
+
+
+def test_neighbor_half_list(structure_rocksalt):
+    """Test for neighbor half list."""
+    neigh = NeighborHalf(structure_rocksalt, cutoff=6.0)
+
+    differences = neigh.differences
+    assert len(differences) == 8
+    assert np.array(differences[0]).shape == (9, 3)
+    assert np.array(differences[1]).shape == (21, 3)
+    assert np.array(differences[2]).shape == (33, 3)
+    assert np.array(differences[3]).shape == (45, 3)
+    assert np.array(differences[4]).shape == (47, 3)
+    assert np.array(differences[5]).shape == (59, 3)
+    assert np.array(differences[6]).shape == (71, 3)
+    assert np.array(differences[7]).shape == (83, 3)
+
+    neighbor_atoms = neigh.neighbor_atoms
+    assert len(neighbor_atoms) == 8
+    assert len(neighbor_atoms[0]) == 9
+    assert len(neighbor_atoms[1]) == 21
+    assert len(neighbor_atoms[2]) == 33
+    assert len(neighbor_atoms[3]) == 45
+    assert len(neighbor_atoms[4]) == 47
+    assert len(neighbor_atoms[5]) == 59
+    assert len(neighbor_atoms[6]) == 71
+    assert len(neighbor_atoms[7]) == 83
+
+    assert np.sum(neighbor_atoms[0]) == 0
+    assert np.sum(neighbor_atoms[1]) == 9
+    assert np.sum(neighbor_atoms[2]) == 30
+    assert np.sum(neighbor_atoms[3]) == 63
+    assert np.sum(neighbor_atoms[4]) == 90
+    assert np.sum(neighbor_atoms[5]) == 149
+    assert np.sum(neighbor_atoms[6]) == 220
+    assert np.sum(neighbor_atoms[7]) == 303
