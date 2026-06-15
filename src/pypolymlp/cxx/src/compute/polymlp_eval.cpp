@@ -223,8 +223,8 @@ void PolymlpEval::eval_gtinv(
     vector1dc ylm, ylm_dx, ylm_dy, ylm_dz;
 
     for (int i = 0; i < n_atom; ++i) {
-        type1 = types[i];
         const vector1i& neighbor_i = neighbor_half[i];
+        type1 = types[i];
         const auto& maps_type = maps.maps_type[type1];
         const auto& nlmtp_attrs_noconj = maps_type.nlmtp_attrs_noconj;
         for (size_t jj = 0; jj < neighbor_i.size(); ++jj){

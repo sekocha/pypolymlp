@@ -19,8 +19,10 @@ NeighborHalfOpenMP::NeighborHalfOpenMP(
     const auto& trans = neigh_cell.get_translations();
     const auto& positions_c_rev = neigh_cell.get_positions_cartesian();
 
-    const double tol = 1e-12;
-    const size_t n_total_atom = types.size();
+    n_total_atom = positions_c[0].size();
+    const double tol = 1e-10;
+    const double tol_sq = tol * tol;
+    const double cutoff_sq = cutoff * cutoff;
 
     vector1i count(n_total_atom, 0);
     for (int i = 0; i < n_total_atom; ++i){
@@ -33,7 +35,7 @@ NeighborHalfOpenMP::NeighborHalfOpenMP(
                 double dy = dy_ij + tr[1];
                 double dz = dz_ij + tr[2];
                 double dis = sqrt(dx*dx + dy*dy + dz*dz);
-                if (dis < cutoff && dis > tol){
+                if (dis < cutoff and dis > tol){
                     count[i]++;
                 }
             }
@@ -43,11 +45,11 @@ NeighborHalfOpenMP::NeighborHalfOpenMP(
             double dy = tr[1];
             double dz = tr[2];
             double r2 = dx*dx + dy*dy + dz*dz;
-            if (r2 < cutoff*cutoff && r2 > tol*tol){
+            if (r2 < cutoff_sq and r2 > tol_sq){
                 bool keep;
                 if (dz >= tol) keep = true;
-                else if (fabs(dz) < tol && dy >= tol) keep = true;
-                else if (fabs(dz) < tol && fabs(dy) < tol && dx >= tol)
+                else if (fabs(dz) < tol and dy >= tol) keep = true;
+                else if (fabs(dz) < tol and fabs(dy) < tol and dx >= tol)
                     keep = true;
                 else keep = false;
                 if (keep){
@@ -80,12 +82,14 @@ NeighborHalfOpenMP::NeighborHalfOpenMP(
                 double dyv = dy_ij + tr[1];
                 double dzv = dz_ij + tr[2];
                 double r2 = dxv*dxv + dyv*dyv + dzv*dzv;
-                if (r2 < cutoff*cutoff && r2 > 1e-20){
-                    int id = pos[i]++;
+                if (r2 < cutoff_sq and r2 > tol_sq){
+                    //int id = pos[i]++;
+                    int id = pos[i];
                     neigh[id] = j;
                     dx[id] = dxv;
                     dy[id] = dyv;
                     dz[id] = dzv;
+                    ++pos[i];
                 }
             }
         }
@@ -95,24 +99,25 @@ NeighborHalfOpenMP::NeighborHalfOpenMP(
             double dyv = tr[1];
             double dzv = tr[2];
             double r2 = dxv*dxv + dyv*dyv + dzv*dzv;
-            if (r2 < cutoff*cutoff && r2 > 1e-20){
+            if (r2 < cutoff_sq and r2 > tol_sq){
                 bool keep;
-                if (dzv >= 1e-12) keep = true;
-                else if (fabs(dzv) < 1e-12 && dyv >= 1e-12) keep = true;
-                else if (fabs(dzv) < 1e-12 && fabs(dyv) < 1e-12 && dxv >= 1e-12)
+                if (dzv >= tol) keep = true;
+                else if (fabs(dzv) < tol and dyv >= tol) keep = true;
+                else if (fabs(dzv) < tol and fabs(dyv) < tol and dxv >= tol)
                     keep = true;
                 else keep = false;
                 if (keep){
-                    int id = pos[i]++;
+                    //int id = pos[i]++;
+                    int id = pos[i];
                     neigh[id] = i;
                     dx[id] = dxv;
                     dy[id] = dyv;
                     dz[id] = dzv;
+                    ++pos[i];
                 }
             }
         }
     }
-
     /*
     half_list = vector2i(n_total_atom);
     diff_list = vector3d(n_total_atom);
@@ -157,6 +162,25 @@ NeighborHalfOpenMP::NeighborHalfOpenMP(
 }
 
 NeighborHalfOpenMP::~NeighborHalfOpenMP(){}
-//
-//const vector2i& NeighborHalfOpenMP::get_half_list() const { return half_list; }
-//const vector3d& NeighborHalfOpenMP::get_diff_list() const { return diff_list; }
+
+// For test
+vector2i NeighborHalfOpenMP::get_half_list(){
+    vector2i half_list(n_total_atom);
+    for (int i = 0; i < n_total_atom; ++i){
+        for (int k = offset[i]; k < offset[i+1]; ++k){
+            half_list[i].emplace_back(neigh[k]);
+        }
+    }
+    return half_list;
+}
+
+// For test
+vector3d NeighborHalfOpenMP::get_diff_list(){
+    vector3d diff_list(n_total_atom);
+    for (int i = 0; i < n_total_atom; ++i){
+        for (int k = offset[i]; k < offset[i+1]; ++k){
+            diff_list[i].emplace_back(vector1d{dx[k], dy[k], dz[k]});
+        }
+    }
+    return diff_list;
+}
