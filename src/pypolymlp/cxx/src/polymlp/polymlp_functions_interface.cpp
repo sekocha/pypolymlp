@@ -7,7 +7,8 @@
 
 #include "polymlp_functions_interface.h"
 
-void get_fn_(const double& dis,
+
+void get_fn_(const double dis,
              const struct feature_params& fp,
              const vector2d& params,
              vector1d& fn){
@@ -28,10 +29,11 @@ void get_fn_(const double& dis,
     }
     */
 }
-void get_fn_(const double& dis,
+void get_fn_(const double dis,
              const struct feature_params& fp,
              vector1d& fn){
 
+    /*** deprecated ***/
     double fc = cosine_cutoff_function(dis, fp.cutoff);
 
     fn.resize(fp.params.size());
@@ -49,7 +51,7 @@ void get_fn_(const double& dis,
     */
 }
 
-void get_fn_(const double& dis,
+void get_fn_(const double dis,
              const struct feature_params& fp,
              const vector2d& params,
              vector1d& fn,
@@ -80,10 +82,12 @@ void get_fn_(const double& dis,
     */
 }
 
-void get_fn_(const double& dis,
+
+void get_fn_(const double dis,
              const struct feature_params& fp,
              vector1d& fn,
              vector1d& fn_dr){
+    /*** deprecated ***/
 
     double fn_val, fn_dr_val;
     const double fc = cosine_cutoff_function(dis, fp.cutoff);
@@ -142,14 +146,3 @@ vector1d cartesian_to_spherical_(const vector1d& v){
     phi = std::atan2(v[1], v[0]);
     return vector1d {theta, phi};
 }
-
-/*
-vector1d cartesian_to_spherical_(const vector1d& v){
-
-    bg::model::point<long double,3,bg::cs::cartesian> p1(v[0], v[1], v[2]);
-    bg::model::point<long double,3,bg::cs::spherical<bg::radian> > p2;
-    bg::transform(p1, p2);
-    return vector1d {static_cast<double>(bg::get<1>(p2)),
-        static_cast<double>(bg::get<0>(p2))}; // theta, phi
-}
-*/

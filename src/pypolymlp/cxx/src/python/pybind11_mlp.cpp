@@ -129,6 +129,37 @@ PYBIND11_MODULE(libmlpcpp, m) {
                 py::return_value_policy::reference_internal)
         ;
 
+    py::class_<feature_params>(m, "FeatureParams")
+        .def(py::init<>())
+        .def_readwrite("n_type", &feature_params::n_type)
+        .def_readwrite("force", &feature_params::force)
+        .def_readwrite("params", &feature_params::params)
+        .def_readwrite("params_conditional", &feature_params::params_conditional)
+        .def_readwrite("cutoff", &feature_params::cutoff)
+        .def_readwrite("pair_type", &feature_params::pair_type)
+        .def_readwrite("feature_type", &feature_params::feature_type)
+        .def_readwrite("model_type", &feature_params::model_type)
+        .def_readwrite("maxp", &feature_params::maxp)
+        .def_readwrite("maxl", &feature_params::maxl)
+        .def_readwrite("lm_array", &feature_params::lm_array)
+        .def_readwrite("l_comb", &feature_params::l_comb)
+        .def_readwrite("lm_coeffs", &feature_params::lm_coeffs)
+        ;
+
+    m.def("get_fn",
+        [](const double dis,
+           const feature_params& fp,
+           const vector2d& params){
+            vector1d fn;
+            vector1d fn_d;
+            get_fn_(dis, fp, params, fn, fn_d);
+            return py::make_tuple(fn, fn_d);
+        },
+        py::arg("dis"),
+        py::arg("fp"),
+        py::arg("params")
+    );
+
     m.def("get_ylm",
         [](double r,
            double polar,

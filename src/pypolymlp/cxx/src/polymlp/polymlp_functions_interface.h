@@ -17,21 +17,21 @@
 //namespace bm = boost::math;
 
 // Radial functions
-void get_fn_(const double& dis,
+void get_fn_(const double dis,
              const struct feature_params& fp,
              vector1d& fn);
 
-void get_fn_(const double& dis,
+void get_fn_(const double dis,
              const struct feature_params& fp,
              const vector2d& params,
              vector1d& fn);
 
-void get_fn_(const double& dis,
+void get_fn_(const double dis,
              const struct feature_params& fp,
              vector1d& fn,
              vector1d& fn_dr);
 
-void get_fn_(const double& dis,
+void get_fn_(const double dis,
              const struct feature_params& fp,
              const vector2d& params,
              vector1d& fn,
