@@ -1,5 +1,4 @@
 /****************************************************************************
-
         Copyright (C) 2024 Atsuto Seko
                 seko@cms.mtl.kyoto-u.ac.jp
 
@@ -14,17 +13,29 @@
 #include "polymlp/polymlp_functions_interface.h"
 #include "polymlp/polymlp_products.h"
 #include "compute/polymlp_eval.h"
+#include "compute/neighbor_half_openmp.h"
+
+struct Diff {
+    double x, y, z;
+};
 
 
 class PolymlpEvalOpenMP {
 
     PolymlpAPI polymlp_api;
+    int n_atom;
+
+    void convert_neighbor_half_to_full(
+        NeighborHalfOpenMP& neigh,
+        vector1i& neighbor_full,
+        std::vector<Diff>& neighbor_diff_full,
+        vector1i& offset);
+
 
     /* for feature_type = pair */
     void compute_antp(
         const vector1i& types,
-        const vector2i& neighbor_half,
-        const vector3d& neighbor_diff,
+        NeighborHalfOpenMP& neigh,
         vector2d& antp
     );
 
@@ -37,8 +48,7 @@ class PolymlpEvalOpenMP {
 
     void eval_pair(
         const vector1i& types,
-        const vector2i& neighbor_half,
-        const vector3d& neighbor_diff,
+        NeighborHalfOpenMP& neigh,
         double& energy,
         vector2d& forces,
         vector1d& stress
@@ -47,8 +57,7 @@ class PolymlpEvalOpenMP {
     /* for feature_type = gtinv */
     void compute_anlmtp(
         const vector1i& types,
-        const vector2i& neighbor_half,
-        const vector3d& neighbor_diff,
+        NeighborHalfOpenMP& neigh,
         vector2dc& anlmtp
     );
 
@@ -61,8 +70,7 @@ class PolymlpEvalOpenMP {
 
     void eval_gtinv(
         const vector1i& types,
-        const vector2i& neighbor_half,
-        const vector3d& neighbor_diff,
+        NeighborHalfOpenMP& neigh,
         double& energy,
         vector2d& forces,
         vector1d& stress
@@ -73,8 +81,7 @@ class PolymlpEvalOpenMP {
         const vector2d& fx_array,
         const vector2d& fy_array,
         const vector2d& fz_array,
-        const vector2i& neighbor_half,
-        const vector3d& neighbor_diff,
+        NeighborHalfOpenMP& neigh,
         double& energy,
         vector2d& forces,
         vector1d& stress
@@ -88,8 +95,7 @@ class PolymlpEvalOpenMP {
 
     void eval(
         const vector1i& types,
-        const vector2i& neighbor_half,
-        const vector3d& neighbor_diff,
+        NeighborHalfOpenMP& neigh,
         double& energy,
         vector2d& forces,
         vector1d& stress

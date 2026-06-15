@@ -27,10 +27,13 @@ void PyPropertiesFast::eval(
     /* positions_c: (3, n_atom) */
     if (use_openmp_atom == true){
         NeighborHalfOpenMP neigh(axis, positions_c, types, fp.cutoff);
+        polymlp_openmp.eval(types, neigh, energy, force, stress);
+        /*
         polymlp_openmp.eval(
             types, neigh.get_half_list(), neigh.get_diff_list(),
             energy, force, stress
         );
+        */
     }
     else {
         NeighborHalf neigh(axis, positions_c, types, fp.cutoff);
@@ -70,8 +73,7 @@ void PyPropertiesFast::eval_multiple(
             axis_array[0], positions_c_array[0], types_array[0], fp.cutoff
         );
         polymlp_openmp.eval(
-            types_array[0], neigh.get_half_list(), neigh.get_diff_list(),
-            e_array[0], f_array[0], s_array[0]
+            types_array[0], neigh, e_array[0], f_array[0], s_array[0]
         );
     }
 }
