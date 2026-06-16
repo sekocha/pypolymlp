@@ -25,6 +25,9 @@ NeighborHalfOpenMP::NeighborHalfOpenMP(
     const double cutoff_sq = cutoff * cutoff;
 
     vector1i count(n_total_atom, 0);
+    #ifdef _OPENMP
+    #pragma omp parallel for schedule(guided)
+    #endif
     for (int i = 0; i < n_total_atom; ++i){
         for (int j = 0; j < i; ++j){
             double dx_ij = positions_c_rev[0][j] - positions_c_rev[0][i];
@@ -34,10 +37,8 @@ NeighborHalfOpenMP::NeighborHalfOpenMP(
                 double dx = dx_ij + tr[0];
                 double dy = dy_ij + tr[1];
                 double dz = dz_ij + tr[2];
-                double dis = sqrt(dx*dx + dy*dy + dz*dz);
-                if (dis < cutoff and dis > tol){
-                    count[i]++;
-                }
+                double r2 = dx*dx + dy*dy + dz*dz;
+                if (r2 < cutoff_sq and r2 > tol_sq) ++count[i];
             }
         }
         for (const auto& tr: trans){
@@ -53,7 +54,7 @@ NeighborHalfOpenMP::NeighborHalfOpenMP(
                     keep = true;
                 else keep = false;
                 if (keep){
-                    count[i]++;
+                    ++count[i];
                 }
             }
         }
@@ -71,8 +72,11 @@ NeighborHalfOpenMP::NeighborHalfOpenMP(
     dy.resize(N);
     dz.resize(N);
 
-    vector1i pos = offset;
+    #ifdef _OPENMP
+    #pragma omp parallel for schedule(guided)
+    #endif
     for (int i = 0; i < n_total_atom; ++i){
+        int id = offset[i];
         for (int j = 0; j < i; ++j){
             double dx_ij = positions_c_rev[0][j] - positions_c_rev[0][i];
             double dy_ij = positions_c_rev[1][j] - positions_c_rev[1][i];
@@ -83,13 +87,11 @@ NeighborHalfOpenMP::NeighborHalfOpenMP(
                 double dzv = dz_ij + tr[2];
                 double r2 = dxv*dxv + dyv*dyv + dzv*dzv;
                 if (r2 < cutoff_sq and r2 > tol_sq){
-                    //int id = pos[i]++;
-                    int id = pos[i];
                     neigh[id] = j;
                     dx[id] = dxv;
                     dy[id] = dyv;
                     dz[id] = dzv;
-                    ++pos[i];
+                    ++id;
                 }
             }
         }
@@ -107,58 +109,15 @@ NeighborHalfOpenMP::NeighborHalfOpenMP(
                     keep = true;
                 else keep = false;
                 if (keep){
-                    //int id = pos[i]++;
-                    int id = pos[i];
                     neigh[id] = i;
                     dx[id] = dxv;
                     dy[id] = dyv;
                     dz[id] = dzv;
-                    ++pos[i];
+                    ++id;
                 }
             }
         }
     }
-    /*
-    half_list = vector2i(n_total_atom);
-    diff_list = vector3d(n_total_atom);
-
-    #ifdef _OPENMP
-    #pragma omp parallel for schedule(guided)
-    #endif
-    for (int i = 0; i < n_total_atom; ++i){
-        double dx, dy, dz, dx_ij, dy_ij, dz_ij, dis;
-        bool bool_half;
-        for (int j = 0; j < i; ++j){
-            dx_ij = positions_c_rev[0][j] - positions_c_rev[0][i];
-            dy_ij = positions_c_rev[1][j] - positions_c_rev[1][i];
-            dz_ij = positions_c_rev[2][j] - positions_c_rev[2][i];
-            for (const auto& tr: trans){
-                dx = dx_ij + tr[0], dy = dy_ij + tr[1], dz = dz_ij + tr[2];
-                dis = sqrt(dx*dx + dy*dy + dz*dz);
-                if (dis < cutoff and dis > 1e-10){
-                    half_list[i].emplace_back(j);
-                    diff_list[i].emplace_back(vector1d({dx, dy, dz}));
-                }
-            }
-        }
-        // j = i
-        for (const auto& tr: trans){
-            dx = tr[0], dy = tr[1], dz = tr[2];
-            dis = sqrt(dx*dx + dy*dy + dz*dz);
-            if (dis < cutoff and dis > 1e-10){
-                if (dz >= tol) bool_half = true;
-                else if (fabs(dz) < tol and dy >= tol) bool_half = true;
-                else if (fabs(dz) < tol and fabs(dy) < tol and dx >=tol)
-                    bool_half = true;
-                else bool_half = false;
-                if (bool_half == true){
-                    half_list[i].emplace_back(i);
-                    diff_list[i].emplace_back(tr);
-                }
-            }
-        }
-    }
-    */
 }
 
 NeighborHalfOpenMP::~NeighborHalfOpenMP(){}

@@ -221,9 +221,9 @@ void PolymlpEvalOpenMP::eval_gtinv(
     vector2d& forces,
     vector1d& stress){
 
-    vector2dc anlmtp, prod_sum_e, prod_sum_f;
 
     auto start1 = std::chrono::high_resolution_clock::now();
+    vector2dc anlmtp, prod_sum_e, prod_sum_f;
     compute_anlmtp(types, neigh, anlmtp);
     auto end1 = std::chrono::high_resolution_clock::now();
     auto elapsed1 =
@@ -270,14 +270,9 @@ void PolymlpEvalOpenMP::eval_gtinv(
         for (int k = begin; k < end; ++k) {
             int jj = k - begin;
             double dx1, dy1, dz1;
+            // diff = pos[j] - pos[i], (dx, dy, dz) = pos[i] - pos[j]
             int j = neigh.neighbor_atom(k);
             neigh.diff(k, dx1, dy1, dz1);
-
-        //for (int jj = 0; jj < neigh.size(i); ++jj) {
-        //    int j = neigh.j(i, jj);
-        //    // diff = pos[j] - pos[i], (dx, dy, dz) = pos[i] - pos[j]
-        //    double dx1, dy1, dz1;
-        //    neigh.diff(i, jj, dx1, dy1, dz1);
 
             dx = - dx1;
             dy = - dy1;
@@ -289,11 +284,10 @@ void PolymlpEvalOpenMP::eval_gtinv(
                 const auto& params = tp_to_params[tp];
                 const auto& sph = cartesian_to_spherical_(vector1d{dx,dy,dz});
                 get_fn_(dis, fp, params, fn, fn_d);
-                // TODO: fn > 1e-20
-                get_ylm_(dis, sph[0], sph[1], fp.maxl,
-                         ylm, ylm_dx, ylm_dy, ylm_dz);
+                get_ylm_(dis, sph[0], sph[1], fp.maxl, ylm, ylm_dx, ylm_dy, ylm_dz);
 
                 e_ij = 0.0, fx = 0.0, fy = 0.0, fz = 0.0;
+                // TODO: fn > 1e-20
                 for (const auto& nlmtp: nlmtp_attrs_noconj){
                     if (tp == nlmtp.tp){
                         const auto& lm_attr = nlmtp.lm;
@@ -344,22 +338,6 @@ void PolymlpEvalOpenMP::eval_gtinv(
         std::chrono::duration_cast<std::chrono::microseconds>
             (t2 - t1).count() / 1000.0
         );
-    std::cout << "anlmt:" << time << std::endl;
-    time = static_cast<double>(
-        std::chrono::duration_cast<std::chrono::microseconds>
-            (t3 - t2).count() / 1000.0
-        );
-    std::cout << "prod:" << time << std::endl;
-    time = static_cast<double>(
-        std::chrono::duration_cast<std::chrono::microseconds>
-            (t4 - t3).count() / 1000.0
-        );
-    std::cout << "final_sum:" << time << std::endl;
-    time = static_cast<double>(
-        std::chrono::duration_cast<std::chrono::microseconds>
-            (t5 - t4).count() / 1000.0
-        );
-    std::cout << "collect:" << time << std::endl;
     */
 }
 
@@ -393,14 +371,6 @@ void PolymlpEvalOpenMP::collect_properties(
             dx = - dx1;
             dy = - dy1;
             dz = - dz1;
-
-        //const vector1i& neighbor_i = neighbor_half[i];
-        //for (size_t jj = 0; jj < neigh.size(i); ++jj){
-        //    int j = neighbor_i[jj];
-        //    const auto& diff = neighbor_diff[i][jj];
-        //    dx = - diff[0];
-        //    dy = - diff[1];
-        //    dz = - diff[2];
             dis = sqrt(dx*dx + dy*dy + dz*dz);
             if (dis < fp.cutoff){
                 energy += e_array[i][jj];
@@ -454,14 +424,12 @@ void PolymlpEvalOpenMP::convert_neighbor_half_to_full(
             double dx, dy, dz;
             neigh.diff(k, dx, dy, dz);
             {
-                //int idx = ++pos[i];
                 int idx = pos[i];
                 neighbor_full[idx] = j;
                 neighbor_diff_full[idx] = {dx, dy, dz};
                 ++pos[i];
             }
             {
-                //int idx = ++pos[j];
                 int idx = pos[j];
                 neighbor_full[idx] = i;
                 neighbor_diff_full[idx] = {-dx, -dy, -dz};
@@ -510,10 +478,6 @@ void PolymlpEvalOpenMP::compute_anlmtp(
             dx = - diff.x;
             dy = - diff.y;
             dz = - diff.z;
-            //TODO: CHECK
-            // dx = diff.x;
-            // dy = diff.y;
-            // dz = diff.z;
             dis = sqrt(dx*dx + dy*dy + dz*dz);
             if (dis < fp.cutoff){
                 type2 = types[j];

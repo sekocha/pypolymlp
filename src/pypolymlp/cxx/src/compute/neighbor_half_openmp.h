@@ -38,15 +38,10 @@ class NeighborHalfOpenMP {
     }
 
     inline int neighbor_atom(int id) const {
-        //return neigh[offset[i] + k];
         return neigh[id];
     }
 
     inline void diff(int id, double &x, double &y, double &z) const {
-        //int id = offset[i] + k;
-        //x = dx[id];
-        //y = dy[id];
-        //z = dz[id];
         x = dx[id];
         y = dy[id];
         z = dz[id];
