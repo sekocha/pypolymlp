@@ -27,9 +27,9 @@ NeighborHalfOpenMP::NeighborHalfOpenMP(
     vector1i count(n_total_atom, 0);
     for (int i = 0; i < n_total_atom; ++i){
         for (int j = 0; j < i; ++j){
-            double dx_ij = positions_c_rev[0][i] - positions_c_rev[0][j];
-            double dy_ij = positions_c_rev[1][i] - positions_c_rev[1][j];
-            double dz_ij = positions_c_rev[2][i] - positions_c_rev[2][j];
+            double dx_ij = positions_c_rev[0][j] - positions_c_rev[0][i];
+            double dy_ij = positions_c_rev[1][j] - positions_c_rev[1][i];
+            double dz_ij = positions_c_rev[2][j] - positions_c_rev[2][i];
             for (const auto& tr: trans){
                 double dx = dx_ij + tr[0];
                 double dy = dy_ij + tr[1];
@@ -74,9 +74,9 @@ NeighborHalfOpenMP::NeighborHalfOpenMP(
     vector1i pos = offset;
     for (int i = 0; i < n_total_atom; ++i){
         for (int j = 0; j < i; ++j){
-            double dx_ij = positions_c_rev[0][i] - positions_c_rev[0][j];
-            double dy_ij = positions_c_rev[1][i] - positions_c_rev[1][j];
-            double dz_ij = positions_c_rev[2][i] - positions_c_rev[2][j];
+            double dx_ij = positions_c_rev[0][j] - positions_c_rev[0][i];
+            double dy_ij = positions_c_rev[1][j] - positions_c_rev[1][i];
+            double dz_ij = positions_c_rev[2][j] - positions_c_rev[2][i];
             for (const auto& tr: trans){
                 double dxv = dx_ij + tr[0];
                 double dyv = dy_ij + tr[1];

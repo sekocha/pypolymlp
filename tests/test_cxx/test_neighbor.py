@@ -69,6 +69,10 @@ def test_neighbor_half_list(structure_rocksalt):
     assert np.array(differences[6]).shape == (71, 3)
     assert np.array(differences[7]).shape == (83, 3)
 
+    assert differences[2][5][0] == pytest.approx(-2.0)
+    assert differences[2][5][1] == pytest.approx(4.0)
+    assert differences[2][5][2] == pytest.approx(2.0)
+
     neighbor_atoms = neigh.neighbor_atoms
     assert len(neighbor_atoms) == 8
     assert len(neighbor_atoms[0]) == 9
@@ -104,6 +108,10 @@ def test_neighbor_half_list_2(structure_rocksalt):
     assert np.array(differences[5]).shape == (59, 3)
     assert np.array(differences[6]).shape == (71, 3)
     assert np.array(differences[7]).shape == (83, 3)
+
+    assert differences[2][5][0] == pytest.approx(-2.0)
+    assert differences[2][5][1] == pytest.approx(4.0)
+    assert differences[2][5][2] == pytest.approx(2.0)
 
     neighbor_atoms = neigh.neighbor_atoms
     assert len(neighbor_atoms) == 8

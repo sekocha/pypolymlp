@@ -33,23 +33,23 @@ class NeighborHalfOpenMP {
         return offset[i+1] - offset[i];
     }
 
-    //inline std::pair<int,int> range(int i) const {
-    //    return {offset[i], offset[i+1]};
-    //}
-
-    inline int j(int i, int k) const {
-        return neigh[offset[i] + k];
-        //return neigh[k];
+    inline std::pair<int,int> range(int i) const {
+        return {offset[i], offset[i+1]};
     }
 
-    inline void diff(int i, int k, double &x, double &y, double &z) const {
-        int id = offset[i] + k;
+    inline int neighbor_atom(int id) const {
+        //return neigh[offset[i] + k];
+        return neigh[id];
+    }
+
+    inline void diff(int id, double &x, double &y, double &z) const {
+        //int id = offset[i] + k;
+        //x = dx[id];
+        //y = dy[id];
+        //z = dz[id];
         x = dx[id];
         y = dy[id];
         z = dz[id];
-        //x = dx[k];
-        //y = dy[k];
-        //z = dz[k];
     }
 
     vector2i get_half_list();

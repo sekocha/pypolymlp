@@ -74,11 +74,14 @@ void PolymlpEvalOpenMP::eval_pair(
         const auto& maps_type = maps.maps_type[type1];
         const auto& ntp_attrs = maps_type.ntp_attrs;
 
-        for (int jj = 0; jj < neigh.size(i); ++jj) {
-            int j = neigh.j(i, jj);
-            type2 = types[j];
+        auto [begin, end] = neigh.range(i);
+        for (int k = begin; k < end; ++k) {
+            int jj = k - begin;
             double dx1, dy1, dz1;
-            neigh.diff(i, jj, dx1, dy1, dz1);
+            int j = neigh.neighbor_atom(k);
+            type2 = types[j];
+            neigh.diff(k, dx1, dy1, dz1);
+
             // diff = pos[j] - pos[i], (dx, dy, dz) = pos[i] - pos[j]
 
             dx = - dx1;
@@ -150,10 +153,12 @@ void PolymlpEvalOpenMP::compute_antp(
         const auto& maps_type = maps.maps_type[type1];
         const auto& ntp_attrs = maps_type.ntp_attrs;
 
-        for (int jj = 0; jj < neigh.size(i); ++jj) {
-            int j = neigh.j(i, jj);
+        auto [begin, end] = neigh.range(i);
+        for (int k = begin; k < end; ++k) {
+            int jj = k - begin;
             double dx1, dy1, dz1;
-            neigh.diff(i, jj, dx1, dy1, dz1);
+            int j = neigh.neighbor_atom(k);
+            neigh.diff(k, dx1, dy1, dz1);
             dx = - dx1;
             dy = - dy1;
             dz = - dz1;
@@ -261,18 +266,25 @@ void PolymlpEvalOpenMP::eval_gtinv(
         const auto& maps_type = maps.maps_type[type1];
         const auto& nlmtp_attrs_noconj = maps_type.nlmtp_attrs_noconj;
 
-        for (int jj = 0; jj < neigh.size(i); ++jj) {
-            int j = neigh.j(i, jj);
-            type2 = types[j];
-            // diff = pos[j] - pos[i], (dx, dy, dz) = pos[i] - pos[j]
+        auto [begin, end] = neigh.range(i);
+        for (int k = begin; k < end; ++k) {
+            int jj = k - begin;
             double dx1, dy1, dz1;
-            neigh.diff(i, jj, dx1, dy1, dz1);
+            int j = neigh.neighbor_atom(k);
+            neigh.diff(k, dx1, dy1, dz1);
+
+        //for (int jj = 0; jj < neigh.size(i); ++jj) {
+        //    int j = neigh.j(i, jj);
+        //    // diff = pos[j] - pos[i], (dx, dy, dz) = pos[i] - pos[j]
+        //    double dx1, dy1, dz1;
+        //    neigh.diff(i, jj, dx1, dy1, dz1);
 
             dx = - dx1;
             dy = - dy1;
             dz = - dz1;
             dis = sqrt(dx*dx + dy*dy + dz*dz);
             if (dis < fp.cutoff){
+                type2 = types[j];
                 tp = type_pairs[type1][type2];
                 const auto& params = tp_to_params[tp];
                 const auto& sph = cartesian_to_spherical_(vector1d{dx,dy,dz});
@@ -371,11 +383,13 @@ void PolymlpEvalOpenMP::collect_properties(
 
     double dx, dy, dz, dis, fx, fy, fz;
     for (int i = 0; i < n_atom; ++i) {
-        for (int jj = 0; jj < neigh.size(i); ++jj) {
+        // diff = pos[j] - pos[i], (dx, dy, dz) = pos[i] - pos[j]
+        auto [begin, end] = neigh.range(i);
+        for (int k = begin; k < end; ++k) {
+            int jj = k - begin;
             double dx1, dy1, dz1;
-            int j = neigh.j(i, jj);
-            // diff = pos[j] - pos[i], (dx, dy, dz) = pos[i] - pos[j]
-            neigh.diff(i, jj, dx1, dy1, dz1);
+            int j = neigh.neighbor_atom(k);
+            neigh.diff(k, dx1, dy1, dz1);
             dx = - dx1;
             dy = - dy1;
             dz = - dz1;
@@ -415,8 +429,9 @@ void PolymlpEvalOpenMP::convert_neighbor_half_to_full(
     std::vector<int> degree(n_atom, 0);
     for (int i = 0; i < n_atom; ++i) {
         degree[i] += neigh.size(i);
-        for (int jj = 0; jj < neigh.size(i); ++jj) {
-            int j = neigh.j(i, jj);
+        auto [begin, end] = neigh.range(i);
+        for (int k = begin; k < end; ++k) {
+            int j = neigh.neighbor_atom(k);
             ++degree[j];
         }
     }
@@ -432,10 +447,12 @@ void PolymlpEvalOpenMP::convert_neighbor_half_to_full(
 
     std::vector<int> pos(offset);
     for (int i = 0; i < n_atom; ++i) {
-        for (int jj = 0; jj < neigh.size(i); ++jj) {
-            int j = neigh.j(i, jj);
+        auto [begin, end] = neigh.range(i);
+        for (int k = begin; k < end; ++k) {
+            int jj = k - begin;
+            int j = neigh.neighbor_atom(k);
             double dx, dy, dz;
-            neigh.diff(i, jj, dx, dy, dz);
+            neigh.diff(k, dx, dy, dz);
             {
                 //int idx = ++pos[i];
                 int idx = pos[i];
