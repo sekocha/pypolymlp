@@ -13,6 +13,7 @@
 PolymlpEvalOpenMP::PolymlpEvalOpenMP(){}
 
 PolymlpEvalOpenMP::PolymlpEvalOpenMP(const PolymlpEval& p){
+
     polymlp_api = p.polymlp_api;
 
     const auto& fp = polymlp_api.get_fp();
@@ -251,7 +252,6 @@ void PolymlpEvalOpenMP::eval_gtinv(
         fy_array[i].resize(jsize);
         fz_array[i].resize(jsize);
     }
-
 /*
     CSRVector prod_sum_e_1d, prod_sum_f_1d;
     auto& flat = prod_sum_e_1d.data;
@@ -330,17 +330,20 @@ void PolymlpEvalOpenMP::eval_gtinv(
             e_ij = 0.0, fx = 0.0, fy = 0.0, fz = 0.0;
             const auto& attrs = nlmtp_attrs1[tp];
             for (const auto& nlmtp : attrs){
-                if (fn[nlmtp.n_id] < 1e-20)
+                double fn_val = fn[nlmtp.n_id];
+                if (fn_val < 1e-20)
                     continue;
+
                 const auto& lm_attr = nlmtp.lm;
                 const int ylmkey = lm_attr.ylmkey;
                 const int idx_i = nlmtp.ilocal_noconj_id;
                 const int idx_j = nlmtp.jlocal_noconj_id;
-                val = fn[nlmtp.n_id] * ylm[ylmkey];
+                val = fn_val * ylm[ylmkey];
                 d1 = fn_d[nlmtp.n_id] * ylm[ylmkey] / dis;
-                valx = - (d1 * dx + fn[nlmtp.n_id] * ylm_dx[ylmkey]);
-                valy = - (d1 * dy + fn[nlmtp.n_id] * ylm_dy[ylmkey]);
-                valz = - (d1 * dz + fn[nlmtp.n_id] * ylm_dz[ylmkey]);
+                valx = - (d1 * dx + fn_val * ylm_dx[ylmkey]);
+                valy = - (d1 * dy + fn_val * ylm_dy[ylmkey]);
+                valz = - (d1 * dz + fn_val * ylm_dz[ylmkey]);
+
                 const auto& prod_ei = prod_sum_e[i][idx_i];
                 const auto& prod_ej = prod_sum_e[j][idx_j];
                 const auto& prod_fi = prod_sum_f[i][idx_i];

@@ -236,10 +236,12 @@ void Potential::compute_sum_of_prod_anlmtp(
         dc sum_e(0.0), sum_f(0.0);
         for (const auto& pterm: pterms1){
             double fval = prod_features_vals[pterm.prod_features_id];
-            if (fabs(fval) > 1e-20){
-                sum_e += pterm.coeff_e * fval * prod_anlmtp_deriv[pterm.prod_id];
-                sum_f += pterm.coeff_f * fval * prod_anlmtp_deriv[pterm.prod_id];
-            }
+            if (fabs(fval) < 1e-20)
+                continue;
+
+            const dc& deriv = prod_anlmtp_deriv[pterm.prod_id];
+            sum_e += deriv * (pterm.coeff_e * fval);
+            sum_f += deriv * (pterm.coeff_f * fval);
         }
         prod_sum_e[i] = sum_e;
         prod_sum_f[i] = sum_f;

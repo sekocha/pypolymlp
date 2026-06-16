@@ -19,25 +19,25 @@ struct Diff {
     double x, y, z;
 };
 
-// class CSRVector {
+//class CSRVector {
 //
-//     public:
+//    public:
 //
-//     vector1dc data;
-//     vector1i offset;
+//    vector1dc data;
+//    vector1i offset;
 //
-//     dc& operator()(int i, int j) {
-//         return data[offset[i] + j];
-//     }
+//    dc& operator()(int i, int j) {
+//        return data[offset[i] + j];
+//    }
 //
-//     const dc& operator()(int i, int j) const {
-//         return data[offset[i] + j];
-//     }
+//    const dc& operator()(int i, int j) const {
+//        return data[offset[i] + j];
+//    }
 //
-//     int size(int i) const {
-//         return offset[i + 1] - offset[i];
-//     }
-// };
+//    int size(int i) const {
+//        return offset[i + 1] - offset[i];
+//    }
+//};
 
 
 class PolymlpEvalOpenMP {
