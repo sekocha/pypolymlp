@@ -335,7 +335,8 @@ void PolymlpEval::compute_anlmtp(
                 tp = type_pairs[type1][type2];
                 const auto& params = tp_to_params[tp];
                 get_fn_(dis, fp, params, fn);
-                get_ylm_(sph[0], sph[1], fp.maxl, ylm);
+                //get_ylm_(sph[0], sph[1], fp.maxl, ylm);
+                get_ylm_(dx, dy, dz, fp.maxl, ylm);
                 for (const auto& nlmtp: nlmtp_attrs_noconj){
                     if (tp == nlmtp.tp){
                         const auto& lm_attr = nlmtp.lm;

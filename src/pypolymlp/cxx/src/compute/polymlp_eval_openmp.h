@@ -19,31 +19,32 @@ struct Diff {
     double x, y, z;
 };
 
-class CSRVector {
-
-    public:
-
-    vector1dc data;
-    vector1i offset;
-
-    dc& operator()(int i, int j) {
-        return data[offset[i] + j];
-    }
-
-    const dc& operator()(int i, int j) const {
-        return data[offset[i] + j];
-    }
-
-    int size(int i) const {
-        return offset[i + 1] - offset[i];
-    }
-};
+// class CSRVector {
+//
+//     public:
+//
+//     vector1dc data;
+//     vector1i offset;
+//
+//     dc& operator()(int i, int j) {
+//         return data[offset[i] + j];
+//     }
+//
+//     const dc& operator()(int i, int j) const {
+//         return data[offset[i] + j];
+//     }
+//
+//     int size(int i) const {
+//         return offset[i + 1] - offset[i];
+//     }
+// };
 
 
 class PolymlpEvalOpenMP {
 
     PolymlpAPI polymlp_api;
     int n_atom;
+    std::vector<std::vector<std::vector<nlmtpAttr> > > nlmtp_attrs;
 
     void convert_neighbor_half_to_full(
         NeighborHalf& neigh,

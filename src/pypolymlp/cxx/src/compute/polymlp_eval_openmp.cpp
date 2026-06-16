@@ -7,11 +7,29 @@
 
 #include "polymlp_eval_openmp.h"
 #include <chrono>
+#include <stdio.h>
+#include <unistd.h>
 
 PolymlpEvalOpenMP::PolymlpEvalOpenMP(){}
 
 PolymlpEvalOpenMP::PolymlpEvalOpenMP(const PolymlpEval& p){
     polymlp_api = p.polymlp_api;
+
+    const auto& fp = polymlp_api.get_fp();
+    const auto& maps = polymlp_api.get_maps();
+    const auto& tp_to_params = maps.tp_to_params;
+
+    int n_type = fp.n_type;
+    int n_tp = tp_to_params.size();
+    nlmtp_attrs.resize(n_type);
+    for (int type1 = 0; type1 < n_type; ++type1){
+        nlmtp_attrs[type1].resize(n_tp);
+        const auto& maps_type = maps.maps_type[type1];
+        const auto& nlmtp_attrs_noconj = maps_type.nlmtp_attrs_noconj;
+        for (const auto& nlmtp: nlmtp_attrs_noconj){
+            nlmtp_attrs[type1][nlmtp.tp].emplace_back(nlmtp);
+        }
+    }
 }
 
 PolymlpEvalOpenMP::~PolymlpEvalOpenMP(){}
@@ -289,6 +307,7 @@ void PolymlpEvalOpenMP::eval_gtinv(
         type1 = types[i];
         const auto& maps_type = maps.maps_type[type1];
         const auto& nlmtp_attrs_noconj = maps_type.nlmtp_attrs_noconj;
+        const auto& nlmtp_attrs1 = nlmtp_attrs[type1];
 
         auto [begin, end] = neigh.range(i);
         for (int k = begin; k < end; ++k) {
@@ -309,37 +328,38 @@ void PolymlpEvalOpenMP::eval_gtinv(
             get_ylm_(dis, sph[0], sph[1], fp.maxl, ylm, ylm_dx, ylm_dy, ylm_dz);
 
             e_ij = 0.0, fx = 0.0, fy = 0.0, fz = 0.0;
-            // TODO: fn > 1e-20
-            for (const auto& nlmtp: nlmtp_attrs_noconj){
-                if (tp == nlmtp.tp){
-                    const auto& lm_attr = nlmtp.lm;
-                    const int ylmkey = lm_attr.ylmkey;
-                    const int idx_i = nlmtp.ilocal_noconj_id;
-                    const int idx_j = nlmtp.jlocal_noconj_id;
-                    val = fn[nlmtp.n_id] * ylm[ylmkey];
-                    d1 = fn_d[nlmtp.n_id] * ylm[ylmkey] / dis;
-                    valx = - (d1 * dx + fn[nlmtp.n_id] * ylm_dx[ylmkey]);
-                    valy = - (d1 * dy + fn[nlmtp.n_id] * ylm_dy[ylmkey]);
-                    valz = - (d1 * dz + fn[nlmtp.n_id] * ylm_dz[ylmkey]);
-                    const auto& prod_ei = prod_sum_e[i][idx_i];
-                    const auto& prod_ej = prod_sum_e[j][idx_j];
-                    const auto& prod_fi = prod_sum_f[i][idx_i];
-                    const auto& prod_fj = prod_sum_f[j][idx_j];
-                    const dc sum_e = prod_ei + prod_ej * lm_attr.sign_j;
-                    const dc sum_f = prod_fi + prod_fj * lm_attr.sign_j;
-                    if (lm_attr.m == 0){
-                        e_ij += 0.5 * prod_real(val, sum_e);
-                        fx += 0.5 * prod_real(valx, sum_f);
-                        fy += 0.5 * prod_real(valy, sum_f);
-                        fz += 0.5 * prod_real(valz, sum_f);
-                    }
-                    else {
-                        e_ij += prod_real(val, sum_e);
-                        fx += prod_real(valx, sum_f);
-                        fy += prod_real(valy, sum_f);
-                        fz += prod_real(valz, sum_f);
-                    }
+            const auto& attrs = nlmtp_attrs1[tp];
+            for (const auto& nlmtp : attrs){
+                if (fn[nlmtp.n_id] < 1e-20)
+                    continue;
+                const auto& lm_attr = nlmtp.lm;
+                const int ylmkey = lm_attr.ylmkey;
+                const int idx_i = nlmtp.ilocal_noconj_id;
+                const int idx_j = nlmtp.jlocal_noconj_id;
+                val = fn[nlmtp.n_id] * ylm[ylmkey];
+                d1 = fn_d[nlmtp.n_id] * ylm[ylmkey] / dis;
+                valx = - (d1 * dx + fn[nlmtp.n_id] * ylm_dx[ylmkey]);
+                valy = - (d1 * dy + fn[nlmtp.n_id] * ylm_dy[ylmkey]);
+                valz = - (d1 * dz + fn[nlmtp.n_id] * ylm_dz[ylmkey]);
+                const auto& prod_ei = prod_sum_e[i][idx_i];
+                const auto& prod_ej = prod_sum_e[j][idx_j];
+                const auto& prod_fi = prod_sum_f[i][idx_i];
+                const auto& prod_fj = prod_sum_f[j][idx_j];
+                const dc sum_e = prod_ei + prod_ej * lm_attr.sign_j;
+                const dc sum_f = prod_fi + prod_fj * lm_attr.sign_j;
+                if (lm_attr.m == 0){
+                    e_ij += 0.5 * prod_real(val, sum_e);
+                    fx += 0.5 * prod_real(valx, sum_f);
+                    fy += 0.5 * prod_real(valy, sum_f);
+                    fz += 0.5 * prod_real(valz, sum_f);
                 }
+                else {
+                    e_ij += prod_real(val, sum_e);
+                    fx += prod_real(valx, sum_f);
+                    fy += prod_real(valy, sum_f);
+                    fz += prod_real(valz, sum_f);
+                }
+                //}
             }
             e_array[i][jj] = e_ij;
             fx_array[i][jj] = fx;
@@ -351,7 +371,6 @@ void PolymlpEvalOpenMP::eval_gtinv(
     auto elapsed3 =
         std::chrono::duration_cast<std::chrono::microseconds>(end3 - start3);
     std::cout << "Elapsed time: " << elapsed3.count() << " micro s" << std::endl;
-
 
     collect_properties(
         e_array, fx_array, fy_array, fz_array, neigh,
@@ -490,10 +509,13 @@ void PolymlpEvalOpenMP::compute_anlmtp(
         type1 = types[i];
         const auto& maps_type = maps.maps_type[type1];
         const auto& nlmtp_attrs_noconj = maps_type.nlmtp_attrs_noconj;
+        const auto& nlmtp_attrs1 = nlmtp_attrs[type1];
 
         vector1d anlmtp_r(nlmtp_attrs_noconj.size(), 0.0);
         vector1d anlmtp_i(nlmtp_attrs_noconj.size(), 0.0);
         for (int k = offset[i]; k < offset[i + 1]; ++k){
+            //auto start1 = std::chrono::high_resolution_clock::now();
+
             int j = neighbor_full[k];
             const auto& diff = neighbor_diff_full[k];
             dx = - diff.x;
@@ -505,20 +527,42 @@ void PolymlpEvalOpenMP::compute_anlmtp(
 
             type2 = types[j];
             //const auto &sph = cartesian_to_spherical_(vector1d{dx,dy,dz});
-            const auto &sph = cartesian_to_spherical_(dx,dy,dz);
+            //const auto &sph = cartesian_to_spherical_(dx,dy,dz);
             tp = type_pairs[type1][type2];
             const auto& params = tp_to_params[tp];
             get_fn_(dis, fp, params, fn);
-            get_ylm_(sph[0], sph[1], fp.maxl, ylm);
-            for (const auto& nlmtp: nlmtp_attrs_noconj){
-                if (tp == nlmtp.tp and fn[nlmtp.n_id] > 1e-20){
-                    const auto& lm_attr = nlmtp.lm;
-                    const int idx_i = nlmtp.ilocal_noconj_id;
-                    val = fn[nlmtp.n_id] * ylm[lm_attr.ylmkey];
-                    anlmtp_r[idx_i] += val.real();
-                    anlmtp_i[idx_i] += val.imag();
-                }
+            //get_ylm_(sph[0], sph[1], fp.maxl, ylm);
+            get_ylm_(dx, dy, dz, fp.maxl, ylm);
+
+            //auto end1 = std::chrono::high_resolution_clock::now();
+            //auto elapsed1 =
+            //    std::chrono::duration_cast<std::chrono::microseconds>(end1 - start1);
+            //sleep(1);
+
+            //auto start2 = std::chrono::high_resolution_clock::now();
+            //for (const auto& nlmtp: nlmtp_attrs_noconj){
+            //    if (tp == nlmtp.tp and fn[nlmtp.n_id] > 1e-20){
+            const auto& attrs = nlmtp_attrs1[tp];
+            for (const auto& nlmtp : attrs){
+                double val_fn = fn[nlmtp.n_id];
+                if (val_fn < 1e-20)
+                    continue;
+
+                const auto& lm_attr = nlmtp.lm;
+                const int idx_i = nlmtp.ilocal_noconj_id;
+                dc& val_ylm = ylm[lm_attr.ylmkey];
+                val = val_fn * val_ylm;
+                anlmtp_r[idx_i] += val.real();
+                anlmtp_i[idx_i] += val.imag();
             }
+
+            //auto end2 = std::chrono::high_resolution_clock::now();
+            //auto elapsed2 =
+            //    std::chrono::duration_cast<std::chrono::microseconds>(end2 - start2);
+            //std::cout << "Elapsed time1: "
+            //    << elapsed1.count() << " micro s" << std::endl;
+            //std::cout << "Elapsed time2: "
+            //    << elapsed2.count() << " micro s" << std::endl;
         }
         polymlp_api.compute_anlmtp_conjugate(
             anlmtp_r, anlmtp_i, types[i], anlmtp[i]

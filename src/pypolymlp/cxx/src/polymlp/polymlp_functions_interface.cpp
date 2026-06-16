@@ -115,7 +115,21 @@ void get_fn_(const double dis,
 }
 
 
-void get_ylm_(const double polar,
+void get_ylm_(const double x,
+              const double y,
+              const double z,
+              const int lmax,
+              vector1dc& ylm){
+
+    double r = std::sqrt(x*x + y*y + z*z);
+    double cos_theta = z / r;
+    double phi = std::atan2(y, x);
+    SphericalHarmonics sh(lmax);
+    sh.compute_ylm(cos_theta, phi, ylm);
+}
+
+
+void get_ylm_polar(const double polar,
               const double azimuthal,
               const int lmax,
               vector1dc& ylm){

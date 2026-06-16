@@ -38,10 +38,17 @@ void get_fn_(const double dis,
              vector1d& fn_dr);
 
 // Spherical harmonics
-void get_ylm_(const double polar,
+void get_ylm_polar(const double polar,
               const double azimuthal,
               const int lmax,
               vector1dc& ylm);
+
+void get_ylm_(const double x,
+              const double y,
+              const double z,
+              const int lmax,
+              vector1dc& ylm);
+
 
 void get_ylm_(const double r,
               const double polar,
