@@ -156,7 +156,7 @@ void Local::compute_anlmtp_d(
                 const vector1d &sph = cartesian_to_spherical_(diff_a[type2][j]);
                 const auto& params = tp_to_params[tp];
                 get_fn_(dis, fp, params, fn, fn_d);
-                get_ylm_(dis, sph[0], sph[1], fp.maxl, ylm, ylm_dx, ylm_dy, ylm_dz);
+                get_ylm_polar(dis, sph[0], sph[1], fp.maxl, ylm, ylm_dx, ylm_dy, ylm_dz);
                 for (const auto& nlmtp: nlmtp_attrs_noconj){
                     if (tp == nlmtp.tp and fabs(fn[nlmtp.n_id]) > tol){
                         const auto& lm_attr = nlmtp.lm;

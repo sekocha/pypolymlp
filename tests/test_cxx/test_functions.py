@@ -27,12 +27,10 @@ def test_get_fn():
 
 def test_get_ylm():
     """Test for get_ylm."""
-    ylm, ylm_dx, ylm_dy, ylm_dz = get_ylm(
-        r=1.0,
-        polar=0.5,
-        azimuthal=1.2,
-        lmax=10,
-    )
+    x = 0.173723561607389
+    y = 0.446843340790007
+    z = 0.877582561890373
+    ylm, ylm_dx, ylm_dy, ylm_dz = get_ylm(x=x, y=y, z=z, lmax=10)
     assert len(ylm) == 66
     assert len(ylm_dx) == 66
     assert len(ylm_dy) == 66

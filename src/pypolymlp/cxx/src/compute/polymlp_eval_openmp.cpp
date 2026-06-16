@@ -323,9 +323,9 @@ void PolymlpEvalOpenMP::eval_gtinv(
             tp = type_pairs[type1][type2];
             const auto& params = tp_to_params[tp];
             //const auto& sph = cartesian_to_spherical_(vector1d{dx,dy,dz});
-            const auto& sph = cartesian_to_spherical_(dx,dy,dz);
+            //const auto& sph = cartesian_to_spherical_(dx,dy,dz);
             get_fn_(dis, fp, params, fn, fn_d);
-            get_ylm_(dis, sph[0], sph[1], fp.maxl, ylm, ylm_dx, ylm_dy, ylm_dz);
+            get_ylm_(dis, dx, dy, dz, fp.maxl, ylm, ylm_dx, ylm_dy, ylm_dz);
 
             e_ij = 0.0, fx = 0.0, fy = 0.0, fz = 0.0;
             const auto& attrs = nlmtp_attrs1[tp];

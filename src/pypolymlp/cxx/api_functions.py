@@ -1,5 +1,7 @@
 """API functions using C++ library."""
 
+import numpy as np
+
 from pypolymlp.cxx.lib import libmlpcpp
 
 
@@ -12,12 +14,14 @@ def get_fn(r: float, params: list, cutoff: float):
     return (fn, fn_d)
 
 
-def get_ylm(r: float, polar: float, azimuthal: float, lmax: int):
+def get_ylm(x: float, y: float, z: float, lmax: int):
     """Calculate spherical harmonics."""
+    r = np.sqrt(x * x + y * y + z * z)
     ylm, ylm_dx, ylm_dy, ylm_dz = libmlpcpp.get_ylm(
         r=r,
-        polar=polar,
-        azimuthal=azimuthal,
+        x=x,
+        y=y,
+        z=z,
         lmax=lmax,
     )
     return (ylm, ylm_dx, ylm_dy, ylm_dz)

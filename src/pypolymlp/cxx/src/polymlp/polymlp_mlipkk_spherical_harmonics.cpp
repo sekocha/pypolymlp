@@ -62,8 +62,39 @@ void SphericalHarmonics::initAB(const int lmax) {
 /// @param[in] costheta cosine of polar angle
 /// @param[in] azimuthal [0, 2 * pi)
 /// @param[out] ylm
-void SphericalHarmonics::compute_ylm(const double costheta, const double azimuthal,
-                                     std::vector<std::complex<double>>& ylm) const
+void SphericalHarmonics::compute_ylm(
+    const double costheta,
+    const double cos_azimuthal,
+    const double sin_azimuthal,
+    std::vector<std::complex<double>>& ylm) const
+{
+    ylm.resize(n_lm_half_);
+    std::vector<double> p;
+    compute_normalized_associated_legendre(costheta, p);
+    for (int l = 0; l <= lmax_; ++l) {
+        ylm[lm2i(l, l)] = p[lm2i(l, 0)] * 0.5 * M_SQRT2;  // (l, m=0)
+    }
+
+    double c1 = 1.0, c2 = cos_azimuthal;  // cos(0 * phi) and cos(-1 * phi)
+    double s1 = 0.0, s2 = -sin_azimuthal;  // sin(0 * phi) and sin(-1 * phi)
+    const double tc = 2.0 * c2;
+    double sign = -1;
+    for (int mp = 1; mp <= lmax_; ++mp) {
+        const double s = tc * s1 - s2;  // sin(mp * phi)
+        const double c = tc * c1 - c2;  // cos(mp * phi)
+        c2 = c1; c1 = c; s2 = s1; s1 = s;
+        for (int l = mp; l <= lmax_; ++l) {
+            const double tmp = sign * p[lm2i(l, mp)] * 0.5 * M_SQRT2;
+            ylm[lm2i(l, l - mp)] = tmp * std::complex<double>(c, -s);  // (l, m=-mp)
+        }
+        sign *= -1;
+    }
+}
+
+void SphericalHarmonics::compute_ylm(
+    const double costheta,
+    const double azimuthal,
+    std::vector<std::complex<double>>& ylm) const
 {
     ylm.resize(n_lm_half_);
     std::vector<double> p;
@@ -87,6 +118,7 @@ void SphericalHarmonics::compute_ylm(const double costheta, const double azimuth
         sign *= -1;
     }
 }
+
 
 /// @brief spherical harmonics and its derivative with cartesian coordinates
 /// Be careful returned list does not contain m > 0
@@ -144,6 +176,61 @@ void SphericalHarmonics::compute_ylm_der(const double costheta, const double azi
         sign *= -1.0;
     }
 }
+
+void SphericalHarmonics::compute_ylm_der(
+    const double costheta,
+    const double cosphi,
+    const double sinphi,
+    const double r,
+    std::vector<std::complex<double>>& ylm_dx,
+    std::vector<std::complex<double>>& ylm_dy,
+    std::vector<std::complex<double>>& ylm_dz) const
+{
+    ylm_dx.resize(n_lm_half_);
+    ylm_dy.resize(n_lm_half_);
+    ylm_dz.resize(n_lm_half_);
+
+    std::vector<double> q;
+    compute_normalized_associated_legendre_sintheta(costheta, q);
+
+    const double sintheta = sqrt(1.0 - costheta * costheta);
+
+    double c1 = 1.0, c2 = cosphi;  // cos(0 * phi) and cos(-1 * phi)
+    double s1 = 0.0, s2 = -sinphi;  // sin(0 * phi) and sin(-1 * phi)
+    const double tc = 2.0 * c2;
+    const double invr = 1.0 / r;
+
+    // (l, 0)
+    for (int l = 0; l <= lmax_; ++l) {
+        const double common = q[lm2i(l, 1)] * sintheta * invr * sqrt(0.5 * l * (l + 1));
+        ylm_dx[lm2i(l, l)] = common * costheta * cosphi;
+        ylm_dy[lm2i(l, l)] = common * costheta * sinphi;
+        ylm_dz[lm2i(l, l)] = -common * sintheta;
+    }
+
+    double sign = -1.0;
+    for (int mp = 1; mp <= lmax_; ++mp) {
+        const double s = tc * s1 - s2;  // sin(mp * phi)
+        const double c = tc * c1 - c2;  // cos(mp * phi)
+        c2 = c1; c1 = c; s2 = s1; s1 = s;
+        for (int l = mp; l <= lmax_; ++l) {
+            const std::complex<double> eimphi(c, s);
+            const auto common = eimphi * 0.5 * M_SQRT2 * invr;
+
+            double dtheta = mp * costheta * q[lm2i(l, mp)];
+            if (mp != l) {
+                dtheta += sqrt((l - mp) * (l + mp + 1)) * q[lm2i(l, mp + 1)] * sintheta;  // TODO: reuse p[]
+            }
+            const std::complex<double> dphi(0.0, mp * q[lm2i(l, mp)]);
+
+            ylm_dx[lm2i(l, l - mp)] = sign * std::conj(common * (dtheta * costheta * cosphi - dphi * sinphi));
+            ylm_dy[lm2i(l, l - mp)] = sign * std::conj(common * (dtheta * costheta * sinphi + dphi * cosphi));
+            ylm_dz[lm2i(l, l - mp)] = sign * std::conj(-common * dtheta * sintheta);
+        }
+        sign *= -1.0;
+    }
+}
+
 
 /// normalized associated Legendre polynomial P_{l}^{m}
 /// For m >= 0, Y_{l}^{m} = P_{l}^{m} exp^{im phi} / sqrt(2)

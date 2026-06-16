@@ -123,9 +123,19 @@ void get_ylm_(const double x,
 
     double r = std::sqrt(x*x + y*y + z*z);
     double cos_theta = z / r;
-    double phi = std::atan2(y, x);
+
+    double cos_azimuthal, sin_azimuthal;
+    double rho = std::hypot(x, y);
+    if (rho > 0.0) {
+        cos_azimuthal = x / rho;
+        sin_azimuthal = y / rho;
+    }
+    else {
+        cos_azimuthal = 1.0;
+        sin_azimuthal = 0.0;
+    }
     SphericalHarmonics sh(lmax);
-    sh.compute_ylm(cos_theta, phi, ylm);
+    sh.compute_ylm(cos_theta, cos_azimuthal, sin_azimuthal, ylm);
 }
 
 
@@ -139,6 +149,36 @@ void get_ylm_polar(const double polar,
 }
 
 void get_ylm_(const double r,
+              const double x,
+              const double y,
+              const double z,
+              const int lmax,
+              vector1dc& ylm,
+              vector1dc& ylm_dx,
+              vector1dc& ylm_dy,
+              vector1dc& ylm_dz){
+
+    double cos_theta = z / r;
+    double cos_azimuthal, sin_azimuthal;
+    double rho = std::hypot(x, y);
+    if (rho > 0.0) {
+        cos_azimuthal = x / rho;
+        sin_azimuthal = y / rho;
+    }
+    else {
+        cos_azimuthal = 1.0;
+        sin_azimuthal = 0.0;
+    }
+
+    SphericalHarmonics sh(lmax);
+    sh.compute_ylm(cos_theta, cos_azimuthal, sin_azimuthal, ylm);
+    sh.compute_ylm_der(
+        cos_theta, cos_azimuthal, sin_azimuthal, r, ylm_dx, ylm_dy, ylm_dz
+    );
+}
+
+
+void get_ylm_polar(const double r,
               const double polar,
               const double azimuthal,
               const int lmax,

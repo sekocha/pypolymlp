@@ -29,9 +29,32 @@ public:
     SphericalHarmonics(const SphericalHarmonics& other);
     SphericalHarmonics& operator=(const SphericalHarmonics& other);
 
-    void compute_ylm(const double costheta, const double azimuthal, std::vector<std::complex<double>>& ylm) const;
-    void compute_ylm_der(const double costheta, const double azimuthal, const double r,
-                         std::vector<std::complex<double>>& ylm_dx, std::vector<std::complex<double>>& ylm_dy, std::vector<std::complex<double>>& ylm_dz) const;
+    void compute_ylm(
+        const double costheta,
+        const double azimuthal,
+        std::vector<std::complex<double>>& ylm) const;
+    void compute_ylm(
+        const double costheta,
+        const double cos_azimuthal,
+        const double sin_azimuthal,
+        std::vector<std::complex<double>>& ylm) const;
+
+    void compute_ylm_der(
+        const double costheta,
+        const double azimuthal,
+        const double r,
+        std::vector<std::complex<double>>& ylm_dx,
+        std::vector<std::complex<double>>& ylm_dy,
+        std::vector<std::complex<double>>& ylm_dz) const;
+    void compute_ylm_der(
+        const double costheta,
+        const double cosphi,
+        const double sinphi,
+        const double r,
+        std::vector<std::complex<double>>& ylm_dx,
+        std::vector<std::complex<double>>& ylm_dy,
+        std::vector<std::complex<double>>& ylm_dz) const;
+
 
     int get_lmax() const { return lmax_; };
     int get_n_lm_half() const { return n_lm_half_; };

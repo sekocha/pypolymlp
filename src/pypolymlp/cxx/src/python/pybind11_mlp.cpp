@@ -152,8 +152,9 @@ PYBIND11_MODULE(libmlpcpp, m) {
 
     m.def("get_ylm",
         [](double r,
-           double polar,
-           double azimuthal,
+           double x,
+           double y,
+           double z,
            int lmax){
             vector1dc ylm;
             vector1dc ylm_dx;
@@ -162,8 +163,9 @@ PYBIND11_MODULE(libmlpcpp, m) {
 
             get_ylm_(
                 r,
-                polar,
-                azimuthal,
+                x,
+                y,
+                z,
                 lmax,
                 ylm,
                 ylm_dx,
@@ -177,8 +179,9 @@ PYBIND11_MODULE(libmlpcpp, m) {
                 ylm_dz);
         },
         py::arg("r"),
-        py::arg("polar"),
-        py::arg("azimuthal"),
+        py::arg("x"),
+        py::arg("y"),
+        py::arg("z"),
         py::arg("lmax")
     );
 }
