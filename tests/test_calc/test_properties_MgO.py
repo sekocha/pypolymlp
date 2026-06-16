@@ -47,7 +47,6 @@ def test_eval1(unitcell_disp_pair_MgO):
 def test_eval2(unitcell_disp_gtinv_MgO):
     """Test properties with polymlp in MgO."""
     unitcell, pot, prop = unitcell_disp_gtinv_MgO
-    energy, forces, stresses = prop.eval(unitcell, use_openmp=True)
 
     energy_true = -40.223320043232334
     forces_true = [
@@ -69,6 +68,7 @@ def test_eval2(unitcell_disp_gtinv_MgO):
         8.83338671e-05,
     ]
 
+    energy, forces, stresses = prop.eval(unitcell, use_openmp=True)
     assert energy == pytest.approx(energy_true, rel=1e-8)
     np.testing.assert_allclose(forces.T, forces_true, atol=1e-6)
     stresses = convert_stresses_in_gpa(np.array([stresses]), [unitcell])[0]
@@ -79,3 +79,17 @@ def test_eval2(unitcell_disp_gtinv_MgO):
     np.testing.assert_allclose(forces.T, forces_true, atol=1e-6)
     stresses = convert_stresses_in_gpa(np.array([stresses]), [unitcell])[0]
     np.testing.assert_allclose(stresses, stresses_true, atol=1e-5)
+
+    energy, forces, stresses = prop.eval_multiple([unitcell])
+    np.testing.assert_allclose(energy, energy_true)
+    np.testing.assert_allclose(forces[0].T, forces_true, atol=1e-6)
+    stresses = convert_stresses_in_gpa(stresses, [unitcell])
+    np.testing.assert_allclose(stresses[0], stresses_true, atol=1e-5)
+
+    energy, forces, stresses = prop.eval_multiple([unitcell, unitcell])
+    np.testing.assert_allclose(energy, energy_true)
+    np.testing.assert_allclose(forces[0].T, forces_true, atol=1e-6)
+    np.testing.assert_allclose(forces[1].T, forces_true, atol=1e-6)
+    stresses = convert_stresses_in_gpa(stresses, [unitcell, unitcell])
+    np.testing.assert_allclose(stresses[0], stresses_true, atol=1e-5)
+    np.testing.assert_allclose(stresses[1], stresses_true, atol=1e-5)

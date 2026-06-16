@@ -23,7 +23,6 @@
 
 // For tests
 #include "compute/neighbor_half.h"
-#include "compute/neighbor_half_openmp.h"
 #include "polymlp/polymlp_mlipkk_spherical_harmonics.h"
 #include "polymlp/polymlp_mlpcpp.h"
 

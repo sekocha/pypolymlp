@@ -146,3 +146,13 @@ vector1d cartesian_to_spherical_(const vector1d& v){
     phi = std::atan2(v[1], v[0]);
     return vector1d {theta, phi};
 }
+
+
+vector1d cartesian_to_spherical_(const double x, const double y, const double z){
+
+    double r, theta, phi;
+    r = sqrt(x*x + y*y + z*z);
+    theta = std::acos(z / r);
+    phi = std::atan2(y, x);
+    return vector1d {theta, phi};
+}

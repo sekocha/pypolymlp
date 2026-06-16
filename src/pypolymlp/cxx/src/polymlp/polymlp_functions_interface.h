@@ -53,5 +53,6 @@ void get_ylm_(const double r,
               vector1dc& ylm_dz);
 
 vector1d cartesian_to_spherical_(const vector1d& v);
+vector1d cartesian_to_spherical_(const double x, const double y, const double z);
 
 #endif

@@ -10,7 +10,6 @@
 
 #include "mlpcpp.h"
 #include "compute/neighbor_half.h"
-#include "compute/neighbor_half_openmp.h"
 #include "compute/polymlp_eval.h"
 #include "compute/polymlp_eval_openmp.h"
 #include "compute/py_params.h"

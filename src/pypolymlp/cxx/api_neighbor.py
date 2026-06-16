@@ -69,20 +69,13 @@ class NeighborHalf:
         if structure.positions_cartesian is None:
             structure.positions_cartesian = structure.axis @ structure.positions
 
-        if use_openmp:
-            self._obj = libmlpcpp.NeighborHalfOpenMP(
-                structure.axis,
-                structure.positions_cartesian,
-                structure.types,
-                cutoff,
-            )
-        else:
-            self._obj = libmlpcpp.NeighborHalf(
-                structure.axis,
-                structure.positions_cartesian,
-                structure.types,
-                cutoff,
-            )
+        self._obj = libmlpcpp.NeighborHalf(
+            structure.axis,
+            structure.positions_cartesian,
+            structure.types,
+            cutoff,
+            use_openmp,
+        )
 
     @property
     def differences(self):
