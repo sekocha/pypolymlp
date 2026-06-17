@@ -52,6 +52,24 @@ void get_ylm_(const double r,
               vector1dc& ylm_dy,
               vector1dc& ylm_dz);
 
+void get_ylm_(const double x,
+              const double y,
+              const double z,
+              SphericalHarmonics& sh,
+              vector1dc& ylm);
+
+
+void get_ylm_(const double r,
+              const double x,
+              const double y,
+              const double z,
+              SphericalHarmonics& sh,
+              vector1dc& ylm,
+              vector1dc& ylm_dx,
+              vector1dc& ylm_dy,
+              vector1dc& ylm_dz);
+
+
 void get_ylm_polar(const double polar,
               const double azimuthal,
               const int lmax,

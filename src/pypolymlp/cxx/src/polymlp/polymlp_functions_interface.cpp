@@ -64,8 +64,8 @@ void get_fn_(const double dis,
              const struct feature_params& fp,
              vector1d& fn,
              vector1d& fn_dr){
-    /*** deprecated ***/
 
+    /*** deprecated ***/
     double fn_val, fn_dr_val;
     const double fc = cosine_cutoff_function(dis, fp.cutoff);
     const double fc_dr = cosine_cutoff_function_d(dis, fp.cutoff);
@@ -144,6 +144,7 @@ void get_ylm_polar(
     const int lmax,
     vector1dc& ylm){
 
+    /*** deprecated ***/
     SphericalHarmonicsDep sh(lmax);
     sh.compute_ylm(cos(polar), azimuthal, ylm);
 }
@@ -158,6 +159,7 @@ void get_ylm_polar(
     vector1dc& ylm_dy,
     vector1dc& ylm_dz){
 
+    /*** deprecated ***/
     SphericalHarmonicsDep sh(lmax);
     sh.compute_ylm(cos(polar), azimuthal, ylm);
     sh.compute_ylm_der(cos(polar), azimuthal, r, ylm_dx, ylm_dy, ylm_dz);

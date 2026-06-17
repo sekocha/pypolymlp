@@ -89,10 +89,10 @@ void Local::compute_anlmtp(
         for (size_t j = 0; j < dis_a[type2].size(); ++j){
             dis = dis_a[type2][j];
             if (dis < fp.cutoff){
-                const vector1d &sph = cartesian_to_spherical_(diff_a[type2][j]);
+                const auto& diff = diff_a[type2][j];
                 const auto& params = tp_to_params[tp];
                 get_fn_(dis, fp, params, fn);
-                get_ylm_polar(sph[0], sph[1], fp.maxl, ylm);
+                get_ylm_(diff[0], diff[1], diff[2], fp.maxl, ylm);
                 for (const auto& nlmtp: nlmtp_attrs_noconj){
                     if (tp == nlmtp.tp and fabs(fn[nlmtp.n_id]) > tol){
                         const auto& lm_attr = nlmtp.lm;
@@ -153,10 +153,11 @@ void Local::compute_anlmtp_d(
             delz = diff_a[type2][j][2];
             if (dis < fp.cutoff){
                 atom2 = atom2_a[type2][j];
-                const vector1d &sph = cartesian_to_spherical_(diff_a[type2][j]);
+                const auto& diff = diff_a[type2][j];
                 const auto& params = tp_to_params[tp];
                 get_fn_(dis, fp, params, fn, fn_d);
-                get_ylm_polar(dis, sph[0], sph[1], fp.maxl, ylm, ylm_dx, ylm_dy, ylm_dz);
+                get_ylm_(dis, diff[0], diff[1], diff[2], fp.maxl,
+                        ylm, ylm_dx, ylm_dy, ylm_dz);
                 for (const auto& nlmtp: nlmtp_attrs_noconj){
                     if (tp == nlmtp.tp and fabs(fn[nlmtp.n_id]) > tol){
                         const auto& lm_attr = nlmtp.lm;
