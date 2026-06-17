@@ -9,6 +9,7 @@
         arXiv: 1410.1748 [physics.chem-ph]
 
         The current implementation is modified from the original algorithm.
+        Derivative calculations in mlipkk_spherical_harmonics.cpp are revised.
 
 *****************************************************************************/
 
@@ -97,9 +98,9 @@ void SphericalHarmonics::compute_ylm_der(
         for (int l = mp; l <= lmax_; ++l) {
             int idx = lm2i_negm(l, -mp);
             const double tmp = sign * p[lm2i(l, mp)] * 0.5 * M_SQRT2;
-            ylm[idx] = tmp * std::complex<double>(c, -s);  // (l, m=-mp)
+            ylm[idx] = tmp * dc(c, -s);  // (l, m=-mp)
 
-            const std::complex<double> eimphi(c, s);
+            const dc eimphi(c, s);
             const auto common = eimphi * 0.5 * M_SQRT2 * invr;
 
             double dtheta = mp * costheta * q[lm2i(l, mp)];
@@ -107,10 +108,12 @@ void SphericalHarmonics::compute_ylm_der(
                 dtheta += sqrt((l - mp) * (l + mp + 1))
                         * q[lm2i(l, mp + 1)] * sintheta;
             }
-            const std::complex<double> dphi(0.0, mp * q[lm2i(l, mp)]);
+            const dc dphi(0.0, mp * q[lm2i(l, mp)]);
 
-            ylm_dx[idx] = sign * std::conj(common * (dtheta * costheta * cosphi - dphi * sinphi));
-            ylm_dy[idx] = sign * std::conj(common * (dtheta * costheta * sinphi + dphi * cosphi));
+            ylm_dx[idx] = sign
+                * std::conj(common * (dtheta * costheta * cosphi - dphi * sinphi));
+            ylm_dy[idx] = sign
+                * std::conj(common * (dtheta * costheta * sinphi + dphi * cosphi));
             ylm_dz[idx] = sign * std::conj(-common * dtheta * sintheta);
         }
         sign *= -1.0;
@@ -197,10 +200,10 @@ void SphericalHarmonics::normalized_associated_legendre(
             double ms = m * m;
             double alm = sqrt((4.0 * ls - 1.0) / (ls - ms));
             double blm = -sqrt((lm1s - ms) / (4.0 * lm1s - 1.0));
-            p[lm2i(l, m)] = alm * (costheta * p[lm2i(l - 1, m)]
-                                   + blm * p[lm2i(l - 2, m)]);
-            q[lm2i(l, m)] = alm * (costheta * q[lm2i(l - 1, m)]
-                                   + blm * q[lm2i(l - 2, m)]);
+            p[lm2i(l, m)] =
+                alm * (costheta * p[lm2i(l - 1, m)] + blm * p[lm2i(l - 2, m)]);
+            q[lm2i(l, m)] =
+                alm * (costheta * q[lm2i(l - 1, m)] + blm * q[lm2i(l - 2, m)]);
         }
     }
 }
