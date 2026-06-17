@@ -23,7 +23,7 @@
 
 // For tests
 #include "compute/neighbor_half.h"
-#include "polymlp/polymlp_spherical_harmonics.h"
+#include "polymlp/polymlp_functions_interface.h"
 #include "polymlp/polymlp_mlpcpp.h"
 
 namespace py = pybind11;

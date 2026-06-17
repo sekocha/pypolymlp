@@ -102,7 +102,7 @@ void get_ylm_(
         cos_azimuthal = 1.0;
         sin_azimuthal = 0.0;
     }
-    SphericalHarmonicsDep sh(lmax);
+    SphericalHarmonics sh(lmax);
     sh.compute_ylm(cos_theta, cos_azimuthal, sin_azimuthal, ylm);
 }
 
@@ -130,7 +130,7 @@ void get_ylm_(
         sin_azimuthal = 0.0;
     }
 
-    SphericalHarmonicsDep sh(lmax);
+    SphericalHarmonics sh(lmax);
     sh.compute_ylm_der(
         cos_theta, cos_azimuthal, sin_azimuthal, r,
         ylm, ylm_dx, ylm_dy, ylm_dz
