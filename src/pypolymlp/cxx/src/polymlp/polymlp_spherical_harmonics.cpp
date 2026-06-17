@@ -28,8 +28,8 @@ void SphericalHarmonics::compute_ylm(
     const double costheta,
     const double cos_azimuthal,
     const double sin_azimuthal,
-    vector1dc& ylm) const
-{
+    vector1dc& ylm) const {
+
     /// List Spherical harmonics with m > 0.
     /// The order of (l, m) is (0, 0), (1, -1), (1, 0), (2, -2), ...
     ylm.resize(n_lm_half_);
@@ -65,8 +65,8 @@ void SphericalHarmonics::compute_ylm_der(
     vector1dc& ylm,
     vector1dc& ylm_dx,
     vector1dc& ylm_dy,
-    vector1dc& ylm_dz) const
-{
+    vector1dc& ylm_dz) const {
+
     ylm.resize(n_lm_half_);
     ylm_dx.resize(n_lm_half_);
     ylm_dy.resize(n_lm_half_);
@@ -106,7 +106,7 @@ void SphericalHarmonics::compute_ylm_der(
             double dtheta = mp * costheta * q[lm2i(l, mp)];
             if (mp != l) {
                 dtheta += sqrt((l - mp) * (l + mp + 1))
-                        * q[lm2i(l, mp + 1)] * sintheta;
+                        * q[lm3i(l, mp + 1)] * sintheta;
             }
             const dc dphi(0.0, mp * q[lm2i(l, mp)]);
 
