@@ -106,7 +106,7 @@ void SphericalHarmonics::compute_ylm_der(
             double dtheta = mp * costheta * q[lm2i(l, mp)];
             if (mp != l) {
                 dtheta += sqrt((l - mp) * (l + mp + 1))
-                        * q[lm3i(l, mp + 1)] * sintheta;
+                        * q[lm2i(l, mp + 1)] * sintheta;
             }
             const dc dphi(0.0, mp * q[lm2i(l, mp)]);
 
