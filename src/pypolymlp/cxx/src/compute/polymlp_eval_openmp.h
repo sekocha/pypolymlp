@@ -15,30 +15,6 @@
 #include "compute/polymlp_eval.h"
 #include "compute/neighbor_half.h"
 
-struct Diff {
-    double x, y, z;
-};
-
-//class CSRVector {
-//
-//    public:
-//
-//    vector1dc data;
-//    vector1i offset;
-//
-//    dc& operator()(int i, int j) {
-//        return data[offset[i] + j];
-//    }
-//
-//    const dc& operator()(int i, int j) const {
-//        return data[offset[i] + j];
-//    }
-//
-//    int size(int i) const {
-//        return offset[i + 1] - offset[i];
-//    }
-//};
-
 
 class PolymlpEvalOpenMP {
 
@@ -49,9 +25,10 @@ class PolymlpEvalOpenMP {
     void convert_neighbor_half_to_full(
         NeighborHalf& neigh,
         vector1i& neighbor_full,
-        std::vector<Diff>& neighbor_diff_full,
+        vector1d& dx_full,
+        vector1d& dy_full,
+        vector1d& dz_full,
         vector1i& offset);
-
 
     /* for feature_type = pair */
     void compute_antp(

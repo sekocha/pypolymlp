@@ -7,7 +7,6 @@
 
 #include "compute/neighbor_half.h"
 
-
 NeighborHalf::NeighborHalf(
     const vector2d& axis,
     const vector2d& positions_c,
@@ -129,4 +128,59 @@ vector3d NeighborHalf::get_diff_list(){
         }
     }
     return diff_list;
+}
+
+void NeighborHalf::get_full_list(
+    vector1i& neigh_full,
+    vector1d& dx_full,
+    vector1d& dy_full,
+    vector1d& dz_full,
+    vector1i& offset_full){
+
+    vector1i degree(n_total_atom, 0);
+    for (int i = 0; i < n_total_atom; ++i) {
+        degree[i] += size(i);
+        auto [begin, end] = range(i);
+        for (int k = begin; k < end; ++k) {
+            int j = neighbor_atom(k);
+            ++degree[j];
+        }
+    }
+
+    offset_full = vector1i(n_total_atom + 1, 0);
+    for (int i = 0; i < n_total_atom; ++i) {
+        offset_full[i + 1] = offset_full[i] + degree[i];
+    }
+
+    int nnz = offset_full[n_total_atom];
+    neigh_full = vector1i(nnz);
+    dx_full = vector1d(nnz);
+    dy_full = vector1d(nnz);
+    dz_full = vector1d(nnz);
+
+    vector1i pos(offset_full);
+    for (int i = 0; i < n_total_atom; ++i) {
+        auto [begin, end] = range(i);
+        for (int k = begin; k < end; ++k) {
+            int j = neighbor_atom(k);
+            double dx, dy, dz;
+            diff(k, dx, dy, dz);
+            {
+                int idx = pos[i];
+                neigh_full[idx] = j;
+                dx_full[idx] = dx;
+                dy_full[idx] = dy;
+                dz_full[idx] = dz;
+                ++pos[i];
+            }
+            {
+                int idx = pos[j];
+                neigh_full[idx] = i;
+                dx_full[idx] = -dx;
+                dy_full[idx] = -dy;
+                dz_full[idx] = -dz;
+                ++pos[j];
+            }
+        }
+    }
 }

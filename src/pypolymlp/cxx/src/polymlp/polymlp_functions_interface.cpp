@@ -21,14 +21,8 @@ void get_fn_(const double dis,
             fn[n] = gauss(dis, params[n][0], params[n][1]) * fc;
         }
     }
-    /*
-    else if (fp.pair_type == "sph_bessel"){
-        for (int n = 0; n < fp.params.size(); ++n){
-            fn[n] = sph_bessel(dis, fp.params[n][0], fp.params[n][1]) * fc;
-        }
-    }
-    */
 }
+
 void get_fn_(const double dis,
              const struct feature_params& fp,
              vector1d& fn){
@@ -42,13 +36,6 @@ void get_fn_(const double dis,
             fn[n] = gauss(dis, fp.params[n][0], fp.params[n][1]) * fc;
         }
     }
-    /*
-    else if (fp.pair_type == "sph_bessel"){
-        for (int n = 0; n < fp.params.size(); ++n){
-            fn[n] = sph_bessel(dis, fp.params[n][0], fp.params[n][1]) * fc;
-        }
-    }
-    */
 }
 
 void get_fn_(const double dis,
@@ -70,16 +57,6 @@ void get_fn_(const double dis,
             fn_dr[n] = fn_dr_val * fc + fn_val * fc_dr;
         }
     }
-    /*
-    else if (fp.pair_type == "sph_bessel"){
-        for (int n = 0; n < fp.params.size(); ++n){
-            sph_bessel_d(dis, fp.params[n][0], fp.params[n][1],
-                         fn_val, fn_dr_val);
-            fn[n] = fn_val * fc;
-            fn_dr[n] = fn_dr_val * fc + fn_val * fc_dr;
-        }
-    }
-    */
 }
 
 
@@ -102,24 +79,15 @@ void get_fn_(const double dis,
             fn_dr[n] = fn_dr_val * fc + fn_val * fc_dr;
         }
     }
-    /*
-    else if (fp.pair_type == "sph_bessel"){
-        for (int n = 0; n < fp.params.size(); ++n){
-            sph_bessel_d(dis, fp.params[n][0], fp.params[n][1],
-                         fn_val, fn_dr_val);
-            fn[n] = fn_val * fc;
-            fn_dr[n] = fn_dr_val * fc + fn_val * fc_dr;
-        }
-    }
-    */
 }
 
 
-void get_ylm_(const double x,
-              const double y,
-              const double z,
-              const int lmax,
-              vector1dc& ylm){
+void get_ylm_(
+    const double x,
+    const double y,
+    const double z,
+    const int lmax,
+    vector1dc& ylm){
 
     double r = std::sqrt(x*x + y*y + z*z);
     double cos_theta = z / r;
@@ -134,29 +102,21 @@ void get_ylm_(const double x,
         cos_azimuthal = 1.0;
         sin_azimuthal = 0.0;
     }
-    SphericalHarmonics sh(lmax);
+    SphericalHarmonicsDep sh(lmax);
     sh.compute_ylm(cos_theta, cos_azimuthal, sin_azimuthal, ylm);
 }
 
 
-void get_ylm_polar(const double polar,
-              const double azimuthal,
-              const int lmax,
-              vector1dc& ylm){
-
-    SphericalHarmonics sh(lmax);
-    sh.compute_ylm(cos(polar), azimuthal, ylm);
-}
-
-void get_ylm_(const double r,
-              const double x,
-              const double y,
-              const double z,
-              const int lmax,
-              vector1dc& ylm,
-              vector1dc& ylm_dx,
-              vector1dc& ylm_dy,
-              vector1dc& ylm_dz){
+void get_ylm_(
+    const double r,
+    const double x,
+    const double y,
+    const double z,
+    const int lmax,
+    vector1dc& ylm,
+    vector1dc& ylm_dx,
+    vector1dc& ylm_dy,
+    vector1dc& ylm_dz){
 
     double cos_theta = z / r;
     double cos_azimuthal, sin_azimuthal;
@@ -170,24 +130,35 @@ void get_ylm_(const double r,
         sin_azimuthal = 0.0;
     }
 
-    SphericalHarmonics sh(lmax);
-    sh.compute_ylm(cos_theta, cos_azimuthal, sin_azimuthal, ylm);
+    SphericalHarmonicsDep sh(lmax);
     sh.compute_ylm_der(
-        cos_theta, cos_azimuthal, sin_azimuthal, r, ylm_dx, ylm_dy, ylm_dz
+        cos_theta, cos_azimuthal, sin_azimuthal, r,
+        ylm, ylm_dx, ylm_dy, ylm_dz
     );
 }
 
 
-void get_ylm_polar(const double r,
-              const double polar,
-              const double azimuthal,
-              const int lmax,
-              vector1dc& ylm,
-              vector1dc& ylm_dx,
-              vector1dc& ylm_dy,
-              vector1dc& ylm_dz){
+void get_ylm_polar(
+    const double polar,
+    const double azimuthal,
+    const int lmax,
+    vector1dc& ylm){
 
-    SphericalHarmonics sh(lmax);
+    SphericalHarmonicsDep sh(lmax);
+    sh.compute_ylm(cos(polar), azimuthal, ylm);
+}
+
+void get_ylm_polar(
+    const double r,
+    const double polar,
+    const double azimuthal,
+    const int lmax,
+    vector1dc& ylm,
+    vector1dc& ylm_dx,
+    vector1dc& ylm_dy,
+    vector1dc& ylm_dz){
+
+    SphericalHarmonicsDep sh(lmax);
     sh.compute_ylm(cos(polar), azimuthal, ylm);
     sh.compute_ylm_der(cos(polar), azimuthal, r, ylm_dx, ylm_dy, ylm_dz);
 }
@@ -200,7 +171,6 @@ vector1d cartesian_to_spherical_(const vector1d& v){
     phi = std::atan2(v[1], v[0]);
     return vector1d {theta, phi};
 }
-
 
 vector1d cartesian_to_spherical_(const double x, const double y, const double z){
 

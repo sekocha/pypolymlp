@@ -10,11 +10,8 @@
 
 #include "polymlp_mlpcpp.h"
 #include "polymlp_basis_function.h"
+#include "polymlp_spherical_harmonics.h"
 #include "polymlp_mlipkk_spherical_harmonics.h"
-
-//#include <boost/geometry.hpp>
-//namespace bg = boost::geometry;
-//namespace bm = boost::math;
 
 // Radial functions
 void get_fn_(const double dis,

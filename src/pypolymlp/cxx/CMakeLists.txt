@@ -57,6 +57,7 @@ set(SRC_FILES
     src/polymlp/polymlp_functions_interface.cpp
     src/polymlp/polymlp_mapping.cpp
     src/polymlp/polymlp_mlipkk_spherical_harmonics.cpp
+    src/polymlp/polymlp_spherical_harmonics.cpp
     src/polymlp/polymlp_model_params.cpp
     src/polymlp/polymlp_model_params_gtinv.cpp
     src/polymlp/polymlp_model_params_polynomial.cpp

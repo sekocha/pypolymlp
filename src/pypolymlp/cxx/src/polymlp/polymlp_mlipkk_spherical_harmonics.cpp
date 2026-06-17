@@ -1,51 +1,22 @@
 /* ----------------------------------------------------------------------
    Contributing author: Kohei Shinohara
+   Revised: Atsuto Seko (2026/6/17)
 ------------------------------------------------------------------------- */
 
 #include "polymlp_mlipkk_spherical_harmonics.h"
 
-#include <complex>
-#include <cmath>
-#include <cassert>
 
-#include <iostream>
-
-SphericalHarmonics::~SphericalHarmonics() {
-    if (A_ != NULL) {
-        delete [] A_;
-        delete [] B_;
-    }
-}
-
-SphericalHarmonics& SphericalHarmonics::operator=(const SphericalHarmonics& other) {
-    if (this != &other) {
-        const int lmax = other.get_lmax();
-        n_lm_half_ = other.get_n_lm_half();
-        n_lm_all_ = other.get_n_lm_all();
-
-        A_ = new double [n_lm_half_];
-        B_ = new double [n_lm_half_];
-
-        initAB(lmax);
-    }
-    return *this;
-}
-
-SphericalHarmonics::SphericalHarmonics(const SphericalHarmonics& other) : lmax_(other.get_lmax()) {
-    *this = other;
-}
-
-SphericalHarmonics::SphericalHarmonics(const int lmax) : lmax_(lmax) {
+SphericalHarmonicsDep::SphericalHarmonicsDep(const int lmax) : lmax_(lmax) {
     n_lm_half_ = (lmax + 1) * (lmax + 2) / 2;
-    n_lm_all_ = (lmax + 1) * (lmax + 1);
-
-    A_ = new double [n_lm_half_];
-    B_ = new double [n_lm_half_];
-
+    A_.resize(n_lm_half_);
+    B_.resize(n_lm_half_);
     initAB(lmax);
 }
 
-void SphericalHarmonics::initAB(const int lmax) {
+SphericalHarmonicsDep::~SphericalHarmonicsDep(){}
+
+
+void SphericalHarmonicsDep::initAB(const int lmax) {
     for (int l = 2; l <= lmax; ++l) {
         double ls = l * l;
         double lm1s = (l - 1) * (l - 1);
@@ -62,7 +33,7 @@ void SphericalHarmonics::initAB(const int lmax) {
 /// @param[in] costheta cosine of polar angle
 /// @param[in] azimuthal [0, 2 * pi)
 /// @param[out] ylm
-void SphericalHarmonics::compute_ylm(
+void SphericalHarmonicsDep::compute_ylm(
     const double costheta,
     const double cos_azimuthal,
     const double sin_azimuthal,
@@ -72,7 +43,8 @@ void SphericalHarmonics::compute_ylm(
     std::vector<double> p;
     compute_normalized_associated_legendre(costheta, p);
     for (int l = 0; l <= lmax_; ++l) {
-        ylm[lm2i(l, l)] = p[lm2i(l, 0)] * 0.5 * M_SQRT2;  // (l, m=0)
+        int idx = lm2i_negm(l, 0);
+        ylm[idx] = p[lm2i(l, 0)] * 0.5 * M_SQRT2;
     }
 
     double c1 = 1.0, c2 = cos_azimuthal;  // cos(0 * phi) and cos(-1 * phi)
@@ -84,14 +56,138 @@ void SphericalHarmonics::compute_ylm(
         const double c = tc * c1 - c2;  // cos(mp * phi)
         c2 = c1; c1 = c; s2 = s1; s1 = s;
         for (int l = mp; l <= lmax_; ++l) {
+            int idx = lm2i_negm(l, -mp);
             const double tmp = sign * p[lm2i(l, mp)] * 0.5 * M_SQRT2;
-            ylm[lm2i(l, l - mp)] = tmp * std::complex<double>(c, -s);  // (l, m=-mp)
+            ylm[idx] = tmp * std::complex<double>(c, -s);
         }
         sign *= -1;
     }
 }
 
-void SphericalHarmonics::compute_ylm(
+void SphericalHarmonicsDep::compute_ylm_der(
+    const double costheta,
+    const double cosphi,
+    const double sinphi,
+    const double r,
+    vector1dc& ylm,
+    vector1dc& ylm_dx,
+    vector1dc& ylm_dy,
+    vector1dc& ylm_dz) const
+{
+    ylm.resize(n_lm_half_);
+    ylm_dx.resize(n_lm_half_);
+    ylm_dy.resize(n_lm_half_);
+    ylm_dz.resize(n_lm_half_);
+
+    vector1d p, q;
+    normalized_associated_legendre(costheta, p, q);
+
+    const double sintheta = sqrt(1.0 - costheta * costheta);
+    const double invr = 1.0 / r;
+
+    for (int l = 0; l <= lmax_; ++l) {
+        int idx = lm2i_negm(l, 0);
+        ylm[idx] = p[lm2i(l, 0)] * 0.5 * M_SQRT2;
+        const double common = q[lm2i(l, 1)] * sintheta * invr * sqrt(0.5 * l * (l + 1));
+        ylm_dx[idx] = common * costheta * cosphi;
+        ylm_dy[idx] = common * costheta * sinphi;
+        ylm_dz[idx] = -common * sintheta;
+    }
+
+    double c1 = 1.0, c2 = cosphi;  // cos(0 * phi) and cos(-1 * phi)
+    double s1 = 0.0, s2 = -sinphi;  // sin(0 * phi) and sin(-1 * phi)
+    const double tc = 2.0 * c2;
+    double sign = -1.0;
+    for (int mp = 1; mp <= lmax_; ++mp) {
+        const double s = tc * s1 - s2;  // sin(mp * phi)
+        const double c = tc * c1 - c2;  // cos(mp * phi)
+        c2 = c1; c1 = c; s2 = s1; s1 = s;
+        for (int l = mp; l <= lmax_; ++l) {
+            int idx = lm2i_negm(l, -mp);
+            const double tmp = sign * p[lm2i(l, mp)] * 0.5 * M_SQRT2;
+            ylm[idx] = tmp * std::complex<double>(c, -s);  // (l, m=-mp)
+
+            const std::complex<double> eimphi(c, s);
+            const auto common = eimphi * 0.5 * M_SQRT2 * invr;
+
+            double dtheta = mp * costheta * q[lm2i(l, mp)];
+            if (mp != l) {
+                dtheta += sqrt((l - mp) * (l + mp + 1))
+                        * q[lm2i(l, mp + 1)] * sintheta;
+            }
+            const std::complex<double> dphi(0.0, mp * q[lm2i(l, mp)]);
+
+            ylm_dx[idx] = sign * std::conj(common * (dtheta * costheta * cosphi - dphi * sinphi));
+            ylm_dy[idx] = sign * std::conj(common * (dtheta * costheta * sinphi + dphi * cosphi));
+            ylm_dz[idx] = sign * std::conj(-common * dtheta * sintheta);
+        }
+        sign *= -1.0;
+    }
+}
+
+
+/// normalized associated Legendre polynomial P_{l}^{m}
+/// For m >= 0, Y_{l}^{m} = P_{l}^{m} exp^{im phi} / sqrt(2)
+void SphericalHarmonicsDep::normalized_associated_legendre(
+    const double costheta,
+    vector1d& p,
+    vector1d& q) const {
+
+    p.resize(n_lm_half_);
+    q.resize(n_lm_half_);
+
+    const double sqrt_inv_2pi = 0.39894228040143267794;  // = sqrt(0.5 / M_PI)
+    p[lm2i(0, 0)] = sqrt_inv_2pi;
+    q[lm2i(0, 0)] = 0.0;
+    if (lmax_ == 0) return;
+
+    const double SQRT3 = 1.7320508075688772935;
+    p[lm2i(1, 0)] = costheta * SQRT3 * sqrt_inv_2pi;
+    q[lm2i(1, 0)] = 0.0;
+
+    const double sintheta = sqrt(1.0 - costheta * costheta);
+    const double SQRT3DIV2 = 1.2247448713915890491;
+    p[lm2i(1, 1)] = - sintheta * SQRT3DIV2 * sqrt_inv_2pi;
+    q[lm2i(1, 1)] = - SQRT3DIV2 * sqrt_inv_2pi;
+
+    for (int l = 2; l <= lmax_; ++l) {
+        double coeff1 = -sqrt(1.0 + 0.5 / l) * sintheta;
+        double coeff2 = sqrt(2.0 * (l - 1.0) + 3.0) * costheta;
+        p[lm2i(l, l)] = coeff1 * p[lm2i(l - 1, l - 1)];
+        p[lm2i(l, l - 1)] = coeff2 * p[lm2i(l - 1, l - 1)];
+        q[lm2i(l, l)] = coeff1 * q[lm2i(l - 1, l - 1)];
+        q[lm2i(l, l - 1)] = coeff2 * q[lm2i(l - 1, l - 1)];
+    }
+
+    for (int l = 2; l <= lmax_; ++l) {
+        for (int m = 0; m <= l - 2; ++m) {
+            // DLMF 14.10.3
+            p[lm2i(l, m)] = A_[lm2i(l, m)] * (costheta * p[lm2i(l - 1, m)]
+                          + B_[lm2i(l, m)] * p[lm2i(l - 2, m)]);
+            q[lm2i(l, m)] = A_[lm2i(l, m)] * (costheta * q[lm2i(l - 1, m)]
+                          + B_[lm2i(l, m)] * q[lm2i(l - 2, m)]);
+        }
+    }
+
+/*
+    q = p;
+    q[lm2i(0, 0)] = 0.0;
+    q[lm2i(1, 0)] = 0.0;
+    q[lm2i(1, 1)] = -0.48860251190291992263;  // -sqrt(3 / (4 * M_PI))
+    for (int l = 2; l <= lmax_; ++l) {
+        for (int m = 0; m <= l - 2; ++m) {
+            q[lm2i(l, m)] *= M_SQRT2;
+        }
+    }
+    */
+}
+
+
+/*********************************
+    Deprecated functions
+**********************************/
+
+void SphericalHarmonicsDep::compute_ylm(
     const double costheta,
     const double azimuthal,
     std::vector<std::complex<double>>& ylm) const
@@ -127,8 +223,13 @@ void SphericalHarmonics::compute_ylm(
 /// @param[out] ylm_dx
 /// @param[out] ylm_dy
 /// @param[out] ylm_dz
-void SphericalHarmonics::compute_ylm_der(const double costheta, const double azimuthal, const double r,
-                                         std::vector<std::complex<double>>& ylm_dx, std::vector<std::complex<double>>& ylm_dy, std::vector<std::complex<double>>& ylm_dz) const
+void SphericalHarmonicsDep::compute_ylm_der(
+    const double costheta,
+    const double azimuthal,
+    const double r,
+    std::vector<std::complex<double>>& ylm_dx,
+    std::vector<std::complex<double>>& ylm_dy,
+    std::vector<std::complex<double>>& ylm_dz) const
 {
     ylm_dx.resize(n_lm_half_);
     ylm_dy.resize(n_lm_half_);
@@ -177,73 +278,19 @@ void SphericalHarmonics::compute_ylm_der(const double costheta, const double azi
     }
 }
 
-void SphericalHarmonics::compute_ylm_der(
-    const double costheta,
-    const double cosphi,
-    const double sinphi,
-    const double r,
-    std::vector<std::complex<double>>& ylm_dx,
-    std::vector<std::complex<double>>& ylm_dy,
-    std::vector<std::complex<double>>& ylm_dz) const
-{
-    ylm_dx.resize(n_lm_half_);
-    ylm_dy.resize(n_lm_half_);
-    ylm_dz.resize(n_lm_half_);
-
-    std::vector<double> q;
-    compute_normalized_associated_legendre_sintheta(costheta, q);
-
-    const double sintheta = sqrt(1.0 - costheta * costheta);
-
-    double c1 = 1.0, c2 = cosphi;  // cos(0 * phi) and cos(-1 * phi)
-    double s1 = 0.0, s2 = -sinphi;  // sin(0 * phi) and sin(-1 * phi)
-    const double tc = 2.0 * c2;
-    const double invr = 1.0 / r;
-
-    // (l, 0)
-    for (int l = 0; l <= lmax_; ++l) {
-        const double common = q[lm2i(l, 1)] * sintheta * invr * sqrt(0.5 * l * (l + 1));
-        ylm_dx[lm2i(l, l)] = common * costheta * cosphi;
-        ylm_dy[lm2i(l, l)] = common * costheta * sinphi;
-        ylm_dz[lm2i(l, l)] = -common * sintheta;
-    }
-
-    double sign = -1.0;
-    for (int mp = 1; mp <= lmax_; ++mp) {
-        const double s = tc * s1 - s2;  // sin(mp * phi)
-        const double c = tc * c1 - c2;  // cos(mp * phi)
-        c2 = c1; c1 = c; s2 = s1; s1 = s;
-        for (int l = mp; l <= lmax_; ++l) {
-            const std::complex<double> eimphi(c, s);
-            const auto common = eimphi * 0.5 * M_SQRT2 * invr;
-
-            double dtheta = mp * costheta * q[lm2i(l, mp)];
-            if (mp != l) {
-                dtheta += sqrt((l - mp) * (l + mp + 1)) * q[lm2i(l, mp + 1)] * sintheta;  // TODO: reuse p[]
-            }
-            const std::complex<double> dphi(0.0, mp * q[lm2i(l, mp)]);
-
-            ylm_dx[lm2i(l, l - mp)] = sign * std::conj(common * (dtheta * costheta * cosphi - dphi * sinphi));
-            ylm_dy[lm2i(l, l - mp)] = sign * std::conj(common * (dtheta * costheta * sinphi + dphi * cosphi));
-            ylm_dz[lm2i(l, l - mp)] = sign * std::conj(-common * dtheta * sintheta);
-        }
-        sign *= -1.0;
-    }
-}
-
-
 /// normalized associated Legendre polynomial P_{l}^{m}
 /// For m >= 0, Y_{l}^{m} = P_{l}^{m} exp^{im phi} / sqrt(2)
-void SphericalHarmonics::compute_normalized_associated_legendre(const double costheta, std::vector<double>& p) const {
+void SphericalHarmonicsDep::compute_normalized_associated_legendre(
+    const double costheta,
+    std::vector<double>& p) const {
+
     p.resize(n_lm_half_);
-    const double sintheta = sqrt(1.0 - costheta * costheta);
 
     double tmp = 0.39894228040143267794;  // = sqrt(0.5 / M_PI)
     p[lm2i(0, 0)] = tmp;
-    if (lmax_ == 0) {
-        return;
-    }
+    if (lmax_ == 0) return;
 
+    const double sintheta = sqrt(1.0 - costheta * costheta);
     const double SQRT3 = 1.7320508075688772935;
     p[lm2i(1, 0)] = costheta * SQRT3 * tmp;
     const double SQRT3DIV2 = -1.2247448713915890491;
@@ -266,19 +313,18 @@ void SphericalHarmonics::compute_normalized_associated_legendre(const double cos
 }
 
 /// normalized associated Legendre polynomial divied by sintheta, P_{l}^{m}/sintheta
-void SphericalHarmonics::compute_normalized_associated_legendre_sintheta(const double costheta,
-                                                                         std::vector<double>& q) const
+void SphericalHarmonicsDep::compute_normalized_associated_legendre_sintheta(
+    const double costheta,
+    vector1d& q) const
 {
     q.resize(n_lm_half_, 0.0);
-    if (lmax_ == 0) {
-        return;
-    }
+    if (lmax_ == 0) return;
 
+    const double sintheta = sqrt(1.0 - costheta * costheta);
     double tmp = -0.48860251190291992263;  // -sqrt(3 / (4 * M_PI))
 
     q[lm2i(1, 1)] = tmp;
 
-    const double sintheta = sqrt(1.0 - costheta * costheta);
     for (int l = 2; l <= lmax_; ++l) {
         for (int m = 1; m <= l - 2; ++m) {
             // DLMF 14.10.3

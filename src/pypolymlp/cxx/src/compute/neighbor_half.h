@@ -69,6 +69,14 @@ class NeighborHalf {
 
     vector2i get_half_list();
     vector3d get_diff_list();
+
+    void get_full_list(
+        vector1i& neigh_full,
+        vector1d& dx_full,
+        vector1d& dy_full,
+        vector1d& dz_full,
+        vector1i& offset_full);
+
 };
 
 #endif
