@@ -83,4 +83,32 @@ class HashVI {
 };
 
 
+template<typename T>
+class MatrixView {
+
+    size_t rows_, cols_;
+    std::vector<T> data_;
+
+    public:
+
+    MatrixView() = default;
+    MatrixView(size_t rows, size_t cols)
+        : rows_(rows), cols_(cols), data_(rows * cols, T{}) {}
+
+    T& operator()(size_t i, size_t j) {
+        return data_[i * cols_ + j];
+    }
+
+    const T& operator()(size_t i, size_t j) const {
+        return data_[i * cols_ + j];
+    }
+    size_t rows() const noexcept {
+        return rows_;
+    }
+    size_t cols() const noexcept {
+        return cols_;
+    }
+};
+
+
 #endif
