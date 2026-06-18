@@ -76,7 +76,6 @@ set(SRC_FILES
     src/compute/py_hybrid_model.cpp
     src/compute/py_features_attr.cpp
     src/compute/polymlp_eval.cpp
-    src/compute/polymlp_eval_openmp.cpp
     src/compute/local.cpp
     src/compute/local_pair.cpp
     src/compute/model.cpp

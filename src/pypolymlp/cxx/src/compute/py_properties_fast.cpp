@@ -13,7 +13,6 @@ PyPropertiesFast::PyPropertiesFast(
 
     convert_params_dict_to_feature_params(params_dict, fp);
     polymlp = PolymlpEval(fp, coeffs);
-    polymlp_openmp = PolymlpEvalOpenMP(polymlp);
 }
 
 PyPropertiesFast::~PyPropertiesFast(){}
@@ -26,15 +25,7 @@ void PyPropertiesFast::eval(
 ){
     /* positions_c: (3, n_atom) */
     NeighborHalf neigh(axis, positions_c, fp.cutoff, use_openmp_atom);
-    if (use_openmp_atom == true){
-        polymlp_openmp.eval(types, neigh, energy, force, stress);
-    }
-    else {
-        polymlp.eval(
-            types, neigh.get_half_list(), neigh.get_diff_list(),
-            energy, force, stress
-        );
-    }
+    polymlp.eval(types, neigh, use_openmp_atom, energy, force, stress);
 }
 
 void PyPropertiesFast::eval_multiple(
@@ -60,7 +51,7 @@ void PyPropertiesFast::eval_multiple(
                 use_openmp
             );
             polymlp.eval(
-                types_array[i], neigh.get_half_list(), neigh.get_diff_list(),
+                types_array[i], neigh, use_openmp,
                 e_array[i], f_array[i], s_array[i]
             );
         }
@@ -68,8 +59,8 @@ void PyPropertiesFast::eval_multiple(
     else if (n_st == 1) {
         const bool use_openmp = true;
         NeighborHalf neigh(axis_array[0], positions_c_array[0], fp.cutoff, use_openmp);
-        polymlp_openmp.eval(
-            types_array[0], neigh, e_array[0], f_array[0], s_array[0]
+        polymlp.eval(
+            types_array[0], neigh, use_openmp, e_array[0], f_array[0], s_array[0]
         );
     }
 }
