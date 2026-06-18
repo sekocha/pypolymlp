@@ -7,7 +7,6 @@
 
 #include "compute/model.h"
 
-
 Model::Model(){}
 
 Model::Model(const struct feature_params& fp){
@@ -21,12 +20,15 @@ Model::Model(const struct feature_params& fp){
     for (int type1 = 0; type1 < fp.n_type; ++type1){
         auto& maps_type = maps.maps_type[type1];
         for (const auto& term: maps_type.polynomial){
-            if (term.local_ids.size() == 1)
+            if (term.local_ids.size() == 1){
                 terms1[type1].emplace_back(term);
-            else if (term.local_ids.size() == 2)
+            }
+            else if (term.local_ids.size() == 2){
                 terms2[type1].emplace_back(term);
-            else if (term.local_ids.size() == 3)
+            }
+            else if (term.local_ids.size() == 3){
                 terms3[type1].emplace_back(term);
+            }
         }
     }
 }
@@ -202,7 +204,6 @@ void Model::model_order1(
     }
 }
 
-
 void Model::model_order2(
     const PolynomialTerm& term,
     const Eigen::VectorXd& de,
@@ -218,7 +219,6 @@ void Model::model_order2(
     const int c2 = term.local_ids[1];
 
     xe_sum(col) += de(c1) * de(c2);
-
     if (!force) return;
 
     const double val1 = de(c2);

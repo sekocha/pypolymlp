@@ -19,7 +19,9 @@
 class Model {
 
     PolymlpAPI polymlp;
-    std::vector<std::vector<PolynomialTerm> > terms1, terms2, terms3;
+    std::vector<std::vector<PolynomialTerm> > terms1;
+    std::vector<std::vector<PolynomialTerm> > terms2;
+    std::vector<std::vector<PolynomialTerm> > terms3;
 
     void pair(
         NeighborFull& neigh,
@@ -87,7 +89,6 @@ class Model {
         Eigen::VectorXd& de_eig,
         Eigen::MatrixXd& df_eig,
         Eigen::MatrixXd& ds_eig);
-
 
     public:
 

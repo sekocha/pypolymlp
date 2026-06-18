@@ -161,32 +161,35 @@ void Local::compute_anlmtp_d(
         get_fn_(dis, fp, params, fn, fn_d);
         get_ylm_(dis, dx, dy, dz, fp.maxl, ylm, ylm_dx, ylm_dy, ylm_dz);
         for (const auto& nlmtp: nlmtp_attrs_noconj){
-            if (tp == nlmtp.tp and fabs(fn[nlmtp.n_id]) > tol){
-                const auto& lm_attr = nlmtp.lm;
-                const int ylmkey = lm_attr.ylmkey;
-                const int idx_i = nlmtp.ilocal_id;
-                val = fn[nlmtp.n_id] * ylm[ylmkey];
-                anlmtp[idx_i] += val;
+            if (tp != nlmtp.tp or fn[nlmtp.n_id] < tol)
+                continue;
 
-                d1 = fn_d[nlmtp.n_id] * ylm[ylmkey] / dis;
-                valx = (d1 * dx + fn[nlmtp.n_id] * ylm_dx[ylmkey]);
-                valy = (d1 * dy + fn[nlmtp.n_id] * ylm_dy[ylmkey]);
-                valz = (d1 * dz + fn[nlmtp.n_id] * ylm_dz[ylmkey]);
+            const auto& lm_attr = nlmtp.lm;
+            const int ylmkey = lm_attr.ylmkey;
+            const int idx_i = nlmtp.ilocal_id;
+            const int n_id = nlmtp.n_id;
 
-                anlmtp_dfx[idx_i][atom1] += valx;
-                anlmtp_dfx[idx_i][atom2] -= valx;
-                anlmtp_dfy[idx_i][atom1] += valy;
-                anlmtp_dfy[idx_i][atom2] -= valy;
-                anlmtp_dfz[idx_i][atom1] += valz;
-                anlmtp_dfz[idx_i][atom2] -= valz;
+            val = fn[n_id] * ylm[ylmkey];
+            anlmtp[idx_i] += val;
 
-                anlmtp_ds[idx_i][0] -= valx * dx;
-                anlmtp_ds[idx_i][1] -= valy * dy;
-                anlmtp_ds[idx_i][2] -= valz * dz;
-                anlmtp_ds[idx_i][3] -= valx * dy;
-                anlmtp_ds[idx_i][4] -= valy * dz;
-                anlmtp_ds[idx_i][5] -= valz * dx;
-            }
+            d1 = fn_d[n_id] * ylm[ylmkey] / dis;
+            valx = (d1 * dx + fn[n_id] * ylm_dx[ylmkey]);
+            valy = (d1 * dy + fn[n_id] * ylm_dy[ylmkey]);
+            valz = (d1 * dz + fn[n_id] * ylm_dz[ylmkey]);
+
+            anlmtp_dfx[idx_i][atom1] += valx;
+            anlmtp_dfx[idx_i][atom2] -= valx;
+            anlmtp_dfy[idx_i][atom1] += valy;
+            anlmtp_dfy[idx_i][atom2] -= valy;
+            anlmtp_dfz[idx_i][atom1] += valz;
+            anlmtp_dfz[idx_i][atom2] -= valz;
+
+            anlmtp_ds[idx_i][0] -= valx * dx;
+            anlmtp_ds[idx_i][1] -= valy * dy;
+            anlmtp_ds[idx_i][2] -= valz * dz;
+            anlmtp_ds[idx_i][3] -= valx * dy;
+            anlmtp_ds[idx_i][4] -= valy * dz;
+            anlmtp_ds[idx_i][5] -= valz * dx;
         }
     }
 
@@ -195,6 +198,7 @@ void Local::compute_anlmtp_d(
             const auto cc_coeff = nlmtp.lm.cc_coeff;
             const int id1 = nlmtp.ilocal_id;
             const int id2 = nlmtp.ilocal_conj_id;
+
             anlmtp[id1] = cc_coeff * std::conj(anlmtp[id2]);
             for (size_t k = 0; k < n_atom; ++k)
                 anlmtp_dfx[id1][k] = cc_coeff * std::conj(anlmtp_dfx[id2][k]);
