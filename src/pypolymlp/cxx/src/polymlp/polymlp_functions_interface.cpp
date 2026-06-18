@@ -45,8 +45,10 @@ void get_fn_(const double dis,
              vector1d& fn_dr){
 
     double fn_val, fn_dr_val;
-    const double fc = cosine_cutoff_function(dis, fp.cutoff);
-    const double fc_dr = cosine_cutoff_function_d(dis, fp.cutoff);
+    double fc, fc_dr;
+    cosine_cutoff_function_d(dis, fp.cutoff, fc, fc_dr);
+    //const double fc = cosine_cutoff_function(dis, fp.cutoff);
+    //const double fc_dr = cosine_cutoff_function_d(dis, fp.cutoff);
 
     fn.resize(params.size());
     fn_dr.resize(params.size());
@@ -67,8 +69,10 @@ void get_fn_(const double dis,
 
     /*** deprecated ***/
     double fn_val, fn_dr_val;
-    const double fc = cosine_cutoff_function(dis, fp.cutoff);
-    const double fc_dr = cosine_cutoff_function_d(dis, fp.cutoff);
+    double fc, fc_dr;
+    cosine_cutoff_function_d(dis, fp.cutoff, fc, fc_dr);
+    //const double fc = cosine_cutoff_function(dis, fp.cutoff);
+    //const double fc_dr = cosine_cutoff_function_d(dis, fp.cutoff);
 
     fn.resize(fp.params.size());
     fn_dr.resize(fp.params.size());

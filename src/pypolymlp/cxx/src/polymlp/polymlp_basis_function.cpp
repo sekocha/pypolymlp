@@ -7,20 +7,7 @@
 
 #include "polymlp_basis_function.h"
 
-const double pi(3.141592653589793);
 
-double cosine_cutoff_function(const double& dis, const double& cutoff){
-    if (dis < cutoff)
-        return 0.5 * (cos (pi * dis / cutoff) + 1.0);
-    else
-        return 0.0;
-}
-double cosine_cutoff_function_d(const double& dis, const double& cutoff){
-    if (dis < cutoff)
-        return - 0.5 * pi / cutoff * sin (pi * dis / cutoff);
-    else
-        return 0.0;
-}
 double bump_cutoff_function(const double& dis, const double& cutoff){
     double x = dis / cutoff;
     return exp (- 1.0 / (1.0 - x*x));
@@ -34,17 +21,6 @@ void bump_cutoff_function_d(const double& dis,
     double tmp2 = pow(x, 19);
     bf = exp (- 1.0 / tmp1);
     bf_d = - 20 * tmp2 * bf / (tmp1 * tmp1);
-}
-double gauss(const double& x, const double& beta, const double& mu){
-    return exp(- beta * pow (fabs(x - mu), 2.0));
-}
-void gauss_d(const double& dis,
-             const double& p1,
-             const double& p2,
-             double& bf,
-             double& bf_d){
-    bf = gauss(dis, p1, p2);
-    bf_d = - 2.0 * p1 * (dis - p2) * bf;
 }
 double cosine(const double& dis, const double& p1){
     return cos(p1 * dis);
