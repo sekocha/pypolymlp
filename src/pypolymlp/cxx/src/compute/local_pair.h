@@ -11,6 +11,7 @@
 #include <cmath>
 
 #include "mlpcpp.h"
+#include "compute/neighbor_full.h"
 #include "polymlp/polymlp_api.h"
 #include "polymlp/polymlp_functions_interface.h"
 
@@ -26,18 +27,17 @@ class LocalPair{
 
     void pair(
         PolymlpAPI& polymlp,
-        const int type1,
-        const vector2d& dis_a,
+        NeighborFull& neigh,
+        const vector1i& types,
+        const int atom1,
         vector1d& dn
     );
 
     void pair_d(
         PolymlpAPI& polymlp,
+        NeighborFull& neigh,
+        const vector1i& types,
         const int atom1,
-        const int type1,
-        const vector2d& dis_a,
-        const vector3d& diff_a,
-        const vector2i& atom2_a,
         vector1d& dn,
         vector2d& dn_dfx,
         vector2d& dn_dfy,

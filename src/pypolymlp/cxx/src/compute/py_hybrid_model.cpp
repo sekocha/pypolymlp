@@ -80,24 +80,10 @@ PyHybridModel::PyHybridModel(
                 types_active,
                 positions_c_active
             );
-            Neighbor neigh(
-                axis[i],
-                positions_c_active,
-                types_active,
-                fp_array[n].n_type,
-                fp_array[n].cutoff
-            );
-
+            NeighborFull neigh(axis[i], positions_c_active, fp_array[n].cutoff);
             Eigen::VectorXd xe;
             Eigen::MatrixXd xf, xs;
-            model_array[n].run(
-                neigh.get_dis_array(),
-                neigh.get_diff_array(),
-                neigh.get_atom2_array(),
-                types_active,
-                force_st[i],
-                xe, xf, xs
-            );
+            model_array[n].run(neigh, types_active, force_st[i], xe, xf, xs);
             for (size_t j = 0; j < xe.size(); ++j)
                 x_all(i, first_index+j) = xe(j);
 

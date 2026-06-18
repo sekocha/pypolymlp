@@ -10,7 +10,7 @@
 
 #include "mlpcpp.h"
 #include "compute/py_params.h"
-#include "compute/neighbor.h"
+#include "compute/neighbor_full.h"
 #include "compute/model.h"
 
 #include <Eigen/Dense>

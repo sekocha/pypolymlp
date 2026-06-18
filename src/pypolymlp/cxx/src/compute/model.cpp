@@ -35,9 +35,7 @@ Model::~Model(){}
 
 
 void Model::run(
-    const vector3d& dis_array,
-    const vector4d& diff_array,
-    const vector3i& atom2_array,
+    NeighborFull& neigh,
     const vector1i& types,
     const bool force,
     Eigen::VectorXd& xe_sum,
@@ -53,36 +51,30 @@ void Model::run(
         xs_sum = Eigen::MatrixXd::Zero(6, size);
     }
     if (fp.feature_type == "pair")
-        pair(dis_array, diff_array, atom2_array, types, force, xe_sum, xf_sum, xs_sum);
+        pair(neigh, types, force, xe_sum, xf_sum, xs_sum);
     else if (fp.feature_type == "gtinv")
-        gtinv(dis_array, diff_array, atom2_array, types, force, xe_sum, xf_sum, xs_sum);
+        gtinv(neigh, types, force, xe_sum, xf_sum, xs_sum);
 }
 
 
 void Model::pair(
-    const vector3d& dis_array,
-    const vector4d& diff_array,
-    const vector3i& atom2_array,
+    NeighborFull& neigh,
     const vector1i& types,
     const bool force,
     Eigen::VectorXd& xe_sum,
     Eigen::MatrixXd& xf_sum,
     Eigen::MatrixXd& xs_sum){
-
     const int n_atom = types.size();
     LocalPair local(n_atom);
     for (int atom1 = 0; atom1 < n_atom; ++atom1){
         const int type1 = types[atom1];
-        const auto& dis = dis_array[atom1];
-        vector1d de; vector2d dfx, dfy, dfz, ds;
+        vector1d de;
+        vector2d dfx, dfy, dfz, ds;
         if (force == false) {
-            local.pair(polymlp, type1, dis, de);
+            local.pair(polymlp, neigh, types, atom1, de);
         }
         else {
-            const auto& diff = diff_array[atom1];
-            const auto& atom2 = atom2_array[atom1];
-            local.pair_d(
-                polymlp, atom1, type1, dis, diff, atom2, de, dfx, dfy, dfz, ds);
+            local.pair_d(polymlp, neigh, types, atom1, de, dfx, dfy, dfz, ds);
         }
 
         Eigen::VectorXd de_eig;
@@ -94,9 +86,7 @@ void Model::pair(
 
 
 void Model::gtinv(
-    const vector3d& dis_array,
-    const vector4d& diff_array,
-    const vector3i& atom2_array,
+    NeighborFull& neigh,
     const vector1i& types,
     const bool force,
     Eigen::VectorXd& xe_sum,
@@ -107,16 +97,13 @@ void Model::gtinv(
     Local local(n_atom);
     for (int atom1 = 0; atom1 < n_atom; ++atom1){
         const int type1 = types[atom1];
-        const auto& dis = dis_array[atom1];
-        const auto& diff = diff_array[atom1];
-        vector1d de; vector2d dfx, dfy, dfz, ds;
+        vector1d de;
+        vector2d dfx, dfy, dfz, ds;
         if (force == false) {
-            local.gtinv(polymlp, type1, dis, diff, de);
+            local.gtinv(polymlp, neigh, types, atom1, de);
         }
         else {
-            const auto& atom2 = atom2_array[atom1];
-            local.gtinv_d(
-                polymlp, atom1, type1, dis, diff, atom2, de, dfx, dfy, dfz, ds);
+            local.gtinv_d(polymlp, neigh, types, atom1, de, dfx, dfy, dfz, ds);
         }
 
         Eigen::VectorXd de_eig;

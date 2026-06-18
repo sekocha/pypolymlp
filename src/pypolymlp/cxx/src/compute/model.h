@@ -13,6 +13,7 @@
 #include "polymlp/polymlp_api.h"
 #include "compute/local.h"
 #include "compute/local_pair.h"
+#include "compute/neighbor_full.h"
 
 
 class Model {
@@ -21,9 +22,7 @@ class Model {
     std::vector<std::vector<PolynomialTerm> > terms1, terms2, terms3;
 
     void pair(
-        const vector3d& dis_array,
-        const vector4d& diff_array,
-        const vector3i& atom2_array,
+        NeighborFull& neigh,
         const vector1i& types,
         const bool force,
         Eigen::VectorXd& xe_sum,
@@ -31,9 +30,7 @@ class Model {
         Eigen::MatrixXd& xs_sum);
 
     void gtinv(
-        const vector3d& dis_array,
-        const vector4d& diff_array,
-        const vector3i& atom2_array,
+        NeighborFull& neigh,
         const vector1i& types,
         const bool force,
         Eigen::VectorXd& xe_sum,
@@ -99,10 +96,8 @@ class Model {
     ~Model();
 
     void run(
-        const vector3d& dis_array,
-        const vector4d& diff_array,
-        const vector3i& atom2_array,
-        const vector1i& types_i,
+        NeighborFull& neigh,
+        const vector1i& types,
         const bool force,
         Eigen::VectorXd& xe_sum,
         Eigen::MatrixXd& xf_sum,

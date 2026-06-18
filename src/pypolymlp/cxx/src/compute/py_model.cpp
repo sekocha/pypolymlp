@@ -41,17 +41,10 @@ PyModel::PyModel(const py::dict& params_dict,
     #pragma omp parallel for schedule(guided,1)
     #endif
     for (int i = 0; i < n_st; ++i){
-        Neighbor neigh(axis[i], positions_c[i], types[i], fp.n_type, fp.cutoff);
+        NeighborFull neigh(axis[i], positions_c[i], fp.cutoff);
         Eigen::VectorXd xe;
         Eigen::MatrixXd xf, xs;
-        mod.run(
-            neigh.get_dis_array(),
-            neigh.get_diff_array(),
-            neigh.get_atom2_array(),
-            types[i],
-            force_st[i],
-            xe, xf, xs
-        );
+        mod.run(neigh, types[i], force_st[i], xe, xf, xs);
         x_all.row(i) = xe.transpose();
         if (force_st[i]) {
             x_all.block(xf_begin[i], 0, xf.rows(), xf.cols()) = xf;

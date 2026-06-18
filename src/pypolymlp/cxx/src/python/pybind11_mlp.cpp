@@ -110,12 +110,23 @@ PYBIND11_MODULE(libmlpcpp, m) {
     py::class_<NeighborHalf>(m, "NeighborHalf")
         .def(py::init<const vector2d&,
                       const vector2d&,
-                      const vector1i&,
-                      const double&,
+                      const double,
                       const bool>())
         .def("get_differences", &NeighborHalf::get_diff_list,
                 py::return_value_policy::reference_internal)
         .def("get_neighbor_indices", &NeighborHalf::get_half_list,
+                py::return_value_policy::reference_internal)
+        ;
+
+    py::class_<NeighborFull>(m, "NeighborFull")
+        .def(py::init<const vector2d&,
+                      const vector2d&,
+                      const double>())
+        .def("get_distances", &NeighborFull::get_dis_array,
+                py::return_value_policy::reference_internal)
+        .def("get_differences", &NeighborFull::get_diff_array,
+                py::return_value_policy::reference_internal)
+        .def("get_neighbor_indices", &NeighborFull::get_atom2_array,
                 py::return_value_policy::reference_internal)
         ;
 

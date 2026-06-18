@@ -17,25 +17,25 @@ Local::~Local(){}
 
 void Local::gtinv(
     PolymlpAPI& polymlp,
-    const int type1,
-    const vector2d& dis_a,
-    const vector3d& diff_a,
+    NeighborFull& neigh,
+    const vector1i& types,
+    const int atom1,
     vector1d& dn
 ){
 
     vector1dc anlmtp;
-    compute_anlmtp(polymlp, type1, dis_a, diff_a, anlmtp);
+    compute_anlmtp(polymlp, neigh, types, atom1, anlmtp);
+
+    const int type1 = types[atom1];
     polymlp.compute_features(anlmtp, type1, dn);
 }
 
 
 void Local::gtinv_d(
     PolymlpAPI& polymlp,
+    NeighborFull& neigh,
+    const vector1i& types,
     const int atom1,
-    const int type1,
-    const vector2d& dis_a,
-    const vector3d& diff_a,
-    const vector2i& atom2_a,
     vector1d& dn,
     vector2d& dn_dfx,
     vector2d& dn_dfy,
@@ -46,10 +46,11 @@ void Local::gtinv_d(
     vector1dc anlmtp;
     vector2dc anlmtp_dfx, anlmtp_dfy, anlmtp_dfz, anlmtp_ds;
     compute_anlmtp_d(
-        polymlp, atom1, type1, dis_a, diff_a, atom2_a,
+        polymlp, neigh, types, atom1,
         anlmtp, anlmtp_dfx, anlmtp_dfy, anlmtp_dfz, anlmtp_ds
     );
 
+    const int type1 = types[atom1];
     polymlp.compute_features(anlmtp, type1, dn);
     polymlp.compute_features_deriv(
         anlmtp, anlmtp_dfx, anlmtp_dfy, anlmtp_dfz, anlmtp_ds,
@@ -60,18 +61,18 @@ void Local::gtinv_d(
 
 void Local::compute_anlmtp(
     PolymlpAPI& polymlp,
-    const int type1,
-    const vector2d& dis_a,
-    const vector3d& diff_a,
+    NeighborFull& neigh,
+    const vector1i& types,
+    const int atom1,
     vector1dc& anlmtp
 ){
 
+    const int type1 = types[atom1];
     const auto& fp = polymlp.get_fp();
     const auto& maps = polymlp.get_maps();
     const auto& type_pairs = maps.type_pairs;
     const auto& tp_to_params = maps.tp_to_params;
 
-    const int n_type = fp.n_type;
     const auto& maps_type = maps.maps_type[type1];
     const auto& nlmtp_attrs_noconj = maps_type.nlmtp_attrs_noconj;
 
@@ -79,29 +80,32 @@ void Local::compute_anlmtp(
     vector1d anlmtp_i(nlmtp_attrs_noconj.size(), 0.0);
 
     int ylmkey;
-    double dis;
+    double dis, dx, dy, dz;
     dc val;
     vector1d fn;
     vector1dc ylm;
 
-    for (int type2 = 0; type2 < n_type; ++type2){
+    auto [begin, end] = neigh.range(atom1);
+    for (int k = begin; k < end; ++k) {
+        int atom2 = neigh.neighbor_atom(k);
+        // (dx, dy, dz) = pos[j] - pos[i]
+        neigh.diff_ji(k, dx, dy, dz);
+        dis = sqrt(dx*dx + dy*dy + dz*dz);
+        if (dis >= fp.cutoff)
+            continue;
+
+        const int type2 = types[atom2];
         const int tp = type_pairs[type1][type2];
-        for (size_t j = 0; j < dis_a[type2].size(); ++j){
-            dis = dis_a[type2][j];
-            if (dis < fp.cutoff){
-                const auto& diff = diff_a[type2][j];
-                const auto& params = tp_to_params[tp];
-                get_fn_(dis, fp, params, fn);
-                get_ylm_(diff[0], diff[1], diff[2], fp.maxl, ylm);
-                for (const auto& nlmtp: nlmtp_attrs_noconj){
-                    if (tp == nlmtp.tp and fabs(fn[nlmtp.n_id]) > tol){
-                        const auto& lm_attr = nlmtp.lm;
-                        const int idx_i = nlmtp.ilocal_noconj_id;
-                        val = fn[nlmtp.n_id] * ylm[lm_attr.ylmkey];
-                        anlmtp_r[idx_i] += val.real();
-                        anlmtp_i[idx_i] += val.imag();
-                    }
-                }
+        const auto& params = tp_to_params[tp];
+        get_fn_(dis, fp, params, fn);
+        get_ylm_(dx, dy, dz, fp.maxl, ylm);
+        for (const auto& nlmtp: nlmtp_attrs_noconj){
+            if (tp == nlmtp.tp and fabs(fn[nlmtp.n_id]) > tol){
+                const auto& lm_attr = nlmtp.lm;
+                const int idx_i = nlmtp.ilocal_noconj_id;
+                val = fn[nlmtp.n_id] * ylm[lm_attr.ylmkey];
+                anlmtp_r[idx_i] += val.real();
+                anlmtp_i[idx_i] += val.imag();
             }
         }
     }
@@ -111,23 +115,21 @@ void Local::compute_anlmtp(
 
 void Local::compute_anlmtp_d(
     PolymlpAPI& polymlp,
+    NeighborFull& neigh,
+    const vector1i& types,
     const int atom1,
-    const int type1,
-    const vector2d& dis_a,
-    const vector3d& diff_a,
-    const vector2i& atom2_a,
     vector1dc& anlmtp,
     vector2dc& anlmtp_dfx,
     vector2dc& anlmtp_dfy,
     vector2dc& anlmtp_dfz,
     vector2dc& anlmtp_ds
 ){
+    const int type1 = types[atom1];
     const auto& fp = polymlp.get_fp();
     const auto& maps = polymlp.get_maps();
     const auto& type_pairs = maps.type_pairs;
     const auto& tp_to_params = maps.tp_to_params;
 
-    const int n_type = fp.n_type;
     const auto& maps_type = maps.maps_type[type1];
     const auto& nlmtp_attrs = maps_type.nlmtp_attrs;
     const auto& nlmtp_attrs_noconj = maps_type.nlmtp_attrs_noconj;
@@ -139,53 +141,51 @@ void Local::compute_anlmtp_d(
     anlmtp_ds = vector2dc(nlmtp_attrs.size(), vector1dc(6, 0.0));
 
     int atom2;
-    double delx,dely,delz,dis,cc;
+    double dx,dy,dz,dis,cc;
     dc d1,val,valx,valy,valz;
     vector1d fn, fn_d;
     vector1dc ylm,ylm_dx,ylm_dy,ylm_dz;
 
-    for (int type2 = 0; type2 < n_type; ++type2){
+    auto [begin, end] = neigh.range(atom1);
+    for (int k = begin; k < end; ++k) {
+        int atom2 = neigh.neighbor_atom(k);
+        // (dx, dy, dz) = pos[j] - pos[i]
+        neigh.diff_ji(k, dx, dy, dz);
+        dis = sqrt(dx*dx + dy*dy + dz*dz);
+        if (dis >= fp.cutoff)
+            continue;
+
+        const int type2 = types[atom2];
         const int tp = type_pairs[type1][type2];
-        for (size_t j = 0; j < dis_a[type2].size(); ++j){
-            dis = dis_a[type2][j];
-            delx = diff_a[type2][j][0];
-            dely = diff_a[type2][j][1];
-            delz = diff_a[type2][j][2];
-            if (dis < fp.cutoff){
-                atom2 = atom2_a[type2][j];
-                const auto& diff = diff_a[type2][j];
-                const auto& params = tp_to_params[tp];
-                get_fn_(dis, fp, params, fn, fn_d);
-                get_ylm_(dis, diff[0], diff[1], diff[2], fp.maxl,
-                        ylm, ylm_dx, ylm_dy, ylm_dz);
-                for (const auto& nlmtp: nlmtp_attrs_noconj){
-                    if (tp == nlmtp.tp and fabs(fn[nlmtp.n_id]) > tol){
-                        const auto& lm_attr = nlmtp.lm;
-                        const int ylmkey = lm_attr.ylmkey;
-                        const int idx_i = nlmtp.ilocal_id;
-                        val = fn[nlmtp.n_id] * ylm[ylmkey];
-                        anlmtp[idx_i] += val;
+        const auto& params = tp_to_params[tp];
+        get_fn_(dis, fp, params, fn, fn_d);
+        get_ylm_(dis, dx, dy, dz, fp.maxl, ylm, ylm_dx, ylm_dy, ylm_dz);
+        for (const auto& nlmtp: nlmtp_attrs_noconj){
+            if (tp == nlmtp.tp and fabs(fn[nlmtp.n_id]) > tol){
+                const auto& lm_attr = nlmtp.lm;
+                const int ylmkey = lm_attr.ylmkey;
+                const int idx_i = nlmtp.ilocal_id;
+                val = fn[nlmtp.n_id] * ylm[ylmkey];
+                anlmtp[idx_i] += val;
 
-                        d1 = fn_d[nlmtp.n_id] * ylm[ylmkey] / dis;
-                        valx = (d1 * delx + fn[nlmtp.n_id] * ylm_dx[ylmkey]);
-                        valy = (d1 * dely + fn[nlmtp.n_id] * ylm_dy[ylmkey]);
-                        valz = (d1 * delz + fn[nlmtp.n_id] * ylm_dz[ylmkey]);
+                d1 = fn_d[nlmtp.n_id] * ylm[ylmkey] / dis;
+                valx = (d1 * dx + fn[nlmtp.n_id] * ylm_dx[ylmkey]);
+                valy = (d1 * dy + fn[nlmtp.n_id] * ylm_dy[ylmkey]);
+                valz = (d1 * dz + fn[nlmtp.n_id] * ylm_dz[ylmkey]);
 
-                        anlmtp_dfx[idx_i][atom1] += valx;
-                        anlmtp_dfx[idx_i][atom2] -= valx;
-                        anlmtp_dfy[idx_i][atom1] += valy;
-                        anlmtp_dfy[idx_i][atom2] -= valy;
-                        anlmtp_dfz[idx_i][atom1] += valz;
-                        anlmtp_dfz[idx_i][atom2] -= valz;
+                anlmtp_dfx[idx_i][atom1] += valx;
+                anlmtp_dfx[idx_i][atom2] -= valx;
+                anlmtp_dfy[idx_i][atom1] += valy;
+                anlmtp_dfy[idx_i][atom2] -= valy;
+                anlmtp_dfz[idx_i][atom1] += valz;
+                anlmtp_dfz[idx_i][atom2] -= valz;
 
-                        anlmtp_ds[idx_i][0] -= valx * delx;
-                        anlmtp_ds[idx_i][1] -= valy * dely;
-                        anlmtp_ds[idx_i][2] -= valz * delz;
-                        anlmtp_ds[idx_i][3] -= valx * dely;
-                        anlmtp_ds[idx_i][4] -= valy * delz;
-                        anlmtp_ds[idx_i][5] -= valz * delx;
-                    }
-                }
+                anlmtp_ds[idx_i][0] -= valx * dx;
+                anlmtp_ds[idx_i][1] -= valy * dy;
+                anlmtp_ds[idx_i][2] -= valz * dz;
+                anlmtp_ds[idx_i][3] -= valx * dy;
+                anlmtp_ds[idx_i][4] -= valy * dz;
+                anlmtp_ds[idx_i][5] -= valz * dx;
             }
         }
     }

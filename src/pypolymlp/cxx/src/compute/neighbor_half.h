@@ -28,8 +28,7 @@ class NeighborHalf {
     NeighborHalf(
         const vector2d& axis,
         const vector2d& positions_c,
-        const vector1i& types,
-        const double& cutoff,
+        const double cutoff,
         const bool use_openmp
     );
     ~NeighborHalf();
