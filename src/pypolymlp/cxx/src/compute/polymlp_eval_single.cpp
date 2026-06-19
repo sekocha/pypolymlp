@@ -5,11 +5,11 @@
 
 ****************************************************************************/
 
-#include "polymlp_eval.h"
+#include "polymlp_eval_single.h"
 
-PolymlpEval::PolymlpEval(){}
+PolymlpEvalSingle::PolymlpEvalSingle(){}
 
-PolymlpEval::PolymlpEval(const feature_params& fp, const vector1d& coeffs){
+PolymlpEvalSingle::PolymlpEvalSingle(const feature_params& fp, const vector1d& coeffs){
 
     vector1d coeffs_rev(coeffs.size());
     for (size_t i = 0; i < coeffs.size(); ++i) coeffs_rev[i] = 2.0 * coeffs[i];
@@ -37,9 +37,10 @@ PolymlpEval::PolymlpEval(const feature_params& fp, const vector1d& coeffs){
     }
 }
 
-PolymlpEval::~PolymlpEval(){}
 
-void PolymlpEval::eval(
+PolymlpEvalSingle::~PolymlpEvalSingle(){}
+
+void PolymlpEvalSingle::eval(
     const vector1i& types,
     NeighborHalf& neigh,
     double& energy,
@@ -59,7 +60,7 @@ void PolymlpEval::eval(
 
 /*--- feature_type = pair ----------------------------------------------*/
 
-void PolymlpEval::eval_pair(
+void PolymlpEvalSingle::eval_pair(
     const vector1i& types,
     NeighborHalf& neigh,
     double& energy,
@@ -84,9 +85,6 @@ void PolymlpEval::eval_pair(
         fz_array[i].resize(jsize);
     }
 
-    #ifdef _OPENMP
-    #pragma omp parallel for schedule(guided)
-    #endif
     for (int i = 0; i < n_atom; ++i) {
         int type1, type2, tp;
         double dx, dy, dz, dis, e_ij, f_ij, fx, fy, fz;
@@ -139,7 +137,7 @@ void PolymlpEval::eval_pair(
     );
 }
 
-void PolymlpEval::compute_antp(
+void PolymlpEvalSingle::compute_antp(
     const vector1i& types,
     NeighborHalf& neigh,
     vector2d& antp
@@ -193,7 +191,7 @@ void PolymlpEval::compute_antp(
 }
 
 
-void PolymlpEval::compute_sum_of_prod_antp(
+void PolymlpEvalSingle::compute_sum_of_prod_antp(
     const vector1i& types,
     const vector2d& antp,
     vector2d& prod_sum_e,
@@ -203,9 +201,6 @@ void PolymlpEval::compute_sum_of_prod_antp(
     prod_sum_e = vector2d(n_atom);
     prod_sum_f = vector2d(n_atom);
 
-    #ifdef _OPENMP
-    #pragma omp parallel for schedule(guided)
-    #endif
     for (int i = 0; i < n_atom; ++i) {
         const int type1 = types[i];
         polymlp_api.compute_sum_of_prod_antp(
@@ -218,7 +213,7 @@ void PolymlpEval::compute_sum_of_prod_antp(
   Feature_type = gtinv
 ********************************************************************************/
 
-void PolymlpEval::eval_gtinv(
+void PolymlpEvalSingle::eval_gtinv(
     const vector1i& types,
     NeighborHalf& neigh,
     double& energy,
@@ -255,9 +250,6 @@ void PolymlpEval::eval_gtinv(
     }
 
     auto start3 = std::chrono::high_resolution_clock::now();
-    #ifdef _OPENMP
-    #pragma omp parallel for schedule(guided)
-    #endif
     for (int i = 0; i < n_atom; ++i) {
         int type1, type2, tp;
         double dx, dy, dz, dis;
@@ -340,7 +332,7 @@ void PolymlpEval::eval_gtinv(
 }
 
 
-void PolymlpEval::collect_properties(
+void PolymlpEvalSingle::collect_properties(
     const vector2d& e_array,
     const vector2d& fx_array,
     const vector2d& fy_array,
@@ -384,7 +376,7 @@ void PolymlpEval::collect_properties(
     }
 }
 
-void PolymlpEval::compute_sum_of_prod_anlmtp(
+void PolymlpEvalSingle::compute_sum_of_prod_anlmtp(
     const vector1i& types,
     NeighborHalf& neigh,
     vector2dc& prod_sum_e,
@@ -402,9 +394,6 @@ void PolymlpEval::compute_sum_of_prod_anlmtp(
     vector1d dx_full, dy_full, dz_full;
     neigh.get_full_list(neighbor_full, dx_full, dy_full, dz_full, offset_full);
 
-    #ifdef _OPENMP
-    #pragma omp parallel for schedule(guided)
-    #endif
     for (int i = 0; i < n_atom; ++i) {
         int type1, type2, tp;
         double dx, dy, dz, dis;

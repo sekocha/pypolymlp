@@ -5,10 +5,8 @@
 
 ****************************************************************************/
 
-#ifndef __POLYMLP_EVAL
-#define __POLYMLP_EVAL
-
-#include <chrono>
+#ifndef __POLYMLP_EVAL_SINGLE
+#define __POLYMLP_EVAL_SINGLE
 
 #include "mlpcpp.h"
 #include "polymlp/polymlp_api.h"
@@ -17,7 +15,7 @@
 #include "compute/neighbor_half.h"
 
 
-class PolymlpEval {
+class PolymlpEvalSingle {
 
     PolymlpAPI polymlp_api;
     int n_atom;
@@ -81,9 +79,9 @@ class PolymlpEval {
 
     public:
 
-    PolymlpEval();
-    PolymlpEval(const feature_params& fp, const vector1d& coeffs);
-    ~PolymlpEval();
+    PolymlpEvalSingle();
+    PolymlpEvalSingle(const feature_params& fp, const vector1d& coeffs);
+    ~PolymlpEvalSingle();
 
     void eval(
         const vector1i& types,

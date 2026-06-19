@@ -32,7 +32,7 @@ NeighborHalf::NeighborHalf(
     vector2d dy_tmp(n_total_atom);
     vector2d dz_tmp(n_total_atom);
     #ifdef _OPENMP
-    #pragma omp parallel for schedule(guided)
+    #pragma omp parallel for schedule(guided) if (use_openmp)
     #endif
     for (int i = 0; i < n_total_atom; ++i){
         auto& jlocal = neighbor_atoms[i];
