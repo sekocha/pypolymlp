@@ -149,3 +149,43 @@ class NeighborFull:
           Array indices correspond to (central atom i, atom type of neighboring atom j).
         """
         return self._obj.get_neighbor_indices(self._n_type, self._types)
+
+
+class NeighborCell:
+    """Calculate candidate cells including neighbor atoms."""
+
+    def __init__(self, structure: PolymlpStructure, cutoff: float = 6.0):
+        """Init method."""
+        if structure.positions_cartesian is None:
+            structure.positions_cartesian = structure.axis @ structure.positions
+
+        self._obj = libmlpcpp.NeighborCell(
+            structure.axis,
+            structure.positions_cartesian,
+            cutoff,
+        )
+
+    @property
+    def axis(self):
+        """Return axis."""
+        return self._obj.get_axis()
+
+    @property
+    def positions_cartesian(self):
+        """Return Cartesian atomic positions.
+
+        Return
+        ------
+        Cartesian atomic positions, shape=(3, N).
+        """
+        return self._obj.get_positions_cartesian()
+
+    @property
+    def translations(self):
+        """Return candidate translations including neighbor atoms.
+
+        Return
+        ------
+        Lattice translations in Cartesian coordinates, shape=(n_cell, 3)
+        """
+        return self._obj.get_translations()

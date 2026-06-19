@@ -130,6 +130,19 @@ PYBIND11_MODULE(libmlpcpp, m) {
                 py::return_value_policy::reference_internal)
         ;
 
+    py::class_<NeighborCell>(m, "NeighborCell")
+        .def(py::init<const vector2d&,
+                      const vector2d&,
+                      const double>())
+        .def("get_axis", &NeighborCell::get_axis,
+                py::return_value_policy::reference_internal)
+        .def("get_positions_cartesian", &NeighborCell::get_positions_cartesian,
+                py::return_value_policy::reference_internal)
+        .def("get_translations", &NeighborCell::get_translations,
+                py::return_value_policy::reference_internal)
+        ;
+
+
     py::class_<feature_params>(m, "FeatureParams")
         .def(py::init<>())
         .def_readwrite("n_type", &feature_params::n_type)

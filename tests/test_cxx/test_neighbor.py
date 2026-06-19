@@ -3,7 +3,12 @@
 import numpy as np
 import pytest
 
-from pypolymlp.cxx.api_neighbor import Neighbor, NeighborFull, NeighborHalf
+from pypolymlp.cxx.api_neighbor import (
+    Neighbor,
+    NeighborCell,
+    NeighborFull,
+    NeighborHalf,
+)
 
 
 def test_compute_neighbor_list(structure_rocksalt):
@@ -180,3 +185,23 @@ def test_compute_neighbor_full_list(structure_rocksalt):
     assert np.sum(neighbor_atoms[6][1]) == 300
     assert np.sum(neighbor_atoms[7][0]) == 60
     assert np.sum(neighbor_atoms[7][1]) == 306
+
+
+def test_neighbor_cell(structure_rocksalt):
+    """Test for neighbor distance list."""
+    neigh = NeighborCell(structure_rocksalt, cutoff=6.0)
+    np.testing.assert_allclose(neigh.axis, structure_rocksalt.axis)
+
+    cartesian = structure_rocksalt.axis @ structure_rocksalt.positions
+    np.testing.assert_allclose(neigh.positions_cartesian, cartesian)
+
+    trans = neigh.translations
+    assert len(trans) == 147
+
+    neigh = NeighborCell(structure_rocksalt, cutoff=8.0)
+    trans = neigh.translations
+    assert len(trans) == 203
+
+    neigh = NeighborCell(structure_rocksalt, cutoff=16.0)
+    trans = neigh.translations
+    assert len(trans) == 751

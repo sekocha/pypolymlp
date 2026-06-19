@@ -3,6 +3,8 @@
         Copyright (C) 2024 Atsuto Seko
                 seko@cms.mtl.kyoto-u.ac.jp
 
+        Deprecated version for constructing neighbor full list.
+
 *****************************************************************************/
 
 #include "compute/neighbor.h"

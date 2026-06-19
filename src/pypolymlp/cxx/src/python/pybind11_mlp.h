@@ -24,6 +24,7 @@
 // For tests
 #include "compute/neighbor_half.h"
 #include "compute/neighbor_full.h"
+#include "compute/neighbor_cell.h"
 #include "polymlp/polymlp_functions_interface.h"
 #include "polymlp/polymlp_mlpcpp.h"
 
