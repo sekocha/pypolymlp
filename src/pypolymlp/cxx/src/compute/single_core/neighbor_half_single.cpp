@@ -5,14 +5,18 @@
 
 *****************************************************************************/
 
-#include "compute/neighbor_half.h"
+#include "compute/neighbor_half_single.h"
 
-NeighborHalf::NeighborHalf(
+NeighborHalfSingle::NeighborHalfSingle(
     const vector2d& axis,
     const vector2d& positions_c,
     const double cutoff,
     const bool use_openmp
 ){
+
+    //int num_threads = omp_get_max_threads();
+    //if (use_openmp) omp_set_num_threads(num_threads);
+    //else omp_set_num_threads(1);
 
     NeighborCell neigh_cell(axis, positions_c, cutoff);
     const auto& trans = neigh_cell.get_translations();
@@ -27,9 +31,6 @@ NeighborHalf::NeighborHalf(
     vector2d dx_tmp(n_total_atom);
     vector2d dy_tmp(n_total_atom);
     vector2d dz_tmp(n_total_atom);
-    #ifdef _OPENMP
-    #pragma omp parallel for schedule(guided) if (use_openmp)
-    #endif
     for (int i = 0; i < n_total_atom; ++i){
         auto& jlocal = neighbor_atoms[i];
         auto& dxlocal = dx_tmp[i];
@@ -97,12 +98,14 @@ NeighborHalf::NeighborHalf(
             ++id;
         }
     }
+
+//    omp_set_num_threads(num_threads);
 }
 
-NeighborHalf::~NeighborHalf(){}
+NeighborHalfSingle::~NeighborHalfSingle(){}
 
 // For test
-vector2i NeighborHalf::get_half_list(){
+vector2i NeighborHalfSingle::get_half_list(){
     vector2i half_list(n_total_atom);
     for (int i = 0; i < n_total_atom; ++i){
         for (int k = offset[i]; k < offset[i+1]; ++k){
@@ -113,7 +116,7 @@ vector2i NeighborHalf::get_half_list(){
 }
 
 // For test
-vector3d NeighborHalf::get_diff_list(){
+vector3d NeighborHalfSingle::get_diff_list(){
     vector3d diff_list(n_total_atom);
     for (int i = 0; i < n_total_atom; ++i){
         for (int k = offset[i]; k < offset[i+1]; ++k){
@@ -123,7 +126,7 @@ vector3d NeighborHalf::get_diff_list(){
     return diff_list;
 }
 
-void NeighborHalf::get_full_list(
+void NeighborHalfSingle::get_full_list(
     vector1i& neigh_full,
     vector1d& dx_full,
     vector1d& dy_full,

@@ -23,6 +23,8 @@ class PolymlpEval {
     int n_atom;
     std::vector<std::vector<std::vector<nlmtpAttr> > > nlmtp_attrs;
 
+    bool use_openmp;
+
     void convert_neighbor_half_to_full(
         NeighborHalf& neigh,
         vector1i& neighbor_full,
@@ -88,6 +90,7 @@ class PolymlpEval {
     void eval(
         const vector1i& types,
         NeighborHalf& neigh,
+        const bool use_openmp_,
         double& energy,
         vector2d& forces,
         vector1d& stress

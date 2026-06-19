@@ -12,7 +12,7 @@
 #include "polymlp/polymlp_api.h"
 #include "polymlp/polymlp_functions_interface.h"
 #include "polymlp/polymlp_products.h"
-#include "compute/neighbor_half.h"
+#include "compute/neighbor_half_single.h"
 
 
 class PolymlpEvalSingle {
@@ -22,7 +22,7 @@ class PolymlpEvalSingle {
     std::vector<std::vector<std::vector<nlmtpAttr> > > nlmtp_attrs;
 
     void convert_neighbor_half_to_full(
-        NeighborHalf& neigh,
+        NeighborHalfSingle& neigh,
         vector1i& neighbor_full,
         vector1d& dx_full,
         vector1d& dy_full,
@@ -32,7 +32,7 @@ class PolymlpEvalSingle {
     /* for feature_type = pair */
     void compute_antp(
         const vector1i& types,
-        NeighborHalf& neigh,
+        NeighborHalfSingle& neigh,
         vector2d& antp
     );
 
@@ -45,7 +45,7 @@ class PolymlpEvalSingle {
 
     void eval_pair(
         const vector1i& types,
-        NeighborHalf& neigh,
+        NeighborHalfSingle& neigh,
         double& energy,
         vector2d& forces,
         vector1d& stress
@@ -54,13 +54,13 @@ class PolymlpEvalSingle {
     /* for feature_type = gtinv */
     void compute_sum_of_prod_anlmtp(
         const vector1i& types,
-        NeighborHalf& neigh,
+        NeighborHalfSingle& neigh,
         vector2dc& prod_sum_e,
         vector2dc& prod_sum_f);
 
     void eval_gtinv(
         const vector1i& types,
-        NeighborHalf& neigh,
+        NeighborHalfSingle& neigh,
         double& energy,
         vector2d& forces,
         vector1d& stress
@@ -71,7 +71,7 @@ class PolymlpEvalSingle {
         const vector2d& fx_array,
         const vector2d& fy_array,
         const vector2d& fz_array,
-        NeighborHalf& neigh,
+        NeighborHalfSingle& neigh,
         double& energy,
         vector2d& forces,
         vector1d& stress
@@ -85,7 +85,7 @@ class PolymlpEvalSingle {
 
     void eval(
         const vector1i& types,
-        NeighborHalf& neigh,
+        NeighborHalfSingle& neigh,
         double& energy,
         vector2d& forces,
         vector1d& stress

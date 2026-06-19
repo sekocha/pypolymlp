@@ -11,7 +11,6 @@
 #include "mlpcpp.h"
 #include "compute/neighbor_half.h"
 #include "compute/polymlp_eval.h"
-#include "compute/polymlp_eval_single.h"
 #include "compute/py_params.h"
 
 #include <pybind11/pybind11.h>
@@ -32,7 +31,6 @@ class PyPropertiesFast {
 
     struct feature_params fp;
     PolymlpEval polymlp;
-    PolymlpEvalSingle polymlp_single;
 
     public:
 

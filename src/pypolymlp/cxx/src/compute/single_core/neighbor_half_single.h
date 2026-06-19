@@ -5,14 +5,17 @@
 
 ****************************************************************************/
 
-#ifndef __NEIGHBOR_HALF
-#define __NEIGHBOR_HALF
+#ifndef __NEIGHBOR_HALF_SINGLE
+#define __NEIGHBOR_HALF_SINGLE
+
+//#include <omp.h>
+//#include <thread>
 
 #include "mlpcpp.h"
 #include "neighbor_cell.h"
 
 
-class NeighborHalf {
+class NeighborHalfSingle {
 
     vector1i offset;
     vector1i neigh;
@@ -22,13 +25,13 @@ class NeighborHalf {
 
     public:
 
-    NeighborHalf(
+    NeighborHalfSingle(
         const vector2d& axis,
         const vector2d& positions_c,
         const double cutoff,
         const bool use_openmp
     );
-    ~NeighborHalf();
+    ~NeighborHalfSingle();
 
     inline int size(int i) const {
         return offset[i+1] - offset[i];

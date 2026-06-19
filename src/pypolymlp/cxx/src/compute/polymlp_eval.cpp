@@ -11,6 +11,8 @@ PolymlpEval::PolymlpEval(){}
 
 PolymlpEval::PolymlpEval(const feature_params& fp, const vector1d& coeffs){
 
+    use_openmp = true;
+
     vector1d coeffs_rev(coeffs.size());
     for (size_t i = 0; i < coeffs.size(); ++i) coeffs_rev[i] = 2.0 * coeffs[i];
     polymlp_api.set_potential_model(fp, coeffs_rev);
@@ -42,10 +44,12 @@ PolymlpEval::~PolymlpEval(){}
 void PolymlpEval::eval(
     const vector1i& types,
     NeighborHalf& neigh,
+    const bool use_openmp_,
     double& energy,
     vector2d& forces,
     vector1d& stress
 ){
+    use_openmp = use_openmp_;
     n_atom = types.size();
     const auto& fp = polymlp_api.get_fp();
 
@@ -85,7 +89,7 @@ void PolymlpEval::eval_pair(
     }
 
     #ifdef _OPENMP
-    #pragma omp parallel for schedule(guided)
+    #pragma omp parallel for schedule(guided) if (use_openmp)
     #endif
     for (int i = 0; i < n_atom; ++i) {
         int type1, type2, tp;
@@ -204,7 +208,7 @@ void PolymlpEval::compute_sum_of_prod_antp(
     prod_sum_f = vector2d(n_atom);
 
     #ifdef _OPENMP
-    #pragma omp parallel for schedule(guided)
+    #pragma omp parallel for schedule(guided) if (use_openmp)
     #endif
     for (int i = 0; i < n_atom; ++i) {
         const int type1 = types[i];
@@ -256,7 +260,7 @@ void PolymlpEval::eval_gtinv(
 
     auto start3 = std::chrono::high_resolution_clock::now();
     #ifdef _OPENMP
-    #pragma omp parallel for schedule(guided)
+    #pragma omp parallel for schedule(guided) if (use_openmp)
     #endif
     for (int i = 0; i < n_atom; ++i) {
         int type1, type2, tp;
@@ -403,7 +407,7 @@ void PolymlpEval::compute_sum_of_prod_anlmtp(
     neigh.get_full_list(neighbor_full, dx_full, dy_full, dz_full, offset_full);
 
     #ifdef _OPENMP
-    #pragma omp parallel for schedule(guided)
+    #pragma omp parallel for schedule(guided) if (use_openmp)
     #endif
     for (int i = 0; i < n_atom; ++i) {
         int type1, type2, tp;

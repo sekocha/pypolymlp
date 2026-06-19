@@ -42,7 +42,7 @@ PolymlpEvalSingle::~PolymlpEvalSingle(){}
 
 void PolymlpEvalSingle::eval(
     const vector1i& types,
-    NeighborHalf& neigh,
+    NeighborHalfSingle& neigh,
     double& energy,
     vector2d& forces,
     vector1d& stress
@@ -62,7 +62,7 @@ void PolymlpEvalSingle::eval(
 
 void PolymlpEvalSingle::eval_pair(
     const vector1i& types,
-    NeighborHalf& neigh,
+    NeighborHalfSingle& neigh,
     double& energy,
     vector2d& forces,
     vector1d& stress
@@ -139,7 +139,7 @@ void PolymlpEvalSingle::eval_pair(
 
 void PolymlpEvalSingle::compute_antp(
     const vector1i& types,
-    NeighborHalf& neigh,
+    NeighborHalfSingle& neigh,
     vector2d& antp
 ){
 
@@ -215,7 +215,7 @@ void PolymlpEvalSingle::compute_sum_of_prod_antp(
 
 void PolymlpEvalSingle::eval_gtinv(
     const vector1i& types,
-    NeighborHalf& neigh,
+    NeighborHalfSingle& neigh,
     double& energy,
     vector2d& forces,
     vector1d& stress){
@@ -337,7 +337,7 @@ void PolymlpEvalSingle::collect_properties(
     const vector2d& fx_array,
     const vector2d& fy_array,
     const vector2d& fz_array,
-    NeighborHalf& neigh,
+    NeighborHalfSingle& neigh,
     double& energy,
     vector2d& forces,
     vector1d& stress
@@ -378,7 +378,7 @@ void PolymlpEvalSingle::collect_properties(
 
 void PolymlpEvalSingle::compute_sum_of_prod_anlmtp(
     const vector1i& types,
-    NeighborHalf& neigh,
+    NeighborHalfSingle& neigh,
     vector2dc& prod_sum_e,
     vector2dc& prod_sum_f)
 {

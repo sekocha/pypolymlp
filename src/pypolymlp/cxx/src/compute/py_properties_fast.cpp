@@ -10,10 +10,8 @@
 PyPropertiesFast::PyPropertiesFast(
     const py::dict& params_dict, const vector1d& coeffs
 ){
-
     convert_params_dict_to_feature_params(params_dict, fp);
     polymlp = PolymlpEval(fp, coeffs);
-    polymlp_single = PolymlpEvalSingle(fp, coeffs); // TODO: Initialize using PolymlpEval
 }
 
 PyPropertiesFast::~PyPropertiesFast(){}
@@ -26,12 +24,7 @@ void PyPropertiesFast::eval(
 ){
     /* positions_c: (3, n_atom) */
     NeighborHalf neigh(axis, positions_c, fp.cutoff, use_openmp_atom);
-    if (use_openmp_atom){
-        polymlp.eval(types, neigh, energy, force, stress);
-    }
-    else {
-        polymlp_single.eval(types, neigh, energy, force, stress);
-    }
+    polymlp.eval(types, neigh, use_openmp_atom, energy, force, stress);
 }
 
 void PyPropertiesFast::eval_multiple(
@@ -43,8 +36,27 @@ void PyPropertiesFast::eval_multiple(
     e_array = vector1d(n_st);
     f_array = vector3d(n_st);
     s_array = vector2d(n_st);
-
-    if (n_st > 1) {
+    bool use_openmp_structure = false;
+    if (!use_openmp_structure){
+        const bool use_openmp = true;
+        for (int i = 0; i < n_st; ++i){
+            NeighborHalf neigh(
+                axis_array[i],
+                positions_c_array[i],
+                fp.cutoff,
+                use_openmp
+            );
+            polymlp.eval(
+                types_array[i],
+                neigh,
+                use_openmp,
+                e_array[i],
+                f_array[i],
+                s_array[i]);
+        }
+    }
+    else {
+        // Deprecated: OPENMP parallelization sometimes fails in pytest autocalc
         #ifdef _OPENMP
         #pragma omp parallel for schedule(guided)
         #endif
@@ -56,15 +68,10 @@ void PyPropertiesFast::eval_multiple(
                 fp.cutoff,
                 use_openmp
             );
-            polymlp_single.eval(
-                types_array[i], neigh, e_array[i], f_array[i], s_array[i]);
+            polymlp.eval(
+                types_array[i], neigh, use_openmp,
+                e_array[i], f_array[i], s_array[i]);
         }
-    }
-    else if (n_st == 1) {
-        const bool use_openmp = true;
-        NeighborHalf neigh(axis_array[0], positions_c_array[0], fp.cutoff, use_openmp);
-        polymlp.eval(
-            types_array[0], neigh, e_array[0], f_array[0], s_array[0]);
     }
 }
 
