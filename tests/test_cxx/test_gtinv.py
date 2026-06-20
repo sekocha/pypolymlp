@@ -2,7 +2,7 @@
 
 import pytest
 
-from pypolymlp.cxx.api_gtinv_list import get_gtinv_attrs
+from pypolymlp.cxx_wrapper.api_gtinv_list import get_gtinv_attrs
 
 
 def test_get_gtinv_attrs1():

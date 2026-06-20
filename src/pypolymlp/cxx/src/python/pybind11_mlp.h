@@ -26,6 +26,7 @@
 #include "compute/neighbor_full.h"
 #include "compute/neighbor_cell.h"
 #include "polymlp/polymlp_functions_interface.h"
+#include "polymlp/polymlp_api.h"
 #include "polymlp/polymlp_mlpcpp.h"
 
 namespace py = pybind11;

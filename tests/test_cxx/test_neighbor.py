@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from pypolymlp.cxx.api_neighbor import (
+from pypolymlp.cxx_wrapper.api_neighbor import (
     Neighbor,
     NeighborCell,
     NeighborFull,

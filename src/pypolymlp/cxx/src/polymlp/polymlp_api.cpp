@@ -32,27 +32,27 @@ int PolymlpAPI::parse_polymlp_file(
 }
 
 
-int PolymlpAPI::set_potential_model(const feature_params& fp_i, const vector1d& pot_i){
+int PolymlpAPI::set_potential_model(const feature_params& fp_, const vector1d& pot_){
     use_potential = true;
-    fp = fp_i;
-    pot = pot_i;
+    fp = fp_;
+    pot = pot_;
     pmodel = Potential(fp, pot);
     return 0;
 }
 
 
-int PolymlpAPI::set_features(const feature_params& fp_i){
+int PolymlpAPI::set_features(const feature_params& fp_){
     use_features = true;
-    fp = fp_i;
+    fp = fp_;
     const bool set_deriv = true;
     features = Features(fp, set_deriv);
     features.release_memory();
     return 0;
 }
 
-int PolymlpAPI::set_model_parameters(const feature_params& fp_i){
+int PolymlpAPI::set_model_parameters(const feature_params& fp_){
     use_model_params = true;
-    fp = fp_i;
+    fp = fp_;
     mapping = Mapping(fp);
     auto& maps = mapping.get_maps();
     modelp = ModelParams(fp, maps);

@@ -142,7 +142,6 @@ PYBIND11_MODULE(libmlpcpp, m) {
                 py::return_value_policy::reference_internal)
         ;
 
-
     py::class_<feature_params>(m, "FeatureParams")
         .def(py::init<>())
         .def_readwrite("n_type", &feature_params::n_type)
@@ -161,11 +160,8 @@ PYBIND11_MODULE(libmlpcpp, m) {
         ;
 
     m.def("get_fn",
-        [](const double dis,
-           const feature_params& fp,
-           const vector2d& params){
-            vector1d fn;
-            vector1d fn_d;
+        [](const double dis, const feature_params& fp, const vector2d& params){
+            vector1d fn, fn_d;
             get_fn_(dis, fp, params, fn, fn_d);
             return py::make_tuple(fn, fn_d);
         },
@@ -175,32 +171,10 @@ PYBIND11_MODULE(libmlpcpp, m) {
     );
 
     m.def("get_ylm",
-        [](double r,
-           double x,
-           double y,
-           double z,
-           int lmax){
-            vector1dc ylm;
-            vector1dc ylm_dx;
-            vector1dc ylm_dy;
-            vector1dc ylm_dz;
-
-            get_ylm_(
-                r,
-                x,
-                y,
-                z,
-                lmax,
-                ylm,
-                ylm_dx,
-                ylm_dy,
-                ylm_dz);
-
-            return py::make_tuple(
-                ylm,
-                ylm_dx,
-                ylm_dy,
-                ylm_dz);
+        [](double r, double x, double y, double z, int lmax){
+            vector1dc ylm, ylm_dx, ylm_dy, ylm_dz;
+            get_ylm_(r, x, y, z, lmax, ylm, ylm_dx, ylm_dy, ylm_dz);
+            return py::make_tuple(ylm, ylm_dx, ylm_dy, ylm_dz);
         },
         py::arg("r"),
         py::arg("x"),
@@ -208,4 +182,18 @@ PYBIND11_MODULE(libmlpcpp, m) {
         py::arg("z"),
         py::arg("lmax")
     );
+
+    py::class_<PolymlpAPI>(m, "PolymlpAPI")
+        .def(py::init<>())
+        .def("set_features", &PolymlpAPI::set_features)
+        .def("set_model_parameters", &PolymlpAPI::set_model_parameters)
+        .def("set_potential_model", &PolymlpAPI::set_potential_model)
+        .def("parse_polymlp_file", &PolymlpAPI::parse_polymlp_file)
+        .def("convert_unit", &PolymlpAPI::convert_unit)
+        .def("get_fp", &PolymlpAPI::get_fp,
+             py::return_value_policy::reference_internal)
+        .def("get_n_variables", &PolymlpAPI::get_n_variables,
+             py::return_value_policy::reference_internal)
+        ;
+
 }

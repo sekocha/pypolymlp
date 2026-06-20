@@ -66,6 +66,8 @@ set(SRC_FILES
     src/polymlp/polymlp_read_gtinv.cpp
     src/polymlp/polymlp_gtinv_data.cpp
     src/polymlp/polymlp_gtinv_binary.cpp
+    src/polymlp/polymlp_parse_potential_legacy.cpp
+    src/polymlp/polymlp_parse_potential.cpp
     src/compute/neighbor.cpp
     src/compute/neighbor_full.cpp
     src/compute/neighbor_half.cpp
