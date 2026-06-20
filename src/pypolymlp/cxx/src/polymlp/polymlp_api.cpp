@@ -191,9 +191,9 @@ Maps& PolymlpAPI::get_maps() {
 
 int PolymlpAPI::get_n_variables() {
     if (use_features) return features.get_n_variables();
+    else if (use_potential) return pot.size();
     else {
-        std::cerr << "No method is found for getting n_variables." << std::endl;
-        exit(8);
+        throw std::runtime_error("No method is found for getting n_variables");
     }
 }
 

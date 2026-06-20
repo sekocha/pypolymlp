@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from pypolymlp.cxx_wrapper.api_functions import get_fn, get_ylm
+from pypolymlp.cxx.wrapper.api_functions import get_fn, get_ylm
 
 cwd = Path(__file__).parent
 path_files = str(cwd) + "/files/"
