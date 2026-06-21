@@ -77,7 +77,10 @@ class PolymlpCPPAPI:
         anlmtp_ds: NDArray,
         type1: int,
     ):
-        """Compute features from anlmtp."""
+        """Compute features from anlmtp.
+
+        anlmtp_dfx: shape=(n_noconj, n_atom)
+        """
         dfx, dfy, dfz, ds = self._api.compute_features_deriv(
             anlmtp, anlmtp_dfx, anlmtp_dfy, anlmtp_dfz, anlmtp_ds, type1
         )
