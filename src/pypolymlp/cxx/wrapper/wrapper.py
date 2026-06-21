@@ -58,6 +58,11 @@ class PolymlpCPPAPI:
         anlmtp = self._api.compute_anlmtp_conjugate(anlmtp_r, anlmtp_i, type1)
         return np.array(anlmtp)
 
+    def compute_features_real(self, antp: NDArray, type1: int):
+        """Compute features from antp."""
+        features = self._api.compute_features_real(antp, type1)
+        return np.array(features)
+
     def compute_features(self, anlmtp: NDArray, type1: int):
         """Compute features from anlmtp."""
         features = self._api.compute_features(anlmtp, type1)
@@ -77,3 +82,13 @@ class PolymlpCPPAPI:
             anlmtp, anlmtp_dfx, anlmtp_dfy, anlmtp_dfz, anlmtp_ds, type1
         )
         return np.array(dfx), np.array(dfy), np.array(dfz), np.array(ds)
+
+    def compute_sum_of_prod_antp(self, antp: NDArray, type1: int):
+        """Compute products from antp."""
+        prod_e, prod_f = self._api.compute_sum_of_prod_antp(antp, type1)
+        return np.array(prod_e), np.array(prod_f)
+
+    def compute_sum_of_prod_anlmtp(self, anlmtp: NDArray, type1: int):
+        """Compute products from anlmtp."""
+        prod_e, prod_f = self._api.compute_sum_of_prod_anlmtp(anlmtp, type1)
+        return np.array(prod_e), np.array(prod_f)

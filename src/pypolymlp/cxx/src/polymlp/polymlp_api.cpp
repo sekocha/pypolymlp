@@ -125,10 +125,9 @@ int PolymlpAPI::compute_features(
     const int type1,
     vector1d& feature_values
 ){
-    if (use_features)
-        features.compute_features(antp, type1, feature_values);
-    else
+    if (!use_features)
         throw std::runtime_error("Features class instance not defined.");
+    features.compute_features(antp, type1, feature_values);
     return 0;
 }
 
@@ -138,10 +137,9 @@ int PolymlpAPI::compute_features(
     const int type1,
     vector1d& feature_values
 ){
-    if (use_features)
-        features.compute_features(anlmtp, type1, feature_values);
-    else
+    if (!use_features)
         throw std::runtime_error("Features class instance not defined.");
+    features.compute_features(anlmtp, type1, feature_values);
     return 0;
 }
 
@@ -157,13 +155,12 @@ int PolymlpAPI::compute_features_deriv(
     vector2d& dn_dfz,
     vector2d& dn_ds
 ){
-    if (use_features)
-        features.compute_features_deriv(
-            anlmtp, anlmtp_dfx, anlmtp_dfy, anlmtp_dfz, anlmtp_ds, type1,
-            dn_dfx, dn_dfy, dn_dfz, dn_ds
-        );
-    else
+    if (!use_features)
         throw std::runtime_error("Features class instance not defined.");
+    features.compute_features_deriv(
+        anlmtp, anlmtp_dfx, anlmtp_dfy, anlmtp_dfz, anlmtp_ds, type1,
+        dn_dfx, dn_dfy, dn_dfz, dn_ds
+    );
     return 0;
 }
 
@@ -173,6 +170,8 @@ int PolymlpAPI::compute_sum_of_prod_antp(
     vector1d& prod_sum_e,
     vector1d& prod_sum_f
 ){
+    if (!use_potential)
+        throw std::runtime_error("Potential class instance not defined.");
     pmodel.compute_sum_of_prod_antp(antp, type1, prod_sum_e, prod_sum_f);
     return 0;
 }
@@ -184,6 +183,8 @@ int PolymlpAPI::compute_sum_of_prod_anlmtp(
     vector1dc& prod_sum_e,
     vector1dc& prod_sum_f
 ){
+    if (!use_potential)
+        throw std::runtime_error("Potential class instance not defined.");
     pmodel.compute_sum_of_prod_anlmtp(anlmtp, type1, prod_sum_e, prod_sum_f);
     return 0;
 }

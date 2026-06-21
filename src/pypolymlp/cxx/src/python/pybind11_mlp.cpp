@@ -207,6 +207,15 @@ PYBIND11_MODULE(libmlpcpp, m) {
             py::arg("anlmtp_i"),
             py::arg("type1")
         )
+        .def("compute_features_real",
+            [](PolymlpAPI& self, const vector1d& antp, const int type1){
+                vector1d features;
+                self.compute_features(antp, type1, features);
+                return features;
+            },
+            py::arg("antp"),
+            py::arg("type1")
+        )
         .def("compute_features",
             [](PolymlpAPI& self, const vector1dc& anlmtp, const int type1){
                 vector1d features;
@@ -235,6 +244,24 @@ PYBIND11_MODULE(libmlpcpp, m) {
             py::arg("anlmtp_dfy"),
             py::arg("anlmtp_dfz"),
             py::arg("anlmtp_ds"),
+            py::arg("type1")
+        )
+        .def("compute_sum_of_prod_antp",
+            [](PolymlpAPI& self, const vector1d& antp, const int type1){
+                vector1d prod_sum_e, prod_sum_f;
+                self.compute_sum_of_prod_antp(antp, type1, prod_sum_e, prod_sum_f);
+                return py::make_tuple(prod_sum_e, prod_sum_f);
+            },
+            py::arg("antp"),
+            py::arg("type1")
+        )
+        .def("compute_sum_of_prod_anlmtp",
+            [](PolymlpAPI& self, const vector1dc& anlmtp, const int type1){
+                vector1dc prod_sum_e, prod_sum_f;
+                self.compute_sum_of_prod_anlmtp(anlmtp, type1, prod_sum_e, prod_sum_f);
+                return py::make_tuple(prod_sum_e, prod_sum_f);
+            },
+            py::arg("anlmtp"),
             py::arg("type1")
         )
         ;

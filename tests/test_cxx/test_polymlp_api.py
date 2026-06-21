@@ -50,9 +50,8 @@ def test_cpp_api4():
     assert api.n_variables == n_variables_MgO
 
 
-def test_compute_properties():
-    """Test compute_anlmtp_conjugate and features."""
-
+def test_compute_anlmtp_conjugate():
+    """Test compute_anlmtp_conjugate."""
     anlmtp_r = np.arange(n_variables_MgO)
     anlmtp_i = np.arange(n_variables_MgO)
     anlmtp0 = api_rep.compute_anlmtp_conjugate(anlmtp_r, anlmtp_i, 0)
@@ -62,10 +61,19 @@ def test_compute_properties():
     assert np.sum(anlmtp0) == (31581 + 17199j)
     assert np.sum(anlmtp1) == (31581 + 17199j)
 
+
+def test_compute_properties():
+    """Test features and products."""
+
+    anlmtp_r = np.arange(n_variables_MgO)
+    anlmtp_i = np.arange(n_variables_MgO)
+    anlmtp0 = api_rep.compute_anlmtp_conjugate(anlmtp_r, anlmtp_i, 0)
+    anlmtp1 = api_rep.compute_anlmtp_conjugate(anlmtp_r, anlmtp_i, 1)
+
     api = PolymlpCPPAPI()
     api.set_features(fp_rep)
     dn0 = api.compute_features(anlmtp0, 0)
-    dn1 = api.compute_features(anlmtp0, 1)
+    dn1 = api.compute_features(anlmtp1, 1)
     assert dn0.shape == (891,)
     assert dn1.shape == (891,)
     assert np.sum(dn0) == pytest.approx(849391612.5622855)
@@ -89,3 +97,9 @@ def test_compute_properties():
     assert np.sum(dfy) == pytest.approx(29122027.72943048)
     assert np.sum(dfz) == pytest.approx(-7326280.333739502)
     assert np.sum(ds) == pytest.approx(10734296.686030138)
+
+    prod_e, prod_f = api_rep.compute_sum_of_prod_anlmtp(anlmtp0, 0)
+    assert prod_e.shape == (270,)
+    assert prod_f.shape == (270,)
+    assert np.sum(prod_e) == pytest.approx((-24266095.550829127 - 955759.7528607883j))
+    assert np.sum(prod_f) == pytest.approx((-72763009.4963038 - 2902187.696305793j))
