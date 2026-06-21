@@ -194,6 +194,48 @@ PYBIND11_MODULE(libmlpcpp, m) {
              py::return_value_policy::reference_internal)
         .def("get_n_variables", &PolymlpAPI::get_n_variables,
              py::return_value_policy::reference_internal)
+        .def("compute_anlmtp_conjugate",
+            [](PolymlpAPI& self,
+               const vector1d& anlmtp_r,
+               const vector1d& anlmtp_i,
+               const int type1){
+                vector1dc anlmtp;
+                self.compute_anlmtp_conjugate(anlmtp_r, anlmtp_i, type1, anlmtp);
+                return anlmtp;
+            },
+            py::arg("anlmtp_r"),
+            py::arg("anlmtp_i"),
+            py::arg("type1")
+        )
+        .def("compute_features",
+            [](PolymlpAPI& self, const vector1dc& anlmtp, const int type1){
+                vector1d features;
+                self.compute_features(anlmtp, type1, features);
+                return features;
+            },
+            py::arg("anlmtp"),
+            py::arg("type1")
+        )
+        .def("compute_features_deriv",
+            [](PolymlpAPI& self,
+               const vector1dc& anlmtp,
+               const vector2dc& anlmtp_dfx,
+               const vector2dc& anlmtp_dfy,
+               const vector2dc& anlmtp_dfz,
+               const vector2dc& anlmtp_ds,
+               const int type1){
+                vector2d dn_dfx, dn_dfy, dn_dfz, dn_ds;
+                self.compute_features_deriv(
+                    anlmtp, anlmtp_dfx, anlmtp_dfy, anlmtp_dfz, anlmtp_ds, type1,
+                    dn_dfx, dn_dfy, dn_dfz, dn_ds);
+                return py::make_tuple(dn_dfx, dn_dfy, dn_dfz, dn_ds);
+            },
+            py::arg("anlmtp"),
+            py::arg("anlmtp_dfx"),
+            py::arg("anlmtp_dfy"),
+            py::arg("anlmtp_dfz"),
+            py::arg("anlmtp_ds"),
+            py::arg("type1")
+        )
         ;
-
 }

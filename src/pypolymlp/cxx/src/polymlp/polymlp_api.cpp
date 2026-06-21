@@ -125,7 +125,10 @@ int PolymlpAPI::compute_features(
     const int type1,
     vector1d& feature_values
 ){
-    features.compute_features(antp, type1, feature_values);
+    if (use_features)
+        features.compute_features(antp, type1, feature_values);
+    else
+        throw std::runtime_error("Features class instance not defined.");
     return 0;
 }
 
@@ -135,7 +138,10 @@ int PolymlpAPI::compute_features(
     const int type1,
     vector1d& feature_values
 ){
-    features.compute_features(anlmtp, type1, feature_values);
+    if (use_features)
+        features.compute_features(anlmtp, type1, feature_values);
+    else
+        throw std::runtime_error("Features class instance not defined.");
     return 0;
 }
 
@@ -151,10 +157,13 @@ int PolymlpAPI::compute_features_deriv(
     vector2d& dn_dfz,
     vector2d& dn_ds
 ){
-    features.compute_features_deriv(
-        anlmtp, anlmtp_dfx, anlmtp_dfy, anlmtp_dfz, anlmtp_ds, type1,
-        dn_dfx, dn_dfy, dn_dfz, dn_ds
-    );
+    if (use_features)
+        features.compute_features_deriv(
+            anlmtp, anlmtp_dfx, anlmtp_dfy, anlmtp_dfz, anlmtp_ds, type1,
+            dn_dfx, dn_dfy, dn_dfz, dn_ds
+        );
+    else
+        throw std::runtime_error("Features class instance not defined.");
     return 0;
 }
 

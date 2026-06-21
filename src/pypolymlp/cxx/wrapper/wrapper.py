@@ -1,5 +1,6 @@
 """API wrapper to test API functions in C++ library."""
 
+import numpy as np
 from numpy.typing import NDArray
 
 from pypolymlp.cxx.lib import libmlpcpp
@@ -46,3 +47,33 @@ class PolymlpCPPAPI:
     def n_variables(self):
         """Return parameters for features."""
         return self._api.get_n_variables()
+
+    def compute_anlmtp_conjugate(
+        self,
+        anlmtp_r: NDArray,
+        anlmtp_i: NDArray,
+        type1: int,
+    ):
+        """Compute complex conjugate of anlmtp."""
+        anlmtp = self._api.compute_anlmtp_conjugate(anlmtp_r, anlmtp_i, type1)
+        return np.array(anlmtp)
+
+    def compute_features(self, anlmtp: NDArray, type1: int):
+        """Compute features from anlmtp."""
+        features = self._api.compute_features(anlmtp, type1)
+        return np.array(features)
+
+    def compute_features_deriv(
+        self,
+        anlmtp: NDArray,
+        anlmtp_dfx: NDArray,
+        anlmtp_dfy: NDArray,
+        anlmtp_dfz: NDArray,
+        anlmtp_ds: NDArray,
+        type1: int,
+    ):
+        """Compute features from anlmtp."""
+        dfx, dfy, dfz, ds = self._api.compute_features_deriv(
+            anlmtp, anlmtp_dfx, anlmtp_dfy, anlmtp_dfz, anlmtp_ds, type1
+        )
+        return np.array(dfx), np.array(dfy), np.array(dfz), np.array(ds)
