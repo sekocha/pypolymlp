@@ -20,8 +20,8 @@ class Potential {
     bool elim_conj;
 
     vector3i prod_features;
-    std::vector<std::vector<PotentialModel> > potential_model;
 
+    std::vector<std::vector<PotentialModel> > potential_model;
     std::vector<PotentialModel> potential_model_flat;
     vector2i offset;
 

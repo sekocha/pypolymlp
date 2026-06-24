@@ -114,6 +114,7 @@ void PolymlpEval::eval_pair(
             const auto& params = tp_to_params[tp];
             get_fn_(dis, fp, params, fn, fn_d);
             e_ij = 0.0, f_ij = 0.0;
+
             for (const auto& ntp: ntp_attrs){
                 if (tp == ntp.tp){
                     const int idx_i = ntp.ilocal_id;
@@ -291,6 +292,7 @@ void PolymlpEval::eval_gtinv(
 
             e_ij = 0.0, fx = 0.0, fy = 0.0, fz = 0.0;
             const auto& attrs = nlmtp_attrs1[tp];
+
             for (const auto& nlmtp : attrs){
                 const int nid = nlmtp.n_id;
                 double fn_val = fn[nid];

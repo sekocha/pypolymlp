@@ -256,9 +256,9 @@ void Potential::compute_sum_of_prod_anlmtp(
         int begin = offset1[i];
         int end = offset1[i+1];
 
-        //#ifdef _OPENMP
-        //#pragma omp simd
-        //#endif
+        #ifdef _OPENMP
+        #pragma omp simd
+        #endif
         for (int j = begin; j < end; ++j){
             const auto& pterm = potential_model1[j];
             const dc& deriv = prod_anlmtp_deriv[pterm.prod_id];
