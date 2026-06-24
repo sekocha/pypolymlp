@@ -15,7 +15,6 @@ inline T compute_product(const vector1i& prod, const std::vector<T>& element){
 
     const size_t n = prod.size();
     if (n == 0) return 1.0;
-
     T val_p = element[prod[0]];
     for (size_t i = 1; i < n; ++i) val_p *= element[prod[i]];
     return val_p;

@@ -19,8 +19,12 @@ void compute_products_real(
 }
 
 double compute_product_real(const vector1i& prod, const vector1dc& element){
-
     const size_t n = prod.size();
+    if (n == 4)
+        return prod_real(
+            element[prod[1]] * element[prod[2]] * element[prod[3]],
+            element[prod[0]]
+        );
     if (n == 3)
         return prod_real(element[prod[0]] * element[prod[1]], element[prod[2]]);
     if (n == 2) return prod_real(element[prod[0]], element[prod[1]]);
