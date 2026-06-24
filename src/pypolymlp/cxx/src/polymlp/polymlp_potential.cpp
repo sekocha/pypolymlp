@@ -19,6 +19,7 @@
 #include "polymlp_potential.h"
 
 
+
 Potential::Potential(){}
 
 Potential::Potential(const feature_params& fp, const vector1d& pot){
@@ -33,6 +34,7 @@ Potential::Potential(const feature_params& fp, const vector1d& pot){
     set_terms_using_mapping(pot);
     release_memory();
     sort_potential_model();
+    flatten_potential_model();
 
 }
 
@@ -135,6 +137,22 @@ void Potential::sort_potential_model(){
     }
 }
 
+void Potential::flatten_potential_model(){
+
+    potential_model_flat.resize(n_type);
+    offset.resize(n_type);
+    for (int t1 = 0; t1 < n_type; ++t1){
+        offset[t1].emplace_back(0);
+        int cnt(0);
+        for (auto& pmodel: potential_model[t1]){
+            for (const auto& pterm: pmodel){
+                potential_model_flat[t1].emplace_back(pterm);
+            }
+            cnt += pmodel.size();
+            offset[t1].emplace_back(cnt);
+        }
+    }
+}
 
 void Potential::compute_features(
     const vector1d& antp,
@@ -227,26 +245,52 @@ void Potential::compute_sum_of_prod_anlmtp(
     compute_prod_features(features, type1, prod_features_vals);
     compute_prod_anlmtp_deriv(anlmtp, type1, prod_anlmtp_deriv);
 
+    const auto& potential_model1 = potential_model_flat[type1];
+    const auto& offset1 = offset[type1];
+    int n_nlmtc_noconj = offset1.size() - 1;
+    prod_sum_e = vector1dc(n_nlmtc_noconj);
+    prod_sum_f = vector1dc(n_nlmtc_noconj);
+
+    for (int i = 0; i < n_nlmtc_noconj; ++i){
+        dc sum_e(0.0), sum_f(0.0);
+        int begin = offset1[i];
+        int end = offset1[i+1];
+        for (int j = begin; j < end; ++j){
+            const auto& pterm = potential_model1[j];
+            const dc& deriv = prod_anlmtp_deriv[pterm.prod_id];
+            double fval = prod_features_vals[pterm.prod_features_id];
+            sum_e += deriv * (fval * pterm.coeff_e);
+            sum_f += deriv * (fval * pterm.coeff_f);
+        }
+        prod_sum_e[i] = sum_e;
+        prod_sum_f[i] = sum_f;
+    }
+/*
     const auto& potential_model1 = potential_model[type1];
-    prod_sum_e = vector1dc(potential_model1.size());
-    prod_sum_f = vector1dc(potential_model1.size());
 
     int i = 0;
     for (const auto& pterms1: potential_model1){
         dc sum_e(0.0), sum_f(0.0);
         for (const auto& pterm: pterms1){
             double fval = prod_features_vals[pterm.prod_features_id];
-            if (fabs(fval) < 1e-20)
-                continue;
+            const dc deriv = prod_anlmtp_deriv[pterm.prod_id];
 
-            const dc& deriv = prod_anlmtp_deriv[pterm.prod_id];
-            sum_e += deriv * (pterm.coeff_e * fval);
-            sum_f += deriv * (pterm.coeff_f * fval);
+            double coeff_e = pterm.coeff_e;
+            double coeff_f = pterm.coeff_f;
+            dc deriv_fval = deriv * fval;
+            sum_e += deriv_fval * coeff_e;
+            sum_f += deriv_fval * coeff_f;
+
+            //sum_e += deriv * (pterm.coeff_e * fval);
+            //sum_f += deriv * (pterm.coeff_f * fval);
+            //sum_e += deriv * (coeff_e * fval);
+            //sum_f += deriv * (coeff_f * fval);
         }
         prod_sum_e[i] = sum_e;
         prod_sum_f[i] = sum_f;
         ++i;
     }
+*/
 }
 
 int Potential::convert_unit(const double energy_conv){

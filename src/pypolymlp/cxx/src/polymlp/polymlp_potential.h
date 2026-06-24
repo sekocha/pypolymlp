@@ -22,10 +22,15 @@ class Potential {
     vector3i prod_features;
     std::vector<std::vector<PotentialModel> > potential_model;
 
+    std::vector<PotentialModel> potential_model_flat;
+    vector2i offset;
+
     int set_mapping_prod_of_features();
     int set_terms_using_mapping(const vector1d& pot);
     void sort_potential_model();
     void release_memory();
+
+    void flatten_potential_model();
 
     public:
 
