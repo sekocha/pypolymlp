@@ -190,6 +190,36 @@ void Mapping::set_nlmtp_local_attrs(){
             maps.nlmtp_global_to_iloc[key] = local_id2;
         }
     }
+
+    const int n_type_pairs = maps.get_n_type_pairs();
+    for (int type1 = 0; type1 < n_type; ++type1){
+        maps_type[type1].nlmtp_attrs_noconj_tp.resize(n_type_pairs);
+        const auto& nlmtp_attrs1 = maps_type[type1].nlmtp_attrs_noconj;
+        for (const auto& nlmtp: nlmtp_attrs1){
+            const int tp = nlmtp.tp;
+            nlmtpAttrCompact nlmtp_compact = {
+                nlmtp.n_id,
+                nlmtp.lm.ylm_key,
+                nlmtp.lm.m,
+                nlmtp.lm.sign_j,
+                nlmtp.ilocal_noconj_id,
+                nlmtp.jlocal_noconj_id
+            };
+            maps_type[type1].nlmtp_attrs_noconj_tp[tp].emplace_back(nlmtp_compact);
+        }
+    }
+    for (int type1 = 0; type1 < n_type; ++type1){
+        for (int tp = 0; tp < n_type_pairs; ++tp){
+            auto& nlmtp_attrs = maps_type[type1].nlmtp_attrs_noconj_tp[tp];
+            std::sort(nlmtp_attrs.begin(), nlmtp_attrs.end(),
+                    [](const nlmtpAttrCompact& a, const nlmtpAttrCompact& b) {
+                    if (a.ilocal_noconj_id != b.ilocal_noconj_id) {
+                    return a.ilocal_noconj_id < b.ilocal_noconj_id;
+                    }
+                    return a.jlocal_noconj_id < b.jlocal_noconj_id;
+                    });
+        }
+    }
 }
 
 void Mapping::set_nlmtp_local_conj_ids(){
@@ -243,19 +273,3 @@ void Mapping::set_lm_attrs(){
 
 
 Maps& Mapping::get_maps() { return maps; }
-
-/*
-void Mapping::set_type_pairs_charge(const feature_params& fp){
-
-    int tp = 0;
-    type_pairs.resize(n_type);
-    for (int i = 0; i < n_type; ++i){
-        for (int j = 0; j < n_type; ++j){
-            type_pairs[i].emplace_back(tp);
-            map_tp_to_nlist.emplace_back(fp.params_conditional[i][j]);
-            ++tp;
-        }
-    }
-    n_type_pairs = n_type * n_type;
-}
-*/

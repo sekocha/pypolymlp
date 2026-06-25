@@ -22,21 +22,6 @@ PolymlpEval::PolymlpEval(const feature_params& fp, const vector1d& coeffs){
     int n_type = fp.n_type;
     int n_tp = tp_to_params.size();
 
-    if (fp.feature_type == "pair"){
-        /*** TODO: Pair mapping ***/
-    }
-    else if (fp.feature_type == "gtinv"){
-        /*** TODO: Prepare in initialization ***/
-        nlmtp_attrs.resize(n_type);
-        for (int type1 = 0; type1 < n_type; ++type1){
-            nlmtp_attrs[type1].resize(n_tp);
-            const auto& maps_type = maps.maps_type[type1];
-            const auto& nlmtp_attrs_noconj = maps_type.nlmtp_attrs_noconj;
-            for (const auto& nlmtp: nlmtp_attrs_noconj){
-                nlmtp_attrs[type1][nlmtp.tp].emplace_back(nlmtp);
-            }
-        }
-    }
 }
 
 PolymlpEval::~PolymlpEval(){}
@@ -230,20 +215,13 @@ void PolymlpEval::eval_gtinv(
     vector2d& forces,
     vector1d& stress){
 
-    //auto start1 = std::chrono::high_resolution_clock::now();
-    //vector2dc anlmtp, prod_sum_e, prod_sum_f;
-    //auto end1 = std::chrono::high_resolution_clock::now();
-    //auto elapsed1 =
-    //    std::chrono::duration_cast<std::chrono::microseconds>(end1 - start1);
-    //std::cout << "Elapsed time: " << elapsed1.count() << " micro s" << std::endl;
-
-    //auto start2 = std::chrono::high_resolution_clock::now();
+    auto start2 = std::chrono::high_resolution_clock::now();
     vector2dc prod_sum_e, prod_sum_f;
     compute_sum_of_prod_anlmtp(types, neigh, prod_sum_e, prod_sum_f);
-    //auto end2 = std::chrono::high_resolution_clock::now();
-    //auto elapsed2 =
-    //    std::chrono::duration_cast<std::chrono::microseconds>(end2 - start2);
-    //std::cout << "Elapsed time: " << elapsed2.count() << " micro s" << std::endl;
+    auto end2 = std::chrono::high_resolution_clock::now();
+    // auto elapsed2 =
+    //     std::chrono::duration_cast<std::chrono::microseconds>(end2 - start2);
+    // std::cout << "Elapsed time: " << elapsed2.count() << " micro s" << std::endl;
 
     const auto& fp = polymlp_api.get_fp();
     const auto& maps = polymlp_api.get_maps();
@@ -272,7 +250,8 @@ void PolymlpEval::eval_gtinv(
         vector1dc ylm, ylm_dx, ylm_dy, ylm_dz;
 
         type1 = types[i];
-        const auto& nlmtp_attrs1 = nlmtp_attrs[type1];
+        const auto& maps_type = maps.maps_type[type1];
+        const auto& nlmtp_attrs1 = maps_type.nlmtp_attrs_noconj_tp;
 
         auto [begin, end] = neigh.range(i);
         for (int k = begin; k < end; ++k) {
@@ -292,15 +271,13 @@ void PolymlpEval::eval_gtinv(
 
             e_ij = 0.0, fx = 0.0, fy = 0.0, fz = 0.0;
             const auto& attrs = nlmtp_attrs1[tp];
-
             for (const auto& nlmtp : attrs){
                 const int nid = nlmtp.n_id;
                 double fn_val = fn[nid];
                 if (fn_val < 1e-20)
                     continue;
 
-                const auto& lm_attr = nlmtp.lm;
-                const int ylmkey = lm_attr.ylmkey;
+                const int ylmkey = nlmtp.ylm_key;
                 const int idx_i = nlmtp.ilocal_noconj_id;
                 const int idx_j = nlmtp.jlocal_noconj_id;
                 val = fn_val * ylm[ylmkey];
@@ -313,20 +290,16 @@ void PolymlpEval::eval_gtinv(
                 const auto& prod_ej = prod_sum_e[j][idx_j];
                 const auto& prod_fi = prod_sum_f[i][idx_i];
                 const auto& prod_fj = prod_sum_f[j][idx_j];
-                const dc sum_e = prod_ei + prod_ej * lm_attr.sign_j;
-                const dc sum_f = prod_fi + prod_fj * lm_attr.sign_j;
-                if (lm_attr.m == 0){
-                    e_ij += 0.5 * prod_real(val, sum_e);
-                    fx += 0.5 * prod_real(valx, sum_f);
-                    fy += 0.5 * prod_real(valy, sum_f);
-                    fz += 0.5 * prod_real(valz, sum_f);
-                }
-                else {
-                    e_ij += prod_real(val, sum_e);
-                    fx += prod_real(valx, sum_f);
-                    fy += prod_real(valy, sum_f);
-                    fz += prod_real(valz, sum_f);
-                }
+                const dc sum_e = prod_ei + prod_ej * nlmtp.sign_j;
+                const dc sum_f = prod_fi + prod_fj * nlmtp.sign_j;
+                const double factor = (nlmtp.m == 0) ? 0.5 : 1.0;
+
+                const dc scaled_sum_e = sum_e * factor;
+                const dc scaled_sum_f = sum_f * factor;
+                e_ij += prod_real(val,  scaled_sum_e);
+                fx   += prod_real(valx, scaled_sum_f);
+                fy   += prod_real(valy, scaled_sum_f);
+                fz   += prod_real(valz, scaled_sum_f);
             }
             e_array[i][jj] = e_ij;
             fx_array[i][jj] = fx;
@@ -419,7 +392,7 @@ void PolymlpEval::compute_sum_of_prod_anlmtp(
         type1 = types[i];
         const auto& maps_type = maps.maps_type[type1];
         const auto& nlmtp_attrs_noconj = maps_type.nlmtp_attrs_noconj;
-        const auto& nlmtp_attrs1 = nlmtp_attrs[type1];
+        const auto& nlmtp_attrs1 = maps_type.nlmtp_attrs_noconj_tp;
 
         vector1d anlmtp_r(nlmtp_attrs_noconj.size(), 0.0);
         vector1d anlmtp_i(nlmtp_attrs_noconj.size(), 0.0);
@@ -444,9 +417,8 @@ void PolymlpEval::compute_sum_of_prod_anlmtp(
                 if (val_fn < 1e-20)
                     continue;
 
-                const auto& lm_attr = nlmtp.lm;
                 const int idx_i = nlmtp.ilocal_noconj_id;
-                dc& val_ylm = ylm[lm_attr.ylmkey];
+                dc& val_ylm = ylm[nlmtp.ylm_key];
                 val = val_fn * val_ylm;
                 anlmtp_r[idx_i] += val.real();
                 anlmtp_i[idx_i] += val.imag();

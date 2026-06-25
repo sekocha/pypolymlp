@@ -103,7 +103,7 @@ void Local::compute_anlmtp(
             if (tp == nlmtp.tp and fabs(fn[nlmtp.n_id]) > tol){
                 const auto& lm_attr = nlmtp.lm;
                 const int idx_i = nlmtp.ilocal_noconj_id;
-                val = fn[nlmtp.n_id] * ylm[lm_attr.ylmkey];
+                val = fn[nlmtp.n_id] * ylm[lm_attr.ylm_key];
                 anlmtp_r[idx_i] += val.real();
                 anlmtp_i[idx_i] += val.imag();
             }
@@ -165,7 +165,7 @@ void Local::compute_anlmtp_d(
                 continue;
 
             const auto& lm_attr = nlmtp.lm;
-            const int ylmkey = lm_attr.ylmkey;
+            const int ylmkey = lm_attr.ylm_key;
             const int idx_i = nlmtp.ilocal_id;
             const int n_id = nlmtp.n_id;
 

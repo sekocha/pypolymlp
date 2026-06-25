@@ -1,5 +1,4 @@
 /****************************************************************************
-
         Copyright (C) 2024 Atsuto Seko
                 seko@cms.mtl.kyoto-u.ac.jp
 
@@ -21,8 +20,6 @@ class PolymlpEval {
 
     PolymlpAPI polymlp_api;
     int n_atom;
-    std::vector<std::vector<std::vector<nlmtpAttr> > > nlmtp_attrs;
-
     bool use_openmp;
 
     void convert_neighbor_half_to_full(

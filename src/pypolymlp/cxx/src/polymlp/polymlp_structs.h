@@ -43,7 +43,7 @@ struct ntpAttr {
 struct lmAttr {
     int l;
     int m;
-    int ylmkey;
+    int ylm_key;
     bool conj;
     double cc_coeff;
     double sign_j;
@@ -63,6 +63,15 @@ struct nlmtpAttr {
     int ilocal_noconj_id;
     int jlocal_noconj_id;
     int ilocal_conj_id;
+};
+
+struct nlmtpAttrCompact {
+    int n_id;
+    int ylm_key;
+    int m;
+    double sign_j;
+    int ilocal_noconj_id;
+    int jlocal_noconj_id;
 };
 
 
@@ -125,7 +134,7 @@ struct MapsType {
     nlmtpAttrArray nlmtp_attrs;
     nlmtpAttrArray nlmtp_attrs_noconj;
 
-    std::vector<nlmtpAttrArray> nlmtp_attrs_noconj_tp;
+    std::vector<std::vector<nlmtpAttrCompact>> nlmtp_attrs_noconj_tp;
 
     MultipleFeatures features;
     std::vector<PolynomialTerm> polynomial;
