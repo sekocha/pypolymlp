@@ -73,7 +73,7 @@ def test_load_mlp():
 def test_find_mlps():
     """Test for find_mlps"""
     mlps = find_mlps(str(cwd) + "/../files")
-    assert len(mlps) == 2
+    assert len(mlps) == 3
 
 
 def test_convert_to_yaml():

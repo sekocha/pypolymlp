@@ -17,6 +17,9 @@ class Mapping {
     int n_type, n_fn, maxl;
     Maps maps;
 
+    vector2i n_to_tp;       // n --> type_pairs
+    vector2i tpn_to_n_id;   // (type_pair, n) -> n_id for type_pair
+
     void set_type_pairs(const feature_params& fp);
     void set_type_pairs_charge(const feature_params& fp);
     void set_map_n_to_tplist();

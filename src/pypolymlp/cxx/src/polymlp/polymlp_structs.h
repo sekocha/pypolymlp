@@ -125,6 +125,8 @@ struct MapsType {
     nlmtpAttrArray nlmtp_attrs;
     nlmtpAttrArray nlmtp_attrs_noconj;
 
+    std::vector<nlmtpAttrArray> nlmtp_attrs_noconj_tp;
+
     MultipleFeatures features;
     std::vector<PolynomialTerm> polynomial;
 
@@ -147,25 +149,22 @@ struct MapsType {
 
 
 struct Maps {
-    ntpAttrArray ntp_attrs;
-    nlmtpAttrArray nlmtp_attrs;
-    nlmtpAttrArray nlmtp_attrs_noconj;
-    lmAttrArray lm_attrs;
+    vector2i type_pairs;           // (type1, type2) --> type_pairs
+    vector2i tp_to_types;          // type_pair --> (type1, type2)
+    vector2i tp_to_n;              // type_pair --> conditional n values
+    vector3d tp_to_params;         // type_pair -> params
 
+    ntpAttrArray ntp_attrs;
     MapFromVec ntp_to_global;      // (n, tp) --> ntp_global key
     MapFromVec ntp_global_to_iloc; // (ntp_global, type1) -> ntp_local
 
+    lmAttrArray lm_attrs;
+    nlmtpAttrArray nlmtp_attrs;
     MapFromVec nlmtp_to_global;      // (n, lm, tp) --> nlmtp_global key
     MapFromVec nlmtp_global_to_iloc; // (nlmtp_global, type1) -> nlmtp_local
+
+    nlmtpAttrArray nlmtp_attrs_noconj;
     vector1i global_to_global_conj;  // nlmtp_global -> nlmtp_global_conj
-
-    vector2i type_pairs;             // (type1, type2) --> type_pairs
-    vector2i tp_to_types;            // type_pair --> (type1, type2)
-
-    vector2i tp_to_n;                // type_pair --> conditional n values
-    vector3d tp_to_params;           // type_pair -> params
-    vector2i n_to_tp;                // n --> type_pairs
-    vector2i tpn_to_n_id;            // (type_pair, n) -> n_id for type_pair
 
     std::vector<MapsType> maps_type;
 
