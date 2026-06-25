@@ -76,10 +76,10 @@ int Potential::set_terms_using_mapping(const vector1d& pot){
                         const int head_id = sterm.nlmtp_ids[j];
                         if (elim_conj and maps_type.is_conj(head_id))
                             continue;
+
                         vector1i keys = erase_a_key(sterm.nlmtp_ids, j);
                         const int prod_id = prod_map_deriv[keys];
 
-                        //if (elim_conj == false or maps_type.is_conj(head_id) == false){
                         vector1i keys_all = {head_id, prod_id, prod_features_id};
                         if (nonequiv_map.count(keys_all) == 0){
                             nonequiv_map[keys_all] = vector1d{coeff_e,coeff_f};
@@ -88,7 +88,6 @@ int Potential::set_terms_using_mapping(const vector1d& pot){
                             nonequiv_map[keys_all][0] += coeff_e;
                             nonequiv_map[keys_all][1] += coeff_f;
                         }
-                        //}
                     }
                 }
             }
@@ -234,6 +233,7 @@ void Potential::compute_sum_of_prod_antp(
     }
 }
 
+
 void Potential::compute_sum_of_prod_anlmtp(
     const vector1dc& anlmtp,
     const int type1,
@@ -294,6 +294,7 @@ void Potential::compute_sum_of_prod_anlmtp(
         prod_sum_f[i] = dc(sum_f_re, sum_f_im);
     }
 }
+
 /*
     const auto& potential_model1 = potential_model[type1];
 
