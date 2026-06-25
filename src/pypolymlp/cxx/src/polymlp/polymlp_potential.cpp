@@ -74,19 +74,21 @@ int Potential::set_terms_using_mapping(const vector1d& pot){
 
                     for (int j = 0; j < sterm.nlmtp_ids.size(); ++j){
                         const int head_id = sterm.nlmtp_ids[j];
+                        if (elim_conj and maps_type.is_conj(head_id))
+                            continue;
                         vector1i keys = erase_a_key(sterm.nlmtp_ids, j);
                         const int prod_id = prod_map_deriv[keys];
 
+                        //if (elim_conj == false or maps_type.is_conj(head_id) == false){
                         vector1i keys_all = {head_id, prod_id, prod_features_id};
-                        if (elim_conj == false or maps_type.is_conj(head_id) == false){
-                            if (nonequiv_map.count(keys_all) == 0){
-                                nonequiv_map[keys_all] = vector1d{coeff_e,coeff_f};
-                            }
-                            else {
-                                nonequiv_map[keys_all][0] += coeff_e;
-                                nonequiv_map[keys_all][1] += coeff_f;
-                            }
+                        if (nonequiv_map.count(keys_all) == 0){
+                            nonequiv_map[keys_all] = vector1d{coeff_e,coeff_f};
                         }
+                        else {
+                            nonequiv_map[keys_all][0] += coeff_e;
+                            nonequiv_map[keys_all][1] += coeff_f;
+                        }
+                        //}
                     }
                 }
             }
@@ -232,7 +234,6 @@ void Potential::compute_sum_of_prod_antp(
     }
 }
 
-
 void Potential::compute_sum_of_prod_anlmtp(
     const vector1dc& anlmtp,
     const int type1,
@@ -247,29 +248,52 @@ void Potential::compute_sum_of_prod_anlmtp(
 
     const auto& potential_model1 = potential_model_flat[type1];
     const auto& offset1 = offset[type1];
-    int n_nlmtc_noconj = offset1.size() - 1;
+    const int n_nlmtc_noconj = static_cast<int>(offset1.size()) - 1;
+
     prod_sum_e = vector1dc(n_nlmtc_noconj);
     prod_sum_f = vector1dc(n_nlmtc_noconj);
 
+    if (n_nlmtc_noconj <= 0) return;
+
+    const PotentialTerm* pbase = potential_model1.data();
+    const double* fvals
+        = prod_features_vals.empty() ? nullptr : prod_features_vals.data();
+    const dc* derivs = prod_anlmtp_deriv.empty() ? nullptr : prod_anlmtp_deriv.data();
+
     for (int i = 0; i < n_nlmtc_noconj; ++i){
-        dc sum_e(0.0), sum_f(0.0);
-        int begin = offset1[i];
-        int end = offset1[i+1];
+        double sum_e_re = 0.0, sum_e_im = 0.0;
+        double sum_f_re = 0.0, sum_f_im = 0.0;
+
+        const int begin = offset1[i];
+        const int end   = offset1[i+1];
 
         #ifdef _OPENMP
-        #pragma omp simd
+        #pragma omp simd reduction(+:sum_e_re,sum_e_im,sum_f_re,sum_f_im)
         #endif
         for (int j = begin; j < end; ++j){
-            const auto& pterm = potential_model1[j];
-            const dc& deriv = prod_anlmtp_deriv[pterm.prod_id];
-            double fval = prod_features_vals[pterm.prod_features_id];
-            sum_e += deriv * (fval * pterm.coeff_e);
-            sum_f += deriv * (fval * pterm.coeff_f);
-        }
-        prod_sum_e[i] = sum_e;
-        prod_sum_f[i] = sum_f;
-    }
+            const PotentialTerm& pt = pbase[j];
+            const int pid = pt.prod_id;
+            const int pfid = pt.prod_features_id;
 
+            const double fval = fvals[pfid];
+            const double s_e = fval * pt.coeff_e; // scalar multiplier for e
+            const double s_f = fval * pt.coeff_f; // scalar multiplier for f
+
+            const dc deriv = derivs[pid]; // small copy to allow .real()/.imag()
+            const double a = deriv.real();
+            const double b = deriv.imag();
+
+            // deriv * s = (a + i b) * s -> real = a*s, imag = b*s
+            sum_e_re += a * s_e;
+            sum_e_im += b * s_e;
+            sum_f_re += a * s_f;
+            sum_f_im += b * s_f;
+        }
+
+        prod_sum_e[i] = dc(sum_e_re, sum_e_im);
+        prod_sum_f[i] = dc(sum_f_re, sum_f_im);
+    }
+}
 /*
     const auto& potential_model1 = potential_model[type1];
 
@@ -296,7 +320,6 @@ void Potential::compute_sum_of_prod_anlmtp(
         ++i;
     }
 */
-}
 
 int Potential::convert_unit(const double energy_conv){
     for (auto& pmodel1: potential_model){
