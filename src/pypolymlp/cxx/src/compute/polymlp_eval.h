@@ -44,6 +44,12 @@ class PolymlpEval {
         vector2d& prod_sum_f
     );
 
+    void compute_sum_of_prod_antp(
+        const vector1i& types,
+        NeighborHalf& neigh,
+        vector2d& prod_sum_e,
+        vector2d& prod_sum_f);
+
     void eval_pair(
         const vector1i& types,
         NeighborHalf& neigh,

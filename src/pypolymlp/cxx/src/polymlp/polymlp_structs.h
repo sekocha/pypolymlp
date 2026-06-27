@@ -40,6 +40,13 @@ struct ntpAttr {
     int jlocal_id;
 };
 
+struct ntpAttrCompact {
+    int n_id;
+    int ilocal_id;
+    int jlocal_id;
+};
+
+
 struct lmAttr {
     int l;
     int m;
@@ -134,6 +141,7 @@ struct MapsType {
     nlmtpAttrArray nlmtp_attrs;
     nlmtpAttrArray nlmtp_attrs_noconj;
 
+    std::vector<std::vector<ntpAttrCompact>> ntp_attrs_tp;
     std::vector<std::vector<nlmtpAttrCompact>> nlmtp_attrs_noconj_tp;
 
     MultipleFeatures features;

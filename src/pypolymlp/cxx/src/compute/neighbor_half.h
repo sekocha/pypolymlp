@@ -14,8 +14,7 @@
 
 class NeighborHalf {
 
-    vector1i offset;
-    vector1i neigh;
+    vector1i neigh, offset;
     vector1d dx, dy, dz;
 
     int n_total_atom;

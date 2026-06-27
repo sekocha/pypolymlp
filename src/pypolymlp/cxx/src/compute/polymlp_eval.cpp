@@ -17,11 +17,6 @@ PolymlpEval::PolymlpEval(const feature_params& fp, const vector1d& coeffs){
     for (size_t i = 0; i < coeffs.size(); ++i) coeffs_rev[i] = 2.0 * coeffs[i];
     polymlp_api.set_potential_model(fp, coeffs_rev);
 
-    const auto& maps = polymlp_api.get_maps();
-    const auto& tp_to_params = maps.tp_to_params;
-    int n_type = fp.n_type;
-    int n_tp = tp_to_params.size();
-
 }
 
 PolymlpEval::~PolymlpEval(){}
@@ -60,9 +55,8 @@ void PolymlpEval::eval_pair(
     const auto& type_pairs = maps.type_pairs;
     const auto& tp_to_params = maps.tp_to_params;
 
-    vector2d antp, prod_sum_e, prod_sum_f;
-    compute_antp(types, neigh, antp);
-    compute_sum_of_prod_antp(types, antp, prod_sum_e, prod_sum_f);
+    vector2d prod_sum_e, prod_sum_f;
+    compute_sum_of_prod_antp(types, neigh, prod_sum_e, prod_sum_f);
 
     vector2d e_array(n_atom),fx_array(n_atom),fy_array(n_atom),fz_array(n_atom);
     for (int i = 0; i < n_atom; ++i) {
@@ -83,7 +77,7 @@ void PolymlpEval::eval_pair(
 
         type1 = types[i];
         const auto& maps_type = maps.maps_type[type1];
-        const auto& ntp_attrs = maps_type.ntp_attrs;
+        const auto& ntp_attrs1 = maps_type.ntp_attrs_tp;
 
         auto [begin, end] = neigh.range(i);
         for (int k = begin; k < end; ++k) {
@@ -98,19 +92,18 @@ void PolymlpEval::eval_pair(
             tp = type_pairs[type1][type2];
             const auto& params = tp_to_params[tp];
             get_fn_(dis, fp, params, fn, fn_d);
-            e_ij = 0.0, f_ij = 0.0;
 
-            for (const auto& ntp: ntp_attrs){
-                if (tp == ntp.tp){
-                    const int idx_i = ntp.ilocal_id;
-                    const int idx_j = ntp.jlocal_id;
-                    const auto& prod_ei = prod_sum_e[i][idx_i];
-                    const auto& prod_ej = prod_sum_e[j][idx_j];
-                    const auto& prod_fi = prod_sum_f[i][idx_i];
-                    const auto& prod_fj = prod_sum_f[j][idx_j];
-                    e_ij += fn[ntp.n_id] * (prod_ei + prod_ej);
-                    f_ij += fn_d[ntp.n_id] * (prod_fi + prod_fj);
-                }
+            e_ij = 0.0, f_ij = 0.0;
+            const auto& attrs = ntp_attrs1[tp];
+            for (const auto& ntp: attrs){
+                const int idx_i = ntp.ilocal_id;
+                const int idx_j = ntp.jlocal_id;
+                const auto& prod_ei = prod_sum_e[i][idx_i];
+                const auto& prod_ej = prod_sum_e[j][idx_j];
+                const auto& prod_fi = prod_sum_f[i][idx_i];
+                const auto& prod_fj = prod_sum_f[j][idx_j];
+                e_ij += fn[ntp.n_id] * (prod_ei + prod_ej);
+                f_ij += fn_d[ntp.n_id] * (prod_fi + prod_fj);
             }
             f_ij *= - 1.0 / dis;
             fx = f_ij * dx;
@@ -129,39 +122,43 @@ void PolymlpEval::eval_pair(
     );
 }
 
-void PolymlpEval::compute_antp(
+void PolymlpEval::compute_sum_of_prod_antp(
     const vector1i& types,
     NeighborHalf& neigh,
-    vector2d& antp
-){
+    vector2d& prod_sum_e,
+    vector2d& prod_sum_f)
+{
+    prod_sum_e = vector2d(n_atom);
+    prod_sum_f = vector2d(n_atom);
 
     const auto& fp = polymlp_api.get_fp();
     const auto& maps = polymlp_api.get_maps();
     const auto& type_pairs = maps.type_pairs;
     const auto& tp_to_params = maps.tp_to_params;
 
-    antp = vector2d(n_atom);
-    for (int i = 0; i < n_atom; ++i) {
-        int type1 = types[i];
-        const auto& maps_type = maps.maps_type[type1];
-        const auto& ntp_attrs = maps_type.ntp_attrs;
-        antp[i] = vector1d(ntp_attrs.size(), 0.0);
-    }
+    vector1i offset_full, neighbor_full;
+    vector1d dx_full, dy_full, dz_full;
+    neigh.get_full_list(neighbor_full, dx_full, dy_full, dz_full, offset_full);
 
-    int type1, type2, tp;
-    double dx, dy, dz, dis;
-    vector1d fn;
-
+    #ifdef _OPENMP
+    #pragma omp parallel for schedule(guided) if (use_openmp)
+    #endif
     for (int i = 0; i < n_atom; ++i) {
+        int type1, type2, tp;
+        double dx, dy, dz, dis;
+        vector1d fn;
+
         type1 = types[i];
         const auto& maps_type = maps.maps_type[type1];
         const auto& ntp_attrs = maps_type.ntp_attrs;
+        const auto& ntp_attrs1 = maps_type.ntp_attrs_tp;
 
-        auto [begin, end] = neigh.range(i);
-        for (int k = begin; k < end; ++k) {
-            int jj = k - begin;
-            int j = neigh.neighbor_atom(k);
-            neigh.diff_ij(k, dx, dy, dz);
+        vector1d antp(ntp_attrs.size(), 0.0);
+        for (int k = offset_full[i]; k < offset_full[i + 1]; ++k){
+            int j = neighbor_full[k];
+            dx = - dx_full[k];
+            dy = - dy_full[k];
+            dz = - dz_full[k];
             dis = sqrt(dx*dx + dy*dy + dz*dz);
             if (dis >= fp.cutoff)
                 continue;
@@ -170,40 +167,17 @@ void PolymlpEval::compute_antp(
             tp = type_pairs[type1][type2];
             const auto& params = tp_to_params[tp];
             get_fn_(dis, fp, params, fn);
-            for (const auto& ntp: ntp_attrs){
-                if (tp == ntp.tp){
-                    const int idx_i = ntp.ilocal_id;
-                    const int idx_j = ntp.jlocal_id;
-                    antp[i][idx_i] += fn[ntp.n_id];
-                    antp[j][idx_j] += fn[ntp.n_id];
-                }
+            const auto& attrs = ntp_attrs1[tp];
+            for (const auto& ntp: attrs){
+                const int idx_i = ntp.ilocal_id;
+                antp[idx_i] += fn[ntp.n_id];
             }
         }
-    }
-}
-
-
-void PolymlpEval::compute_sum_of_prod_antp(
-    const vector1i& types,
-    const vector2d& antp,
-    vector2d& prod_sum_e,
-    vector2d& prod_sum_f){
-
-
-    prod_sum_e = vector2d(n_atom);
-    prod_sum_f = vector2d(n_atom);
-
-    #ifdef _OPENMP
-    #pragma omp parallel for schedule(guided) if (use_openmp)
-    #endif
-    for (int i = 0; i < n_atom; ++i) {
-        const int type1 = types[i];
         polymlp_api.compute_sum_of_prod_antp(
-            antp[i], type1, prod_sum_e[i], prod_sum_f[i]
+            antp, types[i], prod_sum_e[i], prod_sum_f[i]
         );
     }
 }
-
 /*******************************************************************************
   Feature_type = gtinv
 ********************************************************************************/

@@ -218,14 +218,12 @@ void Potential::compute_sum_of_prod_antp(
 
     int i = 0;
     for (const auto& pterms1: potential_model1){
-        double sum_e(0.0), sum_f(0.0), prod;
+        double sum_e(0.0), sum_f(0.0);
         for (const auto& pterm: pterms1){
             double fval = prod_features_vals[pterm.prod_features_id];
-            if (fabs(fval) > 1e-20){
-                prod = fval * prod_antp_deriv[pterm.prod_id];
-                sum_e += pterm.coeff_e * prod;
-                sum_f += pterm.coeff_f * prod;
-            }
+            double prod = fval * prod_antp_deriv[pterm.prod_id];
+            sum_e += pterm.coeff_e * prod;
+            sum_f += pterm.coeff_f * prod;
         }
         prod_sum_e[i] = 0.5 * sum_e;
         prod_sum_f[i] = 0.5 * sum_f;

@@ -21,16 +21,17 @@ class Mapping {
     vector2i tpn_to_n_id;   // (type_pair, n) -> n_id for type_pair
 
     void set_type_pairs(const feature_params& fp);
-    void set_type_pairs_charge(const feature_params& fp);
     void set_map_n_to_tplist();
 
     void set_ntp_global_attrs();
     void set_ntp_local_attrs();
+    void set_ntp_local_attrs_compact();
 
     void set_lm_attrs();
     void set_nlmtp_global_attrs();
     void set_nlmtp_local_attrs();
     void set_nlmtp_local_conj_ids();
+    void set_nlmtp_local_attrs_compact();
 
     public:
 

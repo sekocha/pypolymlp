@@ -1,5 +1,4 @@
 /****************************************************************************
-
         Copyright (C) 2025 Atsuto Seko
                 seko@cms.mtl.kyoto-u.ac.jp
 
@@ -21,12 +20,14 @@ Mapping::Mapping(const struct feature_params& fp){
     if (fp.feature_type == "pair"){
         set_ntp_global_attrs();
         set_ntp_local_attrs();
+        set_ntp_local_attrs_compact();
     }
     else if (fp.feature_type == "gtinv"){
         set_lm_attrs();
         set_nlmtp_global_attrs();
         set_nlmtp_local_attrs();
         set_nlmtp_local_conj_ids();
+        set_nlmtp_local_attrs_compact();
     }
 }
 
@@ -118,6 +119,20 @@ void Mapping::set_ntp_local_attrs(){
     }
 }
 
+void Mapping::set_ntp_local_attrs_compact(){
+
+    auto& maps_type = maps.maps_type;
+    const int n_type_pairs = maps.get_n_type_pairs();
+    for (int type1 = 0; type1 < n_type; ++type1){
+        maps_type[type1].ntp_attrs_tp.resize(n_type_pairs);
+        for (const auto& ntp: maps_type[type1].ntp_attrs){
+            ntpAttrCompact ntp_compact = {ntp.n_id, ntp.ilocal_id, ntp.jlocal_id};
+            maps_type[type1].ntp_attrs_tp[ntp.tp].emplace_back(ntp_compact);
+        }
+    }
+}
+
+
 void Mapping::set_nlmtp_global_attrs(){
 
     int global_id(0), global_noconj_id(0), global_conj_id, conj_subtract, n_id;
@@ -190,7 +205,11 @@ void Mapping::set_nlmtp_local_attrs(){
             maps.nlmtp_global_to_iloc[key] = local_id2;
         }
     }
+}
 
+void Mapping::set_nlmtp_local_attrs_compact(){
+
+    auto& maps_type = maps.maps_type;
     const int n_type_pairs = maps.get_n_type_pairs();
     for (int type1 = 0; type1 < n_type; ++type1){
         maps_type[type1].nlmtp_attrs_noconj_tp.resize(n_type_pairs);
@@ -206,18 +225,6 @@ void Mapping::set_nlmtp_local_attrs(){
                 nlmtp.jlocal_noconj_id
             };
             maps_type[type1].nlmtp_attrs_noconj_tp[tp].emplace_back(nlmtp_compact);
-        }
-    }
-    for (int type1 = 0; type1 < n_type; ++type1){
-        for (int tp = 0; tp < n_type_pairs; ++tp){
-            auto& nlmtp_attrs = maps_type[type1].nlmtp_attrs_noconj_tp[tp];
-            std::sort(nlmtp_attrs.begin(), nlmtp_attrs.end(),
-                    [](const nlmtpAttrCompact& a, const nlmtpAttrCompact& b) {
-                    if (a.ilocal_noconj_id != b.ilocal_noconj_id) {
-                    return a.ilocal_noconj_id < b.ilocal_noconj_id;
-                    }
-                    return a.jlocal_noconj_id < b.jlocal_noconj_id;
-                    });
         }
     }
 }
