@@ -144,27 +144,24 @@ void PolymlpEval::compute_sum_of_prod_antp(
     #pragma omp parallel for schedule(guided) if (use_openmp)
     #endif
     for (int i = 0; i < n_atom; ++i) {
-        int type1, type2, tp;
-        double dx, dy, dz, dis;
-        vector1d fn;
-
-        type1 = types[i];
+        const int type1 = types[i];
         const auto& maps_type = maps.maps_type[type1];
         const auto& ntp_attrs = maps_type.ntp_attrs;
         const auto& ntp_attrs1 = maps_type.ntp_attrs_tp;
 
+        vector1d fn(fp.params.size());
         vector1d antp(ntp_attrs.size(), 0.0);
         for (int k = offset_full[i]; k < offset_full[i + 1]; ++k){
-            int j = neighbor_full[k];
-            dx = - dx_full[k];
-            dy = - dy_full[k];
-            dz = - dz_full[k];
-            dis = sqrt(dx*dx + dy*dy + dz*dz);
+            const int j = neighbor_full[k];
+            double dx = - dx_full[k];
+            double dy = - dy_full[k];
+            double dz = - dz_full[k];
+            double dis = sqrt(dx*dx + dy*dy + dz*dz);
             if (dis >= fp.cutoff)
                 continue;
 
-            type2 = types[j];
-            tp = type_pairs[type1][type2];
+            const int type2 = types[j];
+            const int tp = type_pairs[type1][type2];
             const auto& params = tp_to_params[tp];
             get_fn_(dis, fp, params, fn);
             const auto& attrs = ntp_attrs1[tp];

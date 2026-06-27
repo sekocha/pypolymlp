@@ -141,9 +141,9 @@ void Local::compute_anlmtp_d(
     anlmtp_ds = vector2dc(nlmtp_attrs.size(), vector1dc(6, 0.0));
 
     int atom2;
-    double dx,dy,dz,dis,cc;
+    double dx,dy,dz,dis;
     dc d1,val,valx,valy,valz;
-    vector1d fn, fn_d;
+    vector1d fn(fp.params.size()), fn_d(fp.params.size());
     vector1dc ylm,ylm_dx,ylm_dy,ylm_dz;
 
     auto [begin, end] = neigh.range(atom1);
@@ -177,19 +177,23 @@ void Local::compute_anlmtp_d(
             valy = (d1 * dy + fn[n_id] * ylm_dy[ylmkey]);
             valz = (d1 * dz + fn[n_id] * ylm_dz[ylmkey]);
 
-            anlmtp_dfx[idx_i][atom1] += valx;
-            anlmtp_dfx[idx_i][atom2] -= valx;
-            anlmtp_dfy[idx_i][atom1] += valy;
-            anlmtp_dfy[idx_i][atom2] -= valy;
-            anlmtp_dfz[idx_i][atom1] += valz;
-            anlmtp_dfz[idx_i][atom2] -= valz;
+            auto& dx_i = anlmtp_dfx[idx_i];
+            auto& dy_i = anlmtp_dfy[idx_i];
+            auto& dz_i = anlmtp_dfz[idx_i];
+            auto& ds_i = anlmtp_ds[idx_i];
 
-            anlmtp_ds[idx_i][0] -= valx * dx;
-            anlmtp_ds[idx_i][1] -= valy * dy;
-            anlmtp_ds[idx_i][2] -= valz * dz;
-            anlmtp_ds[idx_i][3] -= valx * dy;
-            anlmtp_ds[idx_i][4] -= valy * dz;
-            anlmtp_ds[idx_i][5] -= valz * dx;
+            dx_i[atom1] += valx;
+            dy_i[atom1] += valy;
+            dz_i[atom1] += valz;
+            dx_i[atom2] -= valx;
+            dy_i[atom2] -= valy;
+            dz_i[atom2] -= valz;
+            ds_i[0] -= valx * dx;
+            ds_i[1] -= valy * dy;
+            ds_i[2] -= valz * dz;
+            ds_i[3] -= valx * dy;
+            ds_i[4] -= valy * dz;
+            ds_i[5] -= valz * dx;
         }
     }
 
