@@ -92,8 +92,8 @@ class LammpsCommand:
         for t in lmp_st.types:
             self._lmp.command("create_atoms " + str(t + 1) + " single 0 0 0")
         self.change_structure(lmp_st.axis, lmp_st.positions_cartesian)
-
         self._lmp.command("run 0")
+
         # enthalpy = self.get_enthalpy(pressure=pressure)
         # return enthalpy, self.forces
 
@@ -161,17 +161,10 @@ class LammpsCommand:
         enthalpy = self.get_enthalpy(pressure=pressure)
         return enthalpy, self.forces
 
-    #    @property
-    #    def structure(self):
-    #        """Return lammps structure."""
-    #        lmp_st = extract_structure_from_lammps_obj(self._lmp)
-    #        lmp_st.set_elements(self.elements)
-    #        return lmp_st
-    #
-    #    @property
-    #    def elements(self):
-    #        """Return unique elements read from potential."""
-    #        return self._elements
+    @property
+    def elements(self):
+        """Return unique elements."""
+        return self._elements
 
     @property
     def energy(self):

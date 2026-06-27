@@ -32,6 +32,7 @@ class PropertiesLammps(PropertiesBase):
         """
 
         super().__init__()
+        self._elements = elements
         self._cmd = LammpsCommand(
             elements=elements,
             pot=pot,
@@ -44,14 +45,9 @@ class PropertiesLammps(PropertiesBase):
 
     def eval(self, st: PolymlpStructure):
         """Evaluate properties for a single structure."""
-        # 1. Convert PolymlpStructure -> Lammps structure
-        # 2. eval(Lammps structure)
         lmp_st = convert_structure_to_lammps_format(st)
         e, f, s = self._cmd.eval(lmp_st)
-        # e, f, s = self._prop.eval(st, use_openmp=use_openmp)
-
         self._e, self._f, self._s = [e], [f], [s]
-        self._structures = [st]
         return e, f, s
 
     def eval_multiple(self, structures: list[PolymlpStructure]):
@@ -64,7 +60,4 @@ class PropertiesLammps(PropertiesBase):
     @property
     def elements(self):
         """Return elements."""
-        pass
-        # if self._prop is None:
-        #     return None
-        # return self._prop.elements
+        return self._elements
