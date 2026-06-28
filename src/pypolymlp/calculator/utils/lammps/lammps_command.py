@@ -6,6 +6,8 @@ import numpy as np
 from lammps import lammps
 from numpy.typing import NDArray
 
+from pypolymlp.core.units import EVtoGPa
+
 from .lammps_structure import LammpsStructure
 
 # from lammps_python.core.lammps_utils import (
@@ -43,12 +45,7 @@ class LammpsCommand:
         self._elements = elements
         self._n_atomtypes = len(self._elements)
         self._pot = pot
-        self._style = style_command + " " + style
-        self._coeff = coeff_command + " * * " + pot + " " + " ".join(elements)
         self._verbose = verbose
-        if self._verbose:
-            print("Lammps style:", self._style, flush=True)
-            print("Lammps coeff:", self._coeff, flush=True)
 
         cmdargs = []
         if not verbose:
@@ -62,40 +59,27 @@ class LammpsCommand:
         self._lmp.command("boundary p p p")
         self._lmp.command("box tilt large")
 
-        # box and structure initialization
+        # Box initialization.
+        # This must be called before providing potential style.
         self._lmp.command("region reg1 prism 0 10000 0 10000 0 10000 0 0 0")
         self._lmp.command("create_box " + str(self._n_atomtypes) + " reg1")
 
+        # Style and coeff initialization.
+        self._style = style_command + " " + style
+        self._coeff = coeff_command + " * * " + pot + " " + " ".join(elements)
         self._lmp.command(self._style)
         self._lmp.command(self._coeff)
+        if self._verbose:
+            print("Lammps style:", self._style, flush=True)
+            print("Lammps coeff:", self._coeff, flush=True)
 
         # property initialization
+        # Number of neighbor atoms is appropriate? 5000? 10000?
         self._lmp.command("variable energy equal pe")
         self._lmp.command("variable volume equal vol")
         self._lmp.command("neigh_modify every 1 delay 0")
-        # TODO: Number of neighbor atoms is appropriate? 5000? 10000?
         self._lmp.command("neigh_modify one 2000")
-
         self._initialize_command_stress()
-
-    def eval(self, lmp_st: LammpsStructure):
-        """Compute enthalpy and forces.
-
-        Return
-        ------
-        energy: Energy.
-        forces: Forces. shape=(N, 3).
-        """
-        # structure: LammpsStructure,
-        # structure modification
-        # lmp_st.recast_types(self._elements)
-        for t in lmp_st.types:
-            self._lmp.command("create_atoms " + str(t + 1) + " single 0 0 0")
-        self.change_structure(lmp_st.axis, lmp_st.positions_cartesian)
-        self._lmp.command("run 0")
-
-        # enthalpy = self.get_enthalpy(pressure=pressure)
-        # return enthalpy, self.forces
 
     def _initialize_command_stress(self):
         """Provide required commands for computing stress."""
@@ -117,11 +101,39 @@ class LammpsCommand:
         self._lmp.command("variable ly0 equal ly")
         self._lmp.command("variable lz0 equal lz")
 
-    def command(self, string: str):
-        """Provide a lammps command from string."""
-        self._lmp.command(string)
+    def eval(self, lmp_st: LammpsStructure):
+        """Compute enthalpy, forces, and stress.
 
-    def change_box(self, axis: list):
+        Return
+        ------
+        energy: Energy. Unit: eV/cell.
+        forces: Forces. shape=(3, N), Unit: eV/angstrom.
+        stress: Stress tensor.
+                shape=(6) in the order of xx, yy, zz, xy, yz, zx. Unit: eV/cell.
+        """
+        self.set_structure(lmp_st)
+        self._lmp.command("run 0")
+        return (self.energy, self.forces, self.stress)
+
+    def set_structure(self, lmp_st: LammpsStructure):
+        """Set structure."""
+        # TODO: structure modification
+        # lmp_st.recast_types(self._elements)
+        for t in lmp_st.types:
+            self._lmp.command("create_atoms " + str(t + 1) + " single 0 0 0")
+        self.change_structure(lmp_st.axis, lmp_st.positions_cartesian)
+
+    def change_structure(self, axis: NDArray, positions_c: NDArray):
+        """Change structure using 6-dimensional axis vector and cartesian positions.
+
+        Caution: The order in types must be considered.
+        """
+        self.change_box(axis)
+        for i, pos in enumerate(positions_c.T):
+            pos_str = " x " + str(pos[0]) + " y " + str(pos[1]) + " z " + str(pos[2])
+            self._lmp.command("set atom " + str(i + 1) + pos_str)
+
+    def change_box(self, axis: list | tuple | NDArray):
         """Change box using 6-dimensional axis vector."""
         lx, ly, lz, xy, yz, xz = axis
         self._lmp.command(
@@ -139,28 +151,6 @@ class LammpsCommand:
             + str(yz)
         )
 
-    def change_structure(self, axis: NDArray, positions_c: NDArray):
-        """Change structure using 6-dimensional axis vector and cartesian positions.
-
-        Caution: The order in types must be considered.
-        """
-        self.change_box(axis)
-        for i, pos in enumerate(positions_c.T):
-            pos_str = " x " + str(pos[0]) + " y " + str(pos[1]) + " z " + str(pos[2])
-            self._lmp.command("set atom " + str(i + 1) + pos_str)
-
-    def compute(self, pressure=0.0):
-        """Compute enthalpy and forces.
-
-        Return
-        ------
-        energy: Energy.
-        forces: Forces. shape=(N, 3).
-        """
-        self._lmp.command("run 0")
-        enthalpy = self.get_enthalpy(pressure=pressure)
-        return enthalpy, self.forces
-
     @property
     def elements(self):
         """Return unique elements."""
@@ -174,10 +164,10 @@ class LammpsCommand:
 
     @property
     def forces(self):
-        """Return forces. shape = (N, 3)."""
+        """Return forces. shape = (3, N)."""
         n = self._lmp.get_natoms()
         f = self._lmp.extract_atom("f", 3)
-        forces = np.array([[f[i][0], f[i][1], f[i][2]] for i in range(n)])
+        forces = np.array([[f[i][0], f[i][1], f[i][2]] for i in range(n)]).T
         return forces
 
     @property
@@ -189,13 +179,62 @@ class LammpsCommand:
         pxy = self._lmp.extract_variable("pxy0", None, 0)
         pyz = self._lmp.extract_variable("pyz0", None, 0)
         pxz = self._lmp.extract_variable("pxz0", None, 0)
-        lx = self._lmp.extract_variable("lx0", None, 0)
-        ly = self._lmp.extract_variable("ly0", None, 0)
-        lz = self._lmp.extract_variable("lz0", None, 0)
-        return (pxx, pyy, pzz, pxy, pyz, pxz), (lx, ly, lz)
+        unit = self.volume / EVtoGPa / 10000
+        return np.array([pxx, pyy, pzz, pxy, pyz, pxz]) * unit
 
     @property
     def volume(self):
         """Return volume."""
         volume = self._lmp.extract_variable("volume", None, 0)
         return volume
+
+    @property
+    def box(self):
+        """Return box size."""
+        lx = self._lmp.extract_variable("lx0", None, 0)
+        ly = self._lmp.extract_variable("ly0", None, 0)
+        lz = self._lmp.extract_variable("lz0", None, 0)
+        return np.array([lx, ly, lz])
+
+    def command(self, string: str):
+        """Provide a lammps command from string."""
+        self._lmp.command(string)
+
+
+# def extract_structure_from_lammps_obj(lmp):
+#     """Extract lammps structure from lammps object."""
+#
+#     boxlo, boxhi, xy, yz, xz, periodicity, box_change = lmp.extract_box()
+#     xhi, yhi, zhi = np.array(boxhi) - np.array(boxlo)
+#
+#     n = lmp.get_natoms()
+#     n_atomtypes = lmp.extract_global("ntypes", 0)
+#
+#     types = lmp.extract_atom("type", 0)
+#     types1 = [types[i] - 1 for i in range(n)]
+#
+#     masses_lmp = lmp.extract_atom("mass", 2)
+#     masses = dict()
+#     for i in range(n_atomtypes):
+#         masses[i] = masses_lmp[i + 1]
+#
+#     cds = lmp.extract_atom("x", 3)
+#     positions_c = [[cds[i][0], cds[i][1], cds[i][2]] for i in range(n)]
+#     positions_c = np.array([np.array(pos) - np.array(boxlo) for pos in positions_c]).T
+#
+#     axis = np.array([xhi, yhi, zhi, xy, yz, xz])
+#     lmp_st = LammpsStructure(
+#         axis=axis,
+#         types=types1,
+#         positions_cartesian=positions_c,
+#         masses=masses,
+#     )
+#     return lmp_st
+#
+
+# def parse_lammps_structure(filename):
+#     """Parse lammps structure file."""
+#     lmp = lammps(cmdargs=["-screen", "none", "-log", "none"])
+#     lmp.command("read_data " + filename)
+#     lmp_st = extract_structure_from_lammps_obj(lmp)
+#     return lmp_st

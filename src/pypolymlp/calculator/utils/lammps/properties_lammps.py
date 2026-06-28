@@ -24,11 +24,7 @@ class PropertiesLammps(PropertiesBase):
 
         Parameters
         ----------
-        pot: polymlp file.
-        params: Parameters for polymlp.
-        coeffs: Polymlp coefficients.
-
-        Any one of pot and (params, coeffs) is needed.
+        pot: potential file.
         """
 
         super().__init__()
@@ -44,7 +40,15 @@ class PropertiesLammps(PropertiesBase):
         )
 
     def eval(self, st: PolymlpStructure):
-        """Evaluate properties for a single structure."""
+        """Evaluate properties for a single structure.
+
+        Return
+        ------
+        energy: Energy. Unit: eV/cell.
+        forces: Forces. shape=(3, N), Unit: eV/angstrom.
+        stress: Stress tensor.
+                shape=(6) in the order of xx, yy, zz, xy, yz, zx. Unit: eV/cell.
+        """
         lmp_st = convert_structure_to_lammps_format(st)
         e, f, s = self._cmd.eval(lmp_st)
         self._e, self._f, self._s = [e], [f], [s]
