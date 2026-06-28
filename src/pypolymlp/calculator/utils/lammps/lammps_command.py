@@ -10,10 +10,6 @@ from pypolymlp.core.units import EVtoGPa
 
 from .lammps_structure import LammpsStructure
 
-# from lammps_python.core.lammps_utils import (
-#     extract_structure_from_lammps_obj,
-# )
-
 
 class LammpsCommand:
     """Class for controlling lammps commands."""
@@ -117,8 +113,7 @@ class LammpsCommand:
 
     def set_structure(self, lmp_st: LammpsStructure):
         """Set structure."""
-        # TODO: structure modification
-        # lmp_st.recast_types(self._elements)
+        lmp_st.recast_types(self._elements)
         for t in lmp_st.types:
             self._lmp.command("create_atoms " + str(t + 1) + " single 0 0 0")
         self.change_structure(lmp_st.axis, lmp_st.positions_cartesian)

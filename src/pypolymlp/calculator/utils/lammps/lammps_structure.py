@@ -105,12 +105,6 @@ class LammpsStructure:
         else:
             self.rotation_inverse = np.linalg.inv(self.rotation)
 
-    def to_initial_basis(self, lmp_cartesian: np.ndarray):
-        """Return fractional coordinates in initial basis."""
-        if self.rotation_inverse is None:
-            raise ValueError("No definition of inverse rotation.")
-        return self.rotation_inverse @ lmp_cartesian
-
     @property
     def lx(self):
         """Return lx."""
@@ -146,67 +140,20 @@ class LammpsStructure:
         """Return volume."""
         return np.linalg.det(self.axis_matrix)
 
+    def recast_types(self, uniq_elements: Union[np.ndarray, list]):
+        """Recast types and related variables using unique elements."""
+        if self.elements is None:
+            raise AttributeError("Elements are not defined.")
 
-#    def _set_masses(self):
-#        """Set masses."""
-#        if self.elements is not None:
-#            table = mass_table()
-#            self.masses = dict()
-#            for t, ele in zip(self.types, self.elements):
-#                self.masses[t] = table[ele]
+        self.n_atomtypes = len(uniq_elements)
+        map1 = dict()
+        for i, ele in enumerate(uniq_elements):
+            map1[ele] = i
+        self.types = [map1[ele] for ele in self.elements]
+        return self
 
-#    def _sort_atoms(self):
-#        """Sort atoms in structure."""
-#        sorted_types = sorted([(t, i) for i, t in enumerate(self.types)])
-#        self.types = [t for t, i in sorted_types]
-#        order_atoms = np.array([i for t, i in sorted_types])
-#
-#        if self.elements is not None:
-#            self.elements = [self.elements[i] for i in order_atoms]
-#
-#        if self.positions is not None:
-#            self.positions = np.array(self.positions)[:, order_atoms]
-#            self.positions_cartesian = self.axis_matrix @ self.positions
-#        elif self.positions_cartesian is not None:
-#            self.positions_cartesian = np.array(self.positions_cartesian)[
-#                :, order_atoms
-#            ]
-#            self.positions = self.axis_matrix_inverse @ self.positions_cartesian
-#        return order_atoms
-
-#    def set_elements(self, uniq_elements: Union[np.ndarray, list]):
-#        """Set elements."""
-#        if len(uniq_elements) != self.n_atomtypes:
-#            raise ValueError(
-#                "LammpsStructure: len(elements) != n_atomtypes in set_masses."
-#            )
-#        self.elements = [uniq_elements[t] for t in self.types]
-#        self._set_masses()
-#
-#    def recast_types(self, uniq_elements: Union[np.ndarray, list]):
-#        """Recast types and related variables using unique elements."""
-#        if self.elements is None:
-#            raise AttributeError("Elements are not defined.")
-#
-#        self.n_atomtypes = len(uniq_elements)
-#        map1 = dict()
-#        for i, ele in enumerate(uniq_elements):
-#            map1[ele] = i
-#        self.types = [map1[ele] for ele in self.elements]
-#        self._set_masses()
-
-# def generate_lammps_structure_from_file(
-#     lammps: str = None,
-#     poscar: str = None,
-#     elements: Union[list, np.ndarray] = None,
-# ):
-#     """Construct LammpsStructure from a file."""
-#     if lammps is not None:
-#         lmp_st = parse_lammps_structure(lammps)
-#         if elements is not None:
-#             lmp_st.set_elements(elements)
-#     elif poscar is not None:
-#         st = Poscar(poscar).structure
-#         lmp_st = convert_structure_to_lammps_format(st)
-#
-#     return lmp_st
+    def to_initial_basis(self, lmp_cartesian: np.ndarray):
+        """Return fractional coordinates in initial basis."""
+        if self.rotation_inverse is None:
+            raise ValueError("No definition of inverse rotation.")
+        return self.rotation_inverse @ lmp_cartesian

@@ -1,5 +1,7 @@
 """Class for calculating properties using lammps python API."""
 
+import numpy as np
+
 from pypolymlp.calculator.utils.properties_base import PropertiesBase
 from pypolymlp.core.data_format import PolymlpStructure
 
@@ -50,16 +52,31 @@ class PropertiesLammps(PropertiesBase):
                 shape=(6) in the order of xx, yy, zz, xy, yz, zx. Unit: eV/cell.
         """
         lmp_st = convert_structure_to_lammps_format(st)
+        # TODO: Extract is_rotation from lmp_st
+        is_rotation = True
+
         e, f, s = self._cmd.eval(lmp_st)
-        self._e, self._f, self._s = [e], [f], [s]
+        if is_rotation:
+            f = lmp_st.to_initial_basis(f)
+            # TODO: Convert stress to initial basis.
+            s = np.array([[s[0], s[3], s[5]], [s[3], s[1], s[4]], [s[5], s[4], s[2]]])
+            s = lmp_st.to_initial_basis(s)
+            s = np.array([s[0, 0], s[1, 1], s[2, 2], s[0, 1], s[1, 2], s[2, 0]])
+        self._e, self._f, self._s = np.array([e]), [f], np.array([s])
         return e, f, s
 
     def eval_multiple(self, structures: list[PolymlpStructure]):
         """Evaluate properties for multiple structures."""
-        pass
-        # self._e, self._f, self._s = self._prop.eval_multiple(structures)
-        # self._structures = structures
-        # return self._e, self._f, self._s
+        e_array, f_array, s_array = [], [], []
+        for st in structures:
+            e, f, s = self.eval(st)
+            e_array.append(e)
+            f_array.append(f)
+            s_array.append(s)
+        self._e = np.array(e)
+        self._f = f_array
+        self._s = np.array(s)
+        return self._e, self._f, self._s
 
     @property
     def elements(self):
