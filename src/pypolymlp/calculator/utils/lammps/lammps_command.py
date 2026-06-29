@@ -114,21 +114,23 @@ class LammpsCommand:
     def set_structure(self, lmp_st: LammpsStructure):
         """Set structure."""
         lmp_st.recast_types(self._elements)
+
+        self._lmp.command("delete_atoms group all")
         for t in lmp_st.types:
             self._lmp.command("create_atoms " + str(t + 1) + " single 0 0 0")
-        self.change_structure(lmp_st.axis, lmp_st.positions_cartesian)
+        self._change_structure(lmp_st.axis, lmp_st.positions_cartesian)
 
-    def change_structure(self, axis: NDArray, positions_c: NDArray):
+    def _change_structure(self, axis: NDArray, positions_c: NDArray):
         """Change structure using 6-dimensional axis vector and cartesian positions.
 
         Caution: The order in types must be considered.
         """
-        self.change_box(axis)
+        self._change_box(axis)
         for i, pos in enumerate(positions_c.T):
             pos_str = " x " + str(pos[0]) + " y " + str(pos[1]) + " z " + str(pos[2])
             self._lmp.command("set atom " + str(i + 1) + pos_str)
 
-    def change_box(self, axis: list | tuple | NDArray):
+    def _change_box(self, axis: list | tuple | NDArray):
         """Change box using 6-dimensional axis vector."""
         lx, ly, lz, xy, yz, xz = axis
         self._lmp.command(
