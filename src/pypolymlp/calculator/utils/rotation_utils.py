@@ -3,8 +3,6 @@
 import numpy as np
 from numpy.typing import NDArray
 
-# from pypolymlp.core.data_format import PolymlpStructure
-
 
 def triangularize_axis(axis: NDArray):
     """Triangularize axis.
@@ -36,6 +34,11 @@ def triangularize_axis(axis: NDArray):
 def recover_rotated_forces(rotated_forces: NDArray, rotation: NDArray):
     """Convert forces in rotated system into forces in original system.
 
+    Parameters
+    ----------
+    rotated_forces: Forces in rotated system. shape=(3, N).
+    rotation: Rotation matrix.
+
     Forces in R @ A -> Forces in A.
 
     f_cart' = R @ (A @ f_frac) = R @ f_cart
@@ -49,7 +52,6 @@ def recover_rotated_stress(rotated_stress: NDArray, rotation: NDArray):
     """Convert stress in rotated system into stress in original system.
 
     Stress tensor in R @ A -> Stress tensor in A.
-
     """
     rotation_inverse = rotation.T
     rep = np.kron(rotation_inverse, rotation_inverse)

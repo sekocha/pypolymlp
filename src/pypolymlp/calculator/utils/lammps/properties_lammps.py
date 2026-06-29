@@ -52,16 +52,11 @@ class PropertiesLammps(PropertiesBase):
                 shape=(6) in the order of xx, yy, zz, xy, yz, zx. Unit: eV/cell.
         """
         lmp_st = convert_structure_to_lammps_format(st)
-        # TODO: Extract is_rotation from lmp_st
-        is_rotation = True
-
         e, f, s = self._cmd.eval(lmp_st)
-        if is_rotation:
-            f = lmp_st.to_initial_basis(f)
-            # TODO: Convert stress to initial basis.
-            s = np.array([[s[0], s[3], s[5]], [s[3], s[1], s[4]], [s[5], s[4], s[2]]])
-            s = lmp_st.to_initial_basis(s)
-            s = np.array([s[0, 0], s[1, 1], s[2, 2], s[0, 1], s[1, 2], s[2, 0]])
+        f = lmp_st.recover_forces(f)
+        s = np.array([[s[0], s[3], s[5]], [s[3], s[1], s[4]], [s[5], s[4], s[2]]])
+        s = lmp_st.recover_stress(s)
+        s = np.array([s[0, 0], s[1, 1], s[2, 2], s[0, 1], s[1, 2], s[2, 0]])
         self._e, self._f, self._s = np.array([e]), [f], np.array([s])
         return e, f, s
 

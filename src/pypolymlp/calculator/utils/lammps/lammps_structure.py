@@ -4,29 +4,19 @@ from dataclasses import dataclass
 from typing import Optional, Union
 
 import numpy as np
+from numpy.typing import NDArray
 
+from pypolymlp.calculator.utils.rotation_utils import (
+    recover_rotated_forces,
+    recover_rotated_stress,
+    triangularize_axis,
+)
 from pypolymlp.core.data_format import PolymlpStructure
 
 
 def convert_structure_to_lammps_format(structure: PolymlpStructure):
     """Convert structure in PolymlpStructure to structure in LammpsStructure."""
-    axis = structure.axis
-    a, b, c = np.linalg.norm(axis, axis=0)
-    calpha = (axis[:, 1] @ axis[:, 2]) / (b * c)
-    cbeta = (axis[:, 2] @ axis[:, 0]) / (c * a)
-    cgamma = (axis[:, 0] @ axis[:, 1]) / (a * b)
-
-    lx = a
-    xy = b * cgamma
-    xz = c * cbeta
-    ly = np.sqrt(b * b - xy * xy)
-    yz = (b * c * calpha - xy * xz) / ly
-    lz = np.sqrt(c * c - xz * xz - yz * yz)
-
-    lmp_axis = np.array([lx, ly, lz, xy, yz, xz])
-    lmp_axis_full = np.array([[lx, xy, xz], [0, ly, yz], [0, 0, lz]])
-    rotation = lmp_axis_full @ np.linalg.inv(axis)
-
+    lmp_axis, lmp_axis_full, rotation = triangularize_axis(structure.axis)
     lmp_st = LammpsStructure(
         axis=lmp_axis,
         types=structure.types,
@@ -67,6 +57,7 @@ class LammpsStructure:
 
     rotation: Optional[np.ndarray] = None
     rotation_inverse: Optional[np.ndarray] = None
+    is_rotation: bool = False
 
     verbose: bool = False
 
@@ -100,10 +91,16 @@ class LammpsStructure:
 
     def _set_rotation_matrices(self):
         if self.rotation is None:
+            self.is_rotation = False
             self.rotation = np.eye(3)
             self.rotation_inverse = np.eye(3)
         else:
-            self.rotation_inverse = np.linalg.inv(self.rotation)
+            if np.allclose(self.rotation, np.eye(3)):
+                self.is_rotation = False
+                self.rotation_inverse = np.eye(3)
+            else:
+                self.is_rotation = True
+                self.rotation_inverse = np.linalg.inv(self.rotation)
 
     @property
     def lx(self):
@@ -152,8 +149,24 @@ class LammpsStructure:
         self.types = [map1[ele] for ele in self.elements]
         return self
 
-    def to_initial_basis(self, lmp_cartesian: np.ndarray):
-        """Return fractional coordinates in initial basis."""
-        if self.rotation_inverse is None:
-            raise ValueError("No definition of inverse rotation.")
-        return self.rotation_inverse @ lmp_cartesian
+    def recover_forces(self, f: NDArray):
+        """Convert rotated forces into forces in original system.
+
+        Parameters
+        ----------
+        rotated_forces: Forces in rotated system. shape=(3, N).
+        """
+        if self.is_rotation:
+            return recover_rotated_forces(f, self.rotation)
+        return f
+
+    def recover_stress(self, s: NDArray):
+        """Convert rotated forces into forces in original system.
+
+        Parameter
+        ---------
+        rotated_stress: Stress in rotated system. shape=(3, 3).
+        """
+        if self.is_rotation:
+            return recover_rotated_stress(s, self.rotation)
+        return s
