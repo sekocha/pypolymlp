@@ -33,8 +33,26 @@ def triangularize_axis(axis: NDArray):
     return (tri_axis, tri_axis_full, rotation)
 
 
-#    def to_initial_basis(self, lmp_cartesian: np.ndarray):
-#        """Return fractional coordinates in initial basis."""
-#        if self.rotation_inverse is None:
-#            raise ValueError("No definition of inverse rotation.")
-#        return self.rotation_inverse @ lmp_cartesian
+def recover_rotated_forces(rotated_forces: NDArray, rotation: NDArray):
+    """Convert forces in rotated system into forces in original system.
+
+    Forces in R @ A -> Forces in A.
+
+    f_cart' = R @ (A @ f_frac) = R @ f_cart
+    -> f_cart = R^{-1} @ f_cart'
+    """
+    rotation_inverse = rotation.T
+    return rotation_inverse @ rotated_forces
+
+
+def recover_rotated_stress(rotated_stress: NDArray, rotation: NDArray):
+    """Convert stress in rotated system into stress in original system.
+
+    Stress tensor in R @ A -> Stress tensor in A.
+
+    """
+    rotation_inverse = rotation.T
+    rep = np.kron(rotation_inverse, rotation_inverse)
+    stress_flat = rep @ rotated_stress.reshape(-1)
+    stress = stress_flat.reshape((3, 3))
+    return stress

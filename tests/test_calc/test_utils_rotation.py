@@ -3,7 +3,11 @@
 import numpy as np
 import pytest
 
-from pypolymlp.calculator.utils.rotation_utils import triangularize_axis
+from pypolymlp.calculator.utils.rotation_utils import (
+    recover_rotated_forces,
+    recover_rotated_stress,
+    triangularize_axis,
+)
 
 
 def test_triangularize_axis():
@@ -33,3 +37,22 @@ def test_triangularize_axis():
     assert rotation[:, 0] @ rotation[:, 1] == pytest.approx(0.0)
     assert rotation[:, 1] @ rotation[:, 2] == pytest.approx(0.0)
     assert rotation[:, 2] @ rotation[:, 0] == pytest.approx(0.0)
+
+
+def test_recover_rotated_forces():
+    """Test recover_rotated_forces."""
+    axis = np.array([[3.0, 0.2, 0.3], [0.1, 3.5, -0.1], [0.1, 0.05, 3.7]])
+    _, _, rotation = triangularize_axis(axis)
+
+    forces = np.random.random((3, 8))
+    recovered = recover_rotated_forces(forces, rotation)
+    np.testing.assert_allclose(recovered, rotation.T @ forces)
+
+
+def test_recover_rotated_stress():
+    """Test recover_rotated_stress."""
+    axis = np.array([[3.0, 0.2, 0.3], [0.1, 3.5, -0.1], [0.1, 0.05, 3.7]])
+    _, _, rotation = triangularize_axis(axis)
+    stress = np.random.random((3, 3))
+    recovered = recover_rotated_stress(stress, rotation)
+    np.testing.assert_allclose(recovered, rotation.T @ stress @ rotation)
