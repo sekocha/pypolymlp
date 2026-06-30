@@ -27,3 +27,8 @@ class PropertiesBase(ABC):
     def elements(self):
         """Return elements."""
         pass
+
+    @abstractmethod
+    def save(self):
+        """Save properties."""
+        pass

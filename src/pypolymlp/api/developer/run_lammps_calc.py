@@ -70,6 +70,13 @@ def run():
     parser.add_argument(
         "--poscars", nargs="*", type=str, default=None, help="poscar files"
     )
+    parser.add_argument(
+        "--vaspruns",
+        nargs="*",
+        type=str,
+        default=None,
+        help="vasprun files",
+    )
     parser.add_argument("--poscar", type=str, default=None, help="poscar")
     parser.add_argument(
         "--supercell",
@@ -218,8 +225,6 @@ def run():
         energies, forces, stresses = polymlp.eval()
         t2 = time.time()
         polymlp.save_properties()
-        if len(forces) == 1:
-            polymlp.print_properties()
         print("Elapsed time:", t2 - t1, "(s)", flush=True)
 
     elif args.force_constants:

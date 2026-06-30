@@ -68,12 +68,33 @@ class PropertiesLammps(PropertiesBase):
             e_array.append(e)
             f_array.append(f)
             s_array.append(s)
-        self._e = np.array(e)
+        self._e = np.array(e_array)
         self._f = f_array
-        self._s = np.array(s)
+        self._s = np.array(s_array)
         return self._e, self._f, self._s
 
     @property
     def elements(self):
         """Return elements."""
         return self._elements
+
+    def save(self, verbose: bool = False):
+        """Save properties to files."""
+        np.save("polymlp_energies.npy", self._e)
+        np.save("polymlp_stress_tensors.npy", self._s)
+        try:
+            np.save("polymlp_forces.npy", self._f)
+        except:
+            for i, force in enumerate(self._f):
+                np.save("polymlp_forces_" + str(i + 1).zfill(5) + ".npy", force)
+
+        if len(self._f) == 1:
+            np.savetxt("polymlp_energies.dat", self._e, fmt="%f")
+
+        if verbose:
+            print(
+                "polymlp_energies.npy, polymlp_forces*.npy,",
+                "and polymlp_stress_tensors.npy are generated.",
+                flush=True,
+            )
+        return self

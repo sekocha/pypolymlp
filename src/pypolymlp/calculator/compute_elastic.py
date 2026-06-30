@@ -84,9 +84,10 @@ class PolymlpElastic:
         self._geometry = None
 
         self._adiabatic_correction = None
-        self._temperature = None
-        if not isinstance(self._prop, Properties):
+        try:
             self._temperature = self._prop.temperature
+        except:
+            self._temperature = None
 
         if geometry_optimization:
             self._geometry = GeometryOptimization(

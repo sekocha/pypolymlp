@@ -154,6 +154,10 @@ class PropertiesSSCHA(PropertiesBase):
             return None
         return self._prop.elements
 
+    def save(self):
+        """Save properties."""
+        pass
+
     @property
     def params(self):
         """Parameters of polymlp."""
