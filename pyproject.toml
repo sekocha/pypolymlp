@@ -52,6 +52,9 @@ pypolymlp-symfc = "pypolymlp.api.developer.run_polymlp_symfc:run"
 pypolymlp-kim = "pypolymlp.api.developer.run_polymlp_kim:run"
 pypolymlp-invariant = "pypolymlp.api.developer.run_polymlp_polyinv:run"
 
+# For developers that use lammps
+pypolymlp-lammps = "pypolymlp.api.developer.run_lammps_calc:run"
+
 [tool.scikit-build]
 cmake.verbose = true
 logging.level = "INFO"
