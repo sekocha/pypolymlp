@@ -1,0 +1,337 @@
+"""Command lines for calculating properites using lammps."""
+
+import argparse
+import signal
+import time
+
+import numpy as np
+
+from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
+from pypolymlp.calculator.utils.lammps.properties_lammps import PropertiesLammps
+from pypolymlp.core.utils import print_credit
+
+
+def check_variables(args):
+    """Check variables."""
+    if args.poscar is None and args.poscars is not None:
+        args.poscar = args.poscars
+    if args.poscars is None and args.poscar is not None:
+        args.poscars = args.poscar
+    return args
+
+
+def run():
+
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--elements",
+        nargs="*",
+        type=str,
+        required=True,
+        help="Element list",
+    )
+    parser.add_argument(
+        "--pot", type=str, default="polymlp.yaml", help="Potential file"
+    )
+    parser.add_argument("--style", type=str, default="polymlp", help="Potential style")
+    parser.add_argument(
+        "--style_command",
+        type=str,
+        default="pair_style",
+        help="Potential style header",
+    )
+    parser.add_argument(
+        "--coeff_command",
+        type=str,
+        default="pair_coeff",
+        help="Potential coeff header",
+    )
+
+    parser.add_argument(
+        "--properties",
+        action="store_true",
+        help="Mode: Property calculation",
+    )
+    parser.add_argument(
+        "--force_constants",
+        action="store_true",
+        help="Mode: Force constant calculation",
+    )
+    parser.add_argument(
+        "--phonon", action="store_true", help="Mode: Phonon calculation"
+    )
+    parser.add_argument("--eos", action="store_true", help="Mode: EOS calculation")
+    parser.add_argument(
+        "--elastic", action="store_true", help="Mode: Elastic constant calculation"
+    )
+
+    parser.add_argument(
+        "--poscars", nargs="*", type=str, default=None, help="poscar files"
+    )
+    parser.add_argument("--poscar", type=str, default=None, help="poscar")
+    parser.add_argument(
+        "--supercell",
+        nargs=3,
+        type=int,
+        default=(2, 2, 2),
+        help="Supercell size (diagonal components)",
+    )
+    parser.add_argument(
+        "--fc_n_samples",
+        type=int,
+        default=None,
+        help="Number of random displacement samples",
+    )
+    parser.add_argument(
+        "--disp",
+        type=float,
+        default=0.01,
+        help="Displacement (in Angstrom)",
+    )
+    parser.add_argument(
+        "--is_plusminus",
+        action="store_true",
+        help="Plus-minus displacements will be generated.",
+    )
+    parser.add_argument(
+        "--geometry_optimization",
+        action="store_true",
+        help="Geometry optimization is performed for initial structure.",
+    )
+    parser.add_argument(
+        "--pressure",
+        type=float,
+        default=0.0,
+        help="Pressure (in GPa)",
+    )
+
+    parser.add_argument(
+        "--no_symmetry",
+        action="store_true",
+        help="Ignore symmetric properties in geometry optimization",
+    )
+    parser.add_argument(
+        "--fix_cell",
+        action="store_true",
+        help="Fix cell shape and volume in geometry optimization",
+    )
+    parser.add_argument(
+        "--fix_volume",
+        action="store_true",
+        help="Fix cell volume in geometry optimization",
+    )
+    parser.add_argument(
+        "--fix_atom",
+        action="store_true",
+        help="Fix atomic positions in geometry optimization",
+    )
+    parser.add_argument(
+        "--method",
+        type=str,
+        choices=["BFGS", "CG", "L-BFGS-B", "SLSQP"],
+        default="BFGS",
+        help="Algorithm for geometry optimization",
+    )
+
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+        default=200,
+        help="Batch size for FC solver.",
+    )
+    parser.add_argument(
+        "--cutoff_fc2",
+        type=float,
+        default=None,
+        help="Cutoff radius for FC2 to set zero elements.",
+    )
+    parser.add_argument(
+        "--cutoff_fc3",
+        type=float,
+        default=None,
+        help="Cutoff radius for FC3 to set zero elements.",
+    )
+    parser.add_argument(
+        "--cutoff_fc4",
+        type=float,
+        default=None,
+        help="Cutoff radius for FC4 to set zero elements.",
+    )
+    parser.add_argument(
+        "--fc_orders",
+        nargs="*",
+        type=int,
+        default=(2, 3),
+        help="FC orders.",
+    )
+    parser.add_argument(
+        "--use_gradient_solver",
+        action="store_true",
+        help="Use gradient-based solver in force-constant estimation.",
+    )
+
+    parser.add_argument("--run_ltc", action="store_true", help="Run LTC calculations")
+    parser.add_argument(
+        "--ltc_mesh",
+        type=int,
+        nargs=3,
+        default=[19, 19, 19],
+        help="k-mesh used for phono3py calculation",
+    )
+
+    parser.add_argument(
+        "--ph_mesh",
+        type=int,
+        nargs=3,
+        default=[10, 10, 10],
+        help="k-mesh used for phonon calculation",
+    )
+    parser.add_argument("--ph_tmin", type=float, default=0, help="Temperature (min)")
+    parser.add_argument("--ph_tmax", type=float, default=1000, help="Temperature (max)")
+    parser.add_argument("--ph_tstep", type=float, default=10, help="Temperature (step)")
+    parser.add_argument("--ph_pdos", action="store_true", help="Compute phonon PDOS")
+
+    args = parser.parse_args()
+    np.set_printoptions(legacy="1.21")
+    print_credit()
+    args = check_variables(args)
+
+    prop = PropertiesLammps(
+        elements=args.elements,
+        pot=args.pot,
+        style=args.style,
+        style_command=args.style_command,
+        coeff_command=args.coeff_command,
+        verbose=True,
+    )
+    polymlp = PypolymlpCalc(properties=prop, verbose=True)
+
+    if args.properties:
+        print("Mode: Property calculations", flush=True)
+        polymlp.load_structures_from_files(
+            poscars=args.poscars,
+            vaspruns=args.vaspruns,
+        )
+        t1 = time.time()
+        energies, forces, stresses = polymlp.eval()
+        t2 = time.time()
+        polymlp.save_properties()
+        if len(forces) == 1:
+            polymlp.print_properties()
+        print("Elapsed time:", t2 - t1, "(s)", flush=True)
+
+    elif args.force_constants:
+        print("Mode: Force constant calculations", flush=True)
+        supercell_matrix = np.diag(args.supercell)
+        polymlp.load_poscars(args.poscar)
+        if args.geometry_optimization:
+            polymlp.init_geometry_optimization(
+                with_sym=True,
+                relax_cell=False,
+                relax_volume=False,
+                relax_positions=True,
+            )
+            polymlp.run_geometry_optimization()
+
+        cutoff = {2: args.cutoff_fc2, 3: args.cutoff_fc3, 4: args.cutoff_fc4}
+        polymlp.init_fc(supercell_matrix=supercell_matrix, cutoff=cutoff)
+        polymlp.run_fc(
+            n_samples=args.fc_n_samples,
+            distance=args.disp,
+            is_plusminus=args.is_plusminus,
+            orders=args.fc_orders,
+            batch_size=args.batch_size,
+            is_compact_fc=True,
+            use_mkl=True,
+            use_gradient_solver=args.use_gradient_solver,
+        )
+        polymlp.save_fc()
+
+        if args.run_ltc:
+            import phono3py
+
+            ph3 = phono3py.load(
+                unitcell_filename=args.poscar,
+                supercell_matrix=supercell_matrix,
+                primitive_matrix="auto",
+                log_level=True,
+            )
+            ph3.mesh_numbers = args.ltc_mesh
+            ph3.init_phph_interaction()
+            ph3.run_thermal_conductivity(
+                temperatures=range(0, 1001, 10),
+                write_kappa=True,
+            )
+
+    elif args.geometry_optimization:
+        print("Mode: Geometry optimization", flush=True)
+        polymlp.load_poscars(args.poscar)
+        relax_cell, relax_volume = True, True
+        if args.fix_cell:
+            relax_cell = False
+            relax_volume = False
+        if args.fix_volume:
+            relax_volume = False
+        polymlp.init_geometry_optimization(
+            with_sym=not args.no_symmetry,
+            relax_cell=relax_cell,
+            relax_volume=relax_volume,
+            relax_positions=not args.fix_atom,
+            pressure=args.pressure,
+        )
+        polymlp.run_geometry_optimization(method=args.method)
+        polymlp.save_poscars(filename="POSCAR_eqm")
+
+    elif args.phonon:
+        print("Mode: Phonon calculations", flush=True)
+        supercell_matrix = np.diag(args.supercell)
+        polymlp.load_poscars(args.poscar)
+
+        polymlp.init_phonon(supercell_matrix=supercell_matrix)
+        polymlp.run_phonon(
+            distance=args.disp,
+            mesh=args.ph_mesh,
+            t_min=args.ph_tmin,
+            t_max=args.ph_tmax,
+            t_step=args.ph_tstep,
+            with_eigenvectors=False,
+            is_mesh_symmetry=True,
+            with_pdos=args.ph_pdos,
+        )
+        polymlp.write_phonon()
+
+        print("Mode: Phonon calculations (QHA)", flush=True)
+        polymlp.run_qha(
+            supercell_matrix=supercell_matrix,
+            distance=args.disp,
+            mesh=args.ph_mesh,
+            t_min=args.ph_tmin,
+            t_max=args.ph_tmax,
+            t_step=args.ph_tstep,
+            eps_min=0.8,
+            eps_max=1.2,
+            eps_step=0.02,
+        )
+        polymlp.write_qha()
+
+    elif args.eos:
+        if args.poscar is None and args.poscars is not None:
+            args.poscar = args.poscars
+        print("Mode: EOS calculation", flush=True)
+        polymlp.load_poscars(args.poscar)
+        polymlp.run_eos(
+            eps_min=0.7,
+            eps_max=2.0,
+            eps_step=0.03,
+            fine_grid=True,
+            eos_fit=True,
+        )
+        polymlp.write_eos(filename="polymlp_eos.yaml")
+
+    elif args.elastic:
+        print("Mode: Elastic constant calculation", flush=True)
+        polymlp.load_poscars(args.poscar)
+        polymlp.run_elastic_constants()
+        polymlp.write_elastic_constants(filename="polymlp_elastic.yaml")
