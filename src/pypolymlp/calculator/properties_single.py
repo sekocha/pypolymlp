@@ -159,3 +159,12 @@ class PropertiesSingle(PropertiesBase):
     def params(self):
         """Return parameters of polymlp."""
         return self._params
+
+    @property
+    def pot(self):
+        """Return potential filename."""
+        return None
+
+    def save(self, verbose: bool = False):
+        """Save properties to files."""
+        return None

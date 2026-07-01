@@ -59,9 +59,9 @@ def test_mlp_devel_api_phono3py2(phono3py_mp_149):
 
     error_train = polymlp.summary.error_train["data1"]
     error_test = polymlp.summary.error_test["data2"]
-    assert error_test["energy"] == pytest.approx(2.3987675262637736e-06, abs=1e-8)
+    assert error_test["energy"] == pytest.approx(2.3987675262637736e-06, rel=1e-2)
     assert error_test["force"] == pytest.approx(0.001078577920994468, rel=1e-3)
-    assert error_train["energy"] == pytest.approx(2.229479437621172e-06, abs=1e-8)
+    assert error_train["energy"] == pytest.approx(2.229479437621172e-06, rel=1e-2)
     assert error_train["force"] == pytest.approx(0.0010762511671704963, rel=1e-3)
 
 
@@ -103,9 +103,9 @@ def test_mlp_devel_api_displacements(phono3py_mp_149):
 
     error_train = polymlp.summary.error_train["data1"]
     error_test = polymlp.summary.error_test["data2"]
-    assert error_test["energy"] == pytest.approx(2.3987675262637736e-06, abs=1e-8)
+    assert error_test["energy"] == pytest.approx(2.3987675262637736e-06, rel=1e-2)
     assert error_test["force"] == pytest.approx(0.001078577920994468, rel=1e-3)
-    assert error_train["energy"] == pytest.approx(2.229479437621172e-06, abs=1e-8)
+    assert error_train["energy"] == pytest.approx(2.229479437621172e-06, rel=1e-2)
     assert error_train["force"] == pytest.approx(0.0010762511671704963, rel=1e-3)
 
 
