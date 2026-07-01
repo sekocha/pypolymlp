@@ -154,10 +154,6 @@ class PropertiesSSCHA(PropertiesBase):
             return None
         return self._prop.elements
 
-    def save(self):
-        """Save properties."""
-        pass
-
     @property
     def params(self):
         """Parameters of polymlp."""
@@ -203,3 +199,11 @@ class PropertiesSSCHA(PropertiesBase):
         """Setter of temperature."""
         self._temperature = val
         self._sscha_params.temperatures = [val]
+
+    def save(self):
+        """Save properties."""
+        return None
+
+    def pot(self):
+        """Return potential file."""
+        return None

@@ -211,7 +211,7 @@ def run():
         style=args.style,
         style_command=args.style_command,
         coeff_command=args.coeff_command,
-        verbose=True,
+        verbose=False,
     )
     polymlp = PypolymlpCalc(properties=prop, verbose=True)
 

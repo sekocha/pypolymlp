@@ -34,7 +34,7 @@ class AutoCalcBase:
         self._pot = self._prop.pot
         self._verbose = verbose
 
-        self._element_strings = self._prop.params.elements
+        self._element_strings = self._prop.elements
         self._n_types = len(self._element_strings)
         if self._n_types not in {1, 2}:
             raise RuntimeError("Structure list not found for systems beyond ternary.")

@@ -54,6 +54,7 @@ pypolymlp-invariant = "pypolymlp.api.developer.run_polymlp_polyinv:run"
 
 # For developers that use lammps
 pypolymlp-lammps = "pypolymlp.api.developer.run_lammps_calc:run"
+pypolymlp-lammps-autocalc = "pypolymlp.api.developer.run_lammps_autocalc:run"
 
 [tool.scikit-build]
 cmake.verbose = true

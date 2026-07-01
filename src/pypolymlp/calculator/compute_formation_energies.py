@@ -28,7 +28,7 @@ class PolymlpFormationEnergies:
         self._prop = properties
         self._verbose = verbose
         if self._prop is not None:
-            self._elements = self._prop.params.elements
+            self._elements = self._prop.elements
         else:
             if elements is None:
                 raise RuntimeError("Elements required if polymlp not provided.")

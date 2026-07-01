@@ -13,7 +13,7 @@ cwd = Path(__file__).parent
 
 def test_eval1():
     """Test lammps API."""
-    path = str(cwd) + "/Ti-Al/"
+    path = str(cwd) + "/files/Ti-Al/"
     pot = path + "/polymlp.lammps"
     elements = ["Ti", "Al"]
     prop = PropertiesLammps(
@@ -80,7 +80,7 @@ def test_eval1():
 
 def test_eval_eam():
     """Test lammps API using EAM potential."""
-    path = str(cwd) + "/Ti-Al/"
+    path = str(cwd) + "/files/Ti-Al/"
     pot = path + "Zope-Ti-Al-2003.eam.alloy"
     elements = ["Ti", "Al"]
 

@@ -28,6 +28,12 @@ class PropertiesBase(ABC):
         """Return elements."""
         pass
 
+    @property
+    @abstractmethod
+    def pot(self):
+        """Return potential file name."""
+        pass
+
     @abstractmethod
     def save(self):
         """Save properties."""

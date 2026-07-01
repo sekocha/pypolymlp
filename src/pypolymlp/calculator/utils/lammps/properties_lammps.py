@@ -40,6 +40,7 @@ class PropertiesLammps(PropertiesBase):
             log=log,
             verbose=verbose,
         )
+        self._pot = pot
 
     def eval(self, st: PolymlpStructure):
         """Evaluate properties for a single structure.
@@ -77,6 +78,11 @@ class PropertiesLammps(PropertiesBase):
     def elements(self):
         """Return elements."""
         return self._elements
+
+    @property
+    def pot(self):
+        """Return potential filename."""
+        return self._pot
 
     def save(self, verbose: bool = False):
         """Save properties to files."""
