@@ -54,3 +54,10 @@ pypolymlp-lammps --phonon --poscar POSCAR --pot Ti-Al-2003.eam.alloy --style eam
 ```shell
 pypolymlp-lammps-autocalc --pot Ti-Al-2003.eam.alloy --style eam/alloy --elements Ti Al
 ```
+
+## SSCHA Calculations Using Lammps
+```shell
+pypolymlp-lammps-sscha --poscar POSCAR --pot Zope-Ti-Al-2003.eam.alloy --style eam/alloy --supercell 3 3 3 --temp 1500 --mixing 0.5 --tol 0.005 --elements Ti Al
+pypolymlp-lammps-sscha --poscar POSCAR --pot Zope-Ti-Al-2003.eam.alloy --style eam/alloy --supercell 3 3 3 --temp 1500 --mixing 0.5 --tol 0.005 --elements Ti Al --geometry_optimization --gtol 0.03
+pypolymlp-lammps-sscha --poscar POSCAR --pot Zope-Ti-Al-2003.eam.alloy --style eam/alloy --supercell 3 3 3 --temp 1500 --mixing 0.5 --tol 0.005 --elements Ti Al --elastic --gtol 0.03
+```
