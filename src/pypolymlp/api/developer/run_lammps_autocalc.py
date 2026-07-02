@@ -1,6 +1,7 @@
 """Command lines for systematically calculating properites."""
 
 import argparse
+import os
 import signal
 
 import numpy as np
@@ -53,3 +54,4 @@ def run():
     polymlp = PypolymlpAutoCalc(properties=prop, verbose=True)
     polymlp.run_prototypes()
     polymlp.save_prototypes()
+    os._exit(0)

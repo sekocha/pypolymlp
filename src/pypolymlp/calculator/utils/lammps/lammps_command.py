@@ -14,19 +14,6 @@ from pypolymlp.core.units import EVtoGPa
 from .lammps_structure import LammpsStructure
 
 
-def worker_process(lmp, pipe_conn):
-    """C++の重い処理を実行する子プロセス"""
-    try:
-        # ここでC++の関数を呼び出す（擬似的にセグフォを起こすと想定）
-        # result = my_cpp_module.heavy_calculation()
-        lmp.command("run 0")
-
-        # 正常に終われば結果を親に送る
-        pipe_conn.send({"status": "success", "data": 0})
-    except Exception as e:
-        pipe_conn.send({"status": "error", "reason": str(e)})
-
-
 class LammpsCommand:
     """Class for controlling lammps commands."""
 
@@ -124,27 +111,6 @@ class LammpsCommand:
                 shape=(6) in the order of xx, yy, zz, xy, yz, zx. Unit: eV/cell.
         """
         self.set_structure(lmp_st)
-
-        # print("Run process")
-        # parent_conn, child_conn = multiprocessing.Pipe()
-        # p = multiprocessing.Process(
-        #    target=worker_process, args=(self._lmp, child_conn,)
-        # )
-        # p.start()
-
-        # exit_code = p.exitcode
-        # print(exitcode)
-        # if exit_code in [-11, -sys.signal.SIGSEGV if hasattr(sys, 'signal') else -11]:
-        #    print("SegFault")
-        #    raise RuntimeError("Segmentation Fault in Lammps.")
-        # elif exit_code == 0:
-        #    # パイプから結果を回収
-        #    if parent_conn.poll(): # データがあるか確認
-        #        result = parent_conn.recv()
-        #        print("親プロセスが結果を受信:", result)
-        # else:
-        #    print(f"子プロセスが異常終了しました。終了コード: {exit_code}")
-
         self._lmp.command("run 0")
         return (self.energy, self.forces, self.stress)
 

@@ -340,3 +340,5 @@ def run():
         polymlp.load_poscars(args.poscar)
         polymlp.run_elastic_constants()
         polymlp.write_elastic_constants(filename="polymlp_elastic.yaml")
+
+    prop.close()

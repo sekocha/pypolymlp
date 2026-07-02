@@ -64,7 +64,7 @@ class PropertiesLammps(PropertiesBase):
     def eval_multiple(self, structures: list[PolymlpStructure]):
         """Evaluate properties for multiple structures."""
         e_array, f_array, s_array = [], [], []
-        for st in structures:
+        for i, st in enumerate(structures):
             e, f, s = self.eval(st)
             e_array.append(e)
             f_array.append(f)

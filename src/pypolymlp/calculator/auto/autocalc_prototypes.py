@@ -90,8 +90,8 @@ class AutoCalcPrototypes(AutoCalcBase):
             self._run_eos(prot)
             self._run_elastic(prot, poscar)
             self._run_phonon(prot)
-            if run_qha:
-                self._run_qha(prot)
+            # if run_qha:
+            #     self._run_qha(prot)
 
         return self
 
