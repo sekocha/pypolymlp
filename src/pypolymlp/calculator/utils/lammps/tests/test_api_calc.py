@@ -1,10 +1,12 @@
 """Tests of calculations using lammps API."""
 
+import shutil
 from pathlib import Path
 
 import numpy as np
 import pytest
 
+from pypolymlp.api.pypolymlp_autocalc import PypolymlpAutoCalc
 from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
 
 cwd = Path(__file__).parent
@@ -111,3 +113,17 @@ def test_phonon_qha(property_mlp_Ti_Al):
     assert len(qha.temperatures) == 101
     assert len(qha.bulk_modulus_temperature) == 100
     assert len(qha.thermal_expansion) == 100
+
+
+def test_autocalc(property_mlp_Ti_Al):
+    """Test automated calculations."""
+    polymlp = PypolymlpAutoCalc(
+        properties=property_mlp_Ti_Al,
+        path_output="tmp",
+        verbose=True,
+    )
+    polymlp.load_prototypes()
+    polymlp.prototypes = polymlp.prototypes[0:1]
+    polymlp.calc_prototypes()
+
+    shutil.rmtree("tmp")
