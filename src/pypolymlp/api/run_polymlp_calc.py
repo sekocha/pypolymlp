@@ -63,7 +63,7 @@ def run_calculations(args, polymlp: PypolymlpCalc, calc_features: bool = True):
             relax_positions=not args.fix_atom,
             pressure=args.pressure,
         )
-        polymlp.run_geometry_optimization(method=args.method)
+        polymlp.run_geometry_optimization(method=args.method, gtol=args.gtol)
         polymlp.save_poscars(filename="POSCAR_eqm")
 
     if args.eos:

@@ -8,210 +8,24 @@ import numpy as np
 from pypolymlp.api.pypolymlp_sscha import PypolymlpSSCHA
 from pypolymlp.core.utils import print_credit
 
+from .common_args import (
+    create_advanced_sscha_parser,
+    create_go_parser,
+    create_polymlp_parser,
+    create_sscha_parser,
+    create_structure_parser,
+)
 
-def run():
 
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "-p",
-        "--poscar",
-        type=str,
-        default=None,
-        help="poscar file (unit cell)",
-    )
-    parser.add_argument(
-        "--yaml",
-        type=str,
-        default=None,
-        help="sscha_results.yaml file for parsing " "unitcell and supercell size.",
-    )
-    parser.add_argument(
-        "--pot",
-        nargs="*",
-        type=str,
-        default=None,
-        help="polymlp files",
-    )
-    parser.add_argument(
-        "--supercell",
-        nargs=3,
-        type=int,
-        default=None,
-        help="Supercell size (diagonal components)",
-    )
-    parser.add_argument(
-        "--mesh",
-        type=int,
-        nargs=3,
-        default=[10, 10, 10],
-        help="q-mesh for phonon calculation",
-    )
-    parser.add_argument(
-        "-t", "--temp", type=float, default=None, help="Temperature (K)"
-    )
-    parser.add_argument(
-        "-t_min",
-        "--temp_min",
-        type=float,
-        default=100,
-        help="Lowest temperature (K)",
-    )
-    parser.add_argument(
-        "-t_max",
-        "--temp_max",
-        type=float,
-        default=2000,
-        help="Highest temperature (K)",
-    )
-    parser.add_argument(
-        "-t_step",
-        "--temp_step",
-        type=float,
-        default=100,
-        help="Temperature interval (K)",
-    )
-    parser.add_argument(
-        "--n_temp",
-        type=int,
-        default=None,
-        help="Number of temperatures",
-    )
-    parser.add_argument(
-        "--tol",
-        type=float,
-        default=0.005,
-        help="Tolerance parameter for FC convergence",
-    )
-    parser.add_argument(
-        "--n_samples",
-        type=int,
-        nargs=2,
-        default=None,
-        help="Number of steps used in " "iterations and the last iteration",
-    )
-    parser.add_argument(
-        "--max_iter",
-        type=int,
-        default=50,
-        help="Maximum number of iterations",
-    )
-    parser.add_argument("--mixing", type=float, default=0.5, help="Mixing parameter")
-    parser.add_argument(
-        "--ascending_temp",
-        action="store_true",
-        help="Use ascending order of temperatures",
-    )
-    parser.add_argument(
-        "--init",
-        choices=["harmonic", "const", "random", "file"],
-        default="harmonic",
-        help="Initial FCs",
-    )
-    parser.add_argument(
-        "--init_file",
-        default=None,
-        help="Location of fc2.hdf5 for initial FCs",
-    )
-    parser.add_argument(
-        "--born_vasprun",
-        type=str,
-        default=None,
-        help="vasprun.xml file for parsing born effective charges",
-    )
-    parser.add_argument(
-        "--cutoff_fc2",
-        type=float,
-        default=None,
-        help="Cutoff radius for effective force constants.",
-    )
-    parser.add_argument(
-        "--use_temporal_cutoff",
-        action="store_true",
-        help="Use an algorithm temporarily using cutoff radius.",
-    )
-    parser.add_argument(
-        "--write_pdos",
-        action="store_true",
-        help="Save projected DOS.",
-    )
-    parser.add_argument(
-        "--disable_mkl",
-        action="store_true",
-        help="Disable to use MKL in Symfc.",
-    )
-    parser.add_argument(
-        "--disable_precondition",
-        action="store_true",
-        help="Disable to use precondition steps.",
-    )
-
-    # Options for finite-temperature geometry optimization using SSCHA free energy
-    parser.add_argument(
-        "--geometry_optimization",
-        action="store_true",
-        help="Perform geometry optimization using SSCHA free energy.",
-    )
-    parser.add_argument(
-        "--pressure",
-        type=float,
-        default=0.0,
-        help="Pressure (in GPa)",
-    )
-    parser.add_argument(
-        "--no_symmetry",
-        action="store_true",
-        help="Ignore symmetric properties in geometry optimization",
-    )
-    parser.add_argument(
-        "--fix_cell",
-        action="store_true",
-        help="Fix cell shape and volume in geometry optimization",
-    )
-    parser.add_argument(
-        "--fix_volume",
-        action="store_true",
-        help="Fix cell volume in geometry optimization",
-    )
-    parser.add_argument(
-        "--fix_atom",
-        action="store_true",
-        help="Fix atomic positions in geometry optimization",
-    )
-    parser.add_argument(
-        "--method",
-        type=str,
-        choices=["BFGS", "CG", "L-BFGS-B", "SLSQP"],
-        default="BFGS",
-        help="Algorithm for geometry optimization",
-    )
-    parser.add_argument(
-        "--gtol",
-        type=float,
-        default=0.01,
-        help="Tolerance parameter for gradients",
-    )
-
-    parser.add_argument(
-        "--elastic",
-        action="store_true",
-        help="Elastic constant calculation using SSCHA free energy.",
-    )
-    args = parser.parse_args()
-
-    np.set_printoptions(legacy="1.21")
-    print_credit()
-    sscha = PypolymlpSSCHA(verbose=True)
-    if args.poscar is not None:
-        sscha.load_poscar(args.poscar, np.diag(args.supercell))
-    elif args.yaml is not None:
+def run_main_sscha(args, sscha: PypolymlpSSCHA):
+    """Run SSCHA calculations."""
+    if args.yaml is not None:
         sscha.load_restart(yaml=args.yaml, parse_fc2=True)
+    elif args.poscar is not None:
+        sscha.load_poscar(args.poscar, np.diag(args.supercell))
     else:
         raise RuntimeError("Structure not found. Use --poscar or --yaml option.")
 
-    if args.pot is not None:
-        sscha.set_polymlp(args.pot)
     if args.born_vasprun is not None:
         sscha.set_nac_params(args.born_vasprun)
 
@@ -293,3 +107,34 @@ def run():
             write_pdos=args.write_pdos,
             use_mkl=not args.disable_mkl,
         )
+
+
+def run():
+
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
+
+    polymlp_parser = create_polymlp_parser()
+    st_parser = create_structure_parser()
+    sscha_parser = create_sscha_parser()
+
+    go_parser = create_go_parser(default_gtol=0.01)
+    advanced_sscha_parser = create_advanced_sscha_parser()
+    parser = argparse.ArgumentParser(
+        description="SSCHA calculations using PolyMLP",
+        parents=[
+            polymlp_parser,
+            st_parser,
+            sscha_parser,
+            advanced_sscha_parser,
+            go_parser,
+        ],
+    )
+    args = parser.parse_args()
+    np.set_printoptions(legacy="1.21")
+    print_credit()
+
+    sscha = PypolymlpSSCHA(verbose=True)
+    if args.pot is not None:
+        sscha.set_polymlp(args.pot)
+
+    run_main_sscha(args, sscha)

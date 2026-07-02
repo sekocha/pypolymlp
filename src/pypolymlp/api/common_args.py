@@ -156,7 +156,7 @@ def create_fc_parser():
     return parser
 
 
-def create_go_parser():
+def create_go_parser(default_gtol: float = 1e-4):
     """Create parser for geometry optimization."""
     parser = argparse.ArgumentParser(add_help=False)
     go_group = parser.add_argument_group(
@@ -195,6 +195,12 @@ def create_go_parser():
         default="BFGS",
         help="Algorithm for geometry optimization",
     )
+    go_group.add_argument(
+        "--gtol",
+        type=float,
+        default=default_gtol,
+        help="Tolerance parameter for gradients",
+    )
     return parser
 
 
@@ -217,4 +223,143 @@ def create_phonon_parser():
         "--ph_tstep", type=float, default=10, help="Temperature (step)"
     )
     ph_group.add_argument("--ph_pdos", action="store_true", help="Compute phonon PDOS")
+    return parser
+
+
+def create_sscha_parser():
+    """Create parser for SSCHA calculation."""
+    parser = argparse.ArgumentParser(add_help=False)
+    sscha_group = parser.add_argument_group("SSCHA", "Options for SSCHA calculation")
+    sscha_group.add_argument(
+        "--yaml",
+        type=str,
+        default=None,
+        help="sscha_results.yaml file for parsing unitcell and supercell size.",
+    )
+    sscha_group.add_argument(
+        "--mesh",
+        type=int,
+        nargs=3,
+        default=[10, 10, 10],
+        help="q-mesh for phonon calculation",
+    )
+    sscha_group.add_argument(
+        "-t", "--temp", type=float, default=None, help="Temperature (K)"
+    )
+    sscha_group.add_argument(
+        "-t_min",
+        "--temp_min",
+        type=float,
+        default=100,
+        help="Lowest temperature (K)",
+    )
+    sscha_group.add_argument(
+        "-t_max",
+        "--temp_max",
+        type=float,
+        default=2000,
+        help="Highest temperature (K)",
+    )
+    sscha_group.add_argument(
+        "-t_step",
+        "--temp_step",
+        type=float,
+        default=100,
+        help="Temperature interval (K)",
+    )
+    sscha_group.add_argument(
+        "--n_temp",
+        type=int,
+        default=None,
+        help="Number of temperatures",
+    )
+    sscha_group.add_argument(
+        "--tol",
+        type=float,
+        default=0.005,
+        help="Tolerance parameter for FC convergence",
+    )
+    sscha_group.add_argument(
+        "--n_samples",
+        type=int,
+        nargs=2,
+        default=None,
+        help="Number of steps used in " "iterations and the last iteration",
+    )
+    sscha_group.add_argument(
+        "--max_iter",
+        type=int,
+        default=50,
+        help="Maximum number of iterations",
+    )
+    sscha_group.add_argument(
+        "--mixing", type=float, default=0.5, help="Mixing parameter"
+    )
+    sscha_group.add_argument(
+        "--ascending_temp",
+        action="store_true",
+        help="Use ascending order of temperatures",
+    )
+    sscha_group.add_argument(
+        "--init",
+        choices=["harmonic", "const", "random", "file"],
+        default="harmonic",
+        help="Initial FCs",
+    )
+    sscha_group.add_argument(
+        "--init_file",
+        default=None,
+        help="Location of fc2.hdf5 for initial FCs",
+    )
+    sscha_group.add_argument(
+        "--born_vasprun",
+        type=str,
+        default=None,
+        help="vasprun.xml file for parsing born effective charges",
+    )
+    sscha_group.add_argument(
+        "--cutoff_fc2",
+        type=float,
+        default=None,
+        help="Cutoff radius for effective force constants.",
+    )
+    sscha_group.add_argument(
+        "--use_temporal_cutoff",
+        action="store_true",
+        help="Use an algorithm temporarily using cutoff radius.",
+    )
+    sscha_group.add_argument(
+        "--write_pdos",
+        action="store_true",
+        help="Save projected DOS.",
+    )
+    sscha_group.add_argument(
+        "--disable_mkl",
+        action="store_true",
+        help="Disable to use MKL in Symfc.",
+    )
+    sscha_group.add_argument(
+        "--disable_precondition",
+        action="store_true",
+        help="Disable to use precondition steps.",
+    )
+    return parser
+
+
+def create_advanced_sscha_parser():
+    """Create parser for advanced SSCHA calculation."""
+    parser = argparse.ArgumentParser(add_help=False)
+    mode_group = parser.add_argument_group(
+        "Advanced SSCHA mode", "Options for specifying advanced SSCHA calculations"
+    )
+    mode_group.add_argument(
+        "--geometry_optimization",
+        action="store_true",
+        help="Perform geometry optimization using SSCHA free energy.",
+    )
+    mode_group.add_argument(
+        "--elastic",
+        action="store_true",
+        help="Elastic constant calculation using SSCHA free energy.",
+    )
     return parser
