@@ -10,34 +10,17 @@ from pypolymlp.api.pypolymlp_autocalc import PypolymlpAutoCalc
 from pypolymlp.calculator.utils.lammps.properties_lammps import PropertiesLammps
 from pypolymlp.core.utils import print_credit
 
+from .lammps_args import create_lammps_parser
+
 
 def run():
 
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--elements",
-        nargs="*",
-        type=str,
-        required=True,
-        help="Element list",
-    )
-    parser.add_argument(
-        "--pot", type=str, default="polymlp.yaml", help="Potential file"
-    )
-    parser.add_argument("--style", type=str, default="polymlp", help="Potential style")
-    parser.add_argument(
-        "--style_command",
-        type=str,
-        default="pair_style",
-        help="Potential style header",
-    )
-    parser.add_argument(
-        "--coeff_command",
-        type=str,
-        default="pair_coeff",
-        help="Potential coeff header",
+    lammps_parser = create_lammps_parser()
+    parser = argparse.ArgumentParser(
+        description="Automated calculations using interatomic potentials in Lammps",
+        parents=[lammps_parser],
     )
     args = parser.parse_args()
     np.set_printoptions(legacy="1.21")

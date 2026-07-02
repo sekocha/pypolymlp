@@ -10,69 +10,69 @@ import numpy as np
 from pypolymlp.api.pypolymlp_md import PypolymlpMD
 from pypolymlp.core.utils import print_credit
 
+from .common_args import create_polymlp_parser, create_structure_parser
+
 
 def run():
 
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--pot", nargs="*", type=str, default="polymlp.yaml", help="polymlp file."
+    polymlp_parser = create_polymlp_parser()
+    st_parser = create_structure_parser()
+    parser = argparse.ArgumentParser(
+        description="Molecular dynamics using PolyMLP",
+        parents=[polymlp_parser, st_parser],
     )
-    parser.add_argument(
-        "-p",
-        "--poscar",
-        type=str,
-        default="POSCAR",
-        help="Initial structure.",
+
+    md_group = parser.add_argument_group(
+        "Molecular dynamics", "Options for setting input parameters for MD"
     )
-    parser.add_argument(
-        "--supercell_size",
-        type=int,
-        nargs=3,
-        default=(1, 1, 1),
-        help="Diagonal supercell size.",
-    )
-    parser.add_argument(
+    md_group.add_argument(
         "--thermostat",
         type=str,
         choices=["Langevin", "Nose-Hoover"],
         default="Langevin",
         help="Thermostat.",
     )
-    parser.add_argument("--temp", type=float, default=300.0, help="Temperature.")
-    parser.add_argument("--time_step", type=float, default=1.0, help="Time step (fs).")
-    parser.add_argument(
+    md_group.add_argument("--temp", type=float, default=300.0, help="Temperature.")
+    md_group.add_argument(
+        "--time_step", type=float, default=1.0, help="Time step (fs)."
+    )
+    md_group.add_argument(
         "--friction",
         type=float,
         default=0.01,
         help="Friction in Langevin thermostat (1/fs).",
     )
-    parser.add_argument(
+    md_group.add_argument(
         "--ttime",
         type=float,
         default=20.0,
         help="Time step interact with thermostat in Langevin thermostat (fs).",
     )
-    parser.add_argument(
+    md_group.add_argument(
         "--n_eq", type=int, default=2000, help="Number of equilibration steps."
     )
-    parser.add_argument("--n_steps", type=int, default=20000, help="Number of steps.")
+    md_group.add_argument("--n_steps", type=int, default=20000, help="Number of steps.")
 
     # for free energy perturbation and MD simulations for mixed state.
-    parser.add_argument(
+    ti_group = parser.add_argument_group(
+        "Thermodynamic integration and free energy perturbation",
+        "Options for setting input parameters for TI",
+    )
+    ti_group.add_argument(
         "--alpha",
         type=float,
         default=0.0,
         help="Alpha value for reference state.",
     )
-    parser.add_argument(
+    ti_group.add_argument(
         "--fc2",
         type=str,
         default=None,
         help="Force constant HDF5 file for reference state.",
     )
-    parser.add_argument(
+    ti_group.add_argument(
         "--pot_ref",
         nargs="*",
         type=str,
@@ -81,24 +81,23 @@ def run():
     )
 
     # for TI
-    parser.add_argument(
+    ti_group.add_argument(
         "--ti",
         action="store_true",
         help="Run thermodynamics integration.",
     )
-    parser.add_argument(
+    ti_group.add_argument(
         "--n_samples", type=int, default=15, help="Number of MD simulations for TI."
     )
-    parser.add_argument(
+    ti_group.add_argument(
         "--max_alpha", type=float, default=1.0, help="Maximum alpha value for TI."
     )
-    parser.add_argument(
+    ti_group.add_argument(
         "--fc2_path",
         type=str,
         default=None,
         help="Directory path for automatically finding reference FC2 state.",
     )
-
     args = parser.parse_args()
 
     print_credit()

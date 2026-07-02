@@ -8,14 +8,18 @@ import numpy as np
 from pypolymlp.api.pypolymlp_autocalc import PypolymlpAutoCalc
 from pypolymlp.core.utils import print_credit
 
+from .common_args import create_polymlp_parser
+
 
 def run():
 
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--pot", nargs="*", type=str, default=None, help="polymlp file")
-
+    polymlp_parser = create_polymlp_parser()
+    parser = argparse.ArgumentParser(
+        description="Automated calculations using PolyMLP",
+        parents=[polymlp_parser],
+    )
     args = parser.parse_args()
     np.set_printoptions(legacy="1.21")
     print_credit()

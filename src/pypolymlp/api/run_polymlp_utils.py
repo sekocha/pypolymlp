@@ -16,56 +16,68 @@ from pypolymlp.utils.atomic_energies.atomic_energies import (
 def run():
 
     signal.signal(signal.SIGINT, signal.SIG_DFL)
-
     parser = argparse.ArgumentParser()
-    parser.add_argument(
+
+    yaml_convert_group = parser.add_argument_group(
+        "Yaml converter", "Options for converting legacy MLP file to yaml file"
+    )
+    yaml_convert_group.add_argument(
         "--yaml_converter",
         type=str,
         default=None,
         help="Convert polymlp.lammps to polymlp.yaml.",
     )
-    parser.add_argument(
+
+    vasprun_group = parser.add_argument_group(
+        "Vasprun", "Options for handling vasprun.xml files"
+    )
+    vasprun_group.add_argument(
         "--vasprun_compress",
         nargs="*",
         type=str,
         default=None,
         help="Compression of vasprun.xml files",
     )
-    parser.add_argument("--n_jobs", type=int, default=1, help="Number of parallel jobs")
-    parser.add_argument(
+    vasprun_group.add_argument(
+        "--n_jobs", type=int, default=1, help="Number of parallel jobs"
+    )
+    vasprun_group.add_argument(
         "--electron_vasprun",
         nargs="*",
         type=str,
         default=None,
         help="Parse vasprun.xml files to get electronic properties.",
     )
-    parser.add_argument(
+    vasprun_group.add_argument(
         "--temp_max",
         type=float,
         default=1000,
         help="Maximum temperature (K).",
     )
-    parser.add_argument(
+    vasprun_group.add_argument(
         "--temp_step",
         type=float,
         default=10,
         help="Temperature interval (K).",
     )
 
-    parser.add_argument(
+    div_group = parser.add_argument_group(
+        "Dataset division", "Options for dividing dataset"
+    )
+    div_group.add_argument(
         "--auto_dataset",
         nargs="*",
         type=str,
         default=None,
         help="Automatic dataset division using " + "vasprun.xml files",
     )
-    parser.add_argument(
+    div_group.add_argument(
         "--n_divide",
         type=int,
         default=3,
         help="Number of groups to divide datasets",
     )
-    parser.add_argument(
+    div_group.add_argument(
         "--elements",
         nargs="*",
         type=str,
@@ -73,33 +85,40 @@ def run():
         help="Element strings.",
     )
 
-    parser.add_argument(
+    # atomic energy
+    atom_e_group = parser.add_argument_group(
+        "Atomic energy", "Options for getting atomic energy"
+    )
+    atom_e_group.add_argument(
         "--atomic_energy_elements",
         nargs="*",
         type=str,
         default=None,
         help="Elements for getting atomic energies.",
     )
-    parser.add_argument(
+    atom_e_group.add_argument(
         "--atomic_energy_formula",
         type=str,
         default=None,
         help="Compound for getting atomic energies.",
     )
-    parser.add_argument(
+    atom_e_group.add_argument(
         "--atomic_energy_functional",
         type=str,
         default="PBE",
         help="Exc functional for getting atomic energies.",
     )
 
-    """Calculation of computational costs"""
-    parser.add_argument(
+    # Calculation of computational costs
+    cost_group = parser.add_argument_group(
+        "Computational cost estimation", "Options for calculating computational time"
+    )
+    cost_group.add_argument(
         "--calc_cost",
         action="store_true",
         help="Calculation of computational costs.",
     )
-    parser.add_argument(
+    cost_group.add_argument(
         "-d",
         "--dirs",
         nargs="*",
@@ -107,17 +126,22 @@ def run():
         default=None,
         help="directory paths",
     )
-    parser.add_argument(
+    cost_group.add_argument(
         "--pot",
         nargs="*",
         type=str,
         default="polymlp.yaml",
         help="polymlp file",
     )
-    parser.add_argument("--n_calc", type=int, default=20, help="number of calculations")
+    cost_group.add_argument(
+        "--n_calc", type=int, default=20, help="number of calculations"
+    )
 
-    """Pareto optimal search"""
-    parser.add_argument(
+    # Pareto optimal search
+    pareto_group = parser.add_argument_group(
+        "Optimal MLP search", "Options for finding optimal MLPs"
+    )
+    pareto_group.add_argument(
         "--find_optimal",
         nargs="*",
         type=str,
@@ -125,23 +149,43 @@ def run():
         help="Find optimal MLPs using a set of MLPs. "
         + "Directories for the set of MLPs.",
     )
-    parser.add_argument(
+    pareto_group.add_argument(
         "--key",
         type=str,
         default=None,
         help="Identification key for the dataset " + "in finding optimal MLPs",
     )
 
-    """Spglib utilities"""
-    parser.add_argument("-p", "--poscar", type=str, help="poscar file name")
-    parser.add_argument(
-        "--symprec",
-        type=float,
-        default=1e-4,
-        help="numerical precision for finding symmetry",
+    # Model generation
+    model_group = parser.add_argument_group(
+        "MLP model generation", "Options for generating MLP model parameters"
     )
-    parser.add_argument("--refine_cell", action="store_true", help="refine cell")
-    parser.add_argument("--space_group", action="store_true", help="get space group")
+    model_group.add_argument(
+        "--generate_models",
+        action="store_true",
+        help="Generate polymlp candidate models.",
+    )
+    model_group.add_argument(
+        "--generate_models_elements",
+        nargs="*",
+        type=str,
+        default=None,
+        help="Elements for model generation.",
+    )
+    model_group.add_argument(
+        "--generate_models_system",
+        type=str,
+        default=None,
+        help="System for model generation.",
+    )
+    model_group.add_argument(
+        "--enable_hybrid",
+        action="store_true",
+        help="Enable enumeration of hybrid models.",
+    )
+
+    # Spglib utilities
+    parser.add_argument("-p", "--poscar", type=str, help="poscar file name")
     parser.add_argument(
         "--supercell",
         nargs="*",
@@ -150,30 +194,15 @@ def run():
         help="get supercell",
     )
 
-    """Model generation"""
-    parser.add_argument(
-        "--generate_models",
-        action="store_true",
-        help="Generate polymlp candidate models.",
+    spg_group = parser.add_argument_group("Spglib", "Options for using spglib")
+    spg_group.add_argument(
+        "--symprec",
+        type=float,
+        default=1e-4,
+        help="numerical precision for finding symmetry",
     )
-    parser.add_argument(
-        "--generate_models_elements",
-        nargs="*",
-        type=str,
-        default=None,
-        help="Elements for model generation.",
-    )
-    parser.add_argument(
-        "--generate_models_system",
-        type=str,
-        default=None,
-        help="System for model generation.",
-    )
-    parser.add_argument(
-        "--enable_hybrid",
-        action="store_true",
-        help="Enable enumeration of hybrid models.",
-    )
+    spg_group.add_argument("--refine_cell", action="store_true", help="refine cell")
+    spg_group.add_argument("--space_group", action="store_true", help="get space group")
 
     args = parser.parse_args()
     print_credit()
