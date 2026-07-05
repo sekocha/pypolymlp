@@ -35,6 +35,7 @@ Potential::Potential(const feature_params& fp, const vector1d& pot){
     release_memory();
     sort_potential_model();
     flatten_potential_model();
+    prod_potential_model();
 
 }
 
@@ -155,6 +156,60 @@ void Potential::flatten_potential_model(){
     }
 }
 
+void Potential::prod_potential_model(){
+
+    int max_prod = 0;
+    for (int t1 = 0; t1 < n_type; ++t1){
+        for (auto& pmodel: potential_model[t1]){
+            for (const auto& pterm: pmodel){
+                if (max_prod < pterm.prod_features_id){
+                    max_prod = pterm.prod_features_id;
+                }
+            }
+        }
+    }
+    potential_model_each.resize(n_type);
+    for (int t1 = 0; t1 < n_type; ++t1){
+        potential_model_each[t1].resize(potential_model[t1].size());
+        int nlmtc(0);
+        for (auto& pmodel: potential_model[t1]){
+            //vector1i prod_ids;
+            //for (const auto& pterm: pmodel){
+            //    prod_ids.add(pterm.prod_ids);
+            //}
+
+
+            potential_model_each[t1][nlmtc].resize(max_prod + 1);
+            for (const auto& pterm: pmodel){
+                int id = pterm.prod_features_id;
+                PotentialTermCompact pterm_c = {
+                    pterm.coeff_e, pterm.coeff_f, pterm.prod_id
+                };
+                potential_model_each[t1][nlmtc][id].emplace_back(pterm_c);
+            }
+            ++nlmtc;
+        }
+    }
+    for (int t1 = 0; t1 < n_type; ++t1){
+        for (auto& pmodel1: potential_model_each[t1]){
+            for (auto& pmodel2: pmodel1){
+                std::sort(pmodel2.begin(), pmodel2.end(),
+                [](const PotentialTermCompact& lhs, const PotentialTermCompact& rhs){
+                    if (lhs.prod_id != rhs.prod_id){
+                        return lhs.prod_id < rhs.prod_id;
+                    }
+                    else {
+                        return lhs.coeff_e < rhs.coeff_e;
+                    }
+                }
+                );
+
+            }
+        }
+    }
+}
+
+
 void Potential::compute_features(
     const vector1d& antp,
     const int type1,
@@ -244,54 +299,139 @@ void Potential::compute_sum_of_prod_anlmtp(
     compute_prod_features(features, type1, prod_features_vals);
     compute_prod_anlmtp_deriv(anlmtp, type1, prod_anlmtp_deriv);
 
-    const auto& potential_model1 = potential_model_flat[type1];
-    const auto& offset1 = offset[type1];
-    const int n_nlmtc_noconj = static_cast<int>(offset1.size()) - 1;
+    const auto& potential_model1 = potential_model_each[type1];
+    prod_sum_e = vector1dc(potential_model1.size());
+    prod_sum_f = vector1dc(potential_model1.size());
 
-    prod_sum_e = vector1dc(n_nlmtc_noconj);
-    prod_sum_f = vector1dc(n_nlmtc_noconj);
+    for (int i_nlmtc = 0; i_nlmtc < potential_model1.size(); ++i_nlmtc){
+        dc sum_e(0.0), sum_f(0.0);
+        const auto& pmodel1 = potential_model1[i_nlmtc];
+        for (int i_prod = 0; i_prod < pmodel1.size(); ++i_prod){
+            const auto& pmodel2 = pmodel1[i_prod];
+            if (pmodel2.empty()) continue;
 
-    if (n_nlmtc_noconj <= 0) return;
-
-    const PotentialTerm* pbase = potential_model1.data();
-    const double* fvals
-        = prod_features_vals.empty() ? nullptr : prod_features_vals.data();
-    const dc* derivs = prod_anlmtp_deriv.empty() ? nullptr : prod_anlmtp_deriv.data();
-
-    for (int i = 0; i < n_nlmtc_noconj; ++i){
-        double sum_e_re = 0.0, sum_e_im = 0.0;
-        double sum_f_re = 0.0, sum_f_im = 0.0;
-
-        const int begin = offset1[i];
-        const int end   = offset1[i+1];
-
-        #ifdef _OPENMP
-        #pragma omp simd reduction(+:sum_e_re,sum_e_im,sum_f_re,sum_f_im)
-        #endif
-        for (int j = begin; j < end; ++j){
-            const PotentialTerm& pt = pbase[j];
-            const int pid = pt.prod_id;
-            const int pfid = pt.prod_features_id;
-
-            const double fval = fvals[pfid];
-            const double s_e = fval * pt.coeff_e; // scalar multiplier for e
-            const double s_f = fval * pt.coeff_f; // scalar multiplier for f
-
-            const dc deriv = derivs[pid]; // small copy to allow .real()/.imag()
-            const double a = deriv.real();
-            const double b = deriv.imag();
-
-            // deriv * s = (a + i b) * s -> real = a*s, imag = b*s
-            sum_e_re += a * s_e;
-            sum_e_im += b * s_e;
-            sum_f_re += a * s_f;
-            sum_f_im += b * s_f;
+            double fval = prod_features_vals[i_prod];
+            dc sum_deriv_e(0.0);
+            dc sum_deriv_f(0.0);
+            //#pragma omp simd reduction(+:sum_deriv_e, sum_deriv_f)
+            for (const auto& pterm: pmodel2){
+                const dc deriv = prod_anlmtp_deriv[pterm.prod_id];
+                sum_deriv_e += deriv * pterm.coeff_e;
+                sum_deriv_f += deriv * pterm.coeff_f;
+            }
+            sum_e += sum_deriv_e * fval;
+            sum_f += sum_deriv_f * fval;
         }
-
-        prod_sum_e[i] = dc(sum_e_re, sum_e_im);
-        prod_sum_f[i] = dc(sum_f_re, sum_f_im);
+        prod_sum_e[i_nlmtc] = sum_e;
+        prod_sum_f[i_nlmtc] = sum_f;
     }
+
+/*
+    int i = 0;
+    for (const auto& potential_model1_prod_feature: potential_model1){
+        dc sum_e(0.0), sum_f(0.0);
+        int prod_features_id = 0;
+        for (const auto& pterms1: potential_model1_prod_feature){
+            if (pterms1.size() > 0){
+                dc sum_deriv_e(0.0);
+                dc sum_deriv_f(0.0);
+                //std::cout << pterms1.size() << std::endl;
+                //#ifdef _OPENMP
+                //#pragma omp simd reduction(+:sum_deriv_e,sum_deriv_f)
+                //#endif
+                for (const auto& pterm: pterms1){
+                    const dc deriv = prod_anlmtp_deriv[pterm.prod_id];
+                    sum_deriv_e += deriv * pterm.coeff_e;
+                    sum_deriv_f += deriv * pterm.coeff_f;
+                }
+                double fval = prod_features_vals[prod_features_id];
+                sum_e += sum_deriv_e * fval;
+                sum_f += sum_deriv_f * fval;
+            }
+            prod_features_id += 1;
+        }
+        prod_sum_e[i] = sum_e;
+        prod_sum_f[i] = sum_f;
+        ++i;
+    }
+    */
+
 }
+
+int Potential::convert_unit(const double energy_conv){
+    for (auto& pmodel1: potential_model){
+        for (auto& pterms1: pmodel1){
+            for (auto& pterm: pterms1){
+                pterm.coeff_e *= energy_conv;
+                pterm.coeff_f *= energy_conv;
+            }
+        }
+    }
+    return 0;
+}
+
+Maps& Potential::get_maps() { return f_obj.get_maps(); }
+
+// void Potential::compute_sum_of_prod_anlmtp(
+//     const vector1dc& anlmtp,
+//     const int type1,
+//     vector1dc& prod_sum_e,
+//     vector1dc& prod_sum_f
+// ){
+//     vector1d features, prod_features_vals;
+//     vector1dc prod_anlmtp_deriv;
+//     compute_features(anlmtp, type1, features);
+//     compute_prod_features(features, type1, prod_features_vals);
+//     compute_prod_anlmtp_deriv(anlmtp, type1, prod_anlmtp_deriv);
+//
+//     const auto& potential_model1 = potential_model_flat[type1];
+//     const auto& offset1 = offset[type1];
+//     const int n_nlmtc_noconj = static_cast<int>(offset1.size()) - 1;
+//
+//     prod_sum_e = vector1dc(n_nlmtc_noconj);
+//     prod_sum_f = vector1dc(n_nlmtc_noconj);
+//
+//     if (n_nlmtc_noconj <= 0) return;
+//
+//     const PotentialTerm* pbase = potential_model1.data();
+//     const double* fvals
+//         = prod_features_vals.empty() ? nullptr : prod_features_vals.data();
+//     const dc* derivs = prod_anlmtp_deriv.empty() ? nullptr : prod_anlmtp_deriv.data();
+//
+//     for (int i = 0; i < n_nlmtc_noconj; ++i){
+//         double sum_e_re = 0.0, sum_e_im = 0.0;
+//         double sum_f_re = 0.0, sum_f_im = 0.0;
+//
+//         const int begin = offset1[i];
+//         const int end   = offset1[i+1];
+//
+//         #ifdef _OPENMP
+//         #pragma omp simd reduction(+:sum_e_re,sum_e_im,sum_f_re,sum_f_im)
+//         #endif
+//         for (int j = begin; j < end; ++j){
+//             const PotentialTerm& pt = pbase[j];
+//             const int pid = pt.prod_id;
+//             const int pfid = pt.prod_features_id;
+//
+//             const double fval = fvals[pfid];
+//             const double s_e = fval * pt.coeff_e; // scalar multiplier for e
+//             const double s_f = fval * pt.coeff_f; // scalar multiplier for f
+//
+//             const dc deriv = derivs[pid]; // small copy to allow .real()/.imag()
+//             const double a = deriv.real();
+//             const double b = deriv.imag();
+//
+//             // deriv * s = (a + i b) * s -> real = a*s, imag = b*s
+//             sum_e_re += a * s_e;
+//             sum_e_im += b * s_e;
+//             sum_f_re += a * s_f;
+//             sum_f_im += b * s_f;
+//         }
+//
+//         prod_sum_e[i] = dc(sum_e_re, sum_e_im);
+//         prod_sum_f[i] = dc(sum_f_re, sum_f_im);
+//     }
+// }
 
 /*
     const auto& potential_model1 = potential_model[type1];
@@ -319,17 +459,3 @@ void Potential::compute_sum_of_prod_anlmtp(
         ++i;
     }
 */
-
-int Potential::convert_unit(const double energy_conv){
-    for (auto& pmodel1: potential_model){
-        for (auto& pterms1: pmodel1){
-            for (auto& pterm: pterms1){
-                pterm.coeff_e *= energy_conv;
-                pterm.coeff_f *= energy_conv;
-            }
-        }
-    }
-    return 0;
-}
-
-Maps& Potential::get_maps() { return f_obj.get_maps(); }

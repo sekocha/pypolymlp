@@ -12,6 +12,12 @@
 #include "polymlp_structs.h"
 #include "polymlp_features.h"
 
+struct PotentialTermCompact {
+    double coeff_e;
+    double coeff_f;
+    int prod_id;
+};
+
 
 class Potential {
 
@@ -22,8 +28,12 @@ class Potential {
     vector3i prod_features;
 
     std::vector<std::vector<PotentialModel> > potential_model;
+
     std::vector<PotentialModel> potential_model_flat;
     vector2i offset;
+
+    std::vector<std::vector<std::vector<std::vector<PotentialTermCompact> > > > potential_model_each;
+    vector3i prod_features_ids;
 
     int set_mapping_prod_of_features();
     int set_terms_using_mapping(const vector1d& pot);
@@ -31,6 +41,7 @@ class Potential {
     void release_memory();
 
     void flatten_potential_model();
+    void prod_potential_model();
 
     public:
 
