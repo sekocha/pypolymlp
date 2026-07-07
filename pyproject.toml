@@ -1,6 +1,6 @@
 [build-system]
 requires = [
-    "scikit-build-core",
+    "scikit-build-core>=0.10",
     "setuptools_scm[toml]>=6.0",
     "cmake",
     "pybind11",
@@ -58,7 +58,7 @@ pypolymlp-lammps-autocalc = "pypolymlp.api.developer.run_lammps_autocalc:run"
 pypolymlp-lammps-sscha = "pypolymlp.api.developer.run_lammps_sscha:run"
 
 [tool.scikit-build]
-cmake.verbose = true
+build.verbose = true
 logging.level = "INFO"
 cmake.source-dir = "./src/pypolymlp/cxx"
 
