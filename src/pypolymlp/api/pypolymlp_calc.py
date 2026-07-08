@@ -146,6 +146,13 @@ class PypolymlpCalc:
 
         return self._prop.eval_multiple(self.structures)
 
+    def eval_multiple(
+        self,
+        structures: Optional[Union[PolymlpStructure, list[PolymlpStructure]]] = None,
+    ):
+        """Evaluate properties for a single structure or multiple structures."""
+        return self.eval(structures)
+
     def save_properties(self):
         """Save properties.
 
