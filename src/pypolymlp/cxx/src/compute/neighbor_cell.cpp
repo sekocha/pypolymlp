@@ -72,11 +72,14 @@ vector1d NeighborCell::dot_prod(const vector2d& mat, const vector1d& vec2){
 
 double NeighborCell::find_maximum_diagonal_in_cell(){
 
-    vector2i vertices_comb = {{0,0,1}, {0,1,0}, {0,1,1},
-                              {1,0,0}, {1,0,1}, {1,1,0}, {1,1,1},
-                              {0,0,-1}, {0,-1,0}, {0,-1,-1},
-                              {-1,0,0}, {-1,0,-1}, {-1,-1,0}, {-1,-1,-1}};
-
+    vector2i vertices_comb;
+    for (int i = -1; i < 2; ++i){
+        for (int j = -1; j < 2; ++j){
+            for (int k = -1; k < 2; ++k){
+                vertices_comb.emplace_back(vector1i({i, j, k}));
+            }
+        }
+    }
     double max_length(0.0);
     for (const auto& ver: vertices_comb){
         double dis = distance(ver[0], ver[1], ver[2]);
@@ -202,14 +205,13 @@ int NeighborCell::find_trans(){
     if (ref_sum > 0){
         refine_axis();
         calc_inverse_axis();
-        /*
-            for (int i = 0; i < 3; ++i){
-                for (int j = 0; j < 3; ++j){
-                    std::cout << axis[i][j] << ", ";
-                }
-                std::cout << std::endl;
-            }
-        */
+            // std::cout << "AXIS" << std::endl;
+            // for (int i = 0; i < 3; ++i){
+            //     for (int j = 0; j < 3; ++j){
+            //         std::cout << axis[i][j] << ", ";
+            //     }
+            //     std::cout << std::endl;
+            // }
         int n_atom = positions_c[0].size();
         vector2d positions(3, vector1d(n_atom));
         vector1d pos_c(3), pos(3);
@@ -231,7 +233,6 @@ int NeighborCell::find_trans(){
             positions_c[2][j] = pos_c[2];
         }
     }
-
     vector1i max_exp = {int(ceil(cutoff / distance(1, 0, 0)) + 1),
                         int(ceil(cutoff / distance(0, 1, 0)) + 1),
                         int(ceil(cutoff / distance(0, 0, 1)) + 1)};
