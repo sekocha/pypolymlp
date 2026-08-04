@@ -282,6 +282,8 @@ def run():
             raise RuntimeError("Elements or system required.")
         if args.generate_models_system is not None:
             elements = args.generate_models_system.split("-")
+        elif args.generate_models_elements is not None:
+            elements = args.generate_models_elements
         else:
             elements = args.elements
 
