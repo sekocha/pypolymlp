@@ -55,7 +55,8 @@ def auto_divide_vaspruns(
     elements: tuple,
     n_divide: int = 3,
     functional: Literal["PBE", "PBEsol"] = "PBE",
-    path_output: Optional[str] = None,
+    path_output: Optional[str] = "polymlp_datasets",
+    path_string: Optional[str] = None,
     verbose: bool = False,
 ):
     """Divide a dataset into training and test datasets automatically."""
@@ -84,9 +85,11 @@ def auto_divide_vaspruns(
         weights = np.tile(weights, n_tiles)
         forces = np.tile(forces, n_tiles)
 
-    path = "./polymlp_datasets/" if path_output is None else path_output + "/"
-    os.makedirs(path, exist_ok=True)
-    f = open(path + "/polymlp.in.append", "w")
+    if path_string is None:
+        path_string = path_output
+
+    os.makedirs(path_output, exist_ok=True)
+    f = open(path_output + "/polymlp.in.append", "w")
 
     if atom_e is not None:
         print("n_type", len(atom_e), file=f)
@@ -102,16 +105,16 @@ def auto_divide_vaspruns(
         force = forces[i]
         if len(attr.train) > 0:
             tag = "train" + str(i + 1)
-            files = path + tag + "/*.xml"
-            copy_vaspruns(vaspruns[attr.train], tag, path_output=path)
+            files = path_string + "/" + tag + "/*.xml"
+            copy_vaspruns(vaspruns[attr.train], tag, path_output=path_output)
             print("train_data", files, str(force), str(weight), file=f)
             if verbose:
                 print("train_data", files, str(force), str(weight), flush=True)
 
         if len(attr.test) > 0:
             tag = "test" + str(i + 1)
-            files = path + tag + "/*.xml"
-            copy_vaspruns(vaspruns[attr.test], tag, path_output=path)
+            files = path_string + "/" + tag + "/*.xml"
+            copy_vaspruns(vaspruns[attr.test], tag, path_output=path_output)
             print("test_data ", files, str(force), str(weight), file=f)
             if verbose:
                 print("test_data ", files, str(force), str(weight), flush=True)

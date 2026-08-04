@@ -84,6 +84,12 @@ def run():
         default=None,
         help="Element strings.",
     )
+    div_group.add_argument(
+        "--path_string",
+        type=str,
+        default=None,
+        help="Path string specifying dataset location used for polylmlp input file.",
+    )
 
     # atomic energy
     atom_e_group = parser.add_argument_group(
@@ -246,7 +252,13 @@ def run():
         polymlp.find_optimal_mlps(args.find_optimal, args.key)
 
     elif args.auto_dataset is not None:
-        polymlp.divide_dataset(args.auto_dataset, args.elements, n_divide=args.n_divide)
+        polymlp.divide_dataset(
+            args.auto_dataset,
+            args.elements,
+            n_divide=args.n_divide,
+            functional=args.atomic_energy_functional,
+            path_string=args.path_string,
+        )
 
     elif args.supercell:
         if len(args.supercell) == 9:

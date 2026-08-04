@@ -1,6 +1,6 @@
 """API Class for using utility functions."""
 
-from typing import Optional, Union
+from typing import Literal, Optional, Union
 
 import numpy as np
 
@@ -152,7 +152,15 @@ class PypolymlpUtils:
         )
         return summary_all, summary_convex, system
 
-    def divide_dataset(self, vaspruns: list[str], elements: tuple, n_divide: int = 3):
+    def divide_dataset(
+        self,
+        vaspruns: list[str],
+        elements: tuple,
+        n_divide: int = 3,
+        functional: Literal["PBE", "PBEsol"] = "PBE",
+        path_output: str = "polymlp_datasets",
+        path_string: Optional[str] = None,
+    ):
         """Divide a dataset into training and test datasets automatically.
 
         Generate divided subsets and texts that will be included in input files.
@@ -161,10 +169,14 @@ class PypolymlpUtils:
         ----------
         vaspruns: vasprun.xml files
         """
+        path_string = "../../polymlp_datasets"
         auto_divide_vaspruns(
             vaspruns,
             elements,
             n_divide=n_divide,
+            functional=functional,
+            path_output=path_output,
+            path_string=path_string,
             verbose=self._verbose,
         )
 
