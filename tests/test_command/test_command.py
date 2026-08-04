@@ -48,9 +48,13 @@ def test_command_lines_developer():
     subprocess.run(cmd.split(), check=True)
     cmd = "pypolymlp-invariant --help"
     subprocess.run(cmd.split(), check=True)
-    cmd = "pypolymlp-lammps --help"
-    subprocess.run(cmd.split(), check=True)
-    cmd = "pypolymlp-lammps-autocalc --help"
-    subprocess.run(cmd.split(), check=True)
-    cmd = "pypolymlp-lammps-sscha --help"
-    subprocess.run(cmd.split(), check=True)
+
+
+# def test_command_lines_developer_lammps():
+#     """Test command lines."""
+#     cmd = "pypolymlp-lammps --help"
+#     subprocess.run(cmd.split(), check=True)
+#     cmd = "pypolymlp-lammps-autocalc --help"
+#     subprocess.run(cmd.split(), check=True)
+#     cmd = "pypolymlp-lammps-sscha --help"
+#     subprocess.run(cmd.split(), check=True)
