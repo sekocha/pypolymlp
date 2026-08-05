@@ -28,6 +28,7 @@ from pypolymlp.mlp_dev.core.features_attr import (
 from pypolymlp.mlp_dev.gradient.fit_cg import fit_cg
 from pypolymlp.mlp_dev.gradient.fit_sgd import fit_sgd
 from pypolymlp.mlp_dev.standard.fit import fit, fit_learning_curve, fit_standard
+from pypolymlp.mlp_dev.standard.fit_cv import fit_cv
 from pypolymlp.mlp_dev.standard.utils_learning_curve import save_learning_curve_log
 
 
@@ -630,6 +631,22 @@ class Pypolymlp:
         )
         return self
 
+    def fit_cv(self, batch_size: Optional[int] = None, verbose: Optional[bool] = None):
+        """Estimate MLP coefficients using leave-one-out cross validation."""
+
+        if verbose is not None:
+            self._verbose = verbose
+
+        self._is_params_none()
+        self._is_data_none()
+        self._mlp_model, inv_xtx = fit_cv(
+            self._params,
+            self._train,
+            batch_size=batch_size,
+            verbose=self._verbose,
+        )
+        return self, inv_xtx
+
     def estimate_error(
         self,
         log_energy: bool = False,
@@ -652,6 +669,35 @@ class Pypolymlp:
         )
         self._mlp_model.error_test = acc.compute_error(
             self._test,
+            log_energy=log_energy,
+            path_output=file_path,
+            tag="test",
+        )
+
+    def estimate_error_cv(
+        self,
+        inv_xtx: np.ndarray,
+        log_energy: bool = False,
+        file_path: str = "./",
+        verbose: Optional[bool] = None,
+    ):
+        """Estimate prediction errors using cross-validation."""
+        if verbose is not None:
+            self._verbose = verbose
+
+        if self._mlp_model is None:
+            raise RuntimeError("Regression must be performed before estimating errors.")
+
+        acc = PolymlpEvalAccuracy(self._mlp_model, verbose=self._verbose)
+        self._mlp_model.error_train = acc.compute_error(
+            self._train,
+            log_energy=log_energy,
+            path_output=file_path,
+            tag="train",
+        )
+        self._mlp_model.error_test = acc.compute_error_cv(
+            self._train,
+            inv_xtx,
             log_energy=log_energy,
             path_output=file_path,
             tag="test",

@@ -15,6 +15,7 @@ from pypolymlp.mlp_dev.core.features_attr import get_features_attr, get_num_feat
 from pypolymlp.mlp_dev.core.utils import check_memory_size_in_regression
 from pypolymlp.mlp_dev.core.utils_model_selection import (
     compute_rmse,
+    compute_rmse_cv,
     get_best_model,
     print_log,
 )
@@ -117,6 +118,25 @@ class PolymlpDevCore:
             x=x,
             y=y,
             check_singular=check_singular,
+        )
+
+    def compute_rmse_cv(
+        self,
+        coefs_single: np.ndarray,
+        scales: np.ndarray,
+        datasets: DatasetList,
+        inv_xtx: np.ndarray,
+        batch_size: Optional[int] = None,
+    ):
+        """Compute weighted RMSEs using cross-validation for a model coefficient."""
+        return compute_rmse_cv(
+            self._params,
+            coefs_single,
+            scales,
+            datasets,
+            inv_xtx,
+            verbose=self._verbose,
+            batch_size=batch_size,
         )
 
     def get_best_model(
