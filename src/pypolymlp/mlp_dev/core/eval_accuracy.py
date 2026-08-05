@@ -298,7 +298,7 @@ class PolymlpEvalAccuracy:
         errors = dict()
         for data in datasets:
             output_key = self._generate_output_key(data.name, tag=tag)
-            errors[data.name] = self.compute_error_cv_single(
+            errors[f"LOOCV:{data.name}"] = self.compute_error_cv_single(
                 data,
                 inv_xtx,
                 batch_size,
