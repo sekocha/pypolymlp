@@ -4,10 +4,17 @@ from typing import Optional
 
 import numpy as np
 
+from pypolymlp.core.dataset import DatasetList
 from pypolymlp.core.params import PolymlpParams
 from pypolymlp.core.utils import rmse
+from pypolymlp.mlp_dev.core.data_sequential import compute_features_single_batch
 from pypolymlp.mlp_dev.core.data_utils import PolymlpDataXY
 from pypolymlp.mlp_dev.core.dataclass import PolymlpDataMLP
+from pypolymlp.mlp_dev.core.features_attr import get_num_features
+from pypolymlp.mlp_dev.core.utils_sequential import (
+    get_auto_batch_size,
+    get_batch_slice,
+)
 
 
 def _check_singular(rmse: np.ndarray, error_threshold: float = 1e6):
@@ -86,6 +93,67 @@ def compute_rmse(
         return compute_rmse_seq(coefs_array, data_xy)
     else:
         return compute_rmse_standard(coefs_array, x, y)
+
+
+def compute_cv_score(
+    params: PolymlpParams,
+    coeff_array: np.ndarray,
+    scales: np.ndarray,
+    datasets: DatasetList,
+    inv_xtx: np.ndarray,
+    verbose: bool = False,
+    batch_size: int = 20,
+):
+    n_features = get_num_features(params)
+    if batch_size is None:
+        batch_size = get_auto_batch_size(
+            n_features,
+            verbose=verbose,
+        )
+
+    mse = 0
+    num_comp = 0
+    for data in datasets:
+        if verbose:
+            print("----- Dataset:", data.name, "-----", flush=True)
+        data.sort_dft()
+        n_str = len(data.structures)
+        begin_ids, end_ids = get_batch_slice(n_str, batch_size)
+        for begin, end in zip(begin_ids, end_ids):
+            if verbose:
+                print("Structures:", end, "/", n_str, flush=True)
+            sliced_data = data.slice_dft(begin, end)
+            x, x_w, x_w2, y_w, _ = compute_features_single_batch(
+                params,
+                sliced_data,
+                verbose=verbose,
+            )
+            x = x / scales
+            x_w = x_w / scales
+            x_w2 = x_w2 / scales
+
+            if verbose:
+                peak_mem = (x.shape[0] * x.shape[0]) * 8e-9
+                print(
+                    f" Matrix shape (Projection matrix) = ({x.shape[0]} {x.shape[0]})"
+                )
+                print(
+                    " Estimated peak memory allocation of projection matrix:",
+                    "{:.2f}".format(peak_mem),
+                    "(GB)",
+                    flush=True,
+                )
+                print(" Compute X @ (X.T @ X)^-1 @ X.T")
+            hat_h = x @ inv_xtx @ x_w2.T
+            hat_h_diag = -np.diagonal(hat_h)
+            hat_h_diag += 1
+
+            y_pred = np.dot(x_w, coeff_array)
+            mse += np.sum(((y_pred - y_w) / hat_h_diag) ** 2)
+            num_comp += y_pred.shape[0]
+
+    cv_value = mse / num_comp
+    return cv_value
 
 
 def get_best_model(

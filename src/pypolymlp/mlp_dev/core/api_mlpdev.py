@@ -14,6 +14,7 @@ from pypolymlp.mlp_dev.core.eval_accuracy import PolymlpEvalAccuracy
 from pypolymlp.mlp_dev.core.features_attr import get_features_attr, get_num_features
 from pypolymlp.mlp_dev.core.utils import check_memory_size_in_regression
 from pypolymlp.mlp_dev.core.utils_model_selection import (
+    compute_cv_score,
     compute_rmse,
     get_best_model,
     print_log,
@@ -117,6 +118,25 @@ class PolymlpDevCore:
             x=x,
             y=y,
             check_singular=check_singular,
+        )
+
+    def compute_cv_score(
+        self,
+        coeff_array: np.ndarray,
+        scales: np.ndarray,
+        datasets: DatasetList,
+        inv_xtx: np.ndarray,
+        batch_size: Optional[int] = None,
+    ):
+        """Compute CV score for model coefficients."""
+        return compute_cv_score(
+            self._params,
+            coeff_array,
+            scales,
+            datasets,
+            inv_xtx,
+            verbose=self._verbose,
+            batch_size=batch_size,
         )
 
     def get_best_model(
