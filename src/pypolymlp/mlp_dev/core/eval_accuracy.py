@@ -287,6 +287,7 @@ class PolymlpEvalAccuracy:
         path_output: bool = "./",
         tag: str = "train",
     ):
+        """Compute cross-validation errors and predicted values for all datasets."""
         n_features = get_num_features(self._prop.params)
         if batch_size is None:
             batch_size = get_auto_batch_size(
@@ -322,6 +323,7 @@ class PolymlpEvalAccuracy:
         log_stress: bool = False,
         path_output: bool = "./",
     ):
+        """Compute cross-validation errors and predicted values for single dataset."""
         dataset.sort_dft()
         n_str = len(dataset.structures)
         begin_ids, end_ids = get_batch_slice(n_str, batch_size)
@@ -358,7 +360,9 @@ class PolymlpEvalAccuracy:
             strs = sliced_data.structures
             n_total_atoms = [sum(st.n_atoms) for st in strs]
             h_e = hat_h_diag[ebegin : ebegin + len(sliced_data.energies)]
-            sl_pred_e = y_pred[ebegin : ebegin + len(sliced_data.energies)] / n_total_atoms
+            sl_pred_e = (
+                y_pred[ebegin : ebegin + len(sliced_data.energies)] / n_total_atoms
+            )
             sl_true_e = sliced_data.energies / n_total_atoms
             true_e.extend(sl_true_e.tolist())
             e_errors.extend(((sl_true_e - sl_pred_e) / h_e).tolist())
@@ -378,7 +382,9 @@ class PolymlpEvalAccuracy:
                     volumes = [st.volume for st in strs]
                     normalize = np.repeat(volumes, 6) / eV_to_GPa
                 h_s = hat_h_diag[sbegin : sbegin + len(sliced_data.stresses)]
-                sl_pred_s = y_pred[sbegin : sbegin + len(sliced_data.stresses)] / normalize
+                sl_pred_s = (
+                    y_pred[sbegin : sbegin + len(sliced_data.stresses)] / normalize
+                )
                 sl_true_s = sliced_data.stresses / normalize
                 true_s.extend(sl_true_s.tolist())
                 s_errors.extend(((sl_true_s - sl_pred_s) / h_s).tolist())

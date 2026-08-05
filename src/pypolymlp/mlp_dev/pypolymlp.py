@@ -681,7 +681,7 @@ class Pypolymlp:
         file_path: str = "./",
         verbose: Optional[bool] = None,
     ):
-        """Estimate prediction errors."""
+        """Estimate prediction errors using cross-validation."""
         if verbose is not None:
             self._verbose = verbose
 

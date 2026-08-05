@@ -15,7 +15,7 @@ def fit_cv(
     batch_size: Optional[int] = None,
     verbose: bool = False,
 ):
-    """Estimate MLP coefficients using the cross validation.
+    """Estimate MLP coefficients using the cross-validation.
 
     Parameters
     ----------
@@ -36,9 +36,9 @@ def fit_cv(
     if verbose:
         print("Regression:", flush=True)
 
+    cv_scores = []
     n_features = xtx.shape[0]
     coefs_array = np.zeros((n_features, len(alphas)))
-    cv_scores = []
     alpha_prev = 0.0
     for i, alpha in enumerate(alphas):
         if verbose:
@@ -48,19 +48,19 @@ def fit_cv(
             print("  Compute X.T @ X + alpha @ I", flush=True)
         xtx.flat[:: n_features + 1] += add
         if verbose:
-            print("  Calculate inverse matrix", flush=True)
+            print("  Compute inverse matrix", flush=True)
         inv_xtx = np.linalg.inv(xtx)
-        coeff_array = inv_xtx @ xty
-        cv_score = polymlp.compute_cv_score(
-            coeff_array,
+        coefs_single = inv_xtx @ xty
+        coefs_array[:, i] = coefs_single
+
+        rmse_cv = polymlp.compute_rmse_cv(
+            coefs_single,
             train_xy.scales,
             train,
             inv_xtx,
             batch_size=20,
         )
-
-        coefs_array[:, i] = inv_xtx @ xty
-        cv_scores.append(cv_score)
+        cv_scores.append(rmse_cv)
         alpha_prev = alpha
 
     if verbose:

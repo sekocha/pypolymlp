@@ -95,15 +95,16 @@ def compute_rmse(
         return compute_rmse_standard(coefs_array, x, y)
 
 
-def compute_cv_score(
+def compute_rmse_cv(
     params: PolymlpParams,
-    coeff_array: np.ndarray,
+    coefs_single: np.ndarray,
     scales: np.ndarray,
     datasets: DatasetList,
     inv_xtx: np.ndarray,
     verbose: bool = False,
     batch_size: int = 20,
 ):
+    """Compute weighted RMSEs using the cross-validation method."""
     n_features = get_num_features(params)
     if batch_size is None:
         batch_size = get_auto_batch_size(
@@ -111,7 +112,7 @@ def compute_cv_score(
             verbose=verbose,
         )
 
-    mse = 0
+    sum_se = 0
     num_comp = 0
     for data in datasets:
         if verbose:
@@ -133,27 +134,26 @@ def compute_cv_score(
             x_w2 = x_w2 / scales
 
             if verbose:
-                peak_mem = (x.shape[0] * x.shape[0]) * 8e-9
                 print(
                     f" Matrix shape (Projection matrix) = ({x.shape[0]} {x.shape[0]})"
                 )
-                print(
-                    " Estimated peak memory allocation of projection matrix:",
-                    "{:.2f}".format(peak_mem),
-                    "(GB)",
-                    flush=True,
-                )
-                print(" Compute X @ (X.T @ X)^-1 @ X.T")
+                # peak_mem = (x.shape[0] * x.shape[0]) * 8e-9
+                # print(
+                #     " Estimated peak memory allocation of projection matrix:",
+                #     "{:.2f}".format(peak_mem),
+                #     "(GB)",
+                #     flush=True,
+                # )
+                print(" Compute X @ (X.T @ X + alpha @ I)^-1 @ X.T")
             hat_h = x @ inv_xtx @ x_w2.T
             hat_h_diag = -np.diagonal(hat_h)
             hat_h_diag += 1
 
-            y_pred = np.dot(x_w, coeff_array)
-            mse += np.sum(((y_pred - y_w) / hat_h_diag) ** 2)
+            y_pred = np.dot(x_w, coefs_single)
+            sum_se += np.sum(((y_pred - y_w) / hat_h_diag) ** 2)
             num_comp += y_pred.shape[0]
 
-    cv_value = mse / num_comp
-    return cv_value
+    return np.sqrt(sum_se / num_comp)
 
 
 def get_best_model(
