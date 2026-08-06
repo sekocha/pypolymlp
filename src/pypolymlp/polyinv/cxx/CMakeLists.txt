@@ -50,6 +50,7 @@ message(STATUS "GSL include dir: ${GSL_INCLUDE_DIR}")
 find_package(OpenMP)
 
 set(SRC_FILES
+    src/projector/precondition.cpp
     src/projector/projector.cpp
     src/python/pybind11_mlp.cpp
 )
