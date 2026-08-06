@@ -51,6 +51,8 @@ class Precondition{
     void order4();
     void order5();
     void order6();
+    void order7();
+    void order8();
 
     public:
 

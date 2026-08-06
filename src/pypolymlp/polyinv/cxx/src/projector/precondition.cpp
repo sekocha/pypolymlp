@@ -31,6 +31,7 @@ Precondition::Precondition(const vector1i& l_list_i)
     else if (order == 4) order4();
     else if (order == 5) order5();
     else if (order == 6) order6();
+    else if (order == 7) order7();
 
 }
 Precondition::~Precondition(){}
@@ -161,6 +162,38 @@ void Precondition::order6(){
         }
     }
 }
+
+void Precondition::order7(){
+
+    const int l1 = l_list[0];
+    const int l2 = l_list[1];
+    const int l3 = l_list[2];
+    const int l4 = l_list[3];
+    const int l5 = l_list[4];
+    const int l6 = l_list[5];
+    const int l7 = l_list[6];
+
+    row.clear();
+    map_m_to_index7.clear();
+    int seq(0);
+    for (int m1=-l1; m1<=l1; ++m1)
+    for (int m2=-l2; m2<=l2; ++m2)
+    for (int m3=-l3; m3<=l3; ++m3)
+    for (int m4=-l4; m4<=l4; ++m4)
+    for (int m5=-l5; m5<=l5; ++m5)
+    for (int m6=-l6; m6<=l6; ++m6){
+        vector1i mv1 = {m1, m2, m3, m4, m5, m6};
+        int m7;
+        if (check_sum(mv1, l7, m7)){
+            mv1.emplace_back(m7);
+            int index = lm_to_matrix_index(mv1);
+            row.emplace_back(index);
+            map_m_to_index7[{m1, m2, m3, m4, m5, m6}] = seq;
+            ++seq;
+        }
+    }
+}
+
 
 int Precondition::lm_to_matrix_index(const vector1i& m_array) {
     /***

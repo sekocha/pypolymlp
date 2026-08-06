@@ -23,10 +23,6 @@
 typedef std::map<tuple2, double> map_tuple2_d;
 typedef std::map<tuple3, double> map_tuple3_d;
 typedef std::map<tuple4, double> map_tuple4_d;
-typedef std::map<tuple5, double> map_tuple5_d;
-typedef std::map<tuple6, double> map_tuple6_d;
-typedef std::map<tuple7, double> map_tuple7_d;
-typedef std::map<tuple8, double> map_tuple8_d;
 
 
 class Projector{
@@ -44,6 +40,26 @@ class Projector{
     void order4(const vector1i& l_list);
     void order5(const vector1i& l_list);
     void order6(const vector1i& l_list);
+    void order7(const vector1i& l_list);
+
+    void set_inter_prod_first(
+        map_tuple3_d& cleb,
+        const int l1,
+        const int l2,
+        const vector1i& list_m,
+        const vector1i& list_mp,
+        vector1d& prod_lq,
+        vector1i& list_lq);
+
+    void set_inter_prod(
+        const vector1d& prod_lq_prev,
+        const vector1i& list_lq_prev,
+        map_tuple4_d& cleb,
+        const int l,
+        const vector1i& list_m,
+        const vector1i& list_mp,
+        vector1d& prod_lq,
+        vector1i& list_lq);
 
     public:
 

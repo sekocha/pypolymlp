@@ -1,5 +1,4 @@
 /****************************************************************************
-
         Copyright (C) 2026 Atsuto Seko
                 seko@cms.mtl.kyoto-u.ac.jp
 
@@ -33,6 +32,7 @@ void Projector::build_projector(const vector1i& l_list){
     else if (order == 4) order4(l_list);
     else if (order == 5) order5(l_list);
     else if (order == 6) order6(l_list);
+    else if (order == 7) order7(l_list);
 }
 
 
@@ -83,9 +83,11 @@ void Projector::order3(const vector1i& l_list){
 
     auto& map_m_to_index3 = pre.get_map_m_to_index3();
 
-    std::map<std::tuple<int, int>, double> cleb1;
-    for (int m1=-l1; m1<=l1; ++m1)
+    map_tuple2_d cleb1;
+    for (int m1=0; m1<=l1; ++m1)
     for (int m2=-l2; m2<=l2; ++m2){
+        if (abs(m1+m2) > l3)
+            continue;
         cleb1[{m1, m2}] = clebsch_gordan(l1, l2, l3, m1, m2, m1+m2);
     }
 
@@ -94,22 +96,28 @@ void Projector::order3(const vector1i& l_list){
     #ifdef _OPENMP
     #pragma omp parallel for collapse(3) schedule(dynamic)
     #endif
-    for (int m1=-l1; m1<=l1; ++m1)
-    for (int m1p=-l1; m1p<=l1; ++m1p)
+    for (int m1=0; m1<=l1; ++m1)
+    for (int m1p=0; m1p<=l1; ++m1p)
     for (int m2=-l2; m2<=l2; ++m2){
+        if (abs(m1+m2) > l3)
+            continue;
         vector1i mv1 = {m1, m2};
         int m3;
         bool nonzero1 = check_sum(mv1, l3, m3);
         if (!nonzero1)
             continue;
         int index = map_m_to_index3[{m1, m2}];
+        int index2 = map_m_to_index3[{-m1, -m2}];
         for (int m2p=-l2; m2p<=l2; ++m2p){
+            if (abs(m1p+m2p) > l3)
+                continue;
             vector1i mv2 = {m1p, m2p};
             int m3p;
             bool nonzero2 = check_sum(mv2, l3, m3p);
             if (!nonzero2)
                 continue;
             int index_p = map_m_to_index3[{m1p, m2p}];
+            int index_p2 = map_m_to_index3[{-m1p, -m2p}];
             if (index > index_p)
                 continue;
 
@@ -121,8 +129,14 @@ void Projector::order3(const vector1i& l_list){
             double num = cg1 * cg2 * inv_norm;
 
             core(index, index_p) = num;
+            core(index, index_p2) = num;
+            core(index2, index_p) = num;
+            core(index2, index_p2) = num;
             if (index != index_p){
                 core(index_p, index) = num;
+                core(index_p, index2) = num;
+                core(index_p2, index) = num;
+                core(index_p2, index2) = num;
             }
         }
     }
@@ -159,8 +173,12 @@ void Projector::order4(const vector1i& l_list){
     for (int l = abs(l1-l2); l <= l1+l2; ++l)
     for (int m1=0; m1<=l1; ++m1)
     for (int m2=-l2; m2<=l2; ++m2){
+        if (abs(m1+m2) > l)
+            continue;
         cleb1[{l, m1, m2}] = clebsch_gordan(l1, l2, l, m1, m2, m1+m2);
         for (int m3=-l3; m3<=l3; ++m3){
+            if (abs(m1+m2+m3) > l4)
+                continue;
             cleb2[{l, m3, m1+m2}] = clebsch_gordan(l3, l, l4, m3, m1+m2, m1+m2+m3);
         }
     }
@@ -176,32 +194,7 @@ void Projector::order4(const vector1i& l_list){
     for (int m2p=-l2; m2p<=l2; ++m2p){
         vector1d prod_lq1;
         vector1i list_lq1;
-        for (int l = abs(l1-l2); l < l1+l2+1; ++l){
-            if (abs(m1+m2) > l)
-                continue;
-            double cg1 = cleb1[{l, m1, m2}];
-            double cg2 = cleb1[{l, m1p, m2p}];
-            prod_lq1.emplace_back(cg1 * cg2);
-            list_lq1.emplace_back(l);
-        }
-
-        //int msum = m1 + m2;
-        //int msump = m1p + m2p;
-        //int lower = std::max(-l3, -l4 - msum);
-        //int upper = std::min(l3, l4 - msum);
-        //int lowerp = std::max(-l3, -l4 - msump);
-        //int upperp = std::min(l3, l4 - msump);
-        //for (int m3=lower; m3<=upper; ++m3){
-        //    int m4 = - (m1 + m2 + m3);
-        //    int index = map_m_to_index4[{m1, m2, m3}];
-        //    int index2 = map_m_to_index4[{-m1, -m2, -m3}];
-        //    for (int m3p=lowerp; m3<=upperp; ++m3p){
-        //        int m4p = - (m1p + m2p + m3p);
-        //        int index_p = map_m_to_index4[{m1p, m2p, m3p}];
-        //        int index_p2 = map_m_to_index4[{-m1p, -m2p, -m3p}];
-        //        if (index > index_p)
-        //            continue;
-
+        set_inter_prod_first(cleb1, l1, l2, {m1, m2}, {m1p, m2p}, prod_lq1, list_lq1);
         for (int m3=-l3; m3<=l3; ++m3){
             vector1i mv1 = {m1, m2, m3};
             int m4;
@@ -216,9 +209,9 @@ void Projector::order4(const vector1i& l_list){
                 if (!check_sum(mv2, l4, m4p))
                     continue;
                 int index_p = map_m_to_index4[{m1p, m2p, m3p}];
-                int index_p2 = map_m_to_index4[{-m1p, -m2p, -m3p}];
                 if (index > index_p)
                     continue;
+                int index_p2 = map_m_to_index4[{-m1p, -m2p, -m3p}];
 
                 double sign = ((abs(m4 - m4p) & 1) == 0) ? 1.0 : -1.0;
                 double inv_norm = sign / (2*l4+1);
@@ -278,10 +271,10 @@ void Projector::order5(const vector1i& l_list){
 
     auto& map_m_to_index5 = pre.get_map_m_to_index5();
 
-    std::map<std::tuple<int, int, int>, double> cleb1, cleb3;
-    std::map<std::tuple<int, int, int, int>, double> cleb2;
+    map_tuple3_d cleb1, cleb3;
+    map_tuple4_d cleb2;
     for (int lq1 = abs(l1-l2); lq1 < l1+l2+1; ++lq1)
-    for (int m1=-l1; m1<=l1; ++m1)
+    for (int m1=0; m1<=l1; ++m1)
     for (int m2=-l2; m2<=l2; ++m2){
         if (abs(m1+m2) > lq1)
             continue;
@@ -307,57 +300,32 @@ void Projector::order5(const vector1i& l_list){
     #ifdef _OPENMP
     #pragma omp parallel for collapse(4) schedule(dynamic)
     #endif
-    for (int m1=-l1; m1<=l1; ++m1)
-    for (int m1p=-l1; m1p<=l1; ++m1p)
+    for (int m1=0; m1<=l1; ++m1)
+    for (int m1p=0; m1p<=l1; ++m1p)
     for (int m2=-l2; m2<=l2; ++m2)
     for (int m2p=-l2; m2p<=l2; ++m2p){
         vector1d prod_lq1;
         vector1i list_lq1;
-        //int M1 = abs(m1 + m2);
-        //int M2 = abs(m1p + m2p);
-        //int lq_min = std::max({abs(l1-l2), M1, M2});
-        for (int lq1 = abs(l1-l2); lq1 < l1+l2+1; ++lq1){
-        //for (int lq1 = lq_min; lq1 < l1+l2+1; ++lq1){
-            if (abs(m1+m2) > lq1)
-                continue;
-            if (abs(m1p+m2p) > lq1)
-                continue;
-            double cg1 = cleb1[{lq1,m1,m2}];
-            double cg2 = cleb1[{lq1,m1p,m2p}];
-            double prod = cg1 * cg2;
-            prod_lq1.emplace_back(prod);
-            list_lq1.emplace_back(lq1);
-        }
+        set_inter_prod_first(cleb1, l1, l2, {m1, m2}, {m1p, m2p}, prod_lq1, list_lq1);
         for (int m3=-l3; m3<=l3; ++m3)
         for (int m3p=-l3; m3p<=l3; ++m3p){
             vector1d prod_lq2;
             vector1i list_lq2;
-            int cnt(0);
-            for (auto lq1: list_lq1){
-                double prod1 = prod_lq1[cnt];
-                for (int lq2 = abs(l3-lq1); lq2 < l3+lq1+1; ++lq2){
-                    if (abs(m1+m2+m3) > lq2)
-                        continue;
-                    if (abs(m1p+m2p+m3p) > lq2)
-                        continue;
-                    double cg3 = cleb2[{lq1,lq2,m3,m1+m2}];
-                    double cg4 = cleb2[{lq1,lq2,m3p,m1p+m2p}];
-                    double prod2 = prod1 * cg3 * cg4;
-                    prod_lq2.emplace_back(prod2);
-                    list_lq2.emplace_back(lq2);
-                }
-                ++cnt;
-            }
+            set_inter_prod(prod_lq1, list_lq1, cleb2, l3,
+                {m1, m2, m3}, {m1p, m2p, m3p},
+                prod_lq2, list_lq2);
             for (int m4=-l4; m4<=l4; ++m4){
                 int m5;
                 if (!check_sum({m1, m2, m3, m4}, l5, m5))
                     continue;
                 int index = map_m_to_index5[{m1, m2, m3, m4}];
+                int index2 = map_m_to_index5[{-m1, -m2, -m3, -m4}];
                 for (int m4p=-l4; m4p<=l4; ++m4p){
                     int m5p;
                     if (!check_sum({m1p, m2p, m3p, m4p}, l5, m5p))
                         continue;
                     int index_p = map_m_to_index5[{m1p, m2p, m3p, m4p}];
+                    int index_p2 = map_m_to_index5[{-m1p, -m2p, -m3p, -m4p}];
                     if (index > index_p)
                         continue;
 
@@ -376,8 +344,14 @@ void Projector::order5(const vector1i& l_list){
                     num *= inv_norm;
 
                     core(index, index_p) = num;
+                    core(index, index_p2) = num;
+                    core(index2, index_p) = num;
+                    core(index2, index_p2) = num;
                     if (index != index_p){
                         core(index_p, index) = num;
+                        core(index_p, index2) = num;
+                        core(index_p2, index) = num;
+                        core(index_p2, index2) = num;
                     }
                 }
             }
@@ -421,10 +395,10 @@ void Projector::order6(const vector1i& l_list){
 
     auto& map_m_to_index6 = pre.get_map_m_to_index6();
 
-    std::map<std::tuple<int, int, int>, double> cleb1, cleb4;
-    std::map<std::tuple<int, int, int, int>, double> cleb2, cleb3;
+    map_tuple3_d cleb1, cleb4;
+    map_tuple4_d cleb2, cleb3;
     for (int lq1 = abs(l1-l2); lq1 < l1+l2+1; ++lq1)
-    for (int m1=-l1; m1<=l1; ++m1)
+    for (int m1=0; m1<=l1; ++m1)
     for (int m2=-l2; m2<=l2; ++m2){
         if (abs(m1+m2) > lq1)
             continue;
@@ -457,63 +431,29 @@ void Projector::order6(const vector1i& l_list){
     #ifdef _OPENMP
     #pragma omp parallel for collapse(4) schedule(dynamic)
     #endif
-    for (int m1=-l1; m1<=l1; ++m1)
-    for (int m1p=-l1; m1p<=l1; ++m1p)
+    for (int m1=0; m1<=l1; ++m1)
+    for (int m1p=0; m1p<=l1; ++m1p)
     for (int m2=-l2; m2<=l2; ++m2)
     for (int m2p=-l2; m2p<=l2; ++m2p){
         vector1d prod_lq1;
         vector1i list_lq1;
-        for (int lq1 = abs(l1-l2); lq1 < l1+l2+1; ++lq1){
-            if (abs(m1+m2) > lq1)
-                continue;
-            if (abs(m1p+m2p) > lq1)
-                continue;
-            double cg1 = cleb1[{lq1,m1,m2}];
-            double cg2 = cleb1[{lq1,m1p,m2p}];
-            double prod = cg1 * cg2;
-            prod_lq1.emplace_back(prod);
-            list_lq1.emplace_back(lq1);
-        }
+        set_inter_prod_first(cleb1, l1, l2, {m1, m2}, {m1p, m2p}, prod_lq1, list_lq1);
         for (int m3=-l3; m3<=l3; ++m3)
         for (int m3p=-l3; m3p<=l3; ++m3p){
             vector1d prod_lq2;
             vector1i list_lq2;
-            int cnt(0);
-            for (auto lq1: list_lq1){
-                double prod1 = prod_lq1[cnt];
-                for (int lq2 = abs(l3-lq1); lq2 < l3+lq1+1; ++lq2){
-                    if (abs(m1+m2+m3) > lq2)
-                        continue;
-                    if (abs(m1p+m2p+m3p) > lq2)
-                        continue;
-                    double cg3 = cleb2[{lq1,lq2,m3,m1+m2}];
-                    double cg4 = cleb2[{lq1,lq2,m3p,m1p+m2p}];
-                    double prod2 = prod1 * cg3 * cg4;
-                    prod_lq2.emplace_back(prod2);
-                    list_lq2.emplace_back(lq2);
-                }
-                ++cnt;
-            }
+            set_inter_prod(prod_lq1, list_lq1, cleb2, l3,
+                {m1, m2, m3}, {m1p, m2p, m3p},
+                prod_lq2, list_lq2);
+
             for (int m4=-l4; m4<=l4; ++m4)
             for (int m4p=-l4; m4p<=l4; ++m4p){
                 vector1d prod_lq3;
                 vector1i list_lq3;
-                int cnt2(0);
-                for (auto lq2: list_lq2){
-                    double prod2 = prod_lq2[cnt2];
-                    for (int lq3 = abs(l4-lq2); lq3 < l4+lq2+1; ++lq3){
-                        if (abs(m1+m2+m3+m4) > lq3)
-                            continue;
-                        if (abs(m1p+m2p+m3p+m4p) > lq3)
-                            continue;
-                        double cg5 = cleb3[{lq2,lq3,m4,m1+m2+m3}];
-                        double cg6 = cleb3[{lq2,lq3,m4p,m1p+m2p+m3p}];
-                        double prod3 = prod2 * cg5 * cg6;
-                        prod_lq3.emplace_back(prod3);
-                        list_lq3.emplace_back(lq3);
-                    }
-                    ++cnt2;
-                }
+                set_inter_prod(prod_lq2, list_lq2, cleb3, l4,
+                    {m1, m2, m3, m4}, {m1p, m2p, m3p, m4p},
+                    prod_lq3, list_lq3);
+
                 for (int m5=-l5; m5<=l5; ++m5){
                     vector1i mv1 = {m1, m2, m3, m4, m5};
                     int m6;
@@ -521,6 +461,7 @@ void Projector::order6(const vector1i& l_list){
                     if (!nonzero1)
                         continue;
                     int index = map_m_to_index6[{m1, m2, m3, m4, m5}];
+                    int index2 = map_m_to_index6[{-m1, -m2, -m3, -m4, -m5}];
                     for (int m5p=-l5; m5p<=l5; ++m5p){
                         vector1i mv2 = {m1p, m2p, m3p, m4p, m5p};
                         int m6p;
@@ -528,6 +469,7 @@ void Projector::order6(const vector1i& l_list){
                         if (!nonzero2)
                             continue;
                         int index_p = map_m_to_index6[{m1p, m2p, m3p, m4p, m5p}];
+                        int index_p2 = map_m_to_index6[{-m1p, -m2p, -m3p, -m4p, -m5p}];
                         if (index > index_p)
                             continue;
 
@@ -546,14 +488,212 @@ void Projector::order6(const vector1i& l_list){
                         num *= inv_norm;
 
                         core(index, index_p) = num;
+                        core(index, index_p2) = num;
+                        core(index2, index_p) = num;
+                        core(index2, index_p2) = num;
                         if (index != index_p){
                             core(index_p, index) = num;
+                            core(index_p, index2) = num;
+                            core(index_p2, index) = num;
+                            core(index_p2, index2) = num;
                         }
                     }
                 }
             }
         }
     }
+}
+
+void Projector::order7(const vector1i& l_list){
+
+    const int l1 = l_list[0];
+    const int l2 = l_list[1];
+    const int l3 = l_list[2];
+    const int l4 = l_list[3];
+    const int l5 = l_list[4];
+    const int l6 = l_list[5];
+    const int l7 = l_list[6];
+
+    auto& map_m_to_index7 = pre.get_map_m_to_index7();
+
+    map_tuple3_d cleb1, cleb5;
+    map_tuple4_d cleb2, cleb3, cleb4;
+    for (int lq1 = abs(l1-l2); lq1 < l1+l2+1; ++lq1)
+    for (int m1=0; m1<=l1; ++m1)
+    for (int m2=-l2; m2<=l2; ++m2){
+        if (abs(m1+m2) > lq1)
+            continue;
+        cleb1[{lq1,m1,m2}] = clebsch_gordan(l1,l2,lq1,m1,m2,m1+m2);
+        for (int lq2 = abs(l3-lq1); lq2 < l3+lq1+1; ++lq2)
+        for (int m3=-l3; m3<=l3; ++m3){
+            if (abs(m1+m2+m3) > lq2)
+                continue;
+            cleb2[{lq1,lq2,m3,m1+m2}]
+                = clebsch_gordan(l3,lq1,lq2,m3,m1+m2,m1+m2+m3);
+            for (int lq3 = abs(l4-lq2); lq3 < l4+lq2+1; ++lq3)
+            for (int m4=-l4; m4<=l4; ++m4){
+                if (abs(m1+m2+m3+m4) > lq3)
+                    continue;
+                cleb3[{lq2,lq3,m4,m1+m2+m3}]
+                    = clebsch_gordan(l4,lq2,lq3,m4,m1+m2+m3,m1+m2+m3+m4);
+
+                for (int lq4 = abs(l5-lq3); lq4 < l5+lq3+1; ++lq4)
+                for (int m5=-l5; m5<=l5; ++m5){
+                    if (abs(m1+m2+m3+m4+m5) > lq4)
+                        continue;
+                    cleb4[{lq3,lq4,m5,m1+m2+m3+m4}]
+                        = clebsch_gordan(l5,lq3,lq4,m5,m1+m2+m3+m4,m1+m2+m3+m4+m5);
+
+                    for (int m6=-l6; m6<=l6; ++m6){
+                        int m7;
+                        if (!check_sum({m1, m2, m3, m4, m5, m6}, l7, m7))
+                            continue;
+                        cleb5[{lq4,m6,m1+m2+m3+m4+m5}] = clebsch_gordan(
+                            l6,lq4,l7,m6,m1+m2+m3+m4+m5,m1+m2+m3+m4+m5+m6);
+                    }
+                }
+            }
+        }
+    }
+
+    core = Eigen::MatrixXd::Zero(core_size, core_size);
+
+    #ifdef _OPENMP
+    #pragma omp parallel for collapse(4) schedule(dynamic)
+    #endif
+    for (int m1=0; m1<=l1; ++m1)
+    for (int m1p=0; m1p<=l1; ++m1p)
+    for (int m2=-l2; m2<=l2; ++m2)
+    for (int m2p=-l2; m2p<=l2; ++m2p){
+        vector1d prod_lq1;
+        vector1i list_lq1;
+        set_inter_prod_first(cleb1, l1, l2, {m1, m2}, {m1p, m2p}, prod_lq1, list_lq1);
+        for (int m3=-l3; m3<=l3; ++m3)
+        for (int m3p=-l3; m3p<=l3; ++m3p){
+            vector1d prod_lq2;
+            vector1i list_lq2;
+            set_inter_prod(prod_lq1, list_lq1, cleb2, l3,
+                {m1, m2, m3}, {m1p, m2p, m3p},
+                prod_lq2, list_lq2);
+            for (int m4=-l4; m4<=l4; ++m4)
+            for (int m4p=-l4; m4p<=l4; ++m4p){
+                vector1d prod_lq3;
+                vector1i list_lq3;
+                set_inter_prod(prod_lq2, list_lq2, cleb3, l4,
+                    {m1, m2, m3, m4}, {m1p, m2p, m3p, m4p},
+                    prod_lq3, list_lq3);
+                for (int m5=-l5; m5<=l5; ++m5)
+                for (int m5p=-l5; m5p<=l5; ++m5p){
+                    vector1d prod_lq4;
+                    vector1i list_lq4;
+                    set_inter_prod(prod_lq3, list_lq3, cleb4, l5,
+                        {m1, m2, m3, m4, m5}, {m1p, m2p, m3p, m4p, m5p},
+                        prod_lq4, list_lq4);
+                    for (int m6=-l6; m6<=l6; ++m6){
+                        vector1i mv1 = {m1, m2, m3, m4, m5, m6};
+                        int m7;
+                        bool nonzero1 = check_sum(mv1, l7, m7);
+                        if (!nonzero1)
+                            continue;
+                        int index = map_m_to_index7[{m1, m2, m3, m4, m5, m6}];
+                        int index2 = map_m_to_index7[{-m1, -m2, -m3, -m4, -m5, -m6}];
+                        for (int m6p=-l6; m6p<=l6; ++m6p){
+                            vector1i mv2 = {m1p, m2p, m3p, m4p, m5p, m6p};
+                            int m7p;
+                            bool nonzero2 = check_sum(mv2, l7, m7p);
+                            if (!nonzero2)
+                                continue;
+                            int index_p = map_m_to_index7[
+                                {m1p, m2p, m3p, m4p, m5p, m6p}];
+                            int index_p2 = map_m_to_index7[
+                                {-m1p, -m2p, -m3p, -m4p, -m5p, -m6p}];
+                            if (index > index_p)
+                                continue;
+
+                            double sign = ((abs(m7 - m7p) & 1) == 0) ? 1.0 : -1.0;
+                            double inv_norm = sign / (2*l7+1);
+
+                            double num(0.0);
+                            int cnt4(0);
+                            for (auto lq4: list_lq4){
+                                double prod4 = prod_lq4[cnt4];
+                                double cg9 = cleb5[{lq4,m6,m1+m2+m3+m4+m5}];
+                                double cg10 = cleb5[{lq4,m6p,m1p+m2p+m3p+m4p+m5p}];
+                                num += prod4 * cg9 * cg10;
+                                ++cnt4;
+                            }
+                            num *= inv_norm;
+
+                            core(index, index_p) = num;
+                            core(index, index_p2) = num;
+                            core(index2, index_p) = num;
+                            core(index2, index_p2) = num;
+                            if (index != index_p){
+                                core(index_p, index) = num;
+                                core(index_p, index2) = num;
+                                core(index_p2, index) = num;
+                                core(index_p2, index2) = num;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+void Projector::set_inter_prod_first(
+    map_tuple3_d& cleb,
+    const int l1,
+    const int l2,
+    const vector1i& list_m,
+    const vector1i& list_mp,
+    vector1d& prod_lq,
+    vector1i& list_lq
+){
+    int sum_m = std::accumulate(list_m.begin(), list_m.end(), 0);
+    int sum_mp = std::accumulate(list_mp.begin(), list_mp.end(), 0);
+    for (int lq1 = abs(l1-l2); lq1 <= l1 + l2; ++lq1){
+        if (abs(sum_m) > lq1 or abs(sum_mp) > lq1)
+            continue;
+        double cg1 = cleb[{lq1, list_m[0], list_m[1]}];
+        double cg2 = cleb[{lq1, list_mp[0], list_mp[1]}];
+        double prod = cg1 * cg2;
+        prod_lq.emplace_back(prod);
+        list_lq.emplace_back(lq1);
+    }
+}
+
+void Projector::set_inter_prod(
+    const vector1d& prod_lq_prev,
+    const vector1i& list_lq_prev,
+    map_tuple4_d& cleb,
+    const int l,
+    const vector1i& list_m,
+    const vector1i& list_mp,
+    vector1d& prod_lq,
+    vector1i& list_lq
+){
+    int sum_m = std::accumulate(list_m.begin(), list_m.end(), 0);
+    int sum_mp = std::accumulate(list_mp.begin(), list_mp.end(), 0);
+    int cnt(0);
+    for (auto lq1: list_lq_prev){
+        double prod1 = prod_lq_prev[cnt];
+        for (int lq2 = abs(l - lq1); lq2 <= l + lq1; ++lq2){
+            if (abs(sum_m) > lq2 or abs(sum_mp) > lq2)
+                continue;
+
+            int m_end = *(list_m.end()-1);
+            int mp_end = *(list_mp.end()-1);
+            double cg1 = cleb[{lq1, lq2, m_end, sum_m - m_end}];
+            double cg2 = cleb[{lq1, lq2, mp_end, sum_mp - mp_end}];
+            double prod2 = prod1 * cg1 * cg2;
+            prod_lq.emplace_back(prod2);
+            list_lq.emplace_back(lq2);
+        }
+        ++cnt;
+    }
+
 }
 
 double Projector::clebsch_gordan
