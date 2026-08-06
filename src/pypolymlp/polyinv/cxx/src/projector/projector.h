@@ -61,6 +61,21 @@ class Projector{
         vector1d& prod_lq,
         vector1i& list_lq);
 
+    double set_final_prod(
+        const vector1d& prod_lq_prev,
+        const vector1i& list_lq_prev,
+        map_tuple3_d& cleb,
+        const vector1i& list_m,
+        const vector1i& list_mp);
+
+    void assign_core(
+        Eigen::MatrixXd& core,
+        const double num,
+        const int index,
+        const int index_p,
+        const int index2,
+        const int index_p2);
+
     public:
 
     Projector();

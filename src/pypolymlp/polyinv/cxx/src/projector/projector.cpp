@@ -41,23 +41,21 @@ void Projector::order2(const vector1i& l_list){
     const int l1 = l_list[0];
     const int l2 = l_list[1];
 
-    auto& map_m_to_index2 = pre.get_map_m_to_index2();
+    auto& map_m = pre.get_map_m_to_index2();
     core = Eigen::MatrixXd::Zero(core_size, core_size);
 
     for (int m1=-l1; m1<=l1; ++m1){
-        vector1i mv1 = {m1};
         int m2;
-        bool nonzero1 = check_sum(mv1, l2, m2);
+        bool nonzero1 = check_sum({m1}, l2, m2);
         if (!nonzero1)
             continue;
-        int index = map_m_to_index2[m1];
+        int index = map_m[m1];
         for (int m1p=-l1; m1p<=l1; ++m1p){
-            vector1i mv2 = {m1p};
             int m2p;
-            bool nonzero2 = check_sum(mv2, l2, m2p);
+            bool nonzero2 = check_sum({m1p}, l2, m2p);
             if (!nonzero2)
                 continue;
-            int index_p = map_m_to_index2[m1p];
+            int index_p = map_m[m1p];
             if (index > index_p)
                 continue;
 
@@ -81,8 +79,6 @@ void Projector::order3(const vector1i& l_list){
     const int l2 = l_list[1];
     const int l3 = l_list[2];
 
-    auto& map_m_to_index3 = pre.get_map_m_to_index3();
-
     map_tuple2_d cleb1;
     for (int m1=0; m1<=l1; ++m1)
     for (int m2=-l2; m2<=l2; ++m2){
@@ -91,6 +87,7 @@ void Projector::order3(const vector1i& l_list){
         cleb1[{m1, m2}] = clebsch_gordan(l1, l2, l3, m1, m2, m1+m2);
     }
 
+    auto& map_m = pre.get_map_m_to_index3();
     core = Eigen::MatrixXd::Zero(core_size, core_size);
 
     #ifdef _OPENMP
@@ -99,25 +96,19 @@ void Projector::order3(const vector1i& l_list){
     for (int m1=0; m1<=l1; ++m1)
     for (int m1p=0; m1p<=l1; ++m1p)
     for (int m2=-l2; m2<=l2; ++m2){
-        if (abs(m1+m2) > l3)
-            continue;
-        vector1i mv1 = {m1, m2};
         int m3;
-        bool nonzero1 = check_sum(mv1, l3, m3);
+        bool nonzero1 = check_sum({m1, m2}, l3, m3);
         if (!nonzero1)
             continue;
-        int index = map_m_to_index3[{m1, m2}];
-        int index2 = map_m_to_index3[{-m1, -m2}];
+        int index = map_m[{m1, m2}];
+        int index2 = map_m[{-m1, -m2}];
         for (int m2p=-l2; m2p<=l2; ++m2p){
-            if (abs(m1p+m2p) > l3)
-                continue;
-            vector1i mv2 = {m1p, m2p};
             int m3p;
-            bool nonzero2 = check_sum(mv2, l3, m3p);
+            bool nonzero2 = check_sum({m1p, m2p}, l3, m3p);
             if (!nonzero2)
                 continue;
-            int index_p = map_m_to_index3[{m1p, m2p}];
-            int index_p2 = map_m_to_index3[{-m1p, -m2p}];
+            int index_p = map_m[{m1p, m2p}];
+            int index_p2 = map_m[{-m1p, -m2p}];
             if (index > index_p)
                 continue;
 
@@ -127,17 +118,7 @@ void Projector::order3(const vector1i& l_list){
             double cg1 = cleb1[{m1, m2}];
             double cg2 = cleb1[{m1p, m2p}];
             double num = cg1 * cg2 * inv_norm;
-
-            core(index, index_p) = num;
-            core(index, index_p2) = num;
-            core(index2, index_p) = num;
-            core(index2, index_p2) = num;
-            if (index != index_p){
-                core(index_p, index) = num;
-                core(index_p, index2) = num;
-                core(index_p2, index) = num;
-                core(index_p2, index2) = num;
-            }
+            assign_core(core, num, index, index_p, index2, index_p2);
         }
     }
 }
@@ -167,22 +148,23 @@ void Projector::order4(const vector1i& l_list){
     const int l3 = l_list[2];
     const int l4 = l_list[3];
 
-    auto& map_m_to_index4 = pre.get_map_m_to_index4();
-
     map_tuple3_d cleb1, cleb2;
     for (int l = abs(l1-l2); l <= l1+l2; ++l)
     for (int m1=0; m1<=l1; ++m1)
     for (int m2=-l2; m2<=l2; ++m2){
-        if (abs(m1+m2) > l)
+        int sum2 = m1 + m2;
+        if (abs(sum2) > l)
             continue;
-        cleb1[{l, m1, m2}] = clebsch_gordan(l1, l2, l, m1, m2, m1+m2);
+        cleb1[{l, m1, m2}] = clebsch_gordan(l1, l2, l, m1, m2, sum2);
         for (int m3=-l3; m3<=l3; ++m3){
-            if (abs(m1+m2+m3) > l4)
+            int sum3 = sum2 + m3;
+            if (abs(sum3) > l4)
                 continue;
-            cleb2[{l, m3, m1+m2}] = clebsch_gordan(l3, l, l4, m3, m1+m2, m1+m2+m3);
+            cleb2[{l, m3, sum2}] = clebsch_gordan(l3, l, l4, m3, sum2, sum3);
         }
     }
 
+    auto& map_m = pre.get_map_m_to_index4();
     core = Eigen::MatrixXd::Zero(core_size, core_size);
 
     #ifdef _OPENMP
@@ -196,47 +178,27 @@ void Projector::order4(const vector1i& l_list){
         vector1i list_lq1;
         set_inter_prod_first(cleb1, l1, l2, {m1, m2}, {m1p, m2p}, prod_lq1, list_lq1);
         for (int m3=-l3; m3<=l3; ++m3){
-            vector1i mv1 = {m1, m2, m3};
             int m4;
-            if (!check_sum(mv1, l4, m4))
+            if (!check_sum({m1, m2, m3}, l4, m4))
                 continue;
-            int index = map_m_to_index4[{m1, m2, m3}];
-            int index2 = map_m_to_index4[{-m1, -m2, -m3}];
-
+            int index = map_m[{m1, m2, m3}];
+            int index2 = map_m[{-m1, -m2, -m3}];
             for (int m3p=-l3; m3p<=l3; ++m3p){
-                vector1i mv2 = {m1p, m2p, m3p};
                 int m4p;
-                if (!check_sum(mv2, l4, m4p))
+                if (!check_sum({m1p, m2p, m3p}, l4, m4p))
                     continue;
-                int index_p = map_m_to_index4[{m1p, m2p, m3p}];
+                int index_p = map_m[{m1p, m2p, m3p}];
+                int index_p2 = map_m[{-m1p, -m2p, -m3p}];
                 if (index > index_p)
                     continue;
-                int index_p2 = map_m_to_index4[{-m1p, -m2p, -m3p}];
 
                 double sign = ((abs(m4 - m4p) & 1) == 0) ? 1.0 : -1.0;
                 double inv_norm = sign / (2*l4+1);
-
-                double num(0.0);
-                int cnt(0);
-                for (auto l: list_lq1){
-                    double prod1 = prod_lq1[cnt];
-                    double cg3 = cleb2[{l, m3, m1+m2}];
-                    double cg4 = cleb2[{l, m3p, m1p+m2p}];
-                    num += prod1 * cg3 * cg4;
-                    ++cnt;
-                }
+                double num = set_final_prod(
+                    prod_lq1, list_lq1, cleb2, {m1, m2, m3}, {m1p, m2p, m3p}
+                );
                 num *= inv_norm;
-
-                core(index, index_p) = num;
-                core(index, index_p2) = num;
-                core(index2, index_p) = num;
-                core(index2, index_p2) = num;
-                if (index != index_p){
-                    core(index_p, index) = num;
-                    core(index_p, index2) = num;
-                    core(index_p2, index) = num;
-                    core(index_p2, index2) = num;
-                }
+                assign_core(core, num, index, index_p, index2, index_p2);
             }
         }
     }
@@ -269,32 +231,31 @@ void Projector::order5(const vector1i& l_list){
     const int l4 = l_list[3];
     const int l5 = l_list[4];
 
-    auto& map_m_to_index5 = pre.get_map_m_to_index5();
-
     map_tuple3_d cleb1, cleb3;
     map_tuple4_d cleb2;
-    for (int lq1 = abs(l1-l2); lq1 < l1+l2+1; ++lq1)
+    for (int lq1 = abs(l1-l2); lq1 <= l1+l2; ++lq1)
     for (int m1=0; m1<=l1; ++m1)
     for (int m2=-l2; m2<=l2; ++m2){
-        if (abs(m1+m2) > lq1)
+        int sum2 = m1 + m2;
+        if (abs(sum2) > lq1)
             continue;
-        cleb1[{lq1,m1,m2}] = clebsch_gordan(l1,l2,lq1,m1,m2,m1+m2);
+        cleb1[{lq1,m1,m2}] = clebsch_gordan(l1,l2,lq1,m1,m2,sum2);
         for (int lq2 = abs(l3-lq1); lq2 < l3+lq1+1; ++lq2)
         for (int m3=-l3; m3<=l3; ++m3){
-            if (abs(m1+m2+m3) > lq2)
+            int sum3 = sum2 + m3;
+            if (abs(sum3) > lq2)
                 continue;
-            cleb2[{lq1,lq2,m3,m1+m2}]
-                = clebsch_gordan(l3,lq1,lq2,m3,m1+m2,m1+m2+m3);
+            cleb2[{lq1,lq2,m3,sum2}] = clebsch_gordan(l3,lq1,lq2,m3,sum2,sum3);
             for (int m4=-l4; m4<=l4; ++m4){
-                int m5;
-                if (!check_sum({m1, m2, m3, m4}, l5, m5))
+                int sum4 = sum3 + m4;
+                if (abs(sum4) > l5)
                     continue;
-                cleb3[{lq2,m4,m1+m2+m3}]
-                    = clebsch_gordan(l4,lq2,l5,m4,m1+m2+m3,m1+m2+m3+m4);
+                cleb3[{lq2,m4,sum3}] = clebsch_gordan(l4,lq2,l5,m4,sum3,sum4);
             }
         }
     }
 
+    auto& map_m = pre.get_map_m_to_index5();
     core = Eigen::MatrixXd::Zero(core_size, core_size);
 
     #ifdef _OPENMP
@@ -311,48 +272,32 @@ void Projector::order5(const vector1i& l_list){
         for (int m3p=-l3; m3p<=l3; ++m3p){
             vector1d prod_lq2;
             vector1i list_lq2;
-            set_inter_prod(prod_lq1, list_lq1, cleb2, l3,
+            set_inter_prod(
+                prod_lq1, list_lq1, cleb2, l3,
                 {m1, m2, m3}, {m1p, m2p, m3p},
                 prod_lq2, list_lq2);
             for (int m4=-l4; m4<=l4; ++m4){
                 int m5;
                 if (!check_sum({m1, m2, m3, m4}, l5, m5))
                     continue;
-                int index = map_m_to_index5[{m1, m2, m3, m4}];
-                int index2 = map_m_to_index5[{-m1, -m2, -m3, -m4}];
+                int index = map_m[{m1, m2, m3, m4}];
+                int index2 = map_m[{-m1, -m2, -m3, -m4}];
                 for (int m4p=-l4; m4p<=l4; ++m4p){
                     int m5p;
                     if (!check_sum({m1p, m2p, m3p, m4p}, l5, m5p))
                         continue;
-                    int index_p = map_m_to_index5[{m1p, m2p, m3p, m4p}];
-                    int index_p2 = map_m_to_index5[{-m1p, -m2p, -m3p, -m4p}];
+                    int index_p = map_m[{m1p, m2p, m3p, m4p}];
+                    int index_p2 = map_m[{-m1p, -m2p, -m3p, -m4p}];
                     if (index > index_p)
                         continue;
 
                     double sign = ((abs(m5 - m5p) & 1) == 0) ? 1.0 : -1.0;
                     double inv_norm = sign / (2*l5+1);
-
-                    double num(0.0);
-                    int cnt2(0);
-                    for (auto lq2: list_lq2){
-                        double prod2 = prod_lq2[cnt2];
-                        double cg5 = cleb3[{lq2,m4,m1+m2+m3}];
-                        double cg6 = cleb3[{lq2,m4p,m1p+m2p+m3p}];
-                        num += prod2 * cg5 * cg6;
-                        ++cnt2;
-                    }
+                    double num = set_final_prod(
+                        prod_lq2, list_lq2, cleb3,
+                        {m1, m2, m3, m4}, {m1p, m2p, m3p, m4p});
                     num *= inv_norm;
-
-                    core(index, index_p) = num;
-                    core(index, index_p2) = num;
-                    core(index2, index_p) = num;
-                    core(index2, index_p2) = num;
-                    if (index != index_p){
-                        core(index_p, index) = num;
-                        core(index_p, index2) = num;
-                        core(index_p2, index) = num;
-                        core(index_p2, index2) = num;
-                    }
+                    assign_core(core, num, index, index_p, index2, index_p2);
                 }
             }
         }
@@ -393,39 +338,38 @@ void Projector::order6(const vector1i& l_list){
     const int l5 = l_list[4];
     const int l6 = l_list[5];
 
-    auto& map_m_to_index6 = pre.get_map_m_to_index6();
-
     map_tuple3_d cleb1, cleb4;
     map_tuple4_d cleb2, cleb3;
-    for (int lq1 = abs(l1-l2); lq1 < l1+l2+1; ++lq1)
+    for (int lq1 = abs(l1-l2); lq1 <= l1+l2; ++lq1)
     for (int m1=0; m1<=l1; ++m1)
     for (int m2=-l2; m2<=l2; ++m2){
-        if (abs(m1+m2) > lq1)
+        int sum2 = m1 + m2;
+        if (abs(sum2) > lq1)
             continue;
-        cleb1[{lq1,m1,m2}] = clebsch_gordan(l1,l2,lq1,m1,m2,m1+m2);
+        cleb1[{lq1,m1,m2}] = clebsch_gordan(l1,l2,lq1,m1,m2,sum2);
         for (int lq2 = abs(l3-lq1); lq2 < l3+lq1+1; ++lq2)
         for (int m3=-l3; m3<=l3; ++m3){
-            if (abs(m1+m2+m3) > lq2)
+            int sum3 = sum2 + m3;
+            if (abs(sum3) > lq2)
                 continue;
-            cleb2[{lq1,lq2,m3,m1+m2}]
-                = clebsch_gordan(l3,lq1,lq2,m3,m1+m2,m1+m2+m3);
+            cleb2[{lq1,lq2,m3,sum2}] = clebsch_gordan(l3,lq1,lq2,m3,sum2,sum3);
             for (int lq3 = abs(l4-lq2); lq3 < l4+lq2+1; ++lq3)
             for (int m4=-l4; m4<=l4; ++m4){
-                if (abs(m1+m2+m3+m4) > lq3)
+                int sum4 = sum3 + m4;
+                if (abs(sum4) > lq3)
                     continue;
-                cleb3[{lq2,lq3,m4,m1+m2+m3}]
-                    = clebsch_gordan(l4,lq2,lq3,m4,m1+m2+m3,m1+m2+m3+m4);
+                cleb3[{lq2,lq3,m4,sum3}] = clebsch_gordan(l4,lq2,lq3,m4,sum3,sum4);
                 for (int m5=-l5; m5<=l5; ++m5){
-                    int m6;
-                    if (!check_sum({m1, m2, m3, m4, m5}, l6, m6))
+                    int sum5 = sum4 + m5;
+                    if (abs(sum5) > l6)
                         continue;
-                    cleb4[{lq3,m5,m1+m2+m3+m4}]
-                        = clebsch_gordan(l5,lq3,l6,m5,m1+m2+m3+m4,m1+m2+m3+m4+m5);
+                    cleb4[{lq3,m5,sum4}] = clebsch_gordan(l5,lq3,l6,m5,sum4,sum5);
                 }
             }
         }
     }
 
+    auto& map_m = pre.get_map_m_to_index6();
     core = Eigen::MatrixXd::Zero(core_size, core_size);
 
     #ifdef _OPENMP
@@ -442,61 +386,44 @@ void Projector::order6(const vector1i& l_list){
         for (int m3p=-l3; m3p<=l3; ++m3p){
             vector1d prod_lq2;
             vector1i list_lq2;
-            set_inter_prod(prod_lq1, list_lq1, cleb2, l3,
+            set_inter_prod(
+                prod_lq1, list_lq1, cleb2, l3,
                 {m1, m2, m3}, {m1p, m2p, m3p},
                 prod_lq2, list_lq2);
-
             for (int m4=-l4; m4<=l4; ++m4)
             for (int m4p=-l4; m4p<=l4; ++m4p){
                 vector1d prod_lq3;
                 vector1i list_lq3;
-                set_inter_prod(prod_lq2, list_lq2, cleb3, l4,
+                set_inter_prod(
+                    prod_lq2, list_lq2, cleb3, l4,
                     {m1, m2, m3, m4}, {m1p, m2p, m3p, m4p},
                     prod_lq3, list_lq3);
-
                 for (int m5=-l5; m5<=l5; ++m5){
                     vector1i mv1 = {m1, m2, m3, m4, m5};
                     int m6;
                     bool nonzero1 = check_sum(mv1, l6, m6);
                     if (!nonzero1)
                         continue;
-                    int index = map_m_to_index6[{m1, m2, m3, m4, m5}];
-                    int index2 = map_m_to_index6[{-m1, -m2, -m3, -m4, -m5}];
+                    int index = map_m[{m1, m2, m3, m4, m5}];
+                    int index2 = map_m[{-m1, -m2, -m3, -m4, -m5}];
                     for (int m5p=-l5; m5p<=l5; ++m5p){
                         vector1i mv2 = {m1p, m2p, m3p, m4p, m5p};
                         int m6p;
                         bool nonzero2 = check_sum(mv2, l6, m6p);
                         if (!nonzero2)
                             continue;
-                        int index_p = map_m_to_index6[{m1p, m2p, m3p, m4p, m5p}];
-                        int index_p2 = map_m_to_index6[{-m1p, -m2p, -m3p, -m4p, -m5p}];
+                        int index_p = map_m[{m1p, m2p, m3p, m4p, m5p}];
+                        int index_p2 = map_m[{-m1p, -m2p, -m3p, -m4p, -m5p}];
                         if (index > index_p)
                             continue;
 
                         double sign = ((abs(m6 - m6p) & 1) == 0) ? 1.0 : -1.0;
                         double inv_norm = sign / (2*l6+1);
-
-                        double num(0.0);
-                        int cnt3(0);
-                        for (auto lq3: list_lq3){
-                            double prod3 = prod_lq3[cnt3];
-                            double cg7 = cleb4[{lq3,m5,m1+m2+m3+m4}];
-                            double cg8 = cleb4[{lq3,m5p,m1p+m2p+m3p+m4p}];
-                            num += prod3 * cg7 * cg8;
-                            ++cnt3;
-                        }
+                        double num = set_final_prod(
+                            prod_lq3, list_lq3, cleb4,
+                            {m1, m2, m3, m4, m5}, {m1p, m2p, m3p, m4p, m5p});
                         num *= inv_norm;
-
-                        core(index, index_p) = num;
-                        core(index, index_p2) = num;
-                        core(index2, index_p) = num;
-                        core(index2, index_p2) = num;
-                        if (index != index_p){
-                            core(index_p, index) = num;
-                            core(index_p, index2) = num;
-                            core(index_p2, index) = num;
-                            core(index_p2, index2) = num;
-                        }
+                        assign_core(core, num, index, index_p, index2, index_p2);
                     }
                 }
             }
@@ -514,48 +441,45 @@ void Projector::order7(const vector1i& l_list){
     const int l6 = l_list[5];
     const int l7 = l_list[6];
 
-    auto& map_m_to_index7 = pre.get_map_m_to_index7();
-
     map_tuple3_d cleb1, cleb5;
     map_tuple4_d cleb2, cleb3, cleb4;
-    for (int lq1 = abs(l1-l2); lq1 < l1+l2+1; ++lq1)
+    for (int lq1 = abs(l1-l2); lq1 <= l1+l2; ++lq1)
     for (int m1=0; m1<=l1; ++m1)
     for (int m2=-l2; m2<=l2; ++m2){
-        if (abs(m1+m2) > lq1)
+        int sum2 = m1 + m2;
+        if (abs(sum2) > lq1)
             continue;
-        cleb1[{lq1,m1,m2}] = clebsch_gordan(l1,l2,lq1,m1,m2,m1+m2);
+        cleb1[{lq1,m1,m2}] = clebsch_gordan(l1,l2,lq1,m1,m2,sum2);
         for (int lq2 = abs(l3-lq1); lq2 < l3+lq1+1; ++lq2)
         for (int m3=-l3; m3<=l3; ++m3){
-            if (abs(m1+m2+m3) > lq2)
+            int sum3 = sum2 + m3;
+            if (abs(sum3) > lq2)
                 continue;
-            cleb2[{lq1,lq2,m3,m1+m2}]
-                = clebsch_gordan(l3,lq1,lq2,m3,m1+m2,m1+m2+m3);
+            cleb2[{lq1,lq2,m3,sum2}] = clebsch_gordan(l3,lq1,lq2,m3,sum2,sum3);
             for (int lq3 = abs(l4-lq2); lq3 < l4+lq2+1; ++lq3)
             for (int m4=-l4; m4<=l4; ++m4){
-                if (abs(m1+m2+m3+m4) > lq3)
+                int sum4 = sum3 + m4;
+                if (abs(sum4) > lq3)
                     continue;
-                cleb3[{lq2,lq3,m4,m1+m2+m3}]
-                    = clebsch_gordan(l4,lq2,lq3,m4,m1+m2+m3,m1+m2+m3+m4);
-
+                cleb3[{lq2,lq3,m4,sum3}] = clebsch_gordan(l4,lq2,lq3,m4,sum3,sum4);
                 for (int lq4 = abs(l5-lq3); lq4 < l5+lq3+1; ++lq4)
                 for (int m5=-l5; m5<=l5; ++m5){
-                    if (abs(m1+m2+m3+m4+m5) > lq4)
+                    int sum5 = sum4 + m5;
+                    if (abs(sum5) > lq4)
                         continue;
-                    cleb4[{lq3,lq4,m5,m1+m2+m3+m4}]
-                        = clebsch_gordan(l5,lq3,lq4,m5,m1+m2+m3+m4,m1+m2+m3+m4+m5);
-
+                    cleb4[{lq3,lq4,m5,sum4}] = clebsch_gordan(l5,lq3,lq4,m5,sum4,sum5);
                     for (int m6=-l6; m6<=l6; ++m6){
-                        int m7;
-                        if (!check_sum({m1, m2, m3, m4, m5, m6}, l7, m7))
+                        int sum6 = sum5 + m6;
+                        if (abs(sum6) > l7)
                             continue;
-                        cleb5[{lq4,m6,m1+m2+m3+m4+m5}] = clebsch_gordan(
-                            l6,lq4,l7,m6,m1+m2+m3+m4+m5,m1+m2+m3+m4+m5+m6);
+                        cleb5[{lq4,m6,sum5}] = clebsch_gordan(l6,lq4,l7,m6,sum5,sum6);
                     }
                 }
             }
         }
     }
 
+    auto& map_m = pre.get_map_m_to_index7();
     core = Eigen::MatrixXd::Zero(core_size, core_size);
 
     #ifdef _OPENMP
@@ -595,45 +519,27 @@ void Projector::order7(const vector1i& l_list){
                         bool nonzero1 = check_sum(mv1, l7, m7);
                         if (!nonzero1)
                             continue;
-                        int index = map_m_to_index7[{m1, m2, m3, m4, m5, m6}];
-                        int index2 = map_m_to_index7[{-m1, -m2, -m3, -m4, -m5, -m6}];
+                        int index = map_m[{m1, m2, m3, m4, m5, m6}];
+                        int index2 = map_m[{-m1, -m2, -m3, -m4, -m5, -m6}];
                         for (int m6p=-l6; m6p<=l6; ++m6p){
                             vector1i mv2 = {m1p, m2p, m3p, m4p, m5p, m6p};
                             int m7p;
                             bool nonzero2 = check_sum(mv2, l7, m7p);
                             if (!nonzero2)
                                 continue;
-                            int index_p = map_m_to_index7[
-                                {m1p, m2p, m3p, m4p, m5p, m6p}];
-                            int index_p2 = map_m_to_index7[
-                                {-m1p, -m2p, -m3p, -m4p, -m5p, -m6p}];
+                            int index_p = map_m[{m1p, m2p, m3p, m4p, m5p, m6p}];
+                            int index_p2 = map_m[{-m1p, -m2p, -m3p, -m4p, -m5p, -m6p}];
                             if (index > index_p)
                                 continue;
 
                             double sign = ((abs(m7 - m7p) & 1) == 0) ? 1.0 : -1.0;
                             double inv_norm = sign / (2*l7+1);
-
-                            double num(0.0);
-                            int cnt4(0);
-                            for (auto lq4: list_lq4){
-                                double prod4 = prod_lq4[cnt4];
-                                double cg9 = cleb5[{lq4,m6,m1+m2+m3+m4+m5}];
-                                double cg10 = cleb5[{lq4,m6p,m1p+m2p+m3p+m4p+m5p}];
-                                num += prod4 * cg9 * cg10;
-                                ++cnt4;
-                            }
+                            double num = set_final_prod(
+                                prod_lq4, list_lq4, cleb5,
+                                {m1, m2, m3, m4, m5, m6},
+                                {m1p, m2p, m3p, m4p, m5p, m6p});
                             num *= inv_norm;
-
-                            core(index, index_p) = num;
-                            core(index, index_p2) = num;
-                            core(index2, index_p) = num;
-                            core(index2, index_p2) = num;
-                            if (index != index_p){
-                                core(index_p, index) = num;
-                                core(index_p, index2) = num;
-                                core(index_p2, index) = num;
-                                core(index_p2, index2) = num;
-                            }
+                            assign_core(core, num, index, index_p, index2, index_p2);
                         }
                     }
                 }
@@ -695,6 +601,51 @@ void Projector::set_inter_prod(
     }
 
 }
+
+double Projector::set_final_prod(
+    const vector1d& prod_lq_prev,
+    const vector1i& list_lq_prev,
+    map_tuple3_d& cleb,
+    const vector1i& list_m,
+    const vector1i& list_mp
+){
+    int sum_m = std::accumulate(list_m.begin(), list_m.end()-1, 0);
+    int sum_mp = std::accumulate(list_mp.begin(), list_mp.end()-1, 0);
+    int m_end = *(list_m.end()-1);
+    int mp_end = *(list_mp.end()-1);
+
+    double num(0.0);
+    int cnt(0);
+    for (auto l: list_lq_prev){
+        double prod1 = prod_lq_prev[cnt];
+        double cg1 = cleb[{l, m_end, sum_m}];
+        double cg2 = cleb[{l, mp_end, sum_mp}];
+        num += prod1 * cg1 * cg2;
+        ++cnt;
+    }
+    return num;
+}
+
+void Projector::assign_core(
+    Eigen::MatrixXd& core,
+    const double num,
+    const int index,
+    const int index_p,
+    const int index2,
+    const int index_p2
+){
+    core(index, index_p) = num;
+    core(index, index_p2) = num;
+    core(index2, index_p) = num;
+    core(index2, index_p2) = num;
+    if (index != index_p){
+        core(index_p, index) = num;
+        core(index_p, index2) = num;
+        core(index_p2, index) = num;
+        core(index_p2, index2) = num;
+    }
+}
+
 
 double Projector::clebsch_gordan
 (const int& l1, const int& l2, const int& l,
