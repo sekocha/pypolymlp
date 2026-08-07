@@ -26,9 +26,9 @@ def test_build_projector_4():
 
 def test_build_projector_5():
     """Test build_projector."""
-    core, lm_indices = build_projector([1, 1, 1, 2, 2])
-    assert core.shape == (105, 105)
-    assert lm_indices.shape == (105, 5, 2)
+    core, lm_indices = build_projector([1, 1, 2, 2, 2])
+    assert core.shape == (159, 159)
+    assert lm_indices.shape == (159, 5, 2)
 
 
 def test_build_projector_6():
