@@ -151,46 +151,14 @@ void Projector::order4(const vector1i& l_list){
     const int l2 = l_list[1];
     const int l3 = l_list[2];
     const int l4 = l_list[3];
-/*
-    map_tuple3_d cleb1, cleb2;
+
+    map3 cleb1, cleb2;
     for (int l = abs(l1-l2); l <= l1+l2; ++l)
     for (int m1=0; m1<=l1; ++m1)
     for (int m2=-l2; m2<=l2; ++m2){
         int sum2 = m1 + m2;
-        if (abs(sum2) > l)
-            continue;
+        if (abs(sum2) > l) continue;
         cleb1[{l, m1, m2}] = clebsch_gordan(l1, l2, l, m1, m2, sum2);
-        for (int m3=-l3; m3<=l3; ++m3){
-            int sum3 = sum2 + m3;
-            if (abs(sum3) > l4)
-                continue;
-            cleb2[{l, m3, sum2}] = clebsch_gordan(l3, l, l4, m3, sum2, sum3);
-        }
-    }
-*/
-
-//    map3 cleb1, cleb2;
-//    for (int l = abs(l1-l2); l <= l1+l2; ++l)
-//    for (int m1=0; m1<=l1; ++m1)
-//    for (int m2=-l2; m2<=l2; ++m2){
-//        int sum2 = m1 + m2;
-//        if (abs(sum2) > l) continue;
-//        cleb1[{l, m1, m2}] = clebsch_gordan(l1, l2, l, m1, m2, sum2);
-//        for (int m3=-l3; m3<=l3; ++m3){
-//            int sum3 = sum2 + m3;
-//            if (abs(sum3) > l4) continue;
-//            cleb2[{l, m3, sum2}] = clebsch_gordan(l3, l, l4, m3, sum2, sum3);
-//        }
-//    }
-    map3 cleb1, cleb2;
-    for (int l = abs(l1-l2); l <= l1+l2; ++l){
-        for (int m1=0; m1<=l1; ++m1)
-        for (int m2=-l2; m2<=l2; ++m2){
-            int sum2 = m1 + m2;
-            if (abs(sum2) > l) continue;
-            cleb1[{l, m1, m2}] = clebsch_gordan(l1, l2, l, m1, m2, sum2);
-        }
-        for (int sum2 = -l; sum2 <= l; ++sum2)
         for (int m3=-l3; m3<=l3; ++m3){
             int sum3 = sum2 + m3;
             if (abs(sum3) > l4) continue;
@@ -265,8 +233,8 @@ void Projector::order5(const vector1i& l_list){
     const int l4 = l_list[3];
     const int l5 = l_list[4];
 
-    map_tuple3_d cleb1, cleb3;
-    map_tuple4_d cleb2;
+    map3 cleb1, cleb3;
+    map4 cleb2;
     for (int lq1 = abs(l1-l2); lq1 <= l1+l2; ++lq1)
     for (int m1=0; m1<=l1; ++m1)
     for (int m2=-l2; m2<=l2; ++m2){
@@ -372,8 +340,8 @@ void Projector::order6(const vector1i& l_list){
     const int l5 = l_list[4];
     const int l6 = l_list[5];
 
-    map_tuple3_d cleb1, cleb4;
-    map_tuple4_d cleb2, cleb3;
+    map3 cleb1, cleb4;
+    map4 cleb2, cleb3;
     for (int lq1 = abs(l1-l2); lq1 <= l1+l2; ++lq1)
     for (int m1=0; m1<=l1; ++m1)
     for (int m2=-l2; m2<=l2; ++m2){
@@ -475,8 +443,8 @@ void Projector::order7(const vector1i& l_list){
     const int l6 = l_list[5];
     const int l7 = l_list[6];
 
-    map_tuple3_d cleb1, cleb5;
-    map_tuple4_d cleb2, cleb3, cleb4;
+    map3 cleb1, cleb5;
+    map4 cleb2, cleb3, cleb4;
     for (int lq1 = abs(l1-l2); lq1 <= l1+l2; ++lq1)
     for (int m1=0; m1<=l1; ++m1)
     for (int m2=-l2; m2<=l2; ++m2){
@@ -593,8 +561,8 @@ void Projector::order8(const vector1i& l_list){
     const int l7 = l_list[6];
     const int l8 = l_list[7];
 
-    map_tuple3_d cleb1, cleb6;
-    map_tuple4_d cleb2, cleb3, cleb4, cleb5;
+    map3 cleb1, cleb6;
+    map4 cleb2, cleb3, cleb4, cleb5;
     for (int lq1 = abs(l1-l2); lq1 <= l1+l2; ++lq1)
     for (int m1=0; m1<=l1; ++m1)
     for (int m2=-l2; m2<=l2; ++m2){
@@ -727,6 +695,7 @@ void Projector::order8(const vector1i& l_list){
 void Projector::order9(const vector1i& l_list){}
 void Projector::order10(const vector1i& l_list){}
 
+
 void Projector::set_inter_prod_first(
     map3& cleb,
     const int l1,
@@ -749,28 +718,6 @@ void Projector::set_inter_prod_first(
     }
 }
 
-
-void Projector::set_inter_prod_first(
-    map_tuple3_d& cleb,
-    const int l1,
-    const int l2,
-    const vector1i& list_m,
-    const vector1i& list_mp,
-    vector1d& prod_lq,
-    vector1i& list_lq
-){
-    int sum_m = std::accumulate(list_m.begin(), list_m.end(), 0);
-    int sum_mp = std::accumulate(list_mp.begin(), list_mp.end(), 0);
-    for (int lq1 = abs(l1-l2); lq1 <= l1 + l2; ++lq1){
-        if (abs(sum_m) > lq1 or abs(sum_mp) > lq1)
-            continue;
-        double cg1 = cleb[{lq1, list_m[0], list_m[1]}];
-        double cg2 = cleb[{lq1, list_mp[0], list_mp[1]}];
-        double prod = cg1 * cg2;
-        prod_lq.emplace_back(prod);
-        list_lq.emplace_back(lq1);
-    }
-}
 
 void Projector::set_inter_prod(
     const vector1d& prod_lq_prev,
@@ -804,37 +751,6 @@ void Projector::set_inter_prod(
 
 }
 
-void Projector::set_inter_prod(
-    const vector1d& prod_lq_prev,
-    const vector1i& list_lq_prev,
-    map_tuple4_d& cleb,
-    const int l,
-    const vector1i& list_m,
-    const vector1i& list_mp,
-    vector1d& prod_lq,
-    vector1i& list_lq
-){
-    int sum_m = std::accumulate(list_m.begin(), list_m.end(), 0);
-    int sum_mp = std::accumulate(list_mp.begin(), list_mp.end(), 0);
-    int cnt(0);
-    for (auto lq1: list_lq_prev){
-        double prod1 = prod_lq_prev[cnt];
-        for (int lq2 = abs(l - lq1); lq2 <= l + lq1; ++lq2){
-            if (abs(sum_m) > lq2 or abs(sum_mp) > lq2)
-                continue;
-
-            int m_end = *(list_m.end()-1);
-            int mp_end = *(list_mp.end()-1);
-            double cg1 = cleb[{lq1, lq2, m_end, sum_m - m_end}];
-            double cg2 = cleb[{lq1, lq2, mp_end, sum_mp - mp_end}];
-            double prod2 = prod1 * cg1 * cg2;
-            prod_lq.emplace_back(prod2);
-            list_lq.emplace_back(lq2);
-        }
-        ++cnt;
-    }
-
-}
 
 double Projector::set_final_prod(
     const vector1d& prod_lq_prev,
@@ -860,30 +776,6 @@ double Projector::set_final_prod(
     return num;
 }
 
-
-double Projector::set_final_prod(
-    const vector1d& prod_lq_prev,
-    const vector1i& list_lq_prev,
-    map_tuple3_d& cleb,
-    const vector1i& list_m,
-    const vector1i& list_mp
-){
-    int sum_m = std::accumulate(list_m.begin(), list_m.end()-1, 0);
-    int sum_mp = std::accumulate(list_mp.begin(), list_mp.end()-1, 0);
-    int m_end = *(list_m.end()-1);
-    int mp_end = *(list_mp.end()-1);
-
-    double num(0.0);
-    int cnt(0);
-    for (auto l: list_lq_prev){
-        double prod1 = prod_lq_prev[cnt];
-        double cg1 = cleb[{l, m_end, sum_m}];
-        double cg2 = cleb[{l, mp_end, sum_mp}];
-        num += prod1 * cg1 * cg2;
-        ++cnt;
-    }
-    return num;
-}
 
 void Projector::assign_core(
     Eigen::MatrixXd& core,

@@ -21,8 +21,6 @@
 #include "mlpcpp.h"
 
 typedef std::map<tuple2, double> map_tuple2_d;
-typedef std::map<tuple3, double> map_tuple3_d;
-typedef std::map<tuple4, double> map_tuple4_d;
 
 struct Key3 {
     int i, j, k;
@@ -85,15 +83,6 @@ class Projector {
     void order10(const vector1i& l_list);
 
     void set_inter_prod_first(
-        map_tuple3_d& cleb,
-        const int l1,
-        const int l2,
-        const vector1i& list_m,
-        const vector1i& list_mp,
-        vector1d& prod_lq,
-        vector1i& list_lq);
-
-    void set_inter_prod_first(
         map3& cleb,
         const int l1,
         const int l2,
@@ -112,27 +101,10 @@ class Projector {
         vector1d& prod_lq,
         vector1i& list_lq);
 
-    void set_inter_prod(
-        const vector1d& prod_lq_prev,
-        const vector1i& list_lq_prev,
-        map_tuple4_d& cleb,
-        const int l,
-        const vector1i& list_m,
-        const vector1i& list_mp,
-        vector1d& prod_lq,
-        vector1i& list_lq);
-
     double set_final_prod(
         const vector1d& prod_lq_prev,
         const vector1i& list_lq_prev,
         map3& cleb,
-        const vector1i& list_m,
-        const vector1i& list_mp);
-
-    double set_final_prod(
-        const vector1d& prod_lq_prev,
-        const vector1i& list_lq_prev,
-        map_tuple3_d& cleb,
         const vector1i& list_m,
         const vector1i& list_mp);
 
