@@ -20,6 +20,7 @@ typedef std::tuple<int, int, int, int, int> tuple5;
 typedef std::tuple<int, int, int, int, int, int> tuple6;
 typedef std::tuple<int, int, int, int, int, int, int> tuple7;
 typedef std::tuple<int, int, int, int, int, int, int, int> tuple8;
+typedef std::tuple<int, int, int, int, int, int, int, int, int> tuple9;
 
 typedef std::map<tuple2, int> map_tuple2_i;
 typedef std::map<tuple3, int> map_tuple3_i;
@@ -28,6 +29,7 @@ typedef std::map<tuple5, int> map_tuple5_i;
 typedef std::map<tuple6, int> map_tuple6_i;
 typedef std::map<tuple7, int> map_tuple7_i;
 typedef std::map<tuple8, int> map_tuple8_i;
+typedef std::map<tuple9, int> map_tuple9_i;
 
 bool check_sum(const vector1i& m, const int lmax, int& mf);
 
@@ -43,6 +45,8 @@ class Precondition{
     map_tuple5_i map_m_to_index6;
     map_tuple6_i map_m_to_index7;
     map_tuple7_i map_m_to_index8;
+    map_tuple8_i map_m_to_index9;
+    map_tuple9_i map_m_to_index10;
 
     int lm_to_matrix_index(const vector1i& m_array);
 
@@ -53,6 +57,8 @@ class Precondition{
     void order6();
     void order7();
     void order8();
+    void order9();
+    void order10();
 
     public:
 
@@ -69,6 +75,8 @@ class Precondition{
     map_tuple5_i& get_map_m_to_index6();
     map_tuple6_i& get_map_m_to_index7();
     map_tuple7_i& get_map_m_to_index8();
+    map_tuple8_i& get_map_m_to_index9();
+    map_tuple9_i& get_map_m_to_index10();
 };
 
 #endif
