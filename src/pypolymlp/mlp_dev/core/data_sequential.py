@@ -154,3 +154,39 @@ def _compute_products_single_batch(
     data_xy.cumulative_n_features = features.cumulative_n_features
 
     return data_xy
+
+
+def compute_features_single_batch(
+    params: PolymlpParams,
+    dataset_sliced: Dataset,
+    weight_stress: float = 0.1,
+    verbose: bool = False,
+):
+    """Compute X for a single batch."""
+    features = compute_features(
+        params,
+        datasets=dataset_sliced,
+        verbose=verbose,
+    )
+    x = features.x
+
+    first_indices = features.first_indices[0]
+    n_data, _ = x.shape
+    y = np.zeros(n_data)
+    x_w, y_w, _ = apply_weights(
+        x.copy(),
+        y.copy(),
+        np.ones(n_data),
+        dataset_sliced,
+        first_indices,
+        weight_stress=weight_stress,
+    )
+    x_w2, _, _ = apply_weights(
+        x_w.copy(),
+        y_w.copy(),
+        np.ones(n_data),
+        dataset_sliced,
+        first_indices,
+        weight_stress=weight_stress,
+    )
+    return x, x_w, x_w2, y_w, first_indices

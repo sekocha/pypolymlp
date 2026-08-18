@@ -50,6 +50,11 @@ def run():
         default=None,
         help="Maximum number of iterations in CG",
     )
+    parser.add_argument(
+        "--cross_val",
+        action="store_true",
+        help="Use cross validation",
+    )
 
     # parser.add_argument(
     #     "--sgd",
@@ -79,12 +84,17 @@ def run():
         polymlp.fit_cg(gtol=args.gtol, max_iter=args.max_iter)
     # elif args.sgd:
     #     polymlp.fit_sgd(verbose=verbose)
+    elif args.cross_val:
+        _, inv_xtx = polymlp.fit_cv(batch_size=args.batch_size)
     else:
         polymlp.fit(batch_size=args.batch_size)
 
     polymlp.save_mlp(filename="polymlp.yaml")
     t2 = time.time()
-    polymlp.estimate_error(log_energy=True)
+    if args.cross_val:
+        polymlp.estimate_error_cv(inv_xtx, log_energy=True)
+    else:
+        polymlp.estimate_error(log_energy=True)
     t3 = time.time()
     polymlp.save_errors(filename="polymlp_error.yaml")
 
