@@ -1,0 +1,51 @@
+"""Functions sgd for estimating regression coefficients from datasets."""
+
+import numpy as np
+
+from pypolymlp.core.dataset import DatasetList
+from pypolymlp.core.params import PolymlpParams
+from pypolymlp.mlp_dev.core.api_mlpdev import PolymlpDevCore
+from pypolymlp.mlp_dev.gradient.solvers_sgd import solver_sgd
+
+
+def fit_sgd(
+    params: PolymlpParams,
+    train: DatasetList,
+    test: DatasetList,
+    verbose: bool = False,
+):
+    """Estimate MLP coefficients without computing entire X."""
+
+    polymlp = PolymlpDevCore(params)
+
+    train_xy = polymlp.calc_xy(train)
+    coefs = []
+    for alpha in params.alphas:
+        c = solver_sgd(train_xy.x, train_xy.y, alpha=alpha, gtol=1e-2, verbose=verbose)
+        coefs.append(c)
+    coefs = np.array(coefs).T
+
+    rmse_train = polymlp.compute_rmse(coefs, train_xy, check_singular=True)
+    train_xy.clear_data()
+    print(rmse_train)
+
+    test_xy = polymlp.calc_xy(
+        test,
+        scales=train_xy.scales,
+        min_energy=train_xy.min_energy,
+    )
+    rmse_test = polymlp.compute_rmse(coefs, test_xy)
+    print(rmse_test)
+    test_xy.clear_data()
+
+    best_model = polymlp.get_best_model(
+        coefs,
+        train_xy.scales,
+        rmse_train,
+        rmse_test,
+        train_xy.cumulative_n_features,
+    )
+    if verbose:
+        polymlp.print_model_selection_log(rmse_train, rmse_test)
+
+    return best_model

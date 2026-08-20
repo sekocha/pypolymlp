@@ -25,11 +25,16 @@ from pypolymlp.mlp_dev.core.features_attr import (
     get_num_features,
     write_polymlp_params_yaml,
 )
-from pypolymlp.mlp_dev.gradient.fit_cg import fit_cg
-from pypolymlp.mlp_dev.gradient.fit_sgd import fit_sgd
-from pypolymlp.mlp_dev.standard.fit import fit, fit_learning_curve, fit_standard
-from pypolymlp.mlp_dev.standard.fit_cv import fit_cv
-from pypolymlp.mlp_dev.standard.utils_learning_curve import save_learning_curve_log
+from pypolymlp.mlp_dev.fit.api_fit import fit_polymlp
+
+# from pypolymlp.mlp_dev.gradient.fit_cg import fit_cg
+# from pypolymlp.mlp_dev.gradient.fit_sgd import fit_sgd
+# from pypolymlp.mlp_dev.standard.fit import fit, fit_learning_curve, fit_standard
+# from pypolymlp.mlp_dev.standard.fit_cv import fit_cv
+# from pypolymlp.mlp_dev.standard.utils_learning_curve import save_learning_curve_log
+
+
+# from pypolymlp.mlp_dev.error.api_errors import fit_polymlp
 
 
 class Pypolymlp:
@@ -41,8 +46,10 @@ class Pypolymlp:
         self._params = None
         self._train = None
         self._test = None
+
         self._mlp_model = None
         self._learning_log = None
+        self._inv_xtx = None
 
         # TODO: For electrons.
         # self._train_yml = None
@@ -548,7 +555,12 @@ class Pypolymlp:
 
         return self
 
-    def fit(self, batch_size: Optional[int] = None, verbose: Optional[bool] = None):
+    def fit(
+        self,
+        batch_size: Optional[int] = None,
+        use_cv: bool = False,
+        verbose: Optional[bool] = None,
+    ):
         """Estimate MLP coefficients without computing entire X.
 
         Parameters
@@ -562,13 +574,19 @@ class Pypolymlp:
 
         self._is_params_none()
         self._is_data_none()
-        self._mlp_model = fit(
+        fit = fit_polymlp(
             self._params,
             self._train,
             self._test,
+            use_cv=use_cv,
+            use_cg=False,
+            use_full_x=False,
             batch_size=batch_size,
             verbose=self._verbose,
         )
+        self._mlp_model = fit.best_model
+        if use_cv:
+            self._inv_xtx = fit.inv_xtx
         return self
 
     def fit_standard(self, verbose: Optional[bool] = None):
@@ -578,12 +596,16 @@ class Pypolymlp:
 
         self._is_params_none()
         self._is_data_none()
-        self._mlp_model = fit_standard(
+        fit = fit_polymlp(
             self._params,
             self._train,
             self._test,
+            use_cv=False,
+            use_cg=False,
+            use_full_x=True,
             verbose=self._verbose,
         )
+        self._mlp_model = fit.best_model
         return self
 
     def fit_cg(
@@ -604,48 +626,18 @@ class Pypolymlp:
 
         self._is_params_none()
         self._is_data_none()
-        self._mlp_model = fit_cg(
+
+        fit = fit_polymlp(
             self._params,
             self._train,
             self._test,
+            use_cg=True,
             gtol=gtol,
             max_iter=max_iter,
             verbose=self._verbose,
         )
+        self._mlp_model = fit.best_model
         return self
-
-    def fit_sgd(self, verbose: Optional[bool] = None):
-        """Estimate MLP coefficients using stochastic gradient descent."""
-        raise NotImplementedError("SGD not available.")
-
-        if verbose is not None:
-            self._verbose = verbose
-
-        self._is_params_none()
-        self._is_data_none()
-        self._mlp_model = fit_sgd(
-            self._params,
-            self._train,
-            self._test,
-            verbose=self._verbose,
-        )
-        return self
-
-    def fit_cv(self, batch_size: Optional[int] = None, verbose: Optional[bool] = None):
-        """Estimate MLP coefficients using leave-one-out cross validation."""
-
-        if verbose is not None:
-            self._verbose = verbose
-
-        self._is_params_none()
-        self._is_data_none()
-        self._mlp_model, inv_xtx = fit_cv(
-            self._params,
-            self._train,
-            batch_size=batch_size,
-            verbose=self._verbose,
-        )
-        return self, inv_xtx
 
     def estimate_error(
         self,
@@ -676,7 +668,6 @@ class Pypolymlp:
 
     def estimate_error_cv(
         self,
-        inv_xtx: np.ndarray,
         log_energy: bool = False,
         file_path: str = "./",
         verbose: Optional[bool] = None,
@@ -697,7 +688,7 @@ class Pypolymlp:
         )
         self._mlp_model.error_test = acc.compute_error_cv(
             self._train,
-            inv_xtx,
+            self._inv_xtx,
             log_energy=log_energy,
             path_output=file_path,
             tag="test",
@@ -733,25 +724,25 @@ class Pypolymlp:
         self.estimate_error()
         return self
 
-    def fit_learning_curve(self, verbose: Optional[bool] = None):
-        """Compute learing curve."""
-        if verbose is not None:
-            self._verbose = verbose
+    #    def fit_learning_curve(self, verbose: Optional[bool] = None):
+    #        """Compute learing curve."""
+    #        if verbose is not None:
+    #            self._verbose = verbose
+    #
+    #        self._is_params_none()
+    #        self._is_data_none()
+    #        self._learning_log = fit_learning_curve(
+    #            self._params,
+    #            self._train,
+    #            self._test,
+    #            verbose=self._verbose,
+    #        )
+    #        return self
 
-        self._is_params_none()
-        self._is_data_none()
-        self._learning_log = fit_learning_curve(
-            self._params,
-            self._train,
-            self._test,
-            verbose=self._verbose,
-        )
-        return self
-
-    def save_learning_curve(self, filename: str = "polymlp_learning_curve.dat"):
-        """Save learing curve."""
-        save_learning_curve_log(self._learning_log, filename=filename)
-        return self
+    # def save_learning_curve(self, filename: str = "polymlp_learning_curve.dat"):
+    #     """Save learing curve."""
+    #     save_learning_curve_log(self._learning_log, filename=filename)
+    #     return self
 
     def save_mlp(self, filename: str = "polymlp.yaml"):
         """Save polynomial MLP as file.

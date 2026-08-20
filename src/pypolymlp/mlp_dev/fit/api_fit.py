@@ -1,0 +1,72 @@
+"""API Class for estimating MLP coefficients."""
+
+from typing import Optional
+
+from pypolymlp.core.dataset import DatasetList
+from pypolymlp.core.params import PolymlpParams
+from pypolymlp.mlp_dev.fit.fit_cg import PolymlpFitCG
+from pypolymlp.mlp_dev.fit.fit_standard import (
+    PolymlpFitStandard,
+    PolymlpFitStandardUseX,
+)
+from pypolymlp.mlp_dev.fit.fit_standard_cv import PolymlpFitStandardLOOCV
+
+
+def fit_polymlp(
+    params: PolymlpParams,
+    train: DatasetList,
+    test: Optional[DatasetList] = None,
+    use_cg: bool = False,
+    use_cv: bool = False,
+    use_full_x: bool = False,
+    batch_size: Optional[int] = None,
+    gtol: float = 1e-2,
+    max_iter: Optional[int] = None,
+    verbose: bool = False,
+):
+    """API function for estimating MLP coefficients."""
+    if not use_cv and test is None:
+        raise RuntimeError("Test data required.")
+
+    if use_cg:
+        if use_cv:
+            raise RuntimeError("CV minimization not available for CG.")
+        else:
+            fitobj = PolymlpFitCG(
+                params,
+                train,
+                test,
+                gtol=gtol,
+                max_iter=max_iter,
+                verbose=verbose,
+            )
+    else:
+        if use_cv:
+            if use_full_x:
+                raise RuntimeError("CV minimization not available for use_full_x.")
+            else:
+                fitobj = PolymlpFitStandardLOOCV(
+                    params,
+                    train,
+                    batch_size=batch_size,
+                    verbose=verbose,
+                )
+        else:
+            if use_full_x:
+                fitobj = PolymlpFitStandardUseX(
+                    params,
+                    train,
+                    test,
+                    verbose=verbose,
+                )
+            else:
+                fitobj = PolymlpFitStandard(
+                    params,
+                    train,
+                    test,
+                    batch_size=batch_size,
+                    verbose=verbose,
+                )
+
+    fitobj.fit()
+    return fitobj
