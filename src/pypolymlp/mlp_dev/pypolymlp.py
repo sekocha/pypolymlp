@@ -27,12 +27,8 @@ from pypolymlp.mlp_dev.core.features_attr import (
 )
 from pypolymlp.mlp_dev.fit.api_fit import fit_polymlp
 
-# from pypolymlp.mlp_dev.gradient.fit_cg import fit_cg
-# from pypolymlp.mlp_dev.gradient.fit_sgd import fit_sgd
 # from pypolymlp.mlp_dev.standard.fit import fit, fit_learning_curve, fit_standard
-# from pypolymlp.mlp_dev.standard.fit_cv import fit_cv
 # from pypolymlp.mlp_dev.standard.utils_learning_curve import save_learning_curve_log
-
 
 # from pypolymlp.mlp_dev.error.api_errors import fit_polymlp
 
