@@ -20,17 +20,16 @@ from pypolymlp.core.params_utils import set_all_params
 from pypolymlp.core.parser_polymlp_params import ParamsParser
 from pypolymlp.core.utils import split_train_test
 from pypolymlp.mlp_dev.core.dataclass import PolymlpDataMLP
-from pypolymlp.mlp_dev.core.eval_accuracy import PolymlpEvalAccuracy, write_error_yaml
+from pypolymlp.mlp_dev.core.eval_accuracy import write_error_yaml
 from pypolymlp.mlp_dev.core.features_attr import (
     get_num_features,
     write_polymlp_params_yaml,
 )
+from pypolymlp.mlp_dev.errors.api_errors import compute_errors
 from pypolymlp.mlp_dev.fit.api_fit import fit_polymlp
 
 # from pypolymlp.mlp_dev.standard.fit import fit, fit_learning_curve, fit_standard
 # from pypolymlp.mlp_dev.standard.utils_learning_curve import save_learning_curve_log
-
-# from pypolymlp.mlp_dev.error.api_errors import fit_polymlp
 
 
 class Pypolymlp:
@@ -637,6 +636,7 @@ class Pypolymlp:
 
     def estimate_error(
         self,
+        use_cv: bool = False,
         log_energy: bool = False,
         file_path: str = "./",
         verbose: Optional[bool] = None,
@@ -648,51 +648,24 @@ class Pypolymlp:
         if self._mlp_model is None:
             raise RuntimeError("Regression must be performed before estimating errors.")
 
-        acc = PolymlpEvalAccuracy(self._mlp_model, verbose=self._verbose)
-        self._mlp_model.error_train = acc.compute_error(
+        error_train, error_test = compute_errors(
+            self._mlp_model,
             self._train,
+            test=self._test,
+            inv_xtx=self._inv_xtx,
+            use_cv=use_cv,
             log_energy=log_energy,
             path_output=file_path,
-            tag="train",
+            verbose=self._verbose,
         )
-        self._mlp_model.error_test = acc.compute_error(
-            self._test,
-            log_energy=log_energy,
-            path_output=file_path,
-            tag="test",
-        )
-
-    def estimate_error_cv(
-        self,
-        log_energy: bool = False,
-        file_path: str = "./",
-        verbose: Optional[bool] = None,
-    ):
-        """Estimate prediction errors using cross-validation."""
-        if verbose is not None:
-            self._verbose = verbose
-
-        if self._mlp_model is None:
-            raise RuntimeError("Regression must be performed before estimating errors.")
-
-        acc = PolymlpEvalAccuracy(self._mlp_model, verbose=self._verbose)
-        self._mlp_model.error_train = acc.compute_error(
-            self._train,
-            log_energy=log_energy,
-            path_output=file_path,
-            tag="train",
-        )
-        self._mlp_model.error_test = acc.compute_error_cv(
-            self._train,
-            self._inv_xtx,
-            log_energy=log_energy,
-            path_output=file_path,
-            tag="test",
-        )
+        self._mlp_model.error_train = error_train
+        self._mlp_model.error_test = error_test
+        return self
 
     def run(
         self,
         batch_size: Optional[int] = None,
+        use_cv: bool = False,
         use_cg: bool = False,
         gtol: float = 1e-2,
         max_iter: Optional[int] = None,
@@ -711,13 +684,14 @@ class Pypolymlp:
         """
         if verbose is not None:
             self._verbose = verbose
+
         if not use_cg:
-            self.fit(batch_size=batch_size)
+            self.fit(use_cv=use_cv, batch_size=batch_size)
+            self.estimate_error(use_cv=use_cv)
         else:
             # TODO: batch size must be active.
             self.fit_cg(gtol=gtol, max_iter=max_iter)
-
-        self.estimate_error()
+            self.estimate_error(use_cv=False)
         return self
 
     #    def fit_learning_curve(self, verbose: Optional[bool] = None):

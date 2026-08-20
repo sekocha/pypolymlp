@@ -87,10 +87,7 @@ def run():
 
     polymlp.save_mlp(filename="polymlp.yaml")
     t2 = time.time()
-    if args.cross_val:
-        polymlp.estimate_error_cv(log_energy=True)
-    else:
-        polymlp.estimate_error(log_energy=True)
+    polymlp.estimate_error(log_energy=True, use_cv=args.cross_val)
     t3 = time.time()
     polymlp.save_errors(filename="polymlp_error.yaml")
 

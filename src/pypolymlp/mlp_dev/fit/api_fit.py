@@ -9,7 +9,7 @@ from pypolymlp.mlp_dev.fit.fit_standard import (
     PolymlpFitStandard,
     PolymlpFitStandardUseX,
 )
-from pypolymlp.mlp_dev.fit.fit_standard_cv import PolymlpFitStandardLOOCV
+from pypolymlp.mlp_dev.fit.fit_standard_loocv import PolymlpFitStandardLOOCV
 
 
 def fit_polymlp(
