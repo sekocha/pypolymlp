@@ -12,7 +12,10 @@ from pypolymlp.mlp_dev.fit.fit_standard import (
     PolymlpFitStandard,
     PolymlpFitStandardUseX,
 )
-from pypolymlp.mlp_dev.fit.fit_standard_loocv import PolymlpFitStandardLOOCV
+from pypolymlp.mlp_dev.fit.fit_standard_loocv import (
+    PolymlpFitStandardLOOCV,
+    PolymlpFitStandardUseXLOOCV,
+)
 
 
 def fit_polymlp(
@@ -47,7 +50,12 @@ def fit_polymlp(
     else:
         if use_cv:
             if use_full_x:
-                raise RuntimeError("CV minimization not available for use_full_x.")
+                fitobj = PolymlpFitStandardUseXLOOCV(
+                    params,
+                    train,
+                    verbose=verbose,
+                )
+                # raise RuntimeError("CV minimization not available for use_full_x.")
             else:
                 fitobj = PolymlpFitStandardLOOCV(
                     params,
