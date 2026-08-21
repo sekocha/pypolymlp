@@ -4,7 +4,7 @@ from pathlib import Path
 
 import numpy as np
 
-from pypolymlp.mlp_dev.gradient.solvers_cg import solver_cg
+from pypolymlp.mlp_dev.fit.solvers_cg import solver_cg
 
 cwd = Path(__file__).parent
 

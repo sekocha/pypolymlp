@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from pypolymlp.mlp_dev.standard.fit import fit, fit_learning_curve, fit_standard
+from pypolymlp.mlp_dev.fit.api_fit import fit_learning_curve, fit_polymlp
 
 cwd = Path(__file__).parent
 
@@ -14,22 +14,26 @@ def test_fit(regdata_mp_149):
     """Test fit function from xtx and xty."""
     params, train = regdata_mp_149
     test = train
-    model = fit(params, train, test)
+    fit = fit_polymlp(params, train, test, use_full_x=False)
+    model = fit.best_model
 
     model.scaled_coeffs[0] == pytest.approx(-6.40229659e02)
     model.scaled_coeffs[1] == pytest.approx(1.73844624e05)
-    # assert model.alpha == pytest.approx(0.001)
+
+    assert len(fit.all_models) == 5
 
 
 def test_fit_standard(regdata_mp_149):
     """Test fit function from x and y."""
     params, train = regdata_mp_149
     test = train
-    model = fit_standard(params, train, test)
+    fit = fit_polymlp(params, train, test, use_full_x=True)
+    model = fit.best_model
 
     model.scaled_coeffs[0] == pytest.approx(-6.40229659e02)
     model.scaled_coeffs[1] == pytest.approx(1.73844624e05)
-    # assert model.alpha == pytest.approx(0.001)
+
+    assert len(fit.all_models) == 5
 
 
 def test_fit_learning_curve(regdata_mp_149):
@@ -38,7 +42,8 @@ def test_fit_learning_curve(regdata_mp_149):
     test = train
 
     params.alphas = [1e2, 1e3, 1e4]
-    log = fit_learning_curve(params, train, test)
+    fit = fit_learning_curve(params, train, test)
+    log = fit.error_log
     params.alphas = [1e-3, 1e-2, 1e-1, 1e0, 1e1]
 
     nums = [l[0] for l in log]

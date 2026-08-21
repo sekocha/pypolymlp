@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from pypolymlp.mlp_dev.standard.solvers import solve_linear_equation, solver_ridge
+from pypolymlp.mlp_dev.fit.solvers_standard import solve_linear_equation, solver_ridge
 
 cwd = Path(__file__).parent
 
