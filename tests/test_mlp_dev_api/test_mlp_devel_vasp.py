@@ -23,7 +23,7 @@ def _run_fit_standard(files: str):
     """Run fitting using standard procedure."""
     pypolymlp = Pypolymlp()
     pypolymlp.load_parameter_file(files, train_ratio=0.9, prefix=str(cwd))
-    pypolymlp.fit_standard()
+    pypolymlp.fit(use_full_x=True)
     pypolymlp.estimate_error(log_energy=False)
     return pypolymlp
 

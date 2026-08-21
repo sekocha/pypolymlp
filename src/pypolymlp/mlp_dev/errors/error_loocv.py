@@ -67,7 +67,7 @@ class PolymlpErrorLOOCV(PolymlpErrorBase):
     ):
         """Compute cross-validation errors and predicted values for single dataset."""
         # TODO: Needed ?
-        dataset.sort_dft()
+        # dataset.sort_dft()
         n_str = len(dataset.structures)
         begin_ids, end_ids = get_batch_slice(n_str, batch_size)
 

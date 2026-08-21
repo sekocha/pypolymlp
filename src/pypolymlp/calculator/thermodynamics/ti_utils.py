@@ -8,7 +8,7 @@ import scipy
 import yaml
 
 from pypolymlp.calculator.utils.fit_utils import Polyfit
-from pypolymlp.mlp_dev.standard.solvers import solver_ridge
+from pypolymlp.mlp_dev.fit.solvers_standard import solver_ridge
 
 
 def _is_success(eng: float, threshold: float = -100):

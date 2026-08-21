@@ -35,6 +35,17 @@ def _initialize(phono3py_mp_149):
     return polymlp
 
 
+def _assert_cv(polymlp: Pypolymlp):
+    """Assert errors."""
+    error_train = polymlp.summary.error_train["data1"]
+    error_test = polymlp.summary.error_test["LOOCV:data1"]
+
+    assert error_test["energy"] == pytest.approx(0.00013679055757029554, rel=1e-3)
+    assert error_test["force"] == pytest.approx(0.0013417973392647246, rel=1e-3)
+    assert error_train["energy"] == pytest.approx(0.0001360249793983003, rel=1e-3)
+    assert error_train["force"] == pytest.approx(0.001338914397009924, rel=1e-3)
+
+
 def _assert(polymlp: Pypolymlp):
     """Assert errors."""
     error_train = polymlp.summary.error_train["data1"]
@@ -57,7 +68,7 @@ def test_sequential(phono3py_mp_149):
 def test_standard(phono3py_mp_149):
     """Test standard algorithm."""
     polymlp = _initialize(phono3py_mp_149)
-    polymlp.fit_standard()
+    polymlp.fit(use_full_x=True)
     polymlp.estimate_error()
     _assert(polymlp)
 
@@ -65,7 +76,7 @@ def test_standard(phono3py_mp_149):
 def test_cg(phono3py_mp_149):
     """Test CG algorithm."""
     polymlp = _initialize(phono3py_mp_149)
-    polymlp.fit_cg(gtol=1e-10)
+    polymlp.fit(use_cg=True, gtol=1e-10)
     polymlp.estimate_error()
     _assert(polymlp)
 
@@ -86,3 +97,18 @@ def test_run_cg(phono3py_mp_149):
     polymlp = _initialize(phono3py_mp_149)
     polymlp.run(use_cg=True, gtol=1e-10)
     _assert(polymlp)
+
+
+def test_loocv(phono3py_mp_149):
+    """Test sequential algorithm with CV."""
+    polymlp = _initialize(phono3py_mp_149)
+    polymlp.fit(use_cv=True)
+    polymlp.estimate_error(use_cv=True)
+    _assert_cv(polymlp)
+
+
+def test_run_loocv(phono3py_mp_149):
+    """Test CG algorithm using function run."""
+    polymlp = _initialize(phono3py_mp_149)
+    polymlp.run(use_cv=True)
+    _assert_cv(polymlp)

@@ -114,7 +114,7 @@ def compute_rmse_cv(
     for data in datasets:
         if verbose:
             print("----- Dataset:", data.name, "-----", flush=True)
-        data.sort_dft()
+        # data.sort_dft()
         n_str = len(data.structures)
         begin_ids, end_ids = get_batch_slice(n_str, batch_size)
         for begin, end in zip(begin_ids, end_ids):

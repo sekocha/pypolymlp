@@ -1,5 +1,6 @@
 """Tests of polynomial MLP development using API"""
 
+import glob
 import os
 from pathlib import Path
 
@@ -25,10 +26,13 @@ def test_attrs():
 
     output_tmp = str(cwd) + "/tmp"
     polymlp.save_mlp(filename=output_tmp)
+    polymlp.save_mlp(filename=output_tmp, optimal=False)
     polymlp.save_params(filename=output_tmp)
     polymlp.save_errors(filename=output_tmp)
 
-    os.remove(output_tmp)
+    os.remove("polymlp.log")
+    for f1 in glob.glob(output_tmp + "*"):
+        os.remove(f1)
 
     mlp_model = polymlp.summary
     np.testing.assert_allclose(mlp_model.scaled_coeffs, polymlp.coeffs)
