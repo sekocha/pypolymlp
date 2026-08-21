@@ -69,7 +69,8 @@ def regdata_mp_149(phono3py_mp_149):
 @pytest.fixture(scope="session")
 def dataxy_mp_149(regdata_mp_149):
     """Return regression data."""
-    params, datasets_ = regdata_mp_149
+    params, datasets = regdata_mp_149
+    datasets_ = copy.deepcopy(datasets)
     core = PolymlpDevCore(params, use_gradient=False)
     data_xy = core.calc_xy(datasets_, scale_threshold=1e-10)
     return data_xy

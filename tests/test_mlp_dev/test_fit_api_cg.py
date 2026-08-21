@@ -1,5 +1,6 @@
 """Tests of cg fit."""
 
+import copy
 from pathlib import Path
 
 import pytest
@@ -12,8 +13,9 @@ cwd = Path(__file__).parent
 def test_fit_cg(regdata_mp_149):
     """Test fit function from xtx and xty."""
     params, train = regdata_mp_149
-    test = train
-    fit = fit_polymlp(params, train, test, use_cg=True)
+    train2 = copy.deepcopy(train)
+    test2 = copy.deepcopy(train)
+    fit = fit_polymlp(params, train2, test2, use_cg=True)
     model = fit.best_model
 
     model.scaled_coeffs[0] == pytest.approx(-6.40229659e02)
