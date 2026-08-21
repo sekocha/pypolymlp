@@ -26,10 +26,8 @@ from pypolymlp.mlp_dev.core.features_attr import (
     write_polymlp_params_yaml,
 )
 from pypolymlp.mlp_dev.errors.api_errors import compute_errors
-from pypolymlp.mlp_dev.fit.api_fit import fit_polymlp
-
-# from pypolymlp.mlp_dev.standard.fit import fit, fit_learning_curve, fit_standard
-# from pypolymlp.mlp_dev.standard.utils_learning_curve import save_learning_curve_log
+from pypolymlp.mlp_dev.fit.api_fit import fit_learning_curve, fit_polymlp
+from pypolymlp.mlp_dev.fit.fit_learning_curve import save_learning_curve_log
 
 
 class Pypolymlp:
@@ -694,25 +692,26 @@ class Pypolymlp:
             self.estimate_error(use_cv=False)
         return self
 
-    #    def fit_learning_curve(self, verbose: Optional[bool] = None):
-    #        """Compute learing curve."""
-    #        if verbose is not None:
-    #            self._verbose = verbose
-    #
-    #        self._is_params_none()
-    #        self._is_data_none()
-    #        self._learning_log = fit_learning_curve(
-    #            self._params,
-    #            self._train,
-    #            self._test,
-    #            verbose=self._verbose,
-    #        )
-    #        return self
+    def fit_learning_curve(self, verbose: Optional[bool] = None):
+        """Compute learing curve."""
+        if verbose is not None:
+            self._verbose = verbose
 
-    # def save_learning_curve(self, filename: str = "polymlp_learning_curve.dat"):
-    #     """Save learing curve."""
-    #     save_learning_curve_log(self._learning_log, filename=filename)
-    #     return self
+        self._is_params_none()
+        self._is_data_none()
+        fit = fit_learning_curve(
+            self._params,
+            self._train,
+            self._test,
+            verbose=self._verbose,
+        )
+        self._learning_log = fit.error_log
+        return self
+
+    def save_learning_curve(self, filename: str = "polymlp_learning_curve.dat"):
+        """Save learing curve."""
+        save_learning_curve_log(self._learning_log, filename=filename)
+        return self
 
     def save_mlp(self, filename: str = "polymlp.yaml"):
         """Save polynomial MLP as file.

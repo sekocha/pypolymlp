@@ -1,6 +1,6 @@
 """API Class for developing polymlp."""
 
-from typing import Literal, Optional
+from typing import Optional
 
 import numpy as np
 
@@ -9,8 +9,6 @@ from pypolymlp.core.params import PolymlpParams
 from pypolymlp.mlp_dev.core.data_sequential import calc_xtx_xty
 from pypolymlp.mlp_dev.core.data_standard import calc_xy
 from pypolymlp.mlp_dev.core.data_utils import PolymlpDataXY
-from pypolymlp.mlp_dev.core.dataclass import PolymlpDataMLP
-from pypolymlp.mlp_dev.core.eval_accuracy import PolymlpEvalAccuracy
 from pypolymlp.mlp_dev.core.features_attr import get_features_attr, get_num_features
 from pypolymlp.mlp_dev.core.utils import check_memory_size_in_regression
 from pypolymlp.mlp_dev.core.utils_model_selection import (
@@ -177,28 +175,3 @@ class PolymlpDevCore:
     def is_hybrid(self) -> bool:
         """Return whether hybrid model is used."""
         return self._params.is_hybrid
-
-
-def eval_accuracy(
-    mlp_model: PolymlpDataMLP,
-    datasets: DatasetList,
-    stress_unit: Literal["eV", "GPa"] = "eV",
-    log_energy: bool = True,
-    log_force: bool = False,
-    log_stress: bool = False,
-    path_output: str = "./",
-    tag: str = "train",
-    verbose: bool = False,
-):
-    """Evaluate accuracy."""
-    acc = PolymlpEvalAccuracy(mlp_model, verbose=verbose)
-    error = acc.compute_error(
-        datasets,
-        stress_unit=stress_unit,
-        log_energy=log_energy,
-        log_force=log_force,
-        log_stress=log_stress,
-        path_output=path_output,
-        tag=tag,
-    )
-    return error

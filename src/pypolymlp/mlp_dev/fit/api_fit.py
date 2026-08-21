@@ -5,6 +5,7 @@ from typing import Optional
 from pypolymlp.core.dataset import DatasetList
 from pypolymlp.core.params import PolymlpParams
 from pypolymlp.mlp_dev.fit.fit_cg import PolymlpFitCG
+from pypolymlp.mlp_dev.fit.fit_learning_curve import PolymlpFitLearningCurve
 from pypolymlp.mlp_dev.fit.fit_standard import (
     PolymlpFitStandard,
     PolymlpFitStandardUseX,
@@ -68,5 +69,22 @@ def fit_polymlp(
                     verbose=verbose,
                 )
 
+    fitobj.fit()
+    return fitobj
+
+
+def fit_learning_curve(
+    params: PolymlpParams,
+    train: DatasetList,
+    test: DatasetList,
+    verbose: bool = False,
+):
+    """API function for estimating MLP coefficients."""
+    fitobj = PolymlpFitLearningCurve(
+        params,
+        train,
+        test,
+        verbose=verbose,
+    )
     fitobj.fit()
     return fitobj

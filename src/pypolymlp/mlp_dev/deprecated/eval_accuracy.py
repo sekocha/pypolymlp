@@ -13,10 +13,7 @@ from pypolymlp.core.utils import rmse
 from pypolymlp.mlp_dev.core.data_sequential import compute_features_single_batch
 from pypolymlp.mlp_dev.core.dataclass import PolymlpDataMLP
 from pypolymlp.mlp_dev.core.features_attr import get_num_features
-from pypolymlp.mlp_dev.core.utils_sequential import (
-    get_auto_batch_size,
-    get_batch_slice,
-)
+from pypolymlp.mlp_dev.core.utils_sequential import get_auto_batch_size, get_batch_slice
 
 
 class PolymlpEvalAccuracy:

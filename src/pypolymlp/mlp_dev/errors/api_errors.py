@@ -11,6 +11,31 @@ from .error_loocv import PolymlpErrorLOOCV
 from .error_rmse import PolymlpErrorRMSE
 
 
+def eval_rmse(
+    mlp: PolymlpDataMLP,
+    datasets: DatasetList,
+    stress_unit: Literal["eV", "GPa"] = "eV",
+    log_energy: bool = True,
+    log_force: bool = False,
+    log_stress: bool = False,
+    path_output: str = "./",
+    tag: str = "train",
+    verbose: bool = False,
+):
+    """Evaluate accuracy."""
+    rmse_obj = PolymlpErrorRMSE(mlp, verbose=verbose)
+    errors = rmse_obj.compute_error(
+        datasets,
+        stress_unit=stress_unit,
+        log_energy=log_energy,
+        log_force=log_force,
+        log_stress=log_stress,
+        path_output=path_output,
+        tag=tag,
+    )
+    return errors
+
+
 def compute_errors(
     mlp: PolymlpDataMLP,
     train: DatasetList,
