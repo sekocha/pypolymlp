@@ -11,10 +11,7 @@ from pypolymlp.mlp_dev.core.data_sequential import compute_features_single_batch
 from pypolymlp.mlp_dev.core.data_utils import PolymlpDataXY
 from pypolymlp.mlp_dev.core.dataclass import PolymlpDataMLP
 from pypolymlp.mlp_dev.core.features_attr import get_num_features
-from pypolymlp.mlp_dev.core.utils_sequential import (
-    get_auto_batch_size,
-    get_batch_slice,
-)
+from pypolymlp.mlp_dev.core.utils_sequential import get_auto_batch_size, get_batch_slice
 
 
 def _check_singular(rmse: np.ndarray, error_threshold: float = 1e6):
@@ -137,13 +134,6 @@ def compute_rmse_cv(
                 print(
                     f" Matrix shape (Projection matrix) = ({x.shape[0]} {x.shape[0]})"
                 )
-                # peak_mem = (x.shape[0] * x.shape[0]) * 8e-9
-                # print(
-                #     " Estimated peak memory allocation of projection matrix:",
-                #     "{:.2f}".format(peak_mem),
-                #     "(GB)",
-                #     flush=True,
-                # )
                 print(" Compute X @ (X.T @ X + alpha @ I)^-1 @ X.T")
             hat_h = x @ inv_xtx @ x_w2.T
             hat_h_diag = -np.diagonal(hat_h)
@@ -183,6 +173,37 @@ def get_best_model(
         cumulative_n_features=cumulative_n_features,
     )
     return best_model
+
+
+def get_all_models(
+    params: PolymlpParams,
+    coefs_array: np.ndarray,
+    scales: np.ndarray,
+    rmse_train: np.ndarray,
+    rmse_test: np.ndarray,
+    cumulative_n_features: Optional[tuple] = None,
+):
+    """Return best polymlp model."""
+    if len(params.alphas) != coefs_array.shape[1]:
+        raise RuntimeError("Shapes of alphas and coeffs not consistent.")
+    if len(params.alphas) != len(rmse_train):
+        raise RuntimeError("Shapes of alphas and rmse_train not consistent.")
+    if len(params.alphas) != len(rmse_test):
+        raise RuntimeError("Shapes of alphas and rmse_test not consistent.")
+
+    all_models = []
+    for idx in range(coefs_array.shape[1]):
+        model = PolymlpDataMLP(
+            coeffs=coefs_array[:, idx],
+            scales=scales,
+            rmse_train=rmse_train[idx],
+            rmse_test=rmse_test[idx],
+            alpha=params.alphas[idx],
+            params=params,
+            cumulative_n_features=cumulative_n_features,
+        )
+        all_models.append(model)
+    return all_models
 
 
 def print_log(

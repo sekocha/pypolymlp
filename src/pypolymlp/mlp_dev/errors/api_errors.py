@@ -50,8 +50,8 @@ def compute_errors(
     verbose: bool = False,
 ):
     """Compute errors for training (and test) datasets."""
-    rmse_obj = PolymlpErrorRMSE(mlp, verbose=verbose)
-    errors_train = rmse_obj.compute_error(
+    errors_train_obj = PolymlpErrorRMSE(mlp, verbose=verbose)
+    _ = errors_train_obj.compute_error(
         train,
         stress_unit=stress_unit,
         log_energy=log_energy,
@@ -63,8 +63,8 @@ def compute_errors(
     if use_cv:
         if inv_xtx is None:
             raise RuntimeError("Inverse of X.T @ X required.")
-        cv_obj = PolymlpErrorLOOCV(mlp, verbose=verbose)
-        errors_test = cv_obj.compute_error(
+        errors_test_obj = PolymlpErrorLOOCV(mlp, verbose=verbose)
+        _ = errors_test_obj.compute_error(
             train,
             inv_xtx,
             stress_unit=stress_unit,
@@ -77,7 +77,8 @@ def compute_errors(
     else:
         if test is None:
             raise RuntimeError("Test dataset required.")
-        errors_test = rmse_obj.compute_error(
+        errors_test_obj = PolymlpErrorRMSE(mlp, verbose=verbose)
+        _ = errors_test_obj.compute_error(
             test,
             stress_unit=stress_unit,
             log_energy=log_energy,
@@ -86,4 +87,4 @@ def compute_errors(
             path_output=path_output,
             tag="test",
         )
-    return (errors_train, errors_test)
+    return (errors_train_obj, errors_test_obj)

@@ -14,6 +14,7 @@ from pypolymlp.mlp_dev.core.utils import check_memory_size_in_regression
 from pypolymlp.mlp_dev.core.utils_model_selection import (
     compute_rmse,
     compute_rmse_cv,
+    get_all_models,
     get_best_model,
     print_log,
 )
@@ -147,6 +148,24 @@ class PolymlpDevCore:
     ):
         """Return best polymlp model."""
         return get_best_model(
+            self._params,
+            coefs,
+            scales,
+            rmse_train,
+            rmse_test,
+            cumulative_n_features,
+        )
+
+    def get_all_models(
+        self,
+        coefs: np.ndarray,
+        scales: np.ndarray,
+        rmse_train: np.ndarray,
+        rmse_test: np.ndarray,
+        cumulative_n_features: Optional[tuple] = None,
+    ):
+        """Return all polymlp models."""
+        return get_all_models(
             self._params,
             coefs,
             scales,

@@ -8,7 +8,6 @@ import numpy as np
 from pypolymlp.core.dataset import Dataset, DatasetList
 from pypolymlp.mlp_dev.core.data_sequential import compute_features_single_batch
 from pypolymlp.mlp_dev.core.dataclass import PolymlpDataMLP
-from pypolymlp.mlp_dev.core.features_attr import get_num_features
 from pypolymlp.mlp_dev.core.utils_sequential import get_auto_batch_size, get_batch_slice
 
 from .error_base import PolymlpErrorBase
@@ -34,18 +33,14 @@ class PolymlpErrorLOOCV(PolymlpErrorBase):
         batch_size: int = 20,
     ):
         """Compute cross-validation errors and predicted values for all datasets."""
-        # TODO: n_features = inv_xtx.shape[0]?
-        n_features = get_num_features(self._prop.params)
         if batch_size is None:
-            batch_size = get_auto_batch_size(
-                n_features,
-                verbose=self._verbose,
-            )
+            n_features = inv_xtx.shape[0]
+            batch_size = get_auto_batch_size(n_features, verbose=self._verbose)
 
-        errors = dict()
+        self._errors = dict()
         for data in datasets:
             output_key = self._generate_output_key(data.name, tag=tag)
-            errors[f"LOOCV:{data.name}"] = self.compute_error_single(
+            self._errors[f"LOOCV:{data.name}"] = self.compute_error_single(
                 data,
                 inv_xtx,
                 batch_size,
@@ -56,7 +51,7 @@ class PolymlpErrorLOOCV(PolymlpErrorBase):
                 log_stress=log_stress,
                 path_output=path_output,
             )
-        return errors
+        return self._errors
 
     def compute_error_single(
         self,

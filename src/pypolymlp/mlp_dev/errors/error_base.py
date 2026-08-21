@@ -99,7 +99,7 @@ class PolymlpErrorBase(ABC):
             print(file=f)
             print("prediction_errors:", file=f)
 
-        for key, dict1 in self._error.items():
+        for key, dict1 in self._errors.items():
             print("- dataset:", key, file=f)
             print("  rmse_energy: ", dict1["energy"] * 1000, file=f)
             if dict1["force"] is not None:

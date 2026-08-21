@@ -20,7 +20,6 @@ from pypolymlp.core.params_utils import set_all_params
 from pypolymlp.core.parser_polymlp_params import ParamsParser
 from pypolymlp.core.utils import split_train_test
 from pypolymlp.mlp_dev.core.dataclass import PolymlpDataMLP
-from pypolymlp.mlp_dev.core.eval_accuracy import write_error_yaml
 from pypolymlp.mlp_dev.core.features_attr import (
     get_num_features,
     write_polymlp_params_yaml,
@@ -41,8 +40,11 @@ class Pypolymlp:
         self._test = None
 
         self._mlp_model = None
+        self._mlp_all_models = None
         self._learning_log = None
         self._inv_xtx = None
+        self._error_train = None
+        self._error_test = None
 
         # TODO: For electrons.
         # self._train_yml = None
@@ -550,67 +552,24 @@ class Pypolymlp:
 
     def fit(
         self,
-        batch_size: Optional[int] = None,
         use_cv: bool = False,
+        use_cg: bool = False,
+        use_full_x: bool = False,
+        batch_size: Optional[int] = None,
+        gtol: float = 1e-2,
+        max_iter: Optional[int] = None,
         verbose: Optional[bool] = None,
     ):
         """Estimate MLP coefficients without computing entire X.
 
         Parameters
         ----------
+        use_cv: Use cross validation for optimizing alpha value.
+        use_cg: Use conjugate gradient solver.
+        use_full_x: Calculate the entire X matrix.
         batch_size: Batch size for sequential regression.
                     If None, the batch size is automatically determined
                     depending on the memory size and number of features.
-        """
-        if verbose is not None:
-            self._verbose = verbose
-
-        self._is_params_none()
-        self._is_data_none()
-        fit = fit_polymlp(
-            self._params,
-            self._train,
-            self._test,
-            use_cv=use_cv,
-            use_cg=False,
-            use_full_x=False,
-            batch_size=batch_size,
-            verbose=self._verbose,
-        )
-        self._mlp_model = fit.best_model
-        if use_cv:
-            self._inv_xtx = fit.inv_xtx
-        return self
-
-    def fit_standard(self, verbose: Optional[bool] = None):
-        """Estimate MLP coefficients with direct evaluation of X."""
-        if verbose is not None:
-            self._verbose = verbose
-
-        self._is_params_none()
-        self._is_data_none()
-        fit = fit_polymlp(
-            self._params,
-            self._train,
-            self._test,
-            use_cv=False,
-            use_cg=False,
-            use_full_x=True,
-            verbose=self._verbose,
-        )
-        self._mlp_model = fit.best_model
-        return self
-
-    def fit_cg(
-        self,
-        gtol: float = 1e-2,
-        max_iter: Optional[int] = None,
-        verbose: Optional[bool] = None,
-    ):
-        """Estimate MLP coefficients using conjugate gradient.
-
-        Parameters
-        ----------
         gtol: Gradient tolerance for CG.
         max_iter: Number of maximum iterations in CG.
         """
@@ -619,17 +578,22 @@ class Pypolymlp:
 
         self._is_params_none()
         self._is_data_none()
-
         fit = fit_polymlp(
-            self._params,
-            self._train,
-            self._test,
-            use_cg=True,
+            params=self._params,
+            train=self._train,
+            test=self._test,
+            use_cv=use_cv,
+            use_cg=use_cg,
+            use_full_x=use_full_x,
+            batch_size=batch_size,
             gtol=gtol,
             max_iter=max_iter,
             verbose=self._verbose,
         )
         self._mlp_model = fit.best_model
+        self._mlp_all_models = fit.all_models
+        if use_cv:
+            self._inv_xtx = fit.inv_xtx
         return self
 
     def estimate_error(
@@ -646,9 +610,9 @@ class Pypolymlp:
         if self._mlp_model is None:
             raise RuntimeError("Regression must be performed before estimating errors.")
 
-        error_train, error_test = compute_errors(
-            self._mlp_model,
-            self._train,
+        self._error_train, self._error_test = compute_errors(
+            mlp=self._mlp_model,
+            train=self._train,
             test=self._test,
             inv_xtx=self._inv_xtx,
             use_cv=use_cv,
@@ -656,40 +620,52 @@ class Pypolymlp:
             path_output=file_path,
             verbose=self._verbose,
         )
-        self._mlp_model.error_train = error_train
-        self._mlp_model.error_test = error_test
+        self._mlp_model.error_train = self._error_train.errors
+        self._mlp_model.error_test = self._error_test.errors
         return self
 
     def run(
         self,
-        batch_size: Optional[int] = None,
         use_cv: bool = False,
         use_cg: bool = False,
+        use_full_x: bool = False,
+        batch_size: Optional[int] = None,
         gtol: float = 1e-2,
         max_iter: Optional[int] = None,
+        log_energy: bool = False,
         verbose: Optional[bool] = None,
     ):
         """Estimate MLP coefficients and prediction errors.
 
         Parameters
         ----------
+        use_cv: Use cross validation for optimizing alpha value.
+        use_cg: Use conjugate gradient solver.
+        use_full_x: Calculate the entire X matrix.
         batch_size: Batch size for sequential regression.
                     If None, the batch size is automatically determined
                     depending on the memory size and number of features.
-        use_cg: CG algorithm is used or not.
         gtol: Gradient tolerance for CG.
         max_iter: Number of maximum iterations in CG.
         """
         if verbose is not None:
             self._verbose = verbose
 
-        if not use_cg:
-            self.fit(use_cv=use_cv, batch_size=batch_size)
-            self.estimate_error(use_cv=use_cv)
-        else:
-            # TODO: batch size must be active.
-            self.fit_cg(gtol=gtol, max_iter=max_iter)
-            self.estimate_error(use_cv=False)
+        # TODO: batch size must be active for CG.
+        self.fit(
+            use_cv=use_cv,
+            use_cg=use_cg,
+            use_full_x=use_full_x,
+            batch_size=batch_size,
+            gtol=gtol,
+            max_iter=max_iter,
+            verbose=self._verbose,
+        )
+        self.estimate_error(
+            use_cv=use_cv,
+            log_energy=log_energy,
+            verbose=self._verbose,
+        )
         return self
 
     def fit_learning_curve(self, verbose: Optional[bool] = None):
@@ -713,15 +689,43 @@ class Pypolymlp:
         save_learning_curve_log(self._learning_log, filename=filename)
         return self
 
-    def save_mlp(self, filename: str = "polymlp.yaml"):
+    def save_mlp(
+        self,
+        filename: str = "polymlp.yaml",
+        filename_log: str = "polymlp.log",
+        optimal: bool = True,
+        error_threshold: float = 1e6,
+    ):
         """Save polynomial MLP as file.
+
+        Parameters
+        ----------
+        filename: File name of generated polynomial MLP.
+        optimal: If true, only the MLP with the lowest prediction error
+                 will be generated. If false, all the MLPs will be generated.
 
         When hybrid models are used, mlp files will be generated as
         filename.1, filename.2, ...
         """
-        if self._mlp_model is None:
-            raise RuntimeError("No polymlp has been developed.")
-        self._mlp_model.save_mlp(filename=filename)
+        if optimal:
+            if self._mlp_model is None:
+                raise RuntimeError("No polymlp has been developed.")
+            self._mlp_model.save_mlp(filename=filename)
+        else:
+            if self._mlp_all_models is None:
+                raise RuntimeError("No polymlp has been developed.")
+
+            with open(filename_log, "w") as f:
+                print("polymlps:", file=f)
+                for i, mlp in enumerate(self._mlp_all_models, 1):
+                    if mlp.rmse_test > error_threshold:
+                        continue
+                    name = filename + ".v" + str(i).zfill(2)
+                    mlp.save_mlp(filename=name)
+                    print("- mlp file: ", name, file=f)
+                    print("  alpha:    ", mlp.alpha, file=f)
+                    print("  rmse_test:", mlp.rmse_test, file=f)
+                    print(file=f)
         return self
 
     def load_mlp(self, filename: Union[str, io.IOBase] = "polymlp.yaml"):
@@ -757,8 +761,8 @@ class Pypolymlp:
         """
         if self._mlp_model.error_train is None:
             raise RuntimeError("estimate_error must be performed before save_errors.")
-        write_error_yaml(self._mlp_model.error_train, filename=filename, mode="w")
-        write_error_yaml(self._mlp_model.error_test, filename=filename, mode="a")
+        self._error_train.write_error_yaml(filename=filename, mode="w")
+        self._error_test.write_error_yaml(filename=filename, mode="a")
         return self
 
     def split_train_test(self, list_obj: list, train_ratio: float = 0.9):

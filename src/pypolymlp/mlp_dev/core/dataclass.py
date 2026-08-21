@@ -26,9 +26,9 @@ class PolymlpDataMLP:
     alpha: Optional[float] = None
     beta: Optional[float] = None
 
-    #     error_train: Optional[dict] = None
-    #     error_test: Optional[dict] = None
-    #
+    error_train: Optional[dict] = None
+    error_test: Optional[dict] = None
+
     params: Optional[PolymlpParams] = None
     cumulative_n_features: Optional[tuple] = None
     scaled_coeffs: Optional[np.ndarray] = None

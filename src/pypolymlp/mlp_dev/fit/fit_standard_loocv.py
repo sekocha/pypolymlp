@@ -83,7 +83,13 @@ class PolymlpFitStandardLOOCV(PolymlpFitBase):
             cv_scores,
             train_xy.cumulative_n_features,
         )
-
+        self._all_models = self._polymlp.get_all_models(
+            coefs_array,
+            train_xy.scales,
+            [0] * len(cv_scores),
+            cv_scores,
+            train_xy.cumulative_n_features,
+        )
         xtx.flat[:: n_features + 1] -= alpha
         xtx.flat[:: n_features + 1] += self._best_model.alpha
         self._inv_xtx = np.linalg.inv(xtx)

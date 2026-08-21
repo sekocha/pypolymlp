@@ -92,6 +92,13 @@ class PolymlpFitCG(PolymlpFitBase):
             rmse_test,
             train_xy.cumulative_n_features,
         )
+        self._all_models = self._polymlp.get_all_models(
+            coefs,
+            train_xy.scales,
+            rmse_train,
+            rmse_test,
+            train_xy.cumulative_n_features,
+        )
         if self._verbose:
             self._polymlp.print_model_selection_log(rmse_train, rmse_test)
 

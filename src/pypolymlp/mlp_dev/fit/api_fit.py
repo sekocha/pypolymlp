@@ -2,6 +2,8 @@
 
 from typing import Optional
 
+import numpy as np
+
 from pypolymlp.core.dataset import DatasetList
 from pypolymlp.core.params import PolymlpParams
 from pypolymlp.mlp_dev.fit.fit_cg import PolymlpFitCG
@@ -23,6 +25,7 @@ def fit_polymlp(
     batch_size: Optional[int] = None,
     gtol: float = 1e-2,
     max_iter: Optional[int] = None,
+    error_threshold: float = 1e6,
     verbose: bool = False,
 ):
     """API function for estimating MLP coefficients."""
@@ -70,6 +73,10 @@ def fit_polymlp(
                 )
 
     fitobj.fit()
+
+    rmses = np.array([mlp.rmse_test for mlp in fitobj.all_models])
+    if np.all(rmses > error_threshold):
+        raise RuntimeError("MLP estimation failed at all alpha values.")
     return fitobj
 
 

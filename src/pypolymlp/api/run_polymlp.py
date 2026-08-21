@@ -55,13 +55,6 @@ def run():
         action="store_true",
         help="Use cross validation",
     )
-
-    # parser.add_argument(
-    #     "--sgd",
-    #     action="store_true",
-    #     help="Use stochastic gradient descent",
-    # )
-
     args = parser.parse_args()
     np.set_printoptions(legacy="1.21")
     print_credit()
@@ -80,10 +73,13 @@ def run():
         tlearn2 = time.time()
 
     t1 = time.time()
-    if args.cg:
-        polymlp.fit_cg(gtol=args.gtol, max_iter=args.max_iter)
-    else:
-        polymlp.fit(use_cv=args.cross_val, batch_size=args.batch_size)
+    polymlp.fit(
+        use_cv=args.cross_val,
+        use_cg=args.cg,
+        batch_size=args.batch_size,
+        gtol=args.gtol,
+        max_iter=args.max_iter,
+    )
 
     polymlp.save_mlp(filename="polymlp.yaml")
     t2 = time.time()
