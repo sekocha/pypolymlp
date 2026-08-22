@@ -1,6 +1,5 @@
 """Class for computing RMSE prediction errors."""
 
-import itertools
 import os
 from math import acos, degrees
 from typing import Literal
@@ -58,13 +57,9 @@ class PolymlpErrorRMSE(PolymlpErrorBase):
     ):
         """Compute errors and predicted values for single dataset."""
         strs = dataset.structures
-        energies, forces, stresses = self._prop.eval_multiple(strs)
-        forces = np.array(
-            list(itertools.chain.from_iterable([f.T.reshape(-1) for f in forces]))
-        )
-        stresses = stresses.reshape(-1)
-
         n_total_atoms = [sum(st.n_atoms) for st in strs]
+        energies, forces, stresses = self._eval_properties(strs)
+
         rmse_e, true_e, pred_e = self._compute_rmse(
             dataset.energies,
             energies,
@@ -101,17 +96,11 @@ class PolymlpErrorRMSE(PolymlpErrorBase):
                 rmse_f_direction = None
                 rmse_percent_f_norm = None
 
-        if stress_unit == "eV":
-            normalize = np.repeat(n_total_atoms, 6)
-        elif stress_unit == "GPa":
-            eV_to_GPa = 160.21766208
-            volumes = [st.volume for st in strs]
-            normalize = np.repeat(volumes, 6) / eV_to_GPa
-
         if not dataset.exist_stress:
             rmse_s = None
             mae_s = None
         else:
+            normalize = self._stress_normalize_coeffs(strs, stress_unit)
             rmse_s, true_s, pred_s = self._compute_rmse(
                 dataset.stresses,
                 stresses,

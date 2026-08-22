@@ -42,9 +42,12 @@ class Pypolymlp:
         self._mlp_model = None
         self._mlp_all_models = None
         self._learning_log = None
-        self._inv_xtx = None
         self._error_train = None
         self._error_test = None
+
+        # For CV.
+        self._inv_xtx = None
+        self._train_xy = None
 
         # TODO: For electrons.
         # self._train_yml = None
@@ -554,8 +557,7 @@ class Pypolymlp:
         self,
         use_cv: bool = False,
         use_cg: bool = False,
-        # use_full_x: bool = False,
-        use_full_x: bool = True,
+        use_full_x: bool = False,
         batch_size: Optional[int] = None,
         gtol: float = 1e-2,
         max_iter: Optional[int] = None,
@@ -577,6 +579,9 @@ class Pypolymlp:
         if verbose is not None:
             self._verbose = verbose
 
+        if use_cv:
+            use_full_x = True
+
         self._is_params_none()
         self._is_data_none()
         fit = fit_polymlp(
@@ -595,6 +600,10 @@ class Pypolymlp:
         self._mlp_all_models = fit.all_models
         if use_cv:
             self._inv_xtx = fit.inv_xtx
+            try:
+                self._train_xy = fit.train_xy
+            except:
+                pass
         return self
 
     def estimate_error(
@@ -616,6 +625,7 @@ class Pypolymlp:
             train=self._train,
             test=self._test,
             inv_xtx=self._inv_xtx,
+            train_xy=self._train_xy,
             use_cv=use_cv,
             log_energy=log_energy,
             path_output=file_path,

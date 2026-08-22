@@ -1,5 +1,6 @@
 """Base class for evaluating errors."""
 
+import itertools
 from abc import ABC, abstractmethod
 from typing import Literal, Optional
 
@@ -19,6 +20,7 @@ class PolymlpErrorBase(ABC):
         self._mlp = mlp
         self._prop = Properties(params=mlp.params, coeffs=mlp.scaled_coeffs)
         self._verbose = verbose
+
         self._errors = None
 
     @abstractmethod
@@ -208,3 +210,27 @@ class PolymlpErrorBase(ABC):
         output_key = tag + "-" + output_key
         output_key = output_key.replace("---", "-").replace("--", "-")
         return output_key
+
+    def _stress_normalize_coeffs(
+        self,
+        structures: list,
+        stress_unit: Literal["eV", "GPa"],
+    ):
+        """Set normalize coefficients for stress entries."""
+        if stress_unit == "eV":
+            n_total_atoms = [sum(st.n_atoms) for st in structures]
+            normalize = np.repeat(n_total_atoms, 6)
+        elif stress_unit == "GPa":
+            eV_to_GPa = 160.21766208
+            volumes = [st.volume for st in structures]
+            normalize = np.repeat(volumes, 6) / eV_to_GPa
+        return normalize
+
+    def _eval_properties(self, structures: list):
+        """Evaluate and flatten properties."""
+        pred_e, pred_f, pred_s = self._prop.eval_multiple(structures)
+        pred_f = np.array(
+            list(itertools.chain.from_iterable([f.T.reshape(-1) for f in pred_f]))
+        )
+        pred_s = pred_s.reshape(-1)
+        return (pred_e, pred_f, pred_s)

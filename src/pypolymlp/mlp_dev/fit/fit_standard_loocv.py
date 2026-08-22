@@ -119,7 +119,7 @@ class PolymlpFitStandardUseXLOOCV(PolymlpFitBase):
         """
         super().__init__(params, train, verbose=verbose)
 
-        self._x = None
+        self._train_xy = None
         self._inv_xtx = None
 
     def fit(self):
@@ -183,14 +183,14 @@ class PolymlpFitStandardUseXLOOCV(PolymlpFitBase):
             self._polymlp.print_model_selection_log(rmse_train, rmse_test, use_cv=True)
 
         xtx.flat[:: n_features + 1] += self._best_model.alpha
-        self._x = x
-        self._inv_xtx = np.linalg.inv(xtx)
+        self._train_xy = train_xy
+        self._train_xy.inv_xtx = np.linalg.inv(xtx)
         return self
 
     @property
-    def x(self):
-        """Return X."""
-        return self._x
+    def train_xy(self):
+        """Return XY data."""
+        return self._train_xy
 
     @property
     def inv_xtx(self):
