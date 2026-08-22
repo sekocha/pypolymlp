@@ -599,7 +599,10 @@ class Pypolymlp:
         self._mlp_model = fit.best_model
         self._mlp_all_models = fit.all_models
         if use_cv:
-            self._inv_xtx = fit.inv_xtx
+            try:
+                self._inv_xtx = fit.inv_xtx
+            except:
+                pass
             try:
                 self._train_xy = fit.train_xy
             except:

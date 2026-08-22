@@ -38,6 +38,7 @@ class PolymlpDataXY:
     y_sq_norm: float = 0.0
 
     inv_xtx: Optional[np.ndarray] = None
+    hat_ii: Optional[np.ndarray] = None
 
     def clear_data(self):
         """Clear large data."""

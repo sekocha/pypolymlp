@@ -192,16 +192,13 @@ class PolymlpErrorUseXLOOCV(PolymlpErrorBase):
         tag: str = "train",
     ):
         """Compute cross-validation errors and predicted values for all datasets."""
-        hat_ii = np.sum((data_xy.x @ data_xy.inv_xtx) * data_xy.x, axis=1)
-        # predictions = (data_xy.x @ self._mlp.coeffs) / data_xy.weights
-
         self._errors = dict()
         for data, indices in zip(datasets, data_xy.first_indices, strict=True):
             output_key = self._generate_output_key(data.name, tag=tag)
             self._errors[f"LOOCV:{data.name}"] = self.compute_error_single(
                 data,
                 indices,
-                hat_ii,
+                data_xy.hat_ii,
                 output_key=output_key,
                 stress_unit=stress_unit,
                 log_energy=log_energy,

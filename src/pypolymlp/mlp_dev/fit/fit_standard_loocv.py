@@ -145,7 +145,8 @@ class PolymlpFitStandardUseXLOOCV(PolymlpFitBase):
 
         sum_w = np.sum(np.square(train_xy.weights))
         rmse_test = []
-        alpha_prev = 0.0
+        alpha_prev, cv_min = 0.0, np.inf
+        hat_ii_min = None
         for i, alpha in enumerate(self._params.alphas):
             if self._verbose:
                 print("- alpha:", alpha, flush=True)
@@ -162,8 +163,12 @@ class PolymlpFitStandardUseXLOOCV(PolymlpFitBase):
 
             rmse_test.append(sqrt_cv)
             alpha_prev = alpha
+            if cv < cv_min:
+                hat_ii_min = hat_ii
+                cv_min = cv
 
         xtx.flat[:: n_features + 1] -= alpha
+        train_xy.clear_data()
 
         self._best_model = self._polymlp.get_best_model(
             coefs,
@@ -182,17 +187,11 @@ class PolymlpFitStandardUseXLOOCV(PolymlpFitBase):
         if self._verbose:
             self._polymlp.print_model_selection_log(rmse_train, rmse_test, use_cv=True)
 
-        xtx.flat[:: n_features + 1] += self._best_model.alpha
         self._train_xy = train_xy
-        self._train_xy.inv_xtx = np.linalg.inv(xtx)
+        self._train_xy.hat_ii = hat_ii_min
         return self
 
     @property
     def train_xy(self):
         """Return XY data."""
         return self._train_xy
-
-    @property
-    def inv_xtx(self):
-        """Return inverse of X.T @ X."""
-        return self._inv_xtx

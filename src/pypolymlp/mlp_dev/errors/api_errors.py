@@ -79,9 +79,6 @@ def compute_errors(
                 tag="test",
             )
         else:
-            if train_xy.inv_xtx is None:
-                raise RuntimeError("Inverse of X.T @ X required.")
-
             errors_test_obj = PolymlpErrorUseXLOOCV(mlp, verbose=verbose)
             _ = errors_test_obj.compute_error(
                 train,
