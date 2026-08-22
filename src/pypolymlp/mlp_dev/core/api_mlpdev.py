@@ -174,9 +174,14 @@ class PolymlpDevCore:
             cumulative_n_features,
         )
 
-    def print_model_selection_log(self, rmse_train: np.ndarray, rmse_test: np.ndarray):
+    def print_model_selection_log(
+        self,
+        rmse_train: np.ndarray,
+        rmse_test: np.ndarray,
+        use_cv: bool = False,
+    ):
         """Print log from model selection."""
-        print_log(self._params, rmse_train, rmse_test)
+        print_log(self._params, rmse_train, rmse_test, use_cv=use_cv)
 
     @property
     def n_features(self):

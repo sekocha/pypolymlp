@@ -210,19 +210,21 @@ def print_log(
     params: PolymlpParams,
     rmse_train: np.ndarray,
     rmse_test: np.ndarray,
+    use_cv: bool = False,
     error_threshold: float = 1e6,
 ):
     """Output log for ridge regression."""
     print("Regression: model selection ...", flush=True)
+    str1 = ": rmse (train), cv =" if use_cv else ": rmse (train, test) ="
     for a, rmse1, rmse2 in zip(params.alphas, rmse_train, rmse_test):
         if rmse1 > error_threshold:
-            text = ": rmse (train, test) = Failed, Failed"
+            text = str1 + "Failed, Failed"
             print("- alpha =", "{:.3e}".format(a), text, flush=True)
         else:
             print(
                 "- alpha =",
                 "{:.3e}".format(a),
-                ": rmse (train, test) =",
+                str1,
                 "{:.5f}".format(rmse1),
                 "{:.5f}".format(rmse2),
                 flush=True,
