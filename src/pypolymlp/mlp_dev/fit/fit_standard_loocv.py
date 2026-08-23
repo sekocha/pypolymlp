@@ -3,6 +3,7 @@
 from typing import Optional
 
 import numpy as np
+import scipy
 
 from pypolymlp.core.dataset import DatasetList
 from pypolymlp.core.params import PolymlpParams
@@ -49,6 +50,13 @@ class PolymlpFitStandardLOOCV(PolymlpFitBase):
         cv_scores = []
         n_features = xtx.shape[0]
         coefs_array = np.zeros((n_features, len(alphas)))
+        # coefs_array = solver_ridge(
+        #     xtx=train_xy.xtx,
+        #     xty=train_xy.xty,
+        #     alphas=self._params.alphas,
+        #     verbose=self._verbose,
+        # )
+
         alpha_prev = 0.0
         for i, alpha in enumerate(alphas):
             if self._verbose:
@@ -59,7 +67,11 @@ class PolymlpFitStandardLOOCV(PolymlpFitBase):
             xtx.flat[:: n_features + 1] += add
             if self._verbose:
                 print("  Compute inverse matrix", flush=True)
+            # coefs_single = coefs_array[:, i]
+            # inv_xtx = scipy.linalg.inv(xtx, assume_a="sym")
+            # inv_xtx = scipy.linalg.pinv(xtx)
             inv_xtx = np.linalg.inv(xtx)
+            # inv_xtx = np.linalg.pinv(xtx)
             coefs_single = inv_xtx @ xty
             coefs_array[:, i] = coefs_single
 
@@ -141,7 +153,6 @@ class PolymlpFitStandardUseXLOOCV(PolymlpFitBase):
         x = train_xy.x
         xtx = train_xy.xtx = x.T @ x
         n_features = xtx.shape[0]
-        n_data = x.shape[0]
 
         sum_w = np.sum(np.square(train_xy.weights))
         rmse_test = []
@@ -152,15 +163,18 @@ class PolymlpFitStandardUseXLOOCV(PolymlpFitBase):
                 print("- alpha:", alpha, flush=True)
             add = alpha - alpha_prev
             xtx.flat[:: n_features + 1] += add
-            inv_xtx = np.linalg.inv(xtx)
+            # inv_xtx = scipy.linalg.inv(xtx)
+            # inv_xtx = np.linalg.inv(xtx)
+            # inv_xtx = np.linalg.pinv(xtx)
+            inv_xtx = scipy.linalg.inv(xtx, assume_a="sym")
 
             pred = x @ coefs[:, i]
             diff = train_xy.y - pred
-            hat_ii = np.sum((x @ inv_xtx) * x, axis=1)
-            denom = np.ones(n_data) - hat_ii
+            hat_ii = self._calc_diagonal_hat(x, inv_xtx)
+
+            denom = 1 - hat_ii
             cv = np.sum(np.square(diff / denom)) / sum_w
             sqrt_cv = np.sqrt(cv)
-
             rmse_test.append(sqrt_cv)
             alpha_prev = alpha
             if cv < cv_min:
@@ -195,3 +209,9 @@ class PolymlpFitStandardUseXLOOCV(PolymlpFitBase):
     def train_xy(self):
         """Return XY data."""
         return self._train_xy
+
+    def _calc_diagonal_hat(self, x: np.ndarray, inv_xtx: np.ndarray):
+        """Calculate diagonal elements of hat matrix."""
+        # hat_ii = np.sum((x @ inv_xtx) * x, axis=1)
+        hat_ii = np.einsum("ij,ij->i", x @ inv_xtx, x)
+        return hat_ii
