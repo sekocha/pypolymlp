@@ -9,7 +9,7 @@ from pypolymlp.core.dataset import DatasetList
 from pypolymlp.core.params import PolymlpParams
 
 from .fit_base import PolymlpFitBase
-from .solvers_standard import solver_ridge
+from .solvers_standard import solve_linear_equation, solver_ridge
 
 
 class PolymlpFitStandardLOOCV(PolymlpFitBase):
@@ -163,16 +163,12 @@ class PolymlpFitStandardUseXLOOCV(PolymlpFitBase):
                 print("- alpha:", alpha, flush=True)
             add = alpha - alpha_prev
             xtx.flat[:: n_features + 1] += add
-            # inv_xtx = scipy.linalg.inv(xtx)
-            # inv_xtx = np.linalg.inv(xtx)
-            # inv_xtx = np.linalg.pinv(xtx)
-            inv_xtx = scipy.linalg.inv(xtx, assume_a="sym")
 
+            hat_ii = self._calc_diagonal_hat(x, xtx)
+            denom = 1 - hat_ii
             pred = x @ coefs[:, i]
             diff = train_xy.y - pred
-            hat_ii = self._calc_diagonal_hat(x, inv_xtx)
 
-            denom = 1 - hat_ii
             cv = np.sum(np.square(diff / denom)) / sum_w
             sqrt_cv = np.sqrt(cv)
             rmse_test.append(sqrt_cv)
@@ -210,8 +206,22 @@ class PolymlpFitStandardUseXLOOCV(PolymlpFitBase):
         """Return XY data."""
         return self._train_xy
 
-    def _calc_diagonal_hat(self, x: np.ndarray, inv_xtx: np.ndarray):
+    def _calc_diagonal_hat(self, x: np.ndarray, xtx: np.ndarray):
         """Calculate diagonal elements of hat matrix."""
+        return self._calc_diagonal_hat_use_linear_solver(x, xtx)
+
+    def _calc_diagonal_hat_use_inverse(self, x: np.ndarray, xtx: np.ndarray):
+        """Calculate diagonal elements of hat matrix."""
+        # inv_xtx = scipy.linalg.inv(xtx)
+        # inv_xtx = np.linalg.inv(xtx)
+        inv_xtx = scipy.linalg.inv(xtx, assume_a="sym")
         # hat_ii = np.sum((x @ inv_xtx) * x, axis=1)
         hat_ii = np.einsum("ij,ij->i", x @ inv_xtx, x)
+        return hat_ii
+
+    def _calc_diagonal_hat_use_linear_solver(self, x: np.ndarray, xtx: np.ndarray):
+        """Calculate diagonal elements of hat matrix."""
+        Z = solve_linear_equation(xtx, x.T)
+        # hat_ii = np.sum(x * Z.T, axis=1)
+        hat_ii = np.einsum("ij,ij->i", x, Z.T)
         return hat_ii
