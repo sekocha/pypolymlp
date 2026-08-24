@@ -218,7 +218,7 @@ def print_log(
     str1 = ": rmse (train), cv =" if use_cv else ": rmse (train, test) ="
     for a, rmse1, rmse2 in zip(params.alphas, rmse_train, rmse_test):
         if rmse1 > error_threshold:
-            text = str1 + "Failed, Failed"
+            text = str1 + " Failed, Failed"
             print("- alpha =", "{:.3e}".format(a), text, flush=True)
         else:
             print(

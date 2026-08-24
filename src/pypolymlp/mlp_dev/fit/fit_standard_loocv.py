@@ -103,7 +103,9 @@ class PolymlpFitStandardLOOCV(PolymlpFitBase):
         xtx.flat[:: n_features + 1] -= alpha
         xtx.flat[:: n_features + 1] += self._best_model.alpha
         self._train_xy = train_xy
-        self._train_xy.inv_xtx = np.linalg.inv(xtx)
+
+        inv_xtx = scipy.linalg.inv(xtx, assume_a="sym")
+        self._train_xy.inv_xtx = inv_xtx
         return self
 
     @property

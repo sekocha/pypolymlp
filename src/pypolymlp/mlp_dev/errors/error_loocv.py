@@ -38,6 +38,7 @@ class PolymlpErrorLOOCV(PolymlpErrorBase):
             raise RuntimeError("Inverse matrix of X.T @ X not found.")
 
         inv_xtx = data_xy.inv_xtx
+        scales = data_xy.scales
         if batch_size is None:
             n_features = inv_xtx.shape[0]
             batch_size = get_auto_batch_size(n_features, verbose=self._verbose)
@@ -48,6 +49,7 @@ class PolymlpErrorLOOCV(PolymlpErrorBase):
             self._errors[f"LOOCV:{data.name}"] = self.compute_error_single(
                 data,
                 inv_xtx,
+                scales,
                 batch_size,
                 output_key=output_key,
                 stress_unit=stress_unit,
@@ -62,6 +64,7 @@ class PolymlpErrorLOOCV(PolymlpErrorBase):
         self,
         dataset: Dataset,
         inv_xtx: np.ndarray,
+        scales: np.ndarray,
         batch_size: int,
         output_key: str = "train",
         stress_unit: Literal["eV", "GPa"] = "eV",
@@ -71,8 +74,6 @@ class PolymlpErrorLOOCV(PolymlpErrorBase):
         path_output: bool = "./",
     ):
         """Compute cross-validation errors and predicted values for single dataset."""
-        # TODO: Needed ?
-        # dataset.sort_dft()
         n_str = len(dataset.structures)
         begin_ids, end_ids = get_batch_slice(n_str, batch_size)
 
@@ -96,11 +97,9 @@ class PolymlpErrorLOOCV(PolymlpErrorBase):
                 sliced_data,
                 verbose=False,
             )
-            x = x / self._mlp.scales
-            x_w2 = x_w2 / self._mlp.scales
-            hat_h = x @ inv_xtx @ x_w2.T
-            hat_h_diag = -np.diagonal(hat_h)
-            hat_h_diag += 1
+            x = x / scales
+            x_w2 = x_w2 / scales
+            hat_h_diag = 1 - np.sum((x @ inv_xtx) * x_w2, axis=1)
 
             y_pred = x @ self._mlp.coeffs
             ebegin, fbegin, sbegin = first_indices
