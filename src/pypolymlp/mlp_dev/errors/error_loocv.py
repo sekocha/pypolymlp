@@ -192,6 +192,9 @@ class PolymlpErrorUseXLOOCV(PolymlpErrorBase):
         tag: str = "train",
     ):
         """Compute cross-validation errors and predicted values for all datasets."""
+        if data_xy.hat_ii is None:
+            raise RuntimeError("Hat matrix not found.")
+
         self._errors = dict()
         for data, indices in zip(datasets, data_xy.first_indices, strict=True):
             output_key = self._generate_output_key(data.name, tag=tag)

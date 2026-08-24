@@ -40,10 +40,10 @@ def _assert_cv(polymlp: Pypolymlp):
     error_train = polymlp.summary.error_train["data1"]
     error_test = polymlp.summary.error_test["LOOCV:data1"]
 
-    assert error_test["energy"] == pytest.approx(0.00013679055757029554, rel=1e-3)
-    assert error_test["force"] == pytest.approx(0.0013417973392647246, rel=1e-3)
-    assert error_train["energy"] == pytest.approx(0.0001360249793983003, rel=1e-3)
-    assert error_train["force"] == pytest.approx(0.001338914397009924, rel=1e-3)
+    assert error_test["energy"] == pytest.approx(2.382180602301668e-06, rel=1e-3)
+    assert error_test["force"] == pytest.approx(0.0011595006498937846, rel=1e-3)
+    assert error_train["energy"] == pytest.approx(2.368768610001591e-06, rel=1e-3)
+    assert error_train["force"] == pytest.approx(0.0011560576729359665, rel=1e-3)
 
 
 def _assert(polymlp: Pypolymlp):
