@@ -46,7 +46,6 @@ class Pypolymlp:
         self._error_test = None
 
         # For CV.
-        self._inv_xtx = None
         self._train_xy = None
 
         # TODO: For electrons.
@@ -569,7 +568,7 @@ class Pypolymlp:
         ----------
         use_cv: Use cross validation for optimizing alpha value.
         use_cg: Use conjugate gradient solver.
-        use_full_x: Calculate the entire X matrix.
+        use_full_x: Calculate the entire X matrix. Available only for use_cv = False.
         batch_size: Batch size for sequential regression.
                     If None, the batch size is automatically determined
                     depending on the memory size and number of features.
@@ -599,14 +598,7 @@ class Pypolymlp:
         self._mlp_model = fit.best_model
         self._mlp_all_models = fit.all_models
         if use_cv:
-            try:
-                self._inv_xtx = fit.inv_xtx
-            except:
-                pass
-            try:
-                self._train_xy = fit.train_xy
-            except:
-                pass
+            self._train_xy = fit.train_xy
         return self
 
     def estimate_error(
@@ -627,7 +619,6 @@ class Pypolymlp:
             mlp=self._mlp_model,
             train=self._train,
             test=self._test,
-            inv_xtx=self._inv_xtx,
             train_xy=self._train_xy,
             use_cv=use_cv,
             log_energy=log_energy,

@@ -33,7 +33,7 @@ class PolymlpFitStandardLOOCV(PolymlpFitBase):
         super().__init__(params, train, verbose=verbose)
 
         self._batch_size = batch_size
-        self._inv_xtx = None
+        self._train_xy = None
 
     def fit(self):
         """Estimate MLP coefficients."""
@@ -42,20 +42,21 @@ class PolymlpFitStandardLOOCV(PolymlpFitBase):
         train_xy = self._polymlp.calc_xtx_xty(self._train, batch_size=self._batch_size)
 
         xtx = train_xy.xtx
-        xty = train_xy.xty
         alphas = self._params.alphas
         if self._verbose:
             print("Regression:", flush=True)
 
         cv_scores = []
         n_features = xtx.shape[0]
-        coefs_array = np.zeros((n_features, len(alphas)))
-        # coefs_array = solver_ridge(
-        #     xtx=train_xy.xtx,
-        #     xty=train_xy.xty,
-        #     alphas=self._params.alphas,
-        #     verbose=self._verbose,
-        # )
+        coefs_array = solver_ridge(
+            xtx=train_xy.xtx,
+            xty=train_xy.xty,
+            alphas=self._params.alphas,
+            verbose=self._verbose,
+        )
+        rmse_train = self._polymlp.compute_rmse(
+            coefs_array, train_xy, check_singular=True
+        )
 
         alpha_prev = 0.0
         for i, alpha in enumerate(alphas):
@@ -67,13 +68,10 @@ class PolymlpFitStandardLOOCV(PolymlpFitBase):
             xtx.flat[:: n_features + 1] += add
             if self._verbose:
                 print("  Compute inverse matrix", flush=True)
-            # coefs_single = coefs_array[:, i]
-            # inv_xtx = scipy.linalg.inv(xtx, assume_a="sym")
-            # inv_xtx = scipy.linalg.pinv(xtx)
-            inv_xtx = np.linalg.inv(xtx)
-            # inv_xtx = np.linalg.pinv(xtx)
-            coefs_single = inv_xtx @ xty
-            coefs_array[:, i] = coefs_single
+
+            coefs_single = coefs_array[:, i]
+            inv_xtx = scipy.linalg.inv(xtx, assume_a="sym")
+            # inv_xtx = np.linalg.inv(xtx)
 
             rmse_cv = self._polymlp.compute_rmse_cv(
                 coefs_single,
@@ -86,33 +84,32 @@ class PolymlpFitStandardLOOCV(PolymlpFitBase):
             alpha_prev = alpha
 
         if self._verbose:
-            self._polymlp.print_model_selection_log(
-                [0] * len(cv_scores), cv_scores, use_cv=True
-            )
+            self._polymlp.print_model_selection_log(rmse_train, cv_scores, use_cv=True)
 
         self._best_model = self._polymlp.get_best_model(
             coefs_array,
             train_xy.scales,
-            [0] * len(cv_scores),
+            rmse_train,
             cv_scores,
             train_xy.cumulative_n_features,
         )
         self._all_models = self._polymlp.get_all_models(
             coefs_array,
             train_xy.scales,
-            [0] * len(cv_scores),
+            rmse_train,
             cv_scores,
             train_xy.cumulative_n_features,
         )
         xtx.flat[:: n_features + 1] -= alpha
         xtx.flat[:: n_features + 1] += self._best_model.alpha
-        self._inv_xtx = np.linalg.inv(xtx)
+        self._train_xy = train_xy
+        self._train_xy.inv_xtx = np.linalg.inv(xtx)
         return self
 
     @property
-    def inv_xtx(self):
-        """Return inverse of X.T @ X."""
-        return self._inv_xtx
+    def train_xy(self):
+        """Return XY data."""
+        return self._train_xy
 
 
 class PolymlpFitStandardUseXLOOCV(PolymlpFitBase):
@@ -132,7 +129,6 @@ class PolymlpFitStandardUseXLOOCV(PolymlpFitBase):
         super().__init__(params, train, verbose=verbose)
 
         self._train_xy = None
-        self._inv_xtx = None
 
     def fit(self):
         """Estimate MLP coefficients."""

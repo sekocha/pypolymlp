@@ -24,7 +24,7 @@ class PolymlpErrorLOOCV(PolymlpErrorBase):
     def compute_error(
         self,
         datasets: DatasetList,
-        inv_xtx: np.ndarray,
+        data_xy: PolymlpDataXY,
         stress_unit: Literal["eV", "GPa"] = "eV",
         log_energy: bool = True,
         log_force: bool = False,
@@ -34,6 +34,10 @@ class PolymlpErrorLOOCV(PolymlpErrorBase):
         batch_size: int = 20,
     ):
         """Compute cross-validation errors and predicted values for all datasets."""
+        if data_xy.inv_xtx is None:
+            raise RuntimeError("Inverse matrix of X.T @ X not found.")
+
+        inv_xtx = data_xy.inv_xtx
         if batch_size is None:
             n_features = inv_xtx.shape[0]
             batch_size = get_auto_batch_size(n_features, verbose=self._verbose)
