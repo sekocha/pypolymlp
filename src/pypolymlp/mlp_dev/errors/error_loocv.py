@@ -233,8 +233,7 @@ class PolymlpErrorUseXLOOCV(PolymlpErrorBase):
         pred_e, pred_f, pred_s = self._eval_properties(strs)
 
         ebegin, fbegin, sbegin = indices
-        eend, send = sbegin, fbegin
-
+        eend = ebegin + dataset.energies.shape[0]
         e1, e2 = self._apply_hat(dataset.energies, pred_e, hat_ii, ebegin, eend)
         rmse_e, _, _ = self._compute_rmse(e1, e2, normalize=n_total_atoms)
         mae_e, _, _ = self._compute_mae(e1, e2, normalize=n_total_atoms)
@@ -250,6 +249,7 @@ class PolymlpErrorUseXLOOCV(PolymlpErrorBase):
         rmse_s = None
         mae_s = None
         if dataset.exist_stress:
+            send = sbegin + dataset.stresses.shape[0]
             normalize = self._stress_normalize_coeffs(strs, stress_unit)
             s1, s2 = self._apply_hat(dataset.stresses, pred_s, hat_ii, sbegin, send)
             rmse_s, _, _ = self._compute_rmse(s1, s2, normalize=normalize)
@@ -291,7 +291,7 @@ class PolymlpErrorUseXLOOCV(PolymlpErrorBase):
     ):
         """Apply 1.0/(1-hat_ii)."""
         hat = hat_ii[begin:end]
-        denom = np.ones(hat.shape[0]) - hat
+        denom = 1 - hat
         val1 = true / denom
         val2 = pred / denom
         return val1, val2

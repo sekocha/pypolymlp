@@ -17,7 +17,7 @@ def test_fit(regdata_mp_149):
     test2 = copy.deepcopy(train)
     fit = fit_polymlp(params, train2, test2, use_cv=True, use_full_x=False)
     model = fit.best_model
-    assert model.rmse_test == pytest.approx(0.0014145062277486947)
+    assert model.rmse_test == pytest.approx(0.0008210162371496754)
 
     model.scaled_coeffs[0] == pytest.approx(-6.40229659e02)
     model.scaled_coeffs[1] == pytest.approx(1.73844624e05)
