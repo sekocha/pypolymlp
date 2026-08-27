@@ -40,3 +40,11 @@ def test_rmse():
     y1 = np.array([0.3, 0.2, 0.1])
     y2 = np.array([0.35, 0.18, 0.09])
     assert rmse(y1, y2) == pytest.approx(0.03162277660168379)
+
+
+def test_rmse_with_weights():
+    """Test for weighted rmse."""
+    y1 = np.array([0.3, 0.2, 0.1])
+    y2 = np.array([0.35, 0.18, 0.09])
+    w = np.array([0.5, 0.5, 2])
+    assert rmse(y1, y2, weights=w) == pytest.approx(0.02581988897471611)

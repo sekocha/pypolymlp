@@ -150,6 +150,7 @@ def _compute_products_single_batch(
     )
     data_xy.xty = sum_array(data_xy.xty, x.T @ y)
     data_xy.y_sq_norm += y @ y
+    data_xy.weights = w
     data_xy.total_n_data += n_data
     data_xy.cumulative_n_features = features.cumulative_n_features
 

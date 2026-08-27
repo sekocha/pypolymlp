@@ -1,5 +1,7 @@
 """Utility functions"""
 
+from typing import Optional
+
 import numpy as np
 
 from pypolymlp._version import __version__
@@ -34,9 +36,13 @@ def split_train_test(files: list, train_ratio: float = 0.9):
     return [files[i] for i in train_ids], [files[i] for i in test_ids]
 
 
-def rmse(y_true: np.ndarray, y_pred: np.ndarray):
+def rmse(y_true: np.ndarray, y_pred: np.ndarray, weights: Optional[np.ndarray] = None):
     """Compute root mean square errors."""
-    return np.sqrt(np.mean(np.square(y_true - y_pred)))
+    if weights is None:
+        return np.sqrt(np.mean(np.square(y_true - y_pred)))
+
+    sum_w = np.sum(np.square(weights))
+    return np.sqrt(np.sum(np.square(y_true - y_pred)) / sum_w)
 
 
 def mass_table():

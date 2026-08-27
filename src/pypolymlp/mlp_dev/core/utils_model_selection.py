@@ -28,11 +28,12 @@ def compute_rmse_standard(
     coefs_array: np.ndarray,
     x: np.ndarray,
     y: np.ndarray,
+    weights: Optional[np.ndarray] = None,
     check_singular: bool = False,
 ):
     """Compute RMSEs from x and y."""
     pred = (x @ coefs_array).T
-    rmse_array = np.array([rmse(y, p) for p in pred])
+    rmse_array = np.array([rmse(y, p, weights=weights) for p in pred])
     if check_singular:
         _check_singular(rmse_array)
     return rmse_array
@@ -56,14 +57,22 @@ def compute_rmse_seq(
     data_xy: PolymlpDataXY,
     check_singular: bool = False,
 ):
-    """Compute RMSEs from xtx and xty."""
+    """Compute weighted RMSEs from xtx and xty."""
+    if data_xy.xtx is None:
+        raise RuntimeError("X.T @ X not found.")
+    if data_xy.xty is None:
+        raise RuntimeError("X.T @ y not found.")
+    if data_xy.weights is None:
+        raise RuntimeError("weights not found.")
+
     rmse_array = []
+    sum_w = np.sum(np.square(data_xy.weights))
     for coefs in coefs_array.T:
         mse = compute_mse(
             data_xy.xtx,
             data_xy.xty,
             data_xy.y_sq_norm,
-            data_xy.total_n_data,
+            sum_w,
             coefs,
         )
         try:
@@ -81,15 +90,21 @@ def compute_rmse(
     data_xy: Optional[PolymlpDataXY] = None,
     x: Optional[np.ndarray] = None,
     y: Optional[np.ndarray] = None,
+    weights: Optional[np.ndarray] = None,
     check_singular: bool = False,
 ):
     """Compute RMSEs."""
-    if data_xy is not None:
-        if data_xy.xtx is None:
-            return compute_rmse_standard(coefs_array, data_xy.x, data_xy.y)
-        return compute_rmse_seq(coefs_array, data_xy)
-    else:
-        return compute_rmse_standard(coefs_array, x, y)
+    if data_xy is None:
+        return compute_rmse_standard(coefs_array, x, y, weights=weights)
+
+    if data_xy.xtx is None:
+        return compute_rmse_standard(
+            coefs_array,
+            data_xy.x,
+            data_xy.y,
+            weights=data_xy.weights,
+        )
+    return compute_rmse_seq(coefs_array, data_xy)
 
 
 def compute_rmse_cv(
