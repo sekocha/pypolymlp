@@ -130,8 +130,12 @@ class PolymlpErrorBase(ABC):
         outdata = np.array([true_e, pred_e, (true_e - pred_e) * 1000]).T
         f = open(path_output + "/predictions/energy." + output_key + ".dat", "w")
         print("# DFT(eV/atom), MLP(eV/atom), DFT-MLP(meV/atom)", file=f)
-        for d, name in zip(outdata, dataset.dft.files):
-            print(d[0], d[1], d[2], name, file=f)
+        if dataset.files is None:
+            for d in outdata:
+                print(d[0], d[1], d[2], file=f)
+        else:
+            for d, name in zip(outdata, dataset.files):
+                print(d[0], d[1], d[2], name, file=f)
         f.close()
 
     def _write_forces(

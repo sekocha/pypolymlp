@@ -76,7 +76,7 @@ def compute_errors(
             log_force=log_force,
             log_stress=log_stress,
             path_output=path_output,
-            tag="test",
+            tag="loocv",
         )
     else:
         if test is None:
