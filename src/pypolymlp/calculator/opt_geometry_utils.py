@@ -1,16 +1,16 @@
 """Class for basis set used in geometry optimization."""
 
+import copy
 from typing import Optional
 
 import numpy as np
+from symfc.api_symfc import eigh
 
 from pypolymlp.calculator.compute_features import update_types
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.utils.spglib_utils import construct_basis_cell
 from pypolymlp.utils.structure_utils import _refine_positions
 from pypolymlp.utils.symfc_utils import construct_basis_fractional_coordinates
-
-# from symfc.api_symfc import eigh
 
 
 class BasisSetGO:
@@ -51,31 +51,41 @@ class BasisSetGO:
 
         self._basis_a = None
         self._basis_f = None
-        self._a0 = None
-        self._f0 = None
-        self._v0 = None
 
         self._init_structure = update_types(cell, elements)
         self._basis_a, self._init_structure = self._set_basis_axis(self._init_structure)
         self._basis_f = self._set_basis_positions(self._init_structure)
 
-        if self._basis_a is None and self._basis_f:
-            raise ValueError("No degree of freedom to be optimized.")
+        self._basis_a = self._apply_sd_cell(selective_dynamics_cell)
+        self._basis_f = self._apply_sd_positions(selective_dynamics_positions)
 
-        if self._verbose:
-            self._print_basis()
+        if self._basis_a is None and self._basis_f is None:
+            raise RuntimeError("No degree of freedom to be optimized.")
 
         self._a0 = self._init_structure.axis
         self._f0 = self._init_structure.positions
         self._v0 = np.linalg.det(self._init_structure.axis)
+
         self._basis_size_f = 0 if self._basis_f is None else self._basis_f.shape[1]
+        self._basis_size = 0
+        if self._basis_f is not None:
+            self._basis_size += self._basis_f.shape[1]
+        if self._basis_a is not None:
+            self._basis_size += self._basis_a.shape[1]
+
+        if self._verbose:
+            self._print_basis()
 
     def _print_basis(self):
         """Print basis sets."""
+        print("Relax cell shape:       ", self._relax_cell, flush=True)
+        print("Relax volume:           ", self._relax_volume, flush=True)
+        print("Relax atomic positions: ", self._relax_positions, flush=True)
         print("Basis (Axis)", flush=True)
         print(self._basis_a, flush=True)
         print("Basis (Positions)", flush=True)
         print(self._basis_f, flush=True)
+        print("Degrees of freedom:", self._basis_size, flush=True)
 
     def _set_basis_axis(self, cell: PolymlpStructure):
         """Set basis vectors for axis components."""
@@ -99,57 +109,37 @@ class BasisSetGO:
         basis_f = construct_basis_fractional_coordinates(cell)
         return basis_f
 
-    #    def _apply_selective_dynamics_cell(
-    #        self,
-    #        selective_dynamics_cell: np.ndarray | None,
-    #    ):
-    #        """Apply selective dynamics."""
-    #        print("Init basis")
-    #        print(self._basis_axis)
-    #        if selective_dynamics_cell is None or self._basis_axis is None:
-    #            return self._basis_axis
-    #
-    #        if selective_dynamics_cell.shape != (3, 3):
-    #            raise RuntimeError("Shape of selective_dynamics_cell != (3, 3).")
-    #
-    #        sd = selective_dynamics_cell.reshape(-1)
-    #        proj_a = self._basis_axis @ self._basis_axis.T
-    #        proj_a[~sd, :] = 0
-    #        proj_a[:, ~sd] = 0
-    #        basis_axis = eigh(proj_a)
-    #
-    #        self._basis_axis = basis_axis
-    #
-    #        print("Final basis")
-    #        print(self._basis_axis)
-    #        return self._basis_axis
-    #
-    #    def _apply_selective_dynamics_positions(
-    #        self,
-    #        selective_dynamics_positions: np.ndarray | None,
-    #    ):
-    #        """Apply selective dynamics."""
-    #        print("Init basis")
-    #        print(self._basis_f)
-    #        if selective_dynamics_positions is None or self._basis_f is None:
-    #            return self._basis_f
-    #
-    #        n_atom = len(self.structure.elements)
-    #        if selective_dynamics_positions.shape != (3, n_atom):
-    #            raise RuntimeError("Shape of selective_dynamics_cell != (3, n_atom).")
-    #
-    #        sd = selective_dynamics_positions.T.reshape(-1)
-    #        proj_f = self._basis_f @ self._basis_f.T
-    #        proj_f[~sd, :] = 0
-    #        proj_f[:, ~sd] = 0
-    #        basis_f = eigh(proj_f)
-    #
-    #        self._basis_f = basis_f
-    #
-    #        print("Final basis")
-    #        print(self._basis_f)
-    #        return self._basis_f
-    #
+    def _apply_sd_cell(self, sd_cell: np.ndarray | None):
+        """Apply selective dynamics."""
+        if sd_cell is None or self._basis_a is None:
+            return self._basis_a
+
+        if sd_cell.shape != (3, 3):
+            raise RuntimeError("Shape of selective_dynamics_cell != (3, 3).")
+
+        sd = sd_cell.reshape(-1)
+        proj_a = self._basis_a @ self._basis_a.T
+        proj_a[~sd, :] = 0
+        proj_a[:, ~sd] = 0
+        basis_a = eigh(proj_a)
+        return basis_a
+
+    def _apply_sd_positions(self, sd_positions: np.ndarray | None):
+        """Apply selective dynamics."""
+        if sd_positions is None or self._basis_f is None:
+            return self._basis_f
+
+        n_atom = len(self.structure.elements)
+        if sd_positions.shape != (3, n_atom):
+            raise RuntimeError("Shape of selective_dynamics_cell != (3, n_atom).")
+
+        sd = sd_positions.T.reshape(-1)
+        proj_f = self._basis_f @ self._basis_f.T
+        proj_f[~sd, :] = 0
+        proj_f[:, ~sd] = 0
+        basis_f = eigh(proj_f)
+        return basis_f
+
     @property
     def basis_a(self):
         """Return basis set for axis."""
@@ -171,12 +161,7 @@ class BasisSetGO:
     @property
     def init_coeffs(self):
         """Set initial coefficients representing structure."""
-        basis_size = 0
-        if self._basis_f is not None:
-            basis_size += self._basis_f.shape[1]
-        if self._basis_a:
-            basis_size += self._basis_a.shape[1]
-        return np.zeros(basis_size)
+        return np.zeros(self._basis_size)
 
     def axis(self, x: np.ndarray):
         """Convert coeffs. to axis."""
@@ -206,7 +191,10 @@ class BasisSetGO:
         x_pos, x_cell = self.split(x)
         axis = self.axis(x_cell)
         positions = self.positions(x_pos)
-        return (axis, positions)
+        st = copy.deepcopy(self._init_structure)
+        st.axis = axis
+        st.positions = positions
+        return st
 
 
 #    def _to_volume(self, x: np.ndarray):
@@ -217,12 +205,6 @@ class BasisSetGO:
 #        volume = np.linalg.det(axis)
 #        return volume
 #
-#        self._basis_axis = self._apply_selective_dynamics_cell(selective_dynamics_cell)
-#        self._basis_f = self._apply_selective_dynamics_positions(
-#            selective_dynamics_positions,
-#        )
-#
-
 #    def fun_fix_cell(self, x, args=None):
 #        """Target function when performing no cell optimization."""
 #        self._to_structure_fix_cell(x)

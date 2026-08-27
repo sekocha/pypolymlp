@@ -461,23 +461,36 @@ class PypolymlpCalc:
             self.structures = init_str
         init_str = self.first_structure
 
-        try:
-            self._go = GeometryOptimization(
-                init_str,
-                self._prop,
-                relax_cell=relax_cell,
-                relax_volume=relax_volume,
-                relax_positions=relax_positions,
-                with_sym=with_sym,
-                pressure=pressure,
-                selective_dynamics_cell=selective_dynamics_cell,
-                selective_dynamics_positions=selective_dynamics_positions,
-                verbose=self._verbose,
-            )
-        except ValueError:
-            self._go = None
-            if self._verbose:
-                print("Warning: No degrees of freedom in structure.", flush=True)
+        self._go = GeometryOptimization(
+            init_str,
+            self._prop,
+            relax_cell=relax_cell,
+            relax_volume=relax_volume,
+            relax_positions=relax_positions,
+            with_sym=with_sym,
+            pressure=pressure,
+            selective_dynamics_cell=selective_dynamics_cell,
+            selective_dynamics_positions=selective_dynamics_positions,
+            verbose=self._verbose,
+        )
+
+        # try:
+        #     self._go = GeometryOptimization(
+        #         init_str,
+        #         self._prop,
+        #         relax_cell=relax_cell,
+        #         relax_volume=relax_volume,
+        #         relax_positions=relax_positions,
+        #         with_sym=with_sym,
+        #         pressure=pressure,
+        #         selective_dynamics_cell=selective_dynamics_cell,
+        #         selective_dynamics_positions=selective_dynamics_positions,
+        #         verbose=self._verbose,
+        #     )
+        # except ValueError:
+        #     self._go = None
+        #     if self._verbose:
+        #         print("Warning: No degrees of freedom in structure.", flush=True)
         return self
 
     def run_geometry_optimization(
@@ -509,10 +522,6 @@ class PypolymlpCalc:
         """
         if self._go is None:
             return (None, None, None)
-
-        if self._verbose:
-            print("Initial structure", flush=True)
-            self._go.print_structure()
 
         self._go.run(method=method, gtol=gtol, maxiter=maxiter, c1=c1, c2=c2)
         self.structures = self._go.structure
