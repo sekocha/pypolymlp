@@ -461,36 +461,23 @@ class PypolymlpCalc:
             self.structures = init_str
         init_str = self.first_structure
 
-        self._go = GeometryOptimization(
-            init_str,
-            self._prop,
-            relax_cell=relax_cell,
-            relax_volume=relax_volume,
-            relax_positions=relax_positions,
-            with_sym=with_sym,
-            pressure=pressure,
-            selective_dynamics_cell=selective_dynamics_cell,
-            selective_dynamics_positions=selective_dynamics_positions,
-            verbose=self._verbose,
-        )
-
-        # try:
-        #     self._go = GeometryOptimization(
-        #         init_str,
-        #         self._prop,
-        #         relax_cell=relax_cell,
-        #         relax_volume=relax_volume,
-        #         relax_positions=relax_positions,
-        #         with_sym=with_sym,
-        #         pressure=pressure,
-        #         selective_dynamics_cell=selective_dynamics_cell,
-        #         selective_dynamics_positions=selective_dynamics_positions,
-        #         verbose=self._verbose,
-        #     )
-        # except ValueError:
-        #     self._go = None
-        #     if self._verbose:
-        #         print("Warning: No degrees of freedom in structure.", flush=True)
+        try:
+            self._go = GeometryOptimization(
+                init_str,
+                self._prop,
+                relax_cell=relax_cell,
+                relax_volume=relax_volume,
+                relax_positions=relax_positions,
+                with_sym=with_sym,
+                pressure=pressure,
+                selective_dynamics_cell=selective_dynamics_cell,
+                selective_dynamics_positions=selective_dynamics_positions,
+                verbose=self._verbose,
+            )
+        except RuntimeError:
+            self._go = None
+            if self._verbose:
+                print("Geometry optimization: No degrees of freedom.", flush=True)
         return self
 
     def run_geometry_optimization(

@@ -92,7 +92,10 @@ class BasisSetGO:
         if not self._relax_cell and not self._relax_volume:
             return None, cell
         if not self._relax_cell and self._relax_volume:
-            return np.full((9, 1), 1.0 / 3.0), cell
+            vec_ratio = cell.axis.reshape(-1) * np.ones(9)
+            basis = vec_ratio / np.linalg.norm(vec_ratio)
+            basis = basis.reshape((9, 1))
+            return basis, cell
         if not self._with_sym:
             return np.eye(9), cell
 
@@ -154,6 +157,16 @@ class BasisSetGO:
         return self._basis_f
 
     @property
+    def basis_size(self):
+        """Return basis set size."""
+        return self._basis_size
+
+    @property
+    def basis_size_f(self):
+        """Return size of basis set for fractional coordinates."""
+        return self._basis_size_f
+
+    @property
     def init_structure(self):
         """Return initial structure."""
         return self._init_structure
@@ -176,15 +189,9 @@ class BasisSetGO:
         """Convert coeffs. to fractional coordinates."""
         if self._basis_f is None:
             return self._f0
+
         df = (self._basis_f @ x).reshape(-1, 3).T
         return _refine_positions(self._f0 + df)
-
-    def split(self, x: np.ndarray):
-        """Split coefficients."""
-        partition1 = self._basis_size_f
-        x_pos = x[:partition1]
-        x_axis = x[partition1:]
-        return x_pos, x_axis
 
     def structure(self, x: np.ndarray):
         """Convert coeffs. to structure."""
@@ -196,6 +203,13 @@ class BasisSetGO:
         st.positions = positions
         return st
 
+    def split(self, x: np.ndarray):
+        """Split coefficients."""
+        partition1 = self._basis_size_f
+        x_pos = x[:partition1]
+        x_axis = x[partition1:]
+        return x_pos, x_axis
+
 
 #    def _to_volume(self, x: np.ndarray):
 #        """Calculate volume from variable vector."""
@@ -204,87 +218,4 @@ class BasisSetGO:
 #        axis = axis.reshape((3, 3)) + self._axis0
 #        volume = np.linalg.det(axis)
 #        return volume
-#
-#    def fun_fix_cell(self, x, args=None):
-#        """Target function when performing no cell optimization."""
-#        self._to_structure_fix_cell(x)
-#        self._energy, self._force, _ = self._prop.eval(self._structure)
-#
-#        if self._energy < -1e3 * self._n_atom:
-#            print("Energy =", self._energy, flush=True)
-#            print("Axis :", flush=True)
-#            print(self._structure.axis.T, flush=True)
-#            print("Fractional coordinates:", flush=True)
-#            print(self._structure.positions.T, flush=True)
-#            raise ValueError(
-#                "Geometry optimization failed: " "Huge negative energy value."
-#            )
-#
-#        self._energy += self._pressure * self._structure.volume / EVtoGPa
-#        return self._energy
-#
-#    def jac_fix_cell(self, x, args=None):
-#        """Target Jacobian function when performing no cell optimization."""
-#        if self._basis_f is not None:
-#            prod = -self._force.T @ self._structure.axis
-#            derivatives = self._basis_f.T @ prod.reshape(-1)
-#            return derivatives
-#        return []
-#
-#    def fun_relax_cell(self, x, args=None):
-#        """Target function when performing cell optimization."""
-#
-#        self._to_structure_relax_cell(x)
-#        (self._energy, self._force, self._stress) = self._prop.eval(self._structure)
-#
-#        if (
-#            self._energy < -1e3 * self._n_atom
-#            or abs(self._structure.volume) / self._n_atom > 1000
-#        ):
-#            print("Energy =", self._energy, flush=True)
-#            print("Axis :", flush=True)
-#            print(self._structure.axis.T, flush=True)
-#            print("Fractional coordinates:", flush=True)
-#            print(self._structure.positions.T, flush=True)
-#            raise ValueError(
-#                "Geometry optimization failed: Huge negative energy value"
-#                "or huge volume value."
-#            )
-#
-#        self._energy += self._pressure * self._structure.volume / EVtoGPa
-#        return self._energy
-#
-#    def jac_relax_cell(self, x, args=None):
-#        """Target Jacobian function when performing cell optimization."""
-#        partition1 = self._size_pos
-#        derivatives = np.zeros(len(x))
-#        if self._relax_positions:
-#            derivatives[:partition1] = self.jac_fix_cell(x[:partition1])
-#        derivatives[partition1:] = self.derivatives_by_axis()
-#        return derivatives
-#
-#    def derivatives_by_axis(self):
-#        """Compute derivatives with respect to axis elements.
-#
-#        PV @ axis_inv.T is exactly the same as the derivatives of PV term
-#        with respect to axis components.
-#
-#        Under the constraint of a fixed cell shape, the mean normal stress
-#        serves as an approximation to the derivative of the enthalpy
-#        with respect to volume.
-#        """
-#        pv = self._pressure * self._structure.volume / EVtoGPa
-#        sigma = [
-#            [self._stress[0] - pv, self._stress[3], self._stress[5]],
-#            [self._stress[3], self._stress[1] - pv, self._stress[4]],
-#            [self._stress[5], self._stress[4], self._stress[2] - pv],
-#        ]
-#        if self._relax_cell:
-#            """derivatives_s: In the order of ax, bx, cx, ay, by, cy, az, bz, cz"""
-#            derivatives_s = -np.array(sigma) @ self._structure.axis_inv.T
-#            derivatives_s = self._basis_axis.T @ derivatives_s.reshape(-1)
-#        else:
-#            derivatives_s = -np.trace(np.array(sigma)) / 3
-#
-#        return derivatives_s
 #
