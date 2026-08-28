@@ -209,13 +209,3 @@ class BasisSetGO:
         x_pos = x[:partition1]
         x_axis = x[partition1:]
         return x_pos, x_axis
-
-
-#    def _to_volume(self, x: np.ndarray):
-#        """Calculate volume from variable vector."""
-#        _, x_cells = self.split(x)
-#        axis = self._basis_axis @ x_cells
-#        axis = axis.reshape((3, 3)) + self._axis0
-#        volume = np.linalg.det(axis)
-#        return volume
-#

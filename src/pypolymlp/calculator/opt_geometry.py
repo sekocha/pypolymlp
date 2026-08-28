@@ -5,8 +5,8 @@ from typing import Literal, Optional
 import numpy as np
 from scipy.optimize import NonlinearConstraint, minimize
 
-from pypolymlp.calculator.opt_geometry_utils import BasisSetGO
 from pypolymlp.calculator.properties import Properties
+from pypolymlp.calculator.utils.opt_geometry_utils import BasisSetGO
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.units import EVtoGPa
 from pypolymlp.utils.vasp_utils import write_poscar_file
@@ -86,10 +86,6 @@ class GeometryOptimization:
             print("E + PV (Initial structure):", h0, flush=True)
             print("---------------------------", flush=True)
 
-    def split(self, x: np.ndarray):
-        """Split coefficients."""
-        return self._basis.split(x)
-
     def _fun_fix_cell(self, x: np.ndarray, args=None):
         """Target function when performing no cell optimization."""
         self.structure = self._basis.structure(x)
@@ -119,6 +115,19 @@ class GeometryOptimization:
         self._energy += self._pressure * volume / EVtoGPa
         return self._energy
 
+    def _fun_relax_cell_fix_volume(self, x: np.ndarray, args=None):
+        """Target function when performing cell optimization."""
+        self.structure = self._basis.structure(x)
+        self._energy, self._force, self._stress = self._prop.eval(self._structure)
+
+        if self._energy < -1e3 * self._n_atom:
+            print("Energy =", self._energy, flush=True)
+            print("Axis :", flush=True)
+            print(self._structure.axis.T, flush=True)
+            raise RuntimeError("Failed: Huge negative energy value or huge volume.")
+
+        return self._energy
+
     def _jac_fix_cell(self, args=None):
         """Target Jacobian function when performing no cell optimization."""
         prod = -self._force.T @ self._structure.axis
@@ -132,6 +141,23 @@ class GeometryOptimization:
         if self._basis_f is not None:
             derivatives[:partition1] = self._jac_fix_cell()
         derivatives[partition1:] = self._derivatives_by_axis()
+        return derivatives
+
+    def _jac_relax_cell_fix_volume(self, args=None):
+        """Target Jacobian function when performing cell optimization."""
+        derivatives = np.zeros(self._basis_size)
+        partition1 = self._basis_size_f
+        if self._basis_f is not None:
+            derivatives[:partition1] = self._jac_fix_cell()
+
+        sigma = [
+            [self._stress[0], self._stress[3], self._stress[5]],
+            [self._stress[3], self._stress[1], self._stress[4]],
+            [self._stress[5], self._stress[4], self._stress[2]],
+        ]
+        derivatives_s = -np.array(sigma) @ self._structure.axis_inv.T
+        derivatives_s = self._basis_a.T @ derivatives_s.reshape(-1)
+        derivatives[partition1:] = derivatives_s
         return derivatives
 
     def _derivatives_by_axis(self):
@@ -154,13 +180,11 @@ class GeometryOptimization:
         ]
         derivatives_s = -np.array(sigma) @ self._structure.axis_inv.T
         derivatives_s = self._basis_a.T @ derivatives_s.reshape(-1)
-
-        # if not self._relax_cell:
-        #     derivatives_s = -np.trace(np.array(sigma)) / 3
         return derivatives_s
 
     def _fun_volume(self, x: np.ndarray):
         """Function to return volume."""
+        self.structure = self._basis.structure(x)
         return self._structure.volume
 
     def run(
@@ -191,7 +215,7 @@ class GeometryOptimization:
             print("Using", method, "method", flush=True)
 
         if method == "SLSQP":
-            options = {"ftol": gtol, "disp": True}
+            options = {"ftol": gtol * 1e-3, "eps": 1e-3, "disp": True}
         else:
             options = {"gtol": gtol, "disp": True}
             if maxiter is not None:
@@ -206,15 +230,19 @@ class GeometryOptimization:
             fun = self._fun_fix_cell
             jac = self._jac_fix_cell
         else:
-            fun = self._fun_relax_cell
-            jac = self._jac_relax_cell
+            if self._basis._relax_volume:
+                fun = self._fun_relax_cell
+                jac = self._jac_relax_cell
+            else:
+                fun = self._fun_relax_cell_fix_volume
+                jac = self._jac_relax_cell_fix_volume
 
         if use_constraint:
             nlc = NonlinearConstraint(
                 self._fun_volume,
-                self._v0 - 1e-15,
-                self._v0 + 1e-15,
-                jac="2-point",
+                self._v0,
+                self._v0,
+                jac="3-point",
             )
             self._res = minimize(
                 fun,
