@@ -132,7 +132,7 @@ class BasisSetGO:
         if sd_positions is None or self._basis_f is None:
             return self._basis_f
 
-        n_atom = len(self.structure.elements)
+        n_atom = len(self._init_structure.elements)
         if sd_positions.shape != (3, n_atom):
             raise RuntimeError("Shape of selective_dynamics_cell != (3, n_atom).")
 
