@@ -24,7 +24,7 @@ def test_opt1(unitcell_disp_pair_MgO):
     )
     assert opt._x0.shape[0] == 21
     assert opt._basis_f.shape == (24, 21)
-    assert opt._basis_axis is None
+    assert opt._basis_a is None
 
     opt.run()
     assert opt.energy == pytest.approx(-40.225125687168294, rel=1e-6)
@@ -33,12 +33,6 @@ def test_opt1(unitcell_disp_pair_MgO):
     opt.write_poscar(filename="tmp")
     os.remove("tmp")
     opt.print_structure()
-
-    n_atom = len(unitcell.elements)
-    xvec = np.random.random((n_atom - 1) * 3 + 6)
-    x1, x2 = opt.split(xvec)
-    assert len(x1) == (n_atom - 1) * 3
-    assert len(x2) == 6
 
 
 def test_opt2(unitcell_disp_pair_MgO):
@@ -56,7 +50,7 @@ def test_opt2(unitcell_disp_pair_MgO):
     )
     assert opt._x0.shape[0] == 30
     assert opt._basis_f.shape == (24, 21)
-    assert opt._basis_axis.shape == (9, 9)
+    assert opt._basis_a.shape == (9, 9)
 
     opt.run()
     assert opt.energy == pytest.approx(-40.225176328737426, rel=1e-6)
@@ -66,12 +60,6 @@ def test_opt2(unitcell_disp_pair_MgO):
     opt.write_poscar(filename="tmp")
     os.remove("tmp")
     opt.print_structure()
-
-    n_atom = len(unitcell.elements)
-    xvec = np.random.random((n_atom - 1) * 3 + 6)
-    x1, x2 = opt.split(xvec)
-    assert len(x1) == (n_atom - 1) * 3
-    assert len(x2) == 6
 
 
 def test_opt3(unitcell_pair_MgO):
@@ -89,7 +77,7 @@ def test_opt3(unitcell_pair_MgO):
     )
     assert opt._x0.shape[0] == 1
     assert opt._basis_f is None
-    assert opt._basis_axis.shape == (9, 1)
+    assert opt._basis_a.shape == (9, 1)
 
     opt.run()
     assert opt.energy == pytest.approx(-40.225176328737426, rel=1e-6)
@@ -99,8 +87,3 @@ def test_opt3(unitcell_pair_MgO):
     opt.write_poscar(filename="tmp")
     os.remove("tmp")
     opt.print_structure()
-
-    xvec = np.random.random(1)
-    x1, x2 = opt.split(xvec)
-    assert len(x1) == 0
-    assert len(x2) == 1
