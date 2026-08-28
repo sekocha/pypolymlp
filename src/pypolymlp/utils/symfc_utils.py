@@ -31,7 +31,13 @@ def construct_basis_cartesian(cell: PolymlpStructure) -> np.ndarray:
 
 
 def construct_basis_fractional_coordinates(cell: PolymlpStructure) -> np.ndarray:
-    """Generate a basis set for atomic positions in fractional coordinates."""
+    """Generate a basis set for atomic positions in fractional coordinates.
+
+    Return
+    ------
+    basis_f: Basis vectors for fractional coordinates. shape=(N3, n_basis).
+    The row order is (0, xa), (0, xb), (0, xc), (1, xa), ..., (N-1, xc).
+    """
     basis_c = construct_basis_cartesian(cell)
     if basis_c is None or basis_c.size == 0:
         return None

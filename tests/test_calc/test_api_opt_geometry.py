@@ -100,3 +100,30 @@ def test_stropt_ZnS_wurtzite3():
 
     e_ref = -13.031440230712214
     assert e0 == pytest.approx(e_ref, rel=1e-6)
+
+
+def test_stropt_ZnS_wurtzite_sd1():
+    """Test geometry optimization using API in wurtzite ZnS."""
+    poscar = path_file + "poscars/POSCAR.WZ.ZnS"
+    pot = path_file + "mlps/polymlp.lammps.gtinv.ZnS"
+    polymlp = PypolymlpCalc(pot=pot)
+    polymlp.load_poscars(poscar)
+
+    sd_cell = np.ones((3, 3), dtype=bool)
+    sd_cell[0, 0] = False
+    sd_pos = np.ones((3, 4), dtype=bool)
+    sd_pos[2, 0] = False
+
+    polymlp.init_geometry_optimization(
+        with_sym=True,
+        relax_cell=True,
+        relax_volume=True,
+        relax_positions=True,
+        selective_dynamics_cell=sd_cell,
+        selective_dynamics_positions=sd_pos,
+    )
+    polymlp.run_geometry_optimization(gtol=1e-5, method="BFGS")
+    e0, n_iter, success = polymlp.go_data
+
+    e_ref = -13.133975971433962
+    assert e0 == pytest.approx(e_ref, rel=1e-6)

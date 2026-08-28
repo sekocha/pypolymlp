@@ -435,6 +435,8 @@ class PypolymlpCalc:
         relax_volume: bool = False,
         relax_positions: bool = True,
         pressure: float = 0.0,
+        selective_dynamics_cell: Optional[np.ndarray] = None,
+        selective_dynamics_positions: Optional[np.ndarray] = None,
     ):
         """Initialize geometry optimization.
 
@@ -448,6 +450,10 @@ class PypolymlpCalc:
         relax_volume: Relax volume.
         relax_positions: Relax atomic positions.
         pressure: Pressure in GPa.
+        selective_dynamics_cell: Selective dynamics for cell.
+                                (3, 3) array with bool elements.
+        selective_dynamics_positions: Selective dynamics for positions.
+                                (3, N) array with bool elements.
         """
         from pypolymlp.calculator.opt_geometry import GeometryOptimization
 
@@ -464,12 +470,14 @@ class PypolymlpCalc:
                 relax_positions=relax_positions,
                 with_sym=with_sym,
                 pressure=pressure,
+                selective_dynamics_cell=selective_dynamics_cell,
+                selective_dynamics_positions=selective_dynamics_positions,
                 verbose=self._verbose,
             )
-        except ValueError:
+        except RuntimeError:
             self._go = None
             if self._verbose:
-                print("Warning: No degrees of freedom in structure.", flush=True)
+                print("Geometry optimization: No degrees of freedom.", flush=True)
         return self
 
     def run_geometry_optimization(
@@ -501,10 +509,6 @@ class PypolymlpCalc:
         """
         if self._go is None:
             return (None, None, None)
-
-        if self._verbose:
-            print("Initial structure", flush=True)
-            self._go.print_structure()
 
         self._go.run(method=method, gtol=gtol, maxiter=maxiter, c1=c1, c2=c2)
         self.structures = self._go.structure
