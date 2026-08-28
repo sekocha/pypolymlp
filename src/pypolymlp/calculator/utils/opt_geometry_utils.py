@@ -148,6 +148,23 @@ class BasisSetGO:
         """Return basis set for axis."""
         return self._basis_a
 
+    @basis_a.setter
+    def basis_a(self, basis_a: np.ndarray):
+        """Setter of axis basis set.
+
+        This can be used to manually set a basis set for axis.
+        """
+        if basis_a.shape[0] != self._basis_a.shape[0]:
+            raise RuntimeError("Inappropriate basis set size.")
+        # TODO: CHECK orthonomality
+        self._basis_a = basis_a
+
+        self._basis_size = 0
+        if self._basis_f is not None:
+            self._basis_size += self._basis_f.shape[1]
+        if self._basis_a is not None:
+            self._basis_size += self._basis_a.shape[1]
+
     @property
     def basis_f(self):
         """Return basis set for fractional coordinates.

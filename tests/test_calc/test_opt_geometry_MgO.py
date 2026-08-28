@@ -87,3 +87,63 @@ def test_opt3(unitcell_pair_MgO):
     opt.write_poscar(filename="tmp")
     os.remove("tmp")
     opt.print_structure()
+
+
+def test_opt4(unitcell_pair_MgO):
+    """Test optimization with pair polymlp in MgO."""
+    unitcell1, pot, prop = unitcell_pair_MgO
+    unitcell = copy.deepcopy(unitcell1)
+    unitcell.axis[0, 2] = 0.02
+    opt = GeometryOptimization(
+        properties=prop,
+        cell=unitcell,
+        relax_cell=False,
+        relax_volume=True,
+        relax_positions=True,
+        with_sym=True,
+        verbose=True,
+    )
+    opt.run()
+    assert opt.energy == pytest.approx(-40.22441865905055, rel=1e-6)
+    assert opt.success
+
+
+def test_opt5(unitcell_pair_MgO):
+    """Test optimization with pair polymlp in MgO."""
+    unitcell1, pot, prop = unitcell_pair_MgO
+    unitcell = copy.deepcopy(unitcell1)
+    unitcell.axis[0, 2] = 0.02
+    opt = GeometryOptimization(
+        properties=prop,
+        cell=unitcell,
+        relax_cell=True,
+        relax_volume=True,
+        relax_positions=True,
+        with_sym=False,
+        verbose=True,
+    )
+    opt.run()
+    assert opt.energy == pytest.approx(-40.225176328737426, rel=1e-6)
+    assert opt.success
+
+
+def test_opt_sd1(unitcell_pair_MgO):
+    """Test optimization with pair polymlp in MgO."""
+    unitcell1, pot, prop = unitcell_pair_MgO
+    unitcell = copy.deepcopy(unitcell1)
+    unitcell.axis[0, 2] = 0.02
+    sd_cell = np.ones((3, 3), dtype=bool)
+    sd_cell[0, 0] = False
+    opt = GeometryOptimization(
+        properties=prop,
+        cell=unitcell,
+        relax_cell=True,
+        relax_volume=True,
+        relax_positions=True,
+        with_sym=False,
+        selective_dynamics_cell=sd_cell,
+        verbose=True,
+    )
+    opt.run()
+    assert opt.energy == pytest.approx(-40.225176328737426, rel=1e-6)
+    assert opt.success

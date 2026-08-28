@@ -326,3 +326,11 @@ class GeometryOptimization:
     def write_poscar(self, filename: str = "POSCAR_eqm"):
         """Save structure to a POSCAR file."""
         write_poscar_file(self._structure, filename=filename)
+
+    def change_basis_axis(self, basis_a: np.ndarray):
+        """Change basis set for axis."""
+        self._basis.basis_a = basis_a
+        self._basis_a = self._basis.basis_a
+        self._basis_size = self._basis.basis_size
+        self._x0 = self._basis.init_coeffs
+        return self
