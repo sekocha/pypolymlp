@@ -26,6 +26,7 @@ class GeometryOptimization:
         selective_dynamics_cell: Optional[np.ndarray] = None,
         selective_dynamics_positions: Optional[np.ndarray] = None,
         pressure: float = 0.0,
+        scale_axis: Optional[float] = None,
         verbose: bool = False,
     ):
         """Init method.
@@ -68,8 +69,9 @@ class GeometryOptimization:
         self._x0 = self._basis.init_coeffs
         self._basis_size = self._basis.basis_size
         self._basis_size_f = self._basis.basis_size_f
-
         self._v0 = self._basis._v0
+
+        self._scale = self._set_scale(scale_axis=scale_axis)
 
         self._energy = None
         self._force = None
@@ -85,6 +87,19 @@ class GeometryOptimization:
             print("Energy (Initial structure):", e0, flush=True)
             print("E + PV (Initial structure):", h0, flush=True)
             print("---------------------------", flush=True)
+
+    def _set_scale(self, scale_axis: Optional[float] = None):
+        """Set scale for fractional coordinates and axis matrix elements."""
+        if self._basis_a is None:
+            return None
+
+        scale = np.ones(self._basis_size)
+        if scale_axis is None:
+            val = pow(self._v0, 1 / 3) * 0.1
+            scale[self._basis_size_f :] = val
+        else:
+            scale[self._basis_size_f :] = scale_axis
+        return scale
 
     def _fun_fix_cell(self, x: np.ndarray, args=None):
         """Target function when performing no cell optimization."""
@@ -102,7 +117,8 @@ class GeometryOptimization:
 
     def _fun_relax_cell(self, x: np.ndarray, args=None):
         """Target function when performing cell optimization."""
-        self.structure = self._basis.structure(x)
+        x_scaled = x * self._scale
+        self.structure = self._basis.structure(x_scaled)
         self._energy, self._force, self._stress = self._prop.eval(self._structure)
 
         volume = self._structure.volume
@@ -117,7 +133,8 @@ class GeometryOptimization:
 
     def _fun_relax_cell_fix_volume(self, x: np.ndarray, args=None):
         """Target function when performing cell optimization."""
-        self.structure = self._basis.structure(x)
+        x_scaled = x * self._scale
+        self.structure = self._basis.structure(x_scaled)
         self._energy, self._force, self._stress = self._prop.eval(self._structure)
 
         if self._energy < -1e3 * self._n_atom:
@@ -130,8 +147,7 @@ class GeometryOptimization:
 
     def _jac_fix_cell(self, args=None):
         """Target Jacobian function when performing no cell optimization."""
-        prod = -self._force.T @ self._structure.axis
-        derivatives = self._basis_f.T @ prod.reshape(-1)
+        derivatives = self._derivatives_by_frac()
         return derivatives
 
     def _jac_relax_cell(self, args=None):
@@ -139,8 +155,10 @@ class GeometryOptimization:
         derivatives = np.zeros(self._basis_size)
         partition1 = self._basis_size_f
         if self._basis_f is not None:
-            derivatives[:partition1] = self._jac_fix_cell()
+            derivatives[:partition1] = self._derivatives_by_frac()
         derivatives[partition1:] = self._derivatives_by_axis()
+
+        derivatives = derivatives * self._scale
         return derivatives
 
     def _jac_relax_cell_fix_volume(self, args=None):
@@ -148,7 +166,7 @@ class GeometryOptimization:
         derivatives = np.zeros(self._basis_size)
         partition1 = self._basis_size_f
         if self._basis_f is not None:
-            derivatives[:partition1] = self._jac_fix_cell()
+            derivatives[:partition1] = self._derivatives_by_frac()
 
         sigma = [
             [self._stress[0], self._stress[3], self._stress[5]],
@@ -158,7 +176,15 @@ class GeometryOptimization:
         derivatives_s = -np.array(sigma) @ self._structure.axis_inv.T
         derivatives_s = self._basis_a.T @ derivatives_s.reshape(-1)
         derivatives[partition1:] = derivatives_s
+
+        derivatives = derivatives * self._scale
         return derivatives
+
+    def _derivatives_by_frac(self):
+        """Compute derivatives with respect to fractional coordinates."""
+        prod = -self._force.T @ self._structure.axis
+        derivatives_f = self._basis_f.T @ prod.reshape(-1)
+        return derivatives_f
 
     def _derivatives_by_axis(self):
         """Compute derivatives with respect to axis elements.
@@ -184,7 +210,8 @@ class GeometryOptimization:
 
     def _fun_volume(self, x: np.ndarray):
         """Function to return volume."""
-        self.structure = self._basis.structure(x)
+        x_scaled = x * self._scale
+        self.structure = self._basis.structure(x_scaled)
         return self._structure.volume
 
     def run(
@@ -300,14 +327,19 @@ class GeometryOptimization:
 
     def print_residuals(self):
         """Print force and stress residuals."""
-        print("Residuals (force):", flush=True)
+        print("Residuals (force, eV/ang):", flush=True)
+        print(self._force.T)
         if self._basis_a is None:
+            print("Gradients (force):", flush=True)
             print(self.residual_forces.T, flush=True)
             return self
 
+        print("Residuals (stress, eV/cell):", flush=True)
+        print(self._stress)
         res_f, res_s = self.residual_forces
+        print("Gradients (force):", flush=True)
         print(res_f.T, flush=True)
-        print("Residuals (stress):", flush=True)
+        print("Gradients (stress):", flush=True)
         print(res_s, flush=True)
         return self
 

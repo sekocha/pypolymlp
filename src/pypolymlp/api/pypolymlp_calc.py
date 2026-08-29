@@ -435,6 +435,7 @@ class PypolymlpCalc:
         relax_volume: bool = False,
         relax_positions: bool = True,
         pressure: float = 0.0,
+        scale_axis: Optional[float] = None,
         selective_dynamics_cell: Optional[np.ndarray] = None,
         selective_dynamics_positions: Optional[np.ndarray] = None,
     ):
@@ -472,6 +473,7 @@ class PypolymlpCalc:
                 pressure=pressure,
                 selective_dynamics_cell=selective_dynamics_cell,
                 selective_dynamics_positions=selective_dynamics_positions,
+                scale_axis=scale_axis,
                 verbose=self._verbose,
             )
         except RuntimeError:
@@ -514,6 +516,7 @@ class PypolymlpCalc:
         self.structures = self._go.structure
         if self._verbose:
             self._go.print_residuals()
+            print("---------------------------", flush=True)
             print("Final structure", flush=True)
             self._go.print_structure()
         return (self._go.energy, self._go.n_iter, self._go.success)
