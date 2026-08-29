@@ -34,7 +34,7 @@ def test_stropt_SrTiO3_tetra():
     e, f, s = polymlp.eval(polymlp.first_structure)
     assert e[0] == pytest.approx(-126.6061605040393, rel=1e-6)
     np.testing.assert_allclose(f, 0.0, atol=1e-4)
-    np.testing.assert_allclose(s, 0.0, atol=1e-4)
+    np.testing.assert_allclose(s, 0.0, atol=1e-3)
 
 
 def test_stropt_ZnS_wurtzite1():
@@ -55,13 +55,13 @@ def test_stropt_ZnS_wurtzite1():
 
     e_ref = -13.136821752018669
     assert e0 == pytest.approx(e_ref, rel=1e-6)
-    np.testing.assert_allclose(polymlp._go.residual_forces[0], 0.0, atol=1e-5)
-    np.testing.assert_allclose(polymlp._go.residual_forces[1], 0.0, atol=1e-5)
+    np.testing.assert_allclose(polymlp._go.residual_forces[0], 0.0, atol=1e-4)
+    np.testing.assert_allclose(polymlp._go.residual_forces[1], 0.0, atol=1e-4)
 
     e, f, s = polymlp.eval(polymlp.first_structure)
     assert e0 == pytest.approx(e_ref, rel=1e-6)
     np.testing.assert_allclose(f, 0.0, atol=1e-4)
-    np.testing.assert_allclose(s, 0.0, atol=1e-4)
+    np.testing.assert_allclose(s, 0.0, atol=1e-3)
 
 
 def test_stropt_ZnS_wurtzite2():

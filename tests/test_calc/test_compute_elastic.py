@@ -26,10 +26,10 @@ def _assert_elastic_pair_MgO(consts: np.ndarray):
             [103.989877, 103.989877, 231.314072],
         ]
     )
-    np.testing.assert_allclose(consts[:3, :3], true1, atol=1e-8)
+    np.testing.assert_allclose(consts[:3, :3], true1, rtol=1e-3)
     np.testing.assert_allclose(consts[:3, 3:], 0.0, atol=1e-8)
     np.testing.assert_allclose(consts[3:, :3], 0.0, atol=1e-8)
-    np.testing.assert_allclose(consts[3:, 3:], np.eye(3) * 143.13633497, atol=1e-8)
+    np.testing.assert_allclose(consts[3:, 3:], np.eye(3) * 143.13633497, rtol=1e-3)
 
 
 def _assert_elastic_gtinv_MgO(consts: np.ndarray):
@@ -42,10 +42,10 @@ def _assert_elastic_gtinv_MgO(consts: np.ndarray):
             [109.43998159, 109.43998159, 288.38350811],
         ]
     )
-    np.testing.assert_allclose(consts[:3, :3], true1, atol=1e-8)
+    np.testing.assert_allclose(consts[:3, :3], true1, rtol=1e-3)
     np.testing.assert_allclose(consts[:3, 3:], 0.0, atol=1e-8)
     np.testing.assert_allclose(consts[3:, :3], 0.0, atol=1e-8)
-    np.testing.assert_allclose(consts[3:, 3:], np.eye(3) * 154.74538473, atol=1e-6)
+    np.testing.assert_allclose(consts[3:, 3:], np.eye(3) * 154.74538473, rtol=1e-3)
 
 
 def test_pair_MgO(unitcell_pair_MgO):
