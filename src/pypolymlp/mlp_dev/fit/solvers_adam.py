@@ -30,12 +30,12 @@ def _shuffle_batch_order(batch_size: int):
     return order
 
 
-def update_coefs_adam(
+def _update_coefs_adam(
     coefs: NDArray,
     grad: NDArray,
     magn: NDArray,
     rate: float,
-    eps_grad: float = 1e-14,
+    eps_grad: float = 1e-6,
 ):
     """Update coefficients using gradients in Adam."""
     magn_sqrt = np.sqrt(magn)
@@ -44,7 +44,7 @@ def update_coefs_adam(
     return coefs
 
 
-def update_gradients_adam(
+def _update_gradients_adam(
     grad_current: NDArray,
     grad_prev: NDArray,
     magn_prev: NDArray,
@@ -57,7 +57,7 @@ def update_gradients_adam(
     return grad, magn
 
 
-def calc_gradient_stats(grad: NDArray):
+def _calc_gradient_stats(grad: NDArray):
     """Calculate average and maximum gradients."""
     grad_abs = np.abs(grad)
     grad_ave = np.average(grad_abs)
@@ -72,17 +72,17 @@ def solver_adam(
     beta: float = 0.95,
     batch_size: int = 100,
     gtol: float = 1e-2,
-    max_n_epochs: int = 10000,
+    n_epochs: int = 100,
     verbose: bool = False,
 ):
     """Estimate MLP coefficients using Adam."""
     if verbose:
         print("Use Adam solver.", flush=True)
         print("conditions:", flush=True)
-        print("- beta:        ", beta, flush=True)
-        print("  batch_size:  ", batch_size, flush=True)
-        print("  gtol:        ", gtol, flush=True)
-        print("  max_n_epochs:", max_n_epochs, flush=True)
+        print("- beta:       ", beta, flush=True)
+        print("  batch_size: ", batch_size, flush=True)
+        print("  gtol:       ", gtol, flush=True)
+        print("  n_epochs:   ", n_epochs, flush=True)
 
     n_data, n_features = x.shape
     beta2 = beta**2 / (beta**2 + (1 - beta) ** 2)
@@ -92,7 +92,7 @@ def solver_adam(
     coef = np.zeros(n_features) if coef0 is None else copy.deepcopy(coef0)
     grad_prev, magn_prev = np.zeros(n_features), np.zeros(n_features)
     converge = False
-    for i_epoch in range(max_n_epochs):
+    for i_epoch in range(n_epochs):
         if verbose:
             print("------", flush=True)
             print("Epoch:", i_epoch + 1, flush=True)
@@ -110,15 +110,15 @@ def solver_adam(
             grad_trial = x_batch.T @ error
             grad_trial /= n_data_batch
 
-            grad, magn = update_gradients_adam(
+            grad, magn = _update_gradients_adam(
                 grad_trial, grad_prev, magn_prev, beta, beta2
             )
-            grad_ave, grad_max = calc_gradient_stats(grad)
+            grad_ave, grad_max = _calc_gradient_stats(grad)
             if grad_ave < gtol and grad_max < gtol * 10:
                 converge = True
                 break
 
-            coef = update_coefs_adam(coef, grad, magn, rate, eps_grad)
+            coef = _update_coefs_adam(coef, grad, magn, rate, eps_grad)
             grad_prev, magn_prev = grad, magn
 
         # if verbose:

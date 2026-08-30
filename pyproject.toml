@@ -46,6 +46,7 @@ pypolymlp-sscha-post = "pypolymlp.api.run_polymlp_sscha_post:run"
 pypolymlp-md = "pypolymlp.api.run_polymlp_md:run"
 pypolymlp-thermodynamics = "pypolymlp.api.run_polymlp_thermodynamics:run"
 pypolymlp-autocalc = "pypolymlp.api.run_polymlp_autocalc:run"
+pypolymlp-online = "pypolymlp.api.run_polymlp_online:run"
 
 # For developers
 pypolymlp-symfc = "pypolymlp.api.developer.run_polymlp_symfc:run"

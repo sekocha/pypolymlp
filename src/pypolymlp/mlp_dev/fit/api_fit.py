@@ -8,6 +8,7 @@ from pypolymlp.core.dataset import DatasetList
 from pypolymlp.core.params import PolymlpParams
 from pypolymlp.mlp_dev.fit.fit_cg import PolymlpFitCG
 from pypolymlp.mlp_dev.fit.fit_learning_curve import PolymlpFitLearningCurve
+from pypolymlp.mlp_dev.fit.fit_online_adam import PolymlpFitOnlineAdam
 from pypolymlp.mlp_dev.fit.fit_standard import (
     PolymlpFitStandard,
     PolymlpFitStandardUseX,
@@ -94,11 +95,36 @@ def fit_learning_curve(
     test: DatasetList,
     verbose: bool = False,
 ):
-    """API function for estimating MLP coefficients."""
+    """API function for estimating learning curve."""
     fitobj = PolymlpFitLearningCurve(
         params,
         train,
         test,
+        verbose=verbose,
+    )
+    fitobj.fit()
+    return fitobj
+
+
+def fit_polymlp_online(
+    params: PolymlpParams,
+    train: DatasetList,
+    coeffs: list | np.ndarray,
+    beta: float = 0.95,
+    batch_size: int = 100,
+    gtol: float = 1e-2,
+    n_epochs: int = 100,
+    verbose: bool = False,
+):
+    """API function for updating MLP coefficients using online algorithms."""
+    fitobj = PolymlpFitOnlineAdam(
+        params,
+        train,
+        coeffs,
+        beta=beta,
+        batch_size=batch_size,
+        gtol=gtol,
+        n_epochs=n_epochs,
         verbose=verbose,
     )
     fitobj.fit()
