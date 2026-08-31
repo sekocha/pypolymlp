@@ -24,14 +24,14 @@ def run():
     parser.add_argument(
         "--batch_size",
         type=int,
-        default=None,
-        help="Batch size of feature calculations",
+        default=100,
+        help="Batch size of online regression",
     )
     parser.add_argument(
         "--gtol",
         type=float,
         default=1e-2,
-        help="Tolerance for gradient in CG",
+        help="Tolerance for gradient in online regression",
     )
     parser.add_argument(
         "--n_epochs",
@@ -43,7 +43,7 @@ def run():
         "--vaspruns",
         nargs="*",
         type=str,
-        default=None,
+        required=True,
         help="vasprun.xml files used for updating MLP",
     )
 

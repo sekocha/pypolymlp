@@ -131,5 +131,6 @@ def solver_adam(
 
         if converge:
             break
+    print(coef)
 
     return coef

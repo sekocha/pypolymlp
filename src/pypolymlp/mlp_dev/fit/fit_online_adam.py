@@ -50,11 +50,14 @@ class PolymlpFitOnlineAdam(PolymlpFitBase):
             n_epochs=self._n_epochs,
             verbose=self._verbose,
         )
+        coeffs = coeffs.reshape((-1, 1))
         rmse_train = self._polymlp.compute_rmse(coeffs, train_xy, check_singular=True)
         train_xy.clear_data()
+        print(coeffs[0, 0], self._coef0[0])
+        print(rmse_train)
 
         self._best_model = self._polymlp.get_best_model(
-            [coeffs],
+            coeffs,
             np.ones(coeffs.shape),
             rmse_train,
             rmse_train,

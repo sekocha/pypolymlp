@@ -35,6 +35,13 @@ def save_mlp_yaml(
         print("enable_spins: ", [0 for _ in params_ele.elements], file=f)
     else:
         print("enable_spins: ", [int(s) for s in params_ele.enable_spins], file=f)
+    print("dataset_type: ", params.dataset_type, file=f)
+    print("atomic_energy:", list(params.atomic_energy), file=f)
+    print(file=f)
+    print("electrostatic:", 0, file=f)
+    mass = [mass_table()[ele] for ele in params.elements]
+    print("mass:         ", mass, file=f)
+    print(file=f)
 
     print("cutoff:       ", model.cutoff, file=f)
     print("pair_type:    ", model.pair_type, file=f)
@@ -51,11 +58,6 @@ def save_mlp_yaml(
         print("gtinv_sym:    ", [0 for _ in gtinv.max_l], file=f)
         print("gtinv_version:", gtinv.version, file=f)
         print(file=f)
-
-    print("electrostatic:", 0, file=f)
-    mass = [mass_table()[ele] for ele in params.elements]
-    print("mass:         ", mass, file=f)
-    print(file=f)
 
     print("n_pair_params:", len(model.pair_params), file=f)
     print("pair_params:", file=f)
