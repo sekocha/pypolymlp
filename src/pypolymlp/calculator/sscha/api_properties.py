@@ -37,6 +37,7 @@ class PropertiesSSCHA(PropertiesBase):
         super().__init__()
         self._sscha_params = sscha_params
         self._prop = properties
+        self._precondition = precondition
         self._verbose = verbose
         self._temperature = self._sscha_params.temperatures[0]
 
@@ -96,6 +97,7 @@ class PropertiesSSCHA(PropertiesBase):
         self._sscha = run_sscha(
             self._sscha_params,
             self._prop,
+            precondition=self._precondition,
             verbose=self._verbose,
         )
 

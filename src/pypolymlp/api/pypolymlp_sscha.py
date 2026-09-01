@@ -35,6 +35,9 @@ class PypolymlpSSCHA:
         self._sscha_params = None
         self._sscha = None
 
+        self._opt = None
+        self._prop_sscha = None
+
         if self._verbose:
             np.set_printoptions(legacy="1.21")
 
@@ -203,7 +206,7 @@ class PypolymlpSSCHA:
         self._fc2 = self._sscha.force_constants
         return self
 
-    def run_geometry_optimization(
+    def init_geometry_optimization(
         self,
         temp: float = 1000,
         n_samples_init: Optional[int] = None,
@@ -220,11 +223,9 @@ class PypolymlpSSCHA:
         relax_cell: bool = False,
         relax_volume: bool = False,
         relax_positions: bool = True,
-        method: Literal["BFGS", "CG", "L-BFGS-B", "SLSQP"] = "BFGS",
-        gtol: float = 2e-2,
-        go_maxiter: int = 1000,
-        c1: float = 1e-3,
-        c2: float = 0.5,
+        selective_dynamics_cell: Optional[np.ndarray] = None,
+        selective_dynamics_positions: Optional[np.ndarray] = None,
+        scale_axis: Optional[float] = None,
         pressure: float = 0.0,
     ):
         """Run geometry optimization using SSCHA.
@@ -287,29 +288,55 @@ class PypolymlpSSCHA:
             self._sscha_params.print_params()
             self._sscha_params.print_unitcell()
 
-        prop_sscha = PropertiesSSCHA(
+        self._prop_sscha = PropertiesSSCHA(
             self._sscha_params,
             self._prop,
+            precondition=False,
             verbose=self._verbose,
         )
-        opt = GeometryOptimization(
+        self._opt = GeometryOptimization(
             self._unitcell,
-            prop_sscha,
+            self._prop_sscha,
             relax_cell=relax_cell,
             relax_volume=relax_volume,
             relax_positions=relax_positions,
             with_sym=with_sym,
             pressure=pressure,
+            selective_dynamics_cell=selective_dynamics_cell,
+            selective_dynamics_positions=selective_dynamics_positions,
+            scale_axis=scale_axis,
             verbose=self._verbose,
         )
-        opt.run(method=method, gtol=gtol, maxiter=go_maxiter, c1=c1, c2=c2)
-        opt.write_poscar()
-        if self._verbose:
-            opt.print_residuals()
-            print("Final structure", flush=True)
-            opt.print_structure()
 
-        self._fc2 = prop_sscha.force_constants
+    def run_geometry_optimization(
+        self,
+        method: Literal["BFGS", "CG", "L-BFGS-B", "SLSQP"] = "BFGS",
+        gtol: float = 2e-2,
+        go_maxiter: int = 1000,
+        c1: float = 1e-3,
+        c2: float = 0.5,
+        pressure: float = 0.0,
+    ):
+        """Run geometry optimization using SSCHA.
+
+        Parameters
+        ----------
+        method: Optimization method, CG, BFGS, L-BFGS-B, or SLSQP.
+                If relax_volume = False, SLSQP is automatically used.
+        gtol: Tolerance for gradients.
+        maxiter: Maximum iteration in scipy optimization.
+        c1: c1 parameter in scipy optimization.
+        c2: c2 parameter in scipy optimization.
+        pressure: Pressure in GPa.
+        """
+        self._opt.run(method=method, gtol=gtol, maxiter=go_maxiter, c1=c1, c2=c2)
+        self._opt.write_poscar()
+        if self._verbose:
+            self._opt.print_residuals()
+            print("Final structure", flush=True)
+            self._opt.print_structure()
+
+        self._fc2 = self._prop_sscha.force_constants
         return self
 
     def run_elastic(
