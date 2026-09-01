@@ -46,7 +46,7 @@ def run_main_sscha(args, sscha: PypolymlpSSCHA):
         if args.fix_volume:
             relax_volume = False
 
-        sscha.run_geometry_optimization(
+        sscha.init_geometry_optimization(
             temp=args.temp,
             n_samples_init=n_samples_init,
             n_samples_final=n_samples_final,
@@ -63,8 +63,8 @@ def run_main_sscha(args, sscha: PypolymlpSSCHA):
             relax_volume=relax_volume,
             relax_positions=not args.fix_atom,
             pressure=args.pressure,
-            gtol=args.gtol,
         )
+        sscha.run_geometry_optimization(gtol=args.gtol)
     elif args.elastic:
         if args.temp is None:
             raise RuntimeError("Temperature required. Use --temp option.")
