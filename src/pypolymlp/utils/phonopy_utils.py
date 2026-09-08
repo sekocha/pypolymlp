@@ -10,6 +10,7 @@ from phonopy import Phonopy
 from phonopy.interface.vasp import VasprunxmlExpat
 from phonopy.physical_units import get_physical_units
 from phonopy.structure.atoms import PhonopyAtoms
+from phonopy.structure.cells import get_supercell
 from phonopy.structure.symmetry import symmetrize_borns_and_epsilon
 
 from pypolymlp.calculator.properties import Properties
@@ -56,7 +57,9 @@ def phonopy_supercell(
         supercell_matrix = np.diag(supercell_diag)
 
     unitcell = structure_to_phonopy_cell(structure)
-    supercell = Phonopy(unitcell, supercell_matrix, primitive_matrix="P").supercell
+    # supercell = Phonopy(unitcell, supercell_matrix, primitive_matrix=None).supercell
+    # supercell = Phonopy(unitcell, supercell_matrix, symprec=1e-2).supercell
+    supercell = get_supercell(unitcell, supercell_matrix, symprec=1e-4)
     if return_phonopy:
         return supercell
 
