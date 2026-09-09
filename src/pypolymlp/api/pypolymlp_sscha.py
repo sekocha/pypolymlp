@@ -206,6 +206,68 @@ class PypolymlpSSCHA:
         self._fc2 = self._sscha.force_constants
         return self
 
+    def get_properties_calculator(
+        self,
+        temp: Optional[float] = None,
+        temp_min: float = 0,
+        temp_max: float = 2000,
+        temp_step: float = 50,
+        n_temp: Optional[int] = None,
+        ascending_temp: bool = False,
+        n_samples_init: Optional[int] = None,
+        n_samples_final: Optional[int] = None,
+        tol: float = 0.005,
+        max_iter: int = 50,
+        mixing: float = 0.5,
+        mesh: tuple = (10, 10, 10),
+        init_fc_algorithm: Literal["harmonic", "const", "random", "file"] = "harmonic",
+        init_fc_file: Optional[str] = None,
+        precondition: bool = True,
+        cutoff_radius: Optional[float] = None,
+        use_temporal_cutoff: bool = False,
+        path: str = "./sscha",
+        write_pdos: bool = False,
+        use_mkl: bool = True,
+    ):
+        """Return PropertiesSSCHA calculator."""
+        if self._prop is None:
+            raise RuntimeError("Set polymlp.")
+        if self._unitcell is None:
+            raise RuntimeError("Set structure.")
+        if self._supercell_matrix is None:
+            raise RuntimeError("Set supercell matrix.")
+
+        self._sscha_params = SSCHAParams(
+            unitcell=self._unitcell,
+            supercell_matrix=self._supercell_matrix,
+            pot=self._pot,
+            temp=temp,
+            temp_min=temp_min,
+            temp_max=temp_max,
+            temp_step=temp_step,
+            n_temp=n_temp,
+            ascending_temp=ascending_temp,
+            n_samples_init=n_samples_init,
+            n_samples_final=n_samples_final,
+            tol=tol,
+            max_iter=max_iter,
+            mixing=mixing,
+            mesh=mesh,
+            init_fc_algorithm=init_fc_algorithm,
+            init_fc_file=init_fc_file,
+            fc2=self._fc2,
+            nac_params=self._nac_params,
+            cutoff_radius=cutoff_radius,
+            use_mkl=use_mkl,
+        )
+        self._prop_sscha = PropertiesSSCHA(
+            self._sscha_params,
+            self._prop,
+            precondition=False,
+            verbose=self._verbose,
+        )
+        return self._prop_sscha
+
     def init_geometry_optimization(
         self,
         temp: float = 1000,
@@ -459,6 +521,14 @@ class PypolymlpSSCHA:
         return self._sscha_params
 
     @property
+    def force_constants(self) -> np.ndarray:
+        """Return FC2 at the final temperature.
+
+        shape=(n_atom, n_atom, 3, 3).
+        """
+        return self._fc2
+
+    @property
     def properties(self) -> SSCHAData:
         """Return SSCHA properties at the final temperature."""
         if self._sscha is None:
@@ -473,12 +543,9 @@ class PypolymlpSSCHA:
         return self._sscha.logs
 
     @property
-    def force_constants(self) -> np.ndarray:
-        """Return FC2 at the final temperature.
-
-        shape=(n_atom, n_atom, 3, 3).
-        """
-        return self._fc2
+    def properties_calculator(self) -> PropertiesSSCHA:
+        """Return instance of PropertiesSSCHA."""
+        return self._prop_sscha
 
     @property
     def sscha_properties(self) -> SSCHAData:
