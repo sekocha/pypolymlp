@@ -67,7 +67,7 @@ class PolymlpTransformation:
         self._supercell = get_supercell(self._base_structure, matrix)
         return self._supercell
 
-    def change_angle(self, degs: float, axis1: int = 0, axis2: int = 1):
+    def _change_angle(self, degs: float, axis1: int = 0, axis2: int = 1):
         """Change angle between two axes.
 
         axis2 is rotated while axis1 and the other axis is fixed.
@@ -112,11 +112,15 @@ class PolymlpTransformation:
         self._geometry.change_basis_axis(basis_a_new)
         return self._geometry
 
-    def run_single_fix_angle(self, gtol: float = 1e-4):
+    def run_single_fix_angle(
+        self,
+        degs: float,
+        axis1: int = 0,
+        axis2: int = 1,
+        gtol: float = 1e-4,
+    ):
         """Run a single geometry optimization with fixed angles."""
-        if self._supercell_rev is None:
-            raise RuntimeError("Structure for calculation not found.")
-
+        self._change_angle(degs, axis1=axis1, axis2=axis2)
         self._geometry = GeometryOptimization(
             self._supercell_rev,
             self._prop,
@@ -140,15 +144,13 @@ class PolymlpTransformation:
         gtol: float = 1e-4,
     ):
         """Run geometry optimizations with fixed angles."""
-        self.change_angle(degs_min, axis1=axis1, axis2=axis2)
-        self.run_single_fix_angle(gtol=gtol)
+        self.run_single_fix_angle(degs_min, axis1=axis1, axis2=axis2, gtol=gtol)
         e0 = self.energy
 
         self._energies = []
         os.makedirs("poscars", exist_ok=True)
         for degs in np.arange(degs_min, degs_max + degs_int, degs_int):
-            self.change_angle(degs, axis1=axis1, axis2=axis2)
-            self.run_single_fix_angle(gtol=gtol)
+            self.run_single_fix_angle(degs, axis1=axis1, axis2=axis2, gtol=gtol)
             st_conv = self.converged_structure
             e = self.energy
             n = len(st_conv.elements)
@@ -159,7 +161,7 @@ class PolymlpTransformation:
         self._energies = np.array(self._energies)
         return self
 
-    def shift(self, frac: float, axis_shift: int = 0, axis_normal_shift: int = 1):
+    def _shift(self, frac: float, axis_shift: int = 0, axis_normal_shift: int = 1):
         """Provide shift into upper-half cell."""
         self._supercell_rev = copy.deepcopy(self._supercell)
         match = self._supercell.positions[axis_normal_shift] >= 0.5 - 1e-12
@@ -177,7 +179,7 @@ class PolymlpTransformation:
         gtol: float = 1e-4,
     ):
         """Run a single geometry optimization with fixed shifts."""
-        self._supercell_rev = self.shift(frac, axis_shift, axis_normal_shift)
+        self._supercell_rev = self._shift(frac, axis_shift, axis_normal_shift)
         self._geometry = GeometryOptimization(
             self._supercell_rev,
             self._prop,
@@ -230,6 +232,11 @@ class PolymlpTransformation:
         """Save energies along path."""
         header = "disp., energy (eV/atom)"
         np.savetxt(filename, self._energies, fmt="%f", header=header)
+
+    @property
+    def energies(self):
+        """Return energies along path."""
+        return self._energies
 
     @property
     def energy(self):
