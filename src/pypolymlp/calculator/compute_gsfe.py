@@ -47,13 +47,17 @@ class PolymlpGSFE:
         supercell_matrix: Optional[np.ndarray] = None,
     ):
         """Set supercell."""
-        if len(slip_plane) != 3:
-            raise RuntimeError("Three elements required for slip plane.")
         if supercell_matrix is not None:
             if np.array(supercell_matrix).shape != (3, 3):
                 raise RuntimeError("Supercell matrix shape is not (3, 3).")
             matrix = copy.deepcopy(supercell_matrix)
         else:
+            if len(disp1) != 3:
+                raise RuntimeError("Three elements required for disp1.")
+            if len(disp2) != 3:
+                raise RuntimeError("Three elements required for disp2.")
+            if len(slip_plane) != 3:
+                raise RuntimeError("Three elements required for slip plane.")
             matrix = np.zeros((3, 3), dtype=int)
             matrix[:, 0] = np.array(disp1)
             matrix[:, 1] = np.array(disp2)
