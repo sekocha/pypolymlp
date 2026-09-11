@@ -35,9 +35,13 @@ def save_mlp_yaml(
         print("enable_spins: ", [0 for _ in params_ele.elements], file=f)
     else:
         print("enable_spins: ", [int(s) for s in params_ele.enable_spins], file=f)
-    print("dataset_type: ", params.dataset_type, file=f)
-    print("atomic_energy:", list(params.atomic_energy), file=f)
+
+    if params.dataset_type is not None:
+        print("dataset_type: ", params.dataset_type, file=f)
+    if params.atomic_energy is not None:
+        print("atomic_energy:", list(params.atomic_energy), file=f)
     print(file=f)
+
     print("electrostatic:", 0, file=f)
     mass = [mass_table()[ele] for ele in params.elements]
     print("mass:         ", mass, file=f)
@@ -112,10 +116,13 @@ def load_mlp_yaml(filename: Union[str, io.IOBase] = "polymlp.yaml"):
 
     try:
         enable_spins = tuple([bool(v) for v in yml["enable_spins"]])
-        atomic_energy = tuple([0.0 for v in yml["enable_spins"]])
     except:
         enable_spins = None
-        atomic_energy = None
+    try:
+        # TODO: Activate for online regression
+        atomic_energy = tuple([float(v) for v in yml["atomic_energy"]])
+    except:
+        atomic_energy = tuple([0.0 for _ in elements])
 
     if yml["feature_type"] == "gtinv":
         gtinv = PolymlpGtinvParams(

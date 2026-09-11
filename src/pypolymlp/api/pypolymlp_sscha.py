@@ -377,7 +377,6 @@ class PypolymlpSSCHA:
         go_maxiter: int = 1000,
         c1: float = 1e-3,
         c2: float = 0.5,
-        pressure: float = 0.0,
     ):
         """Run geometry optimization using SSCHA.
 

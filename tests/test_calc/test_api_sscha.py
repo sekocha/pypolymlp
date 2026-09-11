@@ -42,18 +42,17 @@ def test_sscha_geometry_opt():
     sscha.load_poscar(poscar, (2, 2, 2))
     sscha.set_polymlp(pot)
 
-    sscha.run_geometry_optimization(
+    sscha.init_geometry_optimization(
         temp=700,
         tol=0.02,
         mixing=0.5,
         use_mkl=False,
-        gtol=1e-1,
-        go_maxiter=2,
         relax_cell=True,
         relax_volume=True,
         relax_positions=True,
         pressure=0.01,
     )
+    sscha.run_geometry_optimization(gtol=1e-1, go_maxiter=2)
     shutil.rmtree("sscha")
     os.remove("POSCAR_eqm")
 
