@@ -720,7 +720,7 @@ class Pypolymlp:
         beta: float = 0.95,
         batch_size: int = 100,
         gtol: float = 1e-2,
-        n_epochs: int = 100,
+        n_epochs: int = 1000,
         verbose: Optional[bool] = None,
     ):
         """Compute learing curve."""
@@ -732,7 +732,7 @@ class Pypolymlp:
         if self._mlp_model is None:
             raise RuntimeError("MLP model not found.")
 
-        _ = fit_polymlp_online(
+        fit = fit_polymlp_online(
             self._params,
             self._train,
             self._mlp_model.scaled_coeffs,
@@ -742,6 +742,7 @@ class Pypolymlp:
             n_epochs=n_epochs,
             verbose=self._verbose,
         )
+        self._mlp_model = fit.best_model
         return self
 
     def save_mlp(

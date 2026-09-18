@@ -40,7 +40,7 @@ class PolymlpFitOnlineAdam(PolymlpFitBase):
     def fit(self):
         """Estimate MLP coefficients."""
         train_xy = self._polymlp.calc_xy(self._train)
-
+        train_xy.x *= train_xy.scales
         coeffs = solver_adam(
             x=train_xy.x,
             y=train_xy.y,
@@ -55,14 +55,12 @@ class PolymlpFitOnlineAdam(PolymlpFitBase):
             coeffs.reshape((-1, 1)), train_xy, check_singular=True
         )[0]
         train_xy.clear_data()
-        print(rmse_train)
 
-        print(coeffs.shape)
         self._best_model = self._polymlp.set_model(
             coeffs,
             np.ones(coeffs.shape),
             rmse_train,
-            rmse_train,
-            train_xy.cumulative_n_features,
+            rmse_test=None,
+            cumulative_n_features=train_xy.cumulative_n_features,
         )
         return self

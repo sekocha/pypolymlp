@@ -36,7 +36,7 @@ def run():
     parser.add_argument(
         "--n_epochs",
         type=int,
-        default=100,
+        default=10000,
         help="Number of epochs",
     )
     parser.add_argument(

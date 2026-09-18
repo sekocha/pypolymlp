@@ -66,16 +66,31 @@ def _calc_gradient_stats(grad: NDArray):
 
 
 def solver_adam(
-    x: np.ndarray,
-    y: np.ndarray,
-    coef0: Optional[np.ndarray] = None,
+    x: NDArray,
+    y: NDArray,
+    coef0: Optional[NDArray] = None,
+    alpha: float = 1.0,
     beta: float = 0.95,
     batch_size: int = 100,
     gtol: float = 1e-2,
     n_epochs: int = 100,
     verbose: bool = False,
 ):
-    """Estimate MLP coefficients using Adam."""
+    """Estimate MLP coefficients using Adam.
+
+    If alpha > 0, regularization term (alpha * || (w - w0) / w0 ||^2)
+    is added to minimization function.
+
+    Parameters
+    ----------
+    x: Predictor matrix, X.
+    y: Observation vector, y.
+    coef0: Initial coefficients.
+    alpha: Magnitude parameter for regularization.
+    beta: Parameter for defining gradient update.
+    batch_size: Minibatch size.
+    n_epochs: Number of epochs.
+    """
     if verbose:
         print("Use Adam solver.", flush=True)
         print("conditions:", flush=True)
@@ -83,13 +98,21 @@ def solver_adam(
         print("  batch_size: ", batch_size, flush=True)
         print("  gtol:       ", gtol, flush=True)
         print("  n_epochs:   ", n_epochs, flush=True)
+    if alpha < 0:
+        raise RuntimeError("Found negative alpha.")
 
     n_data, n_features = x.shape
     beta2 = beta**2 / (beta**2 + (1 - beta) ** 2)
     begin_batch, end_batch = _get_batch_slice(n_data, batch_size)
     eps_grad = gtol
 
-    coef = np.zeros(n_features) if coef0 is None else copy.deepcopy(coef0)
+    if coef0 is None:
+        alpha = 0.0
+        coef = np.zeros(n_features)
+    else:
+        coef0 = np.array(coef0)
+        coef = copy.deepcopy(coef0)
+
     grad_prev, magn_prev = np.zeros(n_features), np.zeros(n_features)
     converge = False
     for i_epoch in range(n_epochs):
@@ -97,7 +120,7 @@ def solver_adam(
             print("------", flush=True)
             print("Epoch:", i_epoch + 1, flush=True)
 
-        rate = max(100 / np.sqrt(i_epoch + 1), 1e-4)
+        rate = max(0.1 / np.sqrt(i_epoch + 1), 1e-4)
         if verbose:
             print("- Learning rate:", "{:.5f}".format(rate), flush=True)
 
@@ -108,6 +131,14 @@ def solver_adam(
 
             error = x_batch @ coef - y_batch
             grad_trial = x_batch.T @ error
+
+            # regularization term
+            diff_coef = (coef - coef0) / np.abs(coef0)
+            reg = alpha * (diff_coef @ diff_coef)
+            grad_reg = alpha * diff_coef / np.abs(coef0)
+            error += reg
+            grad_trial += grad_reg
+
             grad_trial /= n_data_batch
 
             grad, magn = _update_gradients_adam(
@@ -121,16 +152,15 @@ def solver_adam(
             coef = _update_coefs_adam(coef, grad, magn, rate, eps_grad)
             grad_prev, magn_prev = grad, magn
 
-        # if verbose:
-        #    error_all = np.array(error_all)
-        #    rmse_forces = np.sqrt(np.mean(error_all**2))
-        #    print("- Time:              ", "{:.3f}".format(t2 - t1), "s", flush=True)
-        #    print("- RMSE (Force):      ", "{:.5e}".format(rmse_forces), flush=True)
-        #    print("- Max gradient (FC2):", "{:.5e}".format(grad_max), flush=True)
-        #    print("- Ave gradient (FC2):", "{:.5e}".format(grad_ave), flush=True)
+        if verbose:
+            #    error_all = np.array(error_all)
+            #    rmse_forces = np.sqrt(np.mean(error_all**2))
+            #    print("- Time:              ", "{:.3f}".format(t2 - t1), "s", flush=True)
+            #    print("- RMSE (Force):      ", "{:.5e}".format(rmse_forces), flush=True)
+            print("- Max gradient:", "{:.5e}".format(grad_max), flush=True)
+            print("- Ave gradient:", "{:.5e}".format(grad_ave), flush=True)
 
         if converge:
             break
-    print(coef)
-
+        print(coef)
     return coef
