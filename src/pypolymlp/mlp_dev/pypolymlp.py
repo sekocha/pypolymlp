@@ -766,13 +766,23 @@ class Pypolymlp:
                     print(file=f)
         return self
 
-    def load_mlp(self, filename: Union[str, io.IOBase] = "polymlp.yaml"):
+    def load_mlp(
+        self,
+        filename: Union[str, io.IOBase] = "polymlp.yaml",
+        require_atomic_energy: bool = False,
+    ):
         """Load polynomial MLP from file."""
         if isinstance(filename, (list, tuple, np.ndarray)):
             raise RuntimeError("load_mlp not available for hybrid model.")
 
         params_single, coeffs = load_mlp(filename)
         self._params = PolymlpParams(params_single)
+        if require_atomic_energy and self._params.atomic_energy is None:
+            raise RuntimeError(
+                "Atomic energies not found in polymlp.yaml. "
+                "Use the latest pypolymlp to develop the input polymlp.yaml."
+            )
+
         scales = np.ones(len(coeffs))
         self._mlp_model = PolymlpDataMLP(
             coeffs=coeffs, scales=scales, params=self._params
@@ -855,6 +865,8 @@ class Pypolymlp:
 
         Use this scaled coefficients to calculate properties.
         """
+        if self._mlp_model is None:
+            return None
         return self._mlp_model.scaled_coeffs
 
     @property

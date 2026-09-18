@@ -297,6 +297,9 @@ class PolymlpParamsSingle:
         if np.count_nonzero(self.enable_spins) == 0:
             return self
 
+        if self.atomic_energy is None:
+            self.atomic_energy = [0.0 for e in self.elements]
+
         n_type = 0
         elements, atomic_energy, enable_spins = [], [], []
         map_types = defaultdict(list)

@@ -53,7 +53,7 @@ def run():
 
     verbose = True
     polymlp = Pypolymlp(verbose=verbose)
-    polymlp.load_mlp(args.pot)
+    polymlp.load_mlp(args.pot, require_atomic_energy=True)
     if verbose:
         polymlp.print_params()
 

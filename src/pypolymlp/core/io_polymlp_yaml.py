@@ -119,10 +119,9 @@ def load_mlp_yaml(filename: Union[str, io.IOBase] = "polymlp.yaml"):
     except:
         enable_spins = None
     try:
-        # TODO: Activate for online regression
         atomic_energy = tuple([float(v) for v in yml["atomic_energy"]])
     except:
-        atomic_energy = tuple([0.0 for _ in elements])
+        atomic_energy = None
 
     if yml["feature_type"] == "gtinv":
         gtinv = PolymlpGtinvParams(
