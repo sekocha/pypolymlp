@@ -65,17 +65,29 @@ def _calc_gradient_stats(grad: NDArray):
     return grad_ave, grad_max
 
 
+def _add_regularization(
+    error: NDArray, grad_trial: NDArray, coef: NDArray, coef0: NDArray, alpha: float
+):
+    """Add quadratic regularization term."""
+    diff_coef = (coef - coef0) / np.abs(coef0)
+    reg = alpha * (diff_coef @ diff_coef)
+    grad_reg = alpha * diff_coef / np.abs(coef0)
+    error += reg
+    grad_trial += grad_reg
+    return error, grad_trial
+
+
 def solver_adam(
     x: NDArray,
     y: NDArray,
     coef0: Optional[NDArray] = None,
-    alpha: float = 100.0,
+    alpha: float = 0.1,
     beta: float = 0.95,
     batch_size: int = 1000,
     gtol: float = 1e-2,
     n_epochs: int = 100,
     use_scales: bool = True,
-    max_learning_rate: float = 1e-2,
+    max_learning_rate: float = 1e-4,
     verbose: bool = False,
 ):
     """Estimate MLP coefficients using Adam.
@@ -141,15 +153,11 @@ def solver_adam(
 
             error = x_batch @ coef - y_batch
             grad_trial = x_batch.T @ error
-
-            # regularization term
-            diff_coef = (coef - coef0) / np.abs(coef0)
-            reg = alpha * (diff_coef @ diff_coef)
-            grad_reg = alpha * diff_coef / np.abs(coef0)
-            error += reg
-            grad_trial += grad_reg
-
+            error, grad_trial = _add_regularization(
+                error, grad_trial, coef, coef0, alpha
+            )
             grad_trial /= n_data_batch
+
             grad, magn = _update_gradients_adam(
                 grad_trial, grad_prev, magn_prev, beta, beta2
             )
