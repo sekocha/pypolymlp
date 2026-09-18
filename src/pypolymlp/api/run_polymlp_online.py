@@ -24,13 +24,13 @@ def run():
     parser.add_argument(
         "--batch_size",
         type=int,
-        default=100,
+        default=None,
         help="Batch size of online regression",
     )
     parser.add_argument(
         "--gtol",
         type=float,
-        default=1e-2,
+        default=1e-5,
         help="Tolerance for gradient in online regression",
     )
     parser.add_argument(

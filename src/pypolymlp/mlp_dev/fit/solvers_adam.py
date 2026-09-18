@@ -69,11 +69,13 @@ def solver_adam(
     x: NDArray,
     y: NDArray,
     coef0: Optional[NDArray] = None,
-    alpha: float = 1.0,
+    alpha: float = 100.0,
     beta: float = 0.95,
-    batch_size: int = 100,
+    batch_size: int = 1000,
     gtol: float = 1e-2,
     n_epochs: int = 100,
+    use_scales: bool = True,
+    max_learning_rate: float = 1e-2,
     verbose: bool = False,
 ):
     """Estimate MLP coefficients using Adam.
@@ -102,16 +104,24 @@ def solver_adam(
         raise RuntimeError("Found negative alpha.")
 
     n_data, n_features = x.shape
-    beta2 = beta**2 / (beta**2 + (1 - beta) ** 2)
-    begin_batch, end_batch = _get_batch_slice(n_data, batch_size)
-    eps_grad = gtol
-
     if coef0 is None:
         alpha = 0.0
-        coef = np.zeros(n_features)
+        coef0 = np.zeros(n_features)
     else:
         coef0 = np.array(coef0)
-        coef = copy.deepcopy(coef0)
+
+    if use_scales:
+        scales = np.std(x, axis=0)
+        x /= scales
+        coef0 *= scales
+
+    coef = copy.deepcopy(coef0)
+
+    beta2 = beta**2 / (beta**2 + (1 - beta) ** 2)
+    if batch_size is None:
+        batch_size = n_data // 5
+    begin_batch, end_batch = _get_batch_slice(n_data, batch_size)
+    eps_grad = gtol
 
     grad_prev, magn_prev = np.zeros(n_features), np.zeros(n_features)
     converge = False
@@ -120,9 +130,9 @@ def solver_adam(
             print("------", flush=True)
             print("Epoch:", i_epoch + 1, flush=True)
 
-        rate = max(0.1 / np.sqrt(i_epoch + 1), 1e-4)
+        rate = max(max_learning_rate / np.sqrt(i_epoch + 1), max_learning_rate * 1e-4)
         if verbose:
-            print("- Learning rate:", "{:.5f}".format(rate), flush=True)
+            print("- Learning rate:", "{:.8f}".format(rate), flush=True)
 
         for i_batch in _shuffle_batch_order(len(begin_batch)):
             begin, end = begin_batch[i_batch], end_batch[i_batch]
@@ -140,7 +150,6 @@ def solver_adam(
             grad_trial += grad_reg
 
             grad_trial /= n_data_batch
-
             grad, magn = _update_gradients_adam(
                 grad_trial, grad_prev, magn_prev, beta, beta2
             )
@@ -153,14 +162,17 @@ def solver_adam(
             grad_prev, magn_prev = grad, magn
 
         if verbose:
-            #    error_all = np.array(error_all)
-            #    rmse_forces = np.sqrt(np.mean(error_all**2))
-            #    print("- Time:              ", "{:.3f}".format(t2 - t1), "s", flush=True)
-            #    print("- RMSE (Force):      ", "{:.5e}".format(rmse_forces), flush=True)
+            rmse = np.sqrt(np.average(np.square(x @ coef - y)))
+            print("- RMSE:        ", "{:.7f}".format(rmse), flush=True)
             print("- Max gradient:", "{:.5e}".format(grad_max), flush=True)
             print("- Ave gradient:", "{:.5e}".format(grad_ave), flush=True)
 
         if converge:
             break
-        print(coef)
+
+    if use_scales:
+        x *= scales
+        coef0 /= scales
+        coef /= scales
+
     return coef
