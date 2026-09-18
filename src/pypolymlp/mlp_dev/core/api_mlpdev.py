@@ -9,6 +9,7 @@ from pypolymlp.core.params import PolymlpParams
 from pypolymlp.mlp_dev.core.data_sequential import calc_xtx_xty
 from pypolymlp.mlp_dev.core.data_standard import calc_xy
 from pypolymlp.mlp_dev.core.data_utils import PolymlpDataXY
+from pypolymlp.mlp_dev.core.dataclass import PolymlpDataMLP
 from pypolymlp.mlp_dev.core.features_attr import get_features_attr, get_num_features
 from pypolymlp.mlp_dev.core.utils import check_memory_size_in_regression
 from pypolymlp.mlp_dev.core.utils_model_selection import (
@@ -137,6 +138,32 @@ class PolymlpDevCore:
             verbose=self._verbose,
             batch_size=batch_size,
         )
+
+    def set_model(
+        self,
+        coefs: np.ndarray,
+        scales: np.ndarray,
+        rmse_train: float,
+        rmse_test: float,
+        cumulative_n_features: Optional[tuple] = None,
+    ):
+        """Return a polymlp model.
+
+        Parameters
+        ----------
+        coeffs: Coefficients, shape=(n_coeffs).
+        scales: Scales, shape=(n_coeffs).
+        """
+        model = PolymlpDataMLP(
+            coeffs=coefs,
+            scales=scales,
+            rmse_train=rmse_train,
+            rmse_test=rmse_test,
+            alpha=None,
+            params=self._params,
+            cumulative_n_features=cumulative_n_features,
+        )
+        return model
 
     def get_best_model(
         self,

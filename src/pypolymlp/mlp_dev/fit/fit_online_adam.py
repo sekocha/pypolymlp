@@ -26,7 +26,8 @@ class PolymlpFitOnlineAdam(PolymlpFitBase):
         """Init method.
 
         params: Parameters of polymlp.
-        train: Training datasets.
+        train:  Training datasets.
+        coeffs: Initial scaled coefficients of polynomial MLP.
         """
         super().__init__(params, train, use_gradient=True, verbose=verbose)
 
@@ -50,13 +51,14 @@ class PolymlpFitOnlineAdam(PolymlpFitBase):
             n_epochs=self._n_epochs,
             verbose=self._verbose,
         )
-        coeffs = coeffs.reshape((-1, 1))
-        rmse_train = self._polymlp.compute_rmse(coeffs, train_xy, check_singular=True)
+        rmse_train = self._polymlp.compute_rmse(
+            coeffs.reshape((-1, 1)), train_xy, check_singular=True
+        )[0]
         train_xy.clear_data()
-        print(coeffs[0, 0], self._coef0[0])
         print(rmse_train)
 
-        self._best_model = self._polymlp.get_best_model(
+        print(coeffs.shape)
+        self._best_model = self._polymlp.set_model(
             coeffs,
             np.ones(coeffs.shape),
             rmse_train,

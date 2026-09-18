@@ -61,17 +61,14 @@ def run():
 
     t1 = time.time()
     polymlp.fit_online(
-        batch_size=args.batch_size, gtol=args.gtol, n_epochs=args.n_epochs
+        batch_size=args.batch_size,
+        gtol=args.gtol,
+        n_epochs=args.n_epochs,
     )
     polymlp.save_mlp(filename="polymlp.yaml.update")
     t2 = time.time()
-
-    # polymlp.estimate_error(log_energy=True, use_cv=args.cross_val)
-    # t3 = time.time()
-    # polymlp.save_errors(filename="polymlp_error.yaml")
 
     if verbose:
         print("Regression: update model", flush=True)
         print("elapsed_time:", flush=True)
         print("  features, fit:      ", "{:.3f}".format(t2 - t1), "(s)", flush=True)
-        # print("  error:              ", "{:.3f}".format(t3 - t2), "(s)", flush=True)
