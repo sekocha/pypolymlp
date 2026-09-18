@@ -556,6 +556,23 @@ class Pypolymlp:
 
         return self
 
+    def set_datasets_vasp_online(self, vaspruns: list):
+        """Set single DFT dataset in vasp format used for online regression.
+
+        Parameters
+        ----------
+        vaspruns: vasprun files.
+        """
+        self._is_params_none()
+        self._params.dataset_type = "vasp"
+        self._train, self._test = set_datasets_from_single_fileset(
+            self._params,
+            train_files=vaspruns,
+            test_files=[],
+            verbose=self._verbose,
+        )
+        return self
+
     def fit(
         self,
         use_cv: bool = False,
@@ -718,7 +735,7 @@ class Pypolymlp:
         _ = fit_polymlp_online(
             self._params,
             self._train,
-            self._mlp_model.coeffs,
+            self._mlp_model.scaled_coeffs,
             beta=beta,
             batch_size=batch_size,
             gtol=gtol,
@@ -779,8 +796,8 @@ class Pypolymlp:
         self._params = PolymlpParams(params_single)
         if require_atomic_energy and self._params.atomic_energy is None:
             raise RuntimeError(
-                "Atomic energies not found in polymlp.yaml. "
-                "Use the latest pypolymlp to develop the input polymlp.yaml."
+                "Atomic energies not found in polymlp file. "
+                "This polymlp file is not compatible with re-training."
             )
 
         scales = np.ones(len(coeffs))

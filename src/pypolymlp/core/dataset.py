@@ -631,9 +631,9 @@ def set_datasets_from_single_fileset(
     if parse_end:
         train.parse_files(params)
         test.parse_files(params)
-
-    train.subtract_atomic_energy(params.atomic_energy)
-    test.subtract_atomic_energy(params.atomic_energy)
+    else:
+        train.subtract_atomic_energy(params.atomic_energy)
+        test.subtract_atomic_energy(params.atomic_energy)
     return train, test
 
 

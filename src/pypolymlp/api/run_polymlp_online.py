@@ -57,18 +57,15 @@ def run():
     if verbose:
         polymlp.print_params()
 
-    # TODO: Reconsider dataset interface
-    polymlp.set_datasets_vasp(vaspruns=args.vaspruns)
+    polymlp.set_datasets_vasp_online(vaspruns=args.vaspruns)
 
     t1 = time.time()
     polymlp.fit_online(
-        batch_size=args.batch_size,
-        gtol=args.gtol,
-        n_epochs=args.n_epochs,
+        batch_size=args.batch_size, gtol=args.gtol, n_epochs=args.n_epochs
     )
-
     polymlp.save_mlp(filename="polymlp.yaml.update")
     t2 = time.time()
+
     # polymlp.estimate_error(log_energy=True, use_cv=args.cross_val)
     # t3 = time.time()
     # polymlp.save_errors(filename="polymlp_error.yaml")
