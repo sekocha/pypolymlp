@@ -802,28 +802,6 @@ class Pypolymlp:
                     print(file=f)
         return self
 
-    # def load_mlp(
-    #     self,
-    #     filename: Union[str, io.IOBase] = "polymlp.yaml",
-    #     require_atomic_energy: bool = False,
-    # ):
-    #     """Load polynomial MLP from file."""
-    #     if isinstance(filename, (list, tuple, np.ndarray)):
-    #         raise RuntimeError("load_mlp not available for hybrid model.")
-    #
-    #     params_single, coeffs = load_mlp(filename)
-    #     self._params = PolymlpParams(params_single)
-    #     if require_atomic_energy and self._params.atomic_energy is None:
-    #         raise RuntimeError(
-    #             "Atomic energies not found in polymlp file. "
-    #             "This polymlp file is not compatible with re-training."
-    #         )
-    #
-    #     scales = np.ones(len(coeffs))
-    #     self._mlp_model = PolymlpDataMLP(
-    #         coeffs=coeffs, scales=scales, params=self._params
-    #     )
-
     def load_mlp(
         self,
         filename: Union[str, io.IOBase] = "polymlp.yaml",
