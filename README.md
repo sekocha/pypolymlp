@@ -105,11 +105,7 @@ Several procedures for generating structures used in DFT calculations are also s
   - [Other utilities](docs/utils.md)
 
 - Experimental Features
-  - [SSCHA free energy model](docs/experimental/mlpdev_sscha.md)
-  - [Electronic free energy model](docs/experimental/mlpdev_electron.md)
-  - [Substitutional disordered model](docs/experimental/mlpdev_disorder.md)
-  - [Spin-dependent model](docs/experimental/mlpdev_spin.md)
-
+  - [Fine tuning of MLP using online learning with Adam](docs/experimental/mlpdev_online_adam.md)
 
 ## Using pypolymlp for Polynomial MLP Calculations
 
@@ -136,12 +132,9 @@ The following calculations can be performed using `pypolymlp` with either `polym
 
 - Experimental features
   - [Self-consistent phonon calculations](docs/experimental/calc_sscha.md)
-  - [Finite-temperature local geometry optimization](docs/experimental/calc_geometry_temperature.md)
-  - [Finite-temperature elastic constants](docs/experimental/calc_elastic_temperature.md)
   - [Molecular dynamics](docs/experimental/calc_md.md)
   - [Thermodynamic integration using molecular dynamics](docs/experimental/calc_ti.md)
   - [Thermodynamic property calculation](docs/experimental/calc_thermodynamics.md)
-  - Evaluation of atomic-configuration-dependent electronic free energy
 
 - [How to use polymlp in other calculator tools](docs/api_other_calc.md)
   - LAMMPS

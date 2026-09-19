@@ -21,7 +21,7 @@ class PolymlpFitOnlineAdam(PolymlpFitBase):
         coeffs: list | np.ndarray,
         max_learning_rate: float = 1e-3,
         alpha: float = 1.0,
-        beta: float = 0.95,
+        beta: float = 0.99,
         batch_size: Optional[int] = None,
         gtol: float = 1e-5,
         n_epochs: int = 1000,

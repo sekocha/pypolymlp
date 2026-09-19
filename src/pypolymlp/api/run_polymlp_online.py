@@ -36,7 +36,7 @@ def run():
     parser.add_argument(
         "--beta",
         type=float,
-        default=0.95,
+        default=0.99,
         help="Parameter for defining gradient update.",
     )
     parser.add_argument(
@@ -79,9 +79,9 @@ def run():
 
     t1 = time.time()
     polymlp.fit_online(
-        max_learning_rate=1e-3,
-        alpha=1.0,
-        beta=0.95,
+        max_learning_rate=args.max_learning_rate,
+        alpha=args.alpha,
+        beta=args.beta,
         batch_size=args.batch_size,
         gtol=args.gtol,
         n_epochs=args.n_epochs,
