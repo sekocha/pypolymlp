@@ -1,5 +1,10 @@
 elements:      [Mg, O]
+enable_spins:  [0, 0]
+dataset_type:  vasp
+atomic_energy: [-0.0004, -1.85321219]
+
 cutoff:        8.0
+
 pair_type:     gaussian
 feature_type:  gtinv
 model_type:    3
