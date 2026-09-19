@@ -32,6 +32,7 @@ class PolymlpDataMLP:
     params: Optional[PolymlpParams] = None
     cumulative_n_features: Optional[tuple] = None
     scaled_coeffs: Optional[np.ndarray] = None
+    scaled_coeffs_flat: Optional[np.ndarray] = None
 
     def __post_init__(self):
         """Post init method."""
@@ -39,8 +40,13 @@ class PolymlpDataMLP:
             coeffs_hybrid = self.hybrid_division(self.coeffs)
             scales_hybrid = self.hybrid_division(self.scales)
             self.scaled_coeffs = [c / s for c, s in zip(coeffs_hybrid, scales_hybrid)]
+            self.scaled_coeffs_flat = []
+            for c in self.scaled_coeffs:
+                self.scaled_coeffs_flat.extend(c)
+            self.scaled_coeffs_flat = np.array(self.scaled_coeffs_flat)
         else:
             self.scaled_coeffs = self.coeffs / self.scales
+            self.scaled_coeffs_flat = self.scaled_coeffs
 
     def save_mlp(self, filename: str = "polymlp.yaml"):
         """Save polymlp.yaml files"""

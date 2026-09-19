@@ -14,7 +14,7 @@ from pypolymlp.core.dataset import (
 from pypolymlp.core.displacements import get_structures_from_displacements
 from pypolymlp.core.interface_vasp import parse_structures_from_poscars
 from pypolymlp.core.interface_yaml import parse_property_yamls
-from pypolymlp.core.io_polymlp import convert_to_yaml, load_mlp
+from pypolymlp.core.io_polymlp import convert_to_yaml, load_mlps
 from pypolymlp.core.params import PolymlpParams
 from pypolymlp.core.params_utils import set_all_params
 from pypolymlp.core.parser_polymlp_params import ParamsParser
@@ -751,7 +751,7 @@ class Pypolymlp:
         fit = fit_polymlp_online(
             self._params,
             self._train,
-            self._mlp_model.scaled_coeffs,
+            self._mlp_model.scaled_coeffs_flat,
             max_learning_rate=max_learning_rate,
             alpha=alpha,
             beta=beta,
@@ -802,26 +802,66 @@ class Pypolymlp:
                     print(file=f)
         return self
 
+    # def load_mlp(
+    #     self,
+    #     filename: Union[str, io.IOBase] = "polymlp.yaml",
+    #     require_atomic_energy: bool = False,
+    # ):
+    #     """Load polynomial MLP from file."""
+    #     if isinstance(filename, (list, tuple, np.ndarray)):
+    #         raise RuntimeError("load_mlp not available for hybrid model.")
+    #
+    #     params_single, coeffs = load_mlp(filename)
+    #     self._params = PolymlpParams(params_single)
+    #     if require_atomic_energy and self._params.atomic_energy is None:
+    #         raise RuntimeError(
+    #             "Atomic energies not found in polymlp file. "
+    #             "This polymlp file is not compatible with re-training."
+    #         )
+    #
+    #     scales = np.ones(len(coeffs))
+    #     self._mlp_model = PolymlpDataMLP(
+    #         coeffs=coeffs, scales=scales, params=self._params
+    #     )
+
     def load_mlp(
         self,
         filename: Union[str, io.IOBase] = "polymlp.yaml",
         require_atomic_energy: bool = False,
     ):
         """Load polynomial MLP from file."""
-        if isinstance(filename, (list, tuple, np.ndarray)):
-            raise RuntimeError("load_mlp not available for hybrid model.")
-
-        params_single, coeffs = load_mlp(filename)
-        self._params = PolymlpParams(params_single)
+        self._params, coeffs = load_mlps(filename)
         if require_atomic_energy and self._params.atomic_energy is None:
             raise RuntimeError(
                 "Atomic energies not found in polymlp file. "
                 "This polymlp file is not compatible with re-training."
             )
 
-        scales = np.ones(len(coeffs))
+        if len(self._params) == 1:
+            scales = np.ones(len(coeffs[0]))
+            self._mlp_model = PolymlpDataMLP(
+                coeffs=coeffs[0],
+                scales=scales,
+                params=self._params,
+            )
+            return self
+
+        coeffs_flat = []
+        cumulative_n_features = []
+        cum = 0
+        for c in coeffs:
+            cum += len(c)
+            coeffs_flat.extend(c)
+            cumulative_n_features.append(cum)
+        cumulative_n_features = tuple(cumulative_n_features)
+        coeffs_flat = np.array(coeffs_flat)
+
+        scales = np.ones(len(coeffs_flat))
         self._mlp_model = PolymlpDataMLP(
-            coeffs=coeffs, scales=scales, params=self._params
+            coeffs=coeffs_flat,
+            scales=scales,
+            params=self._params,
+            cumulative_n_features=cumulative_n_features,
         )
         return self
 

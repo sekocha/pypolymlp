@@ -83,7 +83,7 @@ def load_mlps(file_list_or_file):
     params_array: PolymlpParams.
     coeffs_array: List of polymlp model coefficients.
     """
-    if isinstance(file_list_or_file, str):
+    if isinstance(file_list_or_file, (str, io.IOBase)):
         params_single, coeffs = load_mlp(file_list_or_file)
         return PolymlpParams(params_single), [coeffs]
 

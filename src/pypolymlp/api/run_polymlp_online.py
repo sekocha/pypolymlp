@@ -14,9 +14,9 @@ def run():
 
     signal.signal(signal.SIGINT, signal.SIG_DFL)
     parser = argparse.ArgumentParser()
-    # TODO: Hybrid
     parser.add_argument(
         "--pot",
+        nargs="*",
         type=str,
         default="polymlp.yaml",
         help="Polymlp file name.",

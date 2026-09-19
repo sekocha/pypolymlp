@@ -34,7 +34,10 @@ def set_common_params(
 
     common_params.n_type = n_type
     common_params.elements = tuple(elements)
-    common_params.atomic_energy = tuple(atom_e)
+    if len(atom_e) == 0:
+        common_params.atomic_energy = None
+    else:
+        common_params.atomic_energy = tuple(atom_e)
     if len(enable_spins) == 0:
         common_params.enable_spins = None
     else:
