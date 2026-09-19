@@ -36,7 +36,16 @@ class PolymlpDataMLP:
 
     def __post_init__(self):
         """Post init method."""
+        if len(self.coeffs) != len(self.scales):
+            raise RuntimeError("Found different lengths of coeffs and scales.")
+
         if self.cumulative_n_features is not None:
+            n_features = self.cumulative_n_features[-1]
+            if len(self.coeffs) != n_features:
+                raise RuntimeError("Coefficient size not appropriate.")
+            if len(self.scales) != n_features:
+                raise RuntimeError("Scale size not appropriate.")
+
             coeffs_hybrid = self.hybrid_division(self.coeffs)
             scales_hybrid = self.hybrid_division(self.scales)
             self.scaled_coeffs = [c / s for c, s in zip(coeffs_hybrid, scales_hybrid)]

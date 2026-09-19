@@ -73,6 +73,27 @@ def test_load_mlp():
     assert mlp.coeffs[0] == pytest.approx(coeff_true, rel=1e-8)
 
 
+def test_load_mlps_hybrid():
+    """Test for loading hybrid polymlp files."""
+    filename = str(cwd / "mlps/polymlp.lammps.pair")
+    coeff_true = 9.352307613515078e00 / 2.067583465937491e-01
+
+    mlp = Pypolymlp()
+    mlp.load_mlp([filename, filename])
+    assert len(mlp.parameters) == 2
+    assert len(mlp.coeffs) == 2
+    assert mlp.coeffs[0][0] == pytest.approx(coeff_true, rel=1e-8)
+    assert mlp.coeffs[1][0] == pytest.approx(coeff_true, rel=1e-8)
+    assert len(mlp.coeffs[0]) == 324
+    assert len(mlp.coeffs[1]) == 324
+
+    mlp = Pypolymlp()
+    mlp.load_mlp([filename])
+    assert len(mlp.parameters) == 1
+    assert len(mlp.coeffs) == 324
+    assert mlp.coeffs[0] == pytest.approx(coeff_true, rel=1e-8)
+
+
 def test_split_train_test():
     """Test for splitting dataset."""
     list1 = np.arange(50)
@@ -106,9 +127,3 @@ def test_get_structures_from_poscars():
     st = mlp.get_structures_from_poscars(poscars)
     np.testing.assert_equal(st[0].n_atoms, [4, 4])
     np.testing.assert_equal(st[1].n_atoms, [4, 4])
-
-
-# TODO
-# def test_load_mlps_hybrid():
-#     """Test for loading hybrid polymlp files."""
-#     pass
