@@ -81,13 +81,14 @@ def solver_adam(
     x: NDArray,
     y: NDArray,
     coef0: Optional[NDArray] = None,
-    alpha: float = 0.1,
+    max_learning_rate: float = 1e-3,
+    alpha: float = 1.0,
     beta: float = 0.95,
-    batch_size: int = 1000,
-    gtol: float = 1e-2,
-    n_epochs: int = 100,
+    batch_size: Optional[int] = None,
+    gtol: float = 1e-5,
+    n_epochs: int = 1000,
+    n_epochs_min: int = 10,
     use_scales: bool = True,
-    max_learning_rate: float = 1e-4,
     verbose: bool = False,
 ):
     """Estimate MLP coefficients using Adam.
@@ -100,9 +101,11 @@ def solver_adam(
     x: Predictor matrix, X.
     y: Observation vector, y.
     coef0: Initial coefficients.
+    max_learning_rate: Maximum learning rate used as the initial one.
     alpha: Magnitude parameter for regularization.
     beta: Parameter for defining gradient update.
     batch_size: Minibatch size.
+    gtol: Tolerance for gradient.
     n_epochs: Number of epochs.
     """
     if verbose:
@@ -142,7 +145,7 @@ def solver_adam(
             print("------", flush=True)
             print("Epoch:", i_epoch + 1, flush=True)
 
-        rate = max(max_learning_rate / np.sqrt(i_epoch + 1), max_learning_rate * 1e-4)
+        rate = max(max_learning_rate / np.sqrt(i_epoch + 1), max_learning_rate * 1e-3)
         if verbose:
             print("- Learning rate:", "{:.8f}".format(rate), flush=True)
 
@@ -162,7 +165,7 @@ def solver_adam(
                 grad_trial, grad_prev, magn_prev, beta, beta2
             )
             grad_ave, grad_max = _calc_gradient_stats(grad)
-            if grad_ave < gtol and grad_max < gtol * 10:
+            if i_epoch > n_epochs_min and grad_ave < gtol and grad_max < gtol * 10:
                 converge = True
                 break
 
@@ -171,9 +174,9 @@ def solver_adam(
 
         if verbose:
             rmse = np.sqrt(np.average(np.square(x @ coef - y)))
-            print("- RMSE:        ", "{:.7f}".format(rmse), flush=True)
-            print("- Max gradient:", "{:.5e}".format(grad_max), flush=True)
-            print("- Ave gradient:", "{:.5e}".format(grad_ave), flush=True)
+            print("- RMSE:         ", "{:.7f}".format(rmse), flush=True)
+            print("- Max gradient: ", "{:.5e}".format(grad_max), flush=True)
+            print("- Ave gradient: ", "{:.5e}".format(grad_ave), flush=True)
 
         if converge:
             break

@@ -1,5 +1,7 @@
 """Class for estimating MLP coefficients using online Adam."""
 
+from typing import Optional
+
 import numpy as np
 
 from pypolymlp.core.dataset import DatasetList
@@ -17,25 +19,37 @@ class PolymlpFitOnlineAdam(PolymlpFitBase):
         params: PolymlpParams,
         train: DatasetList,
         coeffs: list | np.ndarray,
-        gtol: float = 1e-2,
-        n_epochs: int = 100,
+        max_learning_rate: float = 1e-3,
+        alpha: float = 1.0,
         beta: float = 0.95,
-        batch_size: int = 100,
+        batch_size: Optional[int] = None,
+        gtol: float = 1e-5,
+        n_epochs: int = 1000,
         verbose: bool = False,
     ):
         """Init method.
 
+        Parameters
+        ----------
         params: Parameters of polymlp.
         train:  Training datasets.
         coeffs: Initial scaled coefficients of polynomial MLP.
+        max_learning_rate: Maximum learning rate used as the initial one.
+        alpha: Magnitude parameter for regularization.
+        beta: Parameter for defining gradient update.
+        batch_size: Minibatch size.
+        gtol: Tolerance for gradient.
+        n_epochs: Number of epochs.
         """
         super().__init__(params, train, use_gradient=True, verbose=verbose)
 
         self._coef0 = coeffs
-        self._gtol = gtol
-        self._n_epochs = n_epochs
+        self._max_learning_rate = max_learning_rate
+        self._alpha = alpha
         self._beta = beta
         self._batch_size = batch_size
+        self._gtol = gtol
+        self._n_epochs = n_epochs
 
     def fit(self):
         """Estimate MLP coefficients."""
@@ -45,6 +59,8 @@ class PolymlpFitOnlineAdam(PolymlpFitBase):
             x=train_xy.x,
             y=train_xy.y,
             coef0=self._coef0,
+            max_learning_rate=self._max_learning_rate,
+            alpha=self._alpha,
             beta=self._beta,
             batch_size=self._batch_size,
             gtol=self._gtol,

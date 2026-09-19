@@ -110,13 +110,31 @@ def fit_polymlp_online(
     params: PolymlpParams,
     train: DatasetList,
     coeffs: list | np.ndarray,
+    max_learning_rate: float = 1e-3,
+    alpha: float = 1.0,
     beta: float = 0.95,
-    batch_size: int = 100,
-    gtol: float = 1e-2,
-    n_epochs: int = 100,
+    batch_size: Optional[int] = None,
+    gtol: float = 1e-5,
+    n_epochs: int = 1000,
     verbose: bool = False,
 ):
-    """API function for updating MLP coefficients using online algorithms."""
+    """API function for updating MLP coefficients using online algorithms.
+
+    If alpha > 0, regularization term (alpha * || (w - w0) / w0 ||^2)
+    is added to minimization function.
+
+    Parameters
+    ----------
+    params: Parameters of polymlp.
+    train:  Training datasets.
+    coeffs: Initial scaled coefficients of polynomial MLP.
+    max_learning_rate: Maximum learning rate used as the initial one.
+    alpha: Magnitude parameter for regularization.
+    beta: Parameter for defining gradient update.
+    batch_size: Minibatch size.
+    gtol: Tolerance for gradient.
+    n_epochs: Number of epochs.
+    """
     fitobj = PolymlpFitOnlineAdam(
         params,
         train,

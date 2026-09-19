@@ -22,10 +22,28 @@ def run():
         help="Polymlp file name.",
     )
     parser.add_argument(
+        "--max_learning_rate",
+        type=float,
+        default=1e-3,
+        help="Maximum learning rate used as the initial one.",
+    )
+    parser.add_argument(
+        "--alpha",
+        type=float,
+        default=1.0,
+        help="Magnitude parameter for regularization.",
+    )
+    parser.add_argument(
+        "--beta",
+        type=float,
+        default=0.95,
+        help="Parameter for defining gradient update.",
+    )
+    parser.add_argument(
         "--batch_size",
         type=int,
         default=None,
-        help="Batch size of online regression",
+        help="Mini-batch size of online Adam",
     )
     parser.add_argument(
         "--gtol",
@@ -36,7 +54,7 @@ def run():
     parser.add_argument(
         "--n_epochs",
         type=int,
-        default=10000,
+        default=1000,
         help="Number of epochs",
     )
     parser.add_argument(
@@ -61,6 +79,9 @@ def run():
 
     t1 = time.time()
     polymlp.fit_online(
+        max_learning_rate=1e-3,
+        alpha=1.0,
+        beta=0.95,
         batch_size=args.batch_size,
         gtol=args.gtol,
         n_epochs=args.n_epochs,

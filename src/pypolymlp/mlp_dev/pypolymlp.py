@@ -717,13 +717,29 @@ class Pypolymlp:
 
     def fit_online(
         self,
+        max_learning_rate: float = 1e-3,
+        alpha: float = 1.0,
         beta: float = 0.95,
-        batch_size: int = 100,
-        gtol: float = 1e-2,
+        batch_size: Optional[int] = None,
+        gtol: float = 1e-5,
         n_epochs: int = 1000,
         verbose: Optional[bool] = None,
     ):
-        """Compute learing curve."""
+        """Estimate MLP coefficients using online Adam.
+
+        This can be used to perform fine tuning of given polymlp.
+        If alpha > 0, regularization term (alpha * || (w - w0) / w0 ||^2)
+        is added to minimization function.
+
+        Parameters
+        ----------
+        max_learning_rate: Maximum learning rate used as the initial one.
+        alpha: Magnitude parameter for regularization.
+        beta: Parameter for defining gradient update.
+        batch_size: Minibatch size.
+        gtol: Tolerance for gradient.
+        n_epochs: Number of epochs.
+        """
         if verbose is not None:
             self._verbose = verbose
 
