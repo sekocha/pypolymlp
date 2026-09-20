@@ -135,6 +135,7 @@ The following calculations can be performed using `pypolymlp` with either `polym
   - [Molecular dynamics](docs/experimental/calc_md.md)
   - [Thermodynamic integration using molecular dynamics](docs/experimental/calc_ti.md)
   - [Thermodynamic property calculation](docs/experimental/calc_thermodynamics.md)
+  - [Cluster expansion for alloys](docs/experimental/calc_cluster_expansion.md)
 
 - [How to use polymlp in other calculator tools](docs/api_other_calc.md)
   - LAMMPS
