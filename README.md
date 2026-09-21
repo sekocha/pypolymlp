@@ -105,6 +105,7 @@ Several procedures for generating structures used in DFT calculations are also s
   - [Other utilities](docs/utils.md)
 
 - Experimental Features
+  - [Generator of Substitutional (Alloy) Structures](docs/experimental/utils_strgen_alloy.md)
   - [Fine tuning of MLP using online learning with Adam](docs/experimental/mlpdev_online_adam.md)
 
 ## Using pypolymlp for Polynomial MLP Calculations
