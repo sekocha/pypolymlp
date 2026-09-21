@@ -213,7 +213,7 @@ class PypolymlpStructureGenerator:
             self._sample_structures.extend(structures)
         return self
 
-    def build_supercells_auto(self, max_natom: int = 150):
+    def build_supercells_auto(self, min_natom: int = 48, max_natom: int = 150):
         """Initialize generators and construct supercells of base structures.
 
         Parameters
@@ -223,7 +223,7 @@ class PypolymlpStructureGenerator:
         """
         self._strgen_instances = []
         for st in self._structures:
-            gen = StructureGenerator(st, natom_ub=max_natom)
+            gen = StructureGenerator(st, natom_lb=min_natom, natom_ub=max_natom)
             self._strgen_instances.append(gen)
             if self._verbose:
                 print("-----------------------", flush=True)
