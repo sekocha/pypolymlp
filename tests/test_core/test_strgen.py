@@ -10,6 +10,7 @@ from pypolymlp.api.pypolymlp_str import PypolymlpStructureGenerator
 from pypolymlp.core.interface_vasp import Poscar
 from pypolymlp.core.strgen import (
     StructureGenerator,
+    generate_substitutional_structures,
     set_structure_id,
     set_volume_eps_array,
     write_structures,
@@ -81,6 +82,20 @@ def test_set_volume_eps_array():
         1.4,
     ]
     np.testing.assert_allclose(eps_array, true)
+
+
+def test_substitutional_structures():
+    """Test write_structures and set_structure_id."""
+    polymlp = PypolymlpStructureGenerator(verbose=True)
+    polymlp.load_poscars(file_rs)
+    strs = polymlp.structures
+    subs = generate_substitutional_structures(
+        strs[0], atom_type_group=[[0, 1]], n_subs=2
+    )
+    assert len(subs) == 2
+    assert sum(subs[0].n_atoms) == 8
+    assert len(subs[0].elements) == 8
+    assert len(subs[0].types) == 8
 
 
 def test_StructureGenerator():
