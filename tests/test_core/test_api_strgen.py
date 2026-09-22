@@ -100,3 +100,34 @@ def test_run_density_algorithm():
 
     assert len(polymlp.sample_structures[0].elements) == 64
     assert len(polymlp.sample_structures[-1].elements) == 72
+
+
+def test_run_standard_algorithm_with_substitution():
+    """Test run_standard_algorithm for substitutional structures."""
+    polymlp = PypolymlpStructureGenerator(verbose=True)
+    polymlp.load_poscars([file_rs, file_wz])
+    polymlp.set_substitutional_structures(atom_type_group=[[0, 1]], n_subs=2)
+    polymlp.build_supercells_auto()
+    polymlp.run_standard_algorithm(n_samples=2, max_distance=1.0)
+    assert polymlp.n_samples == 8
+
+    assert len(polymlp.sample_structures[0].elements) == 64
+    assert len(polymlp.sample_structures[3].elements) == 64
+    assert len(polymlp.sample_structures[4].elements) == 72
+    assert len(polymlp.sample_structures[-1].elements) == 72
+
+
+def test_run_sequential_displacements_with_substitution():
+    """Test for run_sequential_displacements for substitutional structures."""
+    polymlp = PypolymlpStructureGenerator(verbose=True)
+    polymlp.load_structures_from_files(poscars=file_rs)
+    polymlp.set_substitutional_structures(atom_type_group=[[0, 1]], n_subs=2)
+    polymlp.build_supercell(supercell_size=(2, 2, 2))
+    polymlp.run_sequential_displacements(
+        n_samples=2,
+        distance_lb=0.01,
+        distance_ub=0.5,
+        n_volumes=1,
+    )
+    assert polymlp.n_samples == 4
+    assert len(polymlp.sample_structures[0].elements) == 64
