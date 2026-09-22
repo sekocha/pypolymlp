@@ -95,7 +95,6 @@ class PypolymlpStructureGenerator:
             )
         structures = []
         for st in self._structures:
-            atom_type_group = [[0], [1, 2], [3]]
             strs = generate_substitutional_structures(
                 st, atom_type_group=atom_type_group, n_subs=n_subs
             )

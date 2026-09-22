@@ -1,5 +1,6 @@
 """Class for generating random structures."""
 
+import copy
 import os
 from typing import Optional
 
@@ -113,7 +114,11 @@ def generate_substitutional_structures(
         n_elements = len(st.n_atoms)
         group = [[i for i in range(n_elements)]]
     else:
-        # TODO: Check whether type is list of list.
+        if not (
+            isinstance(atom_type_group, (list, tuple))
+            and all(isinstance(item, (list, tuple)) for item in atom_type_group)
+        ):
+            raise RuntimeError("atom_type_group must be two-dimensional list.")
         group = atom_type_group
 
     element_map = {}
@@ -123,11 +128,9 @@ def generate_substitutional_structures(
     structures = []
     types = np.array(st.types)
     for _ in range(n_subs):
-        perm_types = np.zeros(len(types), dtype=int)
+        perm_types = copy.deepcopy(types)
         for atom_types in group:
-            if len(atom_types) == 1:
-                t = atom_types[0]
-                perm_types[np.where(types == t)] = t
+            if len(atom_types) < 2:
                 continue
 
             target_atoms = np.zeros(len(types), dtype=bool)

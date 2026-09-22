@@ -9,6 +9,13 @@ from pypolymlp.api.pypolymlp_str import PypolymlpStructureGenerator
 from pypolymlp.core.utils import print_credit
 
 
+class AppendTypes(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        if getattr(namespace, self.dest, None) is None:
+            setattr(namespace, self.dest, [])
+        getattr(namespace, self.dest).append(values)
+
+
 def run():
     """Command lines for generating DFT structures."""
 
@@ -115,6 +122,16 @@ def run():
             "Parameter specifies the number of substitutional structures."
         ),
     )
+    parser.add_argument(
+        "-t",
+        "--types",
+        nargs="+",
+        type=int,
+        action=AppendTypes,
+        default=None,
+        help="Atom types substituted.",
+    )
+
     args = parser.parse_args()
 
     np.set_printoptions(legacy="1.21")
@@ -123,7 +140,10 @@ def run():
     polymlp.load_structures_from_files(poscars=args.poscars)
 
     if args.substitution is not None:
-        polymlp.set_substitutional_structures(n_subs=args.substitution)
+        polymlp.set_substitutional_structures(
+            atom_type_group=args.types,
+            n_subs=args.substitution,
+        )
 
     if args.displacements is not None:
         print("Pypolymlp structure generator: Displacement mode", flush=True)
