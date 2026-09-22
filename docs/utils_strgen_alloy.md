@@ -2,7 +2,36 @@
 
 ## Generator of Random Substitutional Structures with Atomic Displacements and Cell Changes
 
-Coming soon.
+> **Note**: This feature requires version 0.21.6 or later.
+
+When random structures with atomic substitutions, atomic displacements, and cell changes are used to construct datasets, `pypolymlp` provides the `pypolymlp-structure` command-line interface with the `--substitution` option for generating substitutional alloy structures.
+
+For example, consider substitutional structures of Sr(Zr,Ti)O3.
+Suppose that the base structure is given by the following POSCAR:
+```
+> cat POSCAR
+1.0
+   7.873956509449926 0.000000000000000 0.000000000000000
+   0.000000000000000 7.873956509449926 0.000000000000000
+   0.000000000000000 0.000000000000000 7.907105922700000
+ Sr  Zr  Ti  O
+ 8   4   4   24
+Direct
+    0.75 0.25 0.25
+    (... skipped)
+```
+Random substitutions of Zr and Ti can be specified using the `--types 1 2` option, where atom types are identified by integer indices starting from zero.
+
+Atomic displacements and cell changes can then be introduced into these substitutional structures using the structure-generation procedures implemented in `pypolymlp`.
+The available procedures for generating random structures are described in [Generator of DFT random structures](utils_strgen.md).
+All options for generating random structures can be combined with the `--substitution` option.
+
+If 10 substitutional structures are generated and 20 sets of random atomic displacements and cell changes are introduced for each substitutional structure using the standard algorithm, the following command can be used:
+```shell
+pypolymlp-structure -p POSCAR --standard 20 --max_distance 1.0 --substitution 10 -t 1 2
+```
+In total, 200 structures are generated, and the corresponding POSCAR files are saved in the `poscars` directory.
+
 
 ## Generator of Derivative Structures with Atomic Displacements and Cell Changes
 
