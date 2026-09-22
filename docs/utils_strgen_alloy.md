@@ -28,9 +28,12 @@ All options for generating random structures can be combined with the `--substit
 
 If 10 substitutional structures are generated and 20 sets of random atomic displacements and cell changes are introduced for each substitutional structure using the standard algorithm, the following command can be used:
 ```shell
-pypolymlp-structure -p POSCAR --standard 20 --max_distance 1.0 --substitution 10 -t 1 2
+pypolymlp-structure -p POSCAR --standard 20 --max_distance 1.0 --substitution 10 --types 1 2
 ```
 In total, 200 structures are generated, and the corresponding POSCAR files are saved in the `poscars` directory.
+
+If substitutions on multiple sublattices are required, the `--types` option can be specified multiple times, for example, as `--types 1 2 --types 3 4`.
+In this example, atoms of types 1 and 2 are randomly substituted with each other, while atoms of types 3 and 4 are randomly substituted with each other.
 
 
 ## Generator of Derivative Structures with Atomic Displacements and Cell Changes
