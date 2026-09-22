@@ -1,11 +1,12 @@
 """Class for generating random structures."""
 
 import os
+from typing import Optional
 
 import numpy as np
 
 from pypolymlp.core.data_format import PolymlpStructure
-from pypolymlp.utils.structure_utils import supercell_diagonal
+from pypolymlp.utils.structure_utils import sort_wrt_types, supercell_diagonal
 from pypolymlp.utils.vasp_utils import write_poscar_file
 
 
@@ -100,6 +101,53 @@ def set_volume_eps_array(
     else:
         eps_array3 = np.linspace(1.1, eps_max, n_samples // 3)
     return np.concatenate([eps_array1, eps_array2, eps_array3])
+
+
+def generate_substitutional_structures(
+    st: PolymlpStructure,
+    atom_type_group: Optional[list] = None,
+    n_subs: int = 10,
+):
+    """Generate random substitutional structures."""
+    if atom_type_group is None:
+        n_elements = len(st.n_atoms)
+        group = [[i for i in range(n_elements)]]
+    else:
+        # TODO: Check whether type is list of list.
+        group = atom_type_group
+
+    element_map = {}
+    for t, ele in zip(st.types, st.elements):
+        element_map[t] = ele
+
+    structures = []
+    types = np.array(st.types)
+    for _ in range(n_subs):
+        perm_types = np.zeros(len(types), dtype=int)
+        for atom_types in group:
+            if len(atom_types) == 1:
+                t = atom_types[0]
+                perm_types[np.where(types == t)] = t
+                continue
+
+            target_atoms = np.zeros(len(types), dtype=bool)
+            for t in atom_types:
+                target_atoms = target_atoms | (types == t)
+            types_tmp = types[target_atoms]
+            perm_types[target_atoms] = np.random.permutation(types_tmp)
+
+        elements = np.array([element_map[t] for t in perm_types])
+
+        st_tmp = PolymlpStructure(
+            axis=st.axis,
+            positions=st.positions,
+            n_atoms=st.n_atoms,
+            types=perm_types,
+            elements=elements,
+        )
+        st_tmp = sort_wrt_types(st_tmp)
+        structures.append(st_tmp)
+    return structures
 
 
 class StructureGenerator:

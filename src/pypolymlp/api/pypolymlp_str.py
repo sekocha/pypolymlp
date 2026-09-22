@@ -10,6 +10,7 @@ from pypolymlp.core.displacements import generate_random_const_displacements
 from pypolymlp.core.interface_vasp import parse_structures_from_poscars
 from pypolymlp.core.strgen import (
     StructureGenerator,
+    generate_substitutional_structures,
     set_structure_id,
     set_volume_eps_array,
     write_structures,
@@ -69,6 +70,38 @@ class PypolymlpStructureGenerator:
             raise RuntimeError("Structure files not found.")
 
         self.load_poscars(poscars)
+        return self
+
+    def set_substitutional_structures(
+        self,
+        atom_type_group: Optional[list] = None,
+        n_subs: int = 10,
+    ):
+        """Set substitutional structures as base structures.
+
+        Parameters
+        ----------
+        atom_type_group: Atom type group used for generating substitutional structures.
+                         For example, [[0, 1], [2, 3], [4]] considers two kinds of
+                         substitutions, those of atoms 0 and 1
+                         and those of atoms 2 and 3.
+        n_subs: Number of substitutional structures.
+        """
+        if self._structures is None:
+            raise RuntimeError("Base structures not found.")
+        if self._supercells is not None:
+            raise RuntimeError(
+                "Use substitutional setting before constructing supercells."
+            )
+        structures = []
+        for st in self._structures:
+            atom_type_group = [[0], [1, 2], [3]]
+            strs = generate_substitutional_structures(
+                st, atom_type_group=atom_type_group, n_subs=n_subs
+            )
+            structures.extend(strs)
+
+        self._structures = structures
         return self
 
     def save_random_structures(self, path: str = "./poscars"):

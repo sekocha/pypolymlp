@@ -106,12 +106,24 @@ def run():
         "--max_volume", type=float, default=1.3, help="Maximumm volume ratio."
     )
 
+    parser.add_argument(
+        "--substitution",
+        type=int,
+        default=None,
+        help=(
+            "Consider substitutional structures for specified sublattice. "
+            "Parameter specifies the number of substitutional structures."
+        ),
+    )
     args = parser.parse_args()
 
     np.set_printoptions(legacy="1.21")
     print_credit()
     polymlp = PypolymlpStructureGenerator(verbose=True)
     polymlp.load_structures_from_files(poscars=args.poscars)
+
+    if args.substitution is not None:
+        polymlp.set_substitutional_structures(n_subs=args.substitution)
 
     if args.displacements is not None:
         print("Pypolymlp structure generator: Displacement mode", flush=True)
