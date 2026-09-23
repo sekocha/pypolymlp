@@ -9,7 +9,7 @@ import numpy as np
 from pypolymlp.calculator.opt_geometry import GeometryOptimization
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.core.data_format import PolymlpStructure
-from pypolymlp.utils.supercell_utils import get_supercell
+from pypolymlp.utils.supercell_utils import get_supercell_three_directions
 from pypolymlp.utils.vasp_utils import write_poscar_file
 
 eVang2ToJm2 = 16.021766343
@@ -47,27 +47,14 @@ class PolymlpGSFE:
         supercell_matrix: Optional[np.ndarray] = None,
     ):
         """Set supercell."""
-        if supercell_matrix is not None:
-            if np.array(supercell_matrix).shape != (3, 3):
-                raise RuntimeError("Supercell matrix shape is not (3, 3).")
-            matrix = copy.deepcopy(supercell_matrix)
-        else:
-            if len(disp1) != 3:
-                raise RuntimeError("Three elements required for disp1.")
-            if len(disp2) != 3:
-                raise RuntimeError("Three elements required for disp2.")
-            if len(slip_plane) != 3:
-                raise RuntimeError("Three elements required for slip plane.")
-            matrix = np.zeros((3, 3), dtype=int)
-            matrix[:, 0] = np.array(disp1)
-            matrix[:, 1] = np.array(disp2)
-            matrix[:, 2] = np.array(slip_plane) * n_layers
-
-        for i in range(3):
-            if matrix[i, i] < 0:
-                matrix[:, i] *= -1
-
-        self._supercell = get_supercell(self._base_structure, matrix)
+        self._supercell = get_supercell_three_directions(
+            self._base_structure,
+            direction1=disp1,
+            direction2=disp2,
+            direction3=slip_plane,
+            n_layers=n_layers,
+            supercell_matrix=supercell_matrix,
+        )
         self._area = np.linalg.norm(self._supercell.axis[:, 0]) * np.linalg.norm(
             self._supercell.axis[:, 1]
         )

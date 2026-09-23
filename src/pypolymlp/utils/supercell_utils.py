@@ -1,7 +1,7 @@
 """Utility functions for generating supercell."""
 
 import copy
-from typing import Union
+from typing import Optional, Union
 
 import numpy as np
 
@@ -96,3 +96,38 @@ def get_supercell_size(supercell_matrix: Union[np.array, list, tuple]):
     elif mat.shape == (3, 3):
         return int(round(np.linalg.det(supercell_matrix)))
     raise RuntimeError("Inappropriate supercell matrix.")
+
+
+def get_supercell_three_directions(
+    st: PolymlpStructure,
+    direction1: tuple = (1, 0, 0),
+    direction2: tuple = (0, 1, 0),
+    direction3: tuple = (0, 0, 1),
+    n_layers: int = 2,
+    supercell_matrix: Optional[np.ndarray] = None,
+    slab: bool = False,
+):
+    """Set supercell using three directions."""
+    if supercell_matrix is not None:
+        if np.array(supercell_matrix).shape != (3, 3):
+            raise RuntimeError("Supercell matrix shape is not (3, 3).")
+        matrix = copy.deepcopy(supercell_matrix)
+    else:
+        if len(direction1) != 3:
+            raise RuntimeError("Three elements required for disp1.")
+        if len(direction2) != 3:
+            raise RuntimeError("Three elements required for disp2.")
+        if len(direction3) != 3:
+            raise RuntimeError("Three elements required for slip plane.")
+        matrix = np.zeros((3, 3), dtype=int)
+        matrix[:, 0] = np.array(direction1)
+        matrix[:, 1] = np.array(direction2)
+        matrix[:, 2] = np.array(direction3) * n_layers
+
+    for i in range(3):
+        if matrix[i, i] < 0:
+            matrix[:, i] *= -1
+
+    if not slab:
+        supercell = get_supercell(st, matrix)
+        return supercell
