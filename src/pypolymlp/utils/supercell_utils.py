@@ -98,6 +98,18 @@ def get_supercell_size(supercell_matrix: Union[np.array, list, tuple]):
     raise RuntimeError("Inappropriate supercell matrix.")
 
 
+def _triangularize(supercell: PolymlpStructure):
+    """Triangularize axis."""
+    Q, R = np.linalg.qr(supercell.axis)
+    s = np.sign(np.diag(R))
+    s[s == 0] = 1
+    D = np.diag(s)
+    Q = Q @ D
+    R = D @ R
+    supercell.axis = R
+    return supercell
+
+
 def get_supercell_three_directions(
     st: PolymlpStructure,
     direction1: tuple = (1, 0, 0),
@@ -105,7 +117,6 @@ def get_supercell_three_directions(
     direction3: tuple = (0, 0, 1),
     n_layers: int = 2,
     supercell_matrix: Optional[np.ndarray] = None,
-    slab: bool = False,
 ):
     """Set supercell using three directions."""
     if supercell_matrix is not None:
@@ -128,6 +139,32 @@ def get_supercell_three_directions(
         if matrix[i, i] < 0:
             matrix[:, i] *= -1
 
-    if not slab:
-        supercell = get_supercell(st, matrix)
-        return supercell
+    supercell = get_supercell(st, matrix)
+    supercell = _triangularize(supercell)
+    return supercell
+
+
+def get_slab(
+    st: PolymlpStructure,
+    direction1: tuple = (1, 0, 0),
+    direction2: tuple = (0, 1, 0),
+    direction3: tuple = (0, 0, 1),
+    n_layers: int = 2,
+    supercell_matrix: Optional[np.ndarray] = None,
+    vacuum_width: float = 10.0,
+):
+    """Set slab supercell model using three directions."""
+    supercell = get_supercell_three_directions(
+        st,
+        direction1=direction1,
+        direction2=direction2,
+        direction3=direction3,
+        n_layers=n_layers,
+        supercell_matrix=supercell_matrix,
+    )
+    len3 = np.linalg.norm(supercell.axis[:, 2])
+    ratio = (len3 + vacuum_width) / len3
+    supercell.axis[:, 2] *= ratio
+    supercell.positions[2] /= ratio
+    # TODO: Add end option.
+    return supercell
