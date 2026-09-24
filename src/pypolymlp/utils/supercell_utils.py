@@ -23,6 +23,31 @@ def _refine_positions(positions: np.ndarray, tol: float = 1e-13):
     return positions
 
 
+def _sort_wrt_types(st: PolymlpStructure, return_ids: bool = False):
+    """Sort atoms with respect to types."""
+    # TODO: Unify sort_wrt_types with the same function in structure_utils.
+    map_elements = dict()
+    for t, e in zip(st.types, st.elements):
+        map_elements[t] = e
+
+    n_atoms, positions, types = [], [], []
+    ids_all = []
+    for i in sorted(set(st.types)):
+        ids = np.array(st.types) == i
+        n_atoms.append(np.count_nonzero(ids))
+        positions.extend(st.positions.T[ids])
+        types.extend(np.array(st.types)[ids])
+        ids_all.extend(np.where(ids == True)[0])
+
+    st.positions = np.array(positions).T
+    st.n_atoms = n_atoms
+    st.types = types
+    st.elements = [map_elements[t] for t in types]
+    if return_ids:
+        return st, np.array(ids_all)
+    return st
+
+
 def get_supercell(
     st: PolymlpStructure,
     supercell_matrix: np.ndarray,
@@ -152,6 +177,8 @@ def get_slab(
     n_layers: int = 2,
     supercell_matrix: Optional[np.ndarray] = None,
     vacuum_width: float = 10.0,
+    end_frac: Optional[float] = None,
+    tol: float = 1e-13,
 ):
     """Set slab supercell model using three directions."""
     supercell = get_supercell_three_directions(
@@ -164,7 +191,25 @@ def get_slab(
     )
     len3 = np.linalg.norm(supercell.axis[:, 2])
     ratio = (len3 + vacuum_width) / len3
+    if end_frac is None:
+        supercell.axis[:, 2] *= ratio
+        supercell.positions[2] /= ratio
+        return supercell
+
+    supercell.positions[2] += end_frac
+    supercell.positions = _refine_positions(supercell.positions)
+    match_end = np.abs(supercell.positions[2]) < tol
+
+    add_positions = supercell.positions[:, match_end]
+    add_positions[2] += 1.0
+    add_elements = np.array(supercell.elements)[match_end]
+    add_types = np.array(supercell.types)[match_end]
+
+    supercell.positions = np.hstack([supercell.positions, add_positions])
+    supercell.elements = np.concatenate([supercell.elements, add_elements])
+    supercell.types = np.concatenate([supercell.types, add_types])
+    supercell = _sort_wrt_types(supercell)
+
     supercell.axis[:, 2] *= ratio
     supercell.positions[2] /= ratio
-    # TODO: Add end option.
     return supercell
