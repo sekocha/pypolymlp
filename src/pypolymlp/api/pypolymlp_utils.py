@@ -12,6 +12,7 @@ from pypolymlp.utils.grid_optimal import find_optimal_mlps
 from pypolymlp.utils.grid_search.api_grid_search import PolymlpGridSearch
 from pypolymlp.utils.kim_utils import convert_polymlp_to_kim_model
 from pypolymlp.utils.structure_utils import supercell
+from pypolymlp.utils.supercell_utils import get_slab, get_supercell_three_directions
 from pypolymlp.utils.vasp_utils import (
     load_electronic_properties_from_vasprun,
     print_poscar,
@@ -169,7 +170,7 @@ class PypolymlpUtils:
         ----------
         vaspruns: vasprun.xml files
         """
-        path_string = "../../polymlp_datasets"
+        path_string = "./../../polymlp_datasets"
         auto_divide_vaspruns(
             vaspruns,
             elements,
@@ -187,10 +188,71 @@ class PypolymlpUtils:
         supercell_matrix: Union[tuple, np.ndarray] = (1, 1, 1),
     ):
         """Generate supercell."""
+        if structure is None and poscar is None:
+            raise RuntimeError("Structure not found.")
         if structure is None:
             structure = Poscar(poscar).structure
+
         sup = supercell(structure, supercell_matrix)
         return sup
+
+    def generate_supercell_three_directions(
+        self,
+        structure: Optional[PolymlpStructure] = None,
+        poscar: Optional[str] = None,
+        direction1: tuple = (1, 0, 0),
+        direction2: tuple = (0, 1, 0),
+        direction3: tuple = (0, 0, 1),
+        n_layers: int = 2,
+        supercell_matrix: Optional[np.ndarray] = None,
+    ):
+        """Set supercell using three directions."""
+        if structure is None and poscar is None:
+            raise RuntimeError("Structure not found.")
+        if structure is None:
+            structure = Poscar(poscar).structure
+
+        sup = get_supercell_three_directions(
+            st=structure,
+            direction1=direction1,
+            direction2=direction2,
+            direction3=direction3,
+            n_layers=n_layers,
+            supercell_matrix=supercell_matrix,
+        )
+        return sup
+
+    def generate_slab_model(
+        self,
+        structure: Optional[PolymlpStructure] = None,
+        poscar: Optional[str] = None,
+        direction1: tuple = (1, 0, 0),
+        direction2: tuple = (0, 1, 0),
+        direction3: tuple = (0, 0, 1),
+        n_layers: int = 2,
+        supercell_matrix: Optional[np.ndarray] = None,
+        vacuum_width: float = 10.0,
+        end_frac: Optional[float] = None,
+        tol: float = 1e-13,
+    ):
+        """Set slab supercell model using three directions."""
+        if structure is None and poscar is None:
+            raise RuntimeError("Structure not found.")
+        if structure is None:
+            structure = Poscar(poscar).structure
+
+        slab = get_slab(
+            st=structure,
+            direction1=direction1,
+            direction2=direction2,
+            direction3=direction3,
+            n_layers=n_layers,
+            supercell_matrix=supercell_matrix,
+            vacuum_width=vacuum_width,
+            end_frac=end_frac,
+            tol=tol,
+        )
+        return slab
 
     def init_symmetry(
         self,

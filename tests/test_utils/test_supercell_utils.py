@@ -7,8 +7,10 @@ import pytest
 
 from pypolymlp.utils.supercell_utils import (
     _is_diagonal,
+    get_slab,
     get_supercell,
     get_supercell_size,
+    get_supercell_three_directions,
 )
 
 cwd = Path(__file__).parent
@@ -94,3 +96,58 @@ def test_get_supercell_size():
     """Test get_supercell_size."""
     assert get_supercell_size([2, 3, 4]) == 24
     assert get_supercell_size(np.eye(3) * 2) == 8
+
+
+def test_supercell_three_directions(structure_rocksalt):
+    """Test for supercell functions using three directions."""
+    sup = get_supercell_three_directions(
+        st=structure_rocksalt,
+        direction1=(1, 0, 0),
+        direction2=(0, 1, -1),
+        direction3=(0, 1, 1),
+        n_layers=3,
+    )
+    assert sup.volume == pytest.approx(384.0)
+    assert sum(sup.n_atoms) == 48
+    assert len(sup.elements) == 48
+    assert len(sup.types) == 48
+    assert sup.positions.shape == (3, 48)
+
+
+def test_get_slab(structure_rocksalt):
+    """Test for get_slab."""
+    sup = get_slab(
+        st=structure_rocksalt,
+        direction1=(1, -1, 0),
+        direction2=(1, 1, -2),
+        direction3=(1, 1, 1),
+        n_layers=3,
+        vacuum_width=15.0,
+        end_frac=None,
+    )
+    assert sup.volume == pytest.approx(1152.0)
+    assert sup.axis[0, 0] == pytest.approx(5.656854249492381)
+    assert sup.axis[1, 1] == pytest.approx(9.797958971132712)
+    assert sup.axis[2, 2] == pytest.approx(35.78460969082653)
+    assert sum(sup.n_atoms) == 144
+    assert len(sup.elements) == 144
+    assert len(sup.types) == 144
+    assert sup.positions.shape == (3, 144)
+
+    sup = get_slab(
+        st=structure_rocksalt,
+        direction1=(1, -1, 0),
+        direction2=(1, 1, -2),
+        direction3=(1, 1, 1),
+        n_layers=3,
+        vacuum_width=15.0,
+        end_frac=0.5,
+    )
+    assert sup.volume == pytest.approx(1152.0)
+    assert sup.axis[0, 0] == pytest.approx(5.656854249492381)
+    assert sup.axis[1, 1] == pytest.approx(9.797958971132712)
+    assert sup.axis[2, 2] == pytest.approx(35.78460969082653)
+    assert sum(sup.n_atoms) == 152
+    assert len(sup.elements) == 152
+    assert len(sup.types) == 152
+    assert sup.positions.shape == (3, 152)

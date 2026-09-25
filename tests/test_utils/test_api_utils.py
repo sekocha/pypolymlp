@@ -5,6 +5,8 @@ import os
 import shutil
 from pathlib import Path
 
+import pytest
+
 from pypolymlp.api.pypolymlp_utils import PypolymlpUtils
 
 cwd = Path(__file__).parent
@@ -148,3 +150,82 @@ def test_enumerate_models():
         hybrid=True,
     )
     shutil.rmtree("tmp")
+
+
+def test_supercell(structure_rocksalt):
+    """Test for supercell."""
+    polymlp = PypolymlpUtils()
+    sup = polymlp.generate_supercell(
+        structure=structure_rocksalt,
+        supercell_matrix=(1, 2, 3),
+    )
+    assert sup.volume == pytest.approx(384.0)
+    assert sum(sup.n_atoms) == 48
+    assert len(sup.elements) == 48
+    assert len(sup.types) == 48
+    assert sup.positions.shape == (3, 48)
+
+    sup = polymlp.generate_supercell(
+        structure=structure_rocksalt,
+        supercell_matrix=[[1, 0, 0], [0, 1, -1], [0, 1, 1]],
+    )
+
+    assert sup.volume == pytest.approx(128.0)
+    assert sum(sup.n_atoms) == 16
+    assert len(sup.elements) == 16
+    assert len(sup.types) == 16
+    assert sup.positions.shape == (3, 16)
+
+
+def test_supercell_three_directions(structure_rocksalt):
+    """Test for supercell functions using three directions."""
+    polymlp = PypolymlpUtils()
+    sup = polymlp.generate_supercell_three_directions(
+        structure=structure_rocksalt,
+        direction1=(1, 0, 0),
+        direction2=(0, 1, -1),
+        direction3=(0, 1, 1),
+        n_layers=3,
+    )
+    assert sup.volume == pytest.approx(384.0)
+    assert sum(sup.n_atoms) == 48
+    assert len(sup.elements) == 48
+    assert len(sup.types) == 48
+    assert sup.positions.shape == (3, 48)
+
+
+def test_get_slab(structure_rocksalt):
+    """Test for get_slab."""
+    polymlp = PypolymlpUtils()
+    sup = polymlp.generate_slab_model(
+        structure=structure_rocksalt,
+        direction1=(1, -1, 0),
+        direction2=(1, 1, -2),
+        direction3=(1, 1, 1),
+        n_layers=3,
+        vacuum_width=15.0,
+        end_frac=None,
+    )
+    assert sup.volume == pytest.approx(1152.0)
+    assert sup.axis[0, 0] == pytest.approx(5.656854249492381)
+    assert sup.axis[1, 1] == pytest.approx(9.797958971132712)
+    assert sup.axis[2, 2] == pytest.approx(35.78460969082653)
+    assert sum(sup.n_atoms) == 144
+    assert len(sup.elements) == 144
+    assert len(sup.types) == 144
+    assert sup.positions.shape == (3, 144)
+
+    sup = polymlp.generate_slab_model(
+        structure=structure_rocksalt,
+        direction1=(1, -1, 0),
+        direction2=(1, 1, -2),
+        direction3=(1, 1, 1),
+        n_layers=3,
+        vacuum_width=15.0,
+        end_frac=0.5,
+    )
+    assert sup.volume == pytest.approx(1152.0)
+    assert sup.axis[0, 0] == pytest.approx(5.656854249492381)
+    assert sup.axis[1, 1] == pytest.approx(9.797958971132712)
+    assert sup.axis[2, 2] == pytest.approx(35.78460969082653)
+    assert sum(sup.n_atoms) == 152
