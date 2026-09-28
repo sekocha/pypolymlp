@@ -39,3 +39,54 @@ sup = utils.generate_slab_model(
 )
 utils.write_poscar_file(sup, filename="POSCAR.slab.111")
 ```
+
+## Generalized Stacking Fault Energy
+```python
+from pypolymlp.calculator.compute_gsfe import PolymlpGSFE
+
+trans = PolymlpGSFE(structure=unitcell, properties=prop, verbose=True)
+trans.set_supercell(
+    disp1=(1, 0, 0),
+    disp2=(0, 1, -1),
+    slip_plane=(0, 1, 1),
+    n_layers=4,
+)
+trans.run(n_points=10)
+trans.save(filename="gsfe.dat")
+```
+
+## Transformation path
+```python
+from pypolymlp.calculator.compute_transformation import PolymlpTransformation
+
+# Transformation path along fixed angles
+trans = PolymlpTransformation(unitcell, prop, verbose=False)
+trans.set_supercell(
+    disp1=(1, 0, 0),
+    disp2=(0, 1, 0),
+    slip_plane=(0, 0, 1),
+    n_layers=3,
+)
+
+trans.run_fix_angle(
+    degs_min=90, degs_max=95, degs_int=1, axis1=0, axis2=2, gtol=1e-4
+)
+trans.save(filename="path.dat")
+
+# Transformation path along shift of upper half of supercell.
+trans = PolymlpTransformation(unitcell, prop, verbose=False)
+trans.set_supercell(
+    disp1=(1, 0, 0),
+    disp2=(0, 1, 0),
+    slip_plane=(0, 0, 1),
+    n_layers=4,
+)
+trans.run_fix_shift(
+    max_shift_frac=0.5,
+    n_points=5,
+    axis_shift=0,
+    axis_normal_shift=2,
+    gtol=1e-4,
+)
+trans.save(filename="path.dat")
+```
