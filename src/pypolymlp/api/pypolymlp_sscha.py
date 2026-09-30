@@ -41,9 +41,11 @@ class PypolymlpSSCHA:
         if self._verbose:
             np.set_printoptions(legacy="1.21")
 
-    def load_poscar(self, poscar: str, supercell_matrix: np.ndarray):
+    def load_poscar(self, poscar: str, supercell_matrix: Optional[np.ndarray] = None):
         """Parse POSCAR file and supercell matrix."""
         self._unitcell = Poscar(poscar).structure
+        if supercell_matrix is None:
+            supercell_matrix = np.eye(3)
         self._supercell_matrix = supercell_matrix
         return self
 
