@@ -206,7 +206,6 @@ class SSCHACore:
 
     def _single_iter(self, temp: float = 1000, n_samples: int = 100) -> np.ndarray:
         """Run a standard single sscha iteration."""
-        print(self._fc2.shape)
         self._ph_real.force_constants = self._fc2
         self._ph_real.run(temp=temp, n_samples=n_samples, eliminate_outliers=True)
         self._data_current = self._compute_sscha_properties(temp=temp)
@@ -403,6 +402,12 @@ class SSCHACore:
     def logs(self) -> list[SSCHAData]:
         """Return SSCHA progress."""
         return self._sscha_log
+
+    @property
+    def supercell(self):
+        if self._sscha_params is None:
+            return None
+        return self._sscha_params.supercell
 
     @property
     def n_fc_basis(self) -> int:

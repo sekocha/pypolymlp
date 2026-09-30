@@ -171,6 +171,13 @@ class PropertiesSSCHA(PropertiesBase):
         return self._sscha.properties
 
     @property
+    def supercell(self):
+        """Return SSCHA results."""
+        if self._sscha is None:
+            return None
+        return self._sscha.supercell
+
+    @property
     def logs(self):
         """Return SSCHA progress."""
         if self._sscha is None:
