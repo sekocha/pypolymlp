@@ -119,7 +119,7 @@ class PolymlpGSFE:
 
     def save(self, filename: str = "polymlp_gsfe.dat"):
         """Save excess energies."""
-        header = "1st disp., 2nd disp, Delta E"
+        header = "1st disp., 2nd disp, Delta E (J/m2)"
         np.savetxt(filename, self._excess_energies, fmt="%f", header=header)
 
     @property
