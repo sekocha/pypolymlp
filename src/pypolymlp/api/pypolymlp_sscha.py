@@ -505,6 +505,7 @@ class PypolymlpSSCHA:
     def unitcell(self, cell: PolymlpStructure):
         """Setter of unit cell."""
         self._unitcell = cell
+        self._fc2 = None
 
     @property
     def supercell_matrix(self):
@@ -515,6 +516,7 @@ class PypolymlpSSCHA:
     def supercell_matrix(self, matrix: np.ndarray):
         """Setter of unit cell."""
         self._supercell_matrix = matrix
+        self._fc2 = None
 
     @property
     def sscha_params(self) -> SSCHAParams:
@@ -567,3 +569,10 @@ class PypolymlpSSCHA:
         if self._sscha is None:
             return None
         return self._sscha.logs
+
+    @property
+    def converged_structure(self):
+        """Return converged structure of geometry optimization."""
+        if self._opt is None:
+            return None
+        return self._opt.structure
