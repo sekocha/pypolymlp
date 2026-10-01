@@ -4,13 +4,16 @@ from typing import Literal, Optional, Union
 
 import numpy as np
 
+from pypolymlp.api.api_calculator import PypolymlpCalcProperties
 from pypolymlp.calculator.compute_elastic import PolymlpElastic
 from pypolymlp.calculator.compute_features import (
     compute_from_infile,
     compute_from_polymlp,
 )
 from pypolymlp.calculator.compute_formation_energies import PolymlpFormationEnergies
-from pypolymlp.calculator.properties import Properties, initialize_polymlp_calculator
+
+# from pypolymlp.calculator.properties import Properties, initialize_polymlp_calculator
+from pypolymlp.calculator.properties import Properties
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.interface_vasp import (
     parse_structures_from_poscars,
@@ -21,37 +24,12 @@ from pypolymlp.utils.structure_utils import supercell
 from pypolymlp.utils.vasp_utils import write_poscar_file
 
 
-class PypolymlpCalc:
+class PypolymlpCalc(PypolymlpCalcProperties):
     """API Class for calculating properties."""
 
-    def __init__(
-        self,
-        pot: Optional[Union[str, list[str]]] = None,
-        params: Optional[PolymlpParams] = None,
-        coeffs: Optional[Union[np.ndarray, list[np.ndarray]]] = None,
-        properties: Optional[Properties] = None,
-        verbose: bool = False,
-        require_mlp: bool = True,
-    ):
-        """Init method.
-
-        Parameters
-        ----------
-        pot: polymlp file.
-        params: Parameters for polymlp.
-        coeffs: Polymlp coefficients.
-        properties: Properties instance.
-
-        Any one of pot, (params, coeffs), and properties is needed.
-        """
-        self._prop = initialize_polymlp_calculator(
-            pot=pot,
-            params=params,
-            coeffs=coeffs,
-            properties=properties,
-            return_none=not require_mlp,
-        )
-        self._verbose = verbose
+    def __init__(self, verbose: bool = False):
+        """Init method."""
+        super().__init__(verbose=verbose)
 
         self._structures = None
         self._unitcell = None
@@ -68,6 +46,23 @@ class PypolymlpCalc:
 
         if self._verbose:
             np.set_printoptions(legacy="1.21")
+
+    @property
+    def structures(self) -> list[PolymlpStructure]:
+        """Return structures for the final calculation."""
+        return self._structures
+
+    @structures.setter
+    def structures(
+        self, structures: Union[PolymlpStructure, list[PolymlpStructure]]
+    ) -> list[PolymlpStructure]:
+        """Set structures."""
+        if isinstance(structures, PolymlpStructure):
+            self._structures = [structures]
+        elif isinstance(structures, list):
+            self._structures = structures
+        else:
+            raise RuntimeError("Invalid structure type.")
 
     def load_poscars(self, poscars: Union[str, list[str]]) -> list[PolymlpStructure]:
         """Parse POSCAR files.
@@ -112,21 +107,11 @@ class PypolymlpCalc:
             self.structures = self.load_vaspruns(vaspruns)
         return self.structures
 
-    def load_phonopy_structures(self, structures_ph):
+    def load_phonopy_structures(self, structures_ph: list):
         """Load structures in phonopy format."""
         from pypolymlp.utils.phonopy_utils import phonopy_cell_to_structure
 
         self.structures = [phonopy_cell_to_structure(s) for s in structures_ph]
-
-    def save_poscars(self, filename: str = "POSCAR_pypolymlp", prefix: str = "POSCAR"):
-        """Save structures to POSCAR files."""
-        if len(self.structures) == 1:
-            write_poscar_file(self.first_structure, filename=filename)
-        else:
-            len_zfill = max(np.ceil(np.log10(len(self.structures))).astype(int) + 1, 3)
-            for i, st in enumerate(self.structures):
-                write_poscar_file(st, filename=prefix + str(i).zfill(len_zfill))
-        return self
 
     def eval(
         self,
@@ -141,6 +126,8 @@ class PypolymlpCalc:
         s: Stress tensors. shape=(n_str, 6),
             unit: eV/supercell in the order of xx, yy, zz, xy, yz, zx.
         """
+        if self._prop is None:
+            raise RuntimeError("Property Calculator not found.")
         if structures is not None:
             self.structures = structures
 
@@ -161,12 +148,25 @@ class PypolymlpCalc:
         They contain the energy values, forces, and stress tensors
         for structures used for the latest run of self.eval.
         """
-        self._prop.save(verbose=self._verbose)
+        self.save(verbose=self._verbose)
         return self
 
     def print_properties(self):
         """Print properties for a single structure."""
-        self._prop.print_single()
+        try:
+            self._prop.print_single()
+        except:
+            pass
+        return self
+
+    def save_poscars(self, filename: str = "POSCAR_pypolymlp", prefix: str = "POSCAR"):
+        """Save structures to POSCAR files."""
+        if len(self.structures) == 1:
+            write_poscar_file(self.first_structure, filename=filename)
+        else:
+            len_zfill = max(np.ceil(np.log10(len(self.structures))).astype(int) + 1, 3)
+            for i, st in enumerate(self.structures):
+                write_poscar_file(st, filename=prefix + str(i).zfill(len_zfill))
         return self
 
     def run_features(
@@ -222,6 +222,8 @@ class PypolymlpCalc:
         -------
         elastic_constants: Elastic constants in GPa. shape=(6,6).
         """
+        if self._prop is None:
+            raise RuntimeError("Property Calculator not found.")
 
         if poscar is not None:
             self.load_poscars(poscar)
@@ -239,6 +241,8 @@ class PypolymlpCalc:
 
     def write_elastic_constants(self, filename: str = "polymlp_elastic.yaml"):
         """Save elastic constants to a file."""
+        if self._elastic is None:
+            raise RuntimeError("Elastic constant calculation not completed.")
         self._elastic.write_elastic_constants(filename=filename)
 
     def run_eos(
@@ -271,6 +275,8 @@ class PypolymlpCalc:
         """
         from pypolymlp.calculator.compute_eos import PolymlpEOS
 
+        if self._prop is None:
+            raise RuntimeError("Property Calculator not found.")
         if structure is not None:
             self.structures = structure
         self.unitcell = self.first_structure
@@ -310,6 +316,8 @@ class PypolymlpCalc:
         """
         from pypolymlp.calculator.compute_phonon import PolymlpPhonon
 
+        if self._prop is None:
+            raise RuntimeError("Property Calculator not found.")
         if unitcell is not None:
             self.structures = unitcell
         self.unitcell = self.first_structure
@@ -364,6 +372,8 @@ class PypolymlpCalc:
 
     def write_phonon(self, path: str = "./", write_fc2: bool = True):
         """Save results from phonon calculations."""
+        if self._phonon is None:
+            raise RuntimeError("Phonon calculations not initialized.")
         self._phonon.write_properties(path_output=path, write_fc2=write_fc2)
         return self
 
@@ -401,6 +411,8 @@ class PypolymlpCalc:
         """
         from pypolymlp.calculator.compute_phonon import PolymlpPhononQHA
 
+        if self._prop is None:
+            raise RuntimeError("Property Calculator not found.")
         if unitcell is not None:
             self.structures = unitcell
         self.unitcell = self.first_structure
@@ -457,6 +469,9 @@ class PypolymlpCalc:
                                 (3, N) array with bool elements.
         """
         from pypolymlp.calculator.opt_geometry import GeometryOptimization
+
+        if self._prop is None:
+            raise RuntimeError("Property Calculator not found.")
 
         if init_str is not None:
             self.structures = init_str
@@ -540,6 +555,9 @@ class PypolymlpCalc:
         """
         from pypolymlp.calculator.fc import PolymlpFC
 
+        if self._prop is None:
+            raise RuntimeError("Property Calculator not found.")
+
         if unitcell is not None:
             self.structures = unitcell
         self.unitcell = self.first_structure
@@ -622,6 +640,8 @@ class PypolymlpCalc:
         must be given as [[4, 0], [0, 8]]. If structures are not given, energies
         are regarded as those per atom.
         """
+        if self._prop is None:
+            raise RuntimeError("Property Calculator not found.")
         self._formation = PolymlpFormationEnergies(properties=self._prop)
         self._formation.define_end_members(
             structures=end_structures,
@@ -677,6 +697,8 @@ class PypolymlpCalc:
     @property
     def params(self) -> PolymlpParams:
         """Return parameters."""
+        if self._prop is None:
+            return None
         return self._prop.params
 
     @property
@@ -712,11 +734,6 @@ class PypolymlpCalc:
             return None
 
     @property
-    def structures(self) -> list[PolymlpStructure]:
-        """Return structures for the final calculation."""
-        return self._structures
-
-    @property
     def first_structure(self) -> PolymlpStructure:
         """Return the first structure for the final calculation."""
         if self._structures is None:
@@ -727,18 +744,6 @@ class PypolymlpCalc:
     def converged_structure(self) -> PolymlpStructure:
         """Return the converged structure for the final calculation."""
         return self.first_structure
-
-    @structures.setter
-    def structures(
-        self, structures: Union[PolymlpStructure, list[PolymlpStructure]]
-    ) -> list[PolymlpStructure]:
-        """Set structures."""
-        if isinstance(structures, PolymlpStructure):
-            self._structures = [structures]
-        elif isinstance(structures, list):
-            self._structures = structures
-        else:
-            raise RuntimeError("Invalid structure type.")
 
     @property
     def unitcell(self) -> PolymlpStructure:

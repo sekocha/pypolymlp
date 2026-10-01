@@ -242,6 +242,7 @@ def run():
         raise RuntimeError("Input parameters not found.")
 
     require_mlp = True if args.pot is not None else False
-    polymlp = PypolymlpCalc(pot=args.pot, verbose=True, require_mlp=require_mlp)
+    polymlp = PypolymlpCalc(verbose=True)
+    polymlp.set_polymlp(pot=args.pot, require_mlp=require_mlp)
 
     run_calculations(args, polymlp)
