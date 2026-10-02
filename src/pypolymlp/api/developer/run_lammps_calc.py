@@ -12,8 +12,9 @@ from pypolymlp.api.common_args import (
     create_phonon_parser,
     create_structure_parser,
 )
+from pypolymlp.api.func_calc import run_calculations
 from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
-from pypolymlp.api.run_polymlp_calc import check_variables, run_calculations
+from pypolymlp.api.run_polymlp_calc import check_variables
 from pypolymlp.calculator.utils.lammps.properties_lammps import PropertiesLammps
 from pypolymlp.core.utils import print_credit
 
