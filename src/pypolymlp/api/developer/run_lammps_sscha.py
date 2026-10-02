@@ -49,6 +49,5 @@ def run():
         style=args.style,
         style_command=args.style_command,
         coeff_command=args.coeff_command,
-        verbose=False,
     )
     run_main_sscha(args, polymlp)

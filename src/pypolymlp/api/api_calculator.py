@@ -63,6 +63,7 @@ class PypolymlpCalcProperties:
         style_command: str = "pair_style",
         coeff_command: str = "pair_coeff",
         log: bool = False,
+        screen: bool = False,
     ):
         """Set PropertiesLammps instance.
 
@@ -77,7 +78,7 @@ class PypolymlpCalcProperties:
             style_command=style_command,
             coeff_command=coeff_command,
             log=log,
-            verbose=self._verbose,
+            verbose=False,
         )
         return self._prop
 

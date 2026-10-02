@@ -5,6 +5,7 @@ import signal
 
 import numpy as np
 
+from pypolymlp.api.api_calculator import PypolymlpCalcProperties
 from pypolymlp.api.common_args import (
     create_fc_parser,
     create_go_parser,
@@ -15,7 +16,6 @@ from pypolymlp.api.common_args import (
 from pypolymlp.api.func_calc import run_calculations
 from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
 from pypolymlp.api.run_polymlp_calc import check_variables
-from pypolymlp.calculator.utils.lammps.properties_lammps import PropertiesLammps
 from pypolymlp.core.utils import print_credit
 
 from .lammps_args import create_lammps_parser
@@ -49,13 +49,13 @@ def run():
     print_credit()
     args = check_variables(args)
 
-    prop = PropertiesLammps(
+    polymlp = PypolymlpCalcProperties(verbose=True)
+    prop = polymlp.set_lammps(
         elements=args.elements,
         pot=args.pot,
         style=args.style,
         style_command=args.style_command,
         coeff_command=args.coeff_command,
-        verbose=False,
     )
     polymlp = PypolymlpCalc(properties=prop, verbose=True)
     run_calculations(args, polymlp, calc_features=False)
