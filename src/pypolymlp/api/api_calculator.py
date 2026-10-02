@@ -333,7 +333,9 @@ class PypolymlpCalcProperties:
 
     def load_poscar(self, poscar: str):
         """Parse POSCAR file."""
-        return Poscar(poscar).structure
+        cell = Poscar(poscar).structure
+        self._sscha_unitcell = cell
+        return cell
 
     def load_poscars(self, poscars: str):
         """Parse POSCAR files."""

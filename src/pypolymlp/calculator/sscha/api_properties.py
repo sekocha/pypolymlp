@@ -38,6 +38,7 @@ class PropertiesSSCHA(PropertiesBase):
         self._sscha_params = sscha_params
         self._prop = properties
         self._precondition = precondition
+        self._path = path
         self._verbose = verbose
         self._temperature = self._sscha_params.temperatures[0]
 
@@ -96,6 +97,7 @@ class PropertiesSSCHA(PropertiesBase):
             self._sscha_params,
             self._prop,
             precondition=self._precondition,
+            path=self._path,
             verbose=self._verbose,
         )
 
