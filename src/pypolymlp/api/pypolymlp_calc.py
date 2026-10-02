@@ -10,6 +10,7 @@ from pypolymlp.calculator.compute_features import (
     compute_from_polymlp,
 )
 from pypolymlp.calculator.compute_formation_energies import PolymlpFormationEnergies
+from pypolymlp.calculator.compute_gsfe import PolymlpGSFE
 from pypolymlp.calculator.properties import Properties, initialize_polymlp_calculator
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.interface_vasp import (
@@ -228,7 +229,6 @@ class PypolymlpCalc:
             self._poscar = poscar
 
         self.unitcell = self.first_structure
-
         self._elastic = PolymlpElastic(
             unitcell=self.unitcell,
             properties=self._prop,
@@ -248,9 +248,7 @@ class PypolymlpCalc:
         ----------
         gtol: Tolerance for gradients.
         """
-        # TODO: CHECK SSCHA
         self.unitcell = self.first_structure
-
         self._elastic = PolymlpElastic(
             unitcell=self._unitcell,
             properties=self._prop,
@@ -698,6 +696,35 @@ class PypolymlpCalc:
         convex = self._formation.convex_hull()
         convex_names = self._formation.structure_names_convex
         return (form_e, convex, convex_names)
+
+    def run_gsfe(
+        self,
+        disp1: tuple = (1, 0, 0),
+        disp2: tuple = (0, 1, 0),
+        slip_plane: tuple = (0, 0, 1),
+        n_layers: int = 2,
+        supercell_matrix: Optional[np.ndarray] = None,
+        n_points: int = 10,
+        gtol: float = 0.01,
+        filename: str = "gsfe.dat",
+    ):
+        """Calculate generalized stacking fault energies."""
+        self.unitcell = self.first_structure
+        gsfe = PolymlpGSFE(
+            structure=self._unitcell,
+            properties=self._prop,
+            verbose=self._verbose,
+        )
+        gsfe.set_supercell(
+            disp1=disp1,
+            disp2=disp2,
+            slip_plane=slip_plane,
+            n_layers=n_layers,
+            supercell_matrix=supercell_matrix,
+        )
+        gsfe.run(n_points=n_points, gtol=gtol)
+        gsfe.save(filename=filename)
+        return gsfe.excess_energies
 
     @property
     def params(self) -> PolymlpParams:
