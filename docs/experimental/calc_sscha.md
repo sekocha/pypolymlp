@@ -159,18 +159,15 @@ SSCHA calculations with polynomial MLPs can also be performed using the Python A
 
 ```python
 import numpy as np
-from pypolymlp.api.pypolymlp_sscha import PypolymlpSSCHA
+from pypolymlp.api.api_calculator import PypolymlpCalcProperties
 
-sscha = PypolymlpSSCHA(verbose=True)
-supercell_size = [3, 3, 3]
-sscha.load_poscar("POSCAR", np.diag(supercell_size))
+polymlp = PypolymlpCalcProperties(verbose=True)
+polymlp.set_polymlp(pot=pot)
+unitcell = polymlp.load_poscar("POSCAR")
 
-sscha.set_polymlp("polymlp.yaml")
-
-# Optional function if NAC parameters are needed.
-sscha.set_nac_params("vasprun.xml")
-
-sscha.run(
+polymlp.set_sscha_calculator(
+    unitcell=unitcell,
+    supercell_matrix=(3, 3, 3),
     temp_min=0,
     temp_max=1000,
     temp_step=100,
@@ -185,6 +182,10 @@ sscha.run(
     fc2=None,
     cutoff_radius=None,
 )
+free_energy, force, stress = polymlp.eval(unitcell)
+
+# Optional function if NAC parameters are needed.
+sscha.set_nac_params("vasprun.xml")
 
 """
 Attributes
