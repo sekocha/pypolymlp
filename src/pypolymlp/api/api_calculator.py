@@ -23,6 +23,10 @@ class PypolymlpCalcProperties:
         self._prop_static = None
         self._prop_dyn = None
 
+        self._sscha_unitcell = None
+        self._sscha_supercell = None
+        self._sscha_fc2 = None
+
     def set_polymlp(
         self,
         pot: Optional[Union[str, list[str]]] = None,
@@ -98,19 +102,39 @@ class PypolymlpCalcProperties:
         """
         from pypolymlp.calculator.sscha.api_sscha import load_restart
 
-        unitcell, supercell_matrix, prop_static, fc2 = load_restart(
+        (
+            self._sscha_unitcell,
+            self._sscha_supercell_matrix,
+            self._prop_static,
+            self._sscha_fc2,
+        ) = load_restart(
             yaml=yaml,
             parse_fc2=parse_fc2,
             parse_mlp=parse_mlp,
             pot=pot,
         )
-        self._prop = self._prop_static = prop_static
+        self._prop = self._prop_static
         return self._prop
+
+    @property
+    def sscha_unitcell(self):
+        """Unit cell for SSCHA calculation."""
+        return self._sscha_unitcell
+
+    @property
+    def sscha_supercell_matrix(self):
+        """Supercell matrix for SSCHA calculation."""
+        return self._sscha_supercell_matrix
+
+    @property
+    def sscha_fc2(self):
+        """Force constants for SSCHA calculation."""
+        return self._sscha_fc2
 
     def set_sscha_calculator(
         self,
-        unitcell: PolymlpStructure,
-        supercell_matrix: np.ndarray,
+        unitcell: Optional[PolymlpStructure] = None,
+        supercell_matrix: Optional[np.ndarray] = None,
         temp: Optional[float] = None,
         temp_min: float = 0,
         temp_max: float = 2000,
@@ -165,9 +189,14 @@ class PypolymlpCalcProperties:
         if self._prop_static is None:
             raise RuntimeError("Static Properties class instance not found.")
 
+        if unitcell is None:
+            unitcell = self._sscha_unitcell
+
+        if supercell_matrix is None:
+            supercell_matrix = self._sscha_supercell_matrix
+
         pot = self._prop_static.pot
         sscha_params = SSCHAParams(
-            # unitcell=None,
             unitcell=unitcell,
             supercell_matrix=supercell_matrix,
             pot=pot,

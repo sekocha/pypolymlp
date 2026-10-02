@@ -46,5 +46,7 @@ def run():
     polymlp = PypolymlpCalcProperties(verbose=True)
     if args.pot is not None:
         polymlp.set_polymlp(pot=args.pot)
+    else:
+        polymlp.load_sscha_restart(yaml=args.yaml)
 
     run_main_sscha(args, polymlp)

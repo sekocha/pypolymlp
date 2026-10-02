@@ -1,22 +1,43 @@
 """Functions used for running command line calculations."""
 
 import time
+from typing import Optional
 
 import numpy as np
 
 from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
+from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.utils import precision
+
+
+def run_elastic_temperature(
+    args,
+    polymlp: PypolymlpCalc,
+    structure: Optional[PolymlpStructure] = None,
+    filename: str = "polymlp_elastic_sscha.yaml",
+):
+    """Run temperature dependent elastic constant calculation."""
+    if structure is None:
+        polymlp.load_poscars(args.poscar)
+    else:
+        polymlp.structures = structure
+
+    polymlp.run_elastic_constants_temperature(gtol=args.gtol)
+    polymlp.write_elastic_constants(filename=filename)
+    return
 
 
 def run_geometry_optimization(
     args,
     polymlp: PypolymlpCalc,
-    # structure: Optional[PolymlpStructure] = None,
+    structure: Optional[PolymlpStructure] = None,
     filename: str = "POSCAR_eqm",
 ):
     """Run geometry optimization."""
-    # TODO: Option poscar and structure
-    polymlp.load_poscars(args.poscar)
+    if structure is None:
+        polymlp.load_poscars(args.poscar)
+    else:
+        polymlp.structures = structure
 
     relax_cell, relax_volume = True, True
     if args.fix_cell:
