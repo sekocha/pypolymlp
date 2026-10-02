@@ -5,7 +5,8 @@ import signal
 
 import numpy as np
 
-from pypolymlp.api.pypolymlp_sscha import PypolymlpSSCHA
+from pypolymlp.api.api_calculator import PypolymlpCalcProperties
+from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
 from pypolymlp.core.utils import print_credit
 
 from .common_args import (
@@ -15,101 +16,78 @@ from .common_args import (
     create_sscha_parser,
     create_structure_parser,
 )
+from .run_polymlp_calc import run_geometry_optimization
 
 
-def run_main_sscha(args, sscha: PypolymlpSSCHA):
+def run_main_sscha(args, polymlp: PypolymlpCalcProperties):
     """Run SSCHA calculations."""
-    if args.yaml is not None:
-        sscha.load_restart(yaml=args.yaml, parse_fc2=True)
-    elif args.poscar is not None:
-        sscha.load_poscar(args.poscar, np.diag(args.supercell))
-    else:
-        raise RuntimeError("Structure not found. Use --poscar or --yaml option.")
 
-    if args.born_vasprun is not None:
-        sscha.set_nac_params(args.born_vasprun)
-
+    #     if args.yaml is not None:
+    #         sscha.load_restart(yaml=args.yaml, parse_fc2=True)
+    #     elif args.poscar is not None:
+    #         sscha.load_poscar(args.poscar, np.diag(args.supercell))
+    #     else:
+    #         raise RuntimeError("Structure not found. Use --poscar or --yaml option.")
+    #
+    #     if args.born_vasprun is not None:
+    #         sscha.set_nac_params(args.born_vasprun)
+    #
     if args.n_samples is None:
         n_samples_init, n_samples_final = None, None
     else:
         n_samples_init, n_samples_final = args.n_samples
 
+    unitcell = polymlp.load_poscars(args.poscar)
+    supercell_matrix = np.diag(args.supercell)
+
+    prop = polymlp.set_sscha_calculator(
+        unitcell=unitcell,
+        supercell_matrix=supercell_matrix,
+        temp=args.temp,
+        temp_min=args.temp_min,
+        temp_max=args.temp_max,
+        temp_step=args.temp_step,
+        n_temp=args.n_temp,
+        ascending_temp=args.ascending_temp,
+        n_samples_init=n_samples_init,
+        n_samples_final=n_samples_final,
+        tol=args.tol,
+        max_iter=args.max_iter,
+        mixing=args.mixing,
+        mesh=args.mesh,
+        init_fc_algorithm=args.init,
+        init_fc_file=args.init_file,
+        cutoff_radius=args.cutoff_fc2,
+        use_temporal_cutoff=args.use_temporal_cutoff,
+        precondition=not args.disable_precondition,
+        write_pdos=args.write_pdos,
+        use_mkl=not args.disable_mkl,
+    )
+
+    calc = PypolymlpCalc(properties=prop, verbose=True)
     if args.geometry_optimization:
-        print("Mode: SSCHA geometry optimization", flush=True)
         if args.temp is None:
             raise RuntimeError("Temperature required. Use --temp option.")
 
-        relax_cell, relax_volume = True, True
-        if args.fix_cell:
-            relax_cell = False
-            relax_volume = False
-        if args.fix_volume:
-            relax_volume = False
+        print("Mode: SSCHA geometry optimization", flush=True)
+        run_geometry_optimization(args, calc)
 
-        sscha.init_geometry_optimization(
-            temp=args.temp,
-            n_samples_init=n_samples_init,
-            n_samples_final=n_samples_final,
-            tol=args.tol,
-            max_iter=args.max_iter,
-            mixing=args.mixing,
-            mesh=args.mesh,
-            init_fc_algorithm=args.init,
-            init_fc_file=args.init_file,
-            cutoff_radius=args.cutoff_fc2,
-            use_mkl=not args.disable_mkl,
-            with_sym=not args.no_symmetry,
-            relax_cell=relax_cell,
-            relax_volume=relax_volume,
-            relax_positions=not args.fix_atom,
-            pressure=args.pressure,
-        )
-        sscha.run_geometry_optimization(gtol=args.gtol)
     elif args.elastic:
         if args.temp is None:
             raise RuntimeError("Temperature required. Use --temp option.")
+
         print("Mode: SSCHA elastic constant calculation", flush=True)
-        sscha.run_elastic(
-            temp=args.temp,
-            n_samples_init=n_samples_init,
-            n_samples_final=n_samples_final,
-            tol=args.tol,
-            max_iter=args.max_iter,
-            mixing=args.mixing,
-            mesh=args.mesh,
-            init_fc_algorithm=args.init,
-            init_fc_file=args.init_file,
-            cutoff_radius=args.cutoff_fc2,
-            use_mkl=not args.disable_mkl,
-            gtol=args.gtol,
-            verbose_sscha=False,
-        )
+        calc.load_poscars(args.poscar)
+        calc.run_elastic_constants_temperature(gtol=args.gtol)
+        calc.write_elastic_constants(filename="polymlp_elastic_sscha.yaml")
     else:
         print("Mode: SSCHA calculation", flush=True)
-        sscha.run(
-            temp=args.temp,
-            temp_min=args.temp_min,
-            temp_max=args.temp_max,
-            temp_step=args.temp_step,
-            n_temp=args.n_temp,
-            ascending_temp=args.ascending_temp,
-            n_samples_init=n_samples_init,
-            n_samples_final=n_samples_final,
-            tol=args.tol,
-            max_iter=args.max_iter,
-            mixing=args.mixing,
-            mesh=args.mesh,
-            init_fc_algorithm=args.init,
-            init_fc_file=args.init_file,
-            cutoff_radius=args.cutoff_fc2,
-            use_temporal_cutoff=args.use_temporal_cutoff,
-            precondition=not args.disable_precondition,
-            write_pdos=args.write_pdos,
-            use_mkl=not args.disable_mkl,
-        )
+        calc = PypolymlpCalc(properties=prop, verbose=True)
+        free_energy, _, _ = calc.eval(unitcell)
 
 
 def run():
+    """Run command line."""
 
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
@@ -133,8 +111,8 @@ def run():
     np.set_printoptions(legacy="1.21")
     print_credit()
 
-    sscha = PypolymlpSSCHA(verbose=True)
+    polymlp = PypolymlpCalcProperties(verbose=True)
     if args.pot is not None:
-        sscha.set_polymlp(args.pot)
+        polymlp.set_polymlp(pot=args.pot)
 
-    run_main_sscha(args, sscha)
+    run_main_sscha(args, polymlp)

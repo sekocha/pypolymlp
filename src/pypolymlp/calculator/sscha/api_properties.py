@@ -43,9 +43,7 @@ class PropertiesSSCHA(PropertiesBase):
 
         self._proj_force = None
         self._proj_stress = None
-
         self._sscha = None
-        self._fc2 = None
 
     def _get_projector_force(self):
         """Set projector onto symmetrized supercell forces."""

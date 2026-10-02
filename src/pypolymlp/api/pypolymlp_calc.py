@@ -241,6 +241,36 @@ class PypolymlpCalc:
         """Save elastic constants to a file."""
         self._elastic.write_elastic_constants(filename=filename)
 
+    def run_elastic_constants_temperature(self, gtol: float = 1e-2):
+        """Run elastic constant calculations at T using SSCHA.
+
+        Parameters
+        ----------
+        gtol: Tolerance for gradients.
+        """
+        # TODO: CHECK SSCHA
+        self.unitcell = self.first_structure
+
+        self._elastic = PolymlpElastic(
+            unitcell=self._unitcell,
+            properties=self._prop,
+            gtol=gtol,
+            verbose=self._verbose,
+        )
+        try:
+            self._elastic._geometry.write_poscar()
+            if self._verbose:
+                print("---------------------", flush=True)
+                print("Equilibrium structure", flush=True)
+                self._elastic._geometry.print_structure()
+                print("---------------------", flush=True)
+        except:
+            pass
+
+        self._elastic.run(n_samples=7, eps=0.01)
+        self._elastic.run_adiabatic(n_samples=7, eps=60)
+        return self._elastic.elastic_constants
+
     def run_eos(
         self,
         structure: Optional[PolymlpStructure] = None,
@@ -670,14 +700,12 @@ class PypolymlpCalc:
         return (form_e, convex, convex_names)
 
     @property
-    def instance_properties(self) -> Properties:
-        """Return Properties instance."""
-        return self._prop
-
-    @property
     def params(self) -> PolymlpParams:
         """Return parameters."""
-        return self._prop.params
+        try:
+            return self._prop.params
+        except:
+            return None
 
     @property
     def energies(self) -> np.ndarray:
@@ -852,3 +880,11 @@ class PypolymlpCalc:
             return self._qha.thermal_expansion
         except:
             return None
+
+    @property
+    def instance_properties(self) -> Properties:
+        """Return Properties instance.
+
+        Deprecated.
+        """
+        return self._prop

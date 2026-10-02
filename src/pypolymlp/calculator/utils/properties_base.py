@@ -38,3 +38,7 @@ class PropertiesBase(ABC):
     def save(self):
         """Save properties."""
         pass
+
+    def print_single(self):
+        """Print properties."""
+        pass
