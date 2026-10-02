@@ -1,12 +1,14 @@
 """Class for performing SSCHA."""
 
 import copy
+from typing import Optional, Union
 
 import numpy as np
 
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.sscha.sscha_core import SSCHACore
 from pypolymlp.calculator.sscha.sscha_params import SSCHAParams
+from pypolymlp.calculator.sscha.sscha_restart import Restart
 
 
 def run_sscha(
@@ -170,3 +172,31 @@ def _run_target_sscha(
         sscha.run(temp=temp)
         sscha.save_results(path=path, write_pdos=write_pdos)
     return sscha
+
+
+def load_restart(
+    yaml: str = "sscha_results.yaml",
+    parse_fc2: bool = True,
+    parse_mlp: bool = True,
+    pot: Optional[Union[str, list, tuple, np.ndarray]] = None,
+):
+    """Parse sscha_results.yaml file.
+
+    If parse_fc2 = True, fc2.hdf5 in the same directory
+    as yaml file will be loaded.
+    """
+    if parse_fc2:
+        fc2hdf5 = "/".join(yaml.split("/")[:-1]) + "/fc2.hdf5"
+    else:
+        fc2hdf5 = None
+
+    res = Restart(yaml, fc2hdf5=fc2hdf5)
+    unitcell = res.unitcell
+    supercell_matrix = res.supercell_matrix
+    if parse_mlp:
+        pot = res.polymlp if pot is None else pot
+        prop_static = Properties(pot=pot)
+    else:
+        prop_static = None
+    fc2 = res.force_constants
+    return (unitcell, supercell_matrix, prop_static, fc2)

@@ -77,6 +77,36 @@ class PypolymlpCalcProperties:
         )
         return self._prop
 
+    def load_sscha_restart(
+        self,
+        yaml: str = "sscha_results.yaml",
+        parse_fc2: bool = True,
+        parse_mlp: bool = True,
+        pot: Optional[Union[str, list, tuple, np.ndarray]] = None,
+    ):
+        """Parse sscha_results.yaml file.
+
+        Parameters
+        ----------
+        yaml: yaml file used for restarting SSCHA.
+        parse_fc2: Parse force constants or not.
+        parse_mlp: Parse polymlp or not.
+        pot: Polymlp file.
+
+        If parse_fc2 = True,
+        fc2.hdf5 in the same directory as yaml file will be loaded.
+        """
+        from pypolymlp.calculator.sscha.api_sscha import load_restart
+
+        unitcell, supercell_matrix, prop_static, fc2 = load_restart(
+            yaml=yaml,
+            parse_fc2=parse_fc2,
+            parse_mlp=parse_mlp,
+            pot=pot,
+        )
+        self._prop = self._prop_static = prop_static
+        return self._prop
+
     def set_sscha_calculator(
         self,
         unitcell: PolymlpStructure,
@@ -104,7 +134,31 @@ class PypolymlpCalcProperties:
         write_pdos: bool = False,
         use_mkl: bool = True,
     ):
-        """Set PropertiesSSCHA instance."""
+        """Set PropertiesSSCHA instance.
+
+        Parameters
+        ----------
+        temp: Single simulation temperature.
+        temp_min: Minimum temperature.
+        temp_max: Maximum temperature.
+        temp_step: Temperature interval.
+        n_temp: Number of temperatures.
+                This option is active if n_temp is not None.
+                Temperatures are given using Chebyshev nodes.
+        ascending_temp: Set simulation temperatures in ascending order.
+        n_samples_init: Number of samples in first loop of SSCHA iterations.
+                        If None, the number of samples is automatically determined.
+        n_samples_final: Number of samples in second loop of SSCHA iterations.
+                        If None, the number of samples is automatically determined.
+        tol: Convergence tolerance for FCs.
+        max_iter: Maximum number of iterations.
+        mixing: Mixing parameter.
+                FCs are updated by FC2 = FC2(new) * mixing + FC2(old) * (1-mixing).
+        mesh: q-point mesh for computing harmonic properties using effective FC2.
+        init_fc_algorithm: Algorithm for generating initial FCs.
+        init_fc_file: If algorithm = "file", coefficients are read from init_fc_file.
+        cutoff_radius: Cutoff radius used for estimating FC2.
+        """
         from pypolymlp.calculator.sscha.api_properties import PropertiesSSCHA
         from pypolymlp.calculator.sscha.sscha_params import SSCHAParams
 
