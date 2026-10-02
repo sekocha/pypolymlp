@@ -35,7 +35,7 @@ pypolymlp-invariant -l 3 3 3 3 3 3
 pypolymlp-invariant --orders 2 3 4 --maxl 5
 ```
 
-## Calculation Using Lammps with Interatomic Potentials
+## Calculation Using Lammps
 
 ### Using Polynomial MLP
 ```shell
@@ -50,14 +50,19 @@ pypolymlp-lammps --eos --poscar POSCAR --pot Ti-Al-2003.eam.alloy --style eam/al
 pypolymlp-lammps --phonon --poscar POSCAR --pot Ti-Al-2003.eam.alloy --style eam/alloy --elements Ti Al --supercell 2 2 2
 ```
 
-## Automated Calculations Using Lammps
+### Automated Calculations Using Lammps
 ```shell
 pypolymlp-lammps-autocalc --pot Ti-Al-2003.eam.alloy --style eam/alloy --elements Ti Al
 ```
 
-## SSCHA Calculations Using Lammps
+### SSCHA Calculations Using Lammps
 ```shell
 pypolymlp-lammps-sscha --poscar POSCAR --pot Zope-Ti-Al-2003.eam.alloy --style eam/alloy --supercell 3 3 3 --temp 1500 --mixing 0.5 --tol 0.005 --elements Ti Al
 pypolymlp-lammps-sscha --poscar POSCAR --pot Zope-Ti-Al-2003.eam.alloy --style eam/alloy --supercell 3 3 3 --temp 1500 --mixing 0.5 --tol 0.005 --elements Ti Al --geometry_optimization --gtol 0.03
 pypolymlp-lammps-sscha --poscar POSCAR --pot Zope-Ti-Al-2003.eam.alloy --style eam/alloy --supercell 3 3 3 --temp 1500 --mixing 0.5 --tol 0.005 --elements Ti Al --elastic --gtol 0.03
+```
+
+## GSFE calculation
+```shell
+pypolymlp-calc --pot polymlp.yaml --poscar POSCAR --gsfe --disp1 1 0 0 --disp2 0 1 0 --slip 0 0 1 --n_layers 2 --n_points 2
 ```

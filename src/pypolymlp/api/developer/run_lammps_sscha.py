@@ -9,6 +9,7 @@ from pypolymlp.api.api_calculator import PypolymlpCalcProperties
 from pypolymlp.api.common_args import (
     create_advanced_sscha_parser,
     create_go_parser,
+    create_gsfe_parser,
     create_sscha_parser,
     create_structure_parser,
 )
@@ -25,9 +26,10 @@ def run():
     lammps_parser = create_lammps_parser()
     st_parser = create_structure_parser()
     sscha_parser = create_sscha_parser()
-
     go_parser = create_go_parser(default_gtol=0.01)
+    gsfe_parser = create_gsfe_parser()
     advanced_sscha_parser = create_advanced_sscha_parser()
+
     parser = argparse.ArgumentParser(
         description="SSCHA calculations using Lammps",
         parents=[
@@ -36,6 +38,7 @@ def run():
             sscha_parser,
             advanced_sscha_parser,
             go_parser,
+            gsfe_parser,
         ],
     )
     args = parser.parse_args()

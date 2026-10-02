@@ -9,6 +9,7 @@ from pypolymlp.api.api_calculator import PypolymlpCalcProperties
 from pypolymlp.api.common_args import (
     create_fc_parser,
     create_go_parser,
+    create_gsfe_parser,
     create_mode_parser,
     create_phonon_parser,
     create_structure_parser,
@@ -31,6 +32,7 @@ def run():
     fc_parser = create_fc_parser()
     go_parser = create_go_parser()
     phonon_parser = create_phonon_parser()
+    gsfe_parser = create_gsfe_parser()
 
     parser = argparse.ArgumentParser(
         description="Calculations using interatomic potentials in Lammps",
@@ -40,6 +42,7 @@ def run():
             st_parser,
             go_parser,
             phonon_parser,
+            gsfe_parser,
             fc_parser,
         ],
     )

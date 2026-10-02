@@ -5,7 +5,12 @@ import numpy as np
 from pypolymlp.api.api_calculator import PypolymlpCalcProperties
 from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
 
-from .func_calc import run_elastic_temperature, run_geometry_optimization
+from .func_calc import (
+    run_elastic_temperature,
+    run_eos,
+    run_geometry_optimization,
+    run_gsfe,
+)
 
 
 def run_main_sscha(args, polymlp: PypolymlpCalcProperties):
@@ -78,6 +83,19 @@ def run_main_sscha(args, polymlp: PypolymlpCalcProperties):
 
         print("Mode: SSCHA elastic constant calculation", flush=True)
         run_elastic_temperature(args, calc, structure=unitcell)
+
+    elif args.eos:
+        if args.temp is None:
+            raise RuntimeError("Temperature required. Use --temp option.")
+        print("Mode: SSCHA EOS calculation", flush=True)
+        run_eos(args, calc, structure=unitcell)
+
+    elif args.gsfe:
+        if args.temp is None:
+            raise RuntimeError("Temperature required. Use --temp option.")
+        print("Mode: SSCHA GSFE calculation", flush=True)
+        run_gsfe(args, calc, structure=unitcell)
+
     else:
         print("Mode: SSCHA calculation", flush=True)
         free_energy, _, _ = calc.eval(unitcell)

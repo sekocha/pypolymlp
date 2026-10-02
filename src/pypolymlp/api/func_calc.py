@@ -10,21 +10,17 @@ from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.utils import precision
 
 
-def run_elastic_temperature(
+def _set_structure(
     args,
     polymlp: PypolymlpCalc,
     structure: Optional[PolymlpStructure] = None,
-    filename: str = "polymlp_elastic_sscha.yaml",
 ):
-    """Run temperature dependent elastic constant calculation."""
+    """Set structure."""
     if structure is None:
         polymlp.load_poscars(args.poscar)
     else:
         polymlp.structures = structure
-
-    polymlp.run_elastic_constants_temperature(gtol=args.gtol)
-    polymlp.write_elastic_constants(filename=filename)
-    return
+    return polymlp
 
 
 def run_geometry_optimization(
@@ -34,10 +30,7 @@ def run_geometry_optimization(
     filename: str = "POSCAR_eqm",
 ):
     """Run geometry optimization."""
-    if structure is None:
-        polymlp.load_poscars(args.poscar)
-    else:
-        polymlp.structures = structure
+    polymlp = _set_structure(args, polymlp, structure=structure)
 
     relax_cell, relax_volume = True, True
     if args.fix_cell:
@@ -56,6 +49,107 @@ def run_geometry_optimization(
     polymlp.run_geometry_optimization(method=args.method, gtol=args.gtol)
     polymlp.save_poscars(filename=filename)
     return polymlp
+
+
+def run_elastic_temperature(
+    args,
+    polymlp: PypolymlpCalc,
+    structure: Optional[PolymlpStructure] = None,
+    filename: str = "polymlp_elastic_sscha.yaml",
+):
+    """Run temperature dependent elastic constant calculation."""
+    polymlp = _set_structure(args, polymlp, structure=structure)
+    polymlp.run_elastic_constants_temperature(gtol=args.gtol)
+    polymlp.write_elastic_constants(filename=filename)
+    return
+
+
+def run_elastic(
+    args,
+    polymlp: PypolymlpCalc,
+    structure: Optional[PolymlpStructure] = None,
+    filename: str = "polymlp_elastic.yaml",
+):
+    """Run elastic constant calculation."""
+    polymlp = _set_structure(args, polymlp, structure=structure)
+    polymlp.run_elastic_constants()
+    polymlp.write_elastic_constants(filename=filename)
+
+
+def run_eos(
+    args,
+    polymlp: PypolymlpCalc,
+    structure: Optional[PolymlpStructure] = None,
+    filename: str = "polymlp_eos.yaml",
+):
+    """Run EOS calculation."""
+    if args.poscar is None and args.poscars is not None:
+        args.poscar = args.poscars
+
+    polymlp = _set_structure(args, polymlp, structure=structure)
+    polymlp.run_eos(
+        eps_min=0.7,
+        eps_max=2.0,
+        eps_step=0.03,
+        fine_grid=True,
+        eos_fit=True,
+    )
+    polymlp.write_eos(filename=filename)
+
+
+def run_phonon(
+    args,
+    polymlp: PypolymlpCalc,
+    structure: Optional[PolymlpStructure] = None,
+):
+    """Run phonon calculation."""
+    polymlp = _set_structure(args, polymlp, structure=structure)
+    supercell_matrix = np.diag(args.supercell)
+    polymlp.init_phonon(supercell_matrix=supercell_matrix)
+    polymlp.run_phonon(
+        distance=args.disp,
+        mesh=args.ph_mesh,
+        t_min=args.ph_tmin,
+        t_max=args.ph_tmax,
+        t_step=args.ph_tstep,
+        with_eigenvectors=False,
+        is_mesh_symmetry=True,
+        with_pdos=args.ph_pdos,
+    )
+    polymlp.write_phonon()
+
+    polymlp.run_qha(
+        supercell_matrix=supercell_matrix,
+        distance=args.disp,
+        mesh=args.ph_mesh,
+        t_min=args.ph_tmin,
+        t_max=args.ph_tmax,
+        t_step=args.ph_tstep,
+        eps_min=0.8,
+        eps_max=1.2,
+        eps_step=0.02,
+    )
+    polymlp.write_qha()
+
+
+def run_gsfe(
+    args,
+    polymlp: PypolymlpCalc,
+    structure: Optional[PolymlpStructure] = None,
+    filename: str = "gsfe.dat",
+):
+    """Run GSFE calculation."""
+    polymlp = _set_structure(args, polymlp, structure=structure)
+    excess_energies = polymlp.run_gsfe(
+        disp1=args.disp1,
+        disp2=args.disp2,
+        slip_plane=args.slip,
+        n_layers=args.n_layers,
+        n_points=args.n_points,
+        gtol=args.gtol,
+        filename=filename,
+    )
+    return excess_energies
 
 
 def run_calculations(args, polymlp: PypolymlpCalc, calc_features: bool = True):
@@ -80,26 +174,18 @@ def run_calculations(args, polymlp: PypolymlpCalc, calc_features: bool = True):
     if args.geometry_optimization:
         print("Mode: Geometry optimization", flush=True)
         run_geometry_optimization(args, polymlp)
-
-    if args.eos:
-        if args.poscar is None and args.poscars is not None:
-            args.poscar = args.poscars
-        print("Mode: EOS calculation", flush=True)
-        polymlp.load_poscars(args.poscar)
-        polymlp.run_eos(
-            eps_min=0.7,
-            eps_max=2.0,
-            eps_step=0.03,
-            fine_grid=True,
-            eos_fit=True,
-        )
-        polymlp.write_eos(filename="polymlp_eos.yaml")
-
     if args.elastic:
         print("Mode: Elastic constant calculation", flush=True)
-        polymlp.load_poscars(args.poscar)
-        polymlp.run_elastic_constants()
-        polymlp.write_elastic_constants(filename="polymlp_elastic.yaml")
+        run_elastic(args, polymlp)
+    if args.gsfe:
+        print("Mode: GSFE calculation", flush=True)
+        run_gsfe(args, polymlp)
+    if args.eos:
+        print("Mode: EOS calculation", flush=True)
+        run_eos(args, polymlp)
+    if args.phonon:
+        print("Mode: Phonon calculations", flush=True)
+        run_phonon(args, polymlp)
 
     if args.force_constants:
         print("Mode: Force constant calculations", flush=True)
@@ -143,38 +229,6 @@ def run_calculations(args, polymlp: PypolymlpCalc, calc_features: bool = True):
                 temperatures=range(0, 1001, 10),
                 write_kappa=True,
             )
-
-    if args.phonon:
-        print("Mode: Phonon calculations", flush=True)
-        supercell_matrix = np.diag(args.supercell)
-        polymlp.load_poscars(args.poscar)
-
-        polymlp.init_phonon(supercell_matrix=supercell_matrix)
-        polymlp.run_phonon(
-            distance=args.disp,
-            mesh=args.ph_mesh,
-            t_min=args.ph_tmin,
-            t_max=args.ph_tmax,
-            t_step=args.ph_tstep,
-            with_eigenvectors=False,
-            is_mesh_symmetry=True,
-            with_pdos=args.ph_pdos,
-        )
-        polymlp.write_phonon()
-
-        print("Mode: Phonon calculations (QHA)", flush=True)
-        polymlp.run_qha(
-            supercell_matrix=supercell_matrix,
-            distance=args.disp,
-            mesh=args.ph_mesh,
-            t_min=args.ph_tmin,
-            t_max=args.ph_tmax,
-            t_step=args.ph_tstep,
-            eps_min=0.8,
-            eps_max=1.2,
-            eps_step=0.02,
-        )
-        polymlp.write_qha()
 
     if not calc_features:
         return

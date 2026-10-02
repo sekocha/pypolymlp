@@ -83,6 +83,11 @@ def create_mode_parser():
         action="store_true",
         help="Geometry optimization is performed for initial structure.",
     )
+    mode_group.add_argument(
+        "--gsfe",
+        action="store_true",
+        help="Mode: Generalized stacking fault energy calculation",
+    )
     return parser, mode_group
 
 
@@ -346,6 +351,48 @@ def create_sscha_parser():
     return parser
 
 
+def create_gsfe_parser():
+    """Create parser for generalized stacking fault energy calculation."""
+    parser = argparse.ArgumentParser(add_help=False)
+    gsfe_group = parser.add_argument_group(
+        "GSFEs", "Options for calculating generalized stacking fault energy."
+    )
+    gsfe_group.add_argument(
+        "--disp1",
+        type=int,
+        nargs=3,
+        default=None,
+        help="Direction 1.",
+    )
+    gsfe_group.add_argument(
+        "--disp2",
+        type=int,
+        nargs=3,
+        default=None,
+        help="Direction 2.",
+    )
+    gsfe_group.add_argument(
+        "--slip",
+        type=int,
+        nargs=3,
+        default=None,
+        help="Slip plane.",
+    )
+    gsfe_group.add_argument(
+        "--n_layers",
+        type=int,
+        default=2,
+        help="Number of layers along with slip plane normal.",
+    )
+    gsfe_group.add_argument(
+        "--n_points",
+        type=int,
+        default=5,
+        help="Number of grid points for each direction.",
+    )
+    return parser
+
+
 def create_advanced_sscha_parser():
     """Create parser for advanced SSCHA calculation."""
     parser = argparse.ArgumentParser(add_help=False)
@@ -361,5 +408,15 @@ def create_advanced_sscha_parser():
         "--elastic",
         action="store_true",
         help="Elastic constant calculation using SSCHA free energy.",
+    )
+    mode_group.add_argument(
+        "--eos",
+        action="store_true",
+        help="EOS using SSCHA free energy.",
+    )
+    mode_group.add_argument(
+        "--gsfe",
+        action="store_true",
+        help="Genelized stacking fault energy calculation using SSCHA free energy.",
     )
     return parser
