@@ -16,7 +16,7 @@ from .common_args import (
     create_sscha_parser,
     create_structure_parser,
 )
-from .run_polymlp_calc import run_geometry_optimization
+from .func_calc import run_geometry_optimization
 
 
 def run_main_sscha(args, polymlp: PypolymlpCalcProperties):
