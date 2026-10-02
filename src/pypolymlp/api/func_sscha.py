@@ -15,10 +15,6 @@ def run_main_sscha(args, polymlp: PypolymlpCalcProperties):
     if polymlp.static_calculator is None:
         raise RuntimeError("Static Properties Calculator not found.")
 
-    #     if args.born_vasprun is not None:
-    #         sscha.set_nac_params(args.born_vasprun)
-    #
-
     if args.poscar:
         unitcell = polymlp.load_poscars(args.poscar)
     else:
@@ -29,11 +25,18 @@ def run_main_sscha(args, polymlp: PypolymlpCalcProperties):
     else:
         supercell_matrix = polymlp.sscha_supercell
 
-    fc2 = polymlp.sscha_fc2
+    if args.born_vasprun is None:
+        nac_params = None
+    else:
+        # TODO: Implement size check.
+        nac_params = polymlp.get_nac_params(args.born_vasprun, supercell_matrix)
+
     if args.n_samples is None:
         n_samples_init, n_samples_final = None, None
     else:
         n_samples_init, n_samples_final = args.n_samples
+
+    fc2 = polymlp.sscha_fc2
 
     prop = polymlp.set_sscha_calculator(
         unitcell=unitcell,
@@ -53,14 +56,13 @@ def run_main_sscha(args, polymlp: PypolymlpCalcProperties):
         init_fc_algorithm=args.init,
         init_fc_file=args.init_file,
         fc2=fc2,
-        # nac_params=None,
+        nac_params=nac_params,
         cutoff_radius=args.cutoff_fc2,
         use_temporal_cutoff=args.use_temporal_cutoff,
         precondition=not args.disable_precondition,
         write_pdos=args.write_pdos,
         use_mkl=not args.disable_mkl,
     )
-    # free_energy, _, _ = polymlp.eval(unitcell)
 
     calc = PypolymlpCalc(properties=prop, verbose=True)
     if args.geometry_optimization:

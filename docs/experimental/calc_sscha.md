@@ -165,6 +165,13 @@ polymlp = PypolymlpCalcProperties(verbose=True)
 polymlp.set_polymlp(pot=pot)
 unitcell = polymlp.load_poscar("POSCAR")
 
+# Optional function if NAC parameters are needed.
+enable_nac = False
+if enable_nac:
+    nac_params = polymlp.get_nac_params("vasprun.xml", (3, 3, 3))
+else:
+    nac_params = None
+
 polymlp.set_sscha_calculator(
     unitcell=unitcell,
     supercell_matrix=(3, 3, 3),
@@ -178,14 +185,12 @@ polymlp.set_sscha_calculator(
     max_iter=30,
     mixing=0.5,
     mesh=(10, 10, 10),
+    nac_params=nac_params,
     init_fc_algorithm="harmonic",
     fc2=None,
     cutoff_radius=None,
 )
 free_energy, force, stress = polymlp.eval(unitcell)
-
-# Optional function if NAC parameters are needed.
-sscha.set_nac_params("vasprun.xml")
 
 """
 Attributes

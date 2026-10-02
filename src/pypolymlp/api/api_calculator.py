@@ -340,3 +340,18 @@ class PypolymlpCalcProperties:
     def load_poscars(self, poscars: str):
         """Parse POSCAR files."""
         return parse_structures_from_poscars(poscars)
+
+    def get_nac_params(self, born_vasprun: str, supercell_matrix: np.ndarray):
+        """Return NAC parameters.
+
+        Parameters
+        ----------
+        born_vasprun: vasprun.xml file for parsing Born effective charges.
+        """
+        from pypolymlp.utils.phonopy_utils import get_nac_params
+
+        nac_params = get_nac_params(
+            vasprun=born_vasprun,
+            supercell_matrix=supercell_matrix,
+        )
+        return nac_params
