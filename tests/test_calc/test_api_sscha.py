@@ -108,5 +108,6 @@ def test_sscha_elastic():
     calc.write_elastic_constants(filename="tmp.yaml")
 
     shutil.rmtree("tmp")
+    os.remove("POSCAR_eqm")
     os.remove("tmp_POSCAR")
     os.remove("tmp.yaml")
