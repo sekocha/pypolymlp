@@ -43,23 +43,17 @@ utils.write_poscar_file(sup, filename="POSCAR.slab.111")
 ## Generalized Stacking Fault Energy
 ```python
 from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
-from pypolymlp.calculator.compute_gsfe import PolymlpGSFE
-
 
 polymlp = PypolymlpCalc(pot="polymlp.yaml")
-polymlp.load_poscars("POSCAR_")
-prop = polymlp.instance_properties
-unitcell = polymlp.structures[0]
-
-trans = PolymlpGSFE(structure=unitcell, properties=prop, verbose=True)
-trans.set_supercell(
-    disp1=(1, 0, 0),
-    disp2=(0, 1, -1),
-    slip_plane=(0, 1, 1),
-    n_layers=4,
+polymlp.load_poscars("POSCAR")
+energies = polymlp.run_gsfe(
+    disp1=(1, -1, 0),
+    disp2=(1, 1, -2),
+    slip_plane=(1, 1, 1),
+    n_layers=2,
+    n_points=5,
+    filename="gsfe.dat",
 )
-trans.run(n_points=10)
-trans.save(filename="gsfe.dat")
 ```
 
 ## Transformation path
