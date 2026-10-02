@@ -332,6 +332,14 @@ class PypolymlpCalcProperties:
         except:
             return None
 
+    @property
+    def force_constants(self) -> np.ndarray:
+        """Return force constants."""
+        try:
+            return self._prop.force_constants
+        except:
+            return None
+
     def load_poscar(self, poscar: str):
         """Parse POSCAR file."""
         cell = Poscar(poscar).structure

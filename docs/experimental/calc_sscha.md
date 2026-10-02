@@ -197,7 +197,7 @@ Attributes
 ----------
 force_constants: FC2 at the final temperature, shape=(n_atom, n_atom, 3, 3).
 """
-fc2 = sscha.force_constants
+fc2 = polymlp.force_constants
 ```
 
 ## Random Structure Generation from Converged Effective Force Constants Using the Python API
