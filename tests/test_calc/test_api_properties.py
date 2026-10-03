@@ -96,7 +96,7 @@ def test_lammps_sscha():
     polymlp = PypolymlpCalcProperties(verbose=True)
     try:
         polymlp.set_lammps(elements=("Al",), pot=pot)
-    except:
+    except ImportError:
         return
 
     unitcell = polymlp.load_poscar(poscar)
