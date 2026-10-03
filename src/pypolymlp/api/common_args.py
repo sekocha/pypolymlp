@@ -414,14 +414,14 @@ def create_advanced_sscha_parser():
         help="Perform geometry optimization using SSCHA free energy.",
     )
     mode_group.add_argument(
-        "--elastic",
-        action="store_true",
-        help="Elastic constant calculation using SSCHA free energy.",
-    )
-    mode_group.add_argument(
         "--eos",
         action="store_true",
         help="EOS using SSCHA free energy.",
+    )
+    mode_group.add_argument(
+        "--elastic",
+        action="store_true",
+        help="Elastic constant calculation using SSCHA free energy.",
     )
     mode_group.add_argument(
         "--gsfe",

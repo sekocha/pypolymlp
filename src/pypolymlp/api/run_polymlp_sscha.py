@@ -2,6 +2,7 @@
 
 import argparse
 import signal
+import sys
 
 import numpy as np
 
@@ -19,11 +20,8 @@ from .common_args import (
 from .func_sscha import run_main_sscha
 
 
-def run():
-    """Run command line."""
-
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
-
+def _parse_args_pypolymlp_sscha(args=None):
+    """Parse options."""
     polymlp_parser = create_polymlp_parser()
     st_parser = create_structure_parser()
     sscha_parser = create_sscha_parser()
@@ -42,9 +40,18 @@ def run():
             gsfe_parser,
         ],
     )
-    args = parser.parse_args()
-    np.set_printoptions(legacy="1.21")
+    args = parser.parse_args(args)
+    return args
+
+
+def run():
+    """Run command line."""
+
     print_credit()
+    np.set_printoptions(legacy="1.21")
+
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
+    args = _parse_args_pypolymlp_sscha(sys.argv[1:])
 
     polymlp = PypolymlpCalcProperties(verbose=True)
     if args.pot is not None:
