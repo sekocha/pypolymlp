@@ -60,5 +60,5 @@ def run():
         style_command=args.style_command,
         coeff_command=args.coeff_command,
     )
-    polymlp = PypolymlpCalc(properties=prop, verbose=True)
-    run_calculations(args, polymlp, calc_features=False)
+    calc = PypolymlpCalc(properties=prop, verbose=True)
+    run_calculations(args, calc, calc_features=False)

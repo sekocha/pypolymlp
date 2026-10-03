@@ -197,6 +197,7 @@ class PypolymlpCalcProperties:
             supercell_matrix = self._sscha_supercell_matrix
 
         pot = self._prop_static.pot
+        print(pot)
         sscha_params = SSCHAParams(
             unitcell=unitcell,
             supercell_matrix=supercell_matrix,
@@ -296,39 +297,15 @@ class PypolymlpCalcProperties:
     @property
     def pot(self) -> list:
         """Return potential file name."""
-        if self._prop is None:
+        if self._prop_static is None:
             return None
-        return self._prop.pot
+        return self._prop_static.pot
 
     @property
-    def energies(self) -> np.ndarray:
-        """Return energies from the final calculation."""
+    def sscha(self):
+        """Return SSCHACore instance with results."""
         try:
-            return self._prop.energies
-        except:
-            return None
-
-    @property
-    def forces(self) -> list:
-        """Return forces from the final calculation."""
-        try:
-            return self._prop.forces
-        except:
-            return None
-
-    @property
-    def stresses(self) -> np.ndarray:
-        """Return stress tensors from the final calculation."""
-        try:
-            return self._prop.stresses
-        except:
-            return None
-
-    @property
-    def stresses_gpa(self) -> np.ndarray:
-        """Return stress tensors in GPa from the final calculation."""
-        try:
-            return self._prop.stresses_gpa
+            return self._prop._sscha
         except:
             return None
 
@@ -364,3 +341,35 @@ class PypolymlpCalcProperties:
             supercell_matrix=supercell_matrix,
         )
         return nac_params
+
+    @property
+    def energies(self) -> np.ndarray:
+        """Return energies from the final calculation."""
+        try:
+            return self._prop.energies
+        except:
+            return None
+
+    @property
+    def forces(self) -> list:
+        """Return forces from the final calculation."""
+        try:
+            return self._prop.forces
+        except:
+            return None
+
+    @property
+    def stresses(self) -> np.ndarray:
+        """Return stress tensors from the final calculation."""
+        try:
+            return self._prop.stresses
+        except:
+            return None
+
+    @property
+    def stresses_gpa(self) -> np.ndarray:
+        """Return stress tensors in GPa from the final calculation."""
+        try:
+            return self._prop.stresses_gpa
+        except:
+            return None

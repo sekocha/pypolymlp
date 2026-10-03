@@ -735,38 +735,6 @@ class PypolymlpCalc:
             return None
 
     @property
-    def energies(self) -> np.ndarray:
-        """Return energies from the final calculation."""
-        try:
-            return self._prop.energies
-        except:
-            return None
-
-    @property
-    def forces(self) -> list:
-        """Return forces from the final calculation."""
-        try:
-            return self._prop.forces
-        except:
-            return None
-
-    @property
-    def stresses(self) -> np.ndarray:
-        """Return stress tensors from the final calculation."""
-        try:
-            return self._prop.stresses
-        except:
-            return None
-
-    @property
-    def stresses_gpa(self) -> np.ndarray:
-        """Return stress tensors in GPa from the final calculation."""
-        try:
-            return self._prop.stresses_gpa
-        except:
-            return None
-
-    @property
     def structures(self) -> list[PolymlpStructure]:
         """Return structures for the final calculation."""
         return self._structures
@@ -915,3 +883,35 @@ class PypolymlpCalc:
         Deprecated.
         """
         return self._prop
+
+    @property
+    def energies(self) -> np.ndarray:
+        """Return energies from the final calculation."""
+        try:
+            return self._prop.energies
+        except:
+            return None
+
+    @property
+    def forces(self) -> list:
+        """Return forces from the final calculation."""
+        try:
+            return self._prop.forces
+        except:
+            return None
+
+    @property
+    def stresses(self) -> np.ndarray:
+        """Return stress tensors from the final calculation."""
+        try:
+            return self._prop.stresses
+        except:
+            return None
+
+    @property
+    def stresses_gpa(self) -> np.ndarray:
+        """Return stress tensors in GPa from the final calculation."""
+        try:
+            return self._prop.stresses_gpa
+        except:
+            return None
