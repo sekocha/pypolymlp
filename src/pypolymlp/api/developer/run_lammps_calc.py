@@ -7,6 +7,7 @@ import numpy as np
 
 from pypolymlp.api.api_calculator import PypolymlpCalcProperties
 from pypolymlp.api.common_args import (
+    check_poscar_variables,
     create_fc_parser,
     create_go_parser,
     create_gsfe_parser,
@@ -16,7 +17,6 @@ from pypolymlp.api.common_args import (
 )
 from pypolymlp.api.func_calc import run_calculations
 from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
-from pypolymlp.api.run_polymlp_calc import check_variables
 from pypolymlp.core.utils import print_credit
 
 from .lammps_args import create_lammps_parser
@@ -50,7 +50,7 @@ def run():
     args = parser.parse_args()
     np.set_printoptions(legacy="1.21")
     print_credit()
-    args = check_variables(args)
+    args = check_poscar_variables(args)
 
     polymlp = PypolymlpCalcProperties(verbose=True)
     prop = polymlp.set_lammps(

@@ -3,6 +3,15 @@
 import argparse
 
 
+def check_poscar_variables(args):
+    """Check variables."""
+    if args.poscar is None and args.poscars is not None:
+        args.poscar = args.poscars
+    if args.poscars is None and args.poscar is not None:
+        args.poscars = args.poscar
+    return args
+
+
 def create_polymlp_parser():
     """Create parser for polymlp arguments."""
     parser = argparse.ArgumentParser(add_help=False)

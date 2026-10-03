@@ -2,6 +2,7 @@
 
 import argparse
 import signal
+import sys
 
 import numpy as np
 
@@ -9,6 +10,7 @@ from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
 from pypolymlp.core.utils import print_credit
 
 from .common_args import (
+    check_poscar_variables,
     create_fc_parser,
     create_go_parser,
     create_gsfe_parser,
@@ -19,21 +21,18 @@ from .common_args import (
 )
 from .func_calc import run_calculations
 
+# def check_poscar_variables(args):
+#    """Check variables."""
+#    if args.poscar is None and args.poscars is not None:
+#        args.poscar = args.poscars
+#    if args.poscars is None and args.poscar is not None:
+#        args.poscars = args.poscar
+#    return args
+#
 
-def check_variables(args):
-    """Check variables."""
-    if args.poscar is None and args.poscars is not None:
-        args.poscar = args.poscars
-    if args.poscars is None and args.poscar is not None:
-        args.poscars = args.poscar
-    return args
 
-
-def run():
-    """Main code for command line."""
-
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
-
+def _parse_args_pypolymlp_calc(args=None):
+    """Parse options."""
     mode_parser, mode_group = create_mode_parser()
     mode_group.add_argument(
         "--features", action="store_true", help="Mode: Feature calculation"
@@ -74,12 +73,20 @@ def run():
         action="store_true",
         help="Mode: MLP precision calculation. This uses only features",
     )
+    args = parser.parse_args(args)
+    args = check_poscar_variables(args)
+    return args
 
-    args = parser.parse_args()
-    np.set_printoptions(legacy="1.21")
+
+def run():
+    """Main code for command line."""
+
     print_credit()
+    np.set_printoptions(legacy="1.21")
 
-    args = check_variables(args)
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
+    args = _parse_args_pypolymlp_calc(sys.argv[1:])
+
     if args.pot is None and args.infile is None:
         raise RuntimeError("Input parameters not found.")
     require_mlp = True if args.pot is not None else False
