@@ -3,8 +3,9 @@
 import glob
 import os
 import shutil
-import sys
 from pathlib import Path
+
+import pytest
 
 from pypolymlp.api.api_calculator import PypolymlpCalcProperties
 from pypolymlp.api.developer.run_lammps_calc import _parse_args_lammps_calc
@@ -17,12 +18,9 @@ path_file = str(cwd) + "/files/"
 poscar = path_file + "POSCAR.fcc.Ag"
 pot = path_file + "polymlp.yaml.pair.Ag"
 
-
+pytest.importorskip("lammps")
 api = PypolymlpCalcProperties()
-try:
-    prop = api.set_lammps(elements=("Ag",), pot=pot)
-except ImportError:
-    sys.exit()
+prop = api.set_lammps(elements=("Ag",), pot=pot)
 
 calc = PypolymlpCalc(properties=prop, verbose=True)
 calc.load_poscars(poscar)

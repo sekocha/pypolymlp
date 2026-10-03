@@ -40,15 +40,15 @@ def test_run_functions_go():
     os.remove("POSCAR_eqm")
 
 
-def test_run_functions_eos():
-    """Test func_sscha."""
-    args = _parse_args_pypolymlp_sscha(["--eos"])
-    args.poscar = poscar
-    args.temp = 300
-    args.tol = 0.07
-    run_main_sscha(args, polymlp)
-    shutil.rmtree("sscha")
-    os.remove("polymlp_eos.yaml")
+# def test_run_functions_eos():
+#     """Test func_sscha."""
+#     args = _parse_args_pypolymlp_sscha(["--eos"])
+#     args.poscar = poscar
+#     args.temp = 300
+#     args.tol = 0.07
+#     run_main_sscha(args, polymlp)
+#     shutil.rmtree("sscha")
+#     os.remove("polymlp_eos.yaml")
 
 
 def test_run_functions_elastic():

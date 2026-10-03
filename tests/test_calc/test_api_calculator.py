@@ -79,10 +79,8 @@ def test_sscha_Al():
 def test_lammps():
     """Test PypolymlpCalcProperties with lammps."""
     polymlp = PypolymlpCalcProperties(verbose=True)
-    try:
-        polymlp.set_lammps(elements=("Al",), pot=pot)
-    except:
-        return
+    pytest.importorskip("lammps")
+    polymlp.set_lammps(elements=("Al",), pot=pot)
 
     unitcell = polymlp.load_poscar(poscar)
     e, f, s = polymlp.eval(unitcell)
@@ -94,10 +92,8 @@ def test_lammps():
 def test_lammps_sscha():
     """Test PypolymlpCalcProperties with lammps and SSCHA."""
     polymlp = PypolymlpCalcProperties(verbose=True)
-    try:
-        polymlp.set_lammps(elements=("Al",), pot=pot)
-    except ImportError:
-        return
+    pytest.importorskip("lammps")
+    polymlp.set_lammps(elements=("Al",), pot=pot)
 
     unitcell = polymlp.load_poscar(poscar)
     polymlp.set_sscha_calculator(
