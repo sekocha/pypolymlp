@@ -61,7 +61,15 @@ def test_run_functions():
         os.remove(f)
 
 
-def test_run_calculations():
+def test_run_properties():
+    args = _parse_args_pypolymlp_calc(["--properties", "--pot", pot])
+    args.poscar = args.poscars = poscar
+    run_calculations(args, calc)
+    for f in glob.glob("polymlp_*"):
+        os.remove(f)
+
+
+def test_run_features():
     """Test func_calc."""
     args = _parse_args_pypolymlp_calc(["--features", "--pot", pot])
     args.poscar = args.poscars = poscar
@@ -69,14 +77,20 @@ def test_run_calculations():
     os.remove("features.npy")
 
 
-# fc2.hdf5
-# features.npy
-# files/
-# gsfe.dat
-# phonon_mesh_qpoints.txt
-# phonon_thermal_properties.yaml
-# phonon_total_dos.dat
-# polymlp_elastic.yaml
-# polymlp_eos.yaml
-# polymlp_phonon_qha/
-# polymlp_phonon.yaml
+def test_run_force_constants():
+    args = _parse_args_pypolymlp_calc(["--force_constants", "--pot", pot])
+    args.poscar = args.poscars = poscar
+    run_calculations(args, calc)
+    os.remove("fc2.hdf5")
+    os.remove("fc3.hdf5")
+
+
+def test_gsfe():
+    args = _parse_args_pypolymlp_calc(["--gsfe", "--pot", pot])
+    args.poscar = args.poscars = poscar
+    args.disp1 = (1, 0, 0)
+    args.disp2 = (0, 1, 0)
+    args.slip = (0, 0, 1)
+    run_calculations(args, calc)
+    os.remove("gsfe.dat")
+    shutil.rmtree("poscars")

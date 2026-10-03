@@ -109,7 +109,7 @@ def create_fc_parser():
     fc_group.add_argument(
         "--fc_n_samples",
         type=int,
-        default=None,
+        default=300,
         help="Number of random displacement samples",
     )
     fc_group.add_argument(
