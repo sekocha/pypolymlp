@@ -24,7 +24,6 @@ prop = api.set_lammps(elements=("Ag",), pot=pot)
 
 calc = PypolymlpCalc(properties=prop, verbose=True)
 calc.load_poscars(poscar)
-unitcell = calc.first_structure
 
 
 def test_run_properties():

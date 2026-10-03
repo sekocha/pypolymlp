@@ -20,7 +20,7 @@ from pypolymlp.core.utils import print_credit
 from .lammps_args import create_lammps_parser
 
 
-def _parse_args_pypolymlp_sscha(args=None):
+def _parse_args_lammps_sscha(args=None):
     """Parse options."""
     lammps_parser = create_lammps_parser()
     st_parser = create_structure_parser()
@@ -49,7 +49,7 @@ def run():
     print_credit()
     np.set_printoptions(legacy="1.21")
     signal.signal(signal.SIGINT, signal.SIG_DFL)
-    args = _parse_args_pypolymlp_sscha(sys.argv[1:])
+    args = _parse_args_lammps_sscha(sys.argv[1:])
 
     polymlp = PypolymlpCalcProperties(verbose=True)
     polymlp.set_lammps(
