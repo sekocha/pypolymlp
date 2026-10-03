@@ -2,6 +2,7 @@
 
 import argparse
 import signal
+import sys
 
 import numpy as np
 
@@ -19,10 +20,8 @@ from pypolymlp.core.utils import print_credit
 from .lammps_args import create_lammps_parser
 
 
-def run():
-
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
-
+def _parse_args_pypolymlp_sscha(args=None):
+    """Parse options."""
     lammps_parser = create_lammps_parser()
     st_parser = create_structure_parser()
     sscha_parser = create_sscha_parser()
@@ -41,9 +40,16 @@ def run():
             gsfe_parser,
         ],
     )
-    args = parser.parse_args()
-    np.set_printoptions(legacy="1.21")
+    args = parser.parse_args(args)
+    return args
+
+
+def run():
+    """Run command."""
     print_credit()
+    np.set_printoptions(legacy="1.21")
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
+    args = _parse_args_pypolymlp_sscha(sys.argv[1:])
 
     polymlp = PypolymlpCalcProperties(verbose=True)
     polymlp.set_lammps(

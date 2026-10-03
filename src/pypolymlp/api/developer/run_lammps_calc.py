@@ -2,6 +2,7 @@
 
 import argparse
 import signal
+import sys
 
 import numpy as np
 
@@ -22,10 +23,8 @@ from pypolymlp.core.utils import print_credit
 from .lammps_args import create_lammps_parser
 
 
-def run():
-
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
-
+def _parse_args_lammps_calc(args=None):
+    """Parse args."""
     mode_parser, _ = create_mode_parser()
     lammps_parser = create_lammps_parser()
     st_parser = create_structure_parser(multiple=True, enable_yaml=True)
@@ -46,11 +45,18 @@ def run():
             fc_parser,
         ],
     )
-
-    args = parser.parse_args()
-    np.set_printoptions(legacy="1.21")
-    print_credit()
+    args = parser.parse_args(args)
     args = check_poscar_variables(args)
+    return args
+
+
+def run():
+    """Run command."""
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
+
+    print_credit()
+    np.set_printoptions(legacy="1.21")
+    args = _parse_args_lammps_calc(sys.argv[1:])
 
     polymlp = PypolymlpCalcProperties(verbose=True)
     prop = polymlp.set_lammps(
