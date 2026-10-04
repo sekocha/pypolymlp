@@ -41,6 +41,7 @@ utils.write_poscar_file(sup, filename="POSCAR.slab.111")
 ```
 
 ## Generalized Stacking Fault Energy
+### Calculations for the entire set of points
 ```python
 from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
 
@@ -54,6 +55,32 @@ energies = polymlp.run_gsfe(
     n_points=5,
     filename="gsfe.dat",
 )
+```
+### Single-point Calculation
+```python
+from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
+
+polymlp = PypolymlpCalc(pot="polymlp.yaml")
+polymlp.load_poscars("POSCAR")
+energy = polymlp.run_gsfe(
+    disp1=(1, -1, 0),
+    disp2=(1, 1, -2),
+    slip_plane=(1, 1, 1),
+    n_layers=2,
+    frac1=0.25,
+    frac2=0.3,
+)
+energy0 = polymlp.run_gsfe(
+    disp1=(1, -1, 0),
+    disp2=(1, 1, -2),
+    slip_plane=(1, 1, 1),
+    n_layers=2,
+    frac1=0.0,
+    frac2=0.0,
+)
+
+# Excess energy in J/m^2
+excess = energy - energy0
 ```
 
 ## Transformation path

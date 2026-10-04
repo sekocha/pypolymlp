@@ -147,6 +147,8 @@ def run_gsfe(
         n_layers=args.n_layers,
         n_points=args.n_points,
         gtol=args.gtol,
+        frac1=args.frac1,
+        frac2=args.frac2,
         filename=filename,
     )
     return excess_energies

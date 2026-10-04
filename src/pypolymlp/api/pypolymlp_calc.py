@@ -705,10 +705,28 @@ class PypolymlpCalc:
         n_layers: int = 2,
         supercell_matrix: Optional[np.ndarray] = None,
         n_points: int = 10,
+        frac1: Optional[float] = None,
+        frac2: Optional[float] = None,
         gtol: float = 0.01,
         filename: str = "gsfe.dat",
     ):
-        """Calculate generalized stacking fault energies."""
+        """Calculate generalized stacking fault energies.
+
+        Parameters
+        ----------
+        frac1: Shift magnitude for first direction in fractional coordinates.
+        frac2: Shift magnitude for second direction in fractional coordinates.
+        gtol: Tolerance for gradients in geometry optimization.
+
+        Return
+        ------
+        Energy: Excess energy or Energy per stacking fault in J/m^2.
+
+        If frac1 and frac2 are given, GSFE for the single shift is calculated.
+        In this case, the energy per stacking fault in J/m^2 is returned.
+        Excess stacking fault energy can be calculated as
+        energy - energy(frac1=0.0, frac2=0.0).
+        """
         self.unitcell = self.first_structure
         gsfe = PolymlpGSFE(
             structure=self._unitcell,
@@ -722,9 +740,18 @@ class PypolymlpCalc:
             n_layers=n_layers,
             supercell_matrix=supercell_matrix,
         )
-        gsfe.run(n_points=n_points, gtol=gtol)
-        gsfe.save(filename=filename)
-        return gsfe.excess_energies
+        if frac1 is None or frac2 is None:
+            gsfe.run(n_points=n_points, gtol=gtol)
+            gsfe.save(filename=filename)
+            return gsfe.excess_energies
+
+        energy, go = gsfe.run_single(disp1=frac1, disp2=frac2, gtol=gtol)
+        with open(filename, "w") as f:
+            print("# Disp1, disp2, energy (J/m2)", file=f)
+            print(frac1, frac2, energy, file=f)
+            write_poscar_file(go.structure, filename="POSCAR_gsf")
+
+        return energy
 
     @property
     def params(self) -> PolymlpParams:

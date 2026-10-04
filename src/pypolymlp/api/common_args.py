@@ -399,6 +399,18 @@ def create_gsfe_parser():
         default=5,
         help="Number of grid points for each direction.",
     )
+    gsfe_group.add_argument(
+        "--frac1",
+        type=float,
+        default=None,
+        help="Shift magnitude in direction 1.",
+    )
+    gsfe_group.add_argument(
+        "--frac2",
+        type=float,
+        default=None,
+        help="Shift magnitude in direction 2.",
+    )
     return parser
 
 

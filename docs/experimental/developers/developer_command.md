@@ -64,5 +64,6 @@ pypolymlp-lammps-sscha --poscar POSCAR --pot Zope-Ti-Al-2003.eam.alloy --style e
 
 ## GSFE calculation
 ```shell
-pypolymlp-calc --pot polymlp.yaml --poscar POSCAR --gsfe --disp1 1 0 0 --disp2 0 1 0 --slip 0 0 1 --n_layers 2 --n_points 2
+> pypolymlp-calc --pot polymlp.yaml --poscar POSCAR --gsfe --disp1 1 0 0 --disp2 0 1 0 --slip 0 0 1 --n_layers 2 --n_points 2
+> pypolymlp-calc --pot polymlp.yaml --poscar POSCAR --gsfe --disp1 1 0 0 --disp2 0 1 0 --slip 0 0 1 --n_layers 2 --frac1 0.2 --frac2 0.3
 ```

@@ -78,9 +78,22 @@ class PolymlpGSFE:
         return self._supercell_disp
 
     def run_single(self, disp1: float, disp2: float, gtol: float = 1e-4):
-        """Run geometry optimization for single displaced structure."""
+        """Run geometry optimization for single displaced structure.
+
+        Parameters
+        ----------
+        disp1: Shift magnitude for first direction in fractional coordinates.
+        disp2: Shift magnitude for second direction in fractional coordinates.
+        gtol: Tolerance for gradients in geometry optimization.
+
+        Return
+        ------
+        Energy: Energy per stacking fault in J/m^2.
+                Excess stacking fault energy can be calculated as
+                energy - energy(disp1=0.0, disp2=0.0).
+        """
         self._supercell_disp = self._change_structure(disp1, disp2)
-        self._geometry = GeometryOptimization(
+        go = GeometryOptimization(
             self._supercell_disp,
             self._prop,
             with_sym=False,
@@ -91,12 +104,17 @@ class PolymlpGSFE:
             selective_dynamics_positions=self._sd_pos,
             verbose=False,
         ).run(gtol=gtol)
-        return self._geometry
+        if not go.success:
+            return None
+        energy = go.energy / self._area / 2
+        energy_Jm2 = energy * eVang2ToJm2
+        return (energy_Jm2, go)
 
     def run(self, n_points: int = 10, gtol: float = 1e-4):
         """Run geometry optimizations for entire set of displaced structures."""
-        go = self.run_single(0.0, 0.0)
-        e0 = go.energy
+        e0, _ = self.run_single(0.0, 0.0)
+        if e0 is None:
+            raise RuntimeError("Calculation for perfect crystal failed.")
 
         disps1 = np.arange(n_points + 1) * (0.5 / n_points)
         os.makedirs("poscars", exist_ok=True)
@@ -105,17 +123,16 @@ class PolymlpGSFE:
             if self._verbose:
                 print("Displacement along axis 1:", np.round(d1, 3), flush=True)
             for j, d2 in enumerate(disps1):
-                go = self.run_single(d1, d2, gtol=gtol)
-                if not go.success:
+                e_disp, go = self.run_single(d1, d2, gtol=gtol)
+                if e_disp is None:
                     continue
 
-                excess_e = (go.energy - e0) / self._area / 2
-                excess_e_Jm2 = excess_e * eVang2ToJm2
+                excess_e_Jm2 = e_disp - e0
                 filename = "poscars/POSCAR_" + str(i).zfill(2) + "_" + str(j).zfill(2)
                 write_poscar_file(go.structure, filename)
                 self._excess_energies.append([d1, d2, excess_e_Jm2])
         self._excess_energies = np.array(self._excess_energies)
-        return self
+        return self._excess_energies
 
     def save(self, filename: str = "polymlp_gsfe.dat"):
         """Save excess energies."""

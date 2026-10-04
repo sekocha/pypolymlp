@@ -115,6 +115,19 @@ def test_gsfe():
     shutil.rmtree("poscars")
 
 
+def test_gsfe2():
+    args = _parse_args_pypolymlp_calc(["--gsfe", "--pot", pot])
+    args.poscar = args.poscars = poscar
+    args.disp1 = (1, 0, 0)
+    args.disp2 = (0, 1, 0)
+    args.slip = (0, 0, 1)
+    args.frac1 = 0.2
+    args.frac2 = 0.3
+    run_calculations(args, calc)
+    os.remove("gsfe.dat")
+    os.remove("POSCAR_gsf")
+
+
 def test_run_features():
     """Test func_calc."""
     args = _parse_args_pypolymlp_calc(["--features", "--pot", pot])
