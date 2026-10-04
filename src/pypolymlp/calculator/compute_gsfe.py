@@ -124,8 +124,11 @@ class PolymlpGSFE:
             selective_dynamics_positions=self._sd_pos,
             verbose=False,
         ).run(gtol=gtol)
+
+        # TODO: None should be returned?
         if not go.success:
-            return None
+            return (None, go)
+
         energy = go.energy / self._area / 2
         energy_Jm2 = energy * eVang2ToJm2
         return (energy_Jm2, go)
