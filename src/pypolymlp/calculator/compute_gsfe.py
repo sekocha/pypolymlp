@@ -55,9 +55,17 @@ class PolymlpGSFE:
             n_layers=n_layers,
             supercell_matrix=supercell_matrix,
         )
-        self._area = np.linalg.norm(self._supercell.axis[:, 0]) * np.linalg.norm(
-            self._supercell.axis[:, 1]
-        )
+        self._set_supercell_params()
+        return self._supercell
+
+    def _set_supercell_params(self):
+        """Set parameters for supercell."""
+        if self._supercell is None:
+            raise RuntimeError("Supercell not found.")
+
+        len0 = np.linalg.norm(self._supercell.axis[:, 0])
+        len1 = np.linalg.norm(self._supercell.axis[:, 1])
+        self._area = len0 * len1
 
         self._sd_pos = np.ones(self._supercell.positions.shape, dtype=bool)
         self._sd_pos[0, :] = False
@@ -65,7 +73,7 @@ class PolymlpGSFE:
         self._sd_cell = np.zeros((3, 3), dtype=bool)
         self._sd_cell[:, 2] = True
         self._shift_atoms = self._supercell.positions[2] >= 0.5 - 1e-12
-        return self._supercell
+        return self
 
     def _change_structure(self, disp1: float, disp2: float):
         """Introduce displacement into supercell."""
@@ -77,7 +85,13 @@ class PolymlpGSFE:
         self._supercell_disp.positions[1, self._shift_atoms] += disp2
         return self._supercell_disp
 
-    def run_single(self, disp1: float, disp2: float, gtol: float = 1e-4):
+    def run_single(
+        self,
+        disp1: float = 0.0,
+        disp2: float = 0.0,
+        gtol: float = 1e-4,
+        restart: bool = False,
+    ):
         """Run geometry optimization for single displaced structure.
 
         Parameters
@@ -92,7 +106,13 @@ class PolymlpGSFE:
                 Excess stacking fault energy can be calculated as
                 energy - energy(disp1=0.0, disp2=0.0).
         """
-        self._supercell_disp = self._change_structure(disp1, disp2)
+        if restart:
+            self._supercell = self._base_structure
+            self._supercell_disp = self._base_structure
+            self._set_supercell_params()
+        else:
+            self._supercell_disp = self._change_structure(disp1, disp2)
+
         go = GeometryOptimization(
             self._supercell_disp,
             self._prop,

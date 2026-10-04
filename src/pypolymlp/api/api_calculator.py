@@ -197,7 +197,6 @@ class PypolymlpCalcProperties:
             supercell_matrix = self._sscha_supercell_matrix
 
         pot = self._prop_static.pot
-        print(pot)
         sscha_params = SSCHAParams(
             unitcell=unitcell,
             supercell_matrix=supercell_matrix,

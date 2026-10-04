@@ -733,23 +733,33 @@ class PypolymlpCalc:
             properties=self._prop,
             verbose=self._verbose,
         )
-        gsfe.set_supercell(
-            disp1=disp1,
-            disp2=disp2,
-            slip_plane=slip_plane,
-            n_layers=n_layers,
-            supercell_matrix=supercell_matrix,
+        has_shift_params = all(
+            x is not None for x in (disp1, disp2, slip_plane, n_layers)
         )
-        if frac1 is None or frac2 is None:
-            gsfe.run(n_points=n_points, gtol=gtol)
-            gsfe.save(filename=filename)
-            return gsfe.excess_energies
+        if has_shift_params or supercell_matrix is not None:
+            gsfe.set_supercell(
+                disp1=disp1,
+                disp2=disp2,
+                slip_plane=slip_plane,
+                n_layers=n_layers,
+                supercell_matrix=supercell_matrix,
+            )
+            if frac1 is None or frac2 is None:
+                gsfe.run(n_points=n_points, gtol=gtol)
+                gsfe.save(filename=filename)
+                return gsfe.excess_energies
 
-        energy, go = gsfe.run_single(disp1=frac1, disp2=frac2, gtol=gtol)
-        with open(filename, "w") as f:
-            print("# Disp1, disp2, energy (J/m2)", file=f)
-            print(frac1, frac2, energy, file=f)
-            write_poscar_file(go.structure, filename="POSCAR_gsf")
+            energy, go = gsfe.run_single(disp1=frac1, disp2=frac2, gtol=gtol)
+            with open(filename, "w") as f:
+                print("# Disp1, disp2, energy (J/m2)", file=f)
+                print(frac1, frac2, energy, file=f)
+                write_poscar_file(go.structure, filename="POSCAR_gsf")
+        else:
+            energy, go = gsfe.run_single(gtol=gtol, restart=True)
+            with open(filename, "w") as f:
+                print("# energy (J/m2)", file=f)
+                print(energy, file=f)
+                write_poscar_file(go.structure, filename="POSCAR_gsf")
 
         return energy
 
