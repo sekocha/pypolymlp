@@ -750,12 +750,14 @@ class PypolymlpCalc:
                 return gsfe.excess_energies
 
             energy, go = gsfe.run_single(disp1=frac1, disp2=frac2, gtol=gtol)
+            self.structures = go.structure
             with open(filename, "w") as f:
                 print("# Disp1, disp2, energy (J/m2)", file=f)
                 print(frac1, frac2, energy, file=f)
                 write_poscar_file(go.structure, filename="POSCAR_gsf")
         else:
             energy, go = gsfe.run_single(gtol=gtol, restart=True)
+            self.structures = go.structure
             with open(filename, "w") as f:
                 print("# energy (J/m2)", file=f)
                 print(energy, file=f)
