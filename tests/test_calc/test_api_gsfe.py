@@ -47,5 +47,8 @@ def test_gsfe_single(unitcell_mlp_Al):
         n_layers=2,
         frac1=0.25,
         frac2=0.3,
+        filename="tmp.dat",
     )
     assert energy == pytest.approx(-18.19393440569258)
+    os.remove("tmp.dat")
+    os.remove("POSCAR_gsf")

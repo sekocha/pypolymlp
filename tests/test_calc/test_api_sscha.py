@@ -21,7 +21,7 @@ def test_sscha_Al():
     polymlp = PypolymlpCalcProperties(verbose=True)
     polymlp.set_polymlp(pot=pot)
     unitcell = polymlp.load_poscar(poscar)
-    polymlp.set_sscha_calculator(
+    prop = polymlp.set_sscha_calculator(
         unitcell=unitcell,
         supercell_matrix=(2, 2, 2),
         temp=700,
@@ -30,8 +30,34 @@ def test_sscha_Al():
         path="tmp",
         use_mkl=False,
     )
-    polymlp.eval(unitcell)
-    sscha = polymlp.calculator._sscha
+    calc = PypolymlpCalc(properties=prop, verbose=True)
+    calc.eval(unitcell)
+    sscha = calc._prop._sscha
+
+    _assert_Al(sscha)
+    shutil.rmtree("tmp")
+
+
+def test_sscha_Al_grad():
+    """Test SSCHA calculations from polymlp using API."""
+    polymlp = PypolymlpCalcProperties(verbose=True)
+    polymlp.set_polymlp(pot=pot)
+    unitcell = polymlp.load_poscar(poscar)
+    prop = polymlp.set_sscha_calculator(
+        unitcell=unitcell,
+        supercell_matrix=(2, 2, 2),
+        temp=700,
+        tol=0.003,
+        mixing=0.5,
+        path="tmp",
+        precondition=False,
+        use_mkl=False,
+        symfc_batch_size=1000,
+        symfc_use_gradient_solver=True,
+    )
+    calc = PypolymlpCalc(properties=prop, verbose=True)
+    calc.eval(unitcell)
+    sscha = calc._prop._sscha
 
     _assert_Al(sscha)
     shutil.rmtree("tmp")
