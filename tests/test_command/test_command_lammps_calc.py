@@ -73,7 +73,7 @@ def test_gsfe():
     args.poscar = args.poscars = poscar
     args.disp1 = (1, 0, 0)
     args.disp2 = (0, 1, 0)
-    args.slip = (0, 0, 1)
+    args.glide = (0, 0, 1)
     run_calculations(args, calc, calc_features=False)
     os.remove("gsfe.dat")
     shutil.rmtree("poscars")

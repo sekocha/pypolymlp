@@ -73,7 +73,7 @@ def test_run_functions_elastic():
 #     args.tol = 0.07
 #     args.disp1 = (1, 0, -1)
 #     args.disp2 = (1, -2, 1)
-#     args.slip = (1, 1, 1)
+#     args.glide = (1, 1, 1)
 #     args.n_layer = 1
 #     args.n_points = 1
 #     try:

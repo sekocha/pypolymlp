@@ -22,7 +22,7 @@ def test_gsfe1(unitcell_mlp_Al):
     excess_energies = polymlp.run_gsfe(
         disp1=(1, 0, 0),
         disp2=(0, 1, -1),
-        slip_plane=(0, 1, 1),
+        glide_plane=(0, 1, 1),
         n_layers=2,
         n_points=2,
         filename="tmp.dat",
@@ -43,7 +43,7 @@ def test_gsfe_single(unitcell_mlp_Al):
     energy = polymlp.run_gsfe(
         disp1=(1, 0, 0),
         disp2=(0, 1, -1),
-        slip_plane=(0, 1, 1),
+        glide_plane=(0, 1, 1),
         n_layers=2,
         frac1=0.25,
         frac2=0.3,

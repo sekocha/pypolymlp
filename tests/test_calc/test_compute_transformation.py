@@ -18,7 +18,7 @@ def test_tr1(unitcell_mlp_Al):
     trans.set_supercell(
         disp1=(1, 0, 0),
         disp2=(0, 1, 0),
-        slip_plane=(0, 0, 1),
+        glide_plane=(0, 0, 1),
         n_layers=3,
     )
 
@@ -42,7 +42,7 @@ def test_tr2(unitcell_mlp_Al):
     trans.set_supercell(
         disp1=(1, 0, 0),
         disp2=(0, 1, 0),
-        slip_plane=(0, 0, 1),
+        glide_plane=(0, 0, 1),
         n_layers=4,
     )
     trans.run_fix_shift(

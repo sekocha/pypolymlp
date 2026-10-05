@@ -39,7 +39,7 @@ class PolymlpTransformation:
         self,
         disp1: tuple = (1, 0, 0),
         disp2: tuple = (0, 1, 0),
-        slip_plane: tuple = (0, 0, 1),
+        glide_plane: tuple = (0, 0, 1),
         n_layers: int = 2,
         supercell_matrix: Optional[np.ndarray] = None,
     ):
@@ -53,12 +53,12 @@ class PolymlpTransformation:
                 raise RuntimeError("Three elements required for disp1.")
             if len(disp2) != 3:
                 raise RuntimeError("Three elements required for disp2.")
-            if len(slip_plane) != 3:
-                raise RuntimeError("Three elements required for slip plane.")
+            if len(glide_plane) != 3:
+                raise RuntimeError("Three elements required for glide plane.")
             matrix = np.zeros((3, 3), dtype=int)
             matrix[:, 0] = np.array(disp1)
             matrix[:, 1] = np.array(disp2)
-            matrix[:, 2] = np.array(slip_plane) * n_layers
+            matrix[:, 2] = np.array(glide_plane) * n_layers
 
         for i in range(3):
             if matrix[i, i] < 0:

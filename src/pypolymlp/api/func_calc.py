@@ -147,7 +147,7 @@ def run_gsfe(
     excess_energies = polymlp.run_gsfe(
         disp1=args.disp1,
         disp2=args.disp2,
-        slip_plane=args.slip,
+        glide_plane=args.glide,
         n_layers=args.n_layers,
         n_points=args.n_points,
         gtol=args.gtol,

@@ -50,7 +50,7 @@ polymlp.load_poscars("POSCAR")
 energies = polymlp.run_gsfe(
     disp1=(1, -1, 0),
     disp2=(1, 1, -2),
-    slip_plane=(1, 1, 1),
+    glide_plane=(1, 1, 1),
     n_layers=2,
     n_points=5,
     filename="gsfe.dat",
@@ -65,7 +65,7 @@ polymlp.load_poscars("POSCAR")
 energy = polymlp.run_gsfe(
     disp1=(1, -1, 0),
     disp2=(1, 1, -2),
-    slip_plane=(1, 1, 1),
+    glide_plane=(1, 1, 1),
     n_layers=2,
     frac1=0.25,
     frac2=0.3,
@@ -73,7 +73,7 @@ energy = polymlp.run_gsfe(
 energy0 = polymlp.run_gsfe(
     disp1=(1, -1, 0),
     disp2=(1, 1, -2),
-    slip_plane=(1, 1, 1),
+    glide_plane=(1, 1, 1),
     n_layers=2,
     frac1=0.0,
     frac2=0.0,
@@ -92,7 +92,7 @@ trans = PolymlpTransformation(unitcell, prop, verbose=False)
 trans.set_supercell(
     disp1=(1, 0, 0),
     disp2=(0, 1, 0),
-    slip_plane=(0, 0, 1),
+    glide_plane=(0, 0, 1),
     n_layers=3,
 )
 
@@ -106,7 +106,7 @@ trans = PolymlpTransformation(unitcell, prop, verbose=False)
 trans.set_supercell(
     disp1=(1, 0, 0),
     disp2=(0, 1, 0),
-    slip_plane=(0, 0, 1),
+    glide_plane=(0, 0, 1),
     n_layers=4,
 )
 trans.run_fix_shift(

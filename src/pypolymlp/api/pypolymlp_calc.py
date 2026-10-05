@@ -701,7 +701,7 @@ class PypolymlpCalc:
         self,
         disp1: tuple = (1, 0, 0),
         disp2: tuple = (0, 1, 0),
-        slip_plane: tuple = (0, 0, 1),
+        glide_plane: tuple = (0, 0, 1),
         n_layers: int = 2,
         supercell_matrix: Optional[np.ndarray] = None,
         n_points: int = 10,
@@ -735,13 +735,13 @@ class PypolymlpCalc:
             verbose=self._verbose,
         )
         has_shift_params = all(
-            x is not None for x in (disp1, disp2, slip_plane, n_layers)
+            x is not None for x in (disp1, disp2, glide_plane, n_layers)
         )
         if has_shift_params or supercell_matrix is not None:
             gsfe.set_supercell(
                 disp1=disp1,
                 disp2=disp2,
-                slip_plane=slip_plane,
+                glide_plane=glide_plane,
                 n_layers=n_layers,
                 supercell_matrix=supercell_matrix,
             )

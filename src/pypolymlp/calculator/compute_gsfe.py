@@ -42,7 +42,7 @@ class PolymlpGSFE:
         self,
         disp1: tuple = (1, 0, 0),
         disp2: tuple = (0, 1, 0),
-        slip_plane: tuple = (0, 0, 1),
+        glide_plane: tuple = (0, 0, 1),
         n_layers: int = 2,
         supercell_matrix: Optional[np.ndarray] = None,
     ):
@@ -51,7 +51,7 @@ class PolymlpGSFE:
             self._base_structure,
             direction1=disp1,
             direction2=disp2,
-            direction3=slip_plane,
+            direction3=glide_plane,
             n_layers=n_layers,
             supercell_matrix=supercell_matrix,
         )

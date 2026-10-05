@@ -399,17 +399,17 @@ def create_gsfe_parser():
         help="Direction 2.",
     )
     gsfe_group.add_argument(
-        "--slip",
+        "--glide",
         type=int,
         nargs=3,
         default=None,
-        help="Slip plane.",
+        help="Glide plane.",
     )
     gsfe_group.add_argument(
         "--n_layers",
         type=int,
         default=2,
-        help="Number of layers along with slip plane normal.",
+        help="Number of layers along with glide plane normal.",
     )
     gsfe_group.add_argument(
         "--n_points",

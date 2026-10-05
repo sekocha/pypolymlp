@@ -154,7 +154,7 @@ def get_supercell_three_directions(
         if len(direction2) != 3:
             raise RuntimeError("Three elements required for disp2.")
         if len(direction3) != 3:
-            raise RuntimeError("Three elements required for slip plane.")
+            raise RuntimeError("Three elements required for disp3.")
         matrix = np.zeros((3, 3), dtype=int)
         matrix[:, 0] = np.array(direction1)
         matrix[:, 1] = np.array(direction2)

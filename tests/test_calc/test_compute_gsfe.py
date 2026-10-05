@@ -17,7 +17,7 @@ def test_gsfe1(unitcell_mlp_Al):
     trans.set_supercell(
         disp1=(1, 0, 0),
         disp2=(0, 1, -1),
-        slip_plane=(0, 1, 1),
+        glide_plane=(0, 1, 1),
         n_layers=2,
     )
     trans.run(n_points=2)

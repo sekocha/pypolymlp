@@ -47,7 +47,7 @@ def test_run_functions():
 
     args.disp1 = (1, 0, 0)
     args.disp2 = (0, 1, 0)
-    args.slip = (0, 0, 1)
+    args.glide = (0, 0, 1)
     run_gsfe(args, calc)
 
     os.remove("POSCAR_eqm")
@@ -109,7 +109,7 @@ def test_gsfe():
     args.poscar = args.poscars = poscar
     args.disp1 = (1, 0, 0)
     args.disp2 = (0, 1, 0)
-    args.slip = (0, 0, 1)
+    args.glide = (0, 0, 1)
     run_calculations(args, calc)
     os.remove("gsfe.dat")
     shutil.rmtree("poscars")
@@ -120,7 +120,7 @@ def test_gsfe2():
     args.poscar = args.poscars = poscar
     args.disp1 = (1, 0, 0)
     args.disp2 = (0, 1, 0)
-    args.slip = (0, 0, 1)
+    args.glide = (0, 0, 1)
     args.frac1 = 0.2
     args.frac2 = 0.3
     run_calculations(args, calc)
