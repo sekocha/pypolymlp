@@ -708,6 +708,7 @@ class PypolymlpCalc:
         frac1: Optional[float] = None,
         frac2: Optional[float] = None,
         gtol: float = 0.01,
+        maxiter: int = 1000,
         filename: str = "gsfe.dat",
     ):
         """Calculate generalized stacking fault energies.
@@ -745,18 +746,23 @@ class PypolymlpCalc:
                 supercell_matrix=supercell_matrix,
             )
             if frac1 is None or frac2 is None:
-                gsfe.run(n_points=n_points, gtol=gtol)
+                gsfe.run(n_points=n_points, gtol=gtol, maxiter=maxiter)
                 gsfe.save(filename=filename)
                 return gsfe.excess_energies
 
-            energy, go = gsfe.run_single(disp1=frac1, disp2=frac2, gtol=gtol)
+            energy, go = gsfe.run_single(
+                disp1=frac1,
+                disp2=frac2,
+                gtol=gtol,
+                maxiter=maxiter,
+            )
             self.structures = go.structure
             with open(filename, "w") as f:
                 print("# Disp1, disp2, energy (J/m2)", file=f)
                 print(frac1, frac2, energy, file=f)
                 write_poscar_file(go.structure, filename="POSCAR_gsf")
         else:
-            energy, go = gsfe.run_single(gtol=gtol, restart=True)
+            energy, go = gsfe.run_single(gtol=gtol, maxiter=maxiter, restart=True)
             self.structures = go.structure
             with open(filename, "w") as f:
                 print("# energy (J/m2)", file=f)

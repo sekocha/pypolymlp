@@ -55,7 +55,7 @@ def run_main_sscha(args, polymlp: PypolymlpCalcProperties):
         n_samples_init=n_samples_init,
         n_samples_final=n_samples_final,
         tol=args.tol,
-        max_iter=args.max_iter,
+        max_iter=args.sscha_max_iter,
         mixing=args.mixing,
         mesh=args.mesh,
         init_fc_algorithm=args.init,

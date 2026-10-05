@@ -46,7 +46,11 @@ def run_geometry_optimization(
         relax_positions=not args.fix_atom,
         pressure=args.pressure,
     )
-    polymlp.run_geometry_optimization(method=args.method, gtol=args.gtol)
+    polymlp.run_geometry_optimization(
+        method=args.method,
+        gtol=args.gtol,
+        maxiter=args.maxiter,
+    )
     polymlp.save_poscars(filename=filename)
     return polymlp
 
@@ -147,6 +151,7 @@ def run_gsfe(
         n_layers=args.n_layers,
         n_points=args.n_points,
         gtol=args.gtol,
+        maxiter=args.maxiter,
         frac1=args.frac1,
         frac2=args.frac2,
         filename=filename,

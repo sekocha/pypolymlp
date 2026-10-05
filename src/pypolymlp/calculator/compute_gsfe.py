@@ -93,6 +93,7 @@ class PolymlpGSFE:
         disp1: float = 0.0,
         disp2: float = 0.0,
         gtol: float = 1e-4,
+        maxiter: int = 1000,
         restart: bool = False,
     ):
         """Run geometry optimization for single displaced structure.
@@ -125,18 +126,18 @@ class PolymlpGSFE:
             relax_positions=True,
             selective_dynamics_cell=self._sd_cell,
             selective_dynamics_positions=self._sd_pos,
-            verbose=False,
-        ).run(gtol=gtol)
+            verbose=self._verbose,
+        ).run(gtol=gtol, maxiter=maxiter)
 
         # TODO: None should be returned?
-        if not go.success:
-            return (None, go)
+        # if not go.success:
+        #     return (None, go)
 
         energy = go.energy / self._area / 2
         energy_Jm2 = energy * eVang2ToJm2
         return (energy_Jm2, go)
 
-    def run(self, n_points: int = 10, gtol: float = 1e-4):
+    def run(self, n_points: int = 10, gtol: float = 1e-4, maxiter: int = 1000):
         """Run geometry optimizations for entire set of displaced structures."""
         e0, _ = self.run_single(0.0, 0.0)
         if e0 is None:
@@ -149,7 +150,7 @@ class PolymlpGSFE:
             if self._verbose:
                 print("Displacement along axis 1:", np.round(d1, 3), flush=True)
             for j, d2 in enumerate(disps1):
-                e_disp, go = self.run_single(d1, d2, gtol=gtol)
+                e_disp, go = self.run_single(d1, d2, gtol=gtol, maxiter=maxiter)
                 if e_disp is None:
                     continue
 

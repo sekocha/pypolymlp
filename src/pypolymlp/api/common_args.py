@@ -215,6 +215,13 @@ def create_go_parser(default_gtol: float = 1e-4):
         default=default_gtol,
         help="Tolerance parameter for gradients",
     )
+    go_group.add_argument(
+        "--maxiter",
+        type=int,
+        default=1000,
+        help="Maximum number of iterations for geometry optimization",
+    )
+
     return parser
 
 
@@ -301,7 +308,7 @@ def create_sscha_parser():
         help="Number of steps used in " "iterations and the last iteration",
     )
     sscha_group.add_argument(
-        "--max_iter",
+        "--sscha_max_iter",
         type=int,
         default=50,
         help="Maximum number of iterations",
