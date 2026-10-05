@@ -77,6 +77,12 @@ class PropertiesSSCHA(PropertiesBase):
         )
         return forces_sym, stress_sym
 
+    def change_unit_cell(self, cell: PolymlpStructure):
+        """Change unit cell."""
+        self._sscha_params.unitcell = cell
+        self._sscha_params.supercell_matrix = self._sscha_params.supercell_matrix
+        return self
+
     def eval(self, structure: PolymlpStructure):
         """Evaluate free energy, forces, and virial stress tensor.
 

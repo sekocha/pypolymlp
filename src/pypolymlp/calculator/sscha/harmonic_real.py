@@ -205,10 +205,19 @@ class HarmonicReal:
         """Eliminate outliers."""
         energies = np.array(self._energies_full)
         ids1 = np.where(energies > tol_negative)[0]
-
         e_ave = np.mean(energies[ids1])
-        tol = 2 * abs(e_ave)
-        ids2 = np.where(np.abs(energies - e_ave) < tol)[0]
+        e_std = np.std(energies[ids1])
+
+        algo = 2
+        if algo == 1:
+            tol = 2 * abs(e_ave)
+            ids2 = np.where(np.abs(energies - e_ave) < tol)[0]
+        elif algo == 2:
+            ub = 5 * e_std + e_ave
+            lb = -5 * e_std + e_ave
+            ids2 = np.where((lb < energies) & (energies < ub))[0]
+        else:
+            raise RuntimeError("No algorithm found.")
         ids = set(ids1) & set(ids2)
 
         if self._verbose:
@@ -216,7 +225,8 @@ class HarmonicReal:
             outlier_ids = entire_ids - ids
             if self._verbose and len(outlier_ids) > 0:
                 print("Outliers are eliminated.")
-                print("- Average potential energy:", "{:f}".format(e_ave))
+                print("- Average potential energy: ", "{:f}".format(e_ave))
+                print("- Std.Dev. potential energy:", "{:f}".format(e_std))
                 for i in sorted(outlier_ids):
                     print(
                         "- Potential energy (outlier " + str(i) + "):",

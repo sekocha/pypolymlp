@@ -56,6 +56,9 @@ class PolymlpGSFE:
             supercell_matrix=supercell_matrix,
         )
         self._set_supercell_params()
+        if hasattr(self._prop, "change_unit_cell"):
+            self._prop.change_unit_cell(self._supercell)
+
         return self._supercell
 
     def _set_supercell_params(self):
