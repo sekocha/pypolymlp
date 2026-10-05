@@ -348,15 +348,22 @@ def create_sscha_parser():
         help="Save projected DOS.",
     )
     sscha_group.add_argument(
+        "--disable_precondition",
+        action="store_true",
+        help="Disable to use precondition steps.",
+    )
+    sscha_group.add_argument(
         "--disable_mkl",
         action="store_true",
         help="Disable to use MKL in Symfc.",
     )
     sscha_group.add_argument(
-        "--disable_precondition",
-        action="store_true",
-        help="Disable to use precondition steps.",
+        "--symfc_batch_size",
+        type=int,
+        default=200,
+        help="Batch size used in symfc FC estimation.",
     )
+
     return parser
 
 

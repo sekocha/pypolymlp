@@ -40,6 +40,7 @@ class SSCHACore:
         self._prop = properties
         self._verbose = verbose
         self._use_mkl = sscha_params.use_mkl
+        self._symfc_batch_size = sscha_params.symfc_batch_size
 
         self._phonopy = Phonopy(
             structure_to_phonopy_cell(sscha_params.unitcell),
@@ -188,7 +189,7 @@ class SSCHACore:
         """Estimate FC2 from a forces-displacements dataset."""
         self._symfc.displacements = self._ph_real.displacements.transpose((0, 2, 1))
         self._symfc.forces = self._ph_real.forces.transpose((0, 2, 1))
-        self._symfc.solve(2, is_compact_fc=False)
+        self._symfc.solve(2, is_compact_fc=False, batch_size=self._symfc_batch_size)
         return self._symfc.force_constants[2]
 
     def _recover_fc2(self, coefs: np.ndarray):

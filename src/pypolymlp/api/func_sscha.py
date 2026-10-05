@@ -67,6 +67,7 @@ def run_main_sscha(args, polymlp: PypolymlpCalcProperties):
         precondition=not args.disable_precondition,
         write_pdos=args.write_pdos,
         use_mkl=not args.disable_mkl,
+        symfc_batch_size=args.symfc_batch_size,
     )
 
     calc = PypolymlpCalc(properties=prop, verbose=True)

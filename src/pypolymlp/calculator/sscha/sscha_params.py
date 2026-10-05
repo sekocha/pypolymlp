@@ -36,6 +36,7 @@ class SSCHAParams:
         nac_params: Optional[dict] = None,
         cutoff_radius: Optional[float] = None,
         use_mkl: bool = True,
+        symfc_batch_size: int = 200,
     ):
         """Init method.
 
@@ -64,6 +65,7 @@ class SSCHAParams:
         nac_params: Parameters for non-analytic correction in phonon calculations.
         cutoff_radius: Cutoff radius for FC2.
         use_mkl: Use MKL or not.
+        symfc_batch_size: Batch size used in Symfc.
         """
 
         self._unitcell = unitcell
@@ -83,6 +85,7 @@ class SSCHAParams:
         self._nac_params = nac_params
         self._cutoff_radius = cutoff_radius
         self._use_mkl = use_mkl
+        self._symfc_batch_size = symfc_batch_size
 
         self._temperatures = (
             np.array(temperatures) if temperatures is not None else None
@@ -413,6 +416,16 @@ class SSCHAParams:
     def use_mkl(self, value: bool):
         """Set whether MKL is used or not."""
         self._use_mkl = value
+
+    @property
+    def symfc_batch_size(self) -> bool:
+        """Return batch size."""
+        return self._symfc_batch_size
+
+    @symfc_batch_size.setter
+    def symfc_batch_size(self, value: bool):
+        """Set batch_size."""
+        self._symfc_batch_size = value
 
     @property
     def n_unitcells(self) -> int:

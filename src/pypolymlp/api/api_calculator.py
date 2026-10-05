@@ -158,6 +158,7 @@ class PypolymlpCalcProperties:
         path: str = "./sscha",
         write_pdos: bool = False,
         use_mkl: bool = True,
+        symfc_batch_size: int = 200,
     ):
         """Set PropertiesSSCHA instance.
 
@@ -219,6 +220,7 @@ class PypolymlpCalcProperties:
             nac_params=nac_params,
             cutoff_radius=cutoff_radius,
             use_mkl=use_mkl,
+            symfc_batch_size=symfc_batch_size,
         )
         self._prop = self._prop_dyn = PropertiesSSCHA(
             sscha_params,
