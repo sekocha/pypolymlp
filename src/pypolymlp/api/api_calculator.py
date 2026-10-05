@@ -159,6 +159,7 @@ class PypolymlpCalcProperties:
         write_pdos: bool = False,
         use_mkl: bool = True,
         symfc_batch_size: int = 200,
+        symfc_use_gradient_solver: bool = False,
     ):
         """Set PropertiesSSCHA instance.
 
@@ -221,6 +222,7 @@ class PypolymlpCalcProperties:
             cutoff_radius=cutoff_radius,
             use_mkl=use_mkl,
             symfc_batch_size=symfc_batch_size,
+            symfc_use_gradient_solver=symfc_use_gradient_solver,
         )
         self._prop = self._prop_dyn = PropertiesSSCHA(
             sscha_params,

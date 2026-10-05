@@ -360,10 +360,14 @@ def create_sscha_parser():
     sscha_group.add_argument(
         "--symfc_batch_size",
         type=int,
-        default=200,
+        default=500,
         help="Batch size used in symfc FC estimation.",
     )
-
+    sscha_group.add_argument(
+        "--symfc_use_gradient_solver",
+        action="store_true",
+        help="Use gradient solver in Symfc.",
+    )
     return parser
 
 

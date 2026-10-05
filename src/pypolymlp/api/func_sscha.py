@@ -68,6 +68,7 @@ def run_main_sscha(args, polymlp: PypolymlpCalcProperties):
         write_pdos=args.write_pdos,
         use_mkl=not args.disable_mkl,
         symfc_batch_size=args.symfc_batch_size,
+        symfc_use_gradient_solver=args.symfc_use_gradient_solver,
     )
 
     calc = PypolymlpCalc(properties=prop, verbose=True)

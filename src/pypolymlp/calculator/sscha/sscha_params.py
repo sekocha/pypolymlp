@@ -36,7 +36,8 @@ class SSCHAParams:
         nac_params: Optional[dict] = None,
         cutoff_radius: Optional[float] = None,
         use_mkl: bool = True,
-        symfc_batch_size: int = 200,
+        symfc_batch_size: int = 500,
+        symfc_use_gradient_solver: bool = False,
     ):
         """Init method.
 
@@ -86,6 +87,7 @@ class SSCHAParams:
         self._cutoff_radius = cutoff_radius
         self._use_mkl = use_mkl
         self._symfc_batch_size = symfc_batch_size
+        self._symfc_use_gradient_solver = symfc_use_gradient_solver
 
         self._temperatures = (
             np.array(temperatures) if temperatures is not None else None
@@ -426,6 +428,16 @@ class SSCHAParams:
     def symfc_batch_size(self, value: bool):
         """Set batch_size."""
         self._symfc_batch_size = value
+
+    @property
+    def symfc_use_gradient_solver(self) -> bool:
+        """Return whether gradient solver is used."""
+        return self._symfc_use_gradient_solver
+
+    @symfc_use_gradient_solver.setter
+    def symfc_use_gradient_solver(self, value: bool):
+        """Set whether gradient solver is used."""
+        self._symfc_use_gradient_solver = value
 
     @property
     def n_unitcells(self) -> int:

@@ -65,6 +65,9 @@ class PolymlpTransformation:
                 matrix[:, i] *= -1
 
         self._supercell = get_supercell(self._base_structure, matrix)
+
+        if hasattr(self._prop, "change_unit_cell"):
+            self._prop.change_unit_cell(self._supercell)
         return self._supercell
 
     def _change_angle(self, degs: float, axis1: int = 0, axis2: int = 1):
