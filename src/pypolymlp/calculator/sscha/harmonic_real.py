@@ -208,17 +208,20 @@ class HarmonicReal:
         e_ave = np.mean(energies[ids1])
         e_std = np.std(energies[ids1])
 
-        algo = 2
-        if algo == 1:
-            tol = 2 * abs(e_ave)
-            ids2 = np.where(np.abs(energies - e_ave) < tol)[0]
-        elif algo == 2:
-            ub = 5 * e_std + e_ave
-            lb = -5 * e_std + e_ave
-            ids2 = np.where((lb < energies) & (energies < ub))[0]
+        if len(ids1) > 30:
+            algo = 2
+            if algo == 1:
+                tol = 2 * abs(e_ave)
+                ids2 = np.where(np.abs(energies - e_ave) < tol)[0]
+            elif algo == 2:
+                ub = 5 * e_std + e_ave
+                lb = -5 * e_std + e_ave
+                ids2 = np.where((lb < energies) & (energies < ub))[0]
+            else:
+                raise RuntimeError("No algorithm found.")
+            ids = set(ids1) & set(ids2)
         else:
-            raise RuntimeError("No algorithm found.")
-        ids = set(ids1) & set(ids2)
+            ids = set(ids1)
 
         if self._verbose:
             entire_ids = set(list(range(len(energies))))
