@@ -35,7 +35,7 @@ class SSCHAParams:
         fc2: Optional[np.ndarray] = None,
         nac_params: Optional[dict] = None,
         cutoff_radius: Optional[float] = None,
-        use_mkl: bool = True,
+        symfc_use_mkl: bool = True,
         symfc_batch_size: int = 500,
         symfc_use_gradient_solver: bool = False,
     ):
@@ -65,8 +65,10 @@ class SSCHAParams:
         fc2: Force constants in Numpy array, shape=(N, N, 3, 3).
         nac_params: Parameters for non-analytic correction in phonon calculations.
         cutoff_radius: Cutoff radius for FC2.
-        use_mkl: Use MKL or not.
+
+        symfc_use_mkl: Use MKL or not in Symfc.
         symfc_batch_size: Batch size used in Symfc.
+        symfc_use_gradient_solver: Use grandient solver or not in Symfc.
         """
 
         self._unitcell = unitcell
@@ -85,7 +87,7 @@ class SSCHAParams:
         self._fc2 = fc2
         self._nac_params = nac_params
         self._cutoff_radius = cutoff_radius
-        self._use_mkl = use_mkl
+        self._symfc_use_mkl = symfc_use_mkl
         self._symfc_batch_size = symfc_batch_size
         self._symfc_use_gradient_solver = symfc_use_gradient_solver
 
@@ -410,14 +412,14 @@ class SSCHAParams:
         self._cutoff_radius = None if value is None else float(value)
 
     @property
-    def use_mkl(self) -> bool:
+    def symfc_use_mkl(self) -> bool:
         """Return whether MKL is used or not."""
-        return self._use_mkl
+        return self._symfc_use_mkl
 
-    @use_mkl.setter
-    def use_mkl(self, value: bool):
+    @symfc_use_mkl.setter
+    def symfc_use_mkl(self, value: bool):
         """Set whether MKL is used or not."""
-        self._use_mkl = value
+        self._symfc_use_mkl = value
 
     @property
     def symfc_batch_size(self) -> bool:

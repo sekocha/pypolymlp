@@ -157,7 +157,7 @@ class PypolymlpCalcProperties:
         use_temporal_cutoff: bool = False,
         path: str = "./sscha",
         write_pdos: bool = False,
-        use_mkl: bool = True,
+        symfc_use_mkl: bool = True,
         symfc_batch_size: int = 200,
         symfc_use_gradient_solver: bool = False,
     ):
@@ -220,7 +220,7 @@ class PypolymlpCalcProperties:
             fc2=fc2,
             nac_params=nac_params,
             cutoff_radius=cutoff_radius,
-            use_mkl=use_mkl,
+            symfc_use_mkl=symfc_use_mkl,
             symfc_batch_size=symfc_batch_size,
             symfc_use_gradient_solver=symfc_use_gradient_solver,
         )

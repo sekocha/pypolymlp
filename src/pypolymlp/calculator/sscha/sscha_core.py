@@ -39,7 +39,7 @@ class SSCHACore:
         """
         self._prop = properties
         self._verbose = verbose
-        self._use_mkl = sscha_params.use_mkl
+        self._symfc_use_mkl = sscha_params.symfc_use_mkl
         self._symfc_batch_size = sscha_params.symfc_batch_size
         self._symfc_use_gradient_solver = sscha_params.symfc_use_gradient_solver
 
@@ -67,7 +67,7 @@ class SSCHACore:
         self._symfc = Symfc(
             self._phonopy.supercell,
             cutoff=cutoff,
-            use_mkl=self._use_mkl,
+            use_mkl=self._symfc_use_mkl,
             log_level=self._verbose,
         )
         self._symfc.compute_basis_set(2)
