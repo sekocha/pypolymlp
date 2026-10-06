@@ -152,13 +152,13 @@ class PypolymlpCalcProperties:
         init_fc_file: Optional[str] = None,
         fc2: Optional[np.ndarray] = None,
         nac_params: Optional[np.ndarray] = None,
-        precondition: bool = True,
         cutoff_radius: Optional[float] = None,
+        enable_precondition: bool = True,
         use_temporal_cutoff: bool = False,
         path: str = "./sscha",
-        write_pdos: bool = False,
+        save_pdos: bool = False,
         symfc_use_mkl: bool = True,
-        symfc_batch_size: int = 200,
+        symfc_batch_size: int = 500,
         symfc_use_gradient_solver: bool = False,
     ):
         """Set PropertiesSSCHA instance.
@@ -223,16 +223,17 @@ class PypolymlpCalcProperties:
             symfc_use_mkl=symfc_use_mkl,
             symfc_batch_size=symfc_batch_size,
             symfc_use_gradient_solver=symfc_use_gradient_solver,
-        )
-        self._prop = self._prop_dyn = PropertiesSSCHA(
-            sscha_params,
-            self._prop_static,
-            precondition=precondition,
+            enable_precondition=enable_precondition,
             use_temporal_cutoff=use_temporal_cutoff,
             path=path,
-            write_pdos=write_pdos,
+            save_pdos=save_pdos,
+        )
+        self._prop = PropertiesSSCHA(
+            sscha_params,
+            self._prop_static,
             verbose=self._verbose,
         )
+        self._prop_dyn = self._prop
         return self._prop
 
     def eval(self, structure: PolymlpStructure):

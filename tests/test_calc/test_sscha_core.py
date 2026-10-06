@@ -15,7 +15,7 @@ def test_sscha_core(unitcell_mlp_Al):
     unitcell, pot, prop = unitcell_mlp_Al
     size = (2, 2, 2)
     sscha_params = SSCHAParams(
-        unitcell, size, pot=pot, temp=700, tol=0.003, use_mkl=False
+        unitcell, size, pot=pot, temp=700, tol=0.003, symfc_use_mkl=False
     )
     sscha = SSCHACore(sscha_params, prop, verbose=True)
 

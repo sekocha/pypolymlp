@@ -30,7 +30,7 @@ def test_sscha_properties_Al():
         temp=700,
         tol=0.01,
         mixing=0.5,
-        use_mkl=False,
+        symfc_use_mkl=False,
     )
     prop_sscha = PropertiesSSCHA(sscha_params, prop, verbose=True)
     free_energy, _, _ = prop_sscha.eval(unitcell)

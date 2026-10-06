@@ -38,6 +38,10 @@ class SSCHAParams:
         symfc_use_mkl: bool = True,
         symfc_batch_size: int = 500,
         symfc_use_gradient_solver: bool = False,
+        enable_precondition: bool = True,
+        use_temporal_cutoff: bool = False,
+        path: str = "./sscha",
+        save_pdos: bool = False,
     ):
         """Init method.
 
@@ -46,6 +50,7 @@ class SSCHAParams:
         unitcell: Unit cell.
         supercell_matrix: Supercell matrix. shape=(3, 3).
         pot: polymlp path.
+
         temperatures: Simulation temperatures.
         temp: Single simulation temperature.
         temp_min: Minimum temperature.
@@ -53,6 +58,7 @@ class SSCHAParams:
         temp_step: Temperature interval.
         n_temp: Number of temperatures.
         ascending_temp: Set simulation temperatures in ascending order.
+
         n_samples_init: Number of samples in first loop of SSCHA iterations.
         n_samples_final: Number of samples in second loop of SSCHA iterations.
         tol: Convergence tolerance for FCs.
@@ -60,15 +66,22 @@ class SSCHAParams:
         mixing: Mixing parameter.
                 FCs are updated by FC2 = FC2(new) * mixing + FC2(old) * (1-mixing).
         mesh: q-point mesh for computing harmonic properties using effective FC2.
+
         init_fc_algorithm: Algorithm for generating initial FCs.
         init_fc_file: If algorithm = "file", coefficients are read from given fc2.hdf5.
         fc2: Force constants in Numpy array, shape=(N, N, 3, 3).
+
         nac_params: Parameters for non-analytic correction in phonon calculations.
         cutoff_radius: Cutoff radius for FC2.
 
         symfc_use_mkl: Use MKL or not in Symfc.
         symfc_batch_size: Batch size used in Symfc.
         symfc_use_gradient_solver: Use grandient solver or not in Symfc.
+
+        enable_precondition: Enable small calculations for precondition or not.
+        use_temporal_cutoff: Use temporal cutoff radius for precondition.
+        path: Path to save results
+        save_pdos: Save PDOS or not.
         """
 
         self._unitcell = unitcell
@@ -87,9 +100,15 @@ class SSCHAParams:
         self._fc2 = fc2
         self._nac_params = nac_params
         self._cutoff_radius = cutoff_radius
+
         self._symfc_use_mkl = symfc_use_mkl
         self._symfc_batch_size = symfc_batch_size
         self._symfc_use_gradient_solver = symfc_use_gradient_solver
+
+        self._enable_precondition = enable_precondition
+        self._use_temporal_cutoff = use_temporal_cutoff
+        self._path = path
+        self._save_pdos = save_pdos
 
         self._temperatures = (
             np.array(temperatures) if temperatures is not None else None
@@ -440,6 +459,46 @@ class SSCHAParams:
     def symfc_use_gradient_solver(self, value: bool):
         """Set whether gradient solver is used."""
         self._symfc_use_gradient_solver = value
+
+    @property
+    def enable_precondition(self) -> bool:
+        """Whether to enable the precondition."""
+        return self._enable_precondition
+
+    @enable_precondition.setter
+    def enable_precondition(self, value: bool) -> None:
+        """Set whether to enable the precondition."""
+        self._enable_precondition = value
+
+    @property
+    def use_temporal_cutoff(self) -> bool:
+        """Whether to use the temporal cutoff."""
+        return self._use_temporal_cutoff
+
+    @use_temporal_cutoff.setter
+    def use_temporal_cutoff(self, value: bool) -> None:
+        """Set whether to use the temporal cutoff."""
+        self._use_temporal_cutoff = value
+
+    @property
+    def path(self) -> str:
+        """Path used for saving or loading data."""
+        return self._path
+
+    @path.setter
+    def path(self, value: str) -> None:
+        """Set the path used for saving or loading data."""
+        self._path = value
+
+    @property
+    def save_pdos(self) -> bool:
+        """Whether to save PDOs."""
+        return self._save_pdos
+
+    @save_pdos.setter
+    def save_pdos(self, value: bool) -> None:
+        """Set whether to save PDOs."""
+        self._save_pdos = value
 
     @property
     def n_unitcells(self) -> int:

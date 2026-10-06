@@ -55,7 +55,7 @@ def test_sscha_Al():
         tol=0.01,
         mixing=0.5,
         path="tmp",
-        use_mkl=False,
+        symfc_use_mkl=False,
     )
     e, f, s = polymlp.eval(unitcell)
 
@@ -103,7 +103,7 @@ def test_lammps_sscha():
         tol=0.01,
         mixing=0.5,
         path="tmp",
-        use_mkl=False,
+        symfc_use_mkl=False,
     )
     e, f, s = polymlp.eval(unitcell)
     assert f.shape == (3, 4)

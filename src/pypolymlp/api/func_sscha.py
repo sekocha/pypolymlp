@@ -63,12 +63,12 @@ def run_main_sscha(args, polymlp: PypolymlpCalcProperties):
         fc2=fc2,
         nac_params=nac_params,
         cutoff_radius=args.cutoff_fc2,
-        use_temporal_cutoff=args.use_temporal_cutoff,
-        precondition=not args.disable_precondition,
-        write_pdos=args.write_pdos,
-        symfc_use_mkl=not args.disable_mkl,
+        symfc_use_mkl=not args.symfc_disable_mkl,
         symfc_batch_size=args.symfc_batch_size,
         symfc_use_gradient_solver=args.symfc_use_gradient_solver,
+        use_temporal_cutoff=args.use_temporal_cutoff,
+        enable_precondition=not args.disable_precondition,
+        save_pdos=args.save_pdos,
     )
 
     calc = PypolymlpCalc(properties=prop, verbose=True)

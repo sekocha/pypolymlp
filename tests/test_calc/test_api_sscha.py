@@ -28,7 +28,7 @@ def test_sscha_Al():
         tol=0.003,
         mixing=0.5,
         path="tmp",
-        use_mkl=False,
+        symfc_use_mkl=False,
     )
     calc = PypolymlpCalc(properties=prop, verbose=True)
     calc.eval(unitcell)
@@ -50,8 +50,8 @@ def test_sscha_Al_grad():
         tol=0.003,
         mixing=0.5,
         path="tmp",
-        precondition=False,
-        use_mkl=False,
+        enable_precondition=False,
+        symfc_use_mkl=False,
         symfc_batch_size=1000,
         symfc_use_gradient_solver=True,
     )
@@ -74,7 +74,7 @@ def test_sscha_Al_restart():
         tol=0.003,
         mixing=0.5,
         path="tmp",
-        use_mkl=False,
+        symfc_use_mkl=False,
     )
     polymlp.eval(polymlp.sscha_unitcell)
     sscha = polymlp.calculator._sscha
@@ -95,7 +95,7 @@ def test_sscha_geometry_opt():
         tol=0.02,
         mixing=0.5,
         path="tmp",
-        use_mkl=False,
+        symfc_use_mkl=False,
     )
 
     calc = PypolymlpCalc(properties=prop, verbose=True)
@@ -124,7 +124,7 @@ def test_sscha_elastic():
         tol=0.05,
         mixing=0.95,
         path="tmp",
-        use_mkl=False,
+        symfc_use_mkl=False,
     )
 
     calc = PypolymlpCalc(properties=prop, verbose=True)

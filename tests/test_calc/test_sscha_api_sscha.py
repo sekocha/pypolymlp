@@ -34,9 +34,15 @@ def test_run_sscha(unitcell_mlp_Al):
     unitcell, pot, prop = unitcell_mlp_Al
     size = (2, 2, 2)
     sscha_params = SSCHAParams(
-        unitcell, size, pot=pot, temp=700, tol=0.003, use_mkl=False
+        unitcell,
+        size,
+        pot=pot,
+        temp=700,
+        tol=0.003,
+        symfc_use_mkl=False,
+        path="tmp",
     )
-    sscha = run_sscha(sscha_params, prop, path="tmp")
+    sscha = run_sscha(sscha_params, prop)
     _assert_Al(sscha)
     shutil.rmtree("tmp")
 
@@ -46,14 +52,16 @@ def test_run_sscha2(unitcell_mlp_Al):
     unitcell, pot, prop = unitcell_mlp_Al
     size = (2, 2, 2)
     sscha_params = SSCHAParams(
-        unitcell, size, pot=pot, temp=700, tol=0.003, use_mkl=False
-    )
-    sscha = run_sscha(
-        sscha_params,
-        prop,
-        use_temporal_cutoff=True,
+        unitcell,
+        size,
+        pot=pot,
+        temp=700,
+        tol=0.003,
+        symfc_use_mkl=False,
         path="tmp",
-        write_pdos=True,
+        use_temporal_cutoff=True,
+        save_pdos=True,
     )
+    sscha = run_sscha(sscha_params, prop)
     _assert_Al(sscha)
     shutil.rmtree("tmp")

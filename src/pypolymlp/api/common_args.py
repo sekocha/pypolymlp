@@ -345,22 +345,7 @@ def create_sscha_parser():
         help="Cutoff radius for effective force constants.",
     )
     sscha_group.add_argument(
-        "--use_temporal_cutoff",
-        action="store_true",
-        help="Use an algorithm temporarily using cutoff radius.",
-    )
-    sscha_group.add_argument(
-        "--write_pdos",
-        action="store_true",
-        help="Save projected DOS.",
-    )
-    sscha_group.add_argument(
-        "--disable_precondition",
-        action="store_true",
-        help="Disable to use precondition steps.",
-    )
-    sscha_group.add_argument(
-        "--disable_mkl",
+        "--symfc_disable_mkl",
         action="store_true",
         help="Disable to use MKL in Symfc.",
     )
@@ -374,6 +359,21 @@ def create_sscha_parser():
         "--symfc_use_gradient_solver",
         action="store_true",
         help="Use gradient solver in Symfc.",
+    )
+    sscha_group.add_argument(
+        "--use_temporal_cutoff",
+        action="store_true",
+        help="Use an algorithm temporarily using cutoff radius.",
+    )
+    sscha_group.add_argument(
+        "--save_pdos",
+        action="store_true",
+        help="Save projected DOS.",
+    )
+    sscha_group.add_argument(
+        "--disable_precondition",
+        action="store_true",
+        help="Disable to use precondition steps.",
     )
     return parser
 

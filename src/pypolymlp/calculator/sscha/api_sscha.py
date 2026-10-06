@@ -14,10 +14,6 @@ from pypolymlp.calculator.sscha.sscha_restart import Restart
 def run_sscha(
     sscha_params: SSCHAParams,
     properties: Properties,
-    precondition: bool = True,
-    use_temporal_cutoff: bool = False,
-    path: str = "./sscha",
-    write_pdos: bool = False,
     verbose: bool = False,
 ):
     """Run sscha iterations for multiple temperatures.
@@ -27,33 +23,16 @@ def run_sscha(
     sscha_params: Parameters for SSCHA in SSCHAParams.
     properties: Properties instance.
     """
-    if use_temporal_cutoff:
-        sscha = run_sscha_large_system(
-            sscha_params,
-            properties,
-            precondition=precondition,
-            path=path,
-            write_pdos=write_pdos,
-            verbose=verbose,
-        )
+    if sscha_params.use_temporal_cutoff:
+        sscha = run_sscha_large_system(sscha_params, properties, verbose=verbose)
     else:
-        sscha = run_sscha_standard(
-            sscha_params,
-            properties,
-            precondition=precondition,
-            path=path,
-            write_pdos=write_pdos,
-            verbose=verbose,
-        )
+        sscha = run_sscha_standard(sscha_params, properties, verbose=verbose)
     return sscha
 
 
 def run_sscha_standard(
     sscha_params: SSCHAParams,
     properties: Properties,
-    precondition: bool = True,
-    path: str = "./sscha",
-    write_pdos: bool = False,
     verbose: bool = False,
 ):
     """Run sscha iterations for multiple temperatures.
@@ -70,21 +49,18 @@ def run_sscha_standard(
         print("Frequency (min):      ", np.round(np.min(freq), 5), flush=True)
         print("Frequency (max):      ", np.round(np.max(freq), 5), flush=True)
 
-    if precondition:
+    if sscha_params.enable_precondition:
         sscha = _run_precondition(sscha, verbose=verbose)
 
     if verbose:
         print("Size of FC2 basis-set:", sscha.n_fc_basis, flush=True)
-    sscha = _run_target_sscha(sscha, path=path, write_pdos=write_pdos, verbose=verbose)
+    sscha = _run_target_sscha(sscha, verbose=verbose)
     return sscha
 
 
 def run_sscha_large_system(
     sscha_params: SSCHAParams,
     properties: Properties,
-    precondition: bool = True,
-    path: str = "./sscha",
-    write_pdos: bool = False,
     verbose: bool = False,
 ):
     """Run sscha iterations for multiple temperatures using cutoff temporarily.
@@ -108,7 +84,7 @@ def run_sscha_large_system(
         print("Frequency (min):      ", np.round(np.min(freq), 5), flush=True)
         print("Frequency (max):      ", np.round(np.max(freq), 5), flush=True)
 
-    if precondition:
+    if sscha_params.enable_precondition:
         sscha = _run_precondition(sscha, verbose=verbose)
 
     if rerun:
@@ -127,13 +103,12 @@ def run_sscha_large_system(
     if verbose:
         print("Size of FC2 basis-set:", sscha.n_fc_basis, flush=True)
 
-    sscha = _run_target_sscha(sscha, path=path, write_pdos=write_pdos, verbose=verbose)
+    sscha = _run_target_sscha(sscha, verbose=verbose)
     return sscha
 
 
 def _run_precondition(sscha: SSCHACore, verbose: bool = False):
     """Run a procedure to perform precondition."""
-
     sscha_params = sscha.sscha_params
     if verbose:
         print("---", flush=True)
@@ -159,18 +134,15 @@ def _run_precondition(sscha: SSCHACore, verbose: bool = False):
     return sscha
 
 
-def _run_target_sscha(
-    sscha: SSCHACore,
-    path: str = "./sscha",
-    write_pdos: bool = False,
-    verbose: bool = False,
-):
+def _run_target_sscha(sscha: SSCHACore, verbose: bool = False):
     """Run SSCHA for target temperatures."""
     for temp in sscha.sscha_params.temperatures:
         if verbose:
             print("************** Temperature:", temp, "**************", flush=True)
         sscha.run(temp=temp)
-        sscha.save_results(path=path, write_pdos=write_pdos)
+        # TODO: Include parameters in sschaCore
+        sscha_params = sscha.sscha_params
+        sscha.save_results(path=sscha_params.path, write_pdos=sscha_params.save_pdos)
     return sscha
 
 

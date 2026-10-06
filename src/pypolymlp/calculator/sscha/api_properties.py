@@ -21,10 +21,6 @@ class PropertiesSSCHA(PropertiesBase):
         self,
         sscha_params: SSCHAParams,
         properties: Properties,
-        precondition: bool = True,
-        use_temporal_cutoff: bool = False,
-        path: str = "./sscha",
-        write_pdos: bool = False,
         verbose: bool = False,
     ):
         """Init method.
@@ -37,8 +33,6 @@ class PropertiesSSCHA(PropertiesBase):
         super().__init__()
         self._sscha_params = sscha_params
         self._prop = properties
-        self._precondition = precondition
-        self._path = path
         self._verbose = verbose
         self._temperature = self._sscha_params.temperatures[0]
 
@@ -98,14 +92,7 @@ class PropertiesSSCHA(PropertiesBase):
         self._sscha_params.unitcell = structure
         self._proj_force = self._get_projector_force()
         self._proj_stress = self._get_projector_stress()
-
-        self._sscha = run_sscha(
-            self._sscha_params,
-            self._prop,
-            precondition=self._precondition,
-            path=self._path,
-            verbose=self._verbose,
-        )
+        self._sscha = run_sscha(self._sscha_params, self._prop, verbose=self._verbose)
 
         static_energy = self._sscha.properties.static_potential
         sscha_free_energy = self._sscha.properties.free_energy
