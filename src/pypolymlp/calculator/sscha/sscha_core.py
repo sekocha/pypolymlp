@@ -20,7 +20,7 @@ from pypolymlp.utils.phonopy_utils import (
 )
 
 
-class SSCHACore:
+class SSCHACore(SSCHAParams):
     """Class for performing SSCHA."""
 
     def __init__(
@@ -37,33 +37,30 @@ class SSCHACore:
         properties: Properties instance.
         verbose: Verbose mode.
         """
+        self.__dict__.update(sscha_params.__dict__)
         self._prop = properties
         self._verbose = verbose
-        self._symfc_use_mkl = sscha_params.symfc_use_mkl
-        self._symfc_batch_size = sscha_params.symfc_batch_size
-        self._symfc_use_gradient_solver = sscha_params.symfc_use_gradient_solver
+        self._sscha_params = sscha_params
 
         self._phonopy = Phonopy(
-            structure_to_phonopy_cell(sscha_params.unitcell),
-            sscha_params.supercell_matrix,
+            structure_to_phonopy_cell(self._unitcell),
+            self._supercell_matrix,
             primitive_matrix="P",
         )
-        self._phonopy.nac_params = sscha_params.nac_params
-        self._sscha_params = sscha_params
-        self._n_atom = sscha_params.n_atom
-        self._n_unitcells = sscha_params.n_unitcells
+        self._phonopy.nac_params = self._nac_params
+
         self._n_coeffs = None
         self._fc2 = None
         self._data_current = None
         self._sscha_log = []
 
-        self._symfc = self._set_symfc(sscha_params.cutoff_radius)
+        self._symfc = self._set_symfc()
         self._set_num_samples()
         self._ph_real, self._ph_recip = self._set_harmonic_calculators()
 
-    def _set_symfc(self, cutoff_radius: Optional[float] = None):
+    def _set_symfc(self):
         """Initialize Symfc instance."""
-        cutoff = {2: cutoff_radius}
+        cutoff = {2: self._cutoff_radius}
         self._symfc = Symfc(
             self._phonopy.supercell,
             cutoff=cutoff,
@@ -79,28 +76,24 @@ class SSCHACore:
 
     def _set_num_samples(self):
         """Initialize number of supercell samples."""
-        if self._sscha_params.n_samples_init is None:
-            self._sscha_params.set_n_samples_from_basis(self._n_coeffs)
+        if self._n_samples_init is None:
+            n_samples = self._sscha_params.set_n_samples_from_basis(self._n_coeffs)
+            self._n_samples_init, self._n_samples_final = n_samples
             if self._verbose:
                 print("Number of supercells is automatically determined.")
-                print("- first loop:", self._sscha_params.n_samples_init)
-                print("- second loop:", self._sscha_params.n_samples_final)
+                print("- first loop:", self._n_samples_init)
+                print("- second loop:", self._n_samples_final)
         return self
 
     def _set_harmonic_calculators(self):
         """Initialize calculators for harmonic properties."""
-        supercell_polymlp = phonopy_cell_to_structure(self._phonopy.supercell)
-        supercell_polymlp.masses = self._phonopy.supercell.masses
-        supercell_matrix = self._sscha_params.supercell_matrix
-        supercell_polymlp.supercell_matrix = supercell_matrix
-        supercell_polymlp.n_unitcells = self._n_unitcells
-        self._sscha_params.supercell = supercell_polymlp
+        supercell_pmlp = phonopy_cell_to_structure(self._phonopy.supercell)
+        supercell_pmlp.masses = self._phonopy.supercell.masses
+        supercell_pmlp.supercell_matrix = self._supercell_matrix
+        supercell_pmlp.n_unitcells = self._n_unitcells
+        self._supercell = self._sscha_params.supercell = supercell_pmlp
 
-        self._ph_real = HarmonicReal(
-            supercell_polymlp,
-            self._prop,
-            verbose=self._verbose,
-        )
+        self._ph_real = HarmonicReal(supercell_pmlp, self._prop, verbose=self._verbose)
         self._ph_recip = HarmonicReciprocal(self._phonopy, self._prop)
         return self._ph_real, self._ph_recip
 
