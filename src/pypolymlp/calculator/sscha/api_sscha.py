@@ -140,9 +140,10 @@ def _run_target_sscha(sscha: SSCHACore, verbose: bool = False):
         if verbose:
             print("************** Temperature:", temp, "**************", flush=True)
         sscha.run(temp=temp)
-        # TODO: Include parameters in sschaCore
-        sscha_params = sscha.sscha_params
-        sscha.save_results(path=sscha_params.path, write_pdos=sscha_params.save_pdos)
+        sscha.save_results()
+        # # TODO: Include parameters in sschaCore
+        # sscha_params = sscha.sscha_params
+        # sscha.save_results(path=sscha_params.path, write_pdos=sscha_params.save_pdos)
     return sscha
 
 

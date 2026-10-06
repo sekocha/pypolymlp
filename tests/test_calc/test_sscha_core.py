@@ -15,7 +15,13 @@ def test_sscha_core(unitcell_mlp_Al):
     unitcell, pot, prop = unitcell_mlp_Al
     size = (2, 2, 2)
     sscha_params = SSCHAParams(
-        unitcell, size, pot=pot, temp=700, tol=0.003, symfc_use_mkl=False
+        unitcell,
+        size,
+        pot=pot,
+        temp=700,
+        tol=0.003,
+        symfc_use_mkl=False,
+        path="tmp",
     )
     sscha = SSCHACore(sscha_params, prop, verbose=True)
 
@@ -64,9 +70,9 @@ def test_sscha_core(unitcell_mlp_Al):
     sscha.run(temp=700)
     sscha._print_progress()
 
-    sscha._write_dos(filename="tmp/total_dos.dat", write_pdos=True)
+    sscha._write_dos(filename="tmp/total_dos.dat")
     sscha._print_final_results()
-    sscha.save_results(path="tmp")
+    sscha.save_results()
     shutil.rmtree("tmp")
 
     _assert_Al(sscha)

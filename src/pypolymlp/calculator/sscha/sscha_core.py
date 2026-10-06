@@ -91,8 +91,8 @@ class SSCHACore(SSCHAParams):
         supercell_pmlp.masses = self._phonopy.supercell.masses
         supercell_pmlp.supercell_matrix = self._supercell_matrix
         supercell_pmlp.n_unitcells = self._n_unitcells
-        self._supercell = self._sscha_params.supercell = supercell_pmlp
 
+        self._supercell = self._sscha_params.supercell = supercell_pmlp
         self._ph_real = HarmonicReal(supercell_pmlp, self._prop, verbose=self._verbose)
         self._ph_recip = HarmonicReciprocal(self._phonopy, self._prop)
         return self._ph_real, self._ph_recip
@@ -105,7 +105,7 @@ class SSCHACore(SSCHAParams):
             self._fc2 = fc2
             return self
 
-        algorithm = self._sscha_params.init_fc_algorithm
+        algorithm = self._init_fc_algorithm
         if algorithm not in ("harmonic", "const", "random", "file"):
             raise RuntimeError("Available method for initial FCs not given.")
 
@@ -125,7 +125,7 @@ class SSCHACore(SSCHAParams):
             coeffs_fc2 = (np.random.rand(self._n_coeffs) - 0.5) * 20
             self._fc2 = self._recover_fc2(coeffs_fc2)
         elif algorithm == "file":
-            filename = self._sscha_params.init_fc_file
+            filename = self._init_fc_file
             if self._verbose:
                 print("Initial FCs: File", filename, flush=True)
             self._fc2 = read_fc2_from_hdf5(filename)
@@ -137,7 +137,7 @@ class SSCHACore(SSCHAParams):
             raise RuntimeError("Force constants not found.")
 
         if qmesh is None:
-            qmesh = self._sscha_params.mesh
+            qmesh = self._mesh
 
         self._ph_recip.force_constants = self._fc2
         self._ph_recip.compute_mesh_properties(qmesh=qmesh)
@@ -148,11 +148,10 @@ class SSCHACore(SSCHAParams):
         if self._verbose:
             print("Computing SSCHA properties from FC2.", flush=True)
 
-        qmesh = self._sscha_params.mesh
         self._ph_recip.force_constants = self._fc2
         f_raw, f_rev = self._ph_recip.compute_thermal_properties(
             temp=temp,
-            qmesh=qmesh,
+            qmesh=self._mesh,
             hide_imaginary=False,
             # hide_imaginary=True,
         )
@@ -213,8 +212,7 @@ class SSCHACore(SSCHAParams):
         if self._verbose:
             print("Running symfc solver.", flush=True)
         fc2_new = self._run_solver_fc2()
-        mixing = self._sscha_params.mixing
-        self._fc2 = fc2_new * mixing + self._fc2 * (1 - mixing)
+        self._fc2 = fc2_new * self._mixing + self._fc2 * (1 - self._mixing)
 
         self._data_current.delta = self._convergence_score(self._fc2, fc2_new)
         self._sscha_log.append(self._data_current)
@@ -305,9 +303,8 @@ class SSCHACore(SSCHAParams):
             self._sscha_log = []
 
         n_iter, delta = 1, 1e10
-        max_iter, tol = self._sscha_params.max_iter, self._sscha_params.tol
-        n_samples = self._sscha_params.n_samples_init
-        while (n_iter <= max_iter and delta > tol) or n_iter < 3:
+        n_samples = self._n_samples_init
+        while (n_iter <= self._max_iter and delta > self._tol) or n_iter < 3:
             if self._verbose:
                 self._print_separator(n_iter)
                 if n_samples > 10000:
@@ -319,7 +316,7 @@ class SSCHACore(SSCHAParams):
             delta = self._data_current.delta
             n_iter += 1
 
-        converge = True if delta < tol else False
+        converge = True if delta < self._tol else False
         if not converge:
             self._data_current.converge = converge
             if self._verbose:
@@ -331,7 +328,7 @@ class SSCHACore(SSCHAParams):
             print("SSCHA calculation converges.", flush=True)
             print("Proceeding to a more accurate evaluation.", flush=True)
 
-        self._final_iter(temp=temp, n_samples=self._sscha_params.n_samples_final)
+        self._final_iter(temp=temp, n_samples=self._n_samples_final)
         self._data_current.converge = converge
         self._data_current.delta = delta
         self._data_current.imaginary = self._ph_recip.is_imaginary
@@ -344,7 +341,6 @@ class SSCHACore(SSCHAParams):
     def _write_dos(
         self,
         filename: str = "total_dos.dat",
-        write_pdos: bool = False,
         qmesh: Optional[tuple] = None,
     ):
         """Save phonon DOS file."""
@@ -354,9 +350,9 @@ class SSCHACore(SSCHAParams):
         self._phonopy.force_constants = self._fc2
         self._phonopy.run_total_dos()
         self._phonopy.write_total_dos(filename=filename)
-        if write_pdos:
+        if self._save_pdos:
             if qmesh is None:
-                qmesh = self._sscha_params.mesh
+                qmesh = self._mesh
             self._phonopy.run_mesh(
                 qmesh, is_mesh_symmetry=False, with_eigenvectors=True
             )
@@ -366,7 +362,7 @@ class SSCHACore(SSCHAParams):
     def _print_final_results(self):
         """Print SSCHA results for current temperature."""
         data = self._data_current
-        freq = self.run_frequencies(qmesh=self._sscha_params.mesh)
+        freq = self.run_frequencies(qmesh=self._mesh)
         print("---------------- sscha runs finished ----------------", flush=True)
         print("Temperature:      ", data.temperature, flush=True)
         print("Free energy:      ", data.free_energy, flush=True)
@@ -374,15 +370,15 @@ class SSCHACore(SSCHAParams):
         print("Frequency (min):  ", "{:.6f}".format(np.min(freq)), flush=True)
         print("Frequency (max):  ", "{:.6f}".format(np.max(freq)), flush=True)
 
-    def save_results(self, path: str = "./sscha", write_pdos: bool = False):
+    def save_results(self):
         """Save SSCHA results for current temperature."""
         temp = self._data_current.temperature
-        path_log = path + "/" + str(temp) + "/"
+        path_log = self._path + "/" + str(temp) + "/"
         os.makedirs(path_log, exist_ok=True)
         filename = path_log + "sscha_results.yaml"
         save_sscha_yaml(self._sscha_params, self.logs, filename=filename)
         write_fc2_to_hdf5(self.force_constants, filename=path_log + "fc2.hdf5")
-        self._write_dos(filename=path_log + "total_dos.dat", write_pdos=write_pdos)
+        self._write_dos(filename=path_log + "total_dos.dat")
         if self._verbose:
             self._print_final_results()
 
@@ -405,9 +401,7 @@ class SSCHACore(SSCHAParams):
 
     @property
     def supercell(self):
-        if self._sscha_params is None:
-            return None
-        return self._sscha_params.supercell
+        return self._supercell
 
     @property
     def n_fc_basis(self) -> int:
