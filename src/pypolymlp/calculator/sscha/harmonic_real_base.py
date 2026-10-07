@@ -70,6 +70,7 @@ class HarmonicRealBase(ABC):
         self._forces = None
         self._stress_tensors = None
         self._disps = None
+        self._supercells = None
 
         self._set_mass()
         self._e0, self._f0, self._s0 = self._prop.eval(self._supercell)
@@ -77,10 +78,12 @@ class HarmonicRealBase(ABC):
 
     def _set_mass(self):
         """Set mass."""
-        if self._supercell.masses is None:
-            table = mass_table()
-            masses = [table[e] for e in self._supercell.elements]
-            self._supercell.masses = masses
+        if self._supercell.masses is not None:
+            return self
+        table = mass_table()
+        masses = [table[e] for e in self._supercell.elements]
+        self._supercell.masses = masses
+        return self
 
     def _eval(self, structures: list[PolymlpStructure]):
         """Compute energies, forces, and stress tensors of structures.
@@ -96,6 +99,8 @@ class HarmonicRealBase(ABC):
         stress_tensors: Stress tensors,
                         shape=(n_str, 6) in the order of xx, yy, zz, xy, yz, zx.
         """
+        if self._verbose:
+            print("Computing energies, forces, and stress tensors using MLP.")
         energies, forces, stress_tensors = self._prop.eval_multiple(structures)
         energies = energies - self._e0
         return np.array(energies), np.array(forces), np.array(stress_tensors)
@@ -116,25 +121,18 @@ class HarmonicRealBase(ABC):
         """
 
         if self._fc2 is None:
-            raise ValueError("FC2 is required for HarmonicReal.")
+            raise ValueError("FC2 not found.")
 
         self._mesh_dict = self._solve_eigen_equation()
-        self._disps = self._get_distribution(temp=temp, n_samples=n_samples)
-        self._supercells = get_structures_from_displacements(
-            self._disps,
-            self._supercell,
-        )
+        self._get_distribution(temp=temp, n_samples=n_samples)
 
-        if self._verbose:
-            print("Computing energies, forces, and stress tensors using MLP.")
         res = self._eval(self._supercells)
         self._energies_full, self._forces, self._stress_tensors = res
-        self._eliminate_outliers()
 
-        if self._verbose:
-            print("Computing harmonic potentials, forces, and stress tensors.")
-        self._energies_harm, hf, hs = eval_harmonic_properties(self._disps, self._fc2)
-        self._compute_average_properties(hf, hs)
+        if eliminate_outliers:
+            self._eliminate_outliers()
+
+        self._compute_properties()
         return self
 
     @abstractmethod
@@ -144,12 +142,16 @@ class HarmonicRealBase(ABC):
 
     def _get_distribution(self, temp: float = 1000, n_samples: int = 100):
         """Calculate atomic real-space distribution from density matrix."""
-        return sample_real_space_distribution(
+        disps = sample_real_space_distribution(
             self._mesh_dict,
             self._supercell.masses,
             temp=temp,
             n_samples=n_samples,
         )
+        supercells = get_structures_from_displacements(disps, self._supercell)
+        self._disps = disps
+        self._supercells = supercells
+        return (disps, supercells)
 
     def _eliminate_outliers(self, tol_negative: float = -10):
         """Eliminate outliers."""
@@ -170,6 +172,19 @@ class HarmonicRealBase(ABC):
         )
         return self
 
+    def _compute_properties(self):
+        """Calculate harmonic and average properties."""
+        if self._verbose:
+            print("Computing harmonic potentials, forces, and stress tensors.")
+
+        he, hf, hs = eval_harmonic_properties(self._disps, self._fc2)
+        average_forces, average_stress = self._compute_average_properties(hf, hs)
+
+        self._energies_harm = he
+        self._average_forces = average_forces
+        self._average_stress_tensor = average_stress
+        return self
+
     def _compute_average_properties(
         self,
         harmonic_forces: np.ndarray,
@@ -180,9 +195,9 @@ class HarmonicRealBase(ABC):
         average_hs = np.mean(harmonic_stress_tensors, axis=0)
         average_f = np.mean(self._forces, axis=0)
         average_s = np.mean(self._stress_tensors, axis=0)
-        self._average_forces = average_f - average_hf - self._f0
-        self._average_stress_tensor = average_s - average_hs - self._s0
-        return self._average_forces, self._average_stress_tensor
+        average_forces = average_f - average_hf - self._f0
+        average_stress = average_s - average_hs - self._s0
+        return average_forces, average_stress
 
     @property
     def force_constants(self) -> np.ndarray:
