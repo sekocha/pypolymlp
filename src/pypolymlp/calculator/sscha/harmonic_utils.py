@@ -4,6 +4,7 @@ import numpy as np
 
 from pypolymlp.calculator.utils.fc_utils import eval_properties_fc2
 from pypolymlp.core.units import Kb, Planck
+from pypolymlp.mlp_dev.fit.solvers_standard import solve_linear_equation
 
 """
 Constants
@@ -154,3 +155,34 @@ def eval_harmonic_properties(disps: np.ndarray, fc2: np.ndarray):
         np.array(harmonic_forces),
         np.array(harmonic_stress_tensors),
     )
+
+
+def reduce_dynamical_matrix(dyn: np.ndarray, null_space_basis: np.ndarray):
+    """Reduce null space component from dynamical matrix.
+
+    Compute B @ [M/(C.T @ D @ C)] @ B.T.
+
+    B: Basis set for complement of null space.
+    C: Basis set for null space.
+    D: Dynamical matrix.
+    M: [[C.T @ D @ C, C.T @ D @ B],
+        [B.T @ D @ C, B.T @ D @ B]]
+    M/A: Schur complement of A in M.
+
+    M/(C.T @ D @ C) =
+        (B.T @ D @ B) - (B.T @ D @ C) @ (C.T @ D @ C)^{-1} @ (C.T @ D @ B)
+    B @ [M/(C.T @ D @ C)] @ B.T =
+        P_B @ D @ P_B - P_B @ (D @ C) @ (C.T @ D @ C)^{-1} @ (C.T @ D) @ P_B
+    """
+    # TODO: Shape check.
+    N3 = null_space_basis.shape[0]
+    proj = np.eye(N3) - null_space_basis @ null_space_basis.T
+
+    mat2 = null_space_basis.T @ dyn
+    mat1 = mat2 @ null_space_basis
+
+    # prod = (C.T @ D @ C)^{-1} @ (C.T @ D)
+    prod = solve_linear_equation(mat1, mat2)
+    prod = mat2.T @ prod
+    reduced_dyn = proj @ (dyn - prod) @ proj
+    return reduced_dyn
