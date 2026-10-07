@@ -35,10 +35,10 @@ def test_harmonic_real(unitcell_mlp_Al):
     fc2hdf5 = path_sscha + "fc2.hdf5"
     fc2 = load_fc2_hdf5(fc2hdf5, return_matrix=False)
     real = HarmonicReal(supercell_polymlp, sscha._prop, fc2=fc2)
-    energies, forces, stress = real.eval([unitcell, unitcell])
-    np.testing.assert_allclose(energies, -13.71119227, atol=1e-7)
+    energies, forces, stress = real._eval([supercell_polymlp, supercell_polymlp])
+    np.testing.assert_allclose(energies, 0.0, atol=1e-7)
     np.testing.assert_allclose(forces, 0.0, atol=1e-7)
-    np.testing.assert_allclose(stress[:, :3], 0.05207764921738811, atol=1e-7)
+    np.testing.assert_allclose(stress[:, :3], 0.41662119373915774, atol=1e-7)
     np.testing.assert_allclose(stress[:, 3:], 0.0, atol=1e-7)
 
     real.run(temp=700, n_samples=10)
