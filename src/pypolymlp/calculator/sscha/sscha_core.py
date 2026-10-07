@@ -91,10 +91,19 @@ class SSCHACore(SSCHAParams):
         supercell_pmlp.masses = self._phonopy.supercell.masses
         supercell_pmlp.supercell_matrix = self._supercell_matrix
         supercell_pmlp.n_unitcells = self._n_unitcells
-
         self._supercell = self._sscha_params.supercell = supercell_pmlp
-        self._ph_real = HarmonicReal(supercell_pmlp, self._prop, verbose=self._verbose)
-        self._ph_recip = HarmonicReciprocal(self._phonopy, self._prop)
+
+        if self._null_space_basis is None:
+            self._ph_real = HarmonicReal(
+                supercell_pmlp, self._prop, verbose=self._verbose
+            )
+            self._ph_recip = HarmonicReciprocal(self._phonopy, self._prop)
+        else:
+            self._ph_real = HarmonicReal(
+                supercell_pmlp, self._prop, verbose=self._verbose
+            )
+            self._ph_recip = HarmonicReciprocal(self._phonopy, self._prop)
+            # raise RuntimeError("No function.")
         return self._ph_real, self._ph_recip
 
     def set_initial_force_constants(self, fc2: Optional[np.ndarray] = None):

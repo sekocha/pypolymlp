@@ -77,6 +77,11 @@ class PropertiesSSCHA(PropertiesBase):
         self._sscha_params.supercell_matrix = self._sscha_params.supercell_matrix
         return self
 
+    def set_null_space_basis(self, null_space_basis):
+        """Set linear constraint."""
+        self._sscha_params.null_space_basis = null_space_basis
+        return self
+
     def eval(self, structure: PolymlpStructure):
         """Evaluate free energy, forces, and virial stress tensor.
 

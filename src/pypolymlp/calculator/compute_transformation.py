@@ -68,6 +68,8 @@ class PolymlpTransformation:
 
         if hasattr(self._prop, "change_unit_cell"):
             self._prop.change_unit_cell(self._supercell)
+        # if hasattr(self._prop, "set_null_space_basis"):
+        #     self._prop.set_null_space_basis(null_space_basis)
         return self._supercell
 
     def _change_angle(self, degs: float, axis1: int = 0, axis2: int = 1):

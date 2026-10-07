@@ -36,6 +36,8 @@ class PolymlpGSFE:
         self._sd_cell = None
         self._sd_pos = None
         self._shift_atoms = None
+        self._null_space_basis = None
+
         self._excess_energies = None
 
     def set_supercell(
@@ -55,18 +57,26 @@ class PolymlpGSFE:
             n_layers=n_layers,
             supercell_matrix=supercell_matrix,
         )
-        self._set_supercell_params()
+        self._set_supercell_params(disp1=disp1, disp2=disp2)
+
         if hasattr(self._prop, "change_unit_cell"):
             self._prop.change_unit_cell(self._supercell)
+        if hasattr(self._prop, "set_null_space_basis"):
+            self._prop.set_null_space_basis(self._null_space_basis)
 
         return self._supercell
 
-    def _set_supercell_params(self):
+    def _set_supercell_params(
+        self,
+        disp1: tuple = (1, 0, 0),
+        disp2: tuple = (0, 1, 0),
+    ):
         """Set parameters for supercell."""
         if self._supercell is None:
             raise RuntimeError("Supercell not found.")
 
         len0 = np.linalg.norm(self._supercell.axis[:, 0])
+
         len1 = np.linalg.norm(self._supercell.axis[:, 1])
         self._area = len0 * len1
 
@@ -76,6 +86,13 @@ class PolymlpGSFE:
         self._sd_cell = np.zeros((3, 3), dtype=bool)
         self._sd_cell[:, 2] = True
         self._shift_atoms = self._supercell.positions[2] >= 0.5 - 1e-12
+
+        shape = (self._sd_pos.shape[0], self._sd_pos.shape[1], 2)
+        null_space_basis = np.zeros(shape)
+        null_space_basis[:, self._shift_atoms, 0] = np.array(disp1)[:, None]
+        null_space_basis[:, self._shift_atoms, 1] = np.array(disp2)[:, None]
+        null_space_basis = null_space_basis.transpose((1, 0, 2)).reshape((-1, 2))
+        self._null_space_basis, _ = np.linalg.qr(null_space_basis)
         return self
 
     def _change_structure(self, disp1: float, disp2: float):
@@ -129,13 +146,12 @@ class PolymlpGSFE:
             verbose=self._verbose,
         ).run(gtol=gtol, maxiter=maxiter)
 
-        # TODO: None should be returned?
-        # if not go.success:
-        #     return (None, go)
-
-        energy = go.energy / self._area / 2
-        energy_Jm2 = energy * eVang2ToJm2
-        return (energy_Jm2, go)
+        try:
+            energy = go.energy / self._area / 2
+            energy_Jm2 = energy * eVang2ToJm2
+            return (energy_Jm2, go)
+        except:
+            return (None, go)
 
     def run(self, n_points: int = 10, gtol: float = 1e-4, maxiter: int = 1000):
         """Run geometry optimizations for entire set of displaced structures."""

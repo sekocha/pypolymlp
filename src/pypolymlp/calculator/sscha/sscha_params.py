@@ -42,6 +42,7 @@ class SSCHAParams:
         use_temporal_cutoff: bool = False,
         path: str = "./sscha",
         save_pdos: bool = False,
+        null_space_basis: Optional[np.ndarray] = None,
     ):
         """Init method.
 
@@ -82,6 +83,7 @@ class SSCHAParams:
         use_temporal_cutoff: Use temporal cutoff radius for precondition.
         path: Path to save results
         save_pdos: Save PDOS or not.
+        null_space_basis: A basis for the null space of displacements.
         """
 
         self._unitcell = unitcell
@@ -109,6 +111,7 @@ class SSCHAParams:
         self._use_temporal_cutoff = use_temporal_cutoff
         self._path = path
         self._save_pdos = save_pdos
+        self._null_space_basis = null_space_basis
 
         self._temperatures = (
             np.array(temperatures) if temperatures is not None else None
@@ -499,6 +502,18 @@ class SSCHAParams:
     def save_pdos(self, value: bool) -> None:
         """Set whether to save PDOs."""
         self._save_pdos = value
+
+    @property
+    def null_space_basis(self) -> bool:
+        """Basis set for null space of displacements."""
+        return self._null_space_basis
+
+    @null_space_basis.setter
+    def null_space_basis(self, value: np.ndarray) -> None:
+        """Set basis set for null space of displacements."""
+        if value.shape[0] != len(self._unitcell.elements) * 3:
+            raise RuntimeError("Row shape of null basis not 3 * n_atom_unitcell.")
+        self._null_space_basis = value
 
     @property
     def n_unitcells(self) -> int:
