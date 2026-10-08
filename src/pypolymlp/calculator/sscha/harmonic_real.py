@@ -3,6 +3,7 @@
 from typing import Optional
 
 import numpy as np
+import scipy
 
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.core.data_format import PolymlpStructure
@@ -92,9 +93,19 @@ class HarmonicRealReduced(HarmonicRealBase):
 
         masses = np.repeat(self._supercell.masses, 3)
         masses_sqrt = np.reciprocal(np.sqrt(masses))
+
         dyn = (np.diag(masses_sqrt) @ fc2) @ np.diag(masses_sqrt)
-        square_w, eigvecs = np.linalg.eigh(dyn)
+        Z = scipy.linalg.null_space(self._null_space_basis.T)
+        reduced_dyn = Z.T @ dyn @ Z
+        square_w, eigvecs_reduced = scipy.linalg.eigh(reduced_dyn)
         square_w *= const_sq_angfreq_to_sq_freq_thz  # in THz
+        eigvecs = Z @ eigvecs_reduced
+
+        if np.any(np.abs(eigvecs.T @ self._null_space_basis) > 1e-10):
+            raise RuntimeError("Eigenvectors are not in constraint null space.")
+
+        print(dyn.shape)
+        print(square_w[np.where(square_w < 0)])
 
         negative_square_w = square_w < 0.0
         positive_square_w = square_w >= 0.0

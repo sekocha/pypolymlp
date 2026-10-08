@@ -9,7 +9,7 @@ from phonopy import Phonopy
 from symfc import Symfc
 
 from pypolymlp.calculator.properties import Properties
-from pypolymlp.calculator.sscha.harmonic_real import HarmonicReal
+from pypolymlp.calculator.sscha.harmonic_real import HarmonicReal, HarmonicRealReduced
 from pypolymlp.calculator.sscha.harmonic_reciprocal import HarmonicReciprocal
 from pypolymlp.calculator.sscha.sscha_data import SSCHAData
 from pypolymlp.calculator.sscha.sscha_io import save_sscha_yaml
@@ -42,6 +42,23 @@ class SSCHACore(SSCHAParams):
         self._verbose = verbose
         self._sscha_params = sscha_params
 
+        self._n_coeffs = None
+        self._fc2 = None
+        self._data_current = None
+        self._sscha_log = []
+
+        self._supercell, self._phonopy = self._set_supercell_and_phonopy()
+        self._symfc = self._set_symfc()
+        self._set_num_samples()
+        self._ph_real, self._ph_recip = self._set_harmonic_calculators()
+
+    def _set_supercell_and_phonopy(self):
+        """Set supercell."""
+        if self._supercell_matrix.ndim == 1 and self._supercell_matrix.shape[0] != 3:
+            raise RuntimeError("Supercell matrix not appropriate.")
+        if self._supercell_matrix.ndim == 2 and self._supercell_matrix.shape != (3, 3):
+            raise RuntimeError("Supercell matrix not appropriate.")
+
         self._phonopy = Phonopy(
             structure_to_phonopy_cell(self._unitcell),
             self._supercell_matrix,
@@ -49,14 +66,23 @@ class SSCHACore(SSCHAParams):
         )
         self._phonopy.nac_params = self._nac_params
 
-        self._n_coeffs = None
-        self._fc2 = None
-        self._data_current = None
-        self._sscha_log = []
+        supercell_pmlp = phonopy_cell_to_structure(self._phonopy.supercell)
+        supercell_pmlp.masses = self._phonopy.supercell.masses
+        supercell_pmlp.supercell_matrix = self._supercell_matrix
+        supercell_pmlp.n_unitcells = self._n_unitcells
+        self._supercell = self._sscha_params.supercell = supercell_pmlp
 
-        self._symfc = self._set_symfc()
-        self._set_num_samples()
-        self._ph_real, self._ph_recip = self._set_harmonic_calculators()
+        if self._null_space_basis is not None:
+            sup_null_space_basis = np.array(
+                [
+                    basis_element
+                    for basis_element in self._null_space_basis
+                    for i in range(self._n_unitcells)
+                ]
+            )
+            self._null_space_basis, _ = np.linalg.qr(sup_null_space_basis)
+
+        return (self._supercell, self._phonopy)
 
     def _set_symfc(self):
         """Initialize Symfc instance."""
@@ -87,23 +113,19 @@ class SSCHACore(SSCHAParams):
 
     def _set_harmonic_calculators(self):
         """Initialize calculators for harmonic properties."""
-        supercell_pmlp = phonopy_cell_to_structure(self._phonopy.supercell)
-        supercell_pmlp.masses = self._phonopy.supercell.masses
-        supercell_pmlp.supercell_matrix = self._supercell_matrix
-        supercell_pmlp.n_unitcells = self._n_unitcells
-        self._supercell = self._sscha_params.supercell = supercell_pmlp
-
         if self._null_space_basis is None:
             self._ph_real = HarmonicReal(
-                supercell_pmlp, self._prop, verbose=self._verbose
+                self._supercell, self._prop, verbose=self._verbose
             )
             self._ph_recip = HarmonicReciprocal(self._phonopy, self._prop)
         else:
-            self._ph_real = HarmonicReal(
-                supercell_pmlp, self._prop, verbose=self._verbose
+            self._ph_real = HarmonicRealReduced(
+                self._supercell,
+                self._prop,
+                self._null_space_basis,
+                verbose=self._verbose,
             )
             self._ph_recip = HarmonicReciprocal(self._phonopy, self._prop)
-            # raise RuntimeError("No function.")
         return self._ph_real, self._ph_recip
 
     def set_initial_force_constants(self, fc2: Optional[np.ndarray] = None):

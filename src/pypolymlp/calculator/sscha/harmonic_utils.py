@@ -1,10 +1,10 @@
 """Utilities for harmonic calculation."""
 
 import numpy as np
+import scipy
 
 from pypolymlp.calculator.utils.fc_utils import eval_properties_fc2
 from pypolymlp.core.units import Kb, Planck
-from pypolymlp.mlp_dev.fit.solvers_standard import solve_linear_equation
 
 """
 Constants
@@ -173,16 +173,29 @@ def reduce_dynamical_matrix(dyn: np.ndarray, null_space_basis: np.ndarray):
         (B.T @ D @ B) - (B.T @ D @ C) @ (C.T @ D @ C)^{-1} @ (C.T @ D @ B)
     B @ [M/(C.T @ D @ C)] @ B.T =
         P_B @ D @ P_B - P_B @ (D @ C) @ (C.T @ D @ C)^{-1} @ (C.T @ D) @ P_B
+
+    inv = np.linalg.inv(null_space_basis.T @ dyn @ null_space_basis)
+    prod = dyn @ null_space_basis @ inv @ null_space_basis.T @ dyn
+
+    inv @ null_space_basis.T @ dyn
+        = solve(null_space_basis.T @ dyn @ null_space_basis, null_space_basis.T @ dyn)
     """
-    # TODO: Shape check.
     N3 = null_space_basis.shape[0]
+    if dyn.shape[0] != N3:
+        raise RuntimeError(
+            "Shape mismatch error (Dynamical matrix and null space basis)."
+        )
+    if dyn.shape[1] != N3:
+        raise RuntimeError(
+            "Shape mismatch error (Dynamical matrix and null space basis)."
+        )
+
     proj = np.eye(N3) - null_space_basis @ null_space_basis.T
 
     mat2 = null_space_basis.T @ dyn
     mat1 = mat2 @ null_space_basis
-
-    # prod = (C.T @ D @ C)^{-1} @ (C.T @ D)
-    prod = solve_linear_equation(mat1, mat2)
+    prod = scipy.linalg.solve(mat1, mat2)
     prod = mat2.T @ prod
+
     reduced_dyn = proj @ (dyn - prod) @ proj
     return reduced_dyn
