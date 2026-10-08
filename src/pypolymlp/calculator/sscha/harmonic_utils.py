@@ -157,6 +157,28 @@ def eval_harmonic_properties(disps: np.ndarray, fc2: np.ndarray):
     )
 
 
+def convert_fc2_to_dynamical_matrix(fc2_: np.ndarray, masses_: np.ndarray):
+    """Convert FC2 to dynamial matrix in real space."""
+    fc2 = fc2_.transpose((0, 2, 1, 3))
+    size = fc2.shape[0] * fc2.shape[1]
+    fc2 = np.reshape(fc2, (size, size))
+
+    masses = np.repeat(masses_, 3)
+    masses_sqrt = np.reciprocal(np.sqrt(masses))
+    dyn = (np.diag(masses_sqrt) @ fc2) @ np.diag(masses_sqrt)
+    return dyn
+
+
+def frequencies_from_eigvals(square_w: np.ndarray):
+    """Calculate square root of squared frequencies."""
+    negative_square_w = square_w < 0.0
+    positive_square_w = square_w >= 0.0
+    freq = np.zeros(square_w.shape)
+    freq[positive_square_w] = np.sqrt(square_w[positive_square_w])
+    freq[negative_square_w] = -np.sqrt(-square_w[negative_square_w])
+    return freq
+
+
 def reduce_dynamical_matrix(dyn: np.ndarray, null_space_basis: np.ndarray):
     """Reduce null space component from dynamical matrix.
 
