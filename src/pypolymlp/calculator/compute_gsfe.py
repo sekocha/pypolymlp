@@ -154,7 +154,6 @@ class PolymlpGSFE:
                 selective_dynamics_positions=self._sd_pos,
                 verbose=self._verbose,
             )
-
             # go.change_basis_axis(go._basis_a[:, 2:])
             go.run(gtol=1e-4, maxiter=10000)
             if go.success:
@@ -171,7 +170,7 @@ class PolymlpGSFE:
             selective_dynamics_positions=self._sd_pos,
             verbose=self._verbose,
         )
-        go.change_basis_axis(go._basis_a[:, 2:])
+        # go.change_basis_axis(go._basis_a[:, 2:])
         go.run(gtol=gtol, maxiter=maxiter)
 
         try:

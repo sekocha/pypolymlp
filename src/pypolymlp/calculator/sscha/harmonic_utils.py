@@ -169,6 +169,16 @@ def convert_fc2_to_dynamical_matrix(fc2_: np.ndarray, masses_: np.ndarray):
     return dyn
 
 
+def convert_dynamical_matrix_to_fc2(dyn_: np.ndarray, masses_: np.ndarray):
+    """Convert FC2 to dynamial matrix in real space."""
+    N = dyn_.shape[0] // 3
+    masses_sqrt = np.repeat(np.sqrt(masses_), 3)
+    fc2 = (np.diag(masses_sqrt) @ dyn_) @ np.diag(masses_sqrt)
+    fc2 = fc2.reshape((N, 3, N, 3))
+    fc2 = fc2.transpose((0, 2, 1, 3))
+    return fc2
+
+
 def frequencies_from_eigvals(square_w: np.ndarray):
     """Calculate square root of squared frequencies."""
     negative_square_w = square_w < 0.0

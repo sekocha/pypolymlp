@@ -12,6 +12,8 @@ from symfc import Symfc
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.sscha.harmonic_real import HarmonicReal, HarmonicRealReduced
 from pypolymlp.calculator.sscha.harmonic_reciprocal import HarmonicReciprocal
+
+# from pypolymlp.calculator.sscha.harmonic_utils import reduce_dynamical_matrix
 from pypolymlp.calculator.sscha.sscha_data import SSCHAData
 from pypolymlp.calculator.sscha.sscha_io import save_sscha_yaml
 from pypolymlp.calculator.sscha.sscha_params import SSCHAParams
@@ -106,12 +108,12 @@ class SSCHACore(SSCHAParams):
         )
         self._symfc.compute_basis_set(2)
 
+        # if self._null_space_basis is not None:
+        #    self._symfc = apply_null_space(self._symfc, self._null_space_basis)
+
         self._n_coeffs = self._symfc.basis_set[2].basis_set.shape[1]
         if self._verbose and self._n_coeffs < 1000:
             self._symfc._log_level = 0
-
-        # if self._null_space_basis is not None:
-        #     self._symfc = apply_null_space(self._symfc, self._null_space_basis)
 
         return self._symfc
 
@@ -179,6 +181,17 @@ class SSCHACore(SSCHAParams):
 
         self._fc2 = self._apply_fc_constraints(self._fc2)
         return self
+
+    # def _apply_fc_constraints(self, fc2_: np.ndarray):
+    #     """Apply constraints to force constants."""
+    #     if self._null_space_basis is None:
+    #         return fc2_
+    #     N = fc2_.shape[0]
+    #     N3 = N * 3
+    #     fc2 = fc2_.transpose((0, 2, 1, 3)).reshape((N3, N3))
+    #     fc2 = reduce_dynamical_matrix(fc2, self._null_space_basis)
+    #     fc2 = fc2.reshape((N, 3, N, 3)).transpose((0, 2, 1, 3))
+    #     return fc2
 
     def _apply_fc_constraints(self, fc2_: np.ndarray):
         """Apply constraints to force constants."""
@@ -267,6 +280,7 @@ class SSCHACore(SSCHAParams):
         """Run a standard single sscha iteration."""
         self._ph_real.force_constants = self._fc2
         self._ph_real.run(temp=temp, n_samples=n_samples, eliminate_outliers=True)
+        self._fc2 = self._ph_real.force_constants
         self._data_current = self._compute_sscha_properties(temp=temp)
 
         if self._verbose:
