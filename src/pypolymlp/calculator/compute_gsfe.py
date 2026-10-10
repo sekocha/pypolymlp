@@ -155,7 +155,7 @@ class PolymlpGSFE:
                 verbose=self._verbose,
             )
 
-            go.change_basis_axis(go._basis_a[:, 2:])
+            # go.change_basis_axis(go._basis_a[:, 2:])
             go.run(gtol=1e-4, maxiter=10000)
             if go.success:
                 self._supercell_disp = go.structure
