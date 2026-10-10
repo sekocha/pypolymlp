@@ -329,7 +329,7 @@ class GeometryOptimization:
     def print_residuals(self):
         """Print force and stress residuals."""
         print("Residuals (force, eV/ang):", flush=True)
-        print(self._force.T)
+        print(self._force.T, flush=True)
         if self._basis_a is None:
             print("Gradients (force):", flush=True)
             print(self.residual_forces.T, flush=True)

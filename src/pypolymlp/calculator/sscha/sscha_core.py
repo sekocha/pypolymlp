@@ -4,7 +4,6 @@ import os
 from typing import Optional
 
 import numpy as np
-import scipy
 from phono3py.file_IO import read_fc2_from_hdf5, write_fc2_to_hdf5
 from phonopy import Phonopy
 from symfc import Symfc
@@ -15,6 +14,8 @@ from pypolymlp.calculator.sscha.harmonic_reciprocal import HarmonicReciprocal
 from pypolymlp.calculator.sscha.sscha_data import SSCHAData
 from pypolymlp.calculator.sscha.sscha_io import save_sscha_yaml
 from pypolymlp.calculator.sscha.sscha_params import SSCHAParams
+
+# from pypolymlp.calculator.sscha.symfc_null_space import apply_null_space
 from pypolymlp.utils.phonopy_utils import (
     phonopy_cell_to_structure,
     structure_to_phonopy_cell,
@@ -76,16 +77,26 @@ class SSCHACore(SSCHAParams):
         self._supercell = self._sscha_params.supercell = supercell_pmlp
 
         if self._null_space_basis is not None:
-            sup_null_space_basis = np.array(
-                [
-                    basis_element
-                    for basis_element in self._null_space_basis
-                    for i in range(self._n_unitcells)
-                ]
-            )
+            sup_null_space_basis = []
+            for basis_element in self._null_space_basis.T:
+                tmp_basis = []
+                tmp = basis_element.reshape((-1, 3))
+
+                for t in tmp:
+                    for i in range(self._n_unitcells):
+                        tmp_basis.extend(t)
+                sup_null_space_basis.append(tmp_basis)
+            sup_null_space_basis = np.array(sup_null_space_basis).T
+            # sup_null_space_basis = np.array(
+            #     [
+            #         basis_element
+            #         for basis_element in self._null_space_basis
+            #         for i in range(self._n_unitcells)
+            #     ]
+            # )
             self._null_space_basis, _ = np.linalg.qr(sup_null_space_basis)
-            self._Z = scipy.linalg.null_space(self._null_space_basis.T)
-            self._proj_Z = self._Z @ self._Z.T
+            # self._Z = scipy.linalg.null_space(self._null_space_basis.T)
+            # self._proj_Z = self._Z @ self._Z.T
 
         return (self._supercell, self._phonopy)
 
@@ -103,6 +114,10 @@ class SSCHACore(SSCHAParams):
         self._n_coeffs = self._symfc.basis_set[2].basis_set.shape[1]
         if self._verbose and self._n_coeffs < 1000:
             self._symfc._log_level = 0
+
+        # if self._null_space_basis is not None:
+        #     self._symfc = apply_null_space(self._symfc, self._null_space_basis)
+
         return self._symfc
 
     def _set_num_samples(self):
@@ -139,7 +154,7 @@ class SSCHACore(SSCHAParams):
             if self._verbose:
                 print("Initial FCs: Numpy array", flush=True)
             self._fc2 = fc2
-            self._fc2 = self._apply_fc_constraints(self._fc2)
+            # self._fc2 = self._apply_fc_constraints(self._fc2)
             return self
 
         algorithm = self._init_fc_algorithm
@@ -167,19 +182,19 @@ class SSCHACore(SSCHAParams):
                 print("Initial FCs: File", filename, flush=True)
             self._fc2 = read_fc2_from_hdf5(filename)
 
-        self._fc2 = self._apply_fc_constraints(self._fc2)
+        # self._fc2 = self._apply_fc_constraints(self._fc2)
         return self
 
-    def _apply_fc_constraints(self, fc2_: np.ndarray):
-        """Apply constraints to force constants."""
-        if self._proj_Z is None:
-            return fc2_
-        N = fc2_.shape[0]
-        N3 = N * 3
-        fc2 = fc2_.transpose((0, 2, 1, 3)).reshape((N3, N3))
-        fc2 = self._proj_Z @ fc2 @ self._proj_Z
-        fc2 = fc2.reshape((N, 3, N, 3)).transpose((0, 2, 1, 3))
-        return fc2
+    #    def _apply_fc_constraints(self, fc2_: np.ndarray):
+    #        """Apply constraints to force constants."""
+    #        if self._proj_Z is None:
+    #            return fc2_
+    #        N = fc2_.shape[0]
+    #        N3 = N * 3
+    #        fc2 = fc2_.transpose((0, 2, 1, 3)).reshape((N3, N3))
+    #        fc2 = self._proj_Z @ fc2 @ self._proj_Z
+    #        fc2 = fc2.reshape((N, 3, N, 3)).transpose((0, 2, 1, 3))
+    #        return fc2
 
     def run_frequencies(self, qmesh: Optional[tuple] = None):
         """Calculate effective phonon frequencies from FC2."""
@@ -262,7 +277,7 @@ class SSCHACore(SSCHAParams):
         if self._verbose:
             print("Running symfc solver.", flush=True)
         fc2_new = self._run_solver_fc2()
-        fc2_new = self._apply_fc_constraints(fc2_new)
+        # fc2_new = self._apply_fc_constraints(fc2_new)
 
         self._fc2 = fc2_new * self._mixing + self._fc2 * (1 - self._mixing)
 

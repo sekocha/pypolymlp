@@ -76,7 +76,6 @@ class PolymlpGSFE:
             raise RuntimeError("Supercell not found.")
 
         len0 = np.linalg.norm(self._supercell.axis[:, 0])
-
         len1 = np.linalg.norm(self._supercell.axis[:, 1])
         self._area = len0 * len1
 
@@ -89,8 +88,17 @@ class PolymlpGSFE:
 
         shape = (self._sd_pos.shape[0], self._sd_pos.shape[1], 2)
         null_space_basis = np.zeros(shape)
-        null_space_basis[:, self._shift_atoms, 0] = np.array(disp1)[:, None]
-        null_space_basis[:, self._shift_atoms, 1] = np.array(disp2)[:, None]
+        # null_space_basis[:, self._shift_atoms, 0] = np.array(disp1)[:, None]
+        # null_space_basis[:, self._shift_atoms, 1] = np.array(disp2)[:, None]
+
+        # TODO: Correct in non-orthogonal system?
+        null_space_basis[0, self._shift_atoms, 0] = 1.0
+        null_space_basis[1, self._shift_atoms, 1] = 1.0
+
+        for i in range(2):
+            ave = np.sum(null_space_basis[:, :, i], axis=1) / null_space_basis.shape[1]
+            null_space_basis[:, :, i] -= ave[:, None]
+
         null_space_basis = null_space_basis.transpose((1, 0, 2)).reshape((-1, 2))
         self._null_space_basis, _ = np.linalg.qr(null_space_basis)
         return self
@@ -134,6 +142,24 @@ class PolymlpGSFE:
         else:
             self._supercell_disp = self._change_structure(disp1, disp2)
 
+        if hasattr(self._prop, "_prop"):
+            go = GeometryOptimization(
+                self._supercell_disp,
+                self._prop._prop,
+                with_sym=False,
+                relax_cell=True,
+                relax_volume=True,
+                relax_positions=True,
+                selective_dynamics_cell=self._sd_cell,
+                selective_dynamics_positions=self._sd_pos,
+                verbose=self._verbose,
+            )
+
+            go.change_basis_axis(go._basis_a[:, 2:])
+            go.run(gtol=1e-4, maxiter=10000)
+            if go.success:
+                self._supercell_disp = go.structure
+
         go = GeometryOptimization(
             self._supercell_disp,
             self._prop,
@@ -144,7 +170,9 @@ class PolymlpGSFE:
             selective_dynamics_cell=self._sd_cell,
             selective_dynamics_positions=self._sd_pos,
             verbose=self._verbose,
-        ).run(gtol=gtol, maxiter=maxiter)
+        )
+        go.change_basis_axis(go._basis_a[:, 2:])
+        go.run(gtol=gtol, maxiter=maxiter)
 
         try:
             energy = go.energy / self._area / 2
