@@ -86,12 +86,9 @@ class PolymlpGSFE:
         self._sd_cell[:, 2] = True
         self._shift_atoms = self._supercell.positions[2] >= 0.5 - 1e-12
 
+        # TODO: Correct in non-orthogonal system?
         shape = (self._sd_pos.shape[0], self._sd_pos.shape[1], 2)
         null_space_basis = np.zeros(shape)
-        # null_space_basis[:, self._shift_atoms, 0] = np.array(disp1)[:, None]
-        # null_space_basis[:, self._shift_atoms, 1] = np.array(disp2)[:, None]
-
-        # TODO: Correct in non-orthogonal system?
         null_space_basis[0, self._shift_atoms, 0] = 1.0
         null_space_basis[1, self._shift_atoms, 1] = 1.0
 
@@ -154,8 +151,7 @@ class PolymlpGSFE:
                 selective_dynamics_positions=self._sd_pos,
                 verbose=self._verbose,
             )
-            # go.change_basis_axis(go._basis_a[:, 2:])
-            go.run(gtol=1e-4, maxiter=10000)
+            go.run(gtol=gtol * 1e-1, maxiter=10000)
             if go.success:
                 self._supercell_disp = go.structure
 
@@ -170,7 +166,6 @@ class PolymlpGSFE:
             selective_dynamics_positions=self._sd_pos,
             verbose=self._verbose,
         )
-        # go.change_basis_axis(go._basis_a[:, 2:])
         go.run(gtol=gtol, maxiter=maxiter)
 
         try:
