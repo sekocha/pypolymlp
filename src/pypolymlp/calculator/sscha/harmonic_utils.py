@@ -189,8 +189,8 @@ def frequencies_from_eigvals(square_w: np.ndarray):
     return freq
 
 
-def reduce_dynamical_matrix(dyn: np.ndarray, null_space_basis: np.ndarray):
-    """Reduce null space component from dynamical matrix.
+def schur_reduce_dynamical_matrix(dyn: np.ndarray, null_space_basis: np.ndarray):
+    """Reduce null space component from dynamical matrix using Schur complement.
 
     Compute B @ [M/(C.T @ D @ C)] @ B.T.
 

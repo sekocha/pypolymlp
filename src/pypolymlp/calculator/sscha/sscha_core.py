@@ -12,8 +12,6 @@ from symfc import Symfc
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.sscha.harmonic_real import HarmonicReal, HarmonicRealReduced
 from pypolymlp.calculator.sscha.harmonic_reciprocal import HarmonicReciprocal
-
-# from pypolymlp.calculator.sscha.harmonic_utils import reduce_dynamical_matrix
 from pypolymlp.calculator.sscha.sscha_data import SSCHAData
 from pypolymlp.calculator.sscha.sscha_io import save_sscha_yaml
 from pypolymlp.calculator.sscha.sscha_params import SSCHAParams
@@ -130,11 +128,19 @@ class SSCHACore(SSCHAParams):
 
     def _set_harmonic_calculators(self):
         """Initialize calculators for harmonic properties."""
+        self._ph_real = HarmonicReal(self._supercell, self._prop, verbose=self._verbose)
+        self._ph_recip = HarmonicReciprocal(self._phonopy, self._prop)
+        return self._ph_real, self._ph_recip
+
+    def _set_harmonic_calculators_deprecated(self):
+        """Initialize calculators for harmonic properties.
+
+        Deprecated.
+        """
         if self._null_space_basis is None:
             self._ph_real = HarmonicReal(
                 self._supercell, self._prop, verbose=self._verbose
             )
-            self._ph_recip = HarmonicReciprocal(self._phonopy, self._prop)
         else:
             self._ph_real = HarmonicRealReduced(
                 self._supercell,
@@ -142,7 +148,7 @@ class SSCHACore(SSCHAParams):
                 self._null_space_basis,
                 verbose=self._verbose,
             )
-            self._ph_recip = HarmonicReciprocal(self._phonopy, self._prop)
+        self._ph_recip = HarmonicReciprocal(self._phonopy, self._prop)
         return self._ph_real, self._ph_recip
 
     def set_initial_force_constants(self, fc2: Optional[np.ndarray] = None):
@@ -181,17 +187,6 @@ class SSCHACore(SSCHAParams):
 
         self._fc2 = self._apply_fc_constraints(self._fc2)
         return self
-
-    # def _apply_fc_constraints(self, fc2_: np.ndarray):
-    #     """Apply constraints to force constants."""
-    #     if self._null_space_basis is None:
-    #         return fc2_
-    #     N = fc2_.shape[0]
-    #     N3 = N * 3
-    #     fc2 = fc2_.transpose((0, 2, 1, 3)).reshape((N3, N3))
-    #     fc2 = reduce_dynamical_matrix(fc2, self._null_space_basis)
-    #     fc2 = fc2.reshape((N, 3, N, 3)).transpose((0, 2, 1, 3))
-    #     return fc2
 
     def _apply_fc_constraints(self, fc2_: np.ndarray):
         """Apply constraints to force constants."""
