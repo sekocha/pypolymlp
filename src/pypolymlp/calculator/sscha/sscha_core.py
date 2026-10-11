@@ -15,8 +15,7 @@ from pypolymlp.calculator.sscha.harmonic_reciprocal import HarmonicReciprocal
 from pypolymlp.calculator.sscha.sscha_data import SSCHAData
 from pypolymlp.calculator.sscha.sscha_io import save_sscha_yaml
 from pypolymlp.calculator.sscha.sscha_params import SSCHAParams
-
-# from pypolymlp.calculator.sscha.symfc_null_space import apply_null_space
+from pypolymlp.calculator.sscha.symfc_null_space import apply_null_space
 from pypolymlp.utils.phonopy_utils import (
     phonopy_cell_to_structure,
     structure_to_phonopy_cell,
@@ -106,8 +105,8 @@ class SSCHACore(SSCHAParams):
         )
         self._symfc.compute_basis_set(2)
 
-        # if self._null_space_basis is not None:
-        #    self._symfc = apply_null_space(self._symfc, self._null_space_basis)
+        if self._null_space_basis is not None:
+            self._symfc = apply_null_space(self._symfc, self._null_space_basis)
 
         self._n_coeffs = self._symfc.basis_set[2].basis_set.shape[1]
         if self._verbose and self._n_coeffs < 1000:
@@ -281,7 +280,7 @@ class SSCHACore(SSCHAParams):
         if self._verbose:
             print("Running symfc solver.", flush=True)
         fc2_new = self._run_solver_fc2()
-        fc2_new = self._apply_fc_constraints(fc2_new)
+        # fc2_new = self._apply_fc_constraints(fc2_new)
 
         self._fc2 = fc2_new * self._mixing + self._fc2 * (1 - self._mixing)
 
