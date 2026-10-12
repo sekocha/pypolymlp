@@ -4,7 +4,6 @@ import os
 from typing import Optional
 
 import numpy as np
-import scipy
 from phono3py.file_IO import read_fc2_from_hdf5, write_fc2_to_hdf5
 from phonopy import Phonopy
 from symfc import Symfc
@@ -48,7 +47,6 @@ class SSCHACore(SSCHAParams):
         self._fc2 = None
         self._data_current = None
         self._sscha_log = []
-        self._Z = None
         self._proj_Z = None
 
         self._supercell, self._phonopy = self._set_supercell_and_phonopy()
@@ -89,8 +87,10 @@ class SSCHACore(SSCHAParams):
             sup_null_space_basis = np.array(sup_null_space_basis).T
 
             self._null_space_basis, _ = np.linalg.qr(sup_null_space_basis)
-            self._Z = scipy.linalg.null_space(self._null_space_basis.T)
-            self._proj_Z = self._Z @ self._Z.T
+            self._proj_Z = (
+                np.eye(self._null_space_basis[0])
+                - self._null_space_basis @ self._null_space_basis.T
+            )
 
         return (self._supercell, self._phonopy)
 
@@ -280,8 +280,6 @@ class SSCHACore(SSCHAParams):
         if self._verbose:
             print("Running symfc solver.", flush=True)
         fc2_new = self._run_solver_fc2()
-        # fc2_new = self._apply_fc_constraints(fc2_new)
-
         self._fc2 = fc2_new * self._mixing + self._fc2 * (1 - self._mixing)
 
         self._data_current.delta = self._convergence_score(self._fc2, fc2_new)
