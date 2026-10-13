@@ -45,17 +45,17 @@ class HarmonicReal(HarmonicRealBase):
         dyn = convert_fc2_to_dynamical_matrix(self._fc2, self._supercell.masses)
         square_w, eigvecs = np.linalg.eigh(dyn)
         square_w *= const_sq_angfreq_to_sq_freq_thz  # in THz
-
-        if self._verbose:
-            tol = 0.001
-            print("Imaginary frequencies (Real space):")
-            print(square_w[square_w < -tol])
-            print("Zero frequencies (Real space):")
-            print(square_w[np.abs(square_w) < tol])
-
         freq = frequencies_from_eigvals(square_w)
         self._mesh_dict["frequencies"] = freq
         self._mesh_dict["eigenvectors"] = eigvecs
+
+        if self._verbose:
+            tol = 0.1
+            print("Imaginary frequencies (Real space):", flush=True)
+            print(freq[freq < -tol], flush=True)
+            print("Zero frequencies (Real space):", flush=True)
+            print(freq[np.abs(freq) < tol], flush=True)
+
         return self._mesh_dict
 
 
@@ -100,10 +100,10 @@ class HarmonicRealReduced(HarmonicRealBase):
 
         if self._verbose:
             tol = 0.001
-            print("Imaginary frequencies:")
-            print(square_w[square_w < -tol])
-            print("Zero frequencies:")
-            print(square_w[np.abs(square_w) < tol])
+            print("Imaginary frequencies:", flush=True)
+            print(square_w[square_w < -tol], flush=True)
+            print("Zero frequencies:", flush=True)
+            print(square_w[np.abs(square_w) < tol], flush=True)
 
         freq = frequencies_from_eigvals(square_w)
         self._mesh_dict["frequencies"] = freq
@@ -119,10 +119,10 @@ class HarmonicRealReduced(HarmonicRealBase):
 
         if self._verbose:
             tol = 0.001
-            print("Imaginary frequencies:")
-            print(square_w[square_w < -tol])
-            print("Zero frequencies:")
-            print(square_w[np.abs(square_w) < tol])
+            print("Imaginary frequencies:", flush=True)
+            print(square_w[square_w < -tol], flush=True)
+            print("Zero frequencies:", flush=True)
+            print(square_w[np.abs(square_w) < tol], flush=True)
 
         freq = frequencies_from_eigvals(square_w)
         self._mesh_dict["frequencies"] = freq

@@ -18,6 +18,7 @@ class HarmonicReciprocal:
         phonopy_obj: Phonopy,
         properties: Properties,
         fc2: Optional[np.ndarray] = None,
+        verbose: bool = False,
     ):
         """Init method.
 
@@ -33,6 +34,7 @@ class HarmonicReciprocal:
 
         self._prop = properties
         self.force_constants = fc2
+        self._verbose = verbose
 
         self._tp_dict = dict()
         self._mesh_dict = dict()
@@ -77,6 +79,18 @@ class HarmonicReciprocal:
         self._ph.run_mesh(qmesh)
         self._frequencies = self._ph._mesh.frequencies
 
+        if self._verbose:
+            mesh_dict = self._ph.get_mesh_dict()
+            qpoints = mesh_dict["qpoints"]
+
+            tol = 0.01
+            match = np.where(self._frequencies < -tol)
+            print("Imaginary frequencies (k-space):", flush=True)
+            for q, w in zip(qpoints[match[0]], self._frequencies[match]):
+                print(q, w, flush=True)
+            print("Zero frequencies (k-space):", flush=True)
+            print(self._frequencies[np.abs(self._frequencies) < tol], flush=True)
+
         self._ph.run_total_dos()
         self._mesh_dict = self._ph.get_mesh_dict()
         return self
@@ -93,6 +107,18 @@ class HarmonicReciprocal:
         self._ph.run_thermal_properties(t_step=10, t_max=temp, t_min=temp)
         self._tp_dict = self._ph.get_thermal_properties_dict()
         free_energy_raw = self._tp_dict["free_energy"][0]
+
+        if self._verbose:
+            mesh_dict = self._ph.get_mesh_dict()
+            qpoints = mesh_dict["qpoints"]
+
+            tol = 0.01
+            match = np.where(self._frequencies < -tol)
+            print("Imaginary frequencies (k-space):", flush=True)
+            for q, w in zip(qpoints[match[0]], self._frequencies[match]):
+                print(q, w, flush=True)
+            print("Zero frequencies (k-space):", flush=True)
+            print(self._frequencies[np.abs(self._frequencies) < tol], flush=True)
 
         free_energy_rev = None
         if hide_imaginary:

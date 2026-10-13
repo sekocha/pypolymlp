@@ -159,6 +159,7 @@ class PypolymlpCalcProperties:
         save_pdos: bool = False,
         symfc_use_mkl: bool = True,
         symfc_batch_size: int = 500,
+        symfc_symprec: float = 1e-4,
         symfc_use_gradient_solver: bool = False,
     ):
         """Set PropertiesSSCHA instance.
@@ -222,6 +223,7 @@ class PypolymlpCalcProperties:
             cutoff_radius=cutoff_radius,
             symfc_use_mkl=symfc_use_mkl,
             symfc_batch_size=symfc_batch_size,
+            symfc_symprec=symfc_symprec,
             symfc_use_gradient_solver=symfc_use_gradient_solver,
             enable_precondition=enable_precondition,
             use_temporal_cutoff=use_temporal_cutoff,

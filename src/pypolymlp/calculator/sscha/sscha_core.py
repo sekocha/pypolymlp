@@ -88,7 +88,7 @@ class SSCHACore(SSCHAParams):
 
             self._null_space_basis, _ = np.linalg.qr(sup_null_space_basis)
             self._proj_Z = (
-                np.eye(self._null_space_basis[0])
+                np.eye(self._null_space_basis.shape[0])
                 - self._null_space_basis @ self._null_space_basis.T
             )
 
@@ -102,11 +102,16 @@ class SSCHACore(SSCHAParams):
             cutoff=cutoff,
             use_mkl=self._symfc_use_mkl,
             log_level=self._verbose,
+            symprec=self._symfc_symprec,
         )
         self._symfc.compute_basis_set(2)
 
         if self._null_space_basis is not None:
+            if self._verbose:
+                print("Apply constraints.", flush=True)
             self._symfc = apply_null_space(self._symfc, self._null_space_basis)
+            if self._verbose:
+                print("Done.", flush=True)
 
         self._n_coeffs = self._symfc.basis_set[2].basis_set.shape[1]
         if self._verbose and self._n_coeffs < 1000:
@@ -128,7 +133,11 @@ class SSCHACore(SSCHAParams):
     def _set_harmonic_calculators(self):
         """Initialize calculators for harmonic properties."""
         self._ph_real = HarmonicReal(self._supercell, self._prop, verbose=self._verbose)
-        self._ph_recip = HarmonicReciprocal(self._phonopy, self._prop)
+        self._ph_recip = HarmonicReciprocal(
+            self._phonopy,
+            self._prop,
+            verbose=self._verbose,
+        )
         return self._ph_real, self._ph_recip
 
     def _set_harmonic_calculators_deprecated(self):

@@ -356,6 +356,12 @@ def create_sscha_parser():
         help="Batch size used in symfc FC estimation.",
     )
     sscha_group.add_argument(
+        "--symfc_symprec",
+        type=float,
+        default=1e-4,
+        help="Tolerance for finding symmetry operation in Symfc.",
+    )
+    sscha_group.add_argument(
         "--symfc_use_gradient_solver",
         action="store_true",
         help="Use gradient solver in Symfc.",

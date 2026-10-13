@@ -37,6 +37,7 @@ class SSCHAParams:
         cutoff_radius: Optional[float] = None,
         symfc_use_mkl: bool = True,
         symfc_batch_size: int = 500,
+        symfc_symprec: float = 1e-3,
         symfc_use_gradient_solver: bool = False,
         enable_precondition: bool = True,
         use_temporal_cutoff: bool = False,
@@ -106,6 +107,7 @@ class SSCHAParams:
         self._symfc_use_mkl = symfc_use_mkl
         self._symfc_batch_size = symfc_batch_size
         self._symfc_use_gradient_solver = symfc_use_gradient_solver
+        self._symfc_symprec = symfc_symprec
 
         self._enable_precondition = enable_precondition
         self._use_temporal_cutoff = use_temporal_cutoff

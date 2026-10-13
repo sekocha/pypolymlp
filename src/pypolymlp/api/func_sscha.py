@@ -65,6 +65,7 @@ def run_main_sscha(args, polymlp: PypolymlpCalcProperties):
         cutoff_radius=args.cutoff_fc2,
         symfc_use_mkl=not args.symfc_disable_mkl,
         symfc_batch_size=args.symfc_batch_size,
+        symfc_symprec=args.symfc_symprec,
         symfc_use_gradient_solver=args.symfc_use_gradient_solver,
         use_temporal_cutoff=args.use_temporal_cutoff,
         enable_precondition=not args.disable_precondition,
