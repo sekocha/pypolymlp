@@ -442,6 +442,7 @@ class SSCHACore(SSCHAParams):
         print("Convergence:      ", data.converge, flush=True)
         print("Frequency (min):  ", "{:.6f}".format(np.min(freq)), flush=True)
         print("Frequency (max):  ", "{:.6f}".format(np.max(freq)), flush=True)
+        print("-----------------------------------------------------", flush=True)
 
     def save_results(self):
         """Save SSCHA results for current temperature."""
