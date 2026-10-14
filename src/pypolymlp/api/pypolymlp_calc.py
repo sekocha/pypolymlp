@@ -761,6 +761,11 @@ class PypolymlpCalc:
                 print("# Disp1, disp2, energy (J/m2)", file=f)
                 print(frac1, frac2, energy, file=f)
                 write_poscar_file(go.structure, filename="POSCAR_gsf")
+
+            if self._verbose:
+                print("---------------------------", flush=True)
+                print("Final structure", flush=True)
+                go.print_structure()
         else:
             energy, go = gsfe.run_single(gtol=gtol, maxiter=maxiter, restart=True)
             self.structures = go.structure
@@ -768,6 +773,11 @@ class PypolymlpCalc:
                 print("# energy (J/m2)", file=f)
                 print(energy, file=f)
                 write_poscar_file(go.structure, filename="POSCAR_gsf")
+
+            if self._verbose:
+                print("---------------------------", flush=True)
+                print("Final structure", flush=True)
+                go.print_structure()
 
         return energy
 

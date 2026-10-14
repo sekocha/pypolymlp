@@ -157,6 +157,8 @@ class PolymlpGSFE:
             go.run(gtol=gtol * 1e-1, maxiter=10000)
             if go.success:
                 self._supercell_disp = go.structure
+            if self._verbose:
+                go.print_residuals()
 
         go = GeometryOptimization(
             self._supercell_disp,
@@ -171,6 +173,8 @@ class PolymlpGSFE:
         )
         # go.change_basis_axis(go._basis_a[:, 2:3])
         go.run(gtol=gtol, maxiter=maxiter)
+        if self._verbose:
+            go.print_residuals()
 
         try:
             energy = go.energy / self._area / 2
