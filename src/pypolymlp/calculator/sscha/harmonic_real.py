@@ -85,13 +85,13 @@ class HarmonicRealReduced(HarmonicRealBase):
         N3 = null_space_basis.shape[0]
         N = N3 // 3
         null_sum = np.zeros((N3, 3))
-        null_sum[np.arange(N3), np.arange(N3) // N] = 1.0 / np.sqrt(N)
+        for i in range(N3):
+            null_sum[i, i % 3] = 1.0 / np.sqrt(N)
         proj_sum = np.eye(N3) - null_sum @ null_sum.T
 
-        proj1 = reduced_basis @ reduced_basis.T
-        proj = proj1 @ proj_sum @ proj1
+        proj = reduced_basis.T @ proj_sum @ reduced_basis
         eigvals, eigvecs = scipy.linalg.eigh(proj)
-        eigvecs = eigvecs[:, np.isclose(eigvals, 1.0)]
+        eigvecs = reduced_basis @ eigvecs[:, np.isclose(eigvals, 1.0)]
         self._proj = eigvecs @ eigvecs.T
 
     def _solve_eigen_equation(self) -> dict:

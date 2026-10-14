@@ -157,7 +157,6 @@ class PolymlpGSFE:
             go.run(gtol=gtol * 1e-1, maxiter=10000)
             if go.success:
                 self._supercell_disp = go.structure
-        print(self._supercell_disp.axis)
 
         go = GeometryOptimization(
             self._supercell_disp,

@@ -88,6 +88,26 @@ class HarmonicReciprocalBase(ABC):
         freq_rev[match1] = np.abs(freq_rev[match1]) * 10.0
         return freq_rev
 
+    def _compute_thermal_properties(
+        self,
+        temp: float = 1000,
+        hide_imaginary: bool = False,
+    ):
+        """Compute thermal properties."""
+        self._ph.run_thermal_properties(t_step=10, t_max=temp, t_min=temp)
+        self._tp_dict = self._ph.get_thermal_properties_dict()
+        free_energy_raw = self._tp_dict["free_energy"][0]
+
+        if not hide_imaginary:
+            return free_energy_raw, None
+
+        freq = self._ph._mesh._frequencies
+        self._ph._mesh._frequencies = self._hide_imaginary_modes(freq)
+        self._ph.run_thermal_properties(t_step=10, t_max=temp, t_min=temp)
+        self._tp_dict = self._ph.get_thermal_properties_dict()
+        free_energy_rev = self._tp_dict["free_energy"][0]
+        return free_energy_raw, free_energy_rev
+
     @abstractmethod
     def run(self):
         """Compute mesh and thermal properties."""

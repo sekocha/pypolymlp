@@ -45,26 +45,17 @@ class HarmonicReciprocal(HarmonicReciprocalBase):
     ):
         """Calculate frequencies and properties."""
         self._ph.run_mesh(qmesh)
-        self._ph.run_total_dos()
-        self._mesh_dict = self._ph.get_mesh_dict()
         self._frequencies = self._ph._mesh.frequencies
+        self._mesh_dict = self._ph.get_mesh_dict()
         self._print_frequencies()
+        self._ph.run_total_dos()
 
         if only_frequencies:
             return self._frequencies
 
-        self._ph.run_thermal_properties(t_step=10, t_max=temp, t_min=temp)
-        self._tp_dict = self._ph.get_thermal_properties_dict()
-        free_energy_raw = self._tp_dict["free_energy"][0]
-
-        if not hide_imaginary:
-            return free_energy_raw, None
-
-        freq = self._ph._mesh._frequencies
-        self._ph._mesh._frequencies = self._hide_imaginary_modes(freq)
-        self._ph.run_thermal_properties(t_step=10, t_max=temp, t_min=temp)
-        self._tp_dict = self._ph.get_thermal_properties_dict()
-        free_energy_rev = self._tp_dict["free_energy"][0]
+        free_energy_raw, free_energy_rev = self._compute_thermal_properties(
+            temp=temp, hide_imaginary=hide_imaginary
+        )
         return free_energy_raw, free_energy_rev
 
 
@@ -101,7 +92,8 @@ class HarmonicReciprocalReduced(HarmonicReciprocalBase):
         N = len(self._unitcell.elements)
         N3 = 3 * N
         null_sum = np.zeros((N3, 3))
-        null_sum[np.arange(N3), np.arange(N3) // N] = 1.0 / np.sqrt(N)
+        for i in range(N3):
+            null_sum[i, i % 3] = 1.0 / np.sqrt(N)
         self._proj_sum = np.eye(N3) - null_sum @ null_sum.T
 
     def _solve_eigen_equation(self, qpoints: np.ndarray) -> dict:
@@ -147,16 +139,7 @@ class HarmonicReciprocalReduced(HarmonicReciprocalBase):
         if only_frequencies:
             return self._frequencies
 
-        self._ph.run_thermal_properties(t_step=10, t_max=temp, t_min=temp)
-        self._tp_dict = self._ph.get_thermal_properties_dict()
-        free_energy_raw = self._tp_dict["free_energy"][0]
-
-        if not hide_imaginary:
-            return free_energy_raw, None
-
-        freq = self._ph._mesh._frequencies
-        self._ph._mesh._frequencies = self._hide_imaginary_modes(freq)
-        self._ph.run_thermal_properties(t_step=10, t_max=temp, t_min=temp)
-        self._tp_dict = self._ph.get_thermal_properties_dict()
-        free_energy_rev = self._tp_dict["free_energy"][0]
+        free_energy_raw, free_energy_rev = self._compute_thermal_properties(
+            temp=temp, hide_imaginary=hide_imaginary
+        )
         return free_energy_raw, free_energy_rev
