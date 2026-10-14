@@ -54,6 +54,22 @@ class HarmonicReciprocalBase(ABC):
         self._fc2 = self._ph.force_constants
         return self._fc2
 
+    def _print_frequencies(self, tol: float = 0.01):
+        if self._verbose:
+            if self._frequencies is None:
+                raise RuntimeError("Frequencies not found.")
+
+            mesh_dict = self._ph.get_mesh_dict()
+            qpoints = mesh_dict["qpoints"]
+
+            match = np.where(self._frequencies < -tol)
+            print("Imaginary frequencies (k-space):", flush=True)
+            for q, w in zip(qpoints[match[0]], self._frequencies[match]):
+                print(q, w, flush=True)
+            print("Zero frequencies (k-space):", flush=True)
+            print(self._frequencies[np.abs(self._frequencies) < tol], flush=True)
+        return self
+
     def _hide_imaginary_modes(self, freq: np.ndarray, freq_threshold: float = -0.001):
         """Mask branches with imaginary frequencies."""
         freq_rev = np.array(freq)
@@ -62,13 +78,8 @@ class HarmonicReciprocalBase(ABC):
         return freq_rev
 
     @abstractmethod
-    def compute_mesh_properties(self, qmesh: tuple = (10, 10, 10)):
-        """Compute mesh properties."""
-        pass
-
-    @abstractmethod
-    def compute_thermal_properties(self):
-        """Compute thermal properties."""
+    def run(self):
+        """Compute mesh and thermal properties."""
         pass
 
     @property

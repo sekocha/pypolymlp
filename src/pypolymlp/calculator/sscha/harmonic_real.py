@@ -45,17 +45,12 @@ class HarmonicReal(HarmonicRealBase):
         dyn = convert_fc2_to_dynamical_matrix(self._fc2, self._supercell.masses)
         square_w, eigvecs = np.linalg.eigh(dyn)
         square_w *= const_sq_angfreq_to_sq_freq_thz  # in THz
+
         freq = frequencies_from_eigvals(square_w)
         self._mesh_dict["frequencies"] = freq
         self._mesh_dict["eigenvectors"] = eigvecs
 
-        if self._verbose:
-            tol = 0.1
-            print("Imaginary frequencies (Real space):", flush=True)
-            print(freq[freq < -tol], flush=True)
-            print("Zero frequencies (Real space):", flush=True)
-            print(freq[np.abs(freq) < tol], flush=True)
-
+        self._print_frequencies(freq)
         return self._mesh_dict
 
 
@@ -98,16 +93,11 @@ class HarmonicRealReduced(HarmonicRealBase):
         if np.any(np.abs(eigvecs.T @ self._null_space_basis) > 1e-10):
             raise RuntimeError("Eigenvectors are not in constraint null space.")
 
-        if self._verbose:
-            tol = 0.001
-            print("Imaginary frequencies:", flush=True)
-            print(square_w[square_w < -tol], flush=True)
-            print("Zero frequencies:", flush=True)
-            print(square_w[np.abs(square_w) < tol], flush=True)
-
         freq = frequencies_from_eigvals(square_w)
         self._mesh_dict["frequencies"] = freq
         self._mesh_dict["eigenvectors"] = eigvecs
+
+        self._print_frequencies(freq)
         return self._mesh_dict
 
     def _solve_eigen_equation_use_schur_complement(self) -> dict:
@@ -117,14 +107,9 @@ class HarmonicRealReduced(HarmonicRealBase):
         square_w, eigvecs = scipy.linalg.eigh(reduced_dyn)
         square_w *= const_sq_angfreq_to_sq_freq_thz  # in THz
 
-        if self._verbose:
-            tol = 0.001
-            print("Imaginary frequencies:", flush=True)
-            print(square_w[square_w < -tol], flush=True)
-            print("Zero frequencies:", flush=True)
-            print(square_w[np.abs(square_w) < tol], flush=True)
-
         freq = frequencies_from_eigvals(square_w)
         self._mesh_dict["frequencies"] = freq
         self._mesh_dict["eigenvectors"] = eigvecs
+
+        self._print_frequencies(freq)
         return self._mesh_dict

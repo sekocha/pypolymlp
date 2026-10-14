@@ -236,8 +236,8 @@ class SSCHACore(SSCHAParams):
             qmesh = self._mesh
 
         self._ph_recip.force_constants = self._fc2
-        self._ph_recip.compute_mesh_properties(qmesh=qmesh)
-        return self._ph_recip.frequencies
+        freqs = self._ph_recip.run(qmesh=qmesh, only_frequencies=True)
+        return freqs
 
     def _compute_sscha_properties(self, temp: float = 1000):
         """Compute SSCHA properties using FC2."""
@@ -245,11 +245,7 @@ class SSCHACore(SSCHAParams):
             print("Computing SSCHA properties from FC2.", flush=True)
 
         self._ph_recip.force_constants = self._fc2
-        f_raw, f_rev = self._ph_recip.compute_thermal_properties(
-            temp=temp,
-            qmesh=self._mesh,
-            hide_imaginary=False,
-        )
+        f_raw, f_rev = self._ph_recip.run(temp=temp, qmesh=self._mesh)
         if self._verbose and f_rev is not None:
             print("Harmonic free energy has been changed.", flush=True)
             print("  Original:", np.round(f_raw, 6), flush=True)
@@ -302,7 +298,6 @@ class SSCHACore(SSCHAParams):
         """Run a standard single sscha iteration."""
         self._ph_real.force_constants = self._fc2
         self._ph_real.run(temp=temp, n_samples=n_samples, eliminate_outliers=True)
-        self._fc2 = self._ph_real.force_constants
         self._data_current = self._compute_sscha_properties(temp=temp)
 
         if self._verbose:

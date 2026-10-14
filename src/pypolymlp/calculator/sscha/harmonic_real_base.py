@@ -199,6 +199,15 @@ class HarmonicRealBase(ABC):
         average_stress = average_s - average_hs - self._s0
         return average_forces, average_stress
 
+    def _print_frequencies(self, freq: np.ndarray, tol: float = 0.1):
+        """Print frequencies."""
+        if self._verbose:
+            print("Imaginary frequencies (Real space):", flush=True)
+            print(freq[freq < -tol], flush=True)
+            print("Zero frequencies (Real space):", flush=True)
+            print(freq[np.abs(freq) < tol], flush=True)
+        return self
+
     @property
     def force_constants(self) -> np.ndarray:
         """Return FC2, shape=(n_atom, n_atom, 3, 3)."""
