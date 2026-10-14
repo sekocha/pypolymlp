@@ -8,8 +8,12 @@ from phonopy import Phonopy
 
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.sscha.harmonic_utils import frequencies_from_eigvals
+from pypolymlp.utils.phonopy_utils import phonopy_cell_to_structure
 
-from .harmonic_reciprocal_base import HarmonicReciprocalBase
+from .harmonic_reciprocal_base import (
+    HarmonicReciprocalBase,
+    const_sq_angfreq_to_sq_freq_thz,
+)
 
 
 class HarmonicReciprocal(HarmonicReciprocalBase):
@@ -71,6 +75,7 @@ class HarmonicReciprocalReduced(HarmonicReciprocalBase):
         self,
         phonopy_obj: Phonopy,
         properties: Properties,
+        null_space_basis: np.ndarray,
         fc2: Optional[np.ndarray] = None,
         verbose: bool = False,
     ):
@@ -80,20 +85,46 @@ class HarmonicReciprocalReduced(HarmonicReciprocalBase):
         ----------
         phonopy_obj: Phonopy class object.
         property: Property class object to calculate energies and forces.
+        null_space_basis: Basis set for null space of displacements.
         fc2: Second-order force constants.
         """
         super().__init__(phonopy_obj, properties, fc2=fc2, verbose=verbose)
+        self._unitcell = phonopy_cell_to_structure(phonopy_obj.unitcell)
+        self._null_space_basis = null_space_basis
+
+        if self._null_space_basis.shape[0] != len(self._unitcell.elements) * 3:
+            raise RuntimeError("Size of null space basis not appropriate.")
+
+        self._reduced_basis = scipy.linalg.null_space(self._null_space_basis.T)
+        self._proj_reduced = self._reduced_basis @ self._reduced_basis.T
+
+        N = len(self._unitcell.elements)
+        N3 = 3 * N
+        null_sum = np.zeros((N3, 3))
+        null_sum[np.arange(N3), np.arange(N3) // N] = 1.0 / np.sqrt(N)
+        self._proj_sum = np.eye(N3) - null_sum @ null_sum.T
 
     def _solve_eigen_equation(self, qpoints: np.ndarray) -> dict:
         """Solve eigenvalue equation for dynamical matrix."""
+        # TODO: Check units in dynamical matrix used in phonopy.
         square_freqs = []
         for q in qpoints:
-            D = self._ph.get_dynamical_matrix_at_q(q)
-            eigvals, eigvecs = scipy.linalg.eigh(D)
-            square_freqs.append(eigvals)
+            prod = self._unitcell.positions.T @ q
+            phase = np.repeat(np.exp(2 * np.pi * 1j * prod), 3)
+            proj1 = phase[:, None] * self._proj_reduced * phase.conj()[None, :]
+            proj1 = proj1 @ self._proj_sum @ proj1
 
-        square_freqs = np.array(square_freqs)
-        freqs = frequencies_from_eigvals(square_freqs)
+            eigvals, eigvecs = scipy.linalg.eigh(proj1)
+            eigvecs = eigvecs[:, np.isclose(eigvals, 1.0)]
+            proj_red = eigvecs @ eigvecs.conj().T
+
+            dyn = self._ph.get_dynamical_matrix_at_q(q)
+            reduced_dyn = proj_red.conj().T @ dyn @ proj_red
+            square_w, eigvecs = scipy.linalg.eigh(reduced_dyn)
+            square_w *= const_sq_angfreq_to_sq_freq_thz  # in THz
+            square_freqs.append(square_w)
+
+        freqs = frequencies_from_eigvals(np.array(square_freqs))
         return freqs
 
     def run(
@@ -105,10 +136,13 @@ class HarmonicReciprocalReduced(HarmonicReciprocalBase):
     ):
         """Calculate frequencies and properties."""
         self._ph.run_mesh(qmesh)
-        self._ph.run_total_dos()
         self._mesh_dict = self._ph.get_mesh_dict()
-        self._frequencies = self._ph._mesh.frequencies
+        self._frequencies = self._solve_eigen_equation(self._mesh_dict["qpoints"])
         self._print_frequencies()
+
+        # TODO: setter is correct?
+        self._ph._mesh._frequencies = self._frequencies
+        self._ph.run_total_dos()
 
         if only_frequencies:
             return self._frequencies

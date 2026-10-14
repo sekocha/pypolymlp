@@ -50,6 +50,7 @@ class SSCHACore(SSCHAParams):
         self._fc2 = None
         self._data_current = None
         self._sscha_log = []
+        self._null_space_basis_supercell = None
         self._proj_Z = None
 
         self._supercell, self._phonopy = self._set_supercell_and_phonopy()
@@ -89,10 +90,10 @@ class SSCHACore(SSCHAParams):
                 sup_null_space_basis.append(tmp_basis)
             sup_null_space_basis = np.array(sup_null_space_basis).T
 
-            self._null_space_basis, _ = np.linalg.qr(sup_null_space_basis)
+            self._null_space_basis_supercell, _ = np.linalg.qr(sup_null_space_basis)
             self._proj_Z = (
-                np.eye(self._null_space_basis.shape[0])
-                - self._null_space_basis @ self._null_space_basis.T
+                np.eye(self._null_space_basis_supercell.shape[0])
+                - self._null_space_basis_supercell @ self._null_space_basis_supercell.T
             )
 
         return (self._supercell, self._phonopy)
@@ -112,7 +113,9 @@ class SSCHACore(SSCHAParams):
         if self._null_space_basis is not None:
             if self._verbose:
                 print("Apply constraints.", flush=True)
-            self._symfc = apply_null_space(self._symfc, self._null_space_basis)
+            self._symfc = apply_null_space(
+                self._symfc, self._null_space_basis_supercell
+            )
             if self._verbose:
                 print("Done.", flush=True)
 
@@ -139,44 +142,22 @@ class SSCHACore(SSCHAParams):
             self._ph_real = HarmonicReal(
                 self._supercell, self._prop, verbose=self._verbose
             )
-            self._ph_recip = HarmonicReciprocal(self._phonopy, self._prop)
-        else:
-            self._ph_real = HarmonicRealReduced(
-                self._supercell,
-                self._prop,
-                self._null_space_basis,
-                verbose=self._verbose,
-            )
-            self._ph_recip = HarmonicReciprocalReduced(self._phonopy, self._prop)
-        return self._ph_real, self._ph_recip
-
-    def _set_harmonic_calculators_simple(self):
-        """Initialize calculators for harmonic properties."""
-        self._ph_real = HarmonicReal(self._supercell, self._prop, verbose=self._verbose)
-        self._ph_recip = HarmonicReciprocal(
-            self._phonopy,
-            self._prop,
-            verbose=self._verbose,
-        )
-        return self._ph_real, self._ph_recip
-
-    def _set_harmonic_calculators_deprecated(self):
-        """Initialize calculators for harmonic properties.
-
-        Deprecated.
-        """
-        if self._null_space_basis is None:
-            self._ph_real = HarmonicReal(
-                self._supercell, self._prop, verbose=self._verbose
+            self._ph_recip = HarmonicReciprocal(
+                self._phonopy, self._prop, verbose=self._verbose
             )
         else:
             self._ph_real = HarmonicRealReduced(
                 self._supercell,
                 self._prop,
+                self._null_space_basis_supercell,
+                verbose=self._verbose,
+            )
+            self._ph_recip = HarmonicReciprocalReduced(
+                self._phonopy,
+                self._prop,
                 self._null_space_basis,
                 verbose=self._verbose,
             )
-        self._ph_recip = HarmonicReciprocal(self._phonopy, self._prop)
         return self._ph_real, self._ph_recip
 
     def set_initial_force_constants(self, fc2: Optional[np.ndarray] = None):

@@ -9,6 +9,14 @@ from phonopy import Phonopy
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.utils.phonopy_utils import phonopy_cell_to_structure
 
+"""
+Constants
+---------
+const_sq_angfreq_to_sq_freq_thz:
+    1.602176634e-19 (eV->J) * 6.02214076e23 (avogadro) * 0.1 / (4 * pi^2)
+"""
+const_sq_angfreq_to_sq_freq_thz = 2.4440020137144617e2
+
 
 class HarmonicReciprocalBase(ABC):
     """Base class for harmonic contribution in reciprocal space."""
@@ -64,8 +72,11 @@ class HarmonicReciprocalBase(ABC):
 
             match = np.where(self._frequencies < -tol)
             print("Imaginary frequencies (k-space):", flush=True)
-            for q, w in zip(qpoints[match[0]], self._frequencies[match]):
-                print(q, w, flush=True)
+            if len(match[0]) == 0:
+                print("[]", flush=True)
+            else:
+                for q, w in zip(qpoints[match[0]], self._frequencies[match]):
+                    print(q, w, flush=True)
             print("Zero frequencies (k-space):", flush=True)
             print(self._frequencies[np.abs(self._frequencies) < tol], flush=True)
         return self

@@ -80,18 +80,26 @@ class HarmonicRealReduced(HarmonicRealBase):
             supercell, properties, n_unitcells=n_unitcells, fc2=fc2, verbose=verbose
         )
         self._null_space_basis = null_space_basis
-        self._Z = scipy.linalg.null_space(self._null_space_basis.T)
+        reduced_basis = scipy.linalg.null_space(self._null_space_basis.T)
+
+        N3 = null_space_basis.shape[0]
+        N = N3 // 3
+        null_sum = np.zeros((N3, 3))
+        null_sum[np.arange(N3), np.arange(N3) // N] = 1.0 / np.sqrt(N)
+        proj_sum = np.eye(N3) - null_sum @ null_sum.T
+
+        proj1 = reduced_basis @ reduced_basis.T
+        proj = proj1 @ proj_sum @ proj1
+        eigvals, eigvecs = scipy.linalg.eigh(proj)
+        eigvecs = eigvecs[:, np.isclose(eigvals, 1.0)]
+        self._proj = eigvecs @ eigvecs.T
 
     def _solve_eigen_equation(self) -> dict:
         """Solve eigenvalue equation for dynamical matrix."""
         dyn = convert_fc2_to_dynamical_matrix(self._fc2, self._supercell.masses)
-        reduced_dyn = self._Z.T @ dyn @ self._Z
-        square_w, eigvecs_reduced = scipy.linalg.eigh(reduced_dyn)
+        reduced_dyn = self._proj @ dyn @ self._proj
+        square_w, eigvecs = scipy.linalg.eigh(reduced_dyn)
         square_w *= const_sq_angfreq_to_sq_freq_thz  # in THz
-        eigvecs = self._Z @ eigvecs_reduced
-
-        if np.any(np.abs(eigvecs.T @ self._null_space_basis) > 1e-10):
-            raise RuntimeError("Eigenvectors are not in constraint null space.")
 
         freq = frequencies_from_eigvals(square_w)
         self._mesh_dict["frequencies"] = freq
