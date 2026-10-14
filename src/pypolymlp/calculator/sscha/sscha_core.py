@@ -10,7 +10,10 @@ from symfc import Symfc
 
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.sscha.harmonic_real import HarmonicReal, HarmonicRealReduced
-from pypolymlp.calculator.sscha.harmonic_reciprocal import HarmonicReciprocal
+from pypolymlp.calculator.sscha.harmonic_reciprocal import (
+    HarmonicReciprocal,
+    HarmonicReciprocalReduced,
+)
 from pypolymlp.calculator.sscha.sscha_data import SSCHAData
 from pypolymlp.calculator.sscha.sscha_io import save_sscha_yaml
 from pypolymlp.calculator.sscha.sscha_params import SSCHAParams
@@ -132,6 +135,23 @@ class SSCHACore(SSCHAParams):
 
     def _set_harmonic_calculators(self):
         """Initialize calculators for harmonic properties."""
+        if self._null_space_basis is None:
+            self._ph_real = HarmonicReal(
+                self._supercell, self._prop, verbose=self._verbose
+            )
+            self._ph_recip = HarmonicReciprocal(self._phonopy, self._prop)
+        else:
+            self._ph_real = HarmonicRealReduced(
+                self._supercell,
+                self._prop,
+                self._null_space_basis,
+                verbose=self._verbose,
+            )
+            self._ph_recip = HarmonicReciprocalReduced(self._phonopy, self._prop)
+        return self._ph_real, self._ph_recip
+
+    def _set_harmonic_calculators_simple(self):
+        """Initialize calculators for harmonic properties."""
         self._ph_real = HarmonicReal(self._supercell, self._prop, verbose=self._verbose)
         self._ph_recip = HarmonicReciprocal(
             self._phonopy,
@@ -229,7 +249,6 @@ class SSCHACore(SSCHAParams):
             temp=temp,
             qmesh=self._mesh,
             hide_imaginary=False,
-            # hide_imaginary=True,
         )
         if self._verbose and f_rev is not None:
             print("Harmonic free energy has been changed.", flush=True)

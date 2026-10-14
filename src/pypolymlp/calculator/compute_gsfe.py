@@ -87,16 +87,18 @@ class PolymlpGSFE:
         self._shift_atoms = self._supercell.positions[2] >= 0.5 - 1e-12
 
         # TODO: Correct in non-orthogonal system?
-        shape = (self._sd_pos.shape[0], self._sd_pos.shape[1], 2)
+        n_basis = 2
+        shape = (self._sd_pos.shape[0], self._sd_pos.shape[1], n_basis)
         null_space_basis = np.zeros(shape)
+
         null_space_basis[0, self._shift_atoms, 0] = 1.0
         null_space_basis[1, self._shift_atoms, 1] = 1.0
 
-        for i in range(2):
+        for i in range(n_basis):
             ave = np.sum(null_space_basis[:, :, i], axis=1) / null_space_basis.shape[1]
             null_space_basis[:, :, i] -= ave[:, None]
 
-        null_space_basis = null_space_basis.transpose((1, 0, 2)).reshape((-1, 2))
+        null_space_basis = null_space_basis.transpose((1, 0, 2)).reshape((-1, n_basis))
         self._null_space_basis, _ = np.linalg.qr(null_space_basis)
         return self
 
@@ -151,9 +153,11 @@ class PolymlpGSFE:
                 selective_dynamics_positions=self._sd_pos,
                 verbose=self._verbose,
             )
+            # go.change_basis_axis(go._basis_a[:, 2:3])
             go.run(gtol=gtol * 1e-1, maxiter=10000)
             if go.success:
                 self._supercell_disp = go.structure
+        print(self._supercell_disp.axis)
 
         go = GeometryOptimization(
             self._supercell_disp,
@@ -166,6 +170,7 @@ class PolymlpGSFE:
             selective_dynamics_positions=self._sd_pos,
             verbose=self._verbose,
         )
+        # go.change_basis_axis(go._basis_a[:, 2:3])
         go.run(gtol=gtol, maxiter=maxiter)
 
         try:
