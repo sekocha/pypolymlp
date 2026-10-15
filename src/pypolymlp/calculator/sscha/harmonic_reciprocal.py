@@ -86,15 +86,21 @@ class HarmonicReciprocalReduced(HarmonicReciprocalBase):
         if self._null_space_basis.shape[0] != len(self._unitcell.elements) * 3:
             raise RuntimeError("Size of null space basis not appropriate.")
 
+        # TODO: Need to check sum = 0?
         self._reduced_basis = scipy.linalg.null_space(self._null_space_basis.T)
         self._proj_reduced = self._reduced_basis @ self._reduced_basis.T
 
-        N = len(self._unitcell.elements)
-        N3 = 3 * N
-        null_sum = np.zeros((N3, 3))
-        for i in range(N3):
-            null_sum[i, i % 3] = 1.0 / np.sqrt(N)
-        self._proj_sum = np.eye(N3) - null_sum @ null_sum.T
+        # N = len(self._unitcell.elements)
+        # N3 = 3 * N
+        # null_sum = np.zeros((N3, 3))
+        # for i in range(N3):
+        #     null_sum[i, i % 3] = 1.0 / np.sqrt(N)
+        # self._proj_sum = np.eye(N3) - null_sum @ null_sum.T
+
+        # proj = self._reduced_basis.T @ self._proj_sum @ self._reduced_basis
+        # eigvals, eigvecs = scipy.linalg.eigh(proj)
+        # eigvecs = self._reduced_basis @ eigvecs[:, np.isclose(eigvals, 1.0)]
+        # self._proj_reduced = eigvecs @ eigvecs.T
 
     def _solve_eigen_equation(self, qpoints: np.ndarray) -> dict:
         """Solve eigenvalue equation for dynamical matrix."""
@@ -103,20 +109,28 @@ class HarmonicReciprocalReduced(HarmonicReciprocalBase):
         for q in qpoints:
             prod = self._unitcell.positions.T @ q
             phase = np.repeat(np.exp(2 * np.pi * 1j * prod), 3)
-            proj1 = phase[:, None] * self._proj_reduced * phase.conj()[None, :]
-            proj1 = proj1 @ self._proj_sum @ proj1
+            # proj1 = phase[:, None] * self._proj_reduced * phase.conj()[None, :]
+            # proj1 = phase[:, None] * self._proj_reduced * phase.conj()[None, :]
+            # # proj_sum = phase[:, None] * self._proj_sum * phase.conj()[None, :]
+            # # proj1 = proj1 @ proj_sum @ proj1
+            # proj1 = proj1 @ self._proj_sum @ proj1
 
-            eigvals, eigvecs = scipy.linalg.eigh(proj1)
-            eigvecs = eigvecs[:, np.isclose(eigvals, 1.0)]
-            proj_red = eigvecs @ eigvecs.conj().T
+            # eigvals, eigvecs = scipy.linalg.eigh(proj1)
+            # eigvecs = eigvecs[:, np.isclose(eigvals, 1.0)]
+            # proj_red = eigvecs @ eigvecs.conj().T
 
+            # proj_red = self._proj_reduced
+
+            proj_red = phase[:, None] * self._proj_reduced * phase.conj()[None, :]
             dyn = self._ph.get_dynamical_matrix_at_q(q)
             reduced_dyn = proj_red.conj().T @ dyn @ proj_red
             square_w, eigvecs = scipy.linalg.eigh(reduced_dyn)
             square_w *= const_sq_angfreq_to_sq_freq_thz  # in THz
             square_freqs.append(square_w)
+            # print(square_w)
 
         freqs = frequencies_from_eigvals(np.array(square_freqs))
+        # freqs[(freqs < 0.1) & (freqs > -0.01)] = -0.1
         return freqs
 
     def run(
@@ -133,7 +147,7 @@ class HarmonicReciprocalReduced(HarmonicReciprocalBase):
         self._print_frequencies()
 
         # TODO: setter is correct?
-        self._ph._mesh._frequencies = self._frequencies
+        # self._ph._mesh._frequencies = self._frequencies
         self._ph.run_total_dos()
 
         if only_frequencies:

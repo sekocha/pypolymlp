@@ -37,8 +37,12 @@ def sample_real_space_distribution(
     if "eigenvectors" not in mesh_dict:
         raise RuntimeError("eigenvectors not found in mesh_dict.")
 
-    freq = mask_imaginary_modes(mesh_dict["frequencies"])
-    nonzero = np.isclose(freq, 0.0) == False
+    freq_threshold = 0.1
+    freq = mesh_dict["frequencies"]
+    zero = np.isclose(freq, 0.0, atol=freq_threshold)
+
+    freq = mask_imaginary_modes(freq, freq_threshold=freq_threshold)
+    nonzero = ~np.isclose(freq, 0.0)
 
     beta = np.inf if np.isclose(temp, 0.0) else 1.0 / (Kb * temp)
     const_exp = 0.5 * beta * const_planck
@@ -49,7 +53,7 @@ def sample_real_space_distribution(
     occ[nonzero] = 0.5 * np.reciprocal(np.tanh(beta_h_freq))
 
     # Calculate amplitudes.
-    # Arbitrary setting for branches with low and imaginary frequencies.
+    # Arbitrary setting for branches with imaginary frequencies.
     amplitudes = np.ones(freq.shape) * 0.01
     rec_freq = np.array([1 / f for f in freq[nonzero]])
     amplitudes[nonzero] = const_amplitude * occ[nonzero] * rec_freq
@@ -58,6 +62,8 @@ def sample_real_space_distribution(
     cov = np.diag(amplitudes)
     mean = np.zeros(cov.shape[0])
     disp_normal_coords = np.random.multivariate_normal(mean, cov, n_samples)
+    # Arbitrary setting for branches with low and imaginary frequencies.
+    disp_normal_coords[:, zero] = 0.0
 
     # Generate atomic displacements.
     eigvecs = mesh_dict["eigenvectors"]
@@ -66,6 +72,49 @@ def sample_real_space_distribution(
     disps = (np.diag(np.reciprocal(masses_sqrt)) @ dot1).T
     disps = disps.reshape((n_samples, -1, 3)).transpose((0, 2, 1))
     return disps
+
+
+# def sample_real_space_distribution(
+#     mesh_dict: dict,
+#     masses: np.ndarray,
+#     temp: float = 1000,
+#     n_samples: int = 100,
+# ):
+#     """Calculate atomic real-space distribution from density matrix."""
+#     if "frequencies" not in mesh_dict:
+#         raise RuntimeError("frequencies not found in mesh_dict.")
+#     if "eigenvectors" not in mesh_dict:
+#         raise RuntimeError("eigenvectors not found in mesh_dict.")
+#
+#     freq = mask_imaginary_modes(mesh_dict["frequencies"])
+#     nonzero = np.isclose(freq, 0.0) == False
+#
+#     beta = np.inf if np.isclose(temp, 0.0) else 1.0 / (Kb * temp)
+#     const_exp = 0.5 * beta * const_planck
+#     beta_h_freq = const_exp * freq[nonzero]
+#
+#     # Calculate occupancies.
+#     occ = np.zeros(freq.shape)
+#     occ[nonzero] = 0.5 * np.reciprocal(np.tanh(beta_h_freq))
+#
+#     # Calculate amplitudes.
+#     # Arbitrary setting for branches with low and imaginary frequencies.
+#     amplitudes = np.ones(freq.shape) * 0.01
+#     rec_freq = np.array([1 / f for f in freq[nonzero]])
+#     amplitudes[nonzero] = const_amplitude * occ[nonzero] * rec_freq
+#
+#     # Generate atomic displacements in normal coordinates.
+#     cov = np.diag(amplitudes)
+#     mean = np.zeros(cov.shape[0])
+#     disp_normal_coords = np.random.multivariate_normal(mean, cov, n_samples)
+#
+#     # Generate atomic displacements.
+#     eigvecs = mesh_dict["eigenvectors"]
+#     masses_sqrt = np.sqrt(np.repeat(masses, 3))
+#     dot1 = eigvecs @ disp_normal_coords.T
+#     disps = (np.diag(np.reciprocal(masses_sqrt)) @ dot1).T
+#     disps = disps.reshape((n_samples, -1, 3)).transpose((0, 2, 1))
+#     return disps
 
 
 def eliminate_outliers(
