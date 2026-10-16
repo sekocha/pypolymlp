@@ -83,7 +83,6 @@ class SSCHACore(SSCHAParams):
             for basis_element in self._null_space_basis.T:
                 tmp_basis = []
                 tmp = basis_element.reshape((-1, 3))
-
                 for t in tmp:
                     for i in range(self._n_unitcells):
                         tmp_basis.extend(t)
@@ -165,8 +164,7 @@ class SSCHACore(SSCHAParams):
         if fc2 is not None:
             if self._verbose:
                 print("Initial FCs: Numpy array", flush=True)
-            self._fc2 = fc2
-            self._fc2 = self._apply_fc_constraints(self._fc2)
+            self._fc2 = self._apply_fc_constraints(fc2)
             return self
 
         algorithm = self._init_fc_algorithm
@@ -199,13 +197,18 @@ class SSCHACore(SSCHAParams):
 
     def _apply_fc_constraints(self, fc2_: np.ndarray):
         """Apply constraints to force constants."""
-        if self._proj_Z is None:
-            return fc2_
+        if self._symfc is None:
+            raise RuntimeError("Symfc instance not found.")
+
         N = fc2_.shape[0]
-        N3 = N * 3
-        fc2 = fc2_.transpose((0, 2, 1, 3)).reshape((N3, N3))
-        fc2 = self._proj_Z @ fc2 @ self._proj_Z
-        fc2 = fc2.reshape((N, 3, N, 3)).transpose((0, 2, 1, 3))
+        B = self._symfc.basis_set[2].basis_set
+        C = self._symfc.basis_set[2].compression_matrix
+
+        fc2 = C.T @ fc2_.reshape(-1)
+        fc2 = B.T @ fc2
+        fc2 = B @ fc2
+        fc2 = C @ fc2
+        fc2 = fc2.reshape((N, N, 3, 3))
         return fc2
 
     def run_frequencies(self, qmesh: Optional[tuple] = None):
