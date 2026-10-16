@@ -83,9 +83,9 @@ class HarmonicReciprocalReduced(HarmonicReciprocalBase):
         self._unitcell = phonopy_cell_to_structure(phonopy_obj.unitcell)
         self._null_space_basis = null_space_basis
 
+        # TODO: Need to check sum = 0
         if self._null_space_basis.shape[0] != len(self._unitcell.elements) * 3:
             raise RuntimeError("Size of null space basis not appropriate.")
-        # TODO: Need to check sum = 0
 
         self._reduced_basis = scipy.linalg.null_space(self._null_space_basis.T)
         self._proj_reduced = self._reduced_basis @ self._reduced_basis.T
@@ -95,22 +95,28 @@ class HarmonicReciprocalReduced(HarmonicReciprocalBase):
         prod = self._unitcell.positions.T @ q
         phase = np.repeat(np.exp(2 * np.pi * 1j * prod), 3)
         proj1 = phase.conj()[:, None] * self._proj_reduced * phase[None, :]
+
         eigvals, eigvecs = scipy.linalg.eigh(proj1)
         eigvecs = eigvecs[:, np.isclose(eigvals, 1.0)]
         proj_red = eigvecs @ eigvecs.conj().T
-        return proj_red
+        return proj_red, phase
 
     def _solve_eigen_equation(self, qpoints: np.ndarray) -> dict:
         """Solve eigenvalue equation for dynamical matrix."""
         # TODO: Check units in dynamical matrix used in phonopy.
         square_freqs = []
         for q in qpoints:
-            proj_red = self._projector_dynamical_matrix(q)
+            proj_red, phase = self._projector_dynamical_matrix(q)
             dyn = self._ph.get_dynamical_matrix_at_q(q)
             reduced_dyn = proj_red @ dyn @ proj_red
             square_w, eigvecs = scipy.linalg.eigh(reduced_dyn)
             square_w *= const_sq_angfreq_to_sq_freq_thz  # in THz
-            square_freqs.append(square_w)
+
+            inner_prod = eigvecs.T @ (phase[:, None] * self._null_space_basis)
+            ortho_rows = np.where(
+                np.all(np.isclose(inner_prod, 0.0, atol=1e-3), axis=1)
+            )[0]
+            square_freqs.append(square_w[ortho_rows])
 
         freqs = frequencies_from_eigvals(np.array(square_freqs))
         return freqs
@@ -128,8 +134,8 @@ class HarmonicReciprocalReduced(HarmonicReciprocalBase):
         self._frequencies = self._solve_eigen_equation(self._mesh_dict["qpoints"])
         self._print_frequencies()
 
-        # TODO: setter is correct?
-        # self._ph._mesh._frequencies = self._frequencies
+        # TODO: setter is correct?, Reduced number of frequencies is correct to use?
+        self._ph._mesh._frequencies = self._frequencies
         self._ph.run_total_dos()
 
         if only_frequencies:
