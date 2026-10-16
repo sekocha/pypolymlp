@@ -43,6 +43,10 @@ def phonopy_cell_to_structure(ph_cell: PhonopyAtoms) -> PolymlpStructure:
         types=types,
         volume=ph_cell.volume,
     )
+    try:
+        structure.masses = ph_cell.masses
+    except:
+        pass
     return structure
 
 
