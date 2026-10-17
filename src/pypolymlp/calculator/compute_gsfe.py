@@ -153,7 +153,7 @@ class PolymlpGSFE:
                 selective_dynamics_positions=self._sd_pos,
                 verbose=self._verbose,
             )
-            # go.change_basis_axis(go._basis_a[:, 2:3])
+            go.change_basis_axis(go._basis_a[:, 2:3])
             go.run(gtol=gtol * 1e-1, maxiter=10000)
             if go.success:
                 self._supercell_disp = go.structure
@@ -171,7 +171,7 @@ class PolymlpGSFE:
             selective_dynamics_positions=self._sd_pos,
             verbose=self._verbose,
         )
-        # go.change_basis_axis(go._basis_a[:, 2:3])
+        go.change_basis_axis(go._basis_a[:, 2:3])
         go.run(gtol=gtol, maxiter=maxiter)
         if self._verbose:
             go.print_residuals()

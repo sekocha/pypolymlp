@@ -54,9 +54,10 @@ def sample_real_space_distribution(
 
     # Calculate amplitudes.
     # Arbitrary setting for branches with imaginary frequencies.
-    amplitudes = np.ones(freq.shape) * 0.01
+    amplitudes = np.ones(freq.shape)
     rec_freq = np.array([1 / f for f in freq[nonzero]])
     amplitudes[nonzero] = const_amplitude * occ[nonzero] * rec_freq
+    amplitudes[~nonzero] = 0.001
 
     # Generate atomic displacements in normal coordinates.
     cov = np.diag(amplitudes)

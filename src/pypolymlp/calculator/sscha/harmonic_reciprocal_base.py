@@ -74,6 +74,8 @@ class HarmonicReciprocalBase(ABC):
             print("Imaginary frequencies (k-space):", flush=True)
             if len(match[0]) == 0:
                 print("[]", flush=True)
+            elif len(match[0]) > 100:
+                print("Found at many k-points:", len(match[0]), flush=True)
             else:
                 for q, w in zip(qpoints[match[0]], self._frequencies[match]):
                     print(q, w, flush=True)

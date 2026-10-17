@@ -80,6 +80,9 @@ class HarmonicRealReduced(HarmonicRealBase):
             supercell, properties, n_unitcells=n_unitcells, fc2=fc2, verbose=verbose
         )
         self._null_space_basis = null_space_basis
+        if np.any(~np.isclose(np.sum(self._null_space_basis, axis=0), 0.0)):
+            raise RuntimeError("Sum of each null space basis must be zero.")
+
         reduced_basis = scipy.linalg.null_space(self._null_space_basis.T)
 
         N3 = null_space_basis.shape[0]

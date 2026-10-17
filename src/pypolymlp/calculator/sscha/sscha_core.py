@@ -51,7 +51,6 @@ class SSCHACore(SSCHAParams):
         self._data_current = None
         self._sscha_log = []
         self._null_space_basis_supercell = None
-        self._proj_Z = None
 
         self._supercell, self._phonopy = self._set_supercell_and_phonopy()
         self._symfc = self._set_symfc()
@@ -88,12 +87,7 @@ class SSCHACore(SSCHAParams):
                         tmp_basis.extend(t)
                 sup_null_space_basis.append(tmp_basis)
             sup_null_space_basis = np.array(sup_null_space_basis).T
-
             self._null_space_basis_supercell, _ = np.linalg.qr(sup_null_space_basis)
-            self._proj_Z = (
-                np.eye(self._null_space_basis_supercell.shape[0])
-                - self._null_space_basis_supercell @ self._null_space_basis_supercell.T
-            )
 
         return (self._supercell, self._phonopy)
 
@@ -111,14 +105,15 @@ class SSCHACore(SSCHAParams):
 
         if self._null_space_basis is not None:
             if self._verbose:
-                print("Apply constraints.", flush=True)
-            self._symfc = apply_null_space(
-                self._symfc, self._null_space_basis_supercell
-            )
-            if self._verbose:
                 print("Translationally independent atoms:", flush=True)
                 for i in self._symfc.p2s_map:
                     print(i, self._supercell.positions[:, i], flush=True)
+                print("Apply constraints.", flush=True)
+
+            # TODO: The following null space is correct in alloy or ionic systems?
+            self._symfc = apply_null_space(
+                self._symfc, self._null_space_basis_supercell
+            )
 
         self._n_coeffs = self._symfc.basis_set[2].basis_set.shape[1]
         if self._verbose and self._n_coeffs < 1000:
@@ -264,6 +259,9 @@ class SSCHACore(SSCHAParams):
 
     def _run_solver_fc2(self):
         """Estimate FC2 from a forces-displacements dataset."""
+        if self._verbose:
+            print("Running Symfc solver.", flush=True)
+
         self._symfc.displacements = self._ph_real.displacements.transpose((0, 2, 1))
         self._symfc.forces = self._ph_real.forces.transpose((0, 2, 1))
         self._symfc.solve(
@@ -280,14 +278,38 @@ class SSCHACore(SSCHAParams):
         norm2 = np.linalg.norm(fc2_init)
         return norm1 / norm2
 
-    def _single_iter(self, temp: float = 1000, n_samples: int = 100) -> np.ndarray:
-        """Run a standard single sscha iteration."""
+    def _exist_many_imaginary_modes(
+        self,
+        tol_freq: float = -0.1,
+        tol_ratio: float = 0.1,
+    ):
+        """Check whether many imaginary modes."""
+        if self._null_space_basis is None:
+            return False
+
+        freqs = self._ph_real.frequencies
+        ratio = np.count_nonzero(freqs < tol_freq) / len(freqs)
+        if ratio > tol_ratio:
+            return True
+        return False
+
+    def _run_single_core(self, temp: float = 1000, n_samples: int = 100) -> np.ndarray:
+        """Run the core part of a standard single sscha iteration."""
         self._ph_real.force_constants = self._fc2
         self._ph_real.run(temp=temp, n_samples=n_samples, eliminate_outliers=True)
         self._data_current = self._compute_sscha_properties(temp=temp)
 
-        if self._verbose:
-            print("Running symfc solver.", flush=True)
+    def _single_iter(self, temp: float = 1000, n_samples: int = 100) -> np.ndarray:
+        """Run a standard single sscha iteration."""
+        self._run_single_core(temp=temp, n_samples=n_samples)
+
+        if self._exist_many_imaginary_modes():
+            if self._verbose:
+                print("Stop running symfc solver.", flush=True)
+            self._data_current.delta = 1.0
+            self._sscha_log.append(self._data_current)
+            return self._fc2
+
         fc2_new = self._run_solver_fc2()
         self._fc2 = fc2_new * self._mixing + self._fc2 * (1 - self._mixing)
 
@@ -297,44 +319,9 @@ class SSCHACore(SSCHAParams):
 
     def _final_iter(self, temp: float = 1000, n_samples: int = 100) -> np.ndarray:
         """Run the final iteration."""
-        self._ph_real.force_constants = self._fc2
-        self._ph_real.run(temp=temp, n_samples=n_samples, eliminate_outliers=True)
-        self._data_current = self._compute_sscha_properties(temp=temp)
+        self._run_single_core(temp=temp, n_samples=n_samples)
         self._sscha_log.append(self._data_current)
         return self
-
-    def _print_separator(self, n_iter: int):
-        """Print separator between SSCHA iterations."""
-        txt = "------------------ Iteration : " + str(n_iter) + " ------------------"
-        print(txt, flush=True)
-
-    def _print_progress(self):
-        """Print progress in SSCHA iterations."""
-        disp_norms = np.linalg.norm(self._ph_real.displacements, axis=1)
-
-        data = self._data_current
-        print("temperature:          ", "{:.1f}".format(data.temperature), flush=True)
-        print("number of samples:    ", disp_norms.shape[0], flush=True)
-        print("convergence score:    ", "{:.6f}".format(data.delta), flush=True)
-        print("displacements:")
-        print("- average disp. (Ang.):", np.round(np.mean(disp_norms), 6), flush=True)
-        print("- max disp. (Ang.):    ", np.round(np.max(disp_norms), 6), flush=True)
-        if data.imaginary is not None:
-            print("imaginary:             ", data.imaginary, flush=True)
-
-        print("thermodynamic_properties:", flush=True)
-        prefix = "- free energy (harmonic, kJ/mol):   "
-        print(prefix, "{:.6f}".format(data.harmonic_free_energy), flush=True)
-        prefix = "- free energy (anharmonic, kJ/mol): "
-        print(prefix, "{:.6f}".format(data.anharmonic_free_energy), flush=True)
-        prefix = "- free energy (sscha, kJ/mol):      "
-        print(prefix, "{:.6f}".format(data.free_energy), flush=True)
-
-        print(
-            "Free energy (+ static potential, kJ/mol):",
-            "{:.6f}".format(data.free_energy + data.static_potential),
-            flush=True,
-        )
 
     def precondition(
         self,
@@ -357,10 +344,10 @@ class SSCHACore(SSCHAParams):
             if self._verbose:
                 self._print_separator(n_iter)
             self._fc2 = self._single_iter(temp=temp, n_samples=n_samples)
+            delta = self._data_current.delta
             if self._verbose:
                 self._print_progress()
 
-            delta = self._data_current.delta
             n_iter += 1
 
         return self
@@ -387,10 +374,13 @@ class SSCHACore(SSCHAParams):
                 if n_samples > 10000:
                     print("Number of samples:", n_samples, flush=True)
             self._fc2 = self._single_iter(temp=temp, n_samples=n_samples)
+            delta = self._data_current.delta
             if self._verbose:
                 self._print_progress()
 
-            delta = self._data_current.delta
+            if self._exist_many_imaginary_modes():
+                break
+
             n_iter += 1
 
         converge = True if delta < self._tol else False
@@ -435,18 +425,6 @@ class SSCHACore(SSCHAParams):
             )
             self._phonopy.run_projected_dos()
             self._phonopy.write_projected_dos(filename=path + "/projected_dos.dat")
-
-    def _print_final_results(self):
-        """Print SSCHA results for current temperature."""
-        data = self._data_current
-        freq = self.run_frequencies(qmesh=self._mesh)
-        print("---------------- sscha runs finished ----------------", flush=True)
-        print("Temperature:      ", data.temperature, flush=True)
-        print("Free energy:      ", data.free_energy, flush=True)
-        print("Convergence:      ", data.converge, flush=True)
-        print("Frequency (min):  ", "{:.6f}".format(np.min(freq)), flush=True)
-        print("Frequency (max):  ", "{:.6f}".format(np.max(freq)), flush=True)
-        print("-----------------------------------------------------", flush=True)
 
     def save_results(self):
         """Save SSCHA results for current temperature."""
@@ -505,3 +483,48 @@ class SSCHACore(SSCHAParams):
     def delta(self):
         """Return convergence delta."""
         return self._data_current.delta
+
+    def _print_separator(self, n_iter: int):
+        """Print separator between SSCHA iterations."""
+        txt = "------------------ Iteration : " + str(n_iter) + " ------------------"
+        print(txt, flush=True)
+
+    def _print_progress(self):
+        """Print progress in SSCHA iterations."""
+        disp_norms = np.linalg.norm(self._ph_real.displacements, axis=1)
+
+        data = self._data_current
+        print("temperature:          ", "{:.1f}".format(data.temperature), flush=True)
+        print("number of samples:    ", disp_norms.shape[0], flush=True)
+        print("convergence score:    ", "{:.6f}".format(data.delta), flush=True)
+        print("displacements:")
+        print("- average disp. (Ang.):", np.round(np.mean(disp_norms), 6), flush=True)
+        print("- max disp. (Ang.):    ", np.round(np.max(disp_norms), 6), flush=True)
+        if data.imaginary is not None:
+            print("imaginary:             ", data.imaginary, flush=True)
+
+        print("thermodynamic_properties:", flush=True)
+        prefix = "- free energy (harmonic, kJ/mol):   "
+        print(prefix, "{:.6f}".format(data.harmonic_free_energy), flush=True)
+        prefix = "- free energy (anharmonic, kJ/mol): "
+        print(prefix, "{:.6f}".format(data.anharmonic_free_energy), flush=True)
+        prefix = "- free energy (sscha, kJ/mol):      "
+        print(prefix, "{:.6f}".format(data.free_energy), flush=True)
+
+        print(
+            "Free energy (+ static potential, kJ/mol):",
+            "{:.6f}".format(data.free_energy + data.static_potential),
+            flush=True,
+        )
+
+    def _print_final_results(self):
+        """Print SSCHA results for current temperature."""
+        data = self._data_current
+        freq = self.run_frequencies(qmesh=self._mesh)
+        print("---------------- sscha runs finished ----------------", flush=True)
+        print("Temperature:      ", data.temperature, flush=True)
+        print("Free energy:      ", data.free_energy, flush=True)
+        print("Convergence:      ", data.converge, flush=True)
+        print("Frequency (min):  ", "{:.6f}".format(np.min(freq)), flush=True)
+        print("Frequency (max):  ", "{:.6f}".format(np.max(freq)), flush=True)
+        print("-----------------------------------------------------", flush=True)
