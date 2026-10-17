@@ -17,7 +17,10 @@ from pypolymlp.calculator.sscha.harmonic_reciprocal import (
 from pypolymlp.calculator.sscha.sscha_data import SSCHAData
 from pypolymlp.calculator.sscha.sscha_io import save_sscha_yaml
 from pypolymlp.calculator.sscha.sscha_params import SSCHAParams
-from pypolymlp.calculator.sscha.symfc_null_space import apply_null_space
+from pypolymlp.calculator.sscha.symfc_null_space import (
+    apply_null_space,
+    get_supercell_null_space,
+)
 from pypolymlp.utils.phonopy_utils import (
     phonopy_cell_to_structure,
     structure_to_phonopy_cell,
@@ -78,17 +81,10 @@ class SSCHACore(SSCHAParams):
         self._supercell = self._sscha_params.supercell = supercell_pmlp
 
         if self._null_space_basis is not None:
-            sup_null_space_basis = []
-            for basis_element in self._null_space_basis.T:
-                tmp_basis = []
-                tmp = basis_element.reshape((-1, 3))
-                for t in tmp:
-                    for i in range(self._n_unitcells):
-                        tmp_basis.extend(t)
-                sup_null_space_basis.append(tmp_basis)
-            sup_null_space_basis = np.array(sup_null_space_basis).T
-            self._null_space_basis_supercell, _ = np.linalg.qr(sup_null_space_basis)
-
+            self._null_space_basis_supercell = get_supercell_null_space(
+                self._null_space_basis,
+                self._n_unitcells,
+            )
         return (self._supercell, self._phonopy)
 
     def _set_symfc(self):

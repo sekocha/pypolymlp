@@ -110,3 +110,18 @@ def apply_null_space_stable(symfc: Symfc, null_space_basis: np.ndarray):
     )
     symfc.basis_set[2]._blocked_basis_set = block
     return symfc
+
+
+def get_supercell_null_space(null_space_basis: np.ndarray, n_unitcells: int):
+    """Convert null space basis in unit cell to basis in supercell."""
+    sup_null_space_basis = []
+    for basis_element in null_space_basis.T:
+        tmp_basis = []
+        tmp = basis_element.reshape((-1, 3))
+        for t in tmp:
+            for i in range(n_unitcells):
+                tmp_basis.extend(t)
+        sup_null_space_basis.append(tmp_basis)
+    sup_null_space_basis = np.array(sup_null_space_basis).T
+    null_space_basis_supercell, _ = np.linalg.qr(sup_null_space_basis)
+    return null_space_basis_supercell
