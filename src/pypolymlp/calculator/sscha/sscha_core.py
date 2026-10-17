@@ -116,7 +116,9 @@ class SSCHACore(SSCHAParams):
                 self._symfc, self._null_space_basis_supercell
             )
             if self._verbose:
-                print("Done.", flush=True)
+                print("Translationally independent atoms:", flush=True)
+                for i in self._symfc.p2s_map:
+                    print(i, self._supercell.positions[:, i], flush=True)
 
         self._n_coeffs = self._symfc.basis_set[2].basis_set.shape[1]
         if self._verbose and self._n_coeffs < 1000:
@@ -195,6 +197,13 @@ class SSCHACore(SSCHAParams):
         self._fc2 = self._apply_fc_constraints(self._fc2)
         return self
 
+    def _recover_fc2(self, coefs: np.ndarray):
+        """Recover FC2 from coefficients for basis set."""
+        basis_set = self._symfc.basis_set[2]
+        compr_mat = basis_set.compression_matrix
+        fc = basis_set.basis_set @ coefs
+        return (compr_mat @ fc).reshape((self._n_atom, self._n_atom, 3, 3))
+
     def _apply_fc_constraints(self, fc2_: np.ndarray):
         """Apply constraints to force constants."""
         if self._symfc is None:
@@ -264,13 +273,6 @@ class SSCHACore(SSCHAParams):
             use_gradient_solver=self._symfc_use_gradient_solver,
         )
         return self._symfc.force_constants[2]
-
-    def _recover_fc2(self, coefs: np.ndarray):
-        """Recover FC2 from coefficients for basis set."""
-        basis_set = self._symfc.basis_set[2]
-        compr_mat = basis_set.compression_matrix
-        fc = basis_set.basis_set @ coefs
-        return (compr_mat @ fc).reshape((self._n_atom, self._n_atom, 3, 3))
 
     def _convergence_score(self, fc2_init: np.ndarray, fc2_update: np.ndarray):
         """Compute convergence score."""
