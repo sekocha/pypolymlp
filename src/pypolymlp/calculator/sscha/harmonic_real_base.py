@@ -328,3 +328,18 @@ class HarmonicRealBase(ABC):
     def frequencies(self):
         """Return phonon frequencies calculated from effective harmonic H."""
         return self._mesh_dict["frequencies"]
+
+    def exist_many_imaginary_modes(
+        self,
+        tol_freq: float = -0.1,
+        tol_ratio: float = 0.1,
+    ):
+        """Check whether many imaginary modes."""
+        #        if self._null_space_basis is None:
+        #            return False
+        #
+        freqs = self.frequencies
+        ratio = np.count_nonzero(freqs < tol_freq) / len(freqs)
+        if ratio > tol_ratio:
+            return True
+        return False

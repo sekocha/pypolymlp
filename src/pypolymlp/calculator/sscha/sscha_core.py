@@ -17,9 +17,11 @@ from pypolymlp.calculator.sscha.harmonic_reciprocal import (
 from pypolymlp.calculator.sscha.sscha_data import SSCHAData
 from pypolymlp.calculator.sscha.sscha_io import save_sscha_yaml
 from pypolymlp.calculator.sscha.sscha_params import SSCHAParams
-from pypolymlp.calculator.sscha.symfc_null_space import (
+from pypolymlp.calculator.sscha.symfc_utils_O2 import (
     apply_null_space,
     get_supercell_null_space,
+    project_fc2_space,
+    recover_fc2,
 )
 from pypolymlp.utils.phonopy_utils import (
     phonopy_cell_to_structure,
@@ -53,7 +55,7 @@ class SSCHACore(SSCHAParams):
         self._fc2 = None
         self._data_current = None
         self._sscha_log = []
-        self._null_space_basis_supercell = None
+        self._null_space_basis_sup = None
 
         self._supercell, self._phonopy = self._set_supercell_and_phonopy()
         self._symfc = self._set_symfc()
@@ -81,7 +83,7 @@ class SSCHACore(SSCHAParams):
         self._supercell = self._sscha_params.supercell = supercell_pmlp
 
         if self._null_space_basis is not None:
-            self._null_space_basis_supercell = get_supercell_null_space(
+            self._null_space_basis_sup = get_supercell_null_space(
                 self._null_space_basis,
                 self._n_unitcells,
             )
@@ -107,9 +109,7 @@ class SSCHACore(SSCHAParams):
                 print("Apply constraints.", flush=True)
 
             # TODO: The following null space is correct in alloy or ionic systems?
-            self._symfc = apply_null_space(
-                self._symfc, self._null_space_basis_supercell
-            )
+            self._symfc = apply_null_space(self._symfc, self._null_space_basis_sup)
 
         self._n_coeffs = self._symfc.basis_set[2].basis_set.shape[1]
         if self._verbose and self._n_coeffs < 1000:
@@ -141,7 +141,7 @@ class SSCHACore(SSCHAParams):
             self._ph_real = HarmonicRealReduced(
                 self._supercell,
                 self._prop,
-                self._null_space_basis_supercell,
+                self._null_space_basis_sup,
                 verbose=self._verbose,
             )
             self._ph_recip = HarmonicReciprocalReduced(
@@ -157,7 +157,7 @@ class SSCHACore(SSCHAParams):
         if fc2 is not None:
             if self._verbose:
                 print("Initial FCs: Numpy array", flush=True)
-            self._fc2 = self._apply_fc_constraints(fc2)
+            self._fc2 = project_fc2_space(self._symfc, fc2)
             return self
 
         algorithm = self._init_fc_algorithm
@@ -168,48 +168,28 @@ class SSCHACore(SSCHAParams):
             if self._verbose:
                 print("Initial FCs: Harmonic", flush=True)
             self._fc2 = self._ph_recip.produce_harmonic_force_constants()
+
         elif algorithm == "const":
             if self._verbose:
                 print("Initial FCs: Constants", flush=True)
             coeffs_fc2 = np.ones(self._n_coeffs) * 10
             coeffs_fc2[1::2] *= -1
-            self._fc2 = self._recover_fc2(coeffs_fc2)
+            self._fc2 = recover_fc2(self._symfc, coeffs_fc2)
+
         elif algorithm == "random":
             if self._verbose:
                 print("Initial FCs: Random", flush=True)
             coeffs_fc2 = (np.random.rand(self._n_coeffs) - 0.5) * 20
-            self._fc2 = self._recover_fc2(coeffs_fc2)
+            self._fc2 = recover_fc2(self._symfc, coeffs_fc2)
+
         elif algorithm == "file":
             filename = self._init_fc_file
             if self._verbose:
                 print("Initial FCs: File", filename, flush=True)
             self._fc2 = read_fc2_from_hdf5(filename)
 
-        self._fc2 = self._apply_fc_constraints(self._fc2)
+        self._fc2 = project_fc2_space(self._symfc, self._fc2)
         return self
-
-    def _recover_fc2(self, coefs: np.ndarray):
-        """Recover FC2 from coefficients for basis set."""
-        basis_set = self._symfc.basis_set[2]
-        compr_mat = basis_set.compression_matrix
-        fc = basis_set.basis_set @ coefs
-        return (compr_mat @ fc).reshape((self._n_atom, self._n_atom, 3, 3))
-
-    def _apply_fc_constraints(self, fc2_: np.ndarray):
-        """Apply constraints to force constants."""
-        if self._symfc is None:
-            raise RuntimeError("Symfc instance not found.")
-
-        N = fc2_.shape[0]
-        B = self._symfc.basis_set[2].basis_set
-        C = self._symfc.basis_set[2].compression_matrix
-
-        fc2 = C.T @ fc2_.reshape(-1)
-        fc2 = B.T @ fc2
-        fc2 = B @ fc2
-        fc2 = C @ fc2
-        fc2 = fc2.reshape((N, N, 3, 3))
-        return fc2
 
     def run_frequencies(self, qmesh: Optional[tuple] = None):
         """Calculate effective phonon frequencies from FC2."""
@@ -274,32 +254,21 @@ class SSCHACore(SSCHAParams):
         norm2 = np.linalg.norm(fc2_init)
         return norm1 / norm2
 
-    def _exist_many_imaginary_modes(
-        self,
-        tol_freq: float = -0.1,
-        tol_ratio: float = 0.1,
-    ):
-        """Check whether many imaginary modes."""
-        if self._null_space_basis is None:
-            return False
-
-        freqs = self._ph_real.frequencies
-        ratio = np.count_nonzero(freqs < tol_freq) / len(freqs)
-        if ratio > tol_ratio:
-            return True
-        return False
-
     def _run_single_core(self, temp: float = 1000, n_samples: int = 100) -> np.ndarray:
         """Run the core part of a standard single sscha iteration."""
         self._ph_real.force_constants = self._fc2
         self._ph_real.run(temp=temp, n_samples=n_samples, eliminate_outliers=True)
         self._data_current = self._compute_sscha_properties(temp=temp)
+        return self
 
     def _single_iter(self, temp: float = 1000, n_samples: int = 100) -> np.ndarray:
         """Run a standard single sscha iteration."""
         self._run_single_core(temp=temp, n_samples=n_samples)
 
-        if self._exist_many_imaginary_modes():
+        if (
+            self._null_space_basis is not None
+            and self._ph_real.exist_many_imaginary_modes()
+        ):
             if self._verbose:
                 print("Stop running symfc solver.", flush=True)
             self._data_current.delta = 1.0
@@ -374,7 +343,10 @@ class SSCHACore(SSCHAParams):
             if self._verbose:
                 self._print_progress()
 
-            if self._exist_many_imaginary_modes():
+            if (
+                self._null_space_basis is not None
+                and self._ph_real.exist_many_imaginary_modes()
+            ):
                 break
 
             n_iter += 1
@@ -413,14 +385,15 @@ class SSCHACore(SSCHAParams):
         self._phonopy.force_constants = self._fc2
         self._phonopy.run_total_dos()
         self._phonopy.write_total_dos(filename=filename)
-        if self._save_pdos:
-            if qmesh is None:
-                qmesh = self._mesh
-            self._phonopy.run_mesh(
-                qmesh, is_mesh_symmetry=False, with_eigenvectors=True
-            )
-            self._phonopy.run_projected_dos()
-            self._phonopy.write_projected_dos(filename=path + "/projected_dos.dat")
+        if not self._save_pdos:
+            return self
+
+        if qmesh is None:
+            qmesh = self._mesh
+        self._phonopy.run_mesh(qmesh, is_mesh_symmetry=False, with_eigenvectors=True)
+        self._phonopy.run_projected_dos()
+        self._phonopy.write_projected_dos(filename=path + "/projected_dos.dat")
+        return self
 
     def save_results(self):
         """Save SSCHA results for current temperature."""

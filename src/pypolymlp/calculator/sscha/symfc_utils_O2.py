@@ -125,3 +125,30 @@ def get_supercell_null_space(null_space_basis: np.ndarray, n_unitcells: int):
     sup_null_space_basis = np.array(sup_null_space_basis).T
     null_space_basis_supercell, _ = np.linalg.qr(sup_null_space_basis)
     return null_space_basis_supercell
+
+
+def recover_fc2(symfc: Symfc, coefs: np.ndarray):
+    """Recover FC2 from coefficients for basis set."""
+    basis_set = symfc.basis_set[2]
+    compr_mat = basis_set.compression_matrix
+
+    n_atom = np.sqrt(compr_mat.shape[0] // 9)
+    fc = basis_set.basis_set @ coefs
+    return (compr_mat @ fc).reshape((n_atom, n_atom, 3, 3))
+
+
+def project_fc2_space(symfc: Symfc, fc2_: np.ndarray):
+    """Apply basis set to force constants."""
+    if symfc is None:
+        raise RuntimeError("Symfc instance not found.")
+
+    N = fc2_.shape[0]
+    B = symfc.basis_set[2].basis_set
+    C = symfc.basis_set[2].compression_matrix
+
+    fc2 = C.T @ fc2_.reshape(-1)
+    fc2 = B.T @ fc2
+    fc2 = B @ fc2
+    fc2 = C @ fc2
+    fc2 = fc2.reshape((N, N, 3, 3))
+    return fc2
