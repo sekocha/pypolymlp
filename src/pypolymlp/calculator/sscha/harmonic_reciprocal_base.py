@@ -1,5 +1,6 @@
 """Base class for harmonic contribution in reciprocal space."""
 
+import os
 from abc import ABC, abstractmethod
 from typing import Optional
 
@@ -75,10 +76,11 @@ class HarmonicReciprocalBase(ABC):
             if len(match[0]) == 0:
                 print("[]", flush=True)
             elif len(match[0]) > 100:
-                print("Found at many k-points:", len(match[0]), flush=True)
+                print("- Found at many k-points:", len(match[0]), flush=True)
             else:
                 for q, w in zip(qpoints[match[0]], self._frequencies[match]):
-                    print(q, w, flush=True)
+                    print("- q:", tuple(q), flush=True)
+                    print("  w:", "{:.6f}".format(w), flush=True)
 
             zero_freqs = self._frequencies[np.abs(self._frequencies) < tol]
             if len(zero_freqs) > 10:
@@ -192,3 +194,23 @@ class HarmonicReciprocalBase(ABC):
         tol = -0.01
         n_imag = np.count_nonzero(self._frequencies < tol)
         return (n_imag / self._frequencies.size) > 1e-5
+
+    def calc_save_dos(
+        self,
+        filename: str = "total_dos.dat",
+        qmesh: tuple = (10, 10, 10),
+        save_pdos: bool = False,
+    ):
+        """Calculate and save DOS and PDOS."""
+        path = "/".join(filename.split("/")[:-1])
+        os.makedirs(path, exist_ok=True)
+
+        self._ph.run_total_dos()
+        self._ph.write_total_dos(filename=filename)
+        if not save_pdos:
+            return self
+
+        self._ph.run_mesh(qmesh, is_mesh_symmetry=False, with_eigenvectors=True)
+        self._ph.run_projected_dos()
+        self._ph.write_projected_dos(filename=path + "/projected_dos.dat")
+        return self

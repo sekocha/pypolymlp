@@ -234,6 +234,13 @@ class SSCHACore(SSCHAParams):
 
         return data
 
+    def _run_single_core(self, temp: float = 1000, n_samples: int = 100) -> np.ndarray:
+        """Run the core part of a standard single sscha iteration."""
+        self._ph_real.force_constants = self._fc2
+        self._ph_real.run(temp=temp, n_samples=n_samples, eliminate_outliers=True)
+        self._data_current = self._compute_sscha_properties(temp=temp)
+        return self
+
     def _run_solver_fc2(self):
         """Estimate FC2 from a forces-displacements dataset."""
         if self._verbose:
@@ -254,13 +261,6 @@ class SSCHACore(SSCHAParams):
         norm1 = np.linalg.norm(fc2_update - fc2_init)
         norm2 = np.linalg.norm(fc2_init)
         return norm1 / norm2
-
-    def _run_single_core(self, temp: float = 1000, n_samples: int = 100) -> np.ndarray:
-        """Run the core part of a standard single sscha iteration."""
-        self._ph_real.force_constants = self._fc2
-        self._ph_real.run(temp=temp, n_samples=n_samples, eliminate_outliers=True)
-        self._data_current = self._compute_sscha_properties(temp=temp)
-        return self
 
     def _single_iter(self, temp: float = 1000, n_samples: int = 100) -> np.ndarray:
         """Run a standard single sscha iteration."""
@@ -370,37 +370,22 @@ class SSCHACore(SSCHAParams):
 
         return self
 
-    def _write_dos(
-        self,
-        filename: str = "total_dos.dat",
-        qmesh: Optional[tuple] = None,
-    ):
-        """Save phonon DOS file."""
-        path = "/".join(filename.split("/")[:-1])
-        os.makedirs(path, exist_ok=True)
-
-        self._phonopy.force_constants = self._fc2
-        self._phonopy.run_total_dos()
-        self._phonopy.write_total_dos(filename=filename)
-        if not self._save_pdos:
-            return self
-
-        if qmesh is None:
-            qmesh = self._mesh
-        self._phonopy.run_mesh(qmesh, is_mesh_symmetry=False, with_eigenvectors=True)
-        self._phonopy.run_projected_dos()
-        self._phonopy.write_projected_dos(filename=path + "/projected_dos.dat")
-        return self
-
     def save_results(self):
         """Save SSCHA results for current temperature."""
         temp = self._data_current.temperature
         path_log = self._path + "/" + str(temp) + "/"
         os.makedirs(path_log, exist_ok=True)
+
         filename = path_log + "sscha_results.yaml"
         save_sscha_yaml(self._sscha_params, self.logs, filename=filename)
         write_fc2_to_hdf5(self.force_constants, filename=path_log + "fc2.hdf5")
-        self._write_dos(filename=path_log + "total_dos.dat")
+
+        self._ph_recip.force_constants = self._fc2
+        self._ph_recip.calc_save_dos(
+            filename=path_log + "total_dos.dat",
+            qmesh=self._mesh,
+            save_pdos=self._save_pdos,
+        )
         if self._verbose:
             self._print_final_results()
 
@@ -477,11 +462,8 @@ class SSCHACore(SSCHAParams):
         prefix = "- free energy (sscha, kJ/mol):      "
         print(prefix, "{:.6f}".format(data.free_energy), flush=True)
 
-        print(
-            "Free energy (+ static potential, kJ/mol):",
-            "{:.6f}".format(data.free_energy + data.static_potential),
-            flush=True,
-        )
+        value = "{:.6f}".format(data.free_energy + data.static_potential)
+        print("Free energy (+ static potential, kJ/mol):", value, flush=True)
 
     def _print_final_results(self):
         """Print SSCHA results for current temperature."""
@@ -494,3 +476,23 @@ class SSCHACore(SSCHAParams):
         print("Frequency (min):  ", "{:.6f}".format(np.min(freq)), flush=True)
         print("Frequency (max):  ", "{:.6f}".format(np.max(freq)), flush=True)
         print("-----------------------------------------------------", flush=True)
+
+
+#    def _write_dos(self,filename: str = "total_dos.dat"):
+#        """Save phonon DOS file."""
+#        return self
+#
+#        # path = "/".join(filename.split("/")[:-1])
+#        # os.makedirs(path, exist_ok=True)
+#
+#        # self._phonopy.force_constants = self._fc2
+#        # self._phonopy.run_total_dos()
+#        # self._phonopy.write_total_dos(filename=filename)
+#        # if not self._save_pdos:
+#        #     return self
+#
+#        # if qmesh is None:
+#        #     qmesh = self._mesh
+#        # self._phonopy.run_mesh(qmesh, is_mesh_symmetry=False, with_eigenvectors=True)
+#        # self._phonopy.run_projected_dos()
+#        # self._phonopy.write_projected_dos(filename=path + "/projected_dos.dat")

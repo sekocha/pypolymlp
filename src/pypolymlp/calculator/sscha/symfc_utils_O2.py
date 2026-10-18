@@ -138,7 +138,13 @@ def recover_fc2(symfc: Symfc, coefs: np.ndarray):
 
 
 def project_fc2_space(symfc: Symfc, fc2_: np.ndarray):
-    """Apply basis set to force constants."""
+    """Apply basis set to force constants.
+
+    The projected force constants are calculated as follows.
+    fc2_projected = P @ fc2
+                  = (C @ B) @ (C @ B).T @ fc2
+                  = C @ B @ B.T @ C.T @ fc2
+    """
     if symfc is None:
         raise RuntimeError("Symfc instance not found.")
 
