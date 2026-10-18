@@ -106,18 +106,11 @@ class HarmonicReciprocalReduced(HarmonicReciprocalBase):
             proj_red, phase = self._projector_dynamical_matrix(q)
             dyn = self._ph.get_dynamical_matrix_at_q(q)
             reduced_dyn = proj_red @ dyn @ proj_red
-
-            # square_w = scipy.linalg.eigh(reduced_dyn, eigvals_only=True)
-            # square_w *= const_sq_angfreq_to_sq_freq_thz  # in THz
-            # square_freqs.append(square_w[np.abs(square_w) < 1e-5])
-
             square_w, eigvecs = scipy.linalg.eigh(reduced_dyn)
             square_w *= const_sq_angfreq_to_sq_freq_thz  # in THz
 
             inner_prod = eigvecs.T @ (phase[:, None] * self._null_space_basis)
-            ortho_rows = np.where(
-                np.all(np.isclose(inner_prod, 0.0, atol=1e-6), axis=1)
-            )[0]
+            ortho_rows = np.where(np.all(np.isclose(inner_prod, 0.0), axis=1))[0]
             square_freqs.append(square_w[ortho_rows])
 
         freqs = frequencies_from_eigvals(np.array(square_freqs))

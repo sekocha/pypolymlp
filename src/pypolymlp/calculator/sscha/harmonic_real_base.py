@@ -335,9 +335,6 @@ class HarmonicRealBase(ABC):
         tol_ratio: float = 0.1,
     ):
         """Check whether many imaginary modes."""
-        #        if self._null_space_basis is None:
-        #            return False
-        #
         freqs = self.frequencies
         ratio = np.count_nonzero(freqs < tol_freq) / len(freqs)
         if ratio > tol_ratio:

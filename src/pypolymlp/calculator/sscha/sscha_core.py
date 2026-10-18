@@ -55,12 +55,13 @@ class SSCHACore(SSCHAParams):
         self._fc2 = None
         self._data_current = None
         self._sscha_log = []
-        self._null_space_basis_sup = None
 
         self._supercell, self._phonopy = self._set_supercell_and_phonopy()
         self._symfc = self._set_symfc()
         self._set_num_samples()
         self._ph_real, self._ph_recip = self._set_harmonic_calculators()
+
+        self._null_space_basis_sup = None
 
     def _set_supercell_and_phonopy(self):
         """Set supercell."""
@@ -265,15 +266,13 @@ class SSCHACore(SSCHAParams):
         """Run a standard single sscha iteration."""
         self._run_single_core(temp=temp, n_samples=n_samples)
 
-        if (
-            self._null_space_basis is not None
-            and self._ph_real.exist_many_imaginary_modes()
-        ):
-            if self._verbose:
-                print("Stop running symfc solver.", flush=True)
-            self._data_current.delta = 1.0
-            self._sscha_log.append(self._data_current)
-            return self._fc2
+        if self._null_space_basis is not None:
+            if self._ph_real.exist_many_imaginary_modes():
+                if self._verbose:
+                    print("Stop running symfc solver.", flush=True)
+                self._data_current.delta = 1.0
+                self._sscha_log.append(self._data_current)
+                return self._fc2
 
         fc2_new = self._run_solver_fc2()
         self._fc2 = fc2_new * self._mixing + self._fc2 * (1 - self._mixing)
@@ -340,16 +339,14 @@ class SSCHACore(SSCHAParams):
                     print("Number of samples:", n_samples, flush=True)
             self._fc2 = self._single_iter(temp=temp, n_samples=n_samples)
             delta = self._data_current.delta
+            n_iter += 1
+
             if self._verbose:
                 self._print_progress()
 
-            if (
-                self._null_space_basis is not None
-                and self._ph_real.exist_many_imaginary_modes()
-            ):
-                break
-
-            n_iter += 1
+            if self._null_space_basis is not None:
+                if self._ph_real.exist_many_imaginary_modes():
+                    break
 
         converge = True if delta < self._tol else False
         if not converge:
