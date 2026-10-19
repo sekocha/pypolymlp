@@ -368,3 +368,12 @@ class GeometryOptimization:
         self._x0 = self._basis.init_coeffs
         self._scale = self._set_scale(scale_axis=self._scale_axis)
         return self
+
+    def change_basis_fractional_coordinates(self, basis_f: np.ndarray):
+        """Change basis set for positions."""
+        self._basis.basis_f = basis_f
+        self._basis_f = self._basis.basis_f
+        self._basis_size = self._basis.basis_size
+        self._x0 = self._basis.init_coeffs
+        # self._scale = self._set_scale(scale_axis=self._scale_axis)
+        return self

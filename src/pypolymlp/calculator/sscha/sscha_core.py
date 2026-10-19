@@ -169,6 +169,7 @@ class SSCHACore(SSCHAParams):
             if self._verbose:
                 print("Initial FCs: Harmonic", flush=True)
             self._fc2 = self._ph_recip.produce_harmonic_force_constants()
+            # symmetrize_force_constants in phonopy.
 
         elif algorithm == "const":
             if self._verbose:
