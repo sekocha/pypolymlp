@@ -373,7 +373,9 @@ class GeometryOptimization:
         """Change basis set for positions."""
         self._basis.basis_f = basis_f
         self._basis_f = self._basis.basis_f
+
         self._basis_size = self._basis.basis_size
+        self._basis_size_f = self._basis.basis_size_f
         self._x0 = self._basis.init_coeffs
-        # self._scale = self._set_scale(scale_axis=self._scale_axis)
+        self._scale = self._set_scale(scale_axis=self._scale_axis)
         return self

@@ -173,6 +173,22 @@ class BasisSetGO:
         """
         return self._basis_f
 
+    @basis_f.setter
+    def basis_f(self, basis_f: np.ndarray):
+        """Setter of axis basis set.
+
+        This can be used to manually set a basis set for axis.
+        """
+        # TODO: CHECK orthonomality
+        self._basis_f = basis_f
+        self._basis_size_f = basis_f.shape[1]
+
+        self._basis_size = 0
+        if self._basis_f is not None:
+            self._basis_size += self._basis_f.shape[1]
+        if self._basis_a is not None:
+            self._basis_size += self._basis_a.shape[1]
+
     @property
     def basis_size(self):
         """Return basis set size."""

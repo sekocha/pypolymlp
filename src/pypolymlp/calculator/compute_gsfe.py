@@ -154,6 +154,17 @@ class PolymlpGSFE:
                 verbose=self._verbose,
             )
             go.change_basis_axis(go._basis_a[:, 2:3])
+
+            # restrict displacements along c-axis.
+            positions = self._supercell_disp.positions
+            uniq = np.unique(np.round(positions[2], 6))
+            basis_f = np.zeros((go._basis_f.shape[0], len(uniq)))
+            for i, val in enumerate(uniq):
+                ids = np.where(np.isclose(positions[2], val, atol=1e-6))[0]
+                ids = 3 * ids + 2
+                basis_f[ids, i] = 1.0 / np.sqrt(len(ids))
+
+            go.change_basis_fractional_coordinates(basis_f)
             go.run(gtol=gtol * 1e-1, maxiter=10000)
             if go.success:
                 self._supercell_disp = go.structure
