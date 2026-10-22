@@ -1,4 +1,4 @@
-"""Utility functions for SSCHA."""
+"""API functions for modulation."""
 
 from typing import Optional
 
@@ -7,16 +7,8 @@ import numpy as np
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.core.data_format import PolymlpStructure
 
-from .modulation_utils import ModulationNode, PolymlpModulation, optimize_geometry
-
-# from pypolymlp.calculator.opt_geometry import GeometryOptimization
-# from pypolymlp.calculator.utils.phonon_utils import produce_harmonic_force_constants
-# from pypolymlp.core.data_format import PolymlpStructure
-# from pypolymlp.utils.phonopy_utils import (
-#     phonopy_cell_to_structure,
-#     structure_to_phonopy_cell,
-# )
-# from pypolymlp.utils.spglib_utils import SymCell
+from .modulation import PolymlpModulation
+from .modulation_utils import ModulationNode, optimize_geometry
 
 
 def run_modulations(
@@ -76,6 +68,7 @@ def run_modulations(
 
     # TODO: Supercell matrix must be automatically determined.
     for node_child in node_parent.children:
+        node.structure
         run_modulations(
             properties=properties,
             supercell_matrix=supercell_matrix,
