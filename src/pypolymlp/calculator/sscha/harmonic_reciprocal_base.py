@@ -8,7 +8,7 @@ import numpy as np
 from phonopy import Phonopy
 
 from pypolymlp.calculator.properties import Properties
-from pypolymlp.utils.phonopy_utils import phonopy_cell_to_structure
+from pypolymlp.calculator.utils.phonon_utils import produce_harmonic_force_constants
 
 """
 Constants
@@ -53,14 +53,17 @@ class HarmonicReciprocalBase(ABC):
 
     def produce_harmonic_force_constants(self, displacements: float = 0.01):
         """Produce non-effective harmonic FCs."""
-        self._ph.generate_displacements(distance=displacements)
-        supercells = self._ph.supercells_with_displacements
-        supercells_pmlp = [phonopy_cell_to_structure(cell) for cell in supercells]
-        _, forces, _ = self._prop.eval_multiple(supercells_pmlp)
+        self._fc2 = produce_harmonic_force_constants(
+            self._ph, self._prop, displacements=displacements
+        )
+        # self._ph.generate_displacements(distance=displacements)
+        # supercells = self._ph.supercells_with_displacements
+        # supercells_pmlp = [phonopy_cell_to_structure(cell) for cell in supercells]
+        # _, forces, _ = self._prop.eval_multiple(supercells_pmlp)
 
-        self._ph.forces = np.array(forces).transpose((0, 2, 1))
-        self._ph.produce_force_constants()
-        self._fc2 = self._ph.force_constants
+        # self._ph.forces = np.array(forces).transpose((0, 2, 1))
+        # self._ph.produce_force_constants()
+        # self._fc2 = self._ph.force_constants
         return self._fc2
 
     def _print_frequencies(self, tol: float = 0.01):

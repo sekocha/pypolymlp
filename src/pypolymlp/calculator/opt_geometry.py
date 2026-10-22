@@ -300,7 +300,12 @@ class GeometryOptimization:
 
     @property
     def energy(self):
-        """Return energy at final iteration."""
+        """Return energy (enthalpy) at final iteration."""
+        return self._res.fun
+
+    @property
+    def enthalpy(self):
+        """Return enthalpy (energy) at final iteration."""
         return self._res.fun
 
     @property

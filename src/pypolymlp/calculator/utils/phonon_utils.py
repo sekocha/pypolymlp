@@ -3,8 +3,12 @@
 import numpy as np
 from phonopy import Phonopy
 
+from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.utils.fc_utils import load_fc2_hdf5
-from pypolymlp.utils.phonopy_utils import structure_to_phonopy_cell
+from pypolymlp.utils.phonopy_utils import (
+    phonopy_cell_to_structure,
+    structure_to_phonopy_cell,
+)
 from pypolymlp.utils.yaml_utils import load_cells
 
 
@@ -46,3 +50,19 @@ def is_imaginary(
     dos = np.array(dos)
     is_imag = frequencies < tol_frequency
     return np.sum(dos[is_imag]) > 1e-6
+
+
+def produce_harmonic_force_constants(
+    ph: Phonopy,
+    prop: Properties,
+    displacements: float = 0.01,
+):
+    """Produce non-effective harmonic FCs."""
+    ph.generate_displacements(distance=displacements)
+    supercells = ph.supercells_with_displacements
+    supercells_pmlp = [phonopy_cell_to_structure(cell) for cell in supercells]
+    _, forces, _ = prop.eval_multiple(supercells_pmlp)
+
+    ph.forces = np.array(forces).transpose((0, 2, 1))
+    ph.produce_force_constants()
+    return ph.force_constants

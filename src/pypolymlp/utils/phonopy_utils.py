@@ -50,6 +50,20 @@ def phonopy_cell_to_structure(ph_cell: PhonopyAtoms) -> PolymlpStructure:
     return structure
 
 
+def init_phonopy(
+    unitcell: PolymlpStructure,
+    supercell_matrix: np.ndarray,
+    primitive_matrix="P",
+):
+    """Initialize phonopy instance."""
+    phonopy = Phonopy(
+        structure_to_phonopy_cell(unitcell),
+        supercell_matrix,
+        primitive_matrix="P",
+    )
+    return phonopy
+
+
 def phonopy_supercell(
     structure: PolymlpStructure,
     supercell_matrix: np.ndarray = None,
