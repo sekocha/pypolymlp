@@ -20,6 +20,9 @@ class ModulationNode:
     spacegroup: Optional[str] = None
     is_imaginary: bool = False
 
+    structure_children: Optional[list] = None
+    parent_id: int = 0
+
     parent: Optional[Self] = None
     children: Optional[list] = None
     depth: int = 0
@@ -31,7 +34,6 @@ class ModulationNode:
     def add_child(self, child):
         """Add child."""
         child.parent = self
-        child.depth = self.depth + 1
         self.children.append(child)
 
     def traverse(self):
@@ -46,6 +48,7 @@ def optimize_geometry(
     gtol: float = 1e-4,
     maxiter: int = 10000,
     pressure: float = 0.0,
+    # refine: bool = False,
     verbose: bool = False,
 ):
     go = GeometryOptimization(
@@ -62,7 +65,10 @@ def optimize_geometry(
     enthalpy = go.enthalpy / len(go.structure.elements)
 
     sym = SymCell(st=go.structure, symprec=1e-4)
-    unitcell = sym.refine_cell()
+    # if refine:
+    #     unitcell = sym.refine_cell()
+    # else:
+    unitcell = go.structure
     spacegroup = sym.get_spacegroup()
     return (enthalpy, unitcell, spacegroup)
 
@@ -92,3 +98,15 @@ def find_supercell_size_nearly_isotropic(
             break
         size = size_trial
     return size
+
+
+def eliminate_duplicate_structures(
+    nodes: list[ModulationNode],
+    threshold: float = 1e-5,
+):
+    """Eliminate duplicate structures."""
+    enthalpies = np.array([n.enthalpy for n in nodes])
+    threshold = 1e-5
+    rounded = np.round(enthalpies / threshold) * threshold
+    _, unique_indices = np.unique(rounded, return_index=True)
+    return [nodes[i] for i in np.sort(unique_indices)]

@@ -105,7 +105,7 @@ class PolymlpModulation:
         self._ph = Phonopy(
             structure_to_phonopy_cell(self._unitcell),
             self._supercell_matrix,
-            primitive_matrix="P",
+            # primitive_matrix="P",
         )
         if fc2 is None:
             fc2 = produce_harmonic_force_constants(
@@ -121,7 +121,7 @@ class PolymlpModulation:
             q_point = np.array([p[0] / p[1] for p in prod])
             self._ph.run_qpoints(q_point)
             results = self._ph.get_qpoints_dict()
-            band_indices = np.where(results["frequencies"] < 0)[0]
+            band_indices = np.where(results["frequencies"] < -0.1)[0]
 
             if len(band_indices) == 0:
                 continue
