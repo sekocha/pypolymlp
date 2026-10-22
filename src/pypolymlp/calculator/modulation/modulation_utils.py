@@ -3,6 +3,8 @@
 from dataclasses import dataclass
 from typing import Optional, Self
 
+import numpy as np
+
 from pypolymlp.calculator.opt_geometry import GeometryOptimization
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.core.data_format import PolymlpStructure
@@ -63,3 +65,30 @@ def optimize_geometry(
     unitcell = sym.refine_cell()
     spacegroup = sym.get_spacegroup()
     return (enthalpy, unitcell, spacegroup)
+
+
+def find_supercell_size_nearly_isotropic(
+    structure: PolymlpStructure,
+    natom_lb: int = 48,
+    natom_ub: int = 150,
+):
+    """Find a diagonal supercell size enabling nearly-isotropic supercell."""
+    axis = structure.axis
+    total_n_atoms = sum(structure.n_atoms)
+
+    len_axis = [np.linalg.norm(axis[:, i]) for i in range(3)]
+    ratio1 = len_axis[0] / len_axis[1]
+    ratio2 = len_axis[0] / len_axis[2]
+    ratio = np.array([1, ratio1, ratio2])
+
+    cand = np.arange(1, 11)
+    size = [1, 1, 1]
+    for c in cand:
+        size_trial = np.maximum(np.round(ratio * c).astype(int), [1, 1, 1])
+        n_total = total_n_atoms * np.prod(size_trial)
+        if n_total >= natom_lb:
+            if n_total <= natom_ub:
+                size = size_trial
+            break
+        size = size_trial
+    return size

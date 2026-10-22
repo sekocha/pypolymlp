@@ -8,7 +8,11 @@ from pypolymlp.calculator.properties import Properties
 from pypolymlp.core.data_format import PolymlpStructure
 
 from .modulation import PolymlpModulation
-from .modulation_utils import ModulationNode, optimize_geometry
+from .modulation_utils import (
+    ModulationNode,
+    find_supercell_size_nearly_isotropic,
+    optimize_geometry,
+)
 
 
 def run_modulations(
@@ -54,6 +58,7 @@ def run_modulations(
         return node_parent
 
     # TODO: Remove duplicates.
+    print("Number of modulated structures:", len(mod.structure_children))
     for st in mod.structure_children:
         enthalpy, unitcell, spacegroup = optimize_geometry(
             st,
@@ -68,10 +73,11 @@ def run_modulations(
 
     # TODO: Supercell matrix must be automatically determined.
     for node_child in node_parent.children:
-        node.structure
+        sup = find_supercell_size_nearly_isotropic(node_child.structure)
+        print(node_child.depth, sup)
         run_modulations(
             properties=properties,
-            supercell_matrix=supercell_matrix,
+            supercell_matrix=sup,
             node=node_child,
             max_denom=2,
             gtol=gtol,
