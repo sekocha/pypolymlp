@@ -1,12 +1,13 @@
 """API functions for modulation."""
 
-# import os
+import os
 from typing import Optional
 
 import numpy as np
 
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.core.data_format import PolymlpStructure
+from pypolymlp.utils.vasp_utils import write_poscar_file
 
 from .modulation import PolymlpModulation
 from .modulation_utils import (
@@ -15,8 +16,6 @@ from .modulation_utils import (
     find_supercell_size_nearly_isotropic,
     optimize_geometry,
 )
-
-# from pypolymlp.utils.vasp_utils import write_poscar_file
 
 
 def run_modulations(
@@ -57,18 +56,17 @@ def run_modulations(
     while depth <= max_depth and len(nodes[depth]) > 0:
         depth += 1
         print("--- Depth:", depth, "---", flush=True)
-        n_children = 0
-        nodes_tmp = []
+        nodes_children = []
         for parent_id, node_parent in enumerate(nodes[depth - 1]):
             if len(node_parent.structure_children) == 0:
                 print("Skipped: No imaginary")
                 continue
 
-            children = []
             print("- Parent:", node_parent.spacegroup, node_parent.structure.n_atoms)
             print(
                 "Number of modulated structures:", len(node_parent.structure_children)
             )
+            children_tmp = []
             for st in node_parent.structure_children:
                 if len(st.elements) > max_n_atom:
                     continue
@@ -81,18 +79,20 @@ def run_modulations(
                     verbose=verbose,
                 )
                 node_child = ModulationNode(st_opt, enthalpy, spacegroup)
-                children.append(node_child)
+                children_tmp.append(node_child)
 
-            if len(node_parent.structure_children) == 0:
+            if len(children_tmp) == 0:
                 print("All structures are composed of more than max_n_atom.")
                 continue
 
             # TODO: Remove duplicates using different sophisticated algorithm.
-            children = eliminate_duplicate_structures(children)
-            n_children += len(children)
-
-            print("Number of unique modulated structures:", len(children))
-            for node_child in children:
+            children_tmp = eliminate_duplicate_structures(children_tmp)
+            print("Number of unique modulated structures:", len(children_tmp))
+            for node_child in children_tmp:
+                if depth > 5:
+                    cell = node_child.structure
+                    print(cell.axis)
+                    print(cell.n_atoms)
                 sup = find_supercell_size_nearly_isotropic(node_child.structure)
                 mod = PolymlpModulation(
                     properties=properties,
@@ -114,14 +114,24 @@ def run_modulations(
                     parent_id=parent_id,
                 )
                 print(node_child.spacegroup, list(sup), mod.is_imaginary)
-                nodes_tmp.append(node_child_add)
+                nodes_children.append(node_child_add)
 
-        print("Node size:", len(nodes_tmp), n_children)
-        nodes.append(nodes_tmp)
-
-        if n_children == 0:
+        nodes.append(nodes_children)
+        if len(nodes_children) == 0:
             break
 
+        if depth > 5:
+            print("Not converged.")
+            os.makedirs("not_finished", exist_ok=True)
+            for i, node_child in enumerate(nodes_children):
+                filename = (
+                    "not_finished/poscar-"
+                    + node_child.spacegroup.replace("/", "").replace(" ", "")
+                    + "-"
+                    + str(i).zfill(3)
+                )
+                write_poscar_file(node_child.structure, filename=filename)
+            break
     return nodes
 
 
