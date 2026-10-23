@@ -108,7 +108,6 @@ def exist_in_former_nodes(
         node_ref = nodes_flat[m]
         if node.spacegroup == node_ref.spacegroup:
             key = (node_ref.depth, node_ref.parent_id, node_ref.id)
-            print(key)
             node.equivalent_shallower = key
             break
     return node
