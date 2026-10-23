@@ -1,6 +1,5 @@
 """Utility functions for modulation."""
 
-import os
 from dataclasses import dataclass
 from typing import Optional
 
@@ -10,7 +9,6 @@ from pypolymlp.calculator.opt_geometry import GeometryOptimization
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.utils.spglib_utils import SymCell
-from pypolymlp.utils.vasp_utils import write_poscar_file
 
 
 @dataclass
@@ -89,6 +87,7 @@ def eliminate_duplicate_structures(
     threshold: float = 1e-5,
 ):
     """Eliminate duplicate structures."""
+    # TODO: Remove duplicates using different sophisticated algorithm.
     enthalpies = np.array([n.enthalpy for n in nodes])
     rounded = np.round(enthalpies / threshold) * threshold
     _, unique_indices = np.unique(rounded, return_index=True)
@@ -101,6 +100,7 @@ def exist_in_former_nodes(
     threshold: float = 1e-5,
 ):
     """Check whether a node exists in former nodes."""
+    # TODO: Remove duplicates using different sophisticated algorithm.
     enthalpies = np.array([n.enthalpy for n in nodes_flat])
     rounded_ref = np.round(enthalpies / threshold) * threshold
     rounded = np.round(node.enthalpy / threshold) * threshold
@@ -115,49 +115,3 @@ def exist_in_former_nodes(
             node.equivalent_shallower = key
             break
     return node
-
-
-def save_nodes_to_file(
-    nodes: list[ModulationNode], filename: str = "polymlp_modulation.yaml"
-):
-    """Save attributes of nodes to a file."""
-    os.makedirs("polymlp_modulation_poscars", exist_ok=True)
-
-    idmap = {}
-    idx = 1
-    for nodes_depth in nodes:
-        for node in nodes_depth:
-            idmap[(node.depth, node.parent_id, node.id)] = idx
-            idx += 1
-
-    with open(filename, "w") as f:
-        print("nodes:", file=f)
-        idx = 1
-        for depth, nodes_depth in enumerate(nodes):
-            if len(nodes_depth) == 0:
-                continue
-            print("- depth:", depth, file=f)
-            for node in nodes_depth:
-                parent_id = 0 if node.parent_id is None else node.parent_id
-                print("  - node_id:        ", idx, file=f)
-                print("    spacegroup:     ", node.spacegroup, file=f)
-                print("    enthalpy:       ", node.enthalpy, file=f)
-                print("    parent_id:      ", node.parent_id, file=f)
-                print("    id:             ", node.id, file=f)
-                print("    is_imaginary:   ", node.is_imaginary, file=f)
-                if node.equivalent_shallower is not None:
-                    key = tuple(node.equivalent_shallower)
-                    print("    equivalent_node:", idmap[key], file=f)
-
-                poscarfile = "polymlp_modulation_poscars/poscar-" + str(idx).zfill(4)
-                header = (
-                    "modulation-"
-                    + "-".join([str(node.depth), str(parent_id), str(node.id)])
-                    + ", Spacegroup: "
-                    + node.spacegroup
-                    + ", Imaginary: "
-                    + str(node.is_imaginary)
-                )
-                write_poscar_file(node.structure, filename=poscarfile, header=header)
-                idx += 1
-            print(file=f)

@@ -151,6 +151,8 @@ class PolymlpModulation:
 
             dimension = [p[1] for p in prod]
             phonon_modes = [[q_point, b, amplitude, phase] for b in band_indices]
+
+            # TODO: Consider linear combinations of degenerated modes.
             ph.run_modulations(dimension, phonon_modes)
             mods = ph.get_modulated_supercells()
 
