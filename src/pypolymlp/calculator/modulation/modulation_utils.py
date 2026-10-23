@@ -1,7 +1,7 @@
 """Utility functions for modulation."""
 
 from dataclasses import dataclass
-from typing import Optional, Self
+from typing import Optional
 
 import numpy as np
 
@@ -20,26 +20,11 @@ class ModulationNode:
     spacegroup: Optional[str] = None
     is_imaginary: bool = False
 
-    structure_children: Optional[list] = None
-    parent_id: int = 0
-
-    parent: Optional[Self] = None
-    children: Optional[list] = None
+    structures_children: Optional[list] = None
     depth: int = 0
-
-    def __post_init__(self):
-        """Init method."""
-        self.children = []
-
-    def add_child(self, child):
-        """Add child."""
-        child.parent = self
-        self.children.append(child)
-
-    def traverse(self):
-        yield self
-        for child in self.children:
-            yield from child.traverse()
+    parent_id: int = 0
+    id: int = 0
+    equivalent_shallower: Optional[tuple] = None
 
 
 def optimize_geometry(
@@ -48,7 +33,6 @@ def optimize_geometry(
     gtol: float = 1e-4,
     maxiter: int = 10000,
     pressure: float = 0.0,
-    # refine: bool = False,
     verbose: bool = False,
 ):
     go = GeometryOptimization(
@@ -65,12 +49,8 @@ def optimize_geometry(
     enthalpy = go.enthalpy / len(go.structure.elements)
 
     sym = SymCell(st=go.structure, symprec=1e-4)
-    # if refine:
-    #     unitcell = sym.refine_cell()
-    # else:
-    unitcell = go.structure
     spacegroup = sym.get_spacegroup()
-    return (enthalpy, unitcell, spacegroup)
+    return (enthalpy, go.structure, spacegroup)
 
 
 def find_supercell_size_nearly_isotropic(
@@ -102,11 +82,10 @@ def find_supercell_size_nearly_isotropic(
 
 def eliminate_duplicate_structures(
     nodes: list[ModulationNode],
-    threshold: float = 1e-5,
+    threshold: float = 1e-4,
 ):
     """Eliminate duplicate structures."""
     enthalpies = np.array([n.enthalpy for n in nodes])
-    threshold = 1e-5
     rounded = np.round(enthalpies / threshold) * threshold
     _, unique_indices = np.unique(rounded, return_index=True)
     return [nodes[i] for i in np.sort(unique_indices)]
