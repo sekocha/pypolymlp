@@ -82,10 +82,33 @@ def find_supercell_size_nearly_isotropic(
 
 def eliminate_duplicate_structures(
     nodes: list[ModulationNode],
-    threshold: float = 1e-4,
+    threshold: float = 1e-5,
 ):
     """Eliminate duplicate structures."""
     enthalpies = np.array([n.enthalpy for n in nodes])
     rounded = np.round(enthalpies / threshold) * threshold
     _, unique_indices = np.unique(rounded, return_index=True)
     return [nodes[i] for i in np.sort(unique_indices)]
+
+
+def exist_in_former_nodes(
+    node: ModulationNode,
+    nodes_flat: list[ModulationNode],
+    threshold: float = 1e-5,
+):
+    """Check whether a node exists in former nodes."""
+    enthalpies = np.array([n.enthalpy for n in nodes_flat])
+    rounded_ref = np.round(enthalpies / threshold) * threshold
+    rounded = np.round(node.enthalpy / threshold) * threshold
+    match = np.where(rounded_ref == rounded)[0]
+    if len(match) == 0:
+        return node
+
+    for m in match:
+        node_ref = nodes_flat[m]
+        if node.spacegroup == node_ref.spacegroup:
+            key = (node_ref.depth, node_ref.parent_id, node_ref.id)
+            print(key)
+            node.equivalent_shallower = key
+            break
+    return node

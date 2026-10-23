@@ -54,6 +54,29 @@ class PolymlpModulation:
         node = ModulationNode(unitcell, enthalpy, spacegroup)
         return node
 
+    def optimize_geometry_multiple(
+        self,
+        structures: list,
+        gtol: float = 1e-4,
+        maxiter: int = 10000,
+        max_n_atom: int = 48,
+    ):
+        """Optimize geometry of multiple structures."""
+        children = []
+        for st in structures:
+            if len(st.elements) > max_n_atom:
+                continue
+            # TODO: Check success.
+            try:
+                # Structures are refined using with_sym=True
+                node_child = self.optimize_geometry(st, gtol=gtol, maxiter=maxiter)
+                children.append(node_child)
+            except RuntimeError:
+                if self._verbose:
+                    print("Geometry optimization failed.", flush=True)
+                continue
+        return children
+
     def set_qpoints(self, ph: Phonopy, max_denom: int = 6):
         """Enumerate q-point vectors."""
         symops = ph.symmetry.symmetry_operations

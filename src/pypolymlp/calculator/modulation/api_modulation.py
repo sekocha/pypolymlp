@@ -11,6 +11,7 @@ from pypolymlp.core.data_format import PolymlpStructure
 from .modulation import PolymlpModulation
 from .modulation_utils import (
     eliminate_duplicate_structures,
+    exist_in_former_nodes,
     find_supercell_size_nearly_isotropic,
 )
 
@@ -43,6 +44,7 @@ def run_modulations(
     )
     node_parent.depth = depth
 
+    nodes_flat = [node_parent]
     nodes = [[node_parent]]
     while depth <= max_depth and len(nodes[depth]) > 0:
         depth += 1
@@ -51,8 +53,8 @@ def run_modulations(
         for parent_id, node_parent in enumerate(nodes[depth - 1]):
             if len(node_parent.structures_children) == 0:
                 continue
-            # TODO: Eliminate nodes that are already calculated.
             if node_parent.equivalent_shallower is not None:
+                print("Skipped: equivalent_shallower.")
                 continue
 
             print(
@@ -61,20 +63,12 @@ def run_modulations(
                 node_parent.structure.n_atoms,
                 node_parent.enthalpy,
             )
-            children_tmp = []
-            for st in node_parent.structures_children:
-                if len(st.elements) > max_n_atom:
-                    continue
-
-                # TODO: Check success.
-                try:
-                    # Structures are refined using with_sym=True
-                    node_child = mod.optimize_geometry(st, gtol=gtol, maxiter=maxiter)
-                    children_tmp.append(node_child)
-                except RuntimeError:
-                    print("Geometry optimization failed.")
-                    continue
-
+            children_tmp = mod.optimize_geometry_multiple(
+                node_parent.structures_children,
+                gtol=gtol,
+                maxiter=maxiter,
+                max_n_atom=max_n_atom,
+            )
             if len(children_tmp) == 0:
                 print("All structures are composed of more than max_n_atom.")
                 continue
@@ -98,19 +92,19 @@ def run_modulations(
                 node_child_add.depth = depth
                 node_child_add.parent_id = parent_id
                 node_child_add.id = child_id
-
-                # TODO: Find nodes that are already calculated.
-                node_child_add.equivalent_shallower = None
+                node_child_add = exist_in_former_nodes(node_child_add, nodes_flat)
 
                 nodes_children.append(node_child_add)
+                if node_child_add.equivalent_shallower is None:
+                    nodes_flat.append(node_child_add)
                 child_id += 1
 
                 print(
-                    node_child.spacegroup,
-                    node_child.structure.n_atoms,
+                    node_child_add.spacegroup,
+                    node_child_add.structure.n_atoms,
                     list(sup),
-                    node_child.is_imaginary,
-                    node_child.enthalpy,
+                    node_child_add.is_imaginary,
+                    node_child_add.enthalpy,
                 )
             print("---")
 
