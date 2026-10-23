@@ -25,6 +25,7 @@ class PolymlpModulation:
         properties: Properties,
         pressure: float = 0.0,
         verbose: bool = False,
+        verbose_go: bool = False,
     ):
         """Init method.
 
@@ -35,6 +36,7 @@ class PolymlpModulation:
         self._prop = properties
         self._pressure = pressure
         self._verbose = verbose
+        self._verbose_go = verbose_go
 
     def optimize_geometry(
         self,
@@ -49,8 +51,11 @@ class PolymlpModulation:
             gtol=gtol,
             maxiter=maxiter,
             pressure=self._pressure,
-            verbose=self._verbose,
+            verbose=self._verbose_go,
         )
+        if enthalpy is None:
+            return None
+
         node = ModulationNode(unitcell, enthalpy, spacegroup)
         return node
 
@@ -66,11 +71,14 @@ class PolymlpModulation:
         for st in structures:
             if len(st.elements) > max_n_atom:
                 continue
-            # TODO: Check success.
             try:
                 # Structures are refined using with_sym=True
                 node_child = self.optimize_geometry(st, gtol=gtol, maxiter=maxiter)
-                children.append(node_child)
+                if node_child is None:
+                    if self._verbose:
+                        print("Geometry optimization not succeed.", flush=True)
+                else:
+                    children.append(node_child)
             except RuntimeError:
                 if self._verbose:
                     print("Geometry optimization failed.", flush=True)
