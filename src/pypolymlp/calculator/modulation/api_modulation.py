@@ -27,7 +27,6 @@ def run_modulations(
     max_denom: int = 3,
     max_n_atom: int = 64,
     max_depth: int = 10,
-    fc2: Optional[np.ndarray] = None,
     depth: int = 0,
     verbose: bool = False,
     verbose_go: bool = False,
@@ -42,7 +41,6 @@ def run_modulations(
         gtol=gtol,
         maxiter=maxiter,
         max_denom=max_denom,
-        fc2=fc2,
     )
     node_parent.depth = depth
 
@@ -96,7 +94,6 @@ def run_modulations(
                     gtol=gtol,
                     maxiter=maxiter,
                     max_denom=max_denom,
-                    fc2=fc2,
                 )
                 node_child_add.depth = depth
                 node_child_add.parent_id = parent_id

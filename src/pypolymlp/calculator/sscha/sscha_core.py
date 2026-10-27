@@ -56,6 +56,10 @@ class SSCHACore(SSCHAParams):
         self._data_current = None
         self._sscha_log = []
 
+        if self._verbose:
+            self._sscha_params.print_unitcell()
+            self._sscha_params.print_params()
+
         self._supercell, self._phonopy = self._set_supercell_and_phonopy()
         self._symfc = self._set_symfc()
         self._set_num_samples()
@@ -169,7 +173,7 @@ class SSCHACore(SSCHAParams):
             if self._verbose:
                 print("Initial FCs: Harmonic", flush=True)
             self._fc2 = self._ph_recip.produce_harmonic_force_constants()
-            # symmetrize_force_constants in phonopy.
+            # TODO: symmetrize_force_constants in phonopy.
 
         elif algorithm == "const":
             if self._verbose:
@@ -333,6 +337,7 @@ class SSCHACore(SSCHAParams):
 
         n_iter, delta = 1, 1e10
         n_samples = self._n_samples_init
+        count_many_imaginary = 0
         while (n_iter <= self._max_iter and delta > self._tol) or n_iter < 3:
             if self._verbose:
                 self._print_separator(n_iter)
@@ -345,9 +350,19 @@ class SSCHACore(SSCHAParams):
             if self._verbose:
                 self._print_progress()
 
-            if self._null_space_basis is not None:
-                if self._ph_real.exist_many_imaginary_modes():
+            if self._ph_real.exist_many_imaginary_modes(tol_ratio=0.2):
+                if self._null_space_basis is not None:
                     break
+                count_many_imaginary += 1
+
+            if count_many_imaginary >= 5:
+                if self._verbose:
+                    print(
+                        "Stop SSCHA iteration due to the existence",
+                        " of many imaginary modes.",
+                        flush=True,
+                    )
+                break
 
         converge = True if delta < self._tol else False
         if not converge:
@@ -477,23 +492,3 @@ class SSCHACore(SSCHAParams):
         print("Frequency (min):  ", "{:.6f}".format(np.min(freq)), flush=True)
         print("Frequency (max):  ", "{:.6f}".format(np.max(freq)), flush=True)
         print("-----------------------------------------------------", flush=True)
-
-
-#    def _write_dos(self,filename: str = "total_dos.dat"):
-#        """Save phonon DOS file."""
-#        return self
-#
-#        # path = "/".join(filename.split("/")[:-1])
-#        # os.makedirs(path, exist_ok=True)
-#
-#        # self._phonopy.force_constants = self._fc2
-#        # self._phonopy.run_total_dos()
-#        # self._phonopy.write_total_dos(filename=filename)
-#        # if not self._save_pdos:
-#        #     return self
-#
-#        # if qmesh is None:
-#        #     qmesh = self._mesh
-#        # self._phonopy.run_mesh(qmesh, is_mesh_symmetry=False, with_eigenvectors=True)
-#        # self._phonopy.run_projected_dos()
-#        # self._phonopy.write_projected_dos(filename=path + "/projected_dos.dat")

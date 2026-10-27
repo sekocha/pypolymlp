@@ -1,6 +1,6 @@
 """API Class for setting property class instance."""
 
-from typing import Literal, Optional, Union
+from typing import Any, Literal, Optional, Union
 
 import numpy as np
 
@@ -230,6 +230,20 @@ class PypolymlpCalcProperties:
             path=path,
             save_pdos=save_pdos,
         )
+        self._prop = PropertiesSSCHA(
+            sscha_params,
+            self._prop_static,
+            verbose=self._verbose,
+        )
+        self._prop_dyn = self._prop
+        return self._prop
+
+    def change_sscha_parameter(self, attr: str, value: Any):
+        """Change parameters in SSCHA."""
+        from pypolymlp.calculator.sscha.api_properties import PropertiesSSCHA
+
+        sscha_params = self._prop_dyn._sscha_params
+        setattr(sscha_params, attr, value)
         self._prop = PropertiesSSCHA(
             sscha_params,
             self._prop_static,

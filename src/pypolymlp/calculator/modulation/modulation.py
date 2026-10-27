@@ -1,7 +1,6 @@
 """Class for modulation."""
 
 import itertools
-from typing import Optional
 
 import numpy as np
 from phonopy import Phonopy
@@ -122,7 +121,6 @@ class PolymlpModulation:
         max_denom: int = 3,
         amplitude: float = 0.1,
         phase: float = 0.0,
-        fc2: Optional[np.ndarray] = None,
     ):
         """Run modulated structures.
 
@@ -134,9 +132,11 @@ class PolymlpModulation:
         node = self.optimize_geometry(unitcell, gtol=gtol, maxiter=maxiter)
         ph = Phonopy(structure_to_phonopy_cell(unitcell), supercell_matrix)
         # primitive_matrix="P",
-        if fc2 is None:
+        if self._prop.force_constants is None:
             fc2 = produce_harmonic_force_constants(ph, self._prop, displacements=0.01)
-        ph.force_constants = fc2
+            ph.force_constants = fc2
+        else:
+            ph.force_constants = self._prop.force_constants
 
         uniq_qpoints = self.set_qpoints(ph, max_denom=max_denom)
         structures_children = []
@@ -152,7 +152,7 @@ class PolymlpModulation:
             dimension = [p[1] for p in prod]
             phonon_modes = [[q_point, b, amplitude, phase] for b in band_indices]
 
-            # TODO: Consider linear combinations of degenerated modes.
+            # TODO: Urgent: Consider linear combinations of degenerated modes.
             ph.run_modulations(dimension, phonon_modes)
             mods = ph.get_modulated_supercells()
 
