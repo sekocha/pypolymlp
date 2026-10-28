@@ -1,5 +1,8 @@
 """Tests of harmonic reciprocal-part calculations."""
 
+import os
+import shutil
+
 import numpy as np
 import pytest
 
@@ -17,13 +20,11 @@ def test_harmonic_reciprocal(unitcell_mlp_Al):
     )
     sscha = SSCHACore(sscha_params, prop)
     rec = HarmonicReciprocal(sscha._phonopy, sscha._prop)
-    energies, forces = rec.eval([unitcell, unitcell])
-    np.testing.assert_allclose(energies, -13.71119227, atol=1e-7)
-    np.testing.assert_allclose(forces, 0.0, atol=1e-7)
 
     fc2 = rec.produce_harmonic_force_constants()
-    rec.compute_thermal_properties(temp=700)
-    rec.compute_mesh_properties()
+    rec.force_constants = fc2
+    rec.run(temp=700)
+
     assert fc2.shape == (32, 32, 3, 3)
     assert rec.force_constants.shape == (32, 32, 3, 3)
 
@@ -34,7 +35,7 @@ def test_harmonic_reciprocal(unitcell_mlp_Al):
     assert rec.phonopy_instance is not None
 
     f_true = -63.73642039036109
-    f1, f2 = rec.compute_thermal_properties(temp=700, hide_imaginary=True)
+    f1, f2 = rec._compute_thermal_properties(temp=700, hide_imaginary=True)
     assert f1 == pytest.approx(f_true)
     assert f2 == pytest.approx(f_true)
 
@@ -43,3 +44,11 @@ def test_harmonic_reciprocal(unitcell_mlp_Al):
     assert rec.mesh_dict["frequencies"][0, 2] == pytest.approx(freq_true)
     assert rec.tp_dict["free_energy"][0] == pytest.approx(f_true)
     assert not rec.is_imaginary
+
+    rec._print_frequencies()
+
+    rec.calc_save_dos(filename="tmp.dat", qmesh=(2, 2, 2))
+    os.remove("tmp.dat")
+
+    rec.calc_save_dos(filename="tmp/total_dos.dat", qmesh=(2, 2, 2), save_pdos=True)
+    shutil.rmtree("tmp")

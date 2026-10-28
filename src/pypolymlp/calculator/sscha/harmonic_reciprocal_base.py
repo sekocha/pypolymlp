@@ -56,14 +56,6 @@ class HarmonicReciprocalBase(ABC):
         self._fc2 = produce_harmonic_force_constants(
             self._ph, self._prop, displacements=displacements
         )
-        # self._ph.generate_displacements(distance=displacements)
-        # supercells = self._ph.supercells_with_displacements
-        # supercells_pmlp = [phonopy_cell_to_structure(cell) for cell in supercells]
-        # _, forces, _ = self._prop.eval_multiple(supercells_pmlp)
-
-        # self._ph.forces = np.array(forces).transpose((0, 2, 1))
-        # self._ph.produce_force_constants()
-        # self._fc2 = self._ph.force_constants
         return self._fc2
 
     def _print_frequencies(self, tol: float = 0.01):
@@ -206,7 +198,9 @@ class HarmonicReciprocalBase(ABC):
     ):
         """Calculate and save DOS and PDOS."""
         path = "/".join(filename.split("/")[:-1])
-        os.makedirs(path, exist_ok=True)
+        if not path == "":
+            path += "/"
+            os.makedirs(path, exist_ok=True)
 
         self._ph.run_total_dos()
         self._ph.write_total_dos(filename=filename)
@@ -215,5 +209,5 @@ class HarmonicReciprocalBase(ABC):
 
         self._ph.run_mesh(qmesh, is_mesh_symmetry=False, with_eigenvectors=True)
         self._ph.run_projected_dos()
-        self._ph.write_projected_dos(filename=path + "/projected_dos.dat")
+        self._ph.write_projected_dos(filename=path + "projected_dos.dat")
         return self

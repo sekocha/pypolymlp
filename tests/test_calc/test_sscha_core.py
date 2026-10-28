@@ -59,9 +59,6 @@ def test_sscha_core(unitcell_mlp_Al):
     data = sscha._compute_sscha_properties(temp=700)
     assert data is not None
 
-    # rec_fc2 = sscha._recover_fc2(np.random.random(11))
-    # assert rec_fc2.shape == (32, 32, 3, 3)
-
     score = sscha._convergence_score(np.array([0.1, 0.2]), np.array([0.2, 0.1]))
     assert score == pytest.approx(0.6324555320336759)
 
@@ -73,6 +70,7 @@ def test_sscha_core(unitcell_mlp_Al):
 
     sscha.precondition(temp=700, n_samples=10, max_iter=1)
     sscha.run(temp=700)
+    sscha._print_separator()
     sscha._print_progress()
 
     sscha._print_final_results()
