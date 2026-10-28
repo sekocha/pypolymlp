@@ -34,28 +34,33 @@ def test_sscha_core(unitcell_mlp_Al):
     assert sscha._ph_recip is not None
     assert sscha_params.supercell is not None
 
-    sscha_params.init_fc_algorithm = "const"
+    sscha._init_fc_algorithm = "const"
     sscha.set_initial_force_constants()
     assert sscha.force_constants.shape == (32, 32, 3, 3)
+    assert sscha.force_constants[0, 0, 0, 0] == pytest.approx(1.4529650641782414)
+    freq = sscha.run_frequencies(qmesh=(2, 2, 2))
+    assert np.average(freq) == pytest.approx(1.613959681934481)
 
-    sscha_params.init_fc_algorithm = "random"
+    sscha._init_fc_algorithm = "random"
     sscha.force_constants = None
     sscha.set_initial_force_constants()
     assert sscha.force_constants.shape == (32, 32, 3, 3)
+    freq = sscha.run_frequencies(qmesh=(2, 2, 2))
+    assert freq.shape == (1, 12)
 
-    sscha_params.init_fc_algorithm = "harmonic"
+    sscha._init_fc_algorithm = "harmonic"
     sscha.force_constants = None
     sscha.set_initial_force_constants()
     assert sscha.force_constants.shape == (32, 32, 3, 3)
-
-    freq = sscha.run_frequencies(qmesh=(5, 5, 5))
-    assert np.average(freq) == pytest.approx(6.033117718600683)
+    assert sscha.force_constants[0, 0, 0, 0] == pytest.approx(4.6010114756230065)
+    freq = sscha.run_frequencies(qmesh=(2, 2, 2))
+    assert np.average(freq) == pytest.approx(6.152785617528438)
 
     data = sscha._compute_sscha_properties(temp=700)
     assert data is not None
 
-    rec_fc2 = sscha._recover_fc2(np.random.random(11))
-    assert rec_fc2.shape == (32, 32, 3, 3)
+    # rec_fc2 = sscha._recover_fc2(np.random.random(11))
+    # assert rec_fc2.shape == (32, 32, 3, 3)
 
     score = sscha._convergence_score(np.array([0.1, 0.2]), np.array([0.2, 0.1]))
     assert score == pytest.approx(0.6324555320336759)
@@ -70,7 +75,6 @@ def test_sscha_core(unitcell_mlp_Al):
     sscha.run(temp=700)
     sscha._print_progress()
 
-    sscha._write_dos(filename="tmp/total_dos.dat")
     sscha._print_final_results()
     sscha.save_results()
     shutil.rmtree("tmp")

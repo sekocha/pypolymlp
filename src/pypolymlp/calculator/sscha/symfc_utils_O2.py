@@ -1,5 +1,7 @@
 """Utilities for applying null space to Symfc."""
 
+from math import isqrt
+
 import numpy as np
 import scipy
 from scipy.sparse import csr_array
@@ -132,7 +134,7 @@ def recover_fc2(symfc: Symfc, coefs: np.ndarray):
     basis_set = symfc.basis_set[2]
     compr_mat = basis_set.compression_matrix
 
-    n_atom = np.sqrt(compr_mat.shape[0] // 9)
+    n_atom = isqrt(compr_mat.shape[0] // 9)
     fc = basis_set.basis_set @ coefs
     return (compr_mat @ fc).reshape((n_atom, n_atom, 3, 3))
 
