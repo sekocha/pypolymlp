@@ -112,7 +112,11 @@ class HarmonicRealReduced(HarmonicRealBase):
         return self._mesh_dict
 
     def _solve_eigen_equation_use_schur_complement(self) -> dict:
-        """Solve eigenvalue equation for dynamical matrix using Schur complement."""
+        """Solve eigenvalue equation for dynamical matrix using Schur complement.
+
+        Deprecated.
+        This function can be used only when dynamical matrix is positive-definite.
+        """
         dyn = convert_fc2_to_dynamical_matrix(self._fc2, self._supercell.masses)
         reduced_dyn = schur_reduce_dynamical_matrix(dyn, self._null_space_basis)
         square_w, eigvecs = scipy.linalg.eigh(reduced_dyn)

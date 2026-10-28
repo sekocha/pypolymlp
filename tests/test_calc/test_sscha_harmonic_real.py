@@ -63,3 +63,6 @@ def test_harmonic_real(unitcell_mlp_Al):
     assert np.sum(real.static_stress_tensor) == pytest.approx(0.15623294765213275)
     assert real.average_stress_tensor.shape == (6,)
     assert real.frequencies.shape == (96,)
+
+    real._print_frequencies(real.frequencies)
+    assert not real.exist_many_imaginary_modes()
