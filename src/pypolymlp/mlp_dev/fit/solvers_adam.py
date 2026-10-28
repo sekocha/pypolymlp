@@ -127,6 +127,7 @@ def solver_adam(
 
     if use_scales:
         scales = np.std(x, axis=0)
+        scales[np.where(np.abs(scales) < 1e-15)] = 1.0
         x /= scales
         coef0 *= scales
 
