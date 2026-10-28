@@ -397,6 +397,11 @@ class DatasetDFT:
         self._energies = value
 
     @property
+    def energies_per_atom(self) -> np.ndarray:
+        """Get energies per atom."""
+        return self._energies / self._total_n_atoms
+
+    @property
     def forces(self) -> np.ndarray:
         """Get forces."""
         return self._forces

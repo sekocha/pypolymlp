@@ -15,7 +15,7 @@ from pypolymlp.calculator.properties import Properties, initialize_polymlp_calcu
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.interface_vasp import (
     parse_structures_from_poscars,
-    parse_structures_from_vaspruns,
+    set_dataset_from_vaspruns,
 )
 from pypolymlp.core.params import PolymlpParams
 from pypolymlp.utils.structure_utils import supercell
@@ -57,6 +57,7 @@ class PypolymlpCalc:
         self._structures = None
         self._unitcell = None
         self._poscar = None
+        self._DFT = None
 
         self._features = None
         self._elastic = None
@@ -88,7 +89,11 @@ class PypolymlpCalc:
         -------
         structures: list[PolymlpStructure], Structures.
         """
-        self.structures = parse_structures_from_vaspruns(vaspruns)
+        self._DFT = set_dataset_from_vaspruns(
+            vaspruns,
+            elements=self._prop.elements,
+        )
+        self.structures = self._DFT.structures
         return self.structures
 
     def load_structures_from_files(
@@ -163,6 +168,21 @@ class PypolymlpCalc:
         for structures used for the latest run of self.eval.
         """
         self._prop.save(verbose=self._verbose)
+
+        if self._DFT is None:
+            return self
+        if self._prop.params.atomic_energy is None:
+            return self
+
+        self._DFT.apply_atomic_energy(self._prop.params.atomic_energy)
+        e_mlp = self._prop.energies_per_atom
+        e_dft = self._DFT.energies_per_atom
+        np.savetxt(
+            "polymlp_energies_comparison.dat",
+            np.vstack([e_dft, e_mlp, (e_dft - e_mlp) * 1000]).T,
+            fmt="%f",
+            header="# DFT(eV/atom), MLP(eV/atom), DFT-MLP(meV/atom)",
+        )
         return self
 
     def print_properties(self):

@@ -168,6 +168,12 @@ class Properties(PropertiesBase):
         """Return stresses in GPa."""
         return convert_stresses_in_gpa(self._s, self._structures)
 
+    @property
+    def energies_per_atom(self):
+        """Return energies per atom."""
+        total_n_atoms = np.array([len(st.elements) for st in self._structures])
+        return self._e / total_n_atoms
+
 
 def initialize_polymlp_calculator(
     pot: Optional[Union[str, list[str]]] = None,
