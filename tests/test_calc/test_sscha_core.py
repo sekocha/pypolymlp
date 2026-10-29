@@ -70,7 +70,7 @@ def test_sscha_core(unitcell_mlp_Al):
 
     sscha.precondition(temp=700, n_samples=10, max_iter=1)
     sscha.run(temp=700)
-    sscha._print_separator()
+    sscha._print_separator(n_iter=1)
     sscha._print_progress()
 
     sscha._print_final_results()
