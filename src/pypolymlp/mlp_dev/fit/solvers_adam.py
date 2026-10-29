@@ -69,9 +69,11 @@ def _add_regularization(
     error: NDArray, grad_trial: NDArray, coef: NDArray, coef0: NDArray, alpha: float
 ):
     """Add quadratic regularization term."""
-    diff_coef = (coef - coef0) / np.abs(coef0)
+    # diff_coef = (coef - coef0) / np.abs(coef0)
+    # grad_reg = alpha * diff_coef / np.abs(coef0)
+    diff_coef = coef - coef0
     reg = alpha * (diff_coef @ diff_coef)
-    grad_reg = alpha * diff_coef / np.abs(coef0)
+    grad_reg = alpha * diff_coef
     error += reg
     grad_trial += grad_reg
     return error, grad_trial
@@ -188,3 +190,6 @@ def solver_adam(
         coef /= scales
 
     return coef
+    # interpolation_rate = 0.9
+    # new_coef = coef0 * interpolation_rate + coef * (1.0 - interpolation_rate)
+    # return new_coef

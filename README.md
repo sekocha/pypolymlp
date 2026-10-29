@@ -105,8 +105,10 @@ Several procedures for generating structures used in DFT calculations are also s
   - [Generator of portable model for OpenKIM](docs/utils_kim.md)
   - [Other utilities](docs/utils.md)
 
+<!--
 - Experimental Features
   - [Fine tuning of MLP using online learning with Adam](docs/experimental/mlpdev_online_adam.md)
+-->
 
 ## Using pypolymlp for Polynomial MLP Calculations
 

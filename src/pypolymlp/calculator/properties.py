@@ -1,5 +1,6 @@
 """Class for calculating properties."""
 
+import os
 from typing import Optional, Union
 
 import numpy as np
@@ -98,6 +99,7 @@ class Properties(PropertiesBase):
         except:
             for i, force in enumerate(self.forces):
                 np.save("polymlp_forces_" + str(i + 1).zfill(5) + ".npy", force)
+            os.remove("polymlp_forces.npy")
 
         if len(self.forces) == 1:
             np.savetxt("polymlp_energies.dat", self.energies, fmt="%f")
