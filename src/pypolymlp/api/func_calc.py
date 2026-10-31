@@ -45,6 +45,7 @@ def run_geometry_optimization(
         relax_volume=relax_volume,
         relax_positions=not args.fix_atom,
         pressure=args.pressure,
+        scale_axis=args.scale_axis,
     )
     polymlp.run_geometry_optimization(
         method=args.method,

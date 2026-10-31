@@ -94,12 +94,17 @@ class GeometryOptimization:
         if self._basis_a is None:
             return None
 
+        # TODO: Scales should depend on the number of nonzero elements in basis
         scale = np.ones(self._basis_size)
         if scale_axis is None:
             val = pow(self._v0, 1 / 3) * 0.1
             scale[self._basis_size_f :] = val
         else:
-            scale[self._basis_size_f :] = scale_axis
+            if scale_axis < 1.0:
+                scale[self._basis_size_f :] = scale_axis
+            else:
+                scale[: self._basis_size_f :] = 1.0 / scale_axis
+        print(scale)
         return scale
 
     def _fun_fix_cell(self, x: np.ndarray, args=None):

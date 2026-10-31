@@ -216,6 +216,12 @@ def create_go_parser(default_gtol: float = 1e-4):
         help="Tolerance parameter for gradients",
     )
     go_group.add_argument(
+        "--scale_axis",
+        type=float,
+        default=None,
+        help="Scale for gradient of axis",
+    )
+    go_group.add_argument(
         "--maxiter",
         type=int,
         default=1000,
