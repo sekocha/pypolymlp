@@ -104,7 +104,6 @@ class GeometryOptimization:
                 scale[self._basis_size_f :] = scale_axis
             else:
                 scale[: self._basis_size_f :] = 1.0 / scale_axis
-        print(scale)
         return scale
 
     def _fun_fix_cell(self, x: np.ndarray, args=None):
