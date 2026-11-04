@@ -1,5 +1,6 @@
 """Class for geometry optimization with symmetric constraint."""
 
+import time
 from typing import Literal, Optional
 
 import numpy as np
@@ -123,6 +124,7 @@ class GeometryOptimization:
 
     def _fun_relax_cell(self, x: np.ndarray, args=None):
         """Target function when performing cell optimization."""
+        t1 = time.time()
         x_scaled = x * self._scale
         self.structure = self._basis.structure(x_scaled)
         self._energy, self._force, self._stress = self._prop.eval(self._structure)
@@ -135,6 +137,13 @@ class GeometryOptimization:
             raise RuntimeError("Failed: Huge negative energy value or huge volume.")
 
         self._energy += self._pressure * volume / EVtoGPa
+        t2 = time.time()
+        if (t2 - t1) > 60:
+            print("Residuals (force, eV/ang):", flush=True)
+            print(self._force.T, flush=True)
+            if self._basis_a is not None:
+                print("Residuals (stress, eV/cell):", flush=True)
+                print(self._stress)
         return self._energy
 
     def _fun_relax_cell_fix_volume(self, x: np.ndarray, args=None):

@@ -154,7 +154,7 @@ class PolymlpElastic:
                 elastic_constants[voidt1, voidt2] = el_full[i, j, k, l]
         return elastic_constants
 
-    def run(self, n_samples: int = 7, eps: float = 1e-4):
+    def run(self, n_samples: int = 7, eps: float = 3e-5):
         """Run elastic constant calculation."""
         magnitudes = np.linspace(-eps, eps, n_samples)
         magnitudes = magnitudes[np.logical_not(np.isclose(magnitudes, 0.0))]
