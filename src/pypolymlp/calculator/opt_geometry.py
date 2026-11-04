@@ -164,9 +164,7 @@ class GeometryOptimization:
             derivatives[:partition1] = self._derivatives_by_frac()
         derivatives[partition1:] = self._derivatives_by_axis()
 
-        print(derivatives)
         derivatives = derivatives * self._scale
-        print("Scaled:", derivatives)
         return derivatives
 
     def _jac_relax_cell_fix_volume(self, args=None):
