@@ -94,11 +94,12 @@ class GeometryOptimization:
         if self._basis_a is None:
             return None
 
-        # TODO: Scales should depend on the number of nonzero elements in basis
         scale = np.ones(self._basis_size)
         if scale_axis is None:
-            val = pow(self._v0, 1 / 3) * 0.1
-            scale[self._basis_size_f :] = val
+            # val = pow(self._v0, 1 / 3) * 0.1
+            # scale[self._basis_size_f :] = val
+            N3 = len(self._structure.elements) * 3
+            scale[: self._basis_size_f :] = 1.0 / N3
         else:
             if scale_axis < 1.0:
                 scale[self._basis_size_f :] = scale_axis
@@ -163,7 +164,9 @@ class GeometryOptimization:
             derivatives[:partition1] = self._derivatives_by_frac()
         derivatives[partition1:] = self._derivatives_by_axis()
 
+        print(derivatives)
         derivatives = derivatives * self._scale
+        print("Scaled:", derivatives)
         return derivatives
 
     def _jac_relax_cell_fix_volume(self, args=None):
