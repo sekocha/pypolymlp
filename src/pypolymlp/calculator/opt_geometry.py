@@ -138,7 +138,7 @@ class GeometryOptimization:
 
         self._energy += self._pressure * volume / EVtoGPa
         t2 = time.time()
-        if (t2 - t1) > 60:
+        if self._verbose and (t2 - t1) > 30:
             print("Residuals (force, eV/ang):", flush=True)
             print(self._force.T, flush=True)
             if self._basis_a is not None:
