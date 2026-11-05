@@ -48,11 +48,6 @@ def write_elastic_constants(
         prefix = "  c_" + str(i) + str(j) + ":"
         str1 = "{:.3f}".format(elastic_constants[i - 1][j - 1])
         print(prefix, str1, file=file)
-        # if elastic_constants[i - 1][j - 1] > 1e-8:
-        #     str1 = "{:.3f}".format(elastic_constants[i - 1][j - 1])
-        #     print(prefix, str1, file=file)
-        # else:
-        #     print(prefix, "0", file=file)
     return file
 
 
@@ -154,7 +149,7 @@ class PolymlpElastic:
                 elastic_constants[voidt1, voidt2] = el_full[i, j, k, l]
         return elastic_constants
 
-    def run(self, n_samples: int = 7, eps: float = 3e-5):
+    def run(self, n_samples: int = 7, eps: float = 1e-4):
         """Run elastic constant calculation."""
         magnitudes = np.linspace(-eps, eps, n_samples)
         magnitudes = magnitudes[np.logical_not(np.isclose(magnitudes, 0.0))]

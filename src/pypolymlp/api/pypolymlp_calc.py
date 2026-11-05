@@ -234,10 +234,20 @@ class PypolymlpCalc:
         """Save features."""
         np.save("features.npy", self._features)
 
-    def run_elastic_constants(self, poscar: Optional[str] = None):
+    def run_elastic_constants(
+        self,
+        poscar: Optional[str] = None,
+        gtol: float = 1e-3,
+        n_samples: int = 7,
+        eps: float = 1e-4,
+    ):
         """Run elastic constant calculations.
 
-        pymatgen is required.
+        Parameters
+        ----------
+        gtol: Gradient tolerance.
+        n_samples: Number of points at which strain is introduced.
+        eps: Maximum strain magnitude.
 
         Returns
         -------
@@ -252,21 +262,29 @@ class PypolymlpCalc:
         self._elastic = PolymlpElastic(
             unitcell=self.unitcell,
             properties=self._prop,
+            gtol=gtol,
             verbose=self._verbose,
         )
-        self._elastic.run()
+        self._elastic.run(n_samples=n_samples, eps=eps)
         return self._elastic.elastic_constants
 
     def write_elastic_constants(self, filename: str = "polymlp_elastic.yaml"):
         """Save elastic constants to a file."""
         self._elastic.write_elastic_constants(filename=filename)
 
-    def run_elastic_constants_temperature(self, gtol: float = 1e-2):
+    def run_elastic_constants_temperature(
+        self,
+        gtol: float = 1e-2,
+        n_samples: int = 7,
+        eps: float = 1e-3,
+    ):
         """Run elastic constant calculations at T using SSCHA.
 
         Parameters
         ----------
-        gtol: Tolerance for gradients.
+        gtol: Gradient tolerance.
+        n_samples: Number of points at which strain is introduced.
+        eps: Maximum strain magnitude.
         """
         self.unitcell = self.first_structure
         self._elastic = PolymlpElastic(
@@ -285,8 +303,8 @@ class PypolymlpCalc:
         except:
             pass
 
-        self._elastic.run(n_samples=7, eps=0.01)
-        self._elastic.run_adiabatic(n_samples=7, eps=60)
+        self._elastic.run(n_samples=n_samples, eps=eps)
+        self._elastic.run_adiabatic(n_samples=n_samples, eps=60)
         return self._elastic.elastic_constants
 
     def run_eos(
