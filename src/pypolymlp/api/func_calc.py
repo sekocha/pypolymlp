@@ -77,7 +77,7 @@ def run_elastic(
 ):
     """Run elastic constant calculation."""
     polymlp = _set_structure(args, polymlp, structure=structure)
-    polymlp.run_elastic_constants()
+    polymlp.run_elastic_constants(gtol=args.gtol)
     polymlp.write_elastic_constants(filename=filename)
 
 
