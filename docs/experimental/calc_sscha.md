@@ -162,7 +162,7 @@ import numpy as np
 from pypolymlp.api.api_calculator import PypolymlpCalcProperties
 
 polymlp = PypolymlpCalcProperties(verbose=True)
-polymlp.set_polymlp(pot=pot)
+polymlp.set_polymlp(pot="polymlp.yaml")
 unitcell = polymlp.load_poscar("POSCAR")
 
 # Optional function if NAC parameters are needed.
