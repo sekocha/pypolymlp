@@ -202,12 +202,15 @@ class HarmonicReciprocalBase(ABC):
             path += "/"
             os.makedirs(path, exist_ok=True)
 
+
+        self._ph.run_mesh(qmesh, is_mesh_symmetry=False, with_eigenvectors=True)
+        
         self._ph.run_total_dos()
         self._ph.write_total_dos(filename=filename)
         if not save_pdos:
             return self
 
-        self._ph.run_mesh(qmesh, is_mesh_symmetry=False, with_eigenvectors=True)
+        
         self._ph.run_projected_dos()
         self._ph.write_projected_dos(filename=path + "projected_dos.dat")
         return self
