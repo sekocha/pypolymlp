@@ -17,8 +17,7 @@ from pypolymlp.calculator.sscha.harmonic_reciprocal import (
 from pypolymlp.calculator.sscha.sscha_data import SSCHAData
 from pypolymlp.calculator.sscha.sscha_io import save_sscha_yaml
 from pypolymlp.calculator.sscha.sscha_params import SSCHAParams
-from pypolymlp.calculator.sscha.symfc_utils_O2 import (
-    apply_null_space,
+from pypolymlp.calculator.sscha.symfc_utils_O2 import (  # apply_null_space,
     get_supercell_null_space,
     project_fc2_space,
     recover_fc2,
@@ -60,12 +59,13 @@ class SSCHACore(SSCHAParams):
             self._sscha_params.print_unitcell()
             self._sscha_params.print_params()
 
+        self._null_space_basis_sup = None
+        self._penalty = None
+
         self._supercell, self._phonopy = self._set_supercell_and_phonopy()
         self._symfc = self._set_symfc()
         self._set_num_samples()
         self._ph_real, self._ph_recip = self._set_harmonic_calculators()
-
-        self._null_space_basis_sup = None
 
     def _set_supercell_and_phonopy(self):
         """Set supercell."""
@@ -107,14 +107,14 @@ class SSCHACore(SSCHAParams):
         self._symfc.compute_basis_set(2)
 
         if self._null_space_basis is not None:
+            self._penalty = 1e-7
             if self._verbose:
                 print("Translationally independent atoms:", flush=True)
                 for i in self._symfc.p2s_map:
                     print(i, self._supercell.positions[:, i], flush=True)
-                print("Apply constraints.", flush=True)
 
-            # TODO: The following null space is correct in alloy or ionic systems?
-            self._symfc = apply_null_space(self._symfc, self._null_space_basis_sup)
+            # print("Apply constraints.", flush=True)
+            # self._symfc = apply_null_space(self._symfc, self._null_space_basis_sup)
 
         self._n_coeffs = self._symfc.basis_set[2].basis_set.shape[1]
         if self._verbose and self._n_coeffs < 1000:
@@ -172,8 +172,8 @@ class SSCHACore(SSCHAParams):
         if algorithm == "harmonic":
             if self._verbose:
                 print("Initial FCs: Harmonic", flush=True)
-            self._fc2 = self._ph_recip.produce_harmonic_force_constants()
             # TODO: symmetrize_force_constants in phonopy.
+            self._fc2 = self._ph_recip.produce_harmonic_force_constants()
 
         elif algorithm == "const":
             if self._verbose:
@@ -258,6 +258,7 @@ class SSCHACore(SSCHAParams):
             is_compact_fc=False,
             batch_size=self._symfc_batch_size,
             use_gradient_solver=self._symfc_use_gradient_solver,
+            penalty=1e-3,
         )
         return self._symfc.force_constants[2]
 
