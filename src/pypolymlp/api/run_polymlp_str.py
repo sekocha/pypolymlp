@@ -31,6 +31,12 @@ def run():
         help="Initial structures in POSCAR format",
     )
     parser.add_argument(
+        "--min_natom",
+        type=int,
+        default=48,
+        help="Miminum number of atoms in structures",
+    )
+    parser.add_argument(
         "--max_natom",
         type=int,
         default=150,
@@ -176,7 +182,10 @@ def run():
         )
     else:
         print("Pypolymlp structure generator: Standard algorithms", flush=True)
-        polymlp.build_supercells_auto(max_natom=129)
+        polymlp.build_supercells_auto(
+            min_natom=args.min_natom,
+            max_natom=args.max_natom,
+        )
         if args.standard is not None:
             print("Run standard algorithms", flush=True)
             if args.const_distance is not None:
