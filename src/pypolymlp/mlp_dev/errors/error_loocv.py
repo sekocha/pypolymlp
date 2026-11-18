@@ -239,7 +239,7 @@ class PolymlpErrorUseXLOOCV(PolymlpErrorBase):
 
         rmse_f = None
         mae_f = None
-        if dataset.exist_force:
+        if dataset.include_force:
             fend = fbegin + dataset.forces.shape[0]
             f1, f2 = self._apply_hat(dataset.forces, pred_f, hat_ii, fbegin, fend)
             rmse_f, _, _ = self._compute_rmse(f1, f2)
@@ -247,7 +247,8 @@ class PolymlpErrorUseXLOOCV(PolymlpErrorBase):
 
         rmse_s = None
         mae_s = None
-        if dataset.exist_stress:
+        if dataset.include_stress:
+            fend = fbegin + dataset.forces.shape[0]
             send = sbegin + dataset.stresses.shape[0]
             normalize = self._stress_normalize_coeffs(strs, stress_unit)
             s1, s2 = self._apply_hat(dataset.stresses, pred_s, hat_ii, sbegin, send)
