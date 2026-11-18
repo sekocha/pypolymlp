@@ -58,7 +58,7 @@ class PolymlpFitCG(PolymlpFitBase):
             self._max_iter = max(self._polymlp.n_features * 3, 50000)
 
         coefs, coef0 = [], None
-        for alpha in reversed(self._params.alphas):
+        for alpha in reversed(self._params.solver_alphas):
             c = solver_cg(
                 x=train_xy.x,
                 y=train_xy.y,

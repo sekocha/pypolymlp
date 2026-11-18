@@ -1,7 +1,7 @@
 """Class for input parameters including hybrid polymlps."""
 
 import copy
-from typing import Union
+from typing import Any, Union
 
 import numpy as np
 
@@ -146,6 +146,15 @@ class PolymlpParams:
                 single.type_indices = [elements.index(ele) for ele in single.elements]
         return self
 
+    def setter_common_property(self, name: str, value: Any):
+        """Setter of common target property."""
+        if self._common_params is None:
+            raise RuntimeError("Parameters not defined.")
+
+        setattr(self._common_params, name, value)
+        for p in self._params:
+            setattr(p, name, value)
+
     @property
     def params(self):
         """Return parameters or parameter list.
@@ -196,16 +205,11 @@ class PolymlpParams:
     @enable_spins.setter
     def enable_spins(self, include: bool):
         """Setter of enable_spins."""
-        if self._common_params is None:
-            raise RuntimeError("Parameters not defined.")
-
         exception = ("phono3py", "sscha", "openmx", "electron")
         if self.dataset_type in exception and include:
             raise RuntimeError("Enable_spins not supported for given dataset type.")
 
-        self._common_params.enable_spins = include
-        for p in self._params:
-            p.enable_spins = include
+        self.setter_common_property("enable_spins", include)
 
     @property
     def include_force(self):
@@ -215,15 +219,10 @@ class PolymlpParams:
     @include_force.setter
     def include_force(self, include: bool):
         """Setter of include_force."""
-        if self._common_params is None:
-            raise RuntimeError("Parameters not defined.")
-
         if self.dataset_type == "electron" and include:
             raise RuntimeError("Include_force not supported for given dataset type.")
 
-        self._common_params.include_force = include
-        for p in self._params:
-            p.include_force = include
+        self.setter_common_property("include_force", include)
 
     @property
     def include_stress(self):
@@ -233,16 +232,11 @@ class PolymlpParams:
     @include_stress.setter
     def include_stress(self, include: bool):
         """Setter of include_stress."""
-        if self._common_params is None:
-            raise RuntimeError("Parameters not defined.")
-
         exception = ("phono3py", "sscha", "openmx", "electron")
         if self.dataset_type in exception and include:
             raise RuntimeError("Include_stress not supported for given dataset type.")
 
-        self._common_params.include_stress = include
-        for p in self._params:
-            p.include_stress = include
+        self.setter_common_property("include_stress", include)
 
     @property
     def dataset_type(self):
@@ -252,12 +246,7 @@ class PolymlpParams:
     @dataset_type.setter
     def dataset_type(self, dtype: str):
         """Setter of dataset type."""
-        if self._common_params is None:
-            raise RuntimeError("Parameters not defined.")
-
-        self._common_params.dataset_type = dtype
-        for p in self._params:
-            p.dataset_type = dtype
+        self.setter_common_property("dataset_type", dtype)
         self._set_tags()
 
     @property
@@ -268,11 +257,7 @@ class PolymlpParams:
     @temperature.setter
     def temperature(self, temp: float):
         """Setter of temperature."""
-        if self._common_params is None:
-            raise RuntimeError("Parameters not defined.")
-        self._common_params.temperature = temp
-        for p in self._params:
-            p.temperature = temp
+        self.setter_common_property("temperature", temp)
 
     @property
     def electron_property(self):
@@ -282,11 +267,7 @@ class PolymlpParams:
     @electron_property.setter
     def electron_property(self, prop: str):
         """Setter of target electronic property."""
-        if self._common_params is None:
-            raise RuntimeError("Parameters not defined.")
-        self._common_params.electron_property = prop
-        for p in self._params:
-            p.electron_property = prop
+        self.setter_common_property("electron_property", prop)
 
     @property
     def print_memory(self):
@@ -296,39 +277,97 @@ class PolymlpParams:
     @print_memory.setter
     def print_memory(self, pm: str):
         """Setter of print_memory."""
-        if self._common_params is None:
-            raise RuntimeError("Parameters not defined.")
-        self._common_params.print_memory = pm
-        for p in self._params:
-            p.print_memory = pm
+        self.setter_common_property("print_memory", pm)
 
     @property
-    def regression_alpha(self):
+    def solver_method(self):
+        """Return solver method."""
+        return self._common_params.solver_method
+
+    @solver_method.setter
+    def solver_method(self, method: str):
+        """Setter of solver method."""
+        self.setter_common_property("solver_method", method)
+
+    @property
+    def solver_alpha(self):
         """Return power indices of alpha penalty values."""
-        return self._common_params.regression_alpha
+        return self._common_params.solver_alpha
 
-    @regression_alpha.setter
-    def regression_alpha(self, a: str):
+    @solver_alpha.setter
+    def solver_alpha(self, a: str):
         """Setter of print_memory."""
-        if self._common_params is None:
-            raise RuntimeError("Parameters not defined.")
-        self._common_params.regression_alpha = a
-        for p in self._params:
-            p.regression_alpha = a
+        self.setter_common_property("solver_alpha", a)
 
     @property
-    def alphas(self):
+    def solver_alphas(self):
         """Return alpha penalty values."""
-        return self._common_params.alphas
+        return self._common_params.solver_alphas
 
-    @alphas.setter
-    def alphas(self, a: str):
+    @solver_alphas.setter
+    def solver_alphas(self, a: str):
         """Setter of print_memory."""
-        if self._common_params is None:
-            raise RuntimeError("Parameters not defined.")
-        self._common_params.alphas = a
-        for p in self._params:
-            p.alphas = a
+        self.setter_common_property("solver_alphas", a)
+
+    @property
+    def solver_use_gradient(self):
+        """Return whether gradient solver is used."""
+        return self._common_params.solver_use_gradient
+
+    @solver_use_gradient.setter
+    def solver_use_gradient(self, use_gradient: bool):
+        """Setter of solver_use_gradient."""
+        self.setter_common_property("solver_use_gradient", use_gradient)
+
+    @property
+    def solver_use_cv(self):
+        """Return whether cross-validation is used in the solver."""
+        return self._common_params.solver_use_cv
+
+    @solver_use_cv.setter
+    def solver_use_cv(self, use_cv: bool):
+        """Setter of solver_use_cv."""
+        self.setter_common_property("solver_use_cv", use_cv)
+
+    @property
+    def use_weight(self):
+        """Return whether weight is used."""
+        return self._common_params.use_weight
+
+    @use_weight.setter
+    def use_weight(self, use_weight: bool):
+        """Setter of use_weight."""
+        self.setter_common_property("use_weight", use_weight)
+
+    @property
+    def weight_stress(self):
+        """Return weight stress."""
+        return self._common_params.weight_stress
+
+    @weight_stress.setter
+    def weight_stress(self, weight_stress: float):
+        """Setter of weight_stress."""
+        self.setter_common_property("weight_stress", weight_stress)
+
+    @property
+    def weight_method(self):
+        """Return weight method."""
+        return self._common_params.weight_method
+
+    @weight_method.setter
+    def weight_method(self, weight_method: int):
+        """Setter of weight_method."""
+        self.setter_common_property("weight_method", weight_method)
+
+    @property
+    def weight_min_energy(self):
+        """Return minimum energy for weight."""
+        return self._common_params.weight_min_energy
+
+    @weight_min_energy.setter
+    def weight_min_energy(self, weight_min_energy: float):
+        """Setter of weight_min_energy."""
+        self.setter_common_property("weight_min_energy", weight_min_energy)
 
     @property
     def is_hybrid(self):

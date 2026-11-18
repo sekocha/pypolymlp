@@ -88,7 +88,7 @@ class PolymlpFitLearningCurve(PolymlpFitBase):
             coefs = solver_ridge(
                 x=x,
                 y=y,
-                alphas=self._params.alphas,
+                alphas=self._params.solver_alphas,
                 verbose=False,
             )
             rmse_train = self._polymlp.compute_rmse(coefs, x=x, y=y)

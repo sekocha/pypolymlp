@@ -42,7 +42,7 @@ class PolymlpFitStandard(PolymlpFitBase):
         coefs = solver_ridge(
             xtx=train_xy.xtx,
             xty=train_xy.xty,
-            alphas=self._params.alphas,
+            alphas=self._params.solver_alphas,
             verbose=self._verbose,
         )
 

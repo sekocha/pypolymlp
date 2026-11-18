@@ -13,7 +13,7 @@ from pypolymlp.core.data_format import (
 from pypolymlp.core.units import HartreetoEV
 
 
-def set_regression_alphas(alpha_params: tuple):
+def set_solver_alphas(alpha_params: tuple):
     """Set regularization parameters in regression."""
     assert len(alpha_params) == 3
     return np.linspace(alpha_params[0], alpha_params[1], round(alpha_params[2]))
@@ -150,7 +150,7 @@ def set_all_params(
     gaussian_params2: tuple[float, float, int] = (0.0, 5.0, 7),
     n_gaussians: Optional[int] = None,
     distance: Optional[dict] = None,
-    reg_alpha_params: tuple[float, float, int] = (-3.0, 1.0, 5),
+    solver_alpha_params: tuple[float, float, int] = (-3.0, 1.0, 5),
     gtinv_order: int = 3,
     gtinv_maxl: tuple[int] = (4, 4, 2, 1, 1),
     gtinv_version: Literal[1, 2] = 1,
@@ -184,7 +184,7 @@ def set_all_params(
                  by the cutoff radius and number of Gaussians.
     distance: Interatomic distances for element pairs.
         (e.g.) distance = {(Sr, Sr): [3.5, 4.8], (Ti, Ti): [2.5, 5.5]}
-    reg_alpha_params: Parameters for penalty term in
+    solver_alpha_params: Parameters for penalty term in
         linear ridge regression. Parameters are given as
         np.linspace(p[0], p[1], p[2]).
     gtinv_order: Maximum order of polynomial invariants.
@@ -200,7 +200,7 @@ def set_all_params(
         atomic_energy=atomic_energy,
         enable_spins=enable_spins,
     )
-    alphas = set_regression_alphas(reg_alpha_params)
+    alphas = set_solver_alphas(solver_alpha_params)
 
     gtinv, max_l = set_gtinv_params(
         n_type,
@@ -239,7 +239,7 @@ def set_all_params(
         model=model,
         atomic_energy=atomic_energy,
         enable_spins=enable_spins,
-        regression_alpha=alphas,
+        solver_alpha=alphas,
         include_force=include_force,
         include_stress=include_stress,
     )

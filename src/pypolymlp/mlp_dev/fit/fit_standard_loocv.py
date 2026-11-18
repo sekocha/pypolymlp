@@ -42,7 +42,7 @@ class PolymlpFitStandardLOOCV(PolymlpFitBase):
         train_xy = self._polymlp.calc_xtx_xty(self._train, batch_size=self._batch_size)
 
         xtx = train_xy.xtx
-        alphas = self._params.alphas
+        alphas = self._params.solver_alphas
         if self._verbose:
             print("Regression:", flush=True)
 

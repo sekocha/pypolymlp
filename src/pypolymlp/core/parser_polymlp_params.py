@@ -11,7 +11,7 @@ from pypolymlp.core.params_utils import (
     set_active_gaussian_params,
     set_gaussian_params,
     set_gtinv_params,
-    set_regression_alphas,
+    set_solver_alphas,
 )
 from pypolymlp.core.parser_infile import InputParser
 from pypolymlp.core.units import HartreetoEV
@@ -51,9 +51,10 @@ class ParamsParserSingle:
         """Get parameters from file and set them."""
         include_force, include_stress = self._get_force_tags()
         elements, n_type, atom_e, enable_spins = self._get_element_properties()
-        alphas = self._get_regression_params()
+        alphas, use_grad, use_cv = self._get_solver_params()
         model = self._get_potential_model_params(n_type, elements)
         dataset_type = self._parser.get_params("dataset_type", default="vasp")
+        use_weight, weight_s, weight_method, weight_min_e = self._get_weight_params()
 
         self._params = PolymlpParamsSingle(
             n_type=n_type,
@@ -61,10 +62,16 @@ class ParamsParserSingle:
             model=model,
             atomic_energy=atom_e,
             enable_spins=enable_spins,
-            regression_alpha=alphas,
             include_force=include_force,
             include_stress=include_stress,
             dataset_type=dataset_type,
+            solver_alpha=alphas,
+            solver_use_gradient=use_grad,
+            solver_use_cv=use_cv,
+            use_auto_weight=use_weight,
+            weight_stress=weight_s,
+            weight_method=weight_method,
+            weight_min_energy=weight_min_e,
         )
 
         if dataset_type == "electron":
@@ -129,17 +136,60 @@ class ParamsParserSingle:
         )
         return elements, n_type, tuple(atom_e), enable_spins
 
-    def _get_regression_params(self):
-        """Set regularization parameters in regression."""
+    def _get_solver_params(self):
+        """Set parameters in solver."""
         alpha_params = self._parser.get_params(
-            "reg_alpha_params",
+            "regression_alpha_params",
             size=3,
-            default=(-3.0, 1.0, 5),
+            default=None,
             dtype=float,
             return_array=True,
         )
-        alphas = set_regression_alphas(alpha_params)
-        return alphas
+        if alpha_params is None:
+            alpha_params = self._parser.get_params(
+                "solver_alpha_params",
+                size=3,
+                default=(-3.0, 1.0, 5),
+                dtype=float,
+                return_array=True,
+            )
+        alphas = set_solver_alphas(alpha_params)
+
+        use_gradient = self._parser.get_params(
+            "solver_use_gradient",
+            default=False,
+            dtype=bool,
+        )
+        use_cv = self._parser.get_params(
+            "solver_use_cv",
+            default=False,
+            dtype=bool,
+        )
+        return (alphas, use_gradient, use_cv)
+
+    def _get_weight_params(self):
+        """Set parameters for weights."""
+        use_weight = self._parser.get_params(
+            "use_auto_weight",
+            default=True,
+            dtype=bool,
+        )
+        weight_stress = self._parser.get_params(
+            "weight_stress",
+            default=0.1,
+            dtype=float,
+        )
+        weight_method = self._parser.get_params(
+            "weight_method",
+            default=1,
+            dtype=int,
+        )
+        weight_min_energy = self._parser.get_params(
+            "weight_min_energy",
+            default=None,
+            dtype=float,
+        )
+        return (use_weight, weight_stress, weight_method, weight_min_energy)
 
     def _get_potential_model_params(self, n_type: int, elements: tuple):
         """Set parameters for identifying potential model."""

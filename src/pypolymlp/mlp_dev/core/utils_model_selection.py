@@ -170,11 +170,11 @@ def get_best_model(
     cumulative_n_features: Optional[tuple] = None,
 ):
     """Return best polymlp model."""
-    if len(params.alphas) != coefs_array.shape[1]:
+    if len(params.solver_alphas) != coefs_array.shape[1]:
         raise RuntimeError("Shapes of alphas and coeffs not consistent.")
-    if len(params.alphas) != len(rmse_train):
+    if len(params.solver_alphas) != len(rmse_train):
         raise RuntimeError("Shapes of alphas and rmse_train not consistent.")
-    if len(params.alphas) != len(rmse_test):
+    if len(params.solver_alphas) != len(rmse_test):
         raise RuntimeError("Shapes of alphas and rmse_test not consistent.")
 
     idx = np.argmin(rmse_test)
@@ -183,7 +183,7 @@ def get_best_model(
         scales=scales,
         rmse_train=rmse_train[idx],
         rmse_test=rmse_test[idx],
-        alpha=params.alphas[idx],
+        alpha=params.solver_alphas[idx],
         params=params,
         cumulative_n_features=cumulative_n_features,
     )
@@ -199,11 +199,11 @@ def get_all_models(
     cumulative_n_features: Optional[tuple] = None,
 ):
     """Return best polymlp model."""
-    if len(params.alphas) != coefs_array.shape[1]:
+    if len(params.solver_alphas) != coefs_array.shape[1]:
         raise RuntimeError("Shapes of alphas and coeffs not consistent.")
-    if len(params.alphas) != len(rmse_train):
+    if len(params.solver_alphas) != len(rmse_train):
         raise RuntimeError("Shapes of alphas and rmse_train not consistent.")
-    if len(params.alphas) != len(rmse_test):
+    if len(params.solver_alphas) != len(rmse_test):
         raise RuntimeError("Shapes of alphas and rmse_test not consistent.")
 
     all_models = []
@@ -213,7 +213,7 @@ def get_all_models(
             scales=scales,
             rmse_train=rmse_train[idx],
             rmse_test=rmse_test[idx],
-            alpha=params.alphas[idx],
+            alpha=params.solver_alphas[idx],
             params=params,
             cumulative_n_features=cumulative_n_features,
         )
@@ -231,7 +231,7 @@ def print_log(
     """Output log for ridge regression."""
     print("Regression: model selection ...", flush=True)
     str1 = ": rmse (train), cv =" if use_cv else ": rmse (train, test) ="
-    for a, rmse1, rmse2 in zip(params.alphas, rmse_train, rmse_test):
+    for a, rmse1, rmse2 in zip(params.solver_alphas, rmse_train, rmse_test):
         if rmse1 > error_threshold:
             text = str1 + " Failed, Failed"
             print("- alpha =", "{:.3e}".format(a), text, flush=True)

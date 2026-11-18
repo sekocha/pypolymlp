@@ -207,18 +207,30 @@ class PolymlpParamsSingle:
 
     Parameters
     ----------
-    n_type: Number of atomic types.
-    elements: Element species, (e.g., ['Mg','O']).
+    n_type: Number of element species.
+    elements: Element species. (e.g., ['Mg','O']).
     model: Model parameters in PolymlpModelParams.
     atomic_energy: Atomic energies (in eV).
     enable_spins: Boolean array to activate spins, (e.g., [True, False])
 
-    regression_alpha: Parameters for penalty term in linear ridge regression.
-                      alphas = np.linspace(p[0], p[1], p[2]).
-
     dataset_type: Dataset type.
     include_force: Consider force entries.
     include_stress: Consider stress entries.
+    print_memory: Print estimated memory allocation.
+
+    solver_method: Method for solving normal equations.
+    solver_alpha: Penalty magnitudes used in linear ridge regression.
+                  Three parameters are required.
+                  They are used as alphas = np.linspace(p[0], p[1], p[2]).
+    solver_alphas: Internally used parameter.
+                  Penalty magnitudes converted from solver_alpha.
+    solver_use_gradient: Use conjugate gradient solver.
+    solver_use_cv: Use cross validation to determine the optimal penalty.
+
+    use_auto_weight: Use weighted regression.
+    weight_stress: Additional weight magnitude for virial stress.
+    weight_method: Method for assigning weights automatically.
+    weight_min_energy: Minimum energy used for determining weights.
 
     temperature: Temperature (active if dataset = "electron")
     electron_property: Target electronic property
@@ -233,14 +245,21 @@ class PolymlpParamsSingle:
     atomic_energy: Optional[tuple] = None
     enable_spins: Optional[tuple] = None
 
-    regression_method: str = "ridge"
-    regression_alpha: tuple[float] = tuple(np.linspace(-3.0, 1.0, 5))
-    alphas: Optional[np.ndarray] = None
-
     dataset_type: Literal["vasp", "phonon3py", "openmx", "sscha", "electron"] = "vasp"
     include_force: bool = True
     include_stress: bool = True
     print_memory: bool = False
+
+    solver_method: Literal["ridge"] = "ridge"
+    solver_alpha: tuple[float] = tuple(np.linspace(-3.0, 1.0, 5))
+    solver_alphas: Optional[np.ndarray] = None
+    solver_use_gradient: bool = False
+    solver_use_cv: bool = False
+
+    use_auto_weight: bool = True
+    weight_stress: float = 0.1
+    weight_method: int = 1
+    weight_min_energy: Optional[float] = None
 
     type_indices: Optional[list] = None
     type_full: Optional[bool] = None
@@ -263,7 +282,7 @@ class PolymlpParamsSingle:
     def __post_init__(self):
         self.check_errors()
         self._set_params_spins()
-        self.alphas = np.array([pow(10, a) for a in self.regression_alpha])
+        self.solver_alphas = np.array([pow(10, a) for a in self.solver_alpha])
 
     def as_dict(self) -> dict:
         """Convert the dataclass to dict."""
@@ -279,14 +298,10 @@ class PolymlpParamsSingle:
         if self.enable_spins is not None:
             assert len(self.enable_spins) == self.n_type
 
-    def set_alphas(self, reg_alpha_params: tuple):
+    def set_alphas(self, params: tuple):
         """Set alpha values."""
-        self.regression_alpha = np.linspace(
-            reg_alpha_params[0],
-            reg_alpha_params[1],
-            reg_alpha_params[2],
-        )
-        self.alphas = np.array([pow(10, a) for a in self.regression_alpha])
+        self.solver_alpha = np.linspace(params[0], params[1], params[2])
+        self.solver_alphas = np.array([pow(10, a) for a in self.solver_alpha])
 
     def _set_params_spins(self):
         """Set parameters with spin configurations."""
