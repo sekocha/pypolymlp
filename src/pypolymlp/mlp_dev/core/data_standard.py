@@ -10,7 +10,7 @@ from pypolymlp.mlp_dev.core.data_utils import PolymlpDataXY
 from pypolymlp.mlp_dev.core.features import compute_features
 from pypolymlp.mlp_dev.core.utils import get_min_energy
 from pypolymlp.mlp_dev.core.utils_scales import round_scales
-from pypolymlp.mlp_dev.core.utils_weights import apply_weights
+from pypolymlp.mlp_dev.core.utils_weights import apply_weights_overwrite
 
 
 def calc_xy(
@@ -54,7 +54,7 @@ def calc_xy(
     y = np.zeros(x.shape[0])
     w = np.ones(x.shape[0])
     for data, indices in zip(datasets, first_indices):
-        x, y, w = apply_weights(
+        x, y, w = apply_weights_overwrite(
             x,
             y,
             w,

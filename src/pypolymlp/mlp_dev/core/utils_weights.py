@@ -5,6 +5,7 @@ from typing import Optional
 import numpy as np
 
 from pypolymlp.core.dataset import Dataset
+from pypolymlp.mlp_dev.core.utils import get_observation_slices
 
 
 def _set_weight_energy_data(energy, total_n_atoms, min_e: Optional[float] = None):
@@ -48,6 +49,57 @@ def _set_weight_stress_data(
 
 
 def apply_weights(
+    x: np.ndarray,
+    y: np.ndarray,
+    dataset: Dataset,
+    first_indices: list,
+    weight_stress: float = 0.1,
+    min_e: Optional[float] = None,
+):
+    """Apply weights to data."""
+    if x.shape[0] != y.shape[0]:
+        raise RuntimeError("Shapes of X and y not consistent.")
+
+    include_force = dataset.include_force
+    include_stress = dataset.include_stress
+
+    slices = get_observation_slices(dataset, first_indices)
+    ebegin, eend, fbegin, fend, sbegin, send = slices
+
+    w = np.ones(y.shape[0])
+    weight_e = _set_weight_energy_data(
+        dataset.energies,
+        dataset.total_n_atoms,
+        min_e=min_e,
+    )
+    weight_e *= dataset.weight
+
+    w[ebegin:eend] = weight_e
+    y[ebegin:eend] *= weight_e
+    x[ebegin:eend] *= weight_e[:, np.newaxis]
+
+    if include_force:
+        weight_f = _set_weight_force_data(dataset.forces)
+        weight_f *= dataset.weight
+        w[fbegin:fend] = weight_f
+        y[fbegin:fend] *= weight_f
+        x[fbegin:fend] *= weight_f[:, np.newaxis]
+
+    if include_stress:
+        weight_const = weight_stress * dataset.weight
+        weight_s = _set_weight_stress_data(dataset.stresses, weight_const)
+        w[sbegin:send] = weight_s
+        y[sbegin:send] *= weight_s
+        x[sbegin:send] *= weight_s[:, np.newaxis]
+
+    if include_force and not include_stress:
+        x[sbegin:send, :] = 0.0
+        y[sbegin:send] = 0.0
+        w[sbegin:send] = 0.0
+    return x, y, w
+
+
+def apply_weights_overwrite(
     x: np.ndarray,
     y: np.ndarray,
     w: np.ndarray,

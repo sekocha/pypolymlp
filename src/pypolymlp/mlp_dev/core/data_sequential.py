@@ -9,7 +9,7 @@ from pypolymlp.core.params import PolymlpParams
 from pypolymlp.mlp_dev.core.data_utils import PolymlpDataXY
 from pypolymlp.mlp_dev.core.features import compute_features
 from pypolymlp.mlp_dev.core.features_attr import get_num_features
-from pypolymlp.mlp_dev.core.utils import get_min_energy
+from pypolymlp.mlp_dev.core.utils import collect_observations, get_min_energy
 from pypolymlp.mlp_dev.core.utils_scales import compute_scales
 from pypolymlp.mlp_dev.core.utils_sequential import (
     estimate_peak_memory,
@@ -131,17 +131,20 @@ def _compute_products_single_batch(
         data_xy.xe_sum = sum_array(data_xy.xe_sum, np.sum(xe, axis=0))
         data_xy.xe_sq_sum = sum_array(data_xy.xe_sq_sum, np.sum(np.square(xe), axis=0))
 
-    y = np.zeros(n_data)
-    w = np.ones(n_data)
-    x, y, w = apply_weights(
-        x,
-        y,
-        w,
-        dataset_sliced,
-        first_indices,
-        weight_stress=weight_stress,
-        min_e=min_energy,
-    )
+    y = collect_observations(dataset_sliced, n_data, first_indices)
+
+    if params.use_auto_weight:
+        x, y, w = apply_weights(
+            x,
+            y,
+            dataset_sliced,
+            first_indices,
+            weight_stress=weight_stress,
+            min_e=min_energy,
+        )
+    else:
+        w = np.ones(n_data)
+
     data_xy.xtx = sum_xtx(
         data_xy.xtx,
         x,

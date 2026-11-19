@@ -27,6 +27,12 @@ def run():
         action="store_true",
         help="Learning curve calculations",
     )
+    parser.add_argument(
+        "--use_full_x",
+        action="store_true",
+        help="Calculate entire X matrix.",
+    )
+
     args = parser.parse_args()
     np.set_printoptions(legacy="1.21")
     print_credit()
@@ -45,7 +51,7 @@ def run():
         tlearn2 = time.time()
 
     t1 = time.time()
-    polymlp.fit()
+    polymlp.fit(use_full_x=args.use_full_x)
 
     polymlp.save_mlp(filename="polymlp.yaml")
     t2 = time.time()

@@ -4,7 +4,7 @@ import os
 
 import numpy as np
 
-from pypolymlp.core.dataset import DatasetList
+from pypolymlp.core.dataset import Dataset, DatasetList
 
 
 def get_min_energy(datasets: DatasetList) -> float:
@@ -49,3 +49,30 @@ def check_memory_size_in_regression(
     if verbose:
         print("Memory required for allocating X additionally.", flush=True)
     return mem_req
+
+
+def get_observation_slices(dataset: Dataset, first_indices: list):
+    """Get slices used for assigning X and Y data."""
+    ebegin, fbegin, sbegin = first_indices
+    eend = ebegin + len(dataset.energies)
+    if dataset.include_force:
+        fend = fbegin + len(dataset.forces)
+        send = sbegin + len(dataset.stresses)
+    else:
+        fend = None
+        send = None
+    return (ebegin, eend, fbegin, fend, sbegin, send)
+
+
+def collect_observations(dataset: Dataset, n_data: int, first_indices: list):
+    """Collect observations from a dataset."""
+    slices = get_observation_slices(dataset, first_indices)
+    ebegin, eend, fbegin, fend, sbegin, send = slices
+
+    y = np.zeros(n_data)
+    y[ebegin:eend] = dataset.energies
+    if dataset.include_force:
+        y[fbegin:fend] = dataset.forces
+    if dataset.include_stress:
+        y[sbegin:send] = dataset.stresses
+    return y
