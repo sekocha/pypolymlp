@@ -210,13 +210,10 @@ class PolymlpParamsSingle:
     n_type: Number of element species.
     elements: Element species. (e.g., ['Mg','O']).
     model: Model parameters in PolymlpModelParams.
-    atomic_energy: Atomic energies (in eV).
-    enable_spins: Boolean array to activate spins, (e.g., [True, False])
-
-    dataset_type: Dataset type.
     include_force: Consider force entries.
     include_stress: Consider stress entries.
-    print_memory: Print estimated memory allocation.
+    atomic_energy: Atomic energies.
+    enable_spins: Boolean array to activate spins, (e.g., [True, False])
 
     solver_method: Method for solving normal equations.
     solver_alpha: Penalty magnitudes used in linear ridge regression.
@@ -235,6 +232,8 @@ class PolymlpParamsSingle:
     temperature: Temperature (active if dataset = "electron")
     electron_property: Target electronic property
 
+    dataset_type: Dataset type.
+    print_memory: Print estimated memory allocation.
     dft_train, dft_test: Location of DFT datasets.
                          Their data structures depend on the dataset type.
     """
@@ -242,13 +241,11 @@ class PolymlpParamsSingle:
     n_type: int
     elements: tuple[str]
     model: PolymlpModelParams
-    atomic_energy: Optional[tuple] = None
-    enable_spins: Optional[tuple] = None
 
-    dataset_type: Literal["vasp", "phonon3py", "openmx", "sscha", "electron"] = "vasp"
     include_force: bool = True
     include_stress: bool = True
-    print_memory: bool = False
+    atomic_energy: Optional[tuple] = None
+    enable_spins: Optional[tuple] = None
 
     solver_method: Literal["ridge"] = "ridge"
     solver_alpha: tuple[float] = tuple(np.linspace(-3.0, 1.0, 5))
@@ -275,6 +272,8 @@ class PolymlpParamsSingle:
     name: Optional[str] = None
     mass: Optional[float] = None
     priority_infile: Optional[str] = None
+    dataset_type: Literal["vasp", "phonon3py", "openmx", "sscha", "electron"] = "vasp"
+    print_memory: bool = False
 
     dft_train: Optional[Union[list, dict]] = None
     dft_test: Optional[Union[list, dict]] = None

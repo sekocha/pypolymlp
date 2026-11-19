@@ -11,15 +11,15 @@ from pypolymlp.core.params_utils import (
     set_element_properties,
     set_gaussian_params,
     set_gtinv_params,
-    set_regression_alphas,
+    set_solver_alphas,
 )
 
 cwd = Path(__file__).parent
 
 
-def test_set_regression_alphas():
-    """Test set_regression_alphas."""
-    params = set_regression_alphas((-5, -3, 3))
+def test_set_solver_alphas():
+    """Test set_solver_alphas."""
+    params = set_solver_alphas((-5, -3, 3))
     np.testing.assert_allclose(params, [-5, -4, -3])
 
 

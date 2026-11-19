@@ -1,20 +1,14 @@
 """Class of input parameter parser."""
 
-from typing import Literal, Optional, Union
+from typing import Optional, Union
 
 import numpy as np
 
-from pypolymlp.core.data_format import PolymlpModelParams, PolymlpParamsSingle
+from pypolymlp.core.data_format import PolymlpParamsSingle
 from pypolymlp.core.dataset import Dataset, DatasetList
 from pypolymlp.core.params import PolymlpParams
-from pypolymlp.core.params_utils import (
-    set_active_gaussian_params,
-    set_gaussian_params,
-    set_gtinv_params,
-    set_solver_alphas,
-)
+from pypolymlp.core.params_utils import set_all_params
 from pypolymlp.core.parser_infile import InputParser
-from pypolymlp.core.units import HartreetoEV
 
 
 class ParamsParserSingle:
@@ -34,6 +28,8 @@ class ParamsParserSingle:
         self._train = None
         self._test = None
 
+        self._include_force = None
+
     def run(
         self,
         train_ratio: float = 0.9,
@@ -50,22 +46,34 @@ class ParamsParserSingle:
     def set_params(self):
         """Get parameters from file and set them."""
         include_force, include_stress = self._get_force_tags()
-        elements, n_type, atom_e, enable_spins = self._get_element_properties()
-        alphas, use_grad, use_cv = self._get_solver_params()
-        model = self._get_potential_model_params(n_type, elements)
-        dataset_type = self._parser.get_params("dataset_type", default="vasp")
+        elements, n_type, atom_e, unit, enable_spins = self._get_element_properties()
+        alpha_params, use_grad, use_cv = self._get_solver_params()
         use_weight, weight_s, weight_method, weight_min_e = self._get_weight_params()
+        solver_method = "ridge"
 
-        self._params = PolymlpParamsSingle(
-            n_type=n_type,
+        cutoff, model_type, max_p, feature_type = self._get_potential_model_params()
+        gparams1, gparams2, n_gaussians, distance = self._get_pair_params(cutoff)
+        gtinv_order, gtinv_maxl, gtinv_version = self._get_gtinv_params()
+        self._params = set_all_params(
             elements=elements,
-            model=model,
-            atomic_energy=atom_e,
-            enable_spins=enable_spins,
+            cutoff=cutoff,
+            model_type=model_type,
+            max_p=max_p,
+            feature_type=feature_type,
+            gaussian_params1=gparams1,
+            gaussian_params2=gparams2,
+            n_gaussians=n_gaussians,
+            distance=distance,
+            gtinv_order=gtinv_order,
+            gtinv_maxl=gtinv_maxl,
+            gtinv_version=gtinv_version,
             include_force=include_force,
             include_stress=include_stress,
-            dataset_type=dataset_type,
-            solver_alpha=alphas,
+            atomic_energy_unit=unit,
+            atomic_energy=atom_e,
+            enable_spins=enable_spins,
+            solver_method=solver_method,
+            solver_alpha_params=alpha_params,
             solver_use_gradient=use_grad,
             solver_use_cv=use_cv,
             use_auto_weight=use_weight,
@@ -74,44 +82,48 @@ class ParamsParserSingle:
             weight_min_energy=weight_min_e,
         )
 
+        dataset_type = self._parser.get_params("dataset_type", default="vasp")
+        self._params.dataset_type = dataset_type
         if dataset_type == "electron":
-            self._params.temperature = self._parser.get_params(
-                "temperature", default=300, dtype=float
-            )
-            self._params.electron_property = self._parser.get_params(
-                "electron_property", default="free_energy", dtype=str
-            )
+            temp, prop_name = self._get_electron_tags()
+            self._params.temperature = temp
+            self._params.electron_property = prop_name
 
         return self._params
 
+    def _get_electron_tags(self):
+        """Return tags for electronic free energy model."""
+        temp = self._parser.get_params("temperature", default=300, dtype=float)
+        prop_name = self._parser.get_params(
+            "electron_property", default="free_energy", dtype=str
+        )
+        return (temp, prop_name)
+
     def _get_force_tags(self):
         """Return include_force and include_stress."""
-        include_force = self._parser.get_params(
-            "include_force", default=True, dtype=bool
-        )
-        if include_force:
-            include_stress = self._parser.get_params(
+        inc_force = self._parser.get_params("include_force", default=True, dtype=bool)
+        if inc_force:
+            inc_stress = self._parser.get_params(
                 "include_stress", default=True, dtype=bool
             )
         else:
-            include_stress = False
+            inc_stress = False
 
-        self._include_force = include_force
-        return include_force, include_stress
+        self._include_force = inc_force
+        return (inc_force, inc_stress)
 
     def _get_element_properties(self):
         """Return properties for identifying elements."""
-        n_type = self._parser.get_params("n_type", default=1, dtype=int)
+        n_type = self._parser.get_params("n_type", required=True, dtype=int)
         elements = self._parser.get_params(
             "elements",
             size=n_type,
-            default=None,
             required=True,
             dtype=str,
             return_array=True,
         )
-        d_atom_e = [0.0 for i in range(n_type)]
 
+        d_atom_e = [0.0 for i in range(n_type)]
         atom_e = self._parser.get_params(
             "atomic_energy",
             size=n_type,
@@ -124,9 +136,6 @@ class ParamsParserSingle:
             default="eV",
             dtype=str,
         )
-        if atom_e_unit in ("Hartree", "hartree"):
-            atom_e = [e * HartreetoEV for e in atom_e]
-
         enable_spins = self._parser.get_params(
             "enable_spins",
             size=n_type,
@@ -134,12 +143,12 @@ class ParamsParserSingle:
             dtype=bool,
             return_array=True,
         )
-        return elements, n_type, tuple(atom_e), enable_spins
+        return (elements, n_type, tuple(atom_e), atom_e_unit, enable_spins)
 
     def _get_solver_params(self):
         """Set parameters in solver."""
         alpha_params = self._parser.get_params(
-            "regression_alpha_params",
+            "reg_alpha_params",
             size=3,
             default=None,
             dtype=float,
@@ -153,7 +162,6 @@ class ParamsParserSingle:
                 dtype=float,
                 return_array=True,
             )
-        alphas = set_solver_alphas(alpha_params)
 
         use_gradient = self._parser.get_params(
             "solver_use_gradient",
@@ -165,7 +173,7 @@ class ParamsParserSingle:
             default=False,
             dtype=bool,
         )
-        return (alphas, use_gradient, use_cv)
+        return (alpha_params, use_gradient, use_cv)
 
     def _get_weight_params(self):
         """Set parameters for weights."""
@@ -191,58 +199,15 @@ class ParamsParserSingle:
         )
         return (use_weight, weight_stress, weight_method, weight_min_energy)
 
-    def _get_potential_model_params(self, n_type: int, elements: tuple):
+    def _get_potential_model_params(self):
         """Set parameters for identifying potential model."""
         cutoff = self._parser.get_params("cutoff", default=6.0, dtype=float)
         model_type = self._parser.get_params("model_type", default=1, dtype=int)
         max_p = self._parser.get_params("max_p", default=1, dtype=int)
         feature_type = self._parser.get_params("feature_type", default="gtinv")
+        return (cutoff, model_type, max_p, feature_type)
 
-        gtinv_params, max_l = self._get_gtinv_params(n_type, feature_type)
-        pair_params, pair_params_active, pair_cond = self._get_pair_params(
-            cutoff, elements
-        )
-
-        model = PolymlpModelParams(
-            cutoff,
-            model_type,
-            max_p,
-            max_l,
-            feature_type=feature_type,
-            gtinv=gtinv_params,
-            pair_type="gaussian",
-            pair_conditional=pair_cond,
-            pair_params=pair_params,
-            pair_params_conditional=pair_params_active,
-        )
-        return model
-
-    def _get_gtinv_params(self, n_type: int, feature_type: Literal["gtinv", "pair"]):
-        """Set parameters for group-theoretical invariants."""
-        version = self._parser.get_params("gtinv_version", default=1, dtype=int)
-        order = self._parser.get_params("gtinv_order", default=3, dtype=int)
-        size = order - 1
-        gtinv_maxl = self._parser.get_params(
-            "gtinv_maxl",
-            size=size,
-            default=[2 for i in range(size)],
-            dtype=int,
-            return_array=True,
-        )
-        if len(gtinv_maxl) < size:
-            size_gap = size - len(gtinv_maxl)
-            gtinv_maxl.extend([2 for i in range(size_gap)])
-
-        gtinv_params, max_l = set_gtinv_params(
-            n_type,
-            feature_type=feature_type,
-            gtinv_order=order,
-            gtinv_maxl=gtinv_maxl,
-            gtinv_version=version,
-        )
-        return gtinv_params, max_l
-
-    def _get_pair_params(self, cutoff: float, elements: tuple):
+    def _get_pair_params(self, cutoff: float):
         """Set parameters for Gaussian radial functions."""
         params1 = self._parser.get_params(
             "gaussian_params1",
@@ -264,18 +229,25 @@ class ParamsParserSingle:
             dtype=int,
         )
         distance = self._parser.distance
-        pair_params = set_gaussian_params(
-            params1=params1,
-            params2=params2,
-            n_gaussians=n_gaussians,
-            cutoff=cutoff,
+        return (params1, params2, n_gaussians, distance)
+
+    def _get_gtinv_params(self):
+        """Set parameters for group-theoretical invariants."""
+        version = self._parser.get_params("gtinv_version", default=1, dtype=int)
+        order = self._parser.get_params("gtinv_order", default=3, dtype=int)
+        size = order - 1
+        gtinv_maxl = self._parser.get_params(
+            "gtinv_maxl",
+            size=size,
+            default=[2 for i in range(size)],
+            dtype=int,
+            return_array=True,
         )
-        pair_params_active, cond = set_active_gaussian_params(
-            pair_params,
-            elements,
-            distance,
-        )
-        return pair_params, pair_params_active, cond
+        if len(gtinv_maxl) < size:
+            size_gap = size - len(gtinv_maxl)
+            gtinv_maxl.extend([2 for i in range(size_gap)])
+
+        return (order, gtinv_maxl, version)
 
     def set_datasets(
         self,

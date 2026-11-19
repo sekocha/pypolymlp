@@ -78,8 +78,6 @@ class Pypolymlp:
         self,
         params: Optional[PolymlpParamsSingle] = None,
         elements: tuple[str] = None,
-        include_force: bool = True,
-        include_stress: bool = True,
         cutoff: float = 6.0,
         model_type: Literal[1, 2, 3, 4] = 4,
         max_p: Literal[1, 2, 3] = 2,
@@ -88,21 +86,28 @@ class Pypolymlp:
         gaussian_params2: tuple[float, float, int] = (0.0, 5.0, 7),
         n_gaussians: Optional[int] = None,
         distance: Optional[dict] = None,
-        reg_alpha_params: tuple[float, float, int] = (-3.0, 1.0, 5),
         gtinv_order: int = 3,
         gtinv_maxl: tuple[int] = (4, 4, 2, 1, 1),
         gtinv_version: Literal[1, 2] = 1,
+        include_force: bool = True,
+        include_stress: bool = True,
         atomic_energy_unit: Literal["eV", "Hartree"] = "eV",
         atomic_energy: Optional[tuple[float]] = None,
         enable_spins: Optional[tuple] = None,
+        reg_alpha_params: Optional[tuple] = None,
+        solver_alpha_params: tuple[float, float, int] = (-3.0, 1.0, 5),
+        solver_use_gradient: bool = False,
+        solver_use_cv: bool = False,
+        use_auto_weight: bool = True,
+        weight_stress: float = 0.1,
+        weight_method: int = 1,
+        weight_min_energy: Optional[float] = None,
     ):
         """Assign input parameters.
 
         Parameters
         ----------
         elements: Element species, (e.g., ['Mg','O'])
-        include_force: Considering force entries
-        include_stress: Considering stress entries
         cutoff: Cutoff radius
         model_type: Polynomial function type
             model_type = 1: Linear polynomial of polynomial invariants
@@ -122,23 +127,39 @@ class Pypolymlp:
                      by the cutoff radius and number of Gaussians.
         distance: Interatomic distances for element pairs.
             (e.g.) distance = {(Sr, Sr): [3.5, 4.8], (Ti, Ti): [2.5, 5.5]}
-        reg_alpha_params: Parameters for penalty term in
-            linear ridge regression. Parameters are given as
-            np.linspace(p[0], p[1], p[2]).
         gtinv_order: Maximum order of polynomial invariants.
         gtinv_maxl: Maximum angular numbers of polynomial invariants.
             [maxl for order=2, maxl for order=3, ...]
+        include_force: Consider force entries
+        include_stress: Consider stress entries
+        atomic_energy_unit: Unit of atomic energies. eV or Hartree.
         atomic_energy: Atomic energies.
         enable_spins: Boolean array to activate spin configurations.
+
+        reg_alpha_params: Parameters for penalty term in
+            linear ridge regression. Parameters are given as
+            np.linspace(p[0], p[1], p[2]). (Deprecated)
+        solver_alpha_params: Penalty magnitudes used in linear ridge regression.
+            Three parameters are required.
+            They are used as alphas = np.linspace(p[0], p[1], p[2]).
+        solver_use_gradient: Use conjugate gradient solver.
+        solver_use_cv: Use cross validation to determine the optimal penalty.
+        use_auto_weight: Use weighted regression.
+        weight_stress: Additional weight magnitude for virial stress.
+        weight_method: Method for assigning weights automatically.
+        weight_min_energy: Minimum energy used for determining weights.
         """
         if params is not None:
             self._params = PolymlpParams(params)
             return self
 
+        if reg_alpha_params is not None:
+            alpha_params = reg_alpha_params
+        else:
+            alpha_params = solver_alpha_params
+
         params_single = set_all_params(
             elements=elements,
-            include_force=include_force,
-            include_stress=include_stress,
             cutoff=cutoff,
             model_type=model_type,
             max_p=max_p,
@@ -147,13 +168,22 @@ class Pypolymlp:
             gaussian_params2=gaussian_params2,
             n_gaussians=n_gaussians,
             distance=distance,
-            reg_alpha_params=reg_alpha_params,
             gtinv_order=gtinv_order,
             gtinv_maxl=gtinv_maxl,
             gtinv_version=gtinv_version,
+            include_force=include_force,
+            include_stress=include_stress,
             atomic_energy_unit=atomic_energy_unit,
             atomic_energy=atomic_energy,
             enable_spins=enable_spins,
+            solver_method="ridge",
+            solver_alpha_params=alpha_params,
+            solver_use_gradient=solver_use_gradient,
+            solver_use_cv=solver_use_cv,
+            use_auto_weight=use_auto_weight,
+            weight_stress=weight_stress,
+            weight_method=weight_method,
+            weight_min_energy=weight_min_energy,
         )
         self._params = PolymlpParams(params_single)
         return self
@@ -162,8 +192,6 @@ class Pypolymlp:
         self,
         params: Optional[PolymlpParamsSingle] = None,
         elements: tuple[str] = None,
-        include_force: bool = True,
-        include_stress: bool = True,
         cutoff: float = 6.0,
         model_type: Literal[1, 2, 3, 4] = 4,
         max_p: Literal[1, 2, 3] = 2,
@@ -172,21 +200,15 @@ class Pypolymlp:
         gaussian_params2: tuple[float, float, int] = (0.0, 5.0, 7),
         n_gaussians: Optional[int] = None,
         distance: Optional[dict] = None,
-        reg_alpha_params: tuple[float, float, int] = (-3.0, 1.0, 5),
         gtinv_order: int = 3,
         gtinv_maxl: tuple[int] = (4, 4, 2, 1, 1),
         gtinv_version: Literal[1, 2] = 1,
-        atomic_energy_unit: Literal["eV", "Hartree"] = "eV",
-        atomic_energy: Optional[tuple[float]] = None,
-        enable_spins: Optional[tuple] = None,
     ):
         """Append parameters to hybrid models.
 
         Parameters
         ----------
         elements: Element species, (e.g., ['Mg','O'])
-        include_force: Considering force entries
-        include_stress: Considering stress entries
         cutoff: Cutoff radius
         model_type: Polynomial function type
             model_type = 1: Linear polynomial of polynomial invariants
@@ -206,14 +228,9 @@ class Pypolymlp:
                      by the cutoff radius and number of Gaussians.
         distance: Interatomic distances for element pairs.
             (e.g.) distance = {(Sr, Sr): [3.5, 4.8], (Ti, Ti): [2.5, 5.5]}
-        reg_alpha_params: Parameters for penalty term in
-            linear ridge regression. Parameters are given as
-            np.linspace(p[0], p[1], p[2]).
         gtinv_order: Maximum order of polynomial invariants.
         gtinv_maxl: Maximum angular numbers of polynomial invariants.
             [maxl for order=2, maxl for order=3, ...]
-        atomic_energy: Atomic energies.
-        enable_spins: Boolean array to activate spin configurations.
         """
         if self._params is None:
             print("Use set_params to set priority parameters at first.")
@@ -224,8 +241,6 @@ class Pypolymlp:
 
         params_append = set_all_params(
             elements=elements,
-            include_force=include_force,
-            include_stress=include_stress,
             cutoff=cutoff,
             model_type=model_type,
             max_p=max_p,
@@ -234,13 +249,9 @@ class Pypolymlp:
             gaussian_params2=gaussian_params2,
             n_gaussians=n_gaussians,
             distance=distance,
-            reg_alpha_params=reg_alpha_params,
             gtinv_order=gtinv_order,
             gtinv_maxl=gtinv_maxl,
             gtinv_version=gtinv_version,
-            atomic_energy_unit=atomic_energy_unit,
-            atomic_energy=atomic_energy,
-            enable_spins=enable_spins,
         )
         self._params.append(params_append)
         return self
