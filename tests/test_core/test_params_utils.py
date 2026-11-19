@@ -128,8 +128,6 @@ def test_set_all_params():
     """Test set_all_params."""
     params = set_all_params(
         elements=("Ag", "Au"),
-        include_force=True,
-        include_stress=False,
         cutoff=6.0,
         model_type=4,
         max_p=2,
@@ -137,10 +135,18 @@ def test_set_all_params():
         gaussian_params1=(1.0, 1.0, 1),
         gaussian_params2=(0.0, 5.0, 7),
         distance=None,
-        solver_alpha_params=(-3.0, 1.0, 5),
         gtinv_order=3,
         gtinv_maxl=(4, 4),
+        include_force=True,
+        include_stress=False,
         atomic_energy=None,
+        solver_alpha_params=(-3.0, 1.0, 5),
+        solver_use_gradient=False,
+        solver_use_cv=False,
+        use_auto_weight=True,
+        weight_stress=0.1,
+        weight_method=1,
+        weight_min_energy=None,
     )
 
     assert params.n_type == 2
@@ -181,3 +187,10 @@ def test_set_all_params():
     assert params.include_stress == False
     assert params.dataset_type == "vasp"
     np.testing.assert_allclose(params.solver_alphas, [1e-3, 1e-2, 1e-1, 1, 1e1])
+
+    assert params.solver_use_gradient == False
+    assert params.solver_use_cv == False
+    assert params.use_auto_weight
+    assert params.weight_stress == pytest.approx(0.1)
+    assert params.weight_method == 1
+    assert params.weight_min_energy is None

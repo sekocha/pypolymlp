@@ -232,6 +232,7 @@ class Pypolymlp:
         gtinv_order: Maximum order of polynomial invariants.
         gtinv_maxl: Maximum angular numbers of polynomial invariants.
             [maxl for order=2, maxl for order=3, ...]
+        enable_spins: Boolean array to activate spin configurations.
         """
         if self._params is None:
             print("Use set_params to set priority parameters at first.")

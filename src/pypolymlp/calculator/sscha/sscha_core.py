@@ -113,9 +113,6 @@ class SSCHACore(SSCHAParams):
                 for i in self._symfc.p2s_map:
                     print(i, self._supercell.positions[:, i], flush=True)
 
-            # print("Apply constraints.", flush=True)
-            # self._symfc = apply_null_space(self._symfc, self._null_space_basis_sup)
-
         self._n_coeffs = self._symfc.basis_set[2].basis_set.shape[1]
         if self._verbose and self._n_coeffs < 1000:
             self._symfc._log_level = 0

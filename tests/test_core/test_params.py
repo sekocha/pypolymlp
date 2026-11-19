@@ -4,6 +4,7 @@ import copy
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 from pypolymlp.core.data_format import PolymlpParamsSingle
 from pypolymlp.core.params import PolymlpParams, set_common_params
@@ -139,6 +140,36 @@ def test_PolymlpParams4(regdata_mp_149):
     assert params.solver_alphas == (100, 50)
     for p in params:
         assert p.solver_alphas == (100, 50)
+
+    params.solver_use_gradient = True
+    assert params.solver_use_gradient
+    for p in params:
+        assert p.solver_use_gradient
+
+    params.solver_use_cv = True
+    assert params.solver_use_cv
+    for p in params:
+        assert p.solver_use_cv
+
+    params.use_auto_weight = False
+    assert params.use_auto_weight == False
+    for p in params:
+        assert p.use_auto_weight == False
+
+    params.weight_stress = 0.2
+    assert params.weight_stress == pytest.approx(0.2)
+    for p in params:
+        assert p.weight_stress == pytest.approx(0.2)
+
+    params.weight_method = 2
+    assert params.weight_method == 2
+    for p in params:
+        assert p.weight_method == 2
+
+    params.weight_min_energy = 0.2
+    assert params.weight_min_energy == pytest.approx(0.2)
+    for p in params:
+        assert p.weight_min_energy == pytest.approx(0.2)
 
 
 def test_set_common_params(regdata_mp_149):

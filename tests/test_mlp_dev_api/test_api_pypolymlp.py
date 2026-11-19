@@ -14,6 +14,42 @@ cwd = Path(__file__).parent
 path_files = str(cwd) + "/../files/"
 
 
+def test_variables():
+    """Test input variables."""
+    polymlp = Pypolymlp(verbose=True)
+    polymlp.set_params(
+        elements=["Mg", "O"],
+        cutoff=8.0,
+        model_type=3,
+        max_p=2,
+        feature_type="gtinv",
+        n_gaussians=9,  # gaussian_params2=[0.0, 7.0, 8],
+        gtinv_order=3,
+        gtinv_maxl=[4, 4],
+        include_force=False,
+        include_stress=False,
+        atomic_energy=[-0.00040000, -1.85321219],
+        solver_alpha_params=(-3, -1, 3),
+        solver_use_gradient=False,
+        solver_use_cv=False,
+        use_auto_weight=True,
+        weight_stress=0.1,
+        weight_method=1,
+        weight_min_energy=None,
+    )
+    polymlp.append_hybrid_params(
+        elements=["Mg", "O"],
+        cutoff=6.0,
+        model_type=3,
+        max_p=2,
+        feature_type="gtinv",
+        n_gaussians=5,
+        gtinv_order=3,
+        gtinv_maxl=[4, 4],
+    )
+    assert len(polymlp.parameters) == 2
+
+
 def test_attrs():
     """Test attributes and functions."""
     infile = str(cwd / "polymlp.in.phono3py.Si")

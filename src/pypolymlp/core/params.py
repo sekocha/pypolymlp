@@ -330,14 +330,14 @@ class PolymlpParams:
         self.setter_common_property("solver_use_cv", use_cv)
 
     @property
-    def use_weight(self):
+    def use_auto_weight(self):
         """Return whether weight is used."""
-        return self._common_params.use_weight
+        return self._common_params.use_auto_weight
 
-    @use_weight.setter
-    def use_weight(self, use_weight: bool):
+    @use_auto_weight.setter
+    def use_auto_weight(self, use_auto_weight: bool):
         """Setter of use_weight."""
-        self.setter_common_property("use_weight", use_weight)
+        self.setter_common_property("use_auto_weight", use_auto_weight)
 
     @property
     def weight_stress(self):

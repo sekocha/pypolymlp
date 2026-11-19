@@ -73,6 +73,13 @@ def test_PolymlpParamsSingle(params_MgO):
     assert params_single.electron_property == "free_energy"
     assert isinstance(params_single.as_dict(), dict)
 
+    assert params_single.solver_use_gradient == False
+    assert params_single.solver_use_cv == False
+    assert params_single.use_auto_weight
+    assert params_single.weight_stress == pytest.approx(0.1)
+    assert params_single.weight_method == 1
+    assert params_single.weight_min_energy is None
+
 
 def test_PolymlpParamsSingle_spin(params_MgO):
     """Test PolymlpParamsSingle for spin configurations."""
