@@ -64,7 +64,15 @@ class Pypolymlp:
         train_ratio: float = 0.9,
         prefix: Optional[str] = None,
     ):
-        """Load input parameter file and set parameters."""
+        """Load input parameter file and set parameters.
+
+        Parameters
+        ----------
+        file_params: Input file(s) for developing polymlps.
+        train_ratio : float
+            Ratio of the training set size to the total dataset size.
+        prefix: Prefix of data directory (Required for tests).
+        """
         parser = ParamsParser(
             file_params,
             train_ratio=train_ratio,
@@ -110,8 +118,8 @@ class Pypolymlp:
 
         Parameters
         ----------
-        elements: Element species, (e.g., ['Mg','O'])
-        cutoff: Cutoff radius
+        elements: Element species, (e.g., ['Mg','O']).
+        cutoff: Cutoff radius in angstroms.
         model_type: Polynomial function type
             model_type = 1: Linear polynomial of polynomial invariants
             model_type = 2: Polynomial of polynomial invariants
@@ -120,28 +128,33 @@ class Pypolymlp:
             model_type = 4: Polynomial of pair and second-order invariants
                             + linear polynomial of polynomial invariants
         max_p: Order of polynomial function
-        feature_type: 'gtinv' or 'pair'
-        gaussian_params: Parameters for exp[- param1 * (r - param2)**2]
-            Parameters are given as np.linspace(p[0], p[1], p[2]),
-            where p[0], p[1], and p[2] are given by gaussian_params1
-            and gaussian_params2.
+        feature_type: Feature type, 'gtinv' or 'pair'.
+        gaussian_params: Parameters for generating Gaussian functions.
+            Gaussian functions are specified by two parameters as
+            exp[- param1 * (r - param2)**2]. The first and second parameters
+            are generated using gaussian_params1 and gaussian_params2.
+            Each of gaussian_params1 and gaussian_params2 requires three parameters.
+            They are used to generate sequential parameters, given as
+            np.linspace(p[0], p[1], p[2]).
         n_gaussians: Number of Gaussian functions.
-                     Parameters of Gaussians are automatically determined
-                     by the cutoff radius and number of Gaussians.
+            Gaussian functions are automatically determined
+            based on the cutoff radius and number of Gaussians.
+            If Gaussian functions are manually given, use gaussian_params.
         distance: Interatomic distances for element pairs.
             (e.g.) distance = {(Sr, Sr): [3.5, 4.8], (Ti, Ti): [2.5, 5.5]}
+            Gaussian functions are removed based on the given interatomic distances.
         gtinv_order: Maximum order of polynomial invariants.
         gtinv_maxl: Maximum angular numbers of polynomial invariants.
-            [maxl for order=2, maxl for order=3, ...]
-        include_force: Consider force entries
-        include_stress: Consider stress entries
+            (gtinv_order - 1) parameters are required as
+            [maxl for order=2, maxl for order=3, ...].
+
+        include_force: Consider force entries.
+        include_stress: Consider stress entries.
         atomic_energy_unit: Unit of atomic energies. eV or Hartree.
         atomic_energy: Atomic energies.
         enable_spins: Boolean array to activate spin configurations.
 
-        reg_alpha_params: Parameters for penalty term in
-            linear ridge regression. Parameters are given as
-            np.linspace(p[0], p[1], p[2]). (Deprecated)
+        reg_alpha_params: Penalty magnitudes. See solver_alpha_params.
         solver_alpha_params: Penalty magnitudes used in linear ridge regression.
             Three parameters are required.
             They are used as alphas = np.linspace(p[0], p[1], p[2]).
@@ -150,6 +163,7 @@ class Pypolymlp:
         solver_batch_size: Batch size of polynomial invarint calculations.
         solver_gtol: Gradient tolerance in gradient solvers.
         solver_max_iter: Maximum number of iterations in gradient solvers.
+
         use_auto_weight: Use weighted regression.
         weight_stress: Additional weight magnitude for virial stress.
         weight_method: Method for assigning weights automatically.
@@ -218,8 +232,8 @@ class Pypolymlp:
 
         Parameters
         ----------
-        elements: Element species, (e.g., ['Mg','O'])
-        cutoff: Cutoff radius
+        elements: Element species, (e.g., ['Mg','O']).
+        cutoff: Cutoff radius in angstroms.
         model_type: Polynomial function type
             model_type = 1: Linear polynomial of polynomial invariants
             model_type = 2: Polynomial of polynomial invariants
@@ -228,19 +242,25 @@ class Pypolymlp:
             model_type = 4: Polynomial of pair and second-order invariants
                             + linear polynomial of polynomial invariants
         max_p: Order of polynomial function
-        feature_type: 'gtinv' or 'pair'
-        gaussian_params: Parameters for exp[- param1 * (r - param2)**2]
-            Parameters are given as np.linspace(p[0], p[1], p[2]),
-            where p[0], p[1], and p[2] are given by gaussian_params1
-            and gaussian_params2.
+        feature_type: Feature type, 'gtinv' or 'pair'.
+        gaussian_params: Parameters for generating Gaussian functions.
+            Gaussian functions are specified by two parameters as
+            exp[- param1 * (r - param2)**2]. The first and second parameters
+            are generated using gaussian_params1 and gaussian_params2.
+            Each of gaussian_params1 and gaussian_params2 requires three parameters.
+            They are used to generate sequential parameters, given as
+            np.linspace(p[0], p[1], p[2]).
         n_gaussians: Number of Gaussian functions.
-                     Parameters of Gaussians are automatically determined
-                     by the cutoff radius and number of Gaussians.
+            Gaussian functions are automatically determined
+            based on the cutoff radius and number of Gaussians.
+            If Gaussian functions are manually given, use gaussian_params.
         distance: Interatomic distances for element pairs.
             (e.g.) distance = {(Sr, Sr): [3.5, 4.8], (Ti, Ti): [2.5, 5.5]}
+            Gaussian functions are removed based on the given interatomic distances.
         gtinv_order: Maximum order of polynomial invariants.
         gtinv_maxl: Maximum angular numbers of polynomial invariants.
-            [maxl for order=2, maxl for order=3, ...]
+            (gtinv_order - 1) parameters are required as
+            [maxl for order=2, maxl for order=3, ...].
         enable_spins: Boolean array to activate spin configurations.
         """
         if self._params is None:
@@ -318,10 +338,11 @@ class Pypolymlp:
 
         Parameters
         ----------
-        yamlfiles: electron.yaml files (list)
+        yamlfiles: List of electron.yaml files.
         temperature: Temperature (K).
         target: Target electronic property.
-        train_ratio: Ratio between training and entire data sizes.
+        train_ratio : float
+            Ratio of the training set size to the total dataset size.
         """
         self._is_params_none()
         self._params.dataset_type = "electron"
@@ -341,8 +362,9 @@ class Pypolymlp:
 
         Parameters
         ----------
-        yamlfiles: sscha_results.yaml files (list).
-        train_ratio: Ratio between training and entire data sizes.
+        yamlfiles: List of sscha_results.yaml files.
+        train_ratio : float
+            Ratio of the training set size to the total dataset size.
         """
         self._is_params_none()
         self._params.dataset_type = "sscha"
@@ -366,11 +388,13 @@ class Pypolymlp:
 
         Parameters
         ----------
-        train_vaspruns: vasprun files for training dataset (list)
-        test_vaspruns: vasprun files for test dataset (list)
-        vaspruns: vasprun files.
-                  They are automatically divided into training and test datasets.
-        train_ratio: Ratio between training and entire data sizes.
+        train_vaspruns: List of vasprun files for training dataset.
+        test_vaspruns: List of vasprun files for test dataset.
+        vaspruns: List of vasprun files.
+            If not None, the list is automatically divided
+            into training and test datasets.
+        train_ratio : float
+            Ratio of the training set size to the total dataset size.
         """
         self._is_params_none()
         self._params.dataset_type = "vasp"
@@ -399,8 +423,8 @@ class Pypolymlp:
 
         Parameters
         ----------
-        train_vaspruns: List of list containing vasprun files (training)
-        test_vaspruns: List of list containing vasprun files (test)
+        train_vaspruns: List of list containing vasprun files (training).
+        test_vaspruns: List of list containing vasprun files (test).
         """
         self._is_params_none()
         self._params.dataset_type = "vasp"
@@ -418,7 +442,8 @@ class Pypolymlp:
         Parameters
         ----------
         yaml: Phono3py yaml file.
-        train_ratio: Ratio between training and entire data sizes.
+        train_ratio : float
+            Ratio of the training set size to the total dataset size.
         """
         self._is_params_none()
         self._params.dataset_type = "phono3py"
@@ -436,7 +461,8 @@ class Pypolymlp:
         Parameters
         ----------
         yamls: Structures and properties in yaml files.
-        train_ratio: Ratio between training and entire data sizes.
+        train_ratio : float
+            Ratio of the training set size to the total dataset size.
         """
         self._is_params_none()
         self._params.dataset_type = "vasp"
@@ -471,7 +497,8 @@ class Pypolymlp:
         energies: Energies (training and test), shape=(n_data) in eV/cell.
         forces: Forces (training and test), shape = n_data x (3, n_atoms_i) in eV/ang.
         stresses: Stress tensors (training and test), shape=(n_data, 3, 3), in eV/cell.
-        train_ratio: Ratio between training and entire data sizes.
+        train_ratio : float
+            Ratio of the training set size to the total dataset size.
         """
         self._is_params_none()
         self._disable_derivative_flags(forces, stresses)
@@ -635,7 +662,13 @@ class Pypolymlp:
         file_path: str = "./",
         verbose: Optional[bool] = None,
     ):
-        """Estimate prediction errors."""
+        """Estimate prediction errors.
+
+        Parameters
+        ----------
+        log_energy: Generate a log file containing DFT and MLP energy values.
+        file_path: Path of output files.
+        """
         if verbose is not None:
             self._verbose = verbose
 
@@ -668,6 +701,7 @@ class Pypolymlp:
         Parameters
         ----------
         use_full_x: Calculate the entire X matrix.
+        log_energy: Generate a log file containing DFT and MLP energy values.
         """
         if verbose is not None:
             self._verbose = verbose
@@ -694,7 +728,12 @@ class Pypolymlp:
         return self
 
     def save_learning_curve(self, filename: str = "polymlp_learning_curve.dat"):
-        """Save learing curve."""
+        """Save learing curve.
+
+        Parameters
+        ----------
+        filename: File name for learning curve log.
+        """
         save_learning_curve_log(self._learning_log, filename=filename)
         return self
 
@@ -757,12 +796,18 @@ class Pypolymlp:
 
         Parameters
         ----------
-        filename: File name of generated polynomial MLP.
-        optimal: If true, only the MLP with the lowest prediction error
-                 will be generated. If false, all the MLPs will be generated.
-
-        When hybrid models are used, mlp files will be generated as
-        filename.1, filename.2, ...
+        filename : str
+            File name of the generated polynomial MLP model.
+            When hybrid models are used, mlp files are saved as
+            filename.1, filename.2, ...
+        filename_log : str
+            Name of the log file generated during MLP development using
+            ridge regression. This file is generated only when
+            ``optimal=True``.
+        optimal : bool, default=True
+            If ``True``, only the MLP model with the lowest prediction
+            error is generated.
+            If ``False``, all generated MLP models are saved.
         """
         if optimal:
             if self._mlp_model is None:
@@ -790,7 +835,18 @@ class Pypolymlp:
         filename: Union[str, io.IOBase] = "polymlp.yaml",
         require_atomic_energy: bool = False,
     ):
-        """Load polynomial MLP from file."""
+        """Load polynomial MLP from file.
+
+        Parameters
+        ----------
+        filename : str or list of str
+            File name of the MLP model or a list of MLP file names
+            for hybrid models.
+        require_atomic_energy : bool
+            If ``True``, atomic energy information is required in the
+            MLP files. If ``False``, atomic energy information is not
+            required.
+        """
         self._params, coeffs = load_mlps(filename)
         if require_atomic_energy and self._params.atomic_energy is None:
             raise RuntimeError(
@@ -851,7 +907,15 @@ class Pypolymlp:
         return self
 
     def split_train_test(self, list_obj: list, train_ratio: float = 0.9):
-        """Split list into training and test datasets."""
+        """Split list into training and test datasets.
+
+        Parameters
+        ----------
+        list_obj : list
+            List of objects to be divided into training and test sets.
+        train_ratio : float
+            Ratio of the training set size to the total dataset size.
+        """
         return split_train_test(list_obj, train_ratio=train_ratio)
 
     def convert_to_yaml(
@@ -872,7 +936,12 @@ class Pypolymlp:
     def get_structures_from_poscars(
         self, poscars: Union[str, list[str]]
     ) -> list[PolymlpStructure]:
-        """Load poscar files and convert them to structure instances."""
+        """Load poscar files and convert them to structure instances.
+
+        Parameters
+        ----------
+        poscars: List of poscar files.
+        """
         return parse_structures_from_poscars(poscars)
 
     @property
