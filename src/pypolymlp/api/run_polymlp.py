@@ -27,34 +27,6 @@ def run():
         action="store_true",
         help="Learning curve calculations",
     )
-    parser.add_argument(
-        "--batch_size",
-        type=int,
-        default=None,
-        help="Batch size of feature calculations",
-    )
-    parser.add_argument(
-        "--cg",
-        action="store_true",
-        help="Use conjugate gradient",
-    )
-    parser.add_argument(
-        "--gtol",
-        type=float,
-        default=1e-2,
-        help="Tolerance for gradient in CG",
-    )
-    parser.add_argument(
-        "--max_iter",
-        type=int,
-        default=None,
-        help="Maximum number of iterations in CG",
-    )
-    parser.add_argument(
-        "--cross_val",
-        action="store_true",
-        help="Use cross validation",
-    )
     args = parser.parse_args()
     np.set_printoptions(legacy="1.21")
     print_credit()
@@ -73,17 +45,11 @@ def run():
         tlearn2 = time.time()
 
     t1 = time.time()
-    polymlp.fit(
-        use_cv=args.cross_val,
-        use_cg=args.cg,
-        batch_size=args.batch_size,
-        gtol=args.gtol,
-        max_iter=args.max_iter,
-    )
+    polymlp.fit()
 
     polymlp.save_mlp(filename="polymlp.yaml")
     t2 = time.time()
-    polymlp.estimate_error(log_energy=True, use_cv=args.cross_val)
+    polymlp.estimate_error(log_energy=True)
     t3 = time.time()
     polymlp.save_errors(filename="polymlp_error.yaml")
 

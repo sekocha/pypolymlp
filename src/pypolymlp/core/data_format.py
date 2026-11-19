@@ -223,6 +223,9 @@ class PolymlpParamsSingle:
                   Penalty magnitudes converted from solver_alpha.
     solver_use_gradient: Use conjugate gradient solver.
     solver_use_cv: Use cross validation to determine the optimal penalty.
+    solver_batch_size: Batch size of polynomial invarint calculations.
+    solver_gtol: Gradient tolerance in gradient solvers.
+    solver_max_iter: Maximum number of iterations in gradient solvers.
 
     use_auto_weight: Use weighted regression.
     weight_stress: Additional weight magnitude for virial stress.
@@ -252,6 +255,9 @@ class PolymlpParamsSingle:
     solver_alphas: Optional[np.ndarray] = None
     solver_use_gradient: bool = False
     solver_use_cv: bool = False
+    solver_batch_size: Optional[int] = None
+    solver_gtol: float = 1e-2
+    solver_max_iter: Optional[int] = None
 
     use_auto_weight: bool = True
     weight_stress: float = 0.1

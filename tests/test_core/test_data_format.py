@@ -75,6 +75,10 @@ def test_PolymlpParamsSingle(params_MgO):
 
     assert params_single.solver_use_gradient == False
     assert params_single.solver_use_cv == False
+    assert params_single.solver_batch_size is None
+    assert params_single.solver_gtol == pytest.approx(0.01)
+    assert params_single.solver_max_iter is None
+
     assert params_single.use_auto_weight
     assert params_single.weight_stress == pytest.approx(0.1)
     assert params_single.weight_method == 1

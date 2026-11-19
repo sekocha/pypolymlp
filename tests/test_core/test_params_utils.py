@@ -143,6 +143,9 @@ def test_set_all_params():
         solver_alpha_params=(-3.0, 1.0, 5),
         solver_use_gradient=False,
         solver_use_cv=False,
+        solver_batch_size=None,
+        solver_gtol=0.001,
+        solver_max_iter=100,
         use_auto_weight=True,
         weight_stress=0.1,
         weight_method=1,
@@ -190,6 +193,10 @@ def test_set_all_params():
 
     assert params.solver_use_gradient == False
     assert params.solver_use_cv == False
+    assert params.solver_batch_size is None
+    assert params.solver_gtol == pytest.approx(0.001)
+    assert params.solver_max_iter == 100
+
     assert params.use_auto_weight
     assert params.weight_stress == pytest.approx(0.1)
     assert params.weight_method == 1

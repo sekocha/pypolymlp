@@ -98,6 +98,9 @@ class Pypolymlp:
         solver_alpha_params: tuple[float, float, int] = (-3.0, 1.0, 5),
         solver_use_gradient: bool = False,
         solver_use_cv: bool = False,
+        solver_batch_size: Optional[int] = None,
+        solver_gtol: float = 1e-2,
+        solver_max_iter: Optional[int] = None,
         use_auto_weight: bool = True,
         weight_stress: float = 0.1,
         weight_method: int = 1,
@@ -144,6 +147,9 @@ class Pypolymlp:
             They are used as alphas = np.linspace(p[0], p[1], p[2]).
         solver_use_gradient: Use conjugate gradient solver.
         solver_use_cv: Use cross validation to determine the optimal penalty.
+        solver_batch_size: Batch size of polynomial invarint calculations.
+        solver_gtol: Gradient tolerance in gradient solvers.
+        solver_max_iter: Maximum number of iterations in gradient solvers.
         use_auto_weight: Use weighted regression.
         weight_stress: Additional weight magnitude for virial stress.
         weight_method: Method for assigning weights automatically.
@@ -180,6 +186,9 @@ class Pypolymlp:
             solver_alpha_params=alpha_params,
             solver_use_gradient=solver_use_gradient,
             solver_use_cv=solver_use_cv,
+            solver_batch_size=solver_batch_size,
+            solver_gtol=solver_gtol,
+            solver_max_iter=solver_max_iter,
             use_auto_weight=use_auto_weight,
             weight_stress=weight_stress,
             weight_method=weight_method,
@@ -589,31 +598,19 @@ class Pypolymlp:
 
     def fit(
         self,
-        use_cv: bool = False,
-        use_cg: bool = False,
         use_full_x: bool = False,
-        batch_size: Optional[int] = None,
-        gtol: float = 1e-2,
-        max_iter: Optional[int] = None,
         verbose: Optional[bool] = None,
     ):
         """Estimate MLP coefficients without computing entire X.
 
         Parameters
         ----------
-        use_cv: Use cross validation for optimizing alpha value.
-        use_cg: Use conjugate gradient solver.
         use_full_x: Calculate the entire X matrix. Available only for use_cv = False.
-        batch_size: Batch size for sequential regression.
-                    If None, the batch size is automatically determined
-                    depending on the memory size and number of features.
-        gtol: Gradient tolerance for CG.
-        max_iter: Number of maximum iterations in CG.
         """
         if verbose is not None:
             self._verbose = verbose
 
-        if use_cv:
+        if self._params.solver_use_cv:
             use_full_x = True
 
         self._is_params_none()
@@ -622,23 +619,18 @@ class Pypolymlp:
             params=self._params,
             train=self._train,
             test=self._test,
-            use_cv=use_cv,
-            use_cg=use_cg,
             use_full_x=use_full_x,
-            batch_size=batch_size,
-            gtol=gtol,
-            max_iter=max_iter,
             verbose=self._verbose,
         )
         self._mlp_model = fit.best_model
         self._mlp_all_models = fit.all_models
-        if use_cv:
+
+        if self._params.solver_use_cv:
             self._train_xy = fit.train_xy
         return self
 
     def estimate_error(
         self,
-        use_cv: bool = False,
         log_energy: bool = False,
         file_path: str = "./",
         verbose: Optional[bool] = None,
@@ -650,6 +642,7 @@ class Pypolymlp:
         if self._mlp_model is None:
             raise RuntimeError("Regression must be performed before estimating errors.")
 
+        use_cv = self._params.solver_use_cv
         self._error_train, self._error_test = compute_errors(
             mlp=self._mlp_model,
             train=self._train,
@@ -666,12 +659,7 @@ class Pypolymlp:
 
     def run(
         self,
-        use_cv: bool = False,
-        use_cg: bool = False,
         use_full_x: bool = False,
-        batch_size: Optional[int] = None,
-        gtol: float = 1e-2,
-        max_iter: Optional[int] = None,
         log_energy: bool = False,
         verbose: Optional[bool] = None,
     ):
@@ -679,33 +667,14 @@ class Pypolymlp:
 
         Parameters
         ----------
-        use_cv: Use cross validation for optimizing alpha value.
-        use_cg: Use conjugate gradient solver.
         use_full_x: Calculate the entire X matrix.
-        batch_size: Batch size for sequential regression.
-                    If None, the batch size is automatically determined
-                    depending on the memory size and number of features.
-        gtol: Gradient tolerance for CG.
-        max_iter: Number of maximum iterations in CG.
         """
         if verbose is not None:
             self._verbose = verbose
 
-        # TODO: batch size must be active for CG.
-        self.fit(
-            use_cv=use_cv,
-            use_cg=use_cg,
-            use_full_x=use_full_x,
-            batch_size=batch_size,
-            gtol=gtol,
-            max_iter=max_iter,
-            verbose=self._verbose,
-        )
-        self.estimate_error(
-            use_cv=use_cv,
-            log_energy=log_energy,
-            verbose=self._verbose,
-        )
+        # TODO: batch size will be activated in CG.
+        self.fit(use_full_x=use_full_x, verbose=self._verbose)
+        self.estimate_error(log_energy=log_energy, verbose=self._verbose)
         return self
 
     def fit_learning_curve(self, verbose: Optional[bool] = None):

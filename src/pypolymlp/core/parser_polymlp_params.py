@@ -48,6 +48,7 @@ class ParamsParserSingle:
         include_force, include_stress = self._get_force_tags()
         elements, n_type, atom_e, unit, enable_spins = self._get_element_properties()
         alpha_params, use_grad, use_cv = self._get_solver_params()
+        batch_size, gtol, max_iter = self._get_solver_options()
         use_weight, weight_s, weight_method, weight_min_e = self._get_weight_params()
         solver_method = "ridge"
 
@@ -76,6 +77,9 @@ class ParamsParserSingle:
             solver_alpha_params=alpha_params,
             solver_use_gradient=use_grad,
             solver_use_cv=use_cv,
+            solver_batch_size=batch_size,
+            solver_gtol=gtol,
+            solver_max_iter=max_iter,
             use_auto_weight=use_weight,
             weight_stress=weight_s,
             weight_method=weight_method,
@@ -174,6 +178,17 @@ class ParamsParserSingle:
             dtype=bool,
         )
         return (alpha_params, use_gradient, use_cv)
+
+    def _get_solver_options(self):
+        """Set optional parameters in solver."""
+        batch_size = self._parser.get_params(
+            "solver_batch_size",
+            default=None,
+            dtype=int,
+        )
+        gtol = self._parser.get_params("solver_gtol", default=1e-2, dtype=float)
+        max_iter = self._parser.get_params("solver_max_iter", default=None, dtype=int)
+        return (batch_size, gtol, max_iter)
 
     def _get_weight_params(self):
         """Set parameters for weights."""

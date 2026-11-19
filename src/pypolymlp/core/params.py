@@ -330,6 +330,36 @@ class PolymlpParams:
         self.setter_common_property("solver_use_cv", use_cv)
 
     @property
+    def solver_batch_size(self):
+        """Return solver_batch_size."""
+        return self._common_params.solver_batch_size
+
+    @solver_batch_size.setter
+    def solver_batch_size(self, solver_batch_size: int):
+        """Setter of solver_batch_size."""
+        self.setter_common_property("solver_batch_size", solver_batch_size)
+
+    @property
+    def solver_gtol(self):
+        """Return solver_gtol."""
+        return self._common_params.solver_gtol
+
+    @solver_gtol.setter
+    def solver_gtol(self, solver_gtol: float):
+        """Setter of solver_gtol."""
+        self.setter_common_property("solver_gtol", solver_gtol)
+
+    @property
+    def solver_max_iter(self):
+        """Return solver_max_iter."""
+        return self._common_params.solver_max_iter
+
+    @solver_max_iter.setter
+    def solver_max_iter(self, solver_max_iter: int):
+        """Setter of solver_max_iter."""
+        self.setter_common_property("solver_max_iter", solver_max_iter)
+
+    @property
     def use_auto_weight(self):
         """Return whether weight is used."""
         return self._common_params.use_auto_weight

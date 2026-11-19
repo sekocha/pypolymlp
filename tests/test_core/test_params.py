@@ -151,6 +151,21 @@ def test_PolymlpParams4(regdata_mp_149):
     for p in params:
         assert p.solver_use_cv
 
+    params.solver_batch_size = 100
+    assert params.solver_batch_size == 100
+    for p in params:
+        assert p.solver_batch_size == 100
+
+    params.solver_gtol = 0.001
+    assert params.solver_gtol == pytest.approx(0.001)
+    for p in params:
+        assert p.solver_gtol == pytest.approx(0.001)
+
+    params.solver_max_iter = 100
+    assert params.solver_max_iter == 100
+    for p in params:
+        assert p.solver_max_iter == 100
+
     params.use_auto_weight = False
     assert params.use_auto_weight == False
     for p in params:

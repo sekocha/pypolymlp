@@ -23,16 +23,16 @@ def fit_polymlp(
     params: PolymlpParams,
     train: DatasetList,
     test: Optional[DatasetList] = None,
-    use_cg: bool = False,
-    use_cv: bool = False,
     use_full_x: bool = False,
-    batch_size: Optional[int] = None,
-    gtol: float = 1e-2,
-    max_iter: Optional[int] = None,
     error_threshold: float = 1e6,
     verbose: bool = False,
 ):
     """API function for estimating MLP coefficients."""
+    use_cg = params.solver_use_gradient
+    use_cv = params.solver_use_cv
+    batch_size = params.solver_batch_size
+    gtol = params.solver_gtol
+    max_iter = params.solver_max_iter
     if not use_cv and test is None:
         raise RuntimeError("Test data required.")
 

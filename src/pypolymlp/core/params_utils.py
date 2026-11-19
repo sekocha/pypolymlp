@@ -160,6 +160,9 @@ def set_all_params(
     solver_alpha_params: tuple[float, float, int] = (-3.0, 1.0, 5),
     solver_use_gradient: bool = False,
     solver_use_cv: bool = False,
+    solver_batch_size: Optional[int] = None,
+    solver_gtol: float = 1e-2,
+    solver_max_iter: Optional[int] = None,
     use_auto_weight: bool = True,
     weight_stress: float = 0.1,
     weight_method: int = 1,
@@ -203,6 +206,9 @@ def set_all_params(
         np.linspace(p[0], p[1], p[2]).
     solver_use_gradient: Use conjugate gradient solver.
     solver_use_cv: Use cross validation to determine the optimal penalty.
+    solver_batch_size: Batch size of polynomial invarint calculations.
+    solver_gtol: Gradient tolerance in gradient solvers.
+    solver_max_iter: Maximum number of iterations in gradient solvers.
     use_auto_weight: Use weighted regression.
     weight_stress: Additional weight magnitude for virial stress.
     weight_method: Method for assigning weights automatically.
@@ -260,6 +266,9 @@ def set_all_params(
         solver_alpha=alphas,
         solver_use_gradient=solver_use_gradient,
         solver_use_cv=solver_use_cv,
+        solver_batch_size=solver_batch_size,
+        solver_gtol=solver_gtol,
+        solver_max_iter=solver_max_iter,
         use_auto_weight=use_auto_weight,
         weight_stress=weight_stress,
         weight_method=weight_method,
