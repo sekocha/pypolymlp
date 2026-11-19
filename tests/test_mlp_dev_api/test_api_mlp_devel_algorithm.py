@@ -76,7 +76,9 @@ def test_standard(phono3py_mp_149):
 def test_cg(phono3py_mp_149):
     """Test CG algorithm."""
     polymlp = _initialize(phono3py_mp_149)
-    polymlp.fit(use_cg=True, gtol=1e-10)
+    polymlp.parameters.solver_use_gradient = True
+    polymlp.parameters.solver_gtol = 1e-10
+    polymlp.fit()
     polymlp.estimate_error()
     _assert(polymlp)
 
@@ -88,27 +90,32 @@ def test_run_sequential(phono3py_mp_149):
     _assert(polymlp)
 
     polymlp = _initialize(phono3py_mp_149)
-    polymlp.run(batch_size=5)
+    polymlp.parameters.solver_batch_size = 5
+    polymlp.run()
     _assert(polymlp)
 
 
 def test_run_cg(phono3py_mp_149):
     """Test CG algorithm using function run."""
     polymlp = _initialize(phono3py_mp_149)
-    polymlp.run(use_cg=True, gtol=1e-10)
+    polymlp.parameters.solver_use_gradient = True
+    polymlp.parameters.solver_gtol = 1e-10
+    polymlp.run()
     _assert(polymlp)
 
 
 def test_loocv(phono3py_mp_149):
     """Test sequential algorithm with CV."""
     polymlp = _initialize(phono3py_mp_149)
-    polymlp.fit(use_cv=True)
-    polymlp.estimate_error(use_cv=True)
+    polymlp.parameters.solver_use_cv = True
+    polymlp.fit()
+    polymlp.estimate_error()
     _assert_cv(polymlp)
 
 
 def test_run_loocv(phono3py_mp_149):
     """Test CG algorithm using function run."""
     polymlp = _initialize(phono3py_mp_149)
-    polymlp.run(use_cv=True)
+    polymlp.parameters.solver_use_cv = True
+    polymlp.run()
     _assert_cv(polymlp)

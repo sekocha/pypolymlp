@@ -15,7 +15,10 @@ def test_fit(regdata_mp_149):
     params, train = regdata_mp_149
     train2 = copy.deepcopy(train)
     test2 = copy.deepcopy(train)
-    fit = fit_polymlp(params, train2, test2, use_cv=True, use_full_x=False)
+    params2 = copy.deepcopy(params)
+    params2.solver_use_cv = True
+
+    fit = fit_polymlp(params2, train2, test2, use_full_x=False)
     model = fit.best_model
     assert model.rmse_test == pytest.approx(0.0008210162371496754)
 

@@ -16,7 +16,8 @@ def _run_fit(files: Union[str, list]):
     pypolymlp.load_parameter_file(
         files, train_ratio=0.9, prefix=str(cwd / "data-openmx-AgC")
     )
-    pypolymlp.fit(batch_size=1000)
+    pypolymlp.parameters.solver_batch_size = 1000
+    pypolymlp.fit()
     pypolymlp.estimate_error(log_energy=False)
     return pypolymlp
 
