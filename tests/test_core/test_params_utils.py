@@ -137,7 +137,7 @@ def test_set_all_params():
         gaussian_params1=(1.0, 1.0, 1),
         gaussian_params2=(0.0, 5.0, 7),
         distance=None,
-        reg_alpha_params=(-3.0, 1.0, 5),
+        solver_alpha_params=(-3.0, 1.0, 5),
         gtinv_order=3,
         gtinv_maxl=(4, 4),
         atomic_energy=None,
@@ -176,8 +176,8 @@ def test_set_all_params():
     assert model.pair_params_conditional[(0, 1)] == list(range(8))
     assert model.pair_params_conditional[(1, 1)] == list(range(8))
     np.testing.assert_allclose(params.atomic_energy, [0.0, 0.0])
-    np.testing.assert_allclose(params.regression_alpha, [-3, -2, -1, 0, 1])
+    np.testing.assert_allclose(params.solver_alpha, [-3, -2, -1, 0, 1])
     assert params.include_force == True
     assert params.include_stress == False
     assert params.dataset_type == "vasp"
-    np.testing.assert_allclose(params.alphas, [1e-3, 1e-2, 1e-1, 1, 1e1])
+    np.testing.assert_allclose(params.solver_alphas, [1e-3, 1e-2, 1e-1, 1, 1e1])

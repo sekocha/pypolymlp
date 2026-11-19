@@ -258,7 +258,7 @@ class SSCHACore(SSCHAParams):
             is_compact_fc=False,
             batch_size=self._symfc_batch_size,
             use_gradient_solver=self._symfc_use_gradient_solver,
-            penalty=1e-3,
+            penalty=self._penalty,
         )
         return self._symfc.force_constants[2]
 

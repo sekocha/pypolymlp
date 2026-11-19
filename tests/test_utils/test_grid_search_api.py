@@ -53,7 +53,7 @@ def test_grid_search_input1():
         gtinv_maxl_int=(4, 4, 2, 1, 1),
         include_force=True,
         include_stress=True,
-        regression_alpha=(-4, 1, 6),
+        solver_alpha=(-4, 1, 6),
     )
     grid1.run()
     assert len(grid1.grid) == 459
@@ -69,7 +69,7 @@ def test_grid_search_input2():
         gtinv=False,
         include_force=True,
         include_stress=True,
-        regression_alpha=(-4, 1, 6),
+        solver_alpha=(-4, 1, 6),
     )
     grid1.run()
     assert len(grid1.grid) == 18

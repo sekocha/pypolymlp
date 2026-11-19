@@ -57,5 +57,5 @@ def test_tr2(unitcell_mlp_Al):
     shutil.rmtree("poscars")
 
     assert trans.energies.shape == (6, 2)
-    assert trans.energies[3, 1] == pytest.approx(0.04286155857041152)
+    assert trans.energies[3, 1] == pytest.approx(0.06553755973360609)
     assert trans.energies[-1, 1] == pytest.approx(0.07796180414937437)

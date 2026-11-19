@@ -145,7 +145,7 @@ def test_enumerate_models():
         gtinv_maxl_int=(8, 4),
         include_force=True,
         include_stress=True,
-        regression_alpha=(-4, 1, 6),
+        solver_alpha=(-4, 1, 6),
         path="tmp",
         hybrid=True,
     )

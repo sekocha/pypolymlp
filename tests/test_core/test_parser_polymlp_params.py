@@ -48,11 +48,11 @@ def test_parse_parameter_files():
     assert model.pair_params_conditional[(0, 1)] == list(range(9))
     assert model.pair_params_conditional[(1, 1)] == list(range(9))
     np.testing.assert_allclose(params.atomic_energy, [-0.00040000, -1.85321219])
-    np.testing.assert_allclose(params.regression_alpha, [-3, -2, -1, 0, 1])
+    np.testing.assert_allclose(params.solver_alpha, [-3, -2, -1, 0, 1])
     assert params.include_force == True
     assert params.include_stress == True
     assert params.dataset_type == "vasp"
-    np.testing.assert_allclose(params.alphas, [1e-3, 1e-2, 1e-1, 1, 1e1])
+    np.testing.assert_allclose(params.solver_alphas, [1e-3, 1e-2, 1e-1, 1, 1e1])
 
     train = parser.train[0]
     assert train.files == []

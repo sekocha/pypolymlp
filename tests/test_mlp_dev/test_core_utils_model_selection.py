@@ -21,7 +21,7 @@ def _assert(data_xy, params):
     rmse_train = rmse_test = rmse
     scales = data_xy.scales
     params_tmp = copy.deepcopy(params)
-    params_tmp.alphas = (1e-3, 1e-2, 1e-1)
+    params_tmp.solver_alphas = (1e-3, 1e-2, 1e-1)
     model = get_best_model(params_tmp, coefs, scales, rmse_train, rmse_test)
     np.testing.assert_allclose(model.coeffs, coefs[:, 2])
     assert model.alpha == pytest.approx(0.1)

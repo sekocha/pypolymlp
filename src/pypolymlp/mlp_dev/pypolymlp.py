@@ -203,6 +203,7 @@ class Pypolymlp:
         gtinv_order: int = 3,
         gtinv_maxl: tuple[int] = (4, 4, 2, 1, 1),
         gtinv_version: Literal[1, 2] = 1,
+        enable_spins: Optional[tuple] = None,
     ):
         """Append parameters to hybrid models.
 
@@ -252,6 +253,7 @@ class Pypolymlp:
             gtinv_order=gtinv_order,
             gtinv_maxl=gtinv_maxl,
             gtinv_version=gtinv_version,
+            enable_spins=enable_spins,
         )
         self._params.append(params_append)
         return self

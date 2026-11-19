@@ -107,7 +107,7 @@ class PolymlpFitStandardUseX(PolymlpFitBase):
         coefs = solver_ridge(
             x=train_xy.x,
             y=train_xy.y,
-            alphas=self._params.alphas,
+            alphas=self._params.solver_alphas,
             verbose=self._verbose,
         )
         rmse_train = self._polymlp.compute_rmse(coefs, train_xy, check_singular=True)

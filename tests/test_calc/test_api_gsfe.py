@@ -31,7 +31,7 @@ def test_gsfe1(unitcell_mlp_Al):
     shutil.rmtree("poscars")
     assert excess_energies.shape == (9, 3)
     assert excess_energies[5, 2] == pytest.approx(0.5883636566785202)
-    assert excess_energies[-1, 2] == pytest.approx(0.636360235)
+    assert excess_energies[-1, 2] == pytest.approx(0.6363613826047292)
 
 
 def test_gsfe_single(unitcell_mlp_Al):

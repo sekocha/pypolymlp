@@ -51,7 +51,7 @@ class PolymlpFitStandardLOOCV(PolymlpFitBase):
         coefs_array = solver_ridge(
             xtx=train_xy.xtx,
             xty=train_xy.xty,
-            alphas=self._params.alphas,
+            alphas=self._params.solver_alphas,
             verbose=self._verbose,
         )
         rmse_train = self._polymlp.compute_rmse(
@@ -140,7 +140,7 @@ class PolymlpFitStandardUseXLOOCV(PolymlpFitBase):
         coefs = solver_ridge(
             x=train_xy.x,
             y=train_xy.y,
-            alphas=self._params.alphas,
+            alphas=self._params.solver_alphas,
             verbose=self._verbose,
         )
         rmse_train = self._polymlp.compute_rmse(coefs, train_xy, check_singular=True)
@@ -156,7 +156,7 @@ class PolymlpFitStandardUseXLOOCV(PolymlpFitBase):
         rmse_test = []
         alpha_prev, cv_min = 0.0, np.inf
         hat_ii_min = None
-        for i, alpha in enumerate(self._params.alphas):
+        for i, alpha in enumerate(self._params.solver_alphas):
             if self._verbose:
                 print("- alpha:", alpha, flush=True)
             add = alpha - alpha_prev

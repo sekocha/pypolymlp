@@ -65,7 +65,7 @@ class PolymlpGridSearch:
         gtinv_attrs: Optional[list[GtinvAttrs]] = None,
         include_force: bool = True,
         include_stress: bool = True,
-        regression_alpha: tuple = (-4, 1, 6),
+        solver_alpha: tuple = (-4, 1, 6),
     ):
         """Initialize parameters in grid search for finding optimal MLPs.
 
@@ -80,7 +80,7 @@ class PolymlpGridSearch:
         gtinv_attrs: Possible candidates of invariant parameters.
         include_force: Include forces in regression.
         include_stress: Include stress in regression.
-        regression_alpha: Regularization parameters.
+        solver_alpha: Regularization parameters.
         """
         if cutoffs is None:
             cutoffs = self._auto_cutoff()
@@ -97,7 +97,7 @@ class PolymlpGridSearch:
             gtinv_attrs=gtinv_attrs,
             include_force=include_force,
             include_stress=include_stress,
-            regression_alpha=regression_alpha,
+            solver_alpha=solver_alpha,
         )
         if self._verbose:
             print("Cutoff radius and number of Gaussians:", flush=True)

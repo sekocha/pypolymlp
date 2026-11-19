@@ -22,8 +22,8 @@ def _assert_properties(params):
     assert params.temperature == 300
     assert params.electron_property == "free_energy"
     assert not params.print_memory
-    np.testing.assert_allclose(params.regression_alpha, [-3, -2, -1, 0, 1])
-    np.testing.assert_allclose(params.alphas, [1e-3, 1e-2, 1e-1, 1e0, 1e1])
+    np.testing.assert_allclose(params.solver_alpha, [-3, -2, -1, 0, 1])
+    np.testing.assert_allclose(params.solver_alphas, [1e-3, 1e-2, 1e-1, 1e0, 1e1])
 
 
 def test_PolymlpParams1(regdata_mp_149):
@@ -130,15 +130,15 @@ def test_PolymlpParams4(regdata_mp_149):
     for p in params:
         assert p.print_memory
 
-    params.regression_alpha = (-1, 0, 1)
-    assert params.regression_alpha == (-1, 0, 1)
+    params.solver_alpha = (-1, 0, 1)
+    assert params.solver_alpha == (-1, 0, 1)
     for p in params:
-        assert p.regression_alpha == (-1, 0, 1)
+        assert p.solver_alpha == (-1, 0, 1)
 
-    params.alphas = (100, 50)
-    assert params.alphas == (100, 50)
+    params.solver_alphas = (100, 50)
+    assert params.solver_alphas == (100, 50)
     for p in params:
-        assert p.alphas == (100, 50)
+        assert p.solver_alphas == (100, 50)
 
 
 def test_set_common_params(regdata_mp_149):

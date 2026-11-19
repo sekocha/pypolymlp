@@ -24,7 +24,7 @@ def enum_pair_models(grid: ParamsGrid, elements: tuple):
             n_type=len(elements),
             elements=elements,
             model=model,
-            regression_alpha=grid.regression_alpha,
+            solver_alpha=grid.solver_alpha,
             include_force=grid.include_force,
             include_stress=grid.include_stress,
         )
@@ -51,7 +51,7 @@ def enum_gtinv_models(grid: ParamsGrid, elements: tuple):
             n_type=len(elements),
             elements=elements,
             model=model,
-            regression_alpha=grid.regression_alpha,
+            solver_alpha=grid.solver_alpha,
             include_force=grid.include_force,
             include_stress=grid.include_stress,
         )
@@ -85,7 +85,7 @@ def add_single_model(
         n_type=len(elements),
         elements=elements,
         model=model,
-        regression_alpha=grid.regression_alpha,
+        solver_alpha=grid.solver_alpha,
         include_force=grid.include_force,
         include_stress=grid.include_stress,
     )

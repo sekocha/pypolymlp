@@ -59,8 +59,8 @@ def test_PolymlpParamsSingle(params_MgO):
     assert tuple(params_single.elements) == ("Mg", "O")
     assert len(params_single.atomic_energy) == 2
     assert params_single.enable_spins is None
-    assert len(params_single.regression_alpha) == 5
-    assert len(params_single.alphas) == 5
+    assert len(params_single.solver_alpha) == 5
+    assert len(params_single.solver_alphas) == 5
     assert params_single.dataset_type == "vasp"
     assert params_single.include_force
     assert params_single.include_stress

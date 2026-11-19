@@ -52,7 +52,7 @@ class ParamsGrid:
     gtinv_attrs: Possible candidates of invariant parameters.
     include_force: Include forces in regression.
     include_stress: Include stress in regression.
-    regression_alpha: Regularization parameters.
+    solver_alpha: Regularization parameters.
     """
 
     radial_params: list[GaussianAttrs]
@@ -68,7 +68,7 @@ class ParamsGrid:
 
     include_force: bool = True
     include_stress: bool = True
-    regression_alpha: tuple = (-4, 3, 8)
+    solver_alpha: tuple = (-4, 3, 8)
 
     def __post_init__(self):
         """Post init method."""
@@ -89,8 +89,8 @@ class ParamsGrid:
         if isinstance(self.gtinv_maxl_int, int):
             self.gtinv_maxl_int = [self.gtinv_maxl_int]
 
-        if len(self.regression_alpha) != 3:
-            raise RuntimeError("len(regression_alpha) must be three.")
+        if len(self.solver_alpha) != 3:
+            raise RuntimeError("len(solver_alpha) must be three.")
 
     def get_model_types_pair(self):
         """Set parameters for enumerating pair models"""

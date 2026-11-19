@@ -21,7 +21,7 @@ def _initialize(phono3py_mp_149):
         gtinv_order=3,
         gtinv_maxl=[4, 4],
         gaussian_params2=[0.0, 4.0, 5],
-        reg_alpha_params=(-1, 3, 5),
+        solver_alpha_params=(-1, 3, 5),
         atomic_energy=[0.0],
         include_stress=False,
     )

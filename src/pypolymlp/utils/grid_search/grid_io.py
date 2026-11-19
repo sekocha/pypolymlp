@@ -24,8 +24,8 @@ def save_params(params: PolymlpParamsSingle, filename: str = "polymlp.in"):
 
         print("include_force", params.include_force, file=f)
         print("include_stress", params.include_stress, file=f)
-        alpha = params.regression_alpha
-        print("reg_alpha_params", alpha[0], alpha[1], alpha[2], file=f)
+        alpha = params.solver_alpha
+        print("solver_alpha_params", alpha[0], alpha[1], alpha[2], file=f)
         print(file=f)
 
         print("n_type", len(params.elements), file=f)

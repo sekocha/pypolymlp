@@ -342,7 +342,7 @@ class PypolymlpUtils:
         gtinv_maxl_int: tuple = (4, 4, 2, 1, 1),
         include_force: bool = True,
         include_stress: bool = True,
-        regression_alpha: tuple = (-4, 1, 6),
+        solver_alpha: tuple = (-4, 1, 6),
         path: str = "polymlps",
         hybrid: bool = False,
     ):
@@ -364,7 +364,7 @@ class PypolymlpUtils:
             gtinv_maxl_int=gtinv_maxl_int,
             include_force=include_force,
             include_stress=include_stress,
-            regression_alpha=regression_alpha,
+            solver_alpha=solver_alpha,
         )
         grid1.run()
         grid1.save_models(path=path)

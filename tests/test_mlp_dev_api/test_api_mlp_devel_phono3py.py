@@ -24,7 +24,7 @@ def test_mlp_devel_api_phono3py():
         gtinv_order=3,
         gtinv_maxl=[4, 4],
         gaussian_params2=[0.0, 5.0, 6],
-        reg_alpha_params=(-1, 1, 3),
+        solver_alpha_params=(-1, 1, 3),
         atomic_energy=[0.0],
     )
     yaml = str(cwd / "data-phono3py-Si/phonopy_training_dataset.yaml.xz")
@@ -47,7 +47,7 @@ def test_mlp_devel_api_phono3py2(phono3py_mp_149):
         gtinv_order=3,
         gtinv_maxl=[4, 4],
         gaussian_params2=[0.0, 4.0, 5],
-        reg_alpha_params=(-1, 1, 3),
+        solver_alpha_params=(-1, 1, 3),
         atomic_energy=[0.0],
     )
     ph3 = Phono3pyYaml(phono3py_mp_149)
@@ -79,7 +79,7 @@ def test_mlp_devel_api_displacements(phono3py_mp_149):
         gtinv_order=3,
         gtinv_maxl=[4, 4],
         gaussian_params2=[0.0, 4.0, 5],
-        reg_alpha_params=(-1, 1, 3),
+        solver_alpha_params=(-1, 1, 3),
         atomic_energy=[0.0],
     )
     ph3 = Phono3pyYaml(phono3py_mp_149)

@@ -44,10 +44,10 @@ def test_fit_learning_curve(regdata_mp_149):
     params, train = regdata_mp_149
     train2 = copy.deepcopy(train)
     test2 = copy.deepcopy(train)
-    params.alphas = [1e2, 1e3, 1e4]
+    params.solver_alphas = [1e2, 1e3, 1e4]
     fit = fit_learning_curve(params, train2, test2)
     log = fit.error_log
-    params.alphas = [1e-3, 1e-2, 1e-1, 1e0, 1e1]
+    params.solver_alphas = [1e-3, 1e-2, 1e-1, 1e0, 1e1]
 
     nums = [l[0] for l in log]
     np.testing.assert_equal(nums, np.arange(1, 11) * 18)

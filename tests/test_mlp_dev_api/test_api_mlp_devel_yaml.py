@@ -22,7 +22,7 @@ def test_mlp_devel_api_sscha():
         gtinv_maxl=[2, 2],
         gaussian_params2=[0.0, 4.0, 5],
         atomic_energy=[0.0],
-        reg_alpha_params=(-3, 1, 5),
+        solver_alpha_params=(-3, 1, 5),
         include_stress=True,
     )
     yamlfiles = sorted(glob.glob(str(cwd) + "/data-sscha-Ti/sscha_results_*.yaml"))
@@ -59,7 +59,7 @@ def test_mlp_devel_api_sscha():
 #         gtinv_maxl=[4, 4],
 #         gaussian_params2=[1.0, 7.0, 7],
 #         atomic_energy=[0.0, 0.0, 0.0],
-#         reg_alpha_params=(-1, 3, 10),
+#         solver_alpha_params=(-1, 3, 10),
 #         include_stress=False,
 #     )
 #     yamlfiles = sorted(glob.glob(str(cwd) + "/data-sscha-SrTiO3/sscha_results_*.yaml"))
@@ -95,7 +95,7 @@ def test_mlp_devel_api_electron():
         gtinv_maxl=[4, 4],
         gaussian_params2=[0.0, 6.0, 7],
         atomic_energy=[0],
-        reg_alpha_params=(-1, 3, 10),
+        solver_alpha_params=(-1, 3, 10),
     )
     yamlfiles = sorted(glob.glob(str(cwd) + "/data-electron-Ti/electron-*.yaml"))
     polymlp.set_datasets_electron(yamlfiles, temperature=500, train_ratio=0.8)
@@ -120,7 +120,7 @@ def test_mlp_devel_api_property():
         gtinv_maxl=[4, 4, 2],
         n_gaussians=7,
         atomic_energy=(0.0,),
-        reg_alpha_params=(-5, 5, 30),
+        solver_alpha_params=(-5, 5, 30),
     )
     yamlfiles = sorted(glob.glob(str(cwd) + "/data-property-Fe/polymlp_*.yaml"))
     polymlp.set_datasets_property_yamls(yamlfiles)
