@@ -1,23 +1,11 @@
 """Tests of polynomial MLP development using yaml."""
 
 from pathlib import Path
-from typing import Union
 
 import pytest
-
-from pypolymlp.mlp_dev.pypolymlp import Pypolymlp
+from utils import _run_fit
 
 cwd = Path(__file__).parent
-
-
-def _run_fit(files: Union[str, list]):
-    """Run fitting."""
-    pypolymlp = Pypolymlp(verbose=True)
-    pypolymlp.load_parameter_file(files, train_ratio=0.9, prefix=str(cwd))
-    pypolymlp.parameters.solver_batch_size = 1000
-    pypolymlp.fit()
-    pypolymlp.estimate_error(log_energy=False)
-    return pypolymlp
 
 
 def _check_errors_phono3py_yaml(error_train: dict, error_test: dict):
