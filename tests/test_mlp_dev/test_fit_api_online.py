@@ -15,7 +15,9 @@ def test_fit_adam(regdata_mp_149):
     params, train = regdata_mp_149
     coeffs = np.zeros(168)
     train2 = copy.deepcopy(train)
-    fit = fit_polymlp_online(params, train2, coeffs=coeffs, n_epochs=3)
+    params_ = copy.deepcopy(params)
+    params_.solver_use_gradient = True
+    fit = fit_polymlp_online(params_, train2, coeffs=coeffs, n_epochs=3)
     model = fit.best_model
 
     assert len(model.scaled_coeffs) == 168

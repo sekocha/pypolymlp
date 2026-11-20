@@ -41,7 +41,7 @@ class PolymlpFitOnlineAdam(PolymlpFitBase):
         gtol: Tolerance for gradient.
         n_epochs: Number of epochs.
         """
-        super().__init__(params, train, use_gradient=True, verbose=verbose)
+        super().__init__(params, train, verbose=verbose)
 
         self._coef0 = coeffs
         self._max_learning_rate = max_learning_rate

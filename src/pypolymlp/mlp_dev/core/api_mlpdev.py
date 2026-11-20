@@ -115,7 +115,10 @@ class PolymlpDevCore:
         inv_xtx: np.ndarray,
         batch_size: Optional[int] = None,
     ):
-        """Compute weighted RMSEs using cross-validation for a model coefficient."""
+        """Compute weighted RMSEs using cross-validation for a model coefficient.
+
+        Deprecated. Only used in deprecated FitLOOCV.
+        """
         return compute_rmse_cv(
             self._params,
             coefs_single,

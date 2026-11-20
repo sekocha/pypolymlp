@@ -164,6 +164,7 @@ def set_all_params(
     solver_gtol: float = 1e-2,
     solver_max_iter: Optional[int] = None,
     use_auto_weight: bool = True,
+    weight_force: float = 1.0,
     weight_stress: float = 0.1,
     weight_method: int = 1,
     weight_min_energy: Optional[float] = None,
@@ -210,6 +211,7 @@ def set_all_params(
     solver_gtol: Gradient tolerance in gradient solvers.
     solver_max_iter: Maximum number of iterations in gradient solvers.
     use_auto_weight: Use weighted regression.
+    weight_force: Additional weight magnitude for forces.
     weight_stress: Additional weight magnitude for virial stress.
     weight_method: Method for assigning weights automatically.
     weight_min_energy: Minimum energy used for determining weights.
@@ -270,6 +272,7 @@ def set_all_params(
         solver_gtol=solver_gtol,
         solver_max_iter=solver_max_iter,
         use_auto_weight=use_auto_weight,
+        weight_force=weight_force,
         weight_stress=weight_stress,
         weight_method=weight_method,
         weight_min_energy=weight_min_energy,

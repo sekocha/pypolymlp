@@ -370,6 +370,16 @@ class PolymlpParams:
         self.setter_common_property("use_auto_weight", use_auto_weight)
 
     @property
+    def weight_force(self):
+        """Return weight force."""
+        return self._common_params.weight_force
+
+    @weight_force.setter
+    def weight_force(self, weight_force: float):
+        """Setter of weight_force."""
+        self.setter_common_property("weight_force", weight_force)
+
+    @property
     def weight_stress(self):
         """Return weight stress."""
         return self._common_params.weight_stress
@@ -420,6 +430,7 @@ class PolymlpParams:
         print("  include_stress:    ", self.include_stress, flush=True)
         print("  enable_spins:      ", self.enable_spins, flush=True)
         print("  use_auto_weight:   ", self.use_auto_weight, flush=True)
+        print("  weight_force:      ", self.weight_force, flush=True)
         print("  weight_stress:     ", self.weight_stress, flush=True)
 
         for i, p in enumerate(self._params):

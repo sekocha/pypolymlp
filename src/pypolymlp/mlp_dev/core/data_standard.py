@@ -23,6 +23,7 @@ def calc_xy(
 ):
     """Calculate X and y data."""
     use_auto_weight = params.use_auto_weight
+    weight_force = params.weight_force
     weight_stress = params.weight_stress
 
     if min_energy is None:
@@ -65,6 +66,7 @@ def calc_xy(
             dataset=data,
             first_indices=indices,
             use_auto_weight=use_auto_weight,
+            weight_force=weight_force,
             weight_stress=weight_stress,
             min_e=min_energy,
         )

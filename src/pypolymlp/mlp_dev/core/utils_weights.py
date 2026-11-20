@@ -23,12 +23,17 @@ def _set_weight_energy_data(energy, total_n_atoms, min_e: Optional[float] = None
     return weight_e
 
 
-def _set_weight_force_data(forces: np.ndarray, tol: float = 1e-12):
+def _set_weight_force_data(
+    forces: np.ndarray,
+    weight_force: float,
+    tol: float = 1e-12,
+):
     """Define weights to force data."""
     weight_f = np.abs(forces)
     weight_f[weight_f < tol] = tol
     weight_f = np.reciprocal(weight_f)
     weight_f[weight_f > 1.0] = 1.0
+    weight_f *= weight_force
     return weight_f
 
 
@@ -54,6 +59,7 @@ def apply_weights(
     dataset: Dataset,
     first_indices: list,
     use_auto_weight: bool = True,
+    weight_force: float = 1.0,
     weight_stress: float = 0.1,
     min_e: Optional[float] = None,
 ):
@@ -83,11 +89,11 @@ def apply_weights(
     x[ebegin:eend] *= weight_e[:, np.newaxis]
 
     if include_force:
+        weight_const = weight_force * dataset.weight
         if use_auto_weight:
-            weight_f = _set_weight_force_data(dataset.forces)
-            weight_f *= dataset.weight
+            weight_f = _set_weight_force_data(dataset.forces, weight_const)
         else:
-            weight_f = np.full(len(dataset.forces), dataset.weight)
+            weight_f = np.full(len(dataset.forces), weight_const)
         w[fbegin:fend] = weight_f
         y[fbegin:fend] *= weight_f
         x[fbegin:fend] *= weight_f[:, np.newaxis]
@@ -117,6 +123,7 @@ def apply_weights_overwrite(
     dataset: Dataset,
     first_indices: list,
     use_auto_weight: bool = True,
+    weight_force: float = 1.0,
     weight_stress: float = 0.1,
     min_e: Optional[float] = None,
 ):
@@ -142,11 +149,16 @@ def apply_weights_overwrite(
     x[ebegin:eend] *= weight_e[:, np.newaxis]
 
     if include_force:
+        weight_const = weight_force * dataset.weight
         if use_auto_weight:
-            weight_f = _set_weight_force_data(dataset.forces)
-            weight_f *= dataset.weight
+            weight_f = _set_weight_force_data(dataset.forces, weight_const)
         else:
-            weight_f = np.full(len(dataset.forces), dataset.weight)
+            weight_f = np.full(len(dataset.forces), weight_const)
+        # if use_auto_weight:
+        #     weight_f = _set_weight_force_data(dataset.forces)
+        #     weight_f *= dataset.weight
+        # else:
+        #     weight_f = np.full(len(dataset.forces), dataset.weight)
         w[fbegin:fend] = weight_f
         y[fbegin:fend] = weight_f * dataset.forces
         x[fbegin:fend] *= weight_f[:, np.newaxis]

@@ -51,7 +51,7 @@ def check_memory_size_in_regression(
     return mem_req
 
 
-def get_observation_slices(dataset: Dataset, first_indices: list):
+def get_observation_slices(dataset: Dataset, first_indices: list | tuple):
     """Get slices used for assigning X and Y data."""
     ebegin, fbegin, sbegin = first_indices
     eend = ebegin + len(dataset.energies)
@@ -64,7 +64,7 @@ def get_observation_slices(dataset: Dataset, first_indices: list):
     return (ebegin, eend, fbegin, fend, sbegin, send)
 
 
-def collect_observations(dataset: Dataset, n_data: int, first_indices: list):
+def collect_observations(dataset: Dataset, n_data: int, first_indices: list | tuple):
     """Collect observations from a dataset."""
     slices = get_observation_slices(dataset, first_indices)
     ebegin, eend, fbegin, fend, sbegin, send = slices

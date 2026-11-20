@@ -14,7 +14,7 @@ def test_api_functions(regdata_mp_149):
     """Test for functions in API."""
     params, _ = regdata_mp_149
 
-    core = PolymlpDevCore(params, use_gradient=False)
+    core = PolymlpDevCore(params)
     f_attr, p_attr, a_attr = core.get_features_attr()
     assert isinstance(f_attr, list) == True
     assert isinstance(p_attr, list) == True
@@ -27,7 +27,7 @@ def test_api_functions(regdata_mp_149):
     assert core.is_hybrid == False
 
     hybrid = params.as_hybrid_model()
-    core = PolymlpDevCore(hybrid, use_gradient=False)
+    core = PolymlpDevCore(hybrid)
     assert core.is_hybrid == True
     assert core.n_features == 336
 
@@ -35,7 +35,7 @@ def test_api_functions(regdata_mp_149):
 def test_api_calc_xy(regdata_mp_149):
     """Test for x and y calculation functions in API."""
     params, datasets_ = regdata_mp_149
-    core = PolymlpDevCore(params, use_gradient=False)
+    core = PolymlpDevCore(params)
     data_xy = core.calc_xy(datasets_)
     assert data_xy.x.shape == (35820, 168)
 
@@ -44,7 +44,7 @@ def test_api_calc_xtx_xty1(regdata_mp_149):
     """Test for xtx and xty calculation functions in API."""
     params, datasets = regdata_mp_149
     datasets_ = copy.deepcopy(datasets)
-    core = PolymlpDevCore(params, use_gradient=False)
+    core = PolymlpDevCore(params)
     data_xy = core.calc_xtx_xty(datasets_)
     assert data_xy.xtx.shape == (168, 168)
 
@@ -53,6 +53,6 @@ def test_api_calc_xtx_xty2(regdata_mp_149):
     """Test for xtx and xty calculation functions in API."""
     params, datasets = regdata_mp_149
     datasets_ = copy.deepcopy(datasets)
-    core = PolymlpDevCore(params, use_gradient=False)
-    data_xy = core.calc_xtx_xty(datasets_, batch_size=10)
+    core = PolymlpDevCore(params)
+    data_xy = core.calc_xtx_xty(datasets_)
     assert data_xy.xtx.shape == (168, 168)

@@ -61,11 +61,13 @@ def test_calc_xtx_xty2(regdata_mp_149):
     """Test for parameters of calc_xtx_xty."""
     params, datasets = regdata_mp_149
     datasets_ = copy.deepcopy(datasets)
-    data_xy = calc_xtx_xty(params, datasets_, batch_size=10)
+    data_xy = calc_xtx_xty(params, datasets_)
     _assert_xtx_xty(data_xy)
 
     data_xy = calc_xtx_xty(params, datasets_, n_features_threshold=10)
     _assert_xtx_xty(data_xy)
 
-    data_xy = calc_xtx_xty(params, datasets_, batch_size=50, use_gradient=True)
+    params_ = copy.deepcopy(params)
+    params_.solver_use_gradient = True
+    data_xy = calc_xtx_xty(params_, datasets_)
     _assert_xtx_xty(data_xy)

@@ -49,7 +49,7 @@ class ParamsParserSingle:
         elements, n_type, atom_e, unit, enable_spins = self._get_element_properties()
         alpha_params, use_grad, use_cv = self._get_solver_params()
         batch_size, gtol, max_iter = self._get_solver_options()
-        use_weight, weight_s, weight_method, weight_min_e = self._get_weight_params()
+        use_w, weight_f, weight_s, weight_m, weight_min_e = self._get_weight_params()
         solver_method = "ridge"
 
         cutoff, model_type, max_p, feature_type = self._get_potential_model_params()
@@ -80,9 +80,10 @@ class ParamsParserSingle:
             solver_batch_size=batch_size,
             solver_gtol=gtol,
             solver_max_iter=max_iter,
-            use_auto_weight=use_weight,
+            use_auto_weight=use_w,
+            weight_force=weight_f,
             weight_stress=weight_s,
-            weight_method=weight_method,
+            weight_method=weight_m,
             weight_min_energy=weight_min_e,
         )
 
@@ -197,6 +198,11 @@ class ParamsParserSingle:
             default=True,
             dtype=bool,
         )
+        weight_force = self._parser.get_params(
+            "weight_force",
+            default=1.0,
+            dtype=float,
+        )
         weight_stress = self._parser.get_params(
             "weight_stress",
             default=0.1,
@@ -207,12 +213,12 @@ class ParamsParserSingle:
             default=1,
             dtype=int,
         )
-        weight_min_energy = self._parser.get_params(
+        weight_min_e = self._parser.get_params(
             "weight_min_energy",
             default=None,
             dtype=float,
         )
-        return (use_weight, weight_stress, weight_method, weight_min_energy)
+        return (use_weight, weight_force, weight_stress, weight_method, weight_min_e)
 
     def _get_potential_model_params(self):
         """Set parameters for identifying potential model."""
