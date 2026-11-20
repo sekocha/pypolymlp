@@ -1,7 +1,5 @@
 """Classes for estimating regression coefficients from datasets."""
 
-from typing import Optional
-
 import numpy as np
 import scipy
 
@@ -19,27 +17,24 @@ class PolymlpFitStandardLOOCV(PolymlpFitBase):
         self,
         params: PolymlpParams,
         train: DatasetList,
-        batch_size: Optional[int] = None,
         verbose: bool = False,
     ):
         """Init method.
 
+        Parameters
+        ----------
         params: Parameters of polymlp.
         train: Training datasets.
-        batch_size: Batch size for sequential regression.
-                    If None, the batch size is automatically determined
-                    depending on the memory size and number of features.
         """
         super().__init__(params, train, verbose=verbose)
 
-        self._batch_size = batch_size
         self._train_xy = None
 
     def fit(self):
         """Estimate MLP coefficients."""
         self._polymlp.check_memory_size_in_regression()
 
-        train_xy = self._polymlp.calc_xtx_xty(self._train, batch_size=self._batch_size)
+        train_xy = self._polymlp.calc_xtx_xty(self._train)
 
         xtx = train_xy.xtx
         alphas = self._params.solver_alphas
@@ -71,8 +66,6 @@ class PolymlpFitStandardLOOCV(PolymlpFitBase):
 
             coefs_single = coefs_array[:, i]
             inv_xtx = scipy.linalg.inv(xtx, assume_a="sym")
-            # inv_xtx = np.linalg.inv(xtx)
-
             rmse_cv = self._polymlp.compute_rmse_cv(
                 coefs_single,
                 train_xy.scales,

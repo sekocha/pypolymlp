@@ -14,19 +14,20 @@ class PolymlpFitBase(ABC):
         self,
         params: PolymlpParams,
         train: DatasetList,
-        use_gradient: bool = False,
         verbose: bool = False,
     ):
-        """Init method."""
+        """Init method.
+
+        Parameters
+        ----------
+        params: Parameters of polymlp.
+        train: Training datasets.
+        """
         self._params = params
         self._train = train
         self._verbose = verbose
 
-        self._polymlp = PolymlpDevCore(
-            params,
-            use_gradient=use_gradient,
-            verbose=verbose,
-        )
+        self._polymlp = PolymlpDevCore(params, verbose=verbose)
 
         self._best_model = None
         self._all_models = None

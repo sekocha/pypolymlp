@@ -1,7 +1,5 @@
 """Classes for estimating regression coefficients from datasets."""
 
-from typing import Optional
-
 from pypolymlp.core.dataset import DatasetList
 from pypolymlp.core.params import PolymlpParams
 
@@ -17,28 +15,25 @@ class PolymlpFitStandard(PolymlpFitBase):
         params: PolymlpParams,
         train: DatasetList,
         test: DatasetList,
-        batch_size: Optional[int] = None,
         verbose: bool = False,
     ):
         """Init method.
 
+        Parameters
+        ----------
         params: Parameters of polymlp.
         train: Training datasets.
         test: Test datasets.
-        batch_size: Batch size for sequential regression.
-                    If None, the batch size is automatically determined
-                    depending on the memory size and number of features.
         """
         super().__init__(params, train, verbose=verbose)
 
         self._test = test
-        self._batch_size = batch_size
 
     def fit(self):
         """Estimate MLP coefficients."""
         self._polymlp.check_memory_size_in_regression()
 
-        train_xy = self._polymlp.calc_xtx_xty(self._train, batch_size=self._batch_size)
+        train_xy = self._polymlp.calc_xtx_xty(self._train)
         coefs = solver_ridge(
             xtx=train_xy.xtx,
             xty=train_xy.xty,
@@ -53,7 +48,6 @@ class PolymlpFitStandard(PolymlpFitBase):
             self._test,
             scales=train_xy.scales,
             min_energy=train_xy.min_energy,
-            batch_size=self._batch_size,
         )
         rmse_test = self._polymlp.compute_rmse(coefs, test_xy)
         test_xy.clear_data()
@@ -91,6 +85,8 @@ class PolymlpFitStandardUseX(PolymlpFitBase):
     ):
         """Init method.
 
+        Parameters
+        ----------
         params: Parameters of polymlp.
         train: Training datasets.
         test: Test datasets.

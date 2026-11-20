@@ -17,12 +17,19 @@ def calc_xy(
     params: PolymlpParams,
     datasets: DatasetList,
     scales: Optional[np.ndarray] = None,
-    min_energy: Optional[float] = None,
-    weight_stress: float = 0.1,
+    min_energy: Optional[np.ndarray] = None,
     scale_threshold: float = 1e-10,
     verbose: bool = False,
 ):
     """Calculate X and y data."""
+    use_auto_weight = params.use_auto_weight
+    weight_stress = params.weight_stress
+
+    if min_energy is None:
+        min_energy = params.weight_min_energy
+    if min_energy is None:
+        min_energy = get_min_energy(datasets)
+
     features = compute_features(
         params,
         datasets=datasets,
@@ -48,9 +55,6 @@ def calc_xy(
     x[:, zero_ids] = 0.0
     x /= scales
 
-    if min_energy is None:
-        min_energy = get_min_energy(datasets)
-
     y = np.zeros(x.shape[0])
     w = np.ones(x.shape[0])
     for data, indices in zip(datasets, first_indices):
@@ -58,8 +62,9 @@ def calc_xy(
             x,
             y,
             w,
-            data,
-            indices,
+            dataset=data,
+            first_indices=indices,
+            use_auto_weight=use_auto_weight,
             weight_stress=weight_stress,
             min_e=min_energy,
         )

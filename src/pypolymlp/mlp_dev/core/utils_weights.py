@@ -53,6 +53,7 @@ def apply_weights(
     y: np.ndarray,
     dataset: Dataset,
     first_indices: list,
+    use_auto_weight: bool = True,
     weight_stress: float = 0.1,
     min_e: Optional[float] = None,
 ):
@@ -67,27 +68,37 @@ def apply_weights(
     ebegin, eend, fbegin, fend, sbegin, send = slices
 
     w = np.ones(y.shape[0])
-    weight_e = _set_weight_energy_data(
-        dataset.energies,
-        dataset.total_n_atoms,
-        min_e=min_e,
-    )
-    weight_e *= dataset.weight
+    if use_auto_weight:
+        weight_e = _set_weight_energy_data(
+            dataset.energies,
+            dataset.total_n_atoms,
+            min_e=min_e,
+        )
+        weight_e *= dataset.weight
+    else:
+        weight_e = np.full(len(dataset.energies), dataset.weight)
 
     w[ebegin:eend] = weight_e
     y[ebegin:eend] *= weight_e
     x[ebegin:eend] *= weight_e[:, np.newaxis]
 
     if include_force:
-        weight_f = _set_weight_force_data(dataset.forces)
-        weight_f *= dataset.weight
+        if use_auto_weight:
+            weight_f = _set_weight_force_data(dataset.forces)
+            weight_f *= dataset.weight
+        else:
+            weight_f = np.full(len(dataset.forces), dataset.weight)
         w[fbegin:fend] = weight_f
         y[fbegin:fend] *= weight_f
         x[fbegin:fend] *= weight_f[:, np.newaxis]
 
     if include_stress:
         weight_const = weight_stress * dataset.weight
-        weight_s = _set_weight_stress_data(dataset.stresses, weight_const)
+        if use_auto_weight:
+            weight_s = _set_weight_stress_data(dataset.stresses, weight_const)
+        else:
+            weight_s = np.full(len(dataset.stresses), weight_const)
+
         w[sbegin:send] = weight_s
         y[sbegin:send] *= weight_s
         x[sbegin:send] *= weight_s[:, np.newaxis]
@@ -105,6 +116,7 @@ def apply_weights_overwrite(
     w: np.ndarray,
     dataset: Dataset,
     first_indices: list,
+    use_auto_weight: bool = True,
     weight_stress: float = 0.1,
     min_e: Optional[float] = None,
 ):
@@ -112,33 +124,40 @@ def apply_weights_overwrite(
     include_force = dataset.include_force
     include_stress = dataset.include_stress
 
-    ebegin, fbegin, sbegin = first_indices
-    eend = ebegin + len(dataset.energies)
-    if include_force:
-        fend = fbegin + len(dataset.forces)
-        send = sbegin + len(dataset.stresses)
+    slices = get_observation_slices(dataset, first_indices)
+    ebegin, eend, fbegin, fend, sbegin, send = slices
 
-    weight_e = _set_weight_energy_data(
-        dataset.energies,
-        dataset.total_n_atoms,
-        min_e=min_e,
-    )
-    weight_e *= dataset.weight
+    if use_auto_weight:
+        weight_e = _set_weight_energy_data(
+            dataset.energies,
+            dataset.total_n_atoms,
+            min_e=min_e,
+        )
+        weight_e *= dataset.weight
+    else:
+        weight_e = np.full(len(dataset.energies), dataset.weight)
 
     w[ebegin:eend] = weight_e
     y[ebegin:eend] = weight_e * dataset.energies
     x[ebegin:eend] *= weight_e[:, np.newaxis]
 
     if include_force:
-        weight_f = _set_weight_force_data(dataset.forces)
-        weight_f *= dataset.weight
+        if use_auto_weight:
+            weight_f = _set_weight_force_data(dataset.forces)
+            weight_f *= dataset.weight
+        else:
+            weight_f = np.full(len(dataset.forces), dataset.weight)
         w[fbegin:fend] = weight_f
         y[fbegin:fend] = weight_f * dataset.forces
         x[fbegin:fend] *= weight_f[:, np.newaxis]
 
     if include_stress:
         weight_const = weight_stress * dataset.weight
-        weight_s = _set_weight_stress_data(dataset.stresses, weight_const)
+        if use_auto_weight:
+            weight_s = _set_weight_stress_data(dataset.stresses, weight_const)
+        else:
+            weight_s = np.full(len(dataset.stresses), weight_const)
+
         w[sbegin:send] = weight_s
         y[sbegin:send] = weight_s * dataset.stresses
         x[sbegin:send] *= weight_s[:, np.newaxis]

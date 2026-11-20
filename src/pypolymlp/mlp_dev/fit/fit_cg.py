@@ -1,7 +1,5 @@
 """Class for estimating MLP coefficients using conjugate gradient."""
 
-from typing import Optional
-
 import numpy as np
 
 from pypolymlp.core.dataset import DatasetList
@@ -29,22 +27,22 @@ class PolymlpFitCG(PolymlpFitBase):
         params: PolymlpParams,
         train: DatasetList,
         test: DatasetList,
-        gtol: float = 1e-2,
-        max_iter: Optional[int] = None,
         verbose: bool = False,
     ):
         """Init method.
 
+        Parameters
+        ----------
         params: Parameters of polymlp.
         train: Training datasets.
         test: Test datasets.
         """
         # TODO: Activate batch size.
-        super().__init__(params, train, use_gradient=True, verbose=verbose)
+        super().__init__(params, train, verbose=verbose)
 
         self._test = test
-        self._gtol = gtol
-        self._max_iter = max_iter
+        self._gtol = params.solver_gtol
+        self._max_iter = params.solver_max_iter
 
     def fit(self):
         """Estimate MLP coefficients."""

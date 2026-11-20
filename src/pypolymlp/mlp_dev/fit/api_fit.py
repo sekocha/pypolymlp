@@ -30,9 +30,6 @@ def fit_polymlp(
     """API function for estimating MLP coefficients."""
     use_cg = params.solver_use_gradient
     use_cv = params.solver_use_cv
-    batch_size = params.solver_batch_size
-    gtol = params.solver_gtol
-    max_iter = params.solver_max_iter
     if not use_cv and test is None:
         raise RuntimeError("Test data required.")
 
@@ -40,46 +37,18 @@ def fit_polymlp(
         if use_cv:
             raise RuntimeError("CV minimization not available for CG.")
         else:
-            fitobj = PolymlpFitCG(
-                params,
-                train,
-                test,
-                gtol=gtol,
-                max_iter=max_iter,
-                verbose=verbose,
-            )
+            fitobj = PolymlpFitCG(params, train, test, verbose=verbose)
     else:
         if use_cv:
             if use_full_x:
-                fitobj = PolymlpFitStandardUseXLOOCV(
-                    params,
-                    train,
-                    verbose=verbose,
-                )
-                # raise RuntimeError("CV minimization not available for use_full_x.")
+                fitobj = PolymlpFitStandardUseXLOOCV(params, train, verbose=verbose)
             else:
-                fitobj = PolymlpFitStandardLOOCV(
-                    params,
-                    train,
-                    batch_size=batch_size,
-                    verbose=verbose,
-                )
+                fitobj = PolymlpFitStandardLOOCV(params, train, verbose=verbose)
         else:
             if use_full_x:
-                fitobj = PolymlpFitStandardUseX(
-                    params,
-                    train,
-                    test,
-                    verbose=verbose,
-                )
+                fitobj = PolymlpFitStandardUseX(params, train, test, verbose=verbose)
             else:
-                fitobj = PolymlpFitStandard(
-                    params,
-                    train,
-                    test,
-                    batch_size=batch_size,
-                    verbose=verbose,
-                )
+                fitobj = PolymlpFitStandard(params, train, test, verbose=verbose)
 
     fitobj.fit()
 
@@ -96,12 +65,7 @@ def fit_learning_curve(
     verbose: bool = False,
 ):
     """API function for estimating learning curve."""
-    fitobj = PolymlpFitLearningCurve(
-        params,
-        train,
-        test,
-        verbose=verbose,
-    )
+    fitobj = PolymlpFitLearningCurve(params, train, test, verbose=verbose)
     fitobj.fit()
     return fitobj
 

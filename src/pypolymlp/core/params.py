@@ -419,6 +419,8 @@ class PolymlpParams:
         print("  include_force:     ", self.include_force, flush=True)
         print("  include_stress:    ", self.include_stress, flush=True)
         print("  enable_spins:      ", self.enable_spins, flush=True)
+        print("  use_auto_weight:   ", self.use_auto_weight, flush=True)
+        print("  weight_stress:     ", self.weight_stress, flush=True)
 
         for i, p in enumerate(self._params):
             print("model_" + str(i + 1) + ":", flush=True)

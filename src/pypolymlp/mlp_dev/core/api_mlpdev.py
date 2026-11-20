@@ -24,30 +24,22 @@ from pypolymlp.mlp_dev.core.utils_model_selection import (
 class PolymlpDevCore:
     """API Class for developing polymlp."""
 
-    def __init__(
-        self,
-        params: PolymlpParams,
-        use_gradient: bool = False,
-        verbose: bool = False,
-    ):
+    def __init__(self, params: PolymlpParams, verbose: bool = False):
         """Init method.
 
         Parameters
         ----------
         params: Parameters of polymlp.
-        use_gradient: Use gradient method or not.
         """
         self._params = params
         self._n_features = None
-        self._use_gradient = use_gradient
         self._verbose = verbose
 
     def calc_xy(
         self,
         datasets: DatasetList,
         scales: Optional[np.ndarray] = None,
-        min_energy: Optional[float] = None,
-        weight_stress: float = 0.1,
+        min_energy: Optional[np.ndarray] = None,
         scale_threshold: float = 1e-10,
     ) -> PolymlpDataXY:
         """Calculate X and y data."""
@@ -56,7 +48,6 @@ class PolymlpDevCore:
             datasets,
             scales=scales,
             min_energy=min_energy,
-            weight_stress=weight_stress,
             scale_threshold=scale_threshold,
             verbose=self._verbose,
         )
@@ -66,9 +57,7 @@ class PolymlpDevCore:
         self,
         datasets: DatasetList,
         scales: Optional[np.ndarray] = None,
-        min_energy: Optional[float] = None,
-        weight_stress: float = 0.1,
-        batch_size: Optional[int] = None,
+        min_energy: Optional[np.ndarray] = None,
         scale_threshold: float = 1e-10,
     ) -> PolymlpDataXY:
         """Calculate X.T @ X and X.T @ y data."""
@@ -77,9 +66,6 @@ class PolymlpDevCore:
             datasets,
             scales=scales,
             min_energy=min_energy,
-            weight_stress=weight_stress,
-            batch_size=batch_size,
-            use_gradient=self._use_gradient,
             scale_threshold=scale_threshold,
             verbose=self._verbose,
         )
@@ -97,9 +83,10 @@ class PolymlpDevCore:
 
     def check_memory_size_in_regression(self):
         """Estimate memory size in regression."""
+        use_gradient = self.params.solver_use_gradient
         return check_memory_size_in_regression(
             self.n_features,
-            use_gradient=self._use_gradient,
+            use_gradient=use_gradient,
             verbose=self._verbose,
         )
 
