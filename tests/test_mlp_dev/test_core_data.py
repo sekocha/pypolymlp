@@ -5,7 +5,11 @@ from pathlib import Path
 
 import pytest
 
-from pypolymlp.mlp_dev.core.data_sequential import calc_xtx_xty
+from pypolymlp.mlp_dev.core.data_sequential import (
+    _set_batch_size,
+    _set_min_energy,
+    calc_xtx_xty,
+)
 
 cwd = Path(__file__).parent
 
@@ -71,3 +75,31 @@ def test_calc_xtx_xty2(regdata_mp_149):
     params_.solver_use_gradient = True
     data_xy = calc_xtx_xty(params_, datasets_)
     _assert_xtx_xty(data_xy)
+
+
+def test_set_batch_size(regdata_mp_149):
+    """Test _set_batch_size."""
+    params, datasets = regdata_mp_149
+
+    batch_size = _set_batch_size(params, n_features=1000)
+    assert batch_size == 5722
+
+    params_ = copy.deepcopy(params)
+    params_.solver_batch_size = 30
+    batch_size = _set_batch_size(params_, n_features=1000)
+    assert batch_size == 30
+
+
+def test_set_min_energy(regdata_mp_149):
+    """Test _set_min_energy."""
+    params, datasets = regdata_mp_149
+    min_e = _set_min_energy(params, datasets, min_energy=None)
+    assert min_e == pytest.approx(-5.737324395625)
+
+    min_e = _set_min_energy(params, datasets, min_energy=1.0)
+    assert min_e == pytest.approx(1.0)
+
+    params_ = copy.deepcopy(params)
+    params_.weight_min_energy = 2.0
+    min_e = _set_min_energy(params_, datasets, min_energy=None)
+    assert min_e == pytest.approx(2.0)
