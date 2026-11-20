@@ -78,8 +78,9 @@ Building C++ codes in pypolymlp may require a significant amount of time.
 
 ## Using pypolymlp for Polynomial MLP Development
 
-To develop polynomial MLPs from datasets obtained from DFT calculations, both the command-line interface and the Python API are available.
-Several procedures for generating structures used in DFT calculations are also supported.
+Polynomial MLPs can be developed from datasets obtained through DFT calculations using either a command-line interface or a Python API.
+The energy, force, and virial stress data are used as training observations, and the model coefficients are determined by weighted linear ridge regression.
+The software also supports several procedures for generating atomic structures for DFT calculations.
 
 - Tutorials
   1. [Development of a single on-the-fly MLP](docs/tutorial_onthefly.md)
@@ -92,7 +93,10 @@ Several procedures for generating structures used in DFT calculations are also s
   - [Structure-Properties general datasets (Python API)](docs/mlpdev_dataset_api.md)
   - [Phono3py (Python API)](docs/mlpdev_phono3py.md)
   - [OpenMX](docs/mlpdev_openmx.md)
+
+- Notes on MLP Developments
   - [Notes on parameter and dataset settings](docs/mlpdev_params.md)
+  - [Notes on weights assigned to data entries](docs/mlpdev_weights.md)
 
 - Utilities for MLP development
   - Dataset Generation
