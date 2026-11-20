@@ -10,7 +10,7 @@ cwd = Path(__file__).parent
 
 
 def test_mlp_devel_distance():
-
+    """Test mlp development with distance constraints in SrTiO3."""
     file = str(cwd) + "/polymlp.in.vasp.gtinv.distance.SrTiO3"
     pypolymlp = _run_fit(file)
     assert pypolymlp.n_features == 5452
