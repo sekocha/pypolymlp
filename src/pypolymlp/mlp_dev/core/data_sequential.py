@@ -22,6 +22,29 @@ from pypolymlp.mlp_dev.core.utils_sequential import (
 from pypolymlp.mlp_dev.core.utils_weights import apply_weights
 
 
+def _set_batch_size(params: PolymlpParams, n_features: int, verbose: bool = False):
+    """Set batch size."""
+    batch_size = params.solver_batch_size
+    if batch_size is None:
+        batch_size = get_auto_batch_size(
+            n_features,
+            use_gradient=params.solver_use_gradient,
+            verbose=verbose,
+        )
+    return batch_size
+
+
+def _set_min_energy(
+    params: PolymlpParams, datasets: DatasetList, min_energy: Optional[float] = None
+):
+    """Set minimum energy."""
+    if min_energy is None:
+        min_energy = params.weight_min_energy
+    if min_energy is None:
+        min_energy = get_min_energy(datasets)
+    return min_energy
+
+
 def calc_xtx_xty(
     params: PolymlpParams,
     datasets: DatasetList,
@@ -33,18 +56,8 @@ def calc_xtx_xty(
 ):
     """Compute X.T @ X and X.T @ y."""
     n_features = get_num_features(params)
-    batch_size = params.solver_batch_size
-    if batch_size is None:
-        batch_size = get_auto_batch_size(
-            n_features,
-            use_gradient=params.solver_use_gradient,
-            verbose=verbose,
-        )
-
-    if min_energy is None:
-        min_energy = params.weight_min_energy
-    if min_energy is None:
-        min_energy = get_min_energy(datasets)
+    batch_size = _set_batch_size(params, n_features, verbose=verbose)
+    min_energy = _set_min_energy(params, datasets, min_energy=min_energy)
 
     data_xy = PolymlpDataXY()
     for data in datasets:
@@ -106,11 +119,7 @@ def _compute_products_single_batch(
     use_auto_weight = params.use_auto_weight
     weight_stress = params.weight_stress
 
-    features = compute_features(
-        params,
-        datasets=dataset_sliced,
-        verbose=verbose,
-    )
+    features = compute_features(params, datasets=dataset_sliced, verbose=verbose)
     x = features.x
     first_indices = features.first_indices[0]
     n_data, n_features = x.shape
@@ -132,7 +141,6 @@ def _compute_products_single_batch(
         data_xy.xe_sq_sum = sum_array(data_xy.xe_sq_sum, np.sum(np.square(xe), axis=0))
 
     y = collect_observations(dataset_sliced, n_data, first_indices)
-
     x, y, w = apply_weights(
         x,
         y,
