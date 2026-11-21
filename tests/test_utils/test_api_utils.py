@@ -5,6 +5,7 @@ import os
 import shutil
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 from pypolymlp.api.pypolymlp_utils import PypolymlpUtils
@@ -37,6 +38,15 @@ def test_estimate_computational_cost1():
     polymlp = PypolymlpUtils(verbose=True)
     pot = path_file + "polymlp.yaml.MgO"
     polymlp.estimate_polymlp_comp_cost(pot=pot, n_calc=3)
+    os.remove("polymlp_cost.yaml")
+
+
+def test_estimate_computational_cost_sup():
+    """Test for estimating computational costs of polymlps."""
+    polymlp = PypolymlpUtils(verbose=True)
+    pot = path_file + "polymlp.yaml.MgO"
+    mat = np.array([[2, 0, 0], [0, 2, 0], [1, 0, 2]])
+    polymlp.estimate_polymlp_comp_cost(pot=pot, n_calc=3, supercell_matrix=mat)
     os.remove("polymlp_cost.yaml")
 
 

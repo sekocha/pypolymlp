@@ -12,6 +12,9 @@ from pypolymlp.utils.atomic_energies.atomic_energies import (
     get_atomic_energies_polymlp_in,
 )
 
+from .common_args import SupercellAction
+from .func_calc import set_supercell_matrix
+
 
 def run():
 
@@ -194,10 +197,11 @@ def run():
     parser.add_argument("-p", "--poscar", type=str, help="poscar file name")
     parser.add_argument(
         "--supercell",
-        nargs="*",
+        nargs="+",
         type=int,
-        default=None,
-        help="get supercell",
+        action=SupercellAction,
+        default=(1, 1, 1),
+        help=("Supercell size for random displacement" " generation"),
     )
 
     spg_group = parser.add_argument_group("Spglib", "Options for using spglib")
@@ -234,17 +238,15 @@ def run():
         polymlp.compress_vaspruns(args.vasprun_compress, n_jobs=args.n_jobs)
     elif args.calc_cost:
         if args.supercell is None:
-            size = (4, 4, 4)
-        elif len(args.supercell) == 3:
-            size = args.supercell
+            matrix = (4, 4, 4)
         else:
-            raise RuntimeError("Option `--supercell` must have 3 elements.")
+            matrix = set_supercell_matrix(args)
 
         polymlp.estimate_polymlp_comp_cost(
             pot=args.pot,
             path_pot=args.dirs,
             poscar=args.poscar,
-            supercell=size,
+            supercell_matrix=matrix,
             n_calc=args.n_calc,
         )
 
@@ -261,12 +263,7 @@ def run():
         )
 
     elif args.supercell:
-        if len(args.supercell) == 9:
-            matrix = np.reshape(args.supercell, (3, 3))
-        elif len(args.supercell) == 3:
-            matrix = args.supercell
-        else:
-            raise RuntimeError("Option `--supercell` must have 3 or 9 elements.")
+        matrix = set_supercell_matrix(args)
         st = polymlp.generate_supercell(poscar=args.poscar, supercell_matrix=matrix)
         polymlp.print_poscar(st)
         polymlp.write_poscar_file(st, filename="sposcar_pypolymlp")

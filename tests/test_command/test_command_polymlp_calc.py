@@ -5,6 +5,8 @@ import os
 import shutil
 from pathlib import Path
 
+import numpy as np
+
 from pypolymlp.api.func_calc import (
     run_calculations,
     run_elastic,
@@ -12,6 +14,7 @@ from pypolymlp.api.func_calc import (
     run_geometry_optimization,
     run_gsfe,
     run_phonon,
+    set_supercell_matrix,
 )
 from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
 from pypolymlp.api.run_polymlp_calc import _parse_args_pypolymlp_calc
@@ -26,6 +29,18 @@ pot = path_file + "polymlp.yaml.pair.Ag"
 calc = PypolymlpCalc(pot=pot, verbose=True)
 calc.load_poscars(poscar)
 unitcell = calc.first_structure
+
+
+def test_set_supercell_matrix():
+    """Test set_supercell_matrix."""
+    args = _parse_args_pypolymlp_calc([])
+    args.supercell = (1, 2, 2)
+    mat = set_supercell_matrix(args)
+    np.testing.assert_equal(mat, np.diag((1, 2, 2)))
+
+    args.supercell = (1, 0, 0, 0, 2, 0, 0, 0, 2)
+    mat = set_supercell_matrix(args)
+    np.testing.assert_equal(mat, np.diag((1, 2, 2)))
 
 
 def test_run_functions():

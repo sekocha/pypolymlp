@@ -4,6 +4,7 @@ import os
 import shutil
 from pathlib import Path
 
+import numpy as np
 from test_sscha_api_sscha import _assert_Al
 
 from pypolymlp.api.api_calculator import PypolymlpCalcProperties
@@ -24,6 +25,30 @@ def test_sscha_Al():
     prop = polymlp.set_sscha_calculator(
         unitcell=unitcell,
         supercell_matrix=(2, 2, 2),
+        temp=700,
+        tol=0.003,
+        mixing=0.5,
+        path="tmp",
+        symfc_use_mkl=False,
+    )
+    calc = PypolymlpCalc(properties=prop, verbose=True)
+    calc.eval(unitcell)
+    sscha = calc._prop._sscha
+
+    _assert_Al(sscha)
+    shutil.rmtree("tmp")
+
+
+def test_sscha_Al_supmat():
+    """Test SSCHA calculations from polymlp using API."""
+    polymlp = PypolymlpCalcProperties(verbose=True)
+    polymlp.set_polymlp(pot=pot)
+    unitcell = polymlp.load_poscar(poscar)
+
+    mat = np.array([[2, 0, 0], [0, 2, 0], [1, 0, 2]])
+    prop = polymlp.set_sscha_calculator(
+        unitcell=unitcell,
+        supercell_matrix=mat,
         temp=700,
         tol=0.003,
         mixing=0.5,

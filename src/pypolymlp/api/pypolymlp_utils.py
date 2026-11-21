@@ -106,7 +106,7 @@ class PypolymlpUtils:
         pot: Optional[Union[str, list[str]]] = None,
         path_pot: Optional[list] = None,
         poscar: Optional[str] = None,
-        supercell: np.ndarray = (4, 4, 4),
+        supercell_matrix: np.ndarray = (4, 4, 4),
         n_calc: int = 50,
     ):
         """Estimate computational cost of MLP.
@@ -117,14 +117,14 @@ class PypolymlpUtils:
         path_pot: List of directory paths for polymlps.
                   (e.g. [grid/polymlp-00001, grid/polymlp-00002, ...])
         poscar: Structure in POSCAR format used for calculating properties.
-        supercell: Diagonal supercell size.
+        supercell_matrix: Supercell matrix.
         n_calc: Number of single-point calculations.
         """
         pycost = PolymlpCost(
             pot=pot,
             path_pot=path_pot,
             poscar=poscar,
-            supercell=supercell,
+            supercell_matrix=supercell_matrix,
             verbose=self._verbose,
         )
         pycost.run(n_calc=n_calc)

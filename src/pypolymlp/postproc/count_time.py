@@ -20,7 +20,7 @@ class PolymlpCost:
         pot: Optional[Union[str, list[str]]] = None,
         path_pot: Optional[Union[list, tuple, np.ndarray]] = None,
         poscar: Optional[str] = None,
-        supercell: np.ndarray = np.array([4, 4, 4]),
+        supercell_matrix: np.ndarray = np.array([4, 4, 4]),
         verbose: bool = False,
     ):
         """Init method."""
@@ -32,7 +32,7 @@ class PolymlpCost:
         self._path_pot = path_pot
 
         self._poscar = poscar
-        self._supercell_size = supercell
+        self._supercell_matrix = supercell_matrix
         self._verbose = verbose
 
         self._elements = self._parse_elements_from_pot()
@@ -103,7 +103,7 @@ class PolymlpCost:
                 volume,
             )
 
-        self._supercell = get_supercell(unitcell, self._supercell_size)
+        self._supercell = get_supercell(unitcell, self._supercell_matrix)
         return self._supercell
 
     def _run_single(self, pot: Union[str, list[str]], n_calc: int = 20):

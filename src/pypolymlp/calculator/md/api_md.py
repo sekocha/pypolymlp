@@ -185,9 +185,7 @@ class PolymlpMD:
         """
         if self._unitcell is None:
             raise RuntimeError("Unitcell not found.")
-        if len(size) != 3:
-            raise RuntimeError("Supercell size is not equal to 3.")
-        self._supercell = get_supercell(self._unitcell, size)
+        self._supercell = get_supercell(self._unitcell, size, diagonal=True)
         self._supercell_ase = structure_to_ase_atoms(self._supercell)
         self._supercell_matrix = np.diag(size)
         return self

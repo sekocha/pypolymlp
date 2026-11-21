@@ -1,7 +1,5 @@
 """Functions used for running command line calculations."""
 
-import numpy as np
-
 from pypolymlp.api.api_calculator import PypolymlpCalcProperties
 from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
 
@@ -10,6 +8,7 @@ from .func_calc import (
     run_eos,
     run_geometry_optimization,
     run_gsfe,
+    set_supercell_matrix,
 )
 
 
@@ -26,7 +25,7 @@ def run_main_sscha(args, polymlp: PypolymlpCalcProperties):
         unitcell = polymlp.sscha_unitcell
 
     if args.supercell:
-        supercell_matrix = np.diag(args.supercell)
+        supercell_matrix = set_supercell_matrix(args)
     else:
         supercell_matrix = polymlp.sscha_supercell
 

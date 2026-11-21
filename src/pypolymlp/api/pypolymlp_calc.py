@@ -610,9 +610,9 @@ class PypolymlpCalc:
             self.structures = unitcell
         self.unitcell = self.first_structure
 
-        size = np.diag(supercell_matrix)
-        sup = get_supercell(self.unitcell, size, use_phonopy=True, diagonal=True)
-
+        sup = get_supercell(
+            self.unitcell, supercell_matrix, use_phonopy=True, diagonal=True
+        )
         self._fc = PolymlpFC(
             self._prop,
             supercell=sup,

@@ -11,6 +11,7 @@ from pypolymlp.api.pypolymlp_md import PypolymlpMD
 from pypolymlp.core.utils import print_credit
 
 from .common_args import create_polymlp_parser, create_structure_parser
+from .func_calc import set_supercell_matrix
 
 
 def run():
@@ -111,7 +112,7 @@ def run():
         os.makedirs(path, exist_ok=True)
         md = PypolymlpMD(verbose=True)
         md.load_poscar(args.poscar)
-        md.set_supercell(args.supercell_size)
+        md.set_supercell(set_supercell_matrix(args))
 
         if args.fc2_path is not None:
             fc2 = md.find_reference(args.fc2_path, args.temp)
@@ -140,7 +141,7 @@ def run():
         print("Polymlp:      ", args.pot, flush=True)
         md = PypolymlpMD(verbose=True)
         md.load_poscar(args.poscar)
-        md.set_supercell(args.supercell_size)
+        md.set_supercell(set_supercell_matrix(args))
 
         if args.fc2 is None and args.pot_ref is None:
             md.set_ase_calculator(pot=args.pot)

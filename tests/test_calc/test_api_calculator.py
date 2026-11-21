@@ -76,6 +76,40 @@ def test_sscha_Al():
     shutil.rmtree("tmp")
 
 
+def test_sscha_Al_supmat():
+    """Test PypolymlpCalcProperties with polymlp and SSCHA."""
+    polymlp = PypolymlpCalcProperties(verbose=True)
+    polymlp.set_polymlp(pot=pot)
+    unitcell = polymlp.load_poscar(poscar)
+    mat = np.array([[2, 0, 0], [0, 1, 0], [1, 0, 2]])
+    polymlp.set_sscha_calculator(
+        unitcell=unitcell,
+        supercell_matrix=mat,
+        temp=700,
+        tol=0.01,
+        mixing=0.5,
+        path="tmp",
+        symfc_use_mkl=False,
+    )
+    e, f, s = polymlp.eval(unitcell)
+
+    assert polymlp.calculator is not None
+    assert polymlp.static_calculator is not None
+    assert polymlp.dynamic_calculator is not None
+    assert tuple(polymlp.elements) == ("Al",)
+    assert polymlp.pot.split("/")[-1] == "polymlp.yaml.gtinv.Al"
+
+    assert polymlp.sscha is not None
+    assert polymlp.force_constants.shape == (16, 16, 3, 3)
+
+    assert polymlp.energies is None
+    assert polymlp.forces is None
+    assert polymlp.stresses is None
+    assert polymlp.stresses_gpa is None
+
+    shutil.rmtree("tmp")
+
+
 def test_lammps():
     """Test PypolymlpCalcProperties with lammps."""
     polymlp = PypolymlpCalcProperties(verbose=True)

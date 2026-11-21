@@ -2,6 +2,8 @@
 
 import subprocess
 
+import pytest
+
 
 def test_command_lines_reg():
     """Test command lines."""
@@ -50,11 +52,12 @@ def test_command_lines_developer():
     subprocess.run(cmd.split(), check=True)
 
 
-# def test_command_lines_developer_lammps():
-#     """Test command lines."""
-#     cmd = "pypolymlp-lammps --help"
-#     subprocess.run(cmd.split(), check=True)
-#     cmd = "pypolymlp-lammps-autocalc --help"
-#     subprocess.run(cmd.split(), check=True)
-#     cmd = "pypolymlp-lammps-sscha --help"
-#     subprocess.run(cmd.split(), check=True)
+def test_command_lines_developer_lammps():
+    """Test command lines."""
+    pytest.importorskip("lammps")
+    cmd = "pypolymlp-lammps --help"
+    subprocess.run(cmd.split(), check=True)
+    cmd = "pypolymlp-lammps-autocalc --help"
+    subprocess.run(cmd.split(), check=True)
+    cmd = "pypolymlp-lammps-sscha --help"
+    subprocess.run(cmd.split(), check=True)

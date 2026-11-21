@@ -23,6 +23,16 @@ def _set_structure(
     return polymlp
 
 
+def set_supercell_matrix(args):
+    """Set supercell matrix."""
+    if len(args.supercell) == 3:
+        return np.diag(args.supercell)
+    if len(args.supercell) == 9:
+        return np.array(args.supercell).reshape((3, 3))
+
+    raise RuntimeError("Supercell elements must be composed of 3 or 9.")
+
+
 def run_geometry_optimization(
     args,
     polymlp: PypolymlpCalc,
@@ -109,7 +119,7 @@ def run_phonon(
 ):
     """Run phonon calculation."""
     polymlp = _set_structure(args, polymlp, structure=structure)
-    supercell_matrix = np.diag(args.supercell)
+    supercell_matrix = set_supercell_matrix(args)
     polymlp.init_phonon(supercell_matrix=supercell_matrix)
     polymlp.run_phonon(
         distance=args.disp,
@@ -197,7 +207,7 @@ def run_calculations(args, polymlp: PypolymlpCalc, calc_features: bool = True):
 
     if args.force_constants:
         print("Mode: Force constant calculations", flush=True)
-        supercell_matrix = np.diag(args.supercell)
+        supercell_matrix = set_supercell_matrix(args)
         polymlp.load_poscars(args.poscar)
         if args.geometry_optimization:
             polymlp.init_geometry_optimization(

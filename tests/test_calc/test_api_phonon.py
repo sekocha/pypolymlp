@@ -3,6 +3,7 @@
 import shutil
 from pathlib import Path
 
+import numpy as np
 from test_compute_phonon import _assert_phonon, _assert_qha
 
 from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
@@ -19,6 +20,19 @@ def test_phonon_MgO():
     polymlp = PypolymlpCalc(pot=pot, verbose=True, require_mlp=True)
     polymlp.load_structures_from_files(poscars=poscar)
     polymlp.init_phonon(supercell_matrix=(2, 2, 2))
+    polymlp.run_phonon()
+    _assert_phonon(polymlp._phonon)
+
+    polymlp.write_phonon(path="tmp")
+    shutil.rmtree("tmp")
+
+
+def test_phonon_MgO_supmat():
+    """Test phonon calculations from polymlp using API."""
+    polymlp = PypolymlpCalc(pot=pot, verbose=True, require_mlp=True)
+    polymlp.load_structures_from_files(poscars=poscar)
+    mat = np.array([[2, 0, 0], [0, 1, 0], [1, 0, 2]])
+    polymlp.init_phonon(supercell_matrix=mat)
     polymlp.run_phonon()
     _assert_phonon(polymlp._phonon)
 

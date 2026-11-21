@@ -3,6 +3,15 @@
 import argparse
 
 
+class SupercellAction(argparse.Action):
+    """Class for Supercell action."""
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        if len(values) not in (3, 9):
+            raise argparse.ArgumentError(self, "expected 3 or 9 integers")
+        setattr(namespace, self.dest, values)
+
+
 def check_poscar_variables(args):
     """Check variables."""
     if args.poscar is None and args.poscars is not None:
@@ -54,13 +63,16 @@ def create_structure_parser(
         st_group.add_argument(
             "--str_yaml", type=str, default=None, help="polymlp_str.yaml file"
         )
+
     st_group.add_argument(
         "--supercell",
-        nargs=3,
+        nargs="+",
         type=int,
+        action=SupercellAction,
         default=(2, 2, 2),
-        help="Supercell size (diagonal components)",
+        help="Supercell size (3 diagonal components or 9 matrix components)",
     )
+
     return parser
 
 
