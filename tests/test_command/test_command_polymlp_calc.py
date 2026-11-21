@@ -1,159 +1,97 @@
-"""Test func_calc for APIs."""
+"""Tests of command line calculations"""
 
 import glob
 import os
 import shutil
+import subprocess
 from pathlib import Path
-
-import numpy as np
-
-from pypolymlp.api.func_calc import (
-    run_calculations,
-    run_elastic,
-    run_eos,
-    run_geometry_optimization,
-    run_gsfe,
-    run_phonon,
-    set_supercell_matrix,
-)
-from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
-from pypolymlp.api.run_polymlp_calc import _parse_args_pypolymlp_calc
 
 cwd = Path(__file__).parent
 path_file = str(cwd) + "/files/"
 
 poscar = path_file + "POSCAR.fcc.Ag"
 pot = path_file + "polymlp.yaml.pair.Ag"
+common_str = " --pot " + pot + " --poscar " + poscar + " "
 
 
-calc = PypolymlpCalc(pot=pot, verbose=True)
-calc.load_poscars(poscar)
-unitcell = calc.first_structure
+def test_command_lines_calc_prop():
+    """Test command lines."""
+    cmd = "pypolymlp-calc --properties --eos --elastic" + common_str
+    subprocess.run(cmd.split(), check=True)
+
+    for target in glob.glob("polymlp_*"):
+        os.remove(target)
 
 
-def test_set_supercell_matrix():
-    """Test set_supercell_matrix."""
-    args = _parse_args_pypolymlp_calc([])
-    args.supercell = (1, 2, 2)
-    mat = set_supercell_matrix(args)
-    np.testing.assert_equal(mat, np.diag((1, 2, 2)))
+def test_command_lines_phonon():
+    """Test command lines."""
+    cmd = "pypolymlp-calc --phonon --supercell 1 1 1" + common_str
+    subprocess.run(cmd.split(), check=True)
+    cmd = "pypolymlp-calc --phonon --supercell 1 0 0 0 1 0 1 0 2" + common_str
+    subprocess.run(cmd.split(), check=True)
 
-    args.supercell = (1, 0, 0, 0, 2, 0, 0, 0, 2)
-    mat = set_supercell_matrix(args)
-    np.testing.assert_equal(mat, np.diag((1, 2, 2)))
-
-
-def test_run_functions():
-    """Test func_calc."""
-    args = _parse_args_pypolymlp_calc([])
-    args.poscar = args.poscars = poscar
-
-    run_geometry_optimization(args, calc)
-    run_geometry_optimization(args, calc, structure=unitcell)
-
-    run_elastic(args, calc)
-    run_elastic(args, calc, structure=unitcell)
-
-    run_eos(args, calc)
-    run_eos(args, calc, structure=unitcell)
-
-    args.mesh = (2, 2, 2)
-    run_phonon(args, calc)
-
-    args.disp1 = (1, 0, 0)
-    args.disp2 = (0, 1, 0)
-    args.glide = (0, 0, 1)
-    run_gsfe(args, calc)
-
-    os.remove("POSCAR_eqm")
+    for target in glob.glob("phonon_*"):
+        os.remove(target)
+    os.remove("polymlp_phonon.yaml")
     os.remove("fc2.hdf5")
-    os.remove("gsfe.dat")
-    shutil.rmtree("poscars")
-
-    os.remove("polymlp_elastic.yaml")
-    os.remove("polymlp_eos.yaml")
-
-    os.remove("polymlp_phonon.yaml")
     shutil.rmtree("polymlp_phonon_qha")
-    for f in glob.glob("phonon*"):
-        os.remove(f)
 
 
-def test_run_properties():
-    args = _parse_args_pypolymlp_calc(["--properties", "--pot", pot])
-    args.poscar = args.poscars = poscar
-    run_calculations(args, calc)
-    for f in glob.glob("polymlp_*"):
-        os.remove(f)
+def test_command_lines_fc():
+    """Test command lines."""
+    cmd = (
+        "pypolymlp-calc --force_constants --supercell 2 2 2 --fc_order 2 "
+        "--fc_n_samples 100 --batch_size 50 --disp 0.01 --is_plusminus" + common_str
+    )
+    subprocess.run(cmd.split(), check=True)
+    cmd = (
+        "pypolymlp-calc --force_constants --supercell 2 2 2 --fc_order 2 "
+        "--use_gradient_solver "
+        "--fc_n_samples 100 --batch_size 50 --disp 0.01 --is_plusminus" + common_str
+    )
+    subprocess.run(cmd.split(), check=True)
+
+    os.remove("fc2.hdf5")
 
 
-def test_geometry_optimizations():
-    args = _parse_args_pypolymlp_calc(["--geometry_optimization", "--pot", pot])
-    args.poscar = args.poscars = poscar
-    run_calculations(args, calc)
+def test_command_lines_go():
+    """Test command lines."""
+    cmd = (
+        "pypolymlp-calc --geometry_optimization --pressure 0.1 "
+        "--scale_axis 10 --maxiter 10 --gtol 0.01" + common_str
+    )
+    subprocess.run(cmd.split(), check=True)
+    cmd = (
+        "pypolymlp-calc --geometry_optimization --pressure 0.1 --no_symmetry "
+        "--method CG --fix_cell "
+        "--scale_axis 10 --maxiter 10 --gtol 0.01" + common_str
+    )
+    subprocess.run(cmd.split(), check=True)
+
     os.remove("POSCAR_eqm")
 
 
-def test_run_eos():
-    args = _parse_args_pypolymlp_calc(["--eos", "--pot", pot])
-    args.poscar = args.poscars = poscar
-    run_calculations(args, calc)
-    os.remove("polymlp_eos.yaml")
+def test_command_lines_features():
+    """Test command lines."""
+    cmd = "pypolymlp-calc --features" + common_str
+    subprocess.run(cmd.split(), check=True)
 
-
-def test_run_elastic():
-    args = _parse_args_pypolymlp_calc(["--elastic", "--pot", pot])
-    args.poscar = args.poscars = poscar
-    run_calculations(args, calc)
-    os.remove("polymlp_elastic.yaml")
-
-
-def test_run_phonon():
-    args = _parse_args_pypolymlp_calc(["--phonon", "--pot", pot])
-    args.poscar = args.poscars = poscar
-    args.mesh = (2, 2, 2)
-    run_calculations(args, calc)
-    os.remove("polymlp_phonon.yaml")
-    shutil.rmtree("polymlp_phonon_qha")
-    for f in glob.glob("phonon*"):
-        os.remove(f)
-
-
-def test_gsfe():
-    args = _parse_args_pypolymlp_calc(["--gsfe", "--pot", pot])
-    args.poscar = args.poscars = poscar
-    args.disp1 = (1, 0, 0)
-    args.disp2 = (0, 1, 0)
-    args.glide = (0, 0, 1)
-    run_calculations(args, calc)
-    os.remove("gsfe.dat")
-    shutil.rmtree("poscars")
-
-
-def test_gsfe2():
-    args = _parse_args_pypolymlp_calc(["--gsfe", "--pot", pot])
-    args.poscar = args.poscars = poscar
-    args.disp1 = (1, 0, 0)
-    args.disp2 = (0, 1, 0)
-    args.glide = (0, 0, 1)
-    args.frac1 = 0.2
-    args.frac2 = 0.3
-    run_calculations(args, calc)
-    os.remove("gsfe.dat")
-    os.remove("POSCAR_gsf")
-
-
-def test_run_features():
-    """Test func_calc."""
-    args = _parse_args_pypolymlp_calc(["--features", "--pot", pot])
-    args.poscar = args.poscars = poscar
-    run_calculations(args, calc)
     os.remove("features.npy")
 
 
-def test_run_force_constants():
-    args = _parse_args_pypolymlp_calc(["--force_constants", "--pot", pot])
-    args.poscar = args.poscars = poscar
-    run_calculations(args, calc)
-    os.remove("fc2.hdf5")
-    os.remove("fc3.hdf5")
+def test_command_lines_gsfe():
+    """Test command lines."""
+    cmd = (
+        "pypolymlp-calc --gsfe --disp1 1 0 0 --disp2 0 1 0 --glide 0 0 1 "
+        " --n_layers 2 --n_points 2" + common_str
+    )
+    subprocess.run(cmd.split(), check=True)
+    cmd = (
+        "pypolymlp-calc --gsfe --disp1 1 0 0 --disp2 0 1 0 --glide 0 0 1 "
+        " --n_layers 2 --frac1 0.1 --frac2 0.1" + common_str
+    )
+    subprocess.run(cmd.split(), check=True)
+
+    shutil.rmtree("poscars")
+    os.remove("gsfe.dat")
+    os.remove("POSCAR_gsf")

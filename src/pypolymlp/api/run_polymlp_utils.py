@@ -262,12 +262,6 @@ def run():
             path_string=args.path_string,
         )
 
-    elif args.supercell:
-        matrix = set_supercell_matrix(args)
-        st = polymlp.generate_supercell(poscar=args.poscar, supercell_matrix=matrix)
-        polymlp.print_poscar(st)
-        polymlp.write_poscar_file(st, filename="sposcar_pypolymlp")
-
     elif args.refine_cell or args.space_group:
         polymlp.init_symmetry(poscar=args.poscar, symprec=args.symprec)
         if args.refine_cell:
@@ -286,7 +280,7 @@ def run():
             functional=args.atomic_energy_functional,
         )
 
-    elif args.generate_models is not None:
+    elif args.generate_models:
         if args.elements is None and args.generate_models_system is None:
             raise RuntimeError("Elements or system required.")
         if args.generate_models_system is not None:
@@ -301,3 +295,8 @@ def run():
             path="polymlps",
             hybrid=args.enable_hybrid,
         )
+    elif args.supercell:
+        matrix = set_supercell_matrix(args)
+        st = polymlp.generate_supercell(poscar=args.poscar, supercell_matrix=matrix)
+        polymlp.print_poscar(st)
+        polymlp.write_poscar_file(st, filename="sposcar_pypolymlp")
