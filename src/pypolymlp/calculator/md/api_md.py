@@ -187,7 +187,10 @@ class PolymlpMD:
             raise RuntimeError("Unitcell not found.")
         self._supercell = get_supercell(self._unitcell, size, diagonal=True)
         self._supercell_ase = structure_to_ase_atoms(self._supercell)
-        self._supercell_matrix = np.diag(size)
+        if np.array(size).size == 3:
+            self._supercell_matrix = np.diag(size)
+        else:
+            self._supercell_matrix = size
         return self
 
     def run_Nose_Hoover_NVT(

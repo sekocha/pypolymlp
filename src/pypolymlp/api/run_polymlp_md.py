@@ -99,12 +99,23 @@ def run():
         default=None,
         help="Directory path for automatically finding reference FC2 state.",
     )
+    ti_group.add_argument(
+        "--output_path",
+        type=str,
+        default=None,
+        help="Directory path for generating log files.",
+    )
+
     args = parser.parse_args()
 
     print_credit()
     np.set_printoptions(legacy="1.21")
 
-    path = "/".join(os.path.abspath(args.poscar).split("/")[:-1])
+    if args.output_path is None:
+        path = "/".join(os.path.abspath(args.poscar).split("/")[:-1])
+    else:
+        path = args.output_path
+
     if args.ti:
         print("Run TI from FC2 reference state.", flush=True)
 

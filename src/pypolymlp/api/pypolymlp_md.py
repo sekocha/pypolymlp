@@ -197,15 +197,15 @@ class PypolymlpMD:
         self._md.load_poscar(poscar)
         return self
 
-    def set_supercell(self, size: tuple):
+    def set_supercell(self, supercell_matrix: np.ndarray):
         """Set supercell from unitcell.
 
         Parameter
         ---------
-        size: Supercell size with three elements.
-              Diagonal elements of supercell matrix.
+        supercell_matrix: Supercell size with three elements.
+            Diagonal elements of diagonal supercell matrix.
         """
-        self._md.set_supercell(size)
+        self._md.set_supercell(supercell_matrix)
         return self
 
     def run_md_nvt(
