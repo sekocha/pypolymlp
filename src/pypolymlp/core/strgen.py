@@ -7,7 +7,8 @@ from typing import Optional
 import numpy as np
 
 from pypolymlp.core.data_format import PolymlpStructure
-from pypolymlp.utils.structure_utils import sort_wrt_types, supercell_diagonal
+from pypolymlp.utils.structure_core_utils import sort_wrt_types
+from pypolymlp.utils.structure_utils import supercell_diagonal
 from pypolymlp.utils.vasp_utils import write_poscar_file
 
 

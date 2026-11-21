@@ -6,7 +6,7 @@ import numpy as np
 
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.utils.spglib_utils import construct_basis_cell
-from pypolymlp.utils.structure_utils import refine_positions
+from pypolymlp.utils.structure_core_utils import refine_positions
 from pypolymlp.utils.symfc_utils import construct_basis_cartesian
 from pypolymlp.utils.vasp_utils import write_poscar_file
 

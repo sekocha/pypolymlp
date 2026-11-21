@@ -9,7 +9,7 @@ from symfc.api_symfc import eigh
 from pypolymlp.calculator.compute_features import update_types
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.utils.spglib_utils import construct_basis_cell
-from pypolymlp.utils.structure_utils import _refine_positions
+from pypolymlp.utils.structure_core_utils import refine_positions
 from pypolymlp.utils.symfc_utils import construct_basis_fractional_coordinates
 
 
@@ -224,7 +224,7 @@ class BasisSetGO:
             return self._f0
 
         df = (self._basis_f @ x).reshape(-1, 3).T
-        return _refine_positions(self._f0 + df)
+        return refine_positions(positions=self._f0 + df)
 
     def structure(self, x: np.ndarray):
         """Convert coeffs. to structure."""

@@ -8,7 +8,7 @@ import spglib
 
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.interface_vasp import Poscar
-from pypolymlp.utils.structure_utils import refine_positions
+from pypolymlp.utils.structure_core_utils import refine_positions
 
 
 class SymCell:

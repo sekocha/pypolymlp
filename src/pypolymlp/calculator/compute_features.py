@@ -5,11 +5,11 @@ from typing import Optional
 import numpy as np
 
 from pypolymlp.core.data_format import PolymlpStructure
-from pypolymlp.core.dataset_utils import replace_types
 from pypolymlp.core.io_polymlp import load_mlp
 from pypolymlp.core.params import PolymlpParams
 from pypolymlp.core.parser_polymlp_params import ParamsParser
 from pypolymlp.mlp_dev.core.features import Features
+from pypolymlp.utils.structure_core_utils import replace_types
 
 
 def update_types(structures: list[PolymlpStructure], element_order: list[str]):

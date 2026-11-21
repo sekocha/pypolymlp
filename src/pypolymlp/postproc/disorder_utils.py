@@ -9,7 +9,7 @@ import numpy as np
 from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.params import PolymlpParams
-from pypolymlp.utils.structure_utils import sort_wrt_types
+from pypolymlp.utils.structure_core_utils import sort_wrt_types
 
 
 def _check_occupancy(params: PolymlpParams, occupancy: tuple):

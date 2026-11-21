@@ -8,44 +8,6 @@ from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.utils import split_ids_train_test
 
 
-def replace_types(
-    st: PolymlpStructure,
-    elements_string: list[str],
-) -> PolymlpStructure:
-    """Replace atom types used for property calculations."""
-
-    st.elements = np.array(st.elements)
-    st.types = np.array(st.types)
-    count = 0
-    if len(elements_string) == len(np.unique(elements_string)):
-        for atomtype, ele in enumerate(elements_string):
-            match = st.elements == ele
-            st.types[match] = atomtype
-            count += np.count_nonzero(match)
-    else:
-        atomtype = 0
-        types = np.zeros(st.types.shape, dtype=int)
-        unique_elements = list(dict.fromkeys(elements_string))
-        for ele in unique_elements:
-            match = st.elements == ele
-            count += np.count_nonzero(match)
-
-            match_ids = np.where(match)[0]
-            idx = np.argsort(st.types[match])
-            match_ids = match_ids[idx]
-            types_local = st.types[match_ids]
-            mapping = {v: i + atomtype for i, v in enumerate(np.unique(types_local))}
-            types_local = np.array([mapping[t] for t in types_local])
-            types[match_ids] = types_local
-
-            atomtype += len(np.unique(types_local))
-        st.types = types
-
-    if count != st.elements.shape[0]:
-        raise RuntimeError("Elements in structure not found in elements.")
-    return st
-
-
 def permute_atoms(
     st: PolymlpStructure,
     elements_string: list[str],

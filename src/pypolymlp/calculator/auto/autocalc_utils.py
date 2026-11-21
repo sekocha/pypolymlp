@@ -10,7 +10,7 @@ import yaml
 from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.core.data_format import PolymlpStructure
-from pypolymlp.utils.structure_utils import get_lattice_constants
+from pypolymlp.utils.structure_core_utils import get_lattice_constants
 from pypolymlp.utils.yaml_utils import save_cell
 
 

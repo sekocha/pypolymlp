@@ -6,6 +6,7 @@ from typing import Optional, Union
 import numpy as np
 
 from pypolymlp.core.data_format import PolymlpStructure
+from pypolymlp.utils.structure_core_utils import refine_positions, sort_wrt_types
 
 
 def _is_diagonal(a: np.array):
@@ -14,38 +15,6 @@ def _is_diagonal(a: np.array):
         and a.shape[0] == a.shape[1]
         and np.all(a == np.diag(np.diagonal(a)))
     )
-
-
-def _refine_positions(positions: np.ndarray, tol: float = 1e-13):
-    """Refine fractional coordinates."""
-    positions -= np.floor(positions)
-    positions[np.where(positions > 1 - tol)] -= 1.0
-    return positions
-
-
-def _sort_wrt_types(st: PolymlpStructure, return_ids: bool = False):
-    """Sort atoms with respect to types."""
-    # TODO: Unify sort_wrt_types with the same function in structure_utils.
-    map_elements = dict()
-    for t, e in zip(st.types, st.elements):
-        map_elements[t] = e
-
-    n_atoms, positions, types = [], [], []
-    ids_all = []
-    for i in sorted(set(st.types)):
-        ids = np.array(st.types) == i
-        n_atoms.append(np.count_nonzero(ids))
-        positions.extend(st.positions.T[ids])
-        types.extend(np.array(st.types)[ids])
-        ids_all.extend(np.where(ids == True)[0])
-
-    st.positions = np.array(positions).T
-    st.n_atoms = n_atoms
-    st.types = types
-    st.elements = [map_elements[t] for t in types]
-    if return_ids:
-        return st, np.array(ids_all)
-    return st
 
 
 def get_supercell(
@@ -71,7 +40,7 @@ def get_supercell(
             from pypolymlp.utils.phonopy_utils import phonopy_supercell
 
             sup = phonopy_supercell(st, supercell_matrix=size, return_phonopy=False)
-            sup.positions = _refine_positions(sup.positions)
+            sup.positions = refine_positions(positions=sup.positions)
             return sup
 
         return _get_supercell_diagonal(st, np.diag(size), use_phonopy=use_phonopy)
@@ -109,7 +78,7 @@ def _get_supercell_diagonal(
     trans_all = trans_all[:, [2, 1, 0]]
     positions_new = (st.positions.T[:, None] + trans_all[None, :]).reshape((-1, 3))
     sup.positions = (positions_new / size).T
-    sup.positions = _refine_positions(sup.positions)
+    sup.positions = refine_positions(positions=sup.positions)
     return sup
 
 
@@ -197,7 +166,7 @@ def get_slab(
         return supercell
 
     supercell.positions[2] += end_frac
-    supercell.positions = _refine_positions(supercell.positions)
+    supercell.positions = refine_positions(positions=supercell.positions)
     match_end = np.abs(supercell.positions[2]) < tol
 
     add_positions = supercell.positions[:, match_end]
@@ -208,7 +177,7 @@ def get_slab(
     supercell.positions = np.hstack([supercell.positions, add_positions])
     supercell.elements = np.concatenate([supercell.elements, add_elements])
     supercell.types = np.concatenate([supercell.types, add_types])
-    supercell = _sort_wrt_types(supercell)
+    supercell = sort_wrt_types(supercell)
 
     supercell.axis[:, 2] *= ratio
     supercell.positions[2] /= ratio

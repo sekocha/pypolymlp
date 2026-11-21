@@ -9,55 +9,6 @@ from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.utils.supercell_utils import get_supercell
 
 
-def _refine_positions(positions: np.ndarray, tol: float = 1e-13):
-    """Refine fractional coordinates."""
-    positions -= np.floor(positions)
-    positions[np.where(positions > 1 - tol)] -= 1.0
-    return positions
-
-
-def refine_positions(
-    st: Optional[PolymlpStructure] = None,
-    positions: Optional[np.ndarray] = None,
-    tol: float = 1e-13,
-):
-    """Refine fractional coordinates."""
-    if positions is not None:
-        return _refine_positions(positions, tol=tol)
-
-    st.positions = _refine_positions(st.positions, tol=tol)
-    return st
-
-
-def reset_types(st: PolymlpStructure):
-    """Reset types using n_atoms."""
-    st.types = [i for i, n1 in enumerate(st.n_atoms) for n2 in range(n1)]
-    return st
-
-
-def calc_positions_cartesian(st: PolymlpStructure):
-    """Calculate Cartesian coordinates."""
-    return st.axis @ st.positions
-
-
-def get_reciprocal_axis(
-    st: Optional[PolymlpStructure] = None,
-    axis: Optional[np.ndarray] = None,
-):
-    """Calculate reciprocal axis."""
-    if axis is None:
-        axis = st.axis
-    return 2 * np.pi * np.linalg.inv(axis).T
-
-
-def introduce_disp(st: PolymlpStructure, eps: float = 0.001):
-    """Introduce small random displacements."""
-    shape = st.positions.shape
-    disp = (2 * eps) * (np.random.random(shape) - 0.5)
-    st.positions += disp
-    return st
-
-
 def isotropic_volume_change(st: PolymlpStructure, eps: float = 1.0):
     """Return structure with isotropic volume change."""
     eps1 = pow(eps, 0.3333333333333)
@@ -80,42 +31,31 @@ def multiple_isotropic_volume_changes(
     return [isotropic_volume_change(st, eps=eps) for eps in eps_array]
 
 
-def supercell(
-    st: PolymlpStructure,
-    supercell_matrix: np.ndarray,
-    use_phonopy: bool = False,
-) -> PolymlpStructure:
-    """Construct supercell for a given supercell matrix.
-
-    Parameters
-    ----------
-    st: Unitcell.
-    supercell_matrix: Supercell matrix of shape (3, 3)
-                      or supercell vector composed of three diagonal elements.
-    use_phonopy: Use phonopy supercell algorithm.
-                 This is activated if the supercell matrix is diagonal.
-                 If the supercell matrix is non-diagonal,
-                 phonopy algorithm is automatically used.
-    """
-    return get_supercell(st, supercell_matrix, use_phonopy=use_phonopy)
+def random_deformation(st: PolymlpStructure, max_deform: float = 0.1):
+    """Deform structure randomly."""
+    rand = (np.random.rand(3, 3) - 0.5) * 2 * max_deform
+    st.axis += rand
+    return st
 
 
-def supercell_diagonal(
-    st: PolymlpStructure,
-    size: tuple = (2, 2, 2),
-    use_phonopy: bool = False,
-) -> PolymlpStructure:
-    """Construct supercell for a diagonal supercell matrix.
+def multiple_random_deformation(
+    structures: list[PolymlpStructure],
+    max_deform: float = 0.1,
+):
+    """Deform structure randomly."""
+    n_st = len(structures)
+    random_deform = (np.random.rand(n_st, 3, 3) - 0.5) * 2 * max_deform
+    for st, rand in zip(structures, random_deform):
+        st.axis += rand
+    return structures
 
-    Parameters
-    ----------
-    st: Unitcell.
-    size: Supercell vector composed of three diagonal elements.
-    use_phonopy: Use phonopy supercell algorithm.
 
-    Deprecated.
-    """
-    return get_supercell(st, size, use_phonopy=use_phonopy)
+def introduce_disp(st: PolymlpStructure, eps: float = 0.001):
+    """Introduce small random displacements."""
+    shape = st.positions.shape
+    disp = (2 * eps) * (np.random.random(shape) - 0.5)
+    st.positions += disp
+    return st
 
 
 def remove(st: PolymlpStructure, idx: int):
@@ -184,71 +124,39 @@ def swap_elements(
     return st
 
 
-def get_lattice_constants(st: PolymlpStructure):
-    """Return lattice constants from axis."""
-    a = np.linalg.norm(st.axis[:, 0])
-    b = np.linalg.norm(st.axis[:, 1])
-    c = np.linalg.norm(st.axis[:, 2])
-    calpha = st.axis[:, 1] @ st.axis[:, 2] / (b * c)
-    cbeta = st.axis[:, 2] @ st.axis[:, 0] / (c * a)
-    cgamma = st.axis[:, 0] @ st.axis[:, 1] / (a * b)
-    return a, b, c, calpha, cbeta, cgamma
+def supercell(
+    st: PolymlpStructure,
+    supercell_matrix: np.ndarray,
+    use_phonopy: bool = False,
+) -> PolymlpStructure:
+    """Construct supercell for a given supercell matrix.
+
+    Parameters
+    ----------
+    st: Unitcell.
+    supercell_matrix: Supercell matrix of shape (3, 3)
+                      or supercell vector composed of three diagonal elements.
+    use_phonopy: Use phonopy supercell algorithm.
+                 This is activated if the supercell matrix is diagonal.
+                 If the supercell matrix is non-diagonal,
+                 phonopy algorithm is automatically used.
+    """
+    return get_supercell(st, supercell_matrix, use_phonopy=use_phonopy)
 
 
-def triangulation_axis(st: PolymlpStructure):
-    """Return structure with axis in triangle form."""
-    a, b, c, calpha, cbeta, cgamma = get_lattice_constants(st)
+def supercell_diagonal(
+    st: PolymlpStructure,
+    size: tuple = (2, 2, 2),
+    use_phonopy: bool = False,
+) -> PolymlpStructure:
+    """Construct supercell for a diagonal supercell matrix.
 
-    lx = a
-    xy = b * cgamma
-    xz = c * cbeta
-    ly = np.sqrt(b * b - xy * xy)
-    yz = (b * c * calpha - xy * xz) / ly
-    lz = np.sqrt(c * c - xz * xz - yz * yz)
+    Parameters
+    ----------
+    st: Unitcell.
+    size: Supercell vector composed of three diagonal elements.
+    use_phonopy: Use phonopy supercell algorithm.
 
-    tri_axis = np.array([[lx, xy, xz], [0, ly, yz], [0, 0, lz]])
-    st.axis = tri_axis
-    return st
-
-
-def random_deformation(st: PolymlpStructure, max_deform: float = 0.1):
-    """Deform structure randomly."""
-    rand = (np.random.rand(3, 3) - 0.5) * 2 * max_deform
-    st.axis += rand
-    return st
-
-
-def multiple_random_deformation(
-    structures: list[PolymlpStructure],
-    max_deform: float = 0.1,
-):
-    """Deform structure randomly."""
-    n_st = len(structures)
-    random_deform = (np.random.rand(n_st, 3, 3) - 0.5) * 2 * max_deform
-    for st, rand in zip(structures, random_deform):
-        st.axis += rand
-    return structures
-
-
-def sort_wrt_types(st: PolymlpStructure, return_ids: bool = False):
-    """Sort atoms with respect to types."""
-    map_elements = dict()
-    for t, e in zip(st.types, st.elements):
-        map_elements[t] = e
-
-    n_atoms, positions, types = [], [], []
-    ids_all = []
-    for i in sorted(set(st.types)):
-        ids = np.array(st.types) == i
-        n_atoms.append(np.count_nonzero(ids))
-        positions.extend(st.positions.T[ids])
-        types.extend(np.array(st.types)[ids])
-        ids_all.extend(np.where(ids == True)[0])
-
-    st.positions = np.array(positions).T
-    st.n_atoms = n_atoms
-    st.types = types
-    st.elements = [map_elements[t] for t in types]
-    if return_ids:
-        return st, np.array(ids_all)
-    return st
+    Deprecated.
+    """
+    return get_supercell(st, size, use_phonopy=use_phonopy)
