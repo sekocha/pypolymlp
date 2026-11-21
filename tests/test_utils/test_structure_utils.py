@@ -38,17 +38,6 @@ def test_volumes(structure_rocksalt):
     assert st_vols[1].volume == pytest.approx(128.0)
 
 
-# @pytest.mark.filterwarnings("ignore:.*symmetries of supercell.*")
-# def test_supercell(structure_rocksalt):
-#     """Test for supercell functions."""
-#     sup_mat = [[1, 0, 0], [0, 1, 0], [1, 0, 2]]
-#     sup = supercell(structure_rocksalt, supercell_matrix=sup_mat)
-#     np.testing.assert_equal(sup.n_atoms, [8, 8])
-#
-#     sup = supercell_diagonal(structure_rocksalt, size=(1, 1, 2))
-#     np.testing.assert_equal(sup.n_atoms, [8, 8])
-
-
 def test_remove_element(structure_rocksalt):
     """Test for element removal."""
     st = copy.deepcopy(structure_rocksalt)

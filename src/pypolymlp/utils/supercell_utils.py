@@ -13,6 +13,7 @@ def get_supercell(
     st: PolymlpStructure,
     supercell_matrix: np.ndarray | tuple,
     use_phonopy: bool = False,
+    diagonal: bool = False,
 ) -> PolymlpStructure:
     """Construct supercell for a given supercell matrix.
 
@@ -24,10 +25,14 @@ def get_supercell(
     use_phonopy: Use phonopy supercell algorithm.
         This is activated if the supercell matrix is diagonal.
         If the supercell matrix is non-diagonal, phonopy is automatically used.
+    diagonal: Restrict supercell matrix to diagonal one.
     """
     size = np.array(supercell_matrix).astype(int)
     if size.shape == (3, 3):
         if not _is_diagonal(size):
+            if diagonal:
+                raise RuntimeError("Supercell size not diagonal.")
+
             from pypolymlp.utils.phonopy_utils import phonopy_supercell
 
             sup = phonopy_supercell(st, supercell_matrix=size, return_phonopy=False)

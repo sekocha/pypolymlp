@@ -92,6 +92,20 @@ def test_supercell_algorithms(structure_rocksalt):
     np.testing.assert_allclose(sup1.positions, sup2.positions, atol=1e-7)
 
 
+@pytest.mark.filterwarnings("ignore:.*symmetries of supercell.*")
+def test_supercell_options(structure_rocksalt):
+    """Test for supercell functions."""
+    sup_mat = [[1, 0, 0], [0, 1, 0], [1, 0, 2]]
+    sup = get_supercell(structure_rocksalt, supercell_matrix=sup_mat)
+    np.testing.assert_equal(sup.n_atoms, [8, 8])
+
+    sup = get_supercell(structure_rocksalt, (1, 1, 2), diagonal=True)
+    np.testing.assert_equal(sup.n_atoms, [8, 8])
+    sup_mat = [[1, 0, 0], [0, 1, 0], [0, 0, 2]]
+    sup = get_supercell(structure_rocksalt, sup_mat, diagonal=True)
+    np.testing.assert_equal(sup.n_atoms, [8, 8])
+
+
 def test_get_supercell_size():
     """Test get_supercell_size."""
     assert get_supercell_size([2, 3, 4]) == 24
