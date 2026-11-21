@@ -9,7 +9,7 @@ from pypolymlp.calculator.properties import Properties
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.interface_vasp import Poscar
 from pypolymlp.core.io_polymlp import find_mlps, load_mlps
-from pypolymlp.utils.structure_utils import supercell_diagonal
+from pypolymlp.utils.supercell_utils import get_supercell
 
 
 class PolymlpCost:
@@ -103,7 +103,7 @@ class PolymlpCost:
                 volume,
             )
 
-        self._supercell = supercell_diagonal(unitcell, size=self._supercell_size)
+        self._supercell = get_supercell(unitcell, self._supercell_size)
         return self._supercell
 
     def _run_single(self, pot: Union[str, list[str]], n_calc: int = 20):

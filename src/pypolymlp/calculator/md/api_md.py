@@ -23,7 +23,7 @@ from pypolymlp.calculator.utils.ase_utils import (
 from pypolymlp.calculator.utils.fc_utils import load_fc2_hdf5
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.interface_vasp import Poscar
-from pypolymlp.utils.structure_utils import supercell
+from pypolymlp.utils.supercell_utils import get_supercell
 from pypolymlp.utils.yaml_utils import print_array2d, save_cell
 
 
@@ -187,7 +187,7 @@ class PolymlpMD:
             raise RuntimeError("Unitcell not found.")
         if len(size) != 3:
             raise RuntimeError("Supercell size is not equal to 3.")
-        self._supercell = supercell(self._unitcell, size)
+        self._supercell = get_supercell(self._unitcell, size)
         self._supercell_ase = structure_to_ase_atoms(self._supercell)
         self._supercell_matrix = np.diag(size)
         return self

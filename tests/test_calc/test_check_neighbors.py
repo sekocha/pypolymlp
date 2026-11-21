@@ -7,7 +7,7 @@ import pytest
 
 from pypolymlp.api.pypolymlp_calc import PypolymlpCalc
 from pypolymlp.core.interface_vasp import Poscar
-from pypolymlp.utils.structure_utils import supercell
+from pypolymlp.utils.supercell_utils import get_supercell
 
 cwd = Path(__file__).parent
 path_file = str(cwd) + "/files/"
@@ -70,6 +70,6 @@ def test_eval_neighbors_MgO():
         [[1, 0, 0], [-10, 1, 0], [0, 0, 1]],
     ]
 
-    structures = [supercell(unitcell, np.array(hnf)) for hnf in expansions]
+    structures = [get_supercell(unitcell, np.array(hnf)) for hnf in expansions]
     energies, forces, stresses = polymlp.eval(structures)
     np.testing.assert_allclose(energies, -40.225125687168706, atol=1e-12)

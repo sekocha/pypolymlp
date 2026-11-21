@@ -15,6 +15,7 @@ from pypolymlp.utils.structure_core_utils import (
     sort_wrt_types,
     triangulation_axis,
 )
+from pypolymlp.utils.supercell_utils import get_supercell
 
 cwd = Path(__file__).parent
 
@@ -79,6 +80,33 @@ def test_replace_types(structure_rocksalt):
     elements = ("O", "Mg")
     st = replace_types(structure_rocksalt_copy, elements)
     np.testing.assert_equal(st.types, [1, 1, 1, 1, 0, 0, 0, 0])
+
+
+def test_replace_types_large(structure_rocksalt):
+    """Test for replace_types."""
+    sup = get_supercell(structure_rocksalt, (10, 10, 10))
+    elements = ("O", "Mg")
+    st = replace_types(sup, elements)
+    np.testing.assert_equal(st.types[:4000], 1)
+    np.testing.assert_equal(st.types[4000:], 0)
+
+
+def test_replace_types_elements(structure_rocksalt):
+    """Test for replace_types."""
+    structure_rocksalt_copy = copy.deepcopy(structure_rocksalt)
+    structure_rocksalt_copy.elements = ["O"] * 8
+    elements = ("O", "Mg")
+    st = replace_types(structure_rocksalt_copy, elements)
+    np.testing.assert_equal(st.types, 0)
+
+
+def test_replace_types_elements_large(structure_rocksalt):
+    """Test for replace_types."""
+    sup = get_supercell(structure_rocksalt, (2, 2, 2))
+    sup.elements = ["O"] * 64
+    elements = ("O", "Mg")
+    st = replace_types(sup, elements)
+    np.testing.assert_equal(st.types, 0)
 
 
 def test_replace_types_spins(structure_rocksalt):

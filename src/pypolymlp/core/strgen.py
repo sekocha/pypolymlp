@@ -8,7 +8,7 @@ import numpy as np
 
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.utils.structure_core_utils import sort_wrt_types
-from pypolymlp.utils.structure_utils import supercell_diagonal
+from pypolymlp.utils.supercell_utils import get_supercell
 from pypolymlp.utils.vasp_utils import write_poscar_file
 
 
@@ -185,7 +185,7 @@ class StructureGenerator:
     def _set_supercell(self) -> PolymlpStructure:
         """Set supercell size and expand unitcell into supercell."""
         self._size = self._find_supercell_size_nearly_isotropic()
-        self._supercell = supercell_diagonal(self._unitcell, self._size)
+        self._supercell = get_supercell(self._unitcell, self._size)
         self._supercell.axis_inv = np.linalg.inv(self._supercell.axis)
         return self._supercell
 

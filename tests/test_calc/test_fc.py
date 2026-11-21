@@ -7,13 +7,13 @@ import pytest
 
 from pypolymlp.calculator.fc import PolymlpFC
 from pypolymlp.core.data_format import PolymlpStructure
-from pypolymlp.utils.structure_utils import supercell
+from pypolymlp.utils.supercell_utils import get_supercell
 
 
 def test_fc_AlN(unitcell_wz_AlN):
     """Test FC calculation."""
     unitcell, pot, prop = unitcell_wz_AlN
-    sup = supercell(unitcell, (3, 3, 2), use_phonopy=True)
+    sup = get_supercell(unitcell, (3, 3, 2), use_phonopy=True)
     fc = PolymlpFC(prop, supercell=sup, cutoff={3: 3.0}, verbose=True)
     fc.sample(n_samples=100, displacements=0.01)
     fc.run(orders=(2, 3), write_fc=False, use_mkl=False)
@@ -38,7 +38,7 @@ def test_fc_AlN(unitcell_wz_AlN):
 def test_fc_MgO(unitcell_pair_MgO):
     """Test FC calculation."""
     unitcell, pot, prop = unitcell_pair_MgO
-    sup = supercell(unitcell, (2, 2, 2), use_phonopy=True)
+    sup = get_supercell(unitcell, (2, 2, 2), use_phonopy=True)
     fc = PolymlpFC(prop, supercell=sup, cutoff={3: 3.0}, verbose=True)
     fc.sample(n_samples=100, displacements=0.01)
     fc.run(orders=(2, 3), write_fc=False, use_mkl=False)

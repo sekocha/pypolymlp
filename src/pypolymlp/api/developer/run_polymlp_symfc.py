@@ -9,7 +9,7 @@ from phono3py.file_IO import write_fc2_to_hdf5, write_fc3_to_hdf5
 from symfc import Symfc
 
 from pypolymlp.core.interface_vasp import Poscar, Vasprun, parse_forces_displacements
-from pypolymlp.utils.structure_utils import supercell_diagonal
+from pypolymlp.utils.supercell_utils import get_supercell
 from pypolymlp.utils.symfc_utils import set_symfc_cutoffs, structure_to_symfc_cell
 
 
@@ -93,7 +93,7 @@ def run():
         args.use_phonopy = True
 
     unitcell = Poscar(args.poscar).structure
-    supercell = supercell_diagonal(
+    supercell = get_supercell(
         unitcell,
         args.supercell,
         use_phonopy=args.use_phonopy,

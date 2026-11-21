@@ -11,8 +11,11 @@ from pypolymlp.utils.dataset_divide import auto_divide_vaspruns
 from pypolymlp.utils.grid_optimal import find_optimal_mlps
 from pypolymlp.utils.grid_search.api_grid_search import PolymlpGridSearch
 from pypolymlp.utils.kim_utils import convert_polymlp_to_kim_model
-from pypolymlp.utils.structure_utils import supercell
-from pypolymlp.utils.supercell_utils import get_slab, get_supercell_three_directions
+from pypolymlp.utils.supercell_utils import (
+    get_slab,
+    get_supercell,
+    get_supercell_three_directions,
+)
 from pypolymlp.utils.vasp_utils import (
     load_electronic_properties_from_vasprun,
     print_poscar,
@@ -193,7 +196,7 @@ class PypolymlpUtils:
         if structure is None:
             structure = Poscar(poscar).structure
 
-        sup = supercell(structure, supercell_matrix)
+        sup = get_supercell(structure, supercell_matrix)
         return sup
 
     def generate_supercell_three_directions(

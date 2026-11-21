@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from pypolymlp.utils.structure_utils import (
+from pypolymlp.utils.structure_utils import (  # supercell,; supercell_diagonal,
     introduce_disp,
     isotropic_volume_change,
     multiple_isotropic_volume_changes,
@@ -14,8 +14,6 @@ from pypolymlp.utils.structure_utils import (
     random_deformation,
     remove,
     remove_atom,
-    supercell,
-    supercell_diagonal,
     swap_elements,
 )
 
@@ -40,15 +38,15 @@ def test_volumes(structure_rocksalt):
     assert st_vols[1].volume == pytest.approx(128.0)
 
 
-@pytest.mark.filterwarnings("ignore:.*symmetries of supercell.*")
-def test_supercell(structure_rocksalt):
-    """Test for supercell functions."""
-    sup_mat = [[1, 0, 0], [0, 1, 0], [1, 0, 2]]
-    sup = supercell(structure_rocksalt, supercell_matrix=sup_mat)
-    np.testing.assert_equal(sup.n_atoms, [8, 8])
-
-    sup = supercell_diagonal(structure_rocksalt, size=(1, 1, 2))
-    np.testing.assert_equal(sup.n_atoms, [8, 8])
+# @pytest.mark.filterwarnings("ignore:.*symmetries of supercell.*")
+# def test_supercell(structure_rocksalt):
+#     """Test for supercell functions."""
+#     sup_mat = [[1, 0, 0], [0, 1, 0], [1, 0, 2]]
+#     sup = supercell(structure_rocksalt, supercell_matrix=sup_mat)
+#     np.testing.assert_equal(sup.n_atoms, [8, 8])
+#
+#     sup = supercell_diagonal(structure_rocksalt, size=(1, 1, 2))
+#     np.testing.assert_equal(sup.n_atoms, [8, 8])
 
 
 def test_remove_element(structure_rocksalt):
@@ -57,8 +55,21 @@ def test_remove_element(structure_rocksalt):
     st_rem = remove(st, 0)
     assert st_rem.positions.shape == (3, 4)
     np.testing.assert_equal(st_rem.n_atoms, [4])
-    np.testing.assert_equal(st_rem.types, 1)
+    np.testing.assert_equal(st_rem.types, 0)
     np.testing.assert_equal(st_rem.elements, "O")
+
+
+def test_remove_element2(structure_rocksalt):
+    """Test for element removal."""
+    st = copy.deepcopy(structure_rocksalt)
+    st.elements = ["Mg", "Mg", "Ca", "Ca", "O", "O", "O", "O"]
+    st.types = [0, 0, 1, 1, 2, 2, 2, 2]
+    st.n_atoms = [2, 2, 4]
+    st_rem = remove(st, 1)
+    assert st_rem.positions.shape == (3, 6)
+    np.testing.assert_equal(st_rem.n_atoms, [2, 4])
+    np.testing.assert_equal(st_rem.types, [0, 0, 1, 1, 1, 1])
+    np.testing.assert_equal(st_rem.elements, ["Mg", "Mg", "O", "O", "O", "O"])
 
 
 def test_remove_atom(structure_rocksalt):

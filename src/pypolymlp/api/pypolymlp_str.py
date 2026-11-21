@@ -15,7 +15,8 @@ from pypolymlp.core.strgen import (
     set_volume_eps_array,
     write_structures,
 )
-from pypolymlp.utils.structure_utils import multiple_isotropic_volume_changes, supercell
+from pypolymlp.utils.structure_utils import multiple_isotropic_volume_changes
+from pypolymlp.utils.supercell_utils import get_supercell
 
 
 class PypolymlpStructureGenerator:
@@ -128,7 +129,7 @@ class PypolymlpStructureGenerator:
 
         self._supercells = []
         for unitcell in self._structures:
-            sup = supercell(
+            sup = get_supercell(
                 unitcell,
                 supercell_matrix=supercell_size,
                 use_phonopy=use_phonopy,

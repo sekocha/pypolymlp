@@ -9,7 +9,7 @@ from pypolymlp.calculator.sscha.sscha_utils import symmetrize_properties
 from pypolymlp.calculator.utils.properties_base import PropertiesBase
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.units import EVtoKJmol
-from pypolymlp.utils.structure_utils import supercell
+from pypolymlp.utils.supercell_utils import get_supercell
 from pypolymlp.utils.symfc_utils import compute_projector_cartesian
 from pypolymlp.utils.tensor_utils_O2 import compute_projector_O2
 
@@ -42,7 +42,7 @@ class PropertiesSSCHA(PropertiesBase):
 
     def _get_projector_force(self):
         """Set projector onto symmetrized supercell forces."""
-        sup = supercell(
+        sup = get_supercell(
             self._sscha_params.unitcell,
             self._sscha_params.supercell_matrix,
             use_phonopy=True,

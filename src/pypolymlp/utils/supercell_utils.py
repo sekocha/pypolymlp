@@ -9,17 +9,9 @@ from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.utils.structure_core_utils import refine_positions, sort_wrt_types
 
 
-def _is_diagonal(a: np.array):
-    return (
-        a.ndim == 2
-        and a.shape[0] == a.shape[1]
-        and np.all(a == np.diag(np.diagonal(a)))
-    )
-
-
 def get_supercell(
     st: PolymlpStructure,
-    supercell_matrix: np.ndarray,
+    supercell_matrix: np.ndarray | tuple,
     use_phonopy: bool = False,
 ) -> PolymlpStructure:
     """Construct supercell for a given supercell matrix.
@@ -28,11 +20,10 @@ def get_supercell(
     ----------
     st: Unitcell.
     supercell_matrix: Supercell matrix of shape (3, 3)
-                      or supercell vector composed of three diagonal elements.
+        or supercell vector composed of three diagonal elements.
     use_phonopy: Use phonopy supercell algorithm.
-                 This is activated if the supercell matrix is diagonal.
-                 If the supercell matrix is non-diagonal,
-                 phonopy algorithm is automatically used.
+        This is activated if the supercell matrix is diagonal.
+        If the supercell matrix is non-diagonal, phonopy is automatically used.
     """
     size = np.array(supercell_matrix).astype(int)
     if size.shape == (3, 3):
@@ -48,6 +39,14 @@ def get_supercell(
         return _get_supercell_diagonal(st, size, use_phonopy=use_phonopy)
 
     raise RuntimeError("Supercell size not appropriate.")
+
+
+def _is_diagonal(a: np.array):
+    return (
+        a.ndim == 2
+        and a.shape[0] == a.shape[1]
+        and np.all(a == np.diag(np.diagonal(a)))
+    )
 
 
 def _get_supercell_diagonal(

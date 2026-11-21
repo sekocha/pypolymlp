@@ -13,7 +13,7 @@ from pypolymlp.postproc.disorder_utils import (
     eval_substitutional_structures,
     set_full_occupancy,
 )
-from pypolymlp.utils.structure_utils import supercell_diagonal
+from pypolymlp.utils.supercell_utils import get_supercell
 from pypolymlp.utils.yaml_utils import save_data
 
 
@@ -92,10 +92,7 @@ class PolymlpDisorder:
             raise RuntimeError("Sizes of lattice and occupancy are inconsistent.")
 
         if supercell_size is not None:
-            self._lattice_supercell = supercell_diagonal(
-                self._lattice,
-                size=supercell_size,
-            )
+            self._lattice_supercell = get_supercell(self._lattice, supercell_size)
         else:
             self._lattice_supercell = self._lattice
         return self

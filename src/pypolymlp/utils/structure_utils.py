@@ -6,7 +6,7 @@ from typing import Optional
 import numpy as np
 
 from pypolymlp.core.data_format import PolymlpStructure
-from pypolymlp.utils.supercell_utils import get_supercell
+from pypolymlp.utils.structure_core_utils import reset_types
 
 
 def isotropic_volume_change(st: PolymlpStructure, eps: float = 1.0):
@@ -70,6 +70,7 @@ def remove(st: PolymlpStructure, idx: int):
         st.positions_cartesian = np.delete(
             st.positions_cartesian, range(begin, end), axis=1
         )
+    st = reset_types(st)
     return st
 
 
@@ -84,6 +85,7 @@ def remove_atom(st: PolymlpStructure, idx: int):
     st.n_atoms[match] -= 1
     if st.positions_cartesian is not None:
         st.positions_cartesian = np.delete(st.positions_cartesian, idx, axis=1)
+    st = reset_types(st)
     return st
 
 
@@ -122,41 +124,3 @@ def swap_elements(
     st.types = np.array(types)
     st.positions = np.array(positions).T
     return st
-
-
-def supercell(
-    st: PolymlpStructure,
-    supercell_matrix: np.ndarray,
-    use_phonopy: bool = False,
-) -> PolymlpStructure:
-    """Construct supercell for a given supercell matrix.
-
-    Parameters
-    ----------
-    st: Unitcell.
-    supercell_matrix: Supercell matrix of shape (3, 3)
-                      or supercell vector composed of three diagonal elements.
-    use_phonopy: Use phonopy supercell algorithm.
-                 This is activated if the supercell matrix is diagonal.
-                 If the supercell matrix is non-diagonal,
-                 phonopy algorithm is automatically used.
-    """
-    return get_supercell(st, supercell_matrix, use_phonopy=use_phonopy)
-
-
-def supercell_diagonal(
-    st: PolymlpStructure,
-    size: tuple = (2, 2, 2),
-    use_phonopy: bool = False,
-) -> PolymlpStructure:
-    """Construct supercell for a diagonal supercell matrix.
-
-    Parameters
-    ----------
-    st: Unitcell.
-    size: Supercell vector composed of three diagonal elements.
-    use_phonopy: Use phonopy supercell algorithm.
-
-    Deprecated.
-    """
-    return get_supercell(st, size, use_phonopy=use_phonopy)

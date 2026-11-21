@@ -18,7 +18,7 @@ from pypolymlp.core.interface_vasp import (
     set_dataset_from_vaspruns,
 )
 from pypolymlp.core.params import PolymlpParams
-from pypolymlp.utils.structure_utils import supercell
+from pypolymlp.utils.supercell_utils import get_supercell
 from pypolymlp.utils.vasp_utils import write_poscar_file
 
 
@@ -611,7 +611,7 @@ class PypolymlpCalc:
         self.unitcell = self.first_structure
 
         size = np.diag(supercell_matrix)
-        sup = supercell(self.unitcell, size, use_phonopy=True)
+        sup = get_supercell(self.unitcell, size, use_phonopy=True)
 
         self._fc = PolymlpFC(
             self._prop,

@@ -32,7 +32,7 @@ def refine_positions(
 
 def reset_types(st: PolymlpStructure):
     """Reset types using n_atoms."""
-    st.types = [i for i, n1 in enumerate(st.n_atoms) for n2 in range(n1)]
+    st.types = np.array([i for i, n1 in enumerate(st.n_atoms) for n2 in range(n1)])
     return st
 
 
@@ -120,6 +120,7 @@ def replace_types(
             st.types[match] = atomtype
             count += np.count_nonzero(match)
     else:
+        # TODO: Check efficiency
         atomtype = 0
         types = np.zeros(st.types.shape, dtype=int)
         unique_elements = list(dict.fromkeys(elements_string))
