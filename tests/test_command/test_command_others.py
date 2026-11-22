@@ -16,6 +16,12 @@ common_poscar = " --poscar " + poscar
 common_str = " --pot " + pot + " --poscar " + poscar + " "
 
 
+# def test_autocalc():
+#     """Test command lines."""
+#     cmd = "pypolymlp-autocalc" + common_pot
+#     subprocess.run(cmd.split(), check=True)
+
+
 def test_invariant():
     """Test command lines."""
     cmd = "pypolymlp-invariant --orders 3 --minl 2 --maxl 4"
@@ -69,3 +75,23 @@ def test_sscha_post():
 
     for f in glob.glob("sscha_*"):
         os.remove(f)
+
+
+def test_symfc():
+    """Test command lines."""
+    cmd1 = " --poscar " + path_file + "POSCAR-MgO"
+    cmd2 = (
+        " --vaspruns "
+        + path_file
+        + "vasprun-00001-MgO.xml "
+        + path_file
+        + "vasprun-00002-MgO.xml"
+    )
+    cmd = (
+        "pypolymlp-symfc --orders 2 3 --supercell 2 2 2 --batch_size 10 "
+        "--cutoff_fc2 4 --cutoff_fc3 4" + cmd1 + cmd2
+    )
+    subprocess.run(cmd.split(), check=True)
+    os.remove("fc2.hdf5")
+    os.remove("fc3.hdf5")
+    os.remove("kappa-m191919.hdf5")

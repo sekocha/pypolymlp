@@ -9,6 +9,8 @@ def test_command_lines_reg():
     """Test command lines."""
     cmd = "pypolymlp --help"
     subprocess.run(cmd.split(), check=True)
+    cmd = "pypolymlp-online --help"
+    subprocess.run(cmd.split(), check=True)
 
 
 def test_command_lines_calc():
