@@ -201,7 +201,10 @@ def run():
         type=int,
         action=SupercellAction,
         default=(1, 1, 1),
-        help=("Supercell size for random displacement" " generation"),
+        help=(
+            "Supercell size (3 diagonal components or 9 matrix components). "
+            "Active in supercell construction and random displacement generation."
+        ),
     )
 
     spg_group = parser.add_argument_group("Spglib", "Options for using spglib")
