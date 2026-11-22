@@ -102,6 +102,7 @@ def run():
     )
 
     # This option is activated only when --displacements option is used.
+    # TODO: Implement expansions with non-diagonal matrix
     parser.add_argument(
         "--supercell",
         nargs=3,

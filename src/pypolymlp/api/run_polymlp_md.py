@@ -56,6 +56,13 @@ def run():
     )
     md_group.add_argument("--n_steps", type=int, default=20000, help="Number of steps.")
 
+    md_group.add_argument(
+        "--output_path",
+        type=str,
+        default=None,
+        help="Directory path for generating log files.",
+    )
+
     # for free energy perturbation and MD simulations for mixed state.
     ti_group = parser.add_argument_group(
         "Thermodynamic integration and free energy perturbation",
@@ -99,13 +106,6 @@ def run():
         default=None,
         help="Directory path for automatically finding reference FC2 state.",
     )
-    ti_group.add_argument(
-        "--output_path",
-        type=str,
-        default=None,
-        help="Directory path for generating log files.",
-    )
-
     args = parser.parse_args()
 
     print_credit()
