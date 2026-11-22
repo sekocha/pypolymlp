@@ -21,6 +21,24 @@ pot = path_file + "mlps/polymlp.yaml.gtinv.Al"
 def test_sscha_properties_Al():
     """Test PropertiesSSCHA."""
     unitcell = Poscar(poscar).structure
+    prop = initialize_polymlp_calculator(pot=pot)
+    sscha_params = SSCHAParams(
+        unitcell=unitcell,
+        supercell_matrix=(2, 2, 2),
+        pot=prop.pot,
+        temp=700,
+        tol=0.05,
+        mixing=0.5,
+        symfc_use_mkl=False,
+    )
+    prop_sscha = PropertiesSSCHA(sscha_params, prop, verbose=True)
+    free_energy, _, _ = prop_sscha.eval(unitcell)
+    shutil.rmtree("sscha")
+
+
+def test_sscha_properties_Al_supmat():
+    """Test PropertiesSSCHA."""
+    unitcell = Poscar(poscar).structure
     supercell_matrix = np.diag([2, 2, 2])
     prop = initialize_polymlp_calculator(pot=pot)
     sscha_params = SSCHAParams(

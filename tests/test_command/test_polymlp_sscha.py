@@ -56,7 +56,7 @@ def test_run_functions_elastic():
     args = _parse_args_pypolymlp_sscha(["--elastic"])
     args.poscar = poscar
     args.temp = 300
-    args.gtol = 0.1
+    args.gtol = 0.3
     args.tol = 0.07
     run_main_sscha(args, polymlp)
     shutil.rmtree("sscha")

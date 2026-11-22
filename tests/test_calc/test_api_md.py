@@ -3,6 +3,8 @@
 import os
 from pathlib import Path
 
+import numpy as np
+
 from pypolymlp.api.pypolymlp_md import PypolymlpMD
 
 cwd = Path(__file__).parent
@@ -61,6 +63,27 @@ def test_md_standard2():
     md = PypolymlpMD(verbose=True)
     md.load_poscar(poscar)
     md.set_supercell((1, 1, 1))
+    md.set_ase_calculator(pot=pot)
+    md.run_md_nvt(
+        thermostat="Langevin",
+        temperature=700,
+        n_eq=2,
+        n_steps=3,
+        interval_save_forces=1,
+        interval_save_trajectory=1,
+        interval_log=1,
+        logfile="tmp.dat",
+    )
+    md.save_yaml(filename="tmp.yaml")
+    os.remove("tmp.dat")
+    os.remove("tmp.yaml")
+
+
+def test_md_standard_supmat():
+    """Test MD calculations from polymlp using API."""
+    md = PypolymlpMD(verbose=True)
+    md.load_poscar(poscar)
+    md.set_supercell(np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]]))
     md.set_ase_calculator(pot=pot)
     md.run_md_nvt(
         thermostat="Langevin",

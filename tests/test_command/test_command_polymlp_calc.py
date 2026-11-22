@@ -45,6 +45,11 @@ def test_command_lines_fc():
     )
     subprocess.run(cmd.split(), check=True)
     cmd = (
+        "pypolymlp-calc --force_constants --supercell 2 0 0 0 2 0 0 0 2 --fc_order 2 "
+        "--fc_n_samples 100 --batch_size 50 --disp 0.01 --is_plusminus" + common_str
+    )
+    subprocess.run(cmd.split(), check=True)
+    cmd = (
         "pypolymlp-calc --force_constants --supercell 2 2 2 --fc_order 2 "
         "--use_gradient_solver "
         "--fc_n_samples 100 --batch_size 50 --disp 0.01 --is_plusminus" + common_str
