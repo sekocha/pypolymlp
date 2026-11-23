@@ -7,6 +7,7 @@ import pytest
 
 from pypolymlp.calculator.properties import Properties
 from pypolymlp.calculator.utils.properties_utils import convert_stresses_in_gpa
+from pypolymlp.calculator.validation.validation import PolymlpValidation
 from pypolymlp.core.interface_vasp import Poscar
 
 cwd = Path(__file__).parent
@@ -25,9 +26,9 @@ api_list = [Properties(pot=pot) for pot in pot_list]
 poscar = path_file + "poscars/POSCAR.RS.MgO"
 unitcell = Poscar(poscar).structure
 
-etol = 1e-7
-ftol = 1e-5
-stol = 1e-4
+etol = 1e-8
+ftol = 1e-7
+stol = 1e-6
 
 true_e = [
     -40.22054040319249,
@@ -117,3 +118,17 @@ def test_eval(api, te, tf, ts):
     np.testing.assert_allclose(f.T, tf, atol=ftol)
     s = convert_stresses_in_gpa(np.array([s]), [unitcell])[0]
     np.testing.assert_allclose(s, ts, atol=stol)
+
+
+@pytest.mark.parametrize("api, te, tf, ts", zip(api_list, true_e, true_f, true_s))
+def test_rotation(api, te, tf, ts):
+    """Test rotational invariance."""
+    val = PolymlpValidation(unitcell, api)
+    val.check_rotation(etol=1e-12)
+
+
+@pytest.mark.parametrize("api, te, tf, ts", zip(api_list, true_e, true_f, true_s))
+def test_translation(api, te, tf, ts):
+    """Test translational invariance."""
+    val = PolymlpValidation(unitcell, api)
+    val.check_translation(etol=1e-12, ftol=1e-12, stol=1e-12)
