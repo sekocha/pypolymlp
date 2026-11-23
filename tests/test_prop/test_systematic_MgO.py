@@ -26,10 +26,6 @@ api_list = [Properties(pot=pot) for pot in pot_list]
 poscar = path_file + "poscars/POSCAR.RS.MgO"
 unitcell = Poscar(poscar).structure
 
-etol = 1e-8
-ftol = 1e-7
-stol = 1e-6
-
 true_e = [
     -40.22054040319249,
     -40.221732529620766,
@@ -113,6 +109,10 @@ true_s = [
 @pytest.mark.parametrize("api, te, tf, ts", zip(api_list, true_e, true_f, true_s))
 def test_eval(api, te, tf, ts):
     """Test properties in MgO."""
+    etol = 1e-8
+    ftol = 1e-7
+    stol = 1e-6
+
     e, f, s = api.eval(unitcell)
     assert e == pytest.approx(te, abs=etol)
     np.testing.assert_allclose(f.T, tf, atol=ftol)
@@ -132,3 +132,24 @@ def test_translation(api, te, tf, ts):
     """Test translational invariance."""
     val = PolymlpValidation(unitcell, api)
     val.check_translation(etol=1e-12, ftol=1e-12, stol=1e-12)
+
+
+@pytest.mark.parametrize("api, te, tf, ts", zip(api_list, true_e, true_f, true_s))
+def test_change_atom_order(api, te, tf, ts):
+    """Test invariance for element swap."""
+    val = PolymlpValidation(unitcell, api)
+    val.check_change_atom_order(etol=1e-12)
+
+
+@pytest.mark.parametrize("api, te, tf, ts", zip(api_list, true_e, true_f, true_s))
+def test_different_primitive(api, te, tf, ts):
+    """Test invariance for different primitive cells."""
+    val = PolymlpValidation(unitcell, api)
+    val.check_different_primitive(etol=1e-12)
+
+
+@pytest.mark.parametrize("api, te, tf, ts", zip(api_list, true_e, true_f, true_s))
+def test_supercell(api, te, tf, ts):
+    """Test invariance for supercell expansion."""
+    val = PolymlpValidation(unitcell, api)
+    val.check_supercell(etol=1e-12)
