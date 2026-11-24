@@ -3,6 +3,7 @@
 import numpy as np
 import pytest
 from data_MgO import params as params_MgO
+from data_SrTiO3 import params as params_SrTiO3
 from data_Ti import params as params_Ti
 
 from pypolymlp.calculator.utils.properties_utils import convert_stresses_in_gpa
@@ -16,15 +17,18 @@ def check_eval(unitcell, api, te, tf, ts):
     stol = 1e-6
 
     e, f, s = api.eval(unitcell)
+    print(f.T)
     assert e == pytest.approx(te, abs=etol)
     np.testing.assert_allclose(f.T, tf, atol=ftol)
     s = convert_stresses_in_gpa(np.array([s]), [unitcell])[0]
+    print(s)
     np.testing.assert_allclose(s, ts, atol=stol)
 
 
 params = []
 params.extend(params_Ti)
 params.extend(params_MgO)
+params.extend(params_SrTiO3)
 
 
 @pytest.mark.parametrize("unitcell, api, te, tf, ts", params)

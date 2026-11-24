@@ -159,6 +159,8 @@ class PolymlpValidation:
             [[2, 0, 0], [0, 1, 0], [0, 0, 1]],
             [[2, 0, 0], [1, 2, 0], [1, 1, 2]],
             [[1, 0, 0], [4, 3, 0], [0, 0, 3]],
+            [[5, 0, 0], [4, 5, 0], [1, 0, 3]],
+            [[5, 0, 0], [4, 5, 0], [3, 1, 5]],
         ]
         structures = [
             get_supercell(self._structure, np.array(hnf)) for hnf in expansions
