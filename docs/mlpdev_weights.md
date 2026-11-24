@@ -19,22 +19,22 @@ In `pypolymlp`, the weights assigned to energy, force, and stress entries are de
 - **Energy:**
   $w = w_{\mathrm{auto}} \times w_{\mathrm{dataset}}$
 - **Force:**
-  \(
+  $
   w = w_{\mathrm{auto}} \times w_{\mathrm{dataset}} \times w_{\mathrm{force}}
-  \)
+  $
 - **Stress:**
-  \(
+  $
   w = w_{\mathrm{auto}} \times w_{\mathrm{dataset}} \times w_{\mathrm{stress}}
-  \)
+  $
 
 Here:
 
-- \(w_{\mathrm{auto}}\) is the automatically determined weight based on the value of each data entry.
-The value of \(w_{\mathrm{auto}}\) ranges from 0.0 to 1.0.
+- $w_{\mathrm{auto}}$ is the automatically determined weight based on the value of each data entry.
+The value of $w_{\mathrm{auto}}$ ranges from 0.0 to 1.0.
 For details, see [Phys. Rev. B 110, 224102 (2024)](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.110.224102) and [J. Chem. Phys. 165, 144104 (2026)](https://pubs.aip.org/aip/jcp/article-abstract/165/14/144104/3406254/Pressure-temperature-phase-diagram-from-global?redirectedFrom=fulltext).
-- \(w_{\mathrm{dataset}}\) is a weighting factor specified for each dataset (Default: 1.0).
-- \(w_{\mathrm{force}}\) and \(w_{\mathrm{stress}}\) are additional scaling factors applied to force and stress entries, respectively.
-By default, \(w_{\mathrm{force}}\) and \(w_{\mathrm{stress}}\) are set to 1.0 and 0.1, respectively.
+- $w_{\mathrm{dataset}}$ is a weighting factor specified for each dataset (Default: 1.0).
+- $w_{\mathrm{force}}$ and $w_{\mathrm{stress}}$ are additional scaling factors applied to force and stress entries, respectively.
+By default, $w_{\mathrm{force}}$ and $w_{\mathrm{stress}}$ are set to 1.0 and 0.1, respectively.
 
 ## Disabling Automatic Weight Assignment
 
