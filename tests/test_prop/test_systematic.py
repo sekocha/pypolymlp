@@ -19,7 +19,6 @@ def check_eval(unitcell, api, te, tf, ts):
     assert e == pytest.approx(te, abs=etol)
     np.testing.assert_allclose(f.T, tf, atol=ftol)
     s = convert_stresses_in_gpa(np.array([s]), [unitcell])[0]
-    print(s)
     np.testing.assert_allclose(s, ts, atol=stol)
 
 
