@@ -17,17 +17,17 @@ The rationale behind this automatic weighting scheme is twofold:
 In `pypolymlp`, the weights assigned to energy, force, and stress entries are defined as follows:
 
 - **Energy:**
-  \[
+  \(
   w = w_{\mathrm{auto}} \times w_{\mathrm{dataset}}
-  \]
+  \)
 - **Force:**
-  \[
+  \(
   w = w_{\mathrm{auto}} \times w_{\mathrm{dataset}} \times w_{\mathrm{force}}
-  \]
+  \)
 - **Stress:**
-  \[
+  \(
   w = w_{\mathrm{auto}} \times w_{\mathrm{dataset}} \times w_{\mathrm{stress}}
-  \]
+  \)
 
 Here:
 
