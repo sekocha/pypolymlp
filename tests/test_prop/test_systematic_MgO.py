@@ -120,36 +120,85 @@ def test_eval(api, te, tf, ts):
     np.testing.assert_allclose(s, ts, atol=stol)
 
 
-@pytest.mark.parametrize("api, te, tf, ts", zip(api_list, true_e, true_f, true_s))
-def test_rotation(api, te, tf, ts):
-    """Test rotational invariance."""
-    val = PolymlpValidation(unitcell, api)
-    val.check_rotation(etol=1e-12)
+@pytest.mark.parametrize(
+    "unitcell, api_list, true_e, true_f, true_s",
+    [
+        (unitcell, api_list, true_e, true_f, true_s),
+        # (unitcell_2, api_list_2, true_e_2, true_f_2, true_s_2),
+        # (unitcell_3, api_list_3, true_e_3, true_f_3, true_s_3),
+    ],
+)
+@pytest.mark.parametrize(
+    "check_method",
+    [
+        "check_rotation",
+        "check_translation",
+        "check_permute_axis",
+        "check_permute_atom",
+        "check_different_types_representation",
+        "check_different_primitive",
+        "check_supercell",
+    ],
+)
+def test_invariance(unitcell, api_list, true_e, true_f, true_s, check_method):
+    for api, te, tf, ts in zip(api_list, true_e, true_f, true_s):
+        val = PolymlpValidation(unitcell, api)
+        try:
+            getattr(val, check_method)(
+                etol=1e-12,
+                ftol=1e-12,
+                stol=1e-12,
+            )
+        except:
+            getattr(val, check_method)(
+                etol=1e-12,
+            )
 
 
-@pytest.mark.parametrize("api, te, tf, ts", zip(api_list, true_e, true_f, true_s))
-def test_translation(api, te, tf, ts):
-    """Test translational invariance."""
-    val = PolymlpValidation(unitcell, api)
-    val.check_translation(etol=1e-12, ftol=1e-12, stol=1e-12)
-
-
-@pytest.mark.parametrize("api, te, tf, ts", zip(api_list, true_e, true_f, true_s))
-def test_change_atom_order(api, te, tf, ts):
-    """Test invariance for element swap."""
-    val = PolymlpValidation(unitcell, api)
-    val.check_change_atom_order(etol=1e-12)
-
-
-@pytest.mark.parametrize("api, te, tf, ts", zip(api_list, true_e, true_f, true_s))
-def test_different_primitive(api, te, tf, ts):
-    """Test invariance for different primitive cells."""
-    val = PolymlpValidation(unitcell, api)
-    val.check_different_primitive(etol=1e-12)
-
-
-@pytest.mark.parametrize("api, te, tf, ts", zip(api_list, true_e, true_f, true_s))
-def test_supercell(api, te, tf, ts):
-    """Test invariance for supercell expansion."""
-    val = PolymlpValidation(unitcell, api)
-    val.check_supercell(etol=1e-12)
+#
+# @pytest.mark.parametrize("api, te, tf, ts", zip(api_list, true_e, true_f, true_s))
+# def test_rotation(api, te, tf, ts):
+#     """Test rotational invariance."""
+#     val = PolymlpValidation(unitcell, api)
+#     val.check_rotation(etol=1e-12)
+#
+#
+# @pytest.mark.parametrize("api, te, tf, ts", zip(api_list, true_e, true_f, true_s))
+# def test_translation(api, te, tf, ts):
+#     """Test translational invariance."""
+#     val = PolymlpValidation(unitcell, api)
+#     val.check_translation(etol=1e-12, ftol=1e-12, stol=1e-12)
+#
+# @pytest.mark.parametrize("api, te, tf, ts", zip(api_list, true_e, true_f, true_s))
+# def test_permute_axis(api, te, tf, ts):
+#     """Test invariance for axis permutation."""
+#     val = PolymlpValidation(unitcell, api)
+#     val.check_permute_axis(etol=1e-12, ftol=1e-12, stol=1e-12)
+#
+#
+# @pytest.mark.parametrize("api, te, tf, ts", zip(api_list, true_e, true_f, true_s))
+# def test_permute_atom(api, te, tf, ts):
+#     """Test invariance for atomic permutation."""
+#     val = PolymlpValidation(unitcell, api)
+#     val.check_permute_atom(etol=1e-12, ftol=1e-12, stol=1e-12)
+#
+#
+# @pytest.mark.parametrize("api, te, tf, ts", zip(api_list, true_e, true_f, true_s))
+# def test_different_types_representation(api, te, tf, ts):
+#     """Test invariance for element swap."""
+#     val = PolymlpValidation(unitcell, api)
+#     val.check_different_types_representation(etol=1e-12, ftol=1e-12, stol=1e-12)
+#
+#
+# @pytest.mark.parametrize("api, te, tf, ts", zip(api_list, true_e, true_f, true_s))
+# def test_different_primitive(api, te, tf, ts):
+#     """Test invariance for different primitive cells."""
+#     val = PolymlpValidation(unitcell, api)
+#     val.check_different_primitive(etol=1e-12)
+#
+#
+# @pytest.mark.parametrize("api, te, tf, ts", zip(api_list, true_e, true_f, true_s))
+# def test_supercell(api, te, tf, ts):
+#     """Test invariance for supercell expansion."""
+#     val = PolymlpValidation(unitcell, api)
+#     val.check_supercell(etol=1e-12)

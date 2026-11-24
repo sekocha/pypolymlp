@@ -39,13 +39,15 @@ class PolymlpValidation:
         np.testing.assert_allclose(f, self._f, atol=ftol)
         np.testing.assert_allclose(s, self._s, atol=stol)
 
-    def check_rotation(self, etol: float = 1e-12):
+    def check_rotation(self, etol: float = 1e-12, ftol: float = 1e-12):
         """Check rotational invariance."""
         R = Rotation.random().as_matrix()
         st = copy.deepcopy(self._structure)
         st.axis = R @ st.axis
+
         e, f, s = self._prop.eval(st)
         assert e == pytest.approx(self._e, abs=etol)
+        np.testing.assert_allclose(f, R @ self._f, atol=ftol)
 
     def check_translation(
         self, etol: float = 1e-12, ftol: float = 1e-12, stol: float = 1e-12
@@ -57,24 +59,63 @@ class PolymlpValidation:
         e, f, s = self._prop.eval(st)
         self._assert_all(e, f, s, etol=etol, ftol=ftol, stol=stol)
 
-    def check_change_atom_order(self, etol: float = 1e-12, stol: float = 1e-12):
-        """Check invariance for changing atom order."""
+    def check_permute_axis(
+        self, etol: float = 1e-12, ftol: float = 1e-12, stol: float = 1e-12
+    ):
+        """Check invariance for axis permutation."""
+        st = copy.deepcopy(self._structure)
+        order = np.array([2, 0, 1])
+        st.axis = st.axis[:, order]
+        st.positions = st.positions[order]
+
+        e, f, s = self._prop.eval(st)
+        self._assert_all(e, f, s, etol=etol, ftol=ftol, stol=stol)
+
+    def check_permute_atom(
+        self, etol: float = 1e-12, ftol: float = 1e-12, stol: float = 1e-12
+    ):
+        """Check invariance for atom permutation.
+
+        Check structures such as those shown below.
+        types = [0,1,1,0]
+        elements = ["Mg","O","O","Mg"]
+        """
         st = copy.deepcopy(self._structure)
         order = np.random.permutation(len(self._structure.elements))
 
         st.positions = st.positions[:, order]
         st.types = st.types[order]
         st.elements = st.elements[order]
+
         e, f, s = self._prop.eval(st)
         assert e == pytest.approx(self._e, abs=etol)
-        np.testing.assert_allclose(f, self._f[:, order], atol=stol)
+        np.testing.assert_allclose(f, self._f[:, order], atol=ftol)
         np.testing.assert_allclose(s, self._s, atol=stol)
 
         st, idx = sort_wrt_types(st, return_ids=True)
+
         e, f, s = self._prop.eval(st)
         assert e == pytest.approx(self._e, abs=etol)
-        np.testing.assert_allclose(f, (self._f[:, order[idx]]), atol=stol)
+        np.testing.assert_allclose(f, (self._f[:, order[idx]]), atol=ftol)
         np.testing.assert_allclose(s, self._s, atol=stol)
+
+    def check_different_types_representation(
+        self, etol: float = 1e-12, ftol: float = 1e-12, stol: float = 1e-12
+    ):
+        """Check invariance for structures with different type representation.
+
+        Check structures such as those shown below.
+        types = [1,1,0,0]
+        elements = ["Mg","Mg","O","O"]
+        """
+        st = copy.deepcopy(self._structure)
+        types = copy.deepcopy(self._structure.types)
+        order = np.random.permutation(len(self._structure.n_atoms))
+        for i, replace in enumerate(order):
+            self._structure.types[types == i] = replace
+
+        e, f, s = self._prop.eval(st)
+        self._assert_all(e, f, s, etol=etol, ftol=ftol, stol=stol)
 
     def check_different_primitive(self, etol: float = 1e-12):
         """Check invariance for different primitive cells."""
