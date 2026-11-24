@@ -19,13 +19,9 @@ In `pypolymlp`, the weights assigned to energy, force, and stress entries are de
 - **Energy:**
   $w = w_{\mathrm{auto}} \times w_{\mathrm{dataset}}$
 - **Force:**
-  $
-  w = w_{\mathrm{auto}} \times w_{\mathrm{dataset}} \times w_{\mathrm{force}}
-  $
+  $w = w_{\mathrm{auto}} \times w_{\mathrm{dataset}} \times w_{\mathrm{force}}$
 - **Stress:**
-  $
-  w = w_{\mathrm{auto}} \times w_{\mathrm{dataset}} \times w_{\mathrm{stress}}
-  $
+  $w = w_{\mathrm{auto}} \times w_{\mathrm{dataset}} \times w_{\mathrm{stress}}$
 
 Here:
 
