@@ -6,6 +6,7 @@ import numpy as np
 
 from pypolymlp.core.data_format import PolymlpStructure
 from pypolymlp.core.interface_vasp import Poscar
+from pypolymlp.postproc.benchmark.benchmark import PolymlpBenchmark
 from pypolymlp.postproc.count_time import PolymlpCost
 from pypolymlp.utils.dataset_divide import auto_divide_vaspruns
 from pypolymlp.utils.grid_optimal import find_optimal_mlps
@@ -100,6 +101,22 @@ class PypolymlpUtils:
                 )
                 for vasp, output in zip(vaspruns, output_files)
             )
+
+    def benchmark(self, filename: Optional[str] = None):
+        """Run benchmark.
+
+        Parameters
+        ----------
+        filename : str or None, default=None
+            Path to the file where benchmark results will be saved.
+            If None, benchmark results are not saved to a file.
+        """
+        bench = PolymlpBenchmark(verbose=self._verbose)
+        bench.run()
+        if filename is not None:
+            bench.save(filename=filename)
+
+        return self
 
     def estimate_polymlp_comp_cost(
         self,

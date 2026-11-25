@@ -123,6 +123,11 @@ def run():
         "Computational cost estimation", "Options for calculating computational time"
     )
     cost_group.add_argument(
+        "--benchmark",
+        action="store_true",
+        help="Run benchmark automatically.",
+    )
+    cost_group.add_argument(
         "--calc_cost",
         action="store_true",
         help="Calculation of computational costs.",
@@ -239,6 +244,8 @@ def run():
         )
     elif args.vasprun_compress is not None:
         polymlp.compress_vaspruns(args.vasprun_compress, n_jobs=args.n_jobs)
+    elif args.benchmark:
+        polymlp.benchmark(filename="polymlp_benchmark.yaml")
     elif args.calc_cost:
         if args.supercell is None:
             matrix = (4, 4, 4)
