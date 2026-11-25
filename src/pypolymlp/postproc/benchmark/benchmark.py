@@ -42,7 +42,7 @@ class PolymlpBenchmark:
             max2 = 2
             max3 = 2
         else:
-            max1 = 11
+            max1 = 12
             max2 = 7
             max3 = 5
 
