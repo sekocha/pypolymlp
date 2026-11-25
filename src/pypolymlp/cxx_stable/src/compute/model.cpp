@@ -1,0 +1,271 @@
+/****************************************************************************
+
+        Copyright (C) 2024 Atsuto Seko
+                seko@cms.mtl.kyoto-u.ac.jp
+
+*****************************************************************************/
+
+#include "compute/model.h"
+
+Model::Model(){}
+
+Model::Model(const struct feature_params& fp){
+
+    polymlp.set_features(fp);
+
+    auto& maps = polymlp.get_maps();
+    terms1.resize(fp.n_type);
+    terms2.resize(fp.n_type);
+    terms3.resize(fp.n_type);
+    for (int type1 = 0; type1 < fp.n_type; ++type1){
+        auto& maps_type = maps.maps_type[type1];
+        for (const auto& term: maps_type.polynomial){
+            if (term.local_ids.size() == 1){
+                terms1[type1].emplace_back(term);
+            }
+            else if (term.local_ids.size() == 2){
+                terms2[type1].emplace_back(term);
+            }
+            else if (term.local_ids.size() == 3){
+                terms3[type1].emplace_back(term);
+            }
+        }
+    }
+}
+
+Model::~Model(){}
+
+
+void Model::run(
+    NeighborFull& neigh,
+    const vector1i& types,
+    const bool force,
+    Eigen::VectorXd& xe_sum,
+    Eigen::MatrixXd& xf_sum,
+    Eigen::MatrixXd& xs_sum){
+
+    const auto& fp = polymlp.get_fp();
+    const int size = polymlp.get_n_variables();
+    xe_sum = Eigen::VectorXd::Zero(size);
+    if (force == true){
+        const int n_atom = types.size();
+        xf_sum = Eigen::MatrixXd::Zero(n_atom * 3, size);
+        xs_sum = Eigen::MatrixXd::Zero(6, size);
+    }
+    if (fp.feature_type == "pair")
+        pair(neigh, types, force, xe_sum, xf_sum, xs_sum);
+    else if (fp.feature_type == "gtinv")
+        gtinv(neigh, types, force, xe_sum, xf_sum, xs_sum);
+}
+
+
+void Model::pair(
+    NeighborFull& neigh,
+    const vector1i& types,
+    const bool force,
+    Eigen::VectorXd& xe_sum,
+    Eigen::MatrixXd& xf_sum,
+    Eigen::MatrixXd& xs_sum){
+    const int n_atom = types.size();
+    LocalPair local(n_atom);
+    for (int atom1 = 0; atom1 < n_atom; ++atom1){
+        const int type1 = types[atom1];
+        vector1d de;
+        vector2d dfx, dfy, dfz, ds;
+        if (force == false) {
+            local.pair(polymlp, neigh, types, atom1, de);
+        }
+        else {
+            local.pair_d(polymlp, neigh, types, atom1, de, dfx, dfy, dfz, ds);
+        }
+
+        Eigen::VectorXd de_eig;
+        Eigen::MatrixXd df_eig, ds_eig;
+        reshape(de, dfx, dfy, dfz, ds, force, de_eig, df_eig, ds_eig);
+        model_polynomial(de_eig, df_eig, ds_eig, type1, force, xe_sum, xf_sum, xs_sum);
+    }
+}
+
+
+void Model::gtinv(
+    NeighborFull& neigh,
+    const vector1i& types,
+    const bool force,
+    Eigen::VectorXd& xe_sum,
+    Eigen::MatrixXd& xf_sum,
+    Eigen::MatrixXd& xs_sum){
+
+    const int n_atom = types.size();
+    Local local(n_atom);
+    for (int atom1 = 0; atom1 < n_atom; ++atom1){
+        const int type1 = types[atom1];
+        vector1d de;
+        vector2d dfx, dfy, dfz, ds;
+        if (force == false) {
+            local.gtinv(polymlp, neigh, types, atom1, de);
+        }
+        else {
+            local.gtinv_d(polymlp, neigh, types, atom1, de, dfx, dfy, dfz, ds);
+        }
+
+        Eigen::VectorXd de_eig;
+        Eigen::MatrixXd df_eig, ds_eig;
+        reshape(de, dfx, dfy, dfz, ds, force, de_eig, df_eig, ds_eig);
+        model_polynomial(de_eig, df_eig, ds_eig, type1, force, xe_sum, xf_sum, xs_sum);
+   }
+}
+
+
+void Model::reshape(
+    const vector1d& de,
+    const vector2d& dfx,
+    const vector2d& dfy,
+    const vector2d& dfz,
+    const vector2d& ds,
+    const bool force,
+    Eigen::VectorXd& de_eig,
+    Eigen::MatrixXd& df_eig,
+    Eigen::MatrixXd& ds_eig){
+
+    de_eig = Eigen::VectorXd(de.size());
+    if (force){
+        const int n_atom_3 = dfx[0].size() * 3;
+        df_eig = Eigen::MatrixXd(n_atom_3, dfx.size());
+        ds_eig = Eigen::MatrixXd(6, ds.size());
+    }
+
+    for (size_t i = 0; i < de.size(); ++i)
+        de_eig(i) = de[i];
+
+    if (!force) return;
+
+    for (size_t i = 0; i < dfx.size(); ++i){
+        const auto& dfx_i = dfx[i];
+        const auto& dfy_i = dfy[i];
+        const auto& dfz_i = dfz[i];
+        for (size_t j = 0; j < dfx_i.size(); ++j){
+            df_eig(3 * j, i) = dfx_i[j];
+            df_eig(3 * j + 1, i) = dfy_i[j];
+            df_eig(3 * j + 2, i) = dfz_i[j];
+        }
+    }
+    for (size_t i = 0; i < ds.size(); ++i)
+        for (size_t j = 0; j < ds[i].size(); ++j)
+            ds_eig(j, i) = ds[i][j];
+
+}
+
+
+void Model::model_polynomial(
+    const Eigen::VectorXd& de,
+    const Eigen::MatrixXd& df,
+    const Eigen::MatrixXd& ds,
+    const int type1,
+    const bool force,
+    Eigen::VectorXd& xe_sum,
+    Eigen::MatrixXd& xf_sum,
+    Eigen::MatrixXd& xs_sum){
+
+    for (const auto& term: terms1[type1]){
+        model_order1(term, de, df, ds, force, xe_sum, xf_sum, xs_sum);
+    }
+    for (const auto& term: terms2[type1]){
+        model_order2(term, de, df, ds, force, xe_sum, xf_sum, xs_sum);
+    }
+    for (const auto& term: terms3[type1]){
+        model_order3(term, de, df, ds, force, xe_sum, xf_sum, xs_sum);
+    }
+}
+
+
+void Model::model_order1(
+    const PolynomialTerm& term,
+    const Eigen::VectorXd& de,
+    const Eigen::MatrixXd& df,
+    const Eigen::MatrixXd& ds,
+    const bool force,
+    Eigen::VectorXd& xe_sum,
+    Eigen::MatrixXd& xf_sum,
+    Eigen::MatrixXd& xs_sum){
+
+    const int col = term.global_id;
+    const int c1 = term.local_ids[0];
+
+    xe_sum(col) += de(c1);
+
+    if (!force) return;
+
+    const int n_atom_3 = df.rows();
+    for (int k = 0; k < n_atom_3; ++k){
+        xf_sum(k, col) += df(k, c1);
+    }
+    for (int k = 0; k < 6; ++k){
+        xs_sum(k, col) += ds(k, c1);
+    }
+}
+
+void Model::model_order2(
+    const PolynomialTerm& term,
+    const Eigen::VectorXd& de,
+    const Eigen::MatrixXd& df,
+    const Eigen::MatrixXd& ds,
+    const bool force,
+    Eigen::VectorXd& xe_sum,
+    Eigen::MatrixXd& xf_sum,
+    Eigen::MatrixXd& xs_sum){
+
+    const int col = term.global_id;
+    const int c1 = term.local_ids[0];
+    const int c2 = term.local_ids[1];
+
+    xe_sum(col) += de(c1) * de(c2);
+    if (!force) return;
+
+    const double val1 = de(c2);
+    const double val2 = de(c1);
+
+    const int n_atom_3 = df.rows();
+    for (int k = 0; k < n_atom_3; ++k){
+        xf_sum(k, col) += val1 * df(k, c1) + val2 * df(k, c2);
+    }
+    for (int k = 0; k < 6; ++k){
+        xs_sum(k, col) += val1 * ds(k, c1) + val2 * ds(k, c2);
+    }
+}
+
+
+void Model::model_order3(
+    const PolynomialTerm& term,
+    const Eigen::VectorXd& de,
+    const Eigen::MatrixXd& df,
+    const Eigen::MatrixXd& ds,
+    const bool force,
+    Eigen::VectorXd& xe_sum,
+    Eigen::MatrixXd& xf_sum,
+    Eigen::MatrixXd& xs_sum){
+
+    const int col = term.global_id;
+    const int c1 = term.local_ids[0];
+    const int c2 = term.local_ids[1];
+    const int c3 = term.local_ids[2];
+
+    xe_sum(col) += de(c1) * de(c2) * de(c3);
+
+    if (!force) return;
+
+    const double val1 = de(c2) * de(c3);
+    const double val2 = de(c1) * de(c3);
+    const double val3 = de(c1) * de(c2);
+
+    const int n_atom_3 = df.rows();
+    for (int k = 0; k < n_atom_3; ++k){
+        xf_sum(k, col) += val1 * df(k, c1) + val2 * df(k, c2) + val3 * df(k, c3);
+    }
+    for (int k = 0; k < 6; ++k){
+        xs_sum(k, col) += val1 * ds(k, c1) + val2 * ds(k, c2) + val3 * ds(k, c3);
+    }
+}
+
+int Model::get_n_features(){
+    return polymlp.get_n_variables();
+}

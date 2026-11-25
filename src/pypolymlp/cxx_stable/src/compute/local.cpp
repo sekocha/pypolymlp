@@ -1,0 +1,217 @@
+/****************************************************************************
+
+        Copyright (C) 2024 Atsuto Seko
+                seko@cms.mtl.kyoto-u.ac.jp
+
+*****************************************************************************/
+
+#include "compute/local.h"
+
+
+const double tol = 1e-20;
+
+Local::Local(){}
+Local::Local(const int n_atom_i) : n_atom(n_atom_i) {}
+
+Local::~Local(){}
+
+void Local::gtinv(
+    PolymlpAPI& polymlp,
+    NeighborFull& neigh,
+    const vector1i& types,
+    const int atom1,
+    vector1d& dn
+){
+
+    vector1dc anlmtp;
+    compute_anlmtp(polymlp, neigh, types, atom1, anlmtp);
+
+    const int type1 = types[atom1];
+    polymlp.compute_features(anlmtp, type1, dn);
+}
+
+
+void Local::gtinv_d(
+    PolymlpAPI& polymlp,
+    NeighborFull& neigh,
+    const vector1i& types,
+    const int atom1,
+    vector1d& dn,
+    vector2d& dn_dfx,
+    vector2d& dn_dfy,
+    vector2d& dn_dfz,
+    vector2d& dn_ds
+){
+
+    vector1dc anlmtp;
+    vector2dc anlmtp_dfx, anlmtp_dfy, anlmtp_dfz, anlmtp_ds;
+    compute_anlmtp_d(
+        polymlp, neigh, types, atom1,
+        anlmtp, anlmtp_dfx, anlmtp_dfy, anlmtp_dfz, anlmtp_ds
+    );
+
+    const int type1 = types[atom1];
+    polymlp.compute_features(anlmtp, type1, dn);
+    polymlp.compute_features_deriv(
+        anlmtp, anlmtp_dfx, anlmtp_dfy, anlmtp_dfz, anlmtp_ds,
+        type1, dn_dfx, dn_dfy, dn_dfz, dn_ds
+    );
+}
+
+
+void Local::compute_anlmtp(
+    PolymlpAPI& polymlp,
+    NeighborFull& neigh,
+    const vector1i& types,
+    const int atom1,
+    vector1dc& anlmtp
+){
+
+    const int type1 = types[atom1];
+    const auto& fp = polymlp.get_fp();
+    const auto& maps = polymlp.get_maps();
+    const auto& type_pairs = maps.type_pairs;
+    const auto& tp_to_params = maps.tp_to_params;
+
+    const auto& maps_type = maps.maps_type[type1];
+    const auto& nlmtp_attrs_noconj = maps_type.nlmtp_attrs_noconj;
+
+    vector1d anlmtp_r(nlmtp_attrs_noconj.size(), 0.0);
+    vector1d anlmtp_i(nlmtp_attrs_noconj.size(), 0.0);
+
+    int ylmkey;
+    double dis, dx, dy, dz;
+    dc val;
+    vector1d fn;
+    vector1dc ylm;
+
+    auto [begin, end] = neigh.range(atom1);
+    for (int k = begin; k < end; ++k) {
+        int atom2 = neigh.neighbor_atom(k);
+        // (dx, dy, dz) = pos[j] - pos[i]
+        neigh.diff_ji(k, dx, dy, dz);
+        dis = sqrt(dx*dx + dy*dy + dz*dz);
+        if (dis >= fp.cutoff)
+            continue;
+
+        const int type2 = types[atom2];
+        const int tp = type_pairs[type1][type2];
+        const auto& params = tp_to_params[tp];
+        get_fn_(dis, fp, params, fn);
+        get_ylm_(dx, dy, dz, fp.maxl, ylm);
+        for (const auto& nlmtp: nlmtp_attrs_noconj){
+            if (tp == nlmtp.tp and fabs(fn[nlmtp.n_id]) > tol){
+                const auto& lm_attr = nlmtp.lm;
+                const int idx_i = nlmtp.ilocal_noconj_id;
+                val = fn[nlmtp.n_id] * ylm[lm_attr.ylm_key];
+                anlmtp_r[idx_i] += val.real();
+                anlmtp_i[idx_i] += val.imag();
+            }
+        }
+    }
+    polymlp.compute_anlmtp_conjugate(anlmtp_r, anlmtp_i, type1, anlmtp);
+}
+
+
+void Local::compute_anlmtp_d(
+    PolymlpAPI& polymlp,
+    NeighborFull& neigh,
+    const vector1i& types,
+    const int atom1,
+    vector1dc& anlmtp,
+    vector2dc& anlmtp_dfx,
+    vector2dc& anlmtp_dfy,
+    vector2dc& anlmtp_dfz,
+    vector2dc& anlmtp_ds
+){
+    const int type1 = types[atom1];
+    const auto& fp = polymlp.get_fp();
+    const auto& maps = polymlp.get_maps();
+    const auto& type_pairs = maps.type_pairs;
+    const auto& tp_to_params = maps.tp_to_params;
+
+    const auto& maps_type = maps.maps_type[type1];
+    const auto& nlmtp_attrs = maps_type.nlmtp_attrs;
+    const auto& nlmtp_attrs_noconj = maps_type.nlmtp_attrs_noconj;
+
+    anlmtp = vector1dc(nlmtp_attrs.size(), 0.0);
+    anlmtp_dfx = vector2dc(nlmtp_attrs.size(), vector1dc(n_atom, 0.0));
+    anlmtp_dfy = vector2dc(nlmtp_attrs.size(), vector1dc(n_atom, 0.0));
+    anlmtp_dfz = vector2dc(nlmtp_attrs.size(), vector1dc(n_atom, 0.0));
+    anlmtp_ds = vector2dc(nlmtp_attrs.size(), vector1dc(6, 0.0));
+
+    int atom2;
+    double dx,dy,dz,dis;
+    dc d1,val,valx,valy,valz;
+    vector1d fn(fp.params.size()), fn_d(fp.params.size());
+    vector1dc ylm,ylm_dx,ylm_dy,ylm_dz;
+
+    auto [begin, end] = neigh.range(atom1);
+    for (int k = begin; k < end; ++k) {
+        int atom2 = neigh.neighbor_atom(k);
+        // (dx, dy, dz) = pos[j] - pos[i]
+        neigh.diff_ji(k, dx, dy, dz);
+        dis = sqrt(dx*dx + dy*dy + dz*dz);
+        if (dis >= fp.cutoff)
+            continue;
+
+        const int type2 = types[atom2];
+        const int tp = type_pairs[type1][type2];
+        const auto& params = tp_to_params[tp];
+        get_fn_(dis, fp, params, fn, fn_d);
+        get_ylm_(dis, dx, dy, dz, fp.maxl, ylm, ylm_dx, ylm_dy, ylm_dz);
+        for (const auto& nlmtp: nlmtp_attrs_noconj){
+            if (tp != nlmtp.tp or fn[nlmtp.n_id] < tol)
+                continue;
+
+            const auto& lm_attr = nlmtp.lm;
+            const int ylmkey = lm_attr.ylm_key;
+            const int idx_i = nlmtp.ilocal_id;
+            const int n_id = nlmtp.n_id;
+
+            val = fn[n_id] * ylm[ylmkey];
+            anlmtp[idx_i] += val;
+
+            d1 = fn_d[n_id] * ylm[ylmkey] / dis;
+            valx = (d1 * dx + fn[n_id] * ylm_dx[ylmkey]);
+            valy = (d1 * dy + fn[n_id] * ylm_dy[ylmkey]);
+            valz = (d1 * dz + fn[n_id] * ylm_dz[ylmkey]);
+
+            auto& dx_i = anlmtp_dfx[idx_i];
+            auto& dy_i = anlmtp_dfy[idx_i];
+            auto& dz_i = anlmtp_dfz[idx_i];
+            auto& ds_i = anlmtp_ds[idx_i];
+
+            dx_i[atom1] += valx;
+            dy_i[atom1] += valy;
+            dz_i[atom1] += valz;
+            dx_i[atom2] -= valx;
+            dy_i[atom2] -= valy;
+            dz_i[atom2] -= valz;
+            ds_i[0] -= valx * dx;
+            ds_i[1] -= valy * dy;
+            ds_i[2] -= valz * dz;
+            ds_i[3] -= valx * dy;
+            ds_i[4] -= valy * dz;
+            ds_i[5] -= valz * dx;
+        }
+    }
+
+    for (const auto& nlmtp: nlmtp_attrs){
+        if (nlmtp.lm.conj == true){
+            const auto cc_coeff = nlmtp.lm.cc_coeff;
+            const int id1 = nlmtp.ilocal_id;
+            const int id2 = nlmtp.ilocal_conj_id;
+
+            anlmtp[id1] = cc_coeff * std::conj(anlmtp[id2]);
+            for (size_t k = 0; k < n_atom; ++k)
+                anlmtp_dfx[id1][k] = cc_coeff * std::conj(anlmtp_dfx[id2][k]);
+            for (size_t k = 0; k < n_atom; ++k)
+                anlmtp_dfy[id1][k] = cc_coeff * std::conj(anlmtp_dfy[id2][k]);
+            for (size_t k = 0; k < n_atom; ++k)
+                anlmtp_dfz[id1][k] = cc_coeff * std::conj(anlmtp_dfz[id2][k]);
+            for (size_t k = 0; k < 6; ++k)
+                anlmtp_ds[id1][k] = cc_coeff * std::conj(anlmtp_ds[id2][k]);
+        }
+    }
+}
