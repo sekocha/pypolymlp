@@ -102,7 +102,7 @@ class PypolymlpUtils:
                 for vasp, output in zip(vaspruns, output_files)
             )
 
-    def benchmark(self, filename: Optional[str] = None):
+    def benchmark(self, filename: Optional[str] = None, use_test: bool = False):
         """Run benchmark.
 
         Parameters
@@ -111,7 +111,7 @@ class PypolymlpUtils:
             Path to the file where benchmark results will be saved.
             If None, benchmark results are not saved to a file.
         """
-        bench = PolymlpBenchmark(verbose=self._verbose)
+        bench = PolymlpBenchmark(verbose=self._verbose, use_test=use_test)
         bench.run()
         if filename is not None:
             bench.save(filename=filename)

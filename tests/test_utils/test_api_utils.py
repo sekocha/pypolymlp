@@ -33,12 +33,12 @@ def test_electron_properties():
     os.remove(path_file + "electron-00001-Ti-full.yaml")
 
 
-def test_estimate_computational_cost1():
-    """Test for estimating computational costs of polymlps."""
+def test_benchmark():
+    """Test for automatic benchmark."""
     polymlp = PypolymlpUtils(verbose=True)
-    pot = path_file + "polymlp.yaml.MgO"
-    polymlp.estimate_polymlp_comp_cost(pot=pot, n_calc=3)
-    os.remove("polymlp_cost.yaml")
+    polymlp.benchmark(use_test=True)
+    polymlp.benchmark(filename="tmp.yaml", use_test=True)
+    os.remove("tmp.yaml")
 
 
 def test_estimate_computational_cost_sup():

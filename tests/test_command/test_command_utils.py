@@ -26,6 +26,12 @@ def test_atomic_energy():
     subprocess.run(cmd.split(), check=True)
 
 
+def test_benchmark():
+    """Test command lines."""
+    cmd = "pypolymlp-utils --benchmark --test"
+    subprocess.run(cmd.split(), check=True)
+
+
 def test_calc_cost():
     """Test command lines."""
     cmd = "pypolymlp-utils --calc_cost" + common_str

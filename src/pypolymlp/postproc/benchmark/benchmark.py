@@ -32,20 +32,29 @@ class TargetBenchmark:
 class PolymlpBenchmark:
     """Class for benckmark."""
 
-    def __init__(self, verbose: bool = False):
+    def __init__(self, verbose: bool = False, use_test: bool = False):
         """Init method."""
         self._verbose = verbose
 
         base_dir = Path(__file__).resolve().parent
+        if use_test:
+            max1 = 2
+            max2 = 2
+            max3 = 2
+        else:
+            max1 = 8
+            max2 = 7
+            max3 = 5
+
         poscars = [
             base_dir / "POSCAR.hcp.Ti",
             base_dir / "POSCAR.RS.MgO",
             base_dir / "POSCAR.perovskite.SrTiO3",
         ]
         pot_all = [
-            [base_dir / f"polymlp.yaml.Ti.{i}" for i in range(1, 8)],
-            [base_dir / f"polymlp.yaml.MgO.{i}" for i in range(1, 7)],
-            [base_dir / f"polymlp.yaml.SrTiO3.{i}" for i in range(1, 5)],
+            [base_dir / f"polymlp.yaml.Ti.{i}" for i in range(1, max1)],
+            [base_dir / f"polymlp.yaml.MgO.{i}" for i in range(1, max2)],
+            [base_dir / f"polymlp.yaml.SrTiO3.{i}" for i in range(1, max3)],
         ]
 
         if self._verbose:
