@@ -91,7 +91,7 @@ class PolymlpAPI {
         vector2d& dn_ds
     );
 
-    int compute_sum_of_prod_antp(
+    int compute_sum(
         const vector1d& antp,
         const int type1,
         vector1d& prod_sum_e,

@@ -9,6 +9,7 @@
 
 
 PolymlpAPI::PolymlpAPI(){
+    use_pair = false;
     use_features = false;
     use_potential = false;
     use_model_params = false;
@@ -27,7 +28,10 @@ int PolymlpAPI::parse_polymlp_file(
     if (legacy == true) parse_polymlp_legacy(file, fp, pot, ele, mass);
     else parse_polymlp(file, fp, pot, ele, mass);
 
-    pmodel = Potential(fp, pot);
+    if (fp.feature_type == "pair") use_pair = true;
+
+    if (use_pair) pmodel_pair = PotentialPair(fp, pot);
+    else pmodel = Potential(fp, pot);
     return 0;
 }
 
@@ -36,7 +40,11 @@ int PolymlpAPI::set_potential_model(const feature_params& fp_, const vector1d& p
     use_potential = true;
     fp = fp_;
     pot = pot_;
-    pmodel = Potential(fp, pot);
+
+    if (fp.feature_type == "pair") use_pair = true;
+
+    if (use_pair) pmodel_pair = PotentialPair(fp, pot);
+    else pmodel = Potential(fp, pot);
     return 0;
 }
 
@@ -45,8 +53,17 @@ int PolymlpAPI::set_features(const feature_params& fp_){
     use_features = true;
     fp = fp_;
     const bool set_deriv = true;
-    features = Features(fp, set_deriv);
-    features.release_memory();
+
+    if (fp.feature_type == "pair") use_pair = true;
+
+    if (use_pair) {
+        features_pair = FeaturesPair(fp);
+        //features_pair.release_memory();
+    }
+    else {
+        features = Features(fp, set_deriv);
+        features.release_memory();
+    }
     return 0;
 }
 
@@ -127,7 +144,10 @@ int PolymlpAPI::compute_features(
 ){
     if (!use_features)
         throw std::runtime_error("Features class instance not defined.");
-    features.compute_features(antp, type1, feature_values);
+    if (!use_pair)
+        throw std::runtime_error("Only pair features are available.");
+
+    features_pair.compute_features(antp, type1, feature_values);
     return 0;
 }
 
@@ -139,6 +159,9 @@ int PolymlpAPI::compute_features(
 ){
     if (!use_features)
         throw std::runtime_error("Features class instance not defined.");
+    if (use_pair)
+        throw std::runtime_error("Pair features are not available.");
+
     features.compute_features(anlmtp, type1, feature_values);
     return 0;
 }
@@ -164,7 +187,7 @@ int PolymlpAPI::compute_features_deriv(
     return 0;
 }
 
-int PolymlpAPI::compute_sum_of_prod_antp(
+int PolymlpAPI::compute_sum(
     const vector1d& antp,
     const int type1,
     vector1d& prod_sum_e,
@@ -172,7 +195,10 @@ int PolymlpAPI::compute_sum_of_prod_antp(
 ){
     if (!use_potential)
         throw std::runtime_error("Potential class instance not defined.");
-    pmodel.compute_sum_of_prod_antp(antp, type1, prod_sum_e, prod_sum_f);
+    if (!use_pair)
+        throw std::runtime_error("Only pair features are available.");
+
+    pmodel_pair.compute_sum(antp, type1, prod_sum_e, prod_sum_f);
     return 0;
 }
 
@@ -185,6 +211,9 @@ int PolymlpAPI::compute_sum_of_prod_anlmtp(
 ){
     if (!use_potential)
         throw std::runtime_error("Potential class instance not defined.");
+    if (use_pair)
+        throw std::runtime_error("Pair features are not available.");
+
     pmodel.compute_sum_of_prod_anlmtp(anlmtp, type1, prod_sum_e, prod_sum_f);
     return 0;
 }
@@ -194,16 +223,30 @@ const feature_params& PolymlpAPI::get_fp() const { return fp; }
 const ModelParams& PolymlpAPI::get_model_params() const { return modelp; }
 
 Maps& PolymlpAPI::get_maps() {
-    if (use_potential) return pmodel.get_maps();
-    else if (use_model_params) return mapping.get_maps();
-    return features.get_maps();
+    if (use_pair){
+        if (use_potential) return pmodel_pair.get_maps();
+        else if (use_model_params) return mapping.get_maps();
+        return features_pair.get_maps();
+    else {
+        if (use_potential) return pmodel.get_maps();
+        else if (use_model_params) return mapping.get_maps();
+        return features.get_maps();
+    }
 }
 
 int PolymlpAPI::get_n_variables() {
-    if (use_features) return features.get_n_variables();
-    else if (use_potential) return pot.size();
+    if (use_pair){
+        if (use_features) return features_pair.get_n_variables();
+        else if (use_potential) return pot.size();
+        else {
+            throw std::runtime_error("No method is found for getting n_variables");
+        }
     else {
-        throw std::runtime_error("No method is found for getting n_variables");
+        if (use_features) return features.get_n_variables();
+        else if (use_potential) return pot.size();
+        else {
+            throw std::runtime_error("No method is found for getting n_variables");
+        }
     }
 }
 
@@ -211,6 +254,7 @@ int PolymlpAPI::convert_unit(
     const double energy_conv,
     const double length_conv,
     const double inv_length_conv){
+    /*
     for (auto& p: fp.params){
         p[0] *= inv_length_conv * inv_length_conv;
         p[1] *= length_conv;
@@ -218,5 +262,7 @@ int PolymlpAPI::convert_unit(
     fp.cutoff *= length_conv;
     pmodel = Potential(fp, pot);
     pmodel.convert_unit(energy_conv);
+    return 0;
+    */
     return 0;
 }
