@@ -50,6 +50,7 @@ class PotentialPair {
         vector1d& prod_sum_e,
         vector1d& prod_sum_f
     );
+    void release_memory();
 
 //    int convert_unit(const double energy_conv);
 

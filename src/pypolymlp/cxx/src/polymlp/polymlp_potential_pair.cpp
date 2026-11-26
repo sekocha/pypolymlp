@@ -31,9 +31,9 @@ PotentialPair::PotentialPair(const feature_params& fp, const vector1d& pot){
 
 PotentialPair::~PotentialPair(){}
 
-//void PotentialPair::release_memory(){
-//    f_obj.release_memory();
-//}
+void PotentialPair::release_memory(){
+    f_obj.release_memory();
+}
 
 int PotentialPair::set_force_terms(const vector1d& pot){
 

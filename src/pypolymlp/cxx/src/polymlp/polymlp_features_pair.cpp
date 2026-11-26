@@ -1,25 +1,12 @@
 /****************************************************************************
 
-        Copyright (C) 2024 Atsuto Seko
+        Copyright (C) 2026 Atsuto Seko
                 seko@cms.mtl.kyoto-u.ac.jp
 
 *****************************************************************************/
 
-/*****************************************************************************
-
-        SingleTerm: [coeff,[(n1,l1,m1,tc1), (n2,l2,m2,tc2), ...]]
-            (n1,l1,m1,tc1) is represented with nlmtc_key.
-
-        SingleFeature: [SingleTerms1, SingleTerms2, ...]
-
-        MultipleFeaturesPair: [SingleFeature1, SingleFeature2, ...]
-
-*****************************************************************************/
 
 #include "polymlp_features_pair.h"
-
-const int threshold_prod = 1000;
-
 
 FeaturesPair::FeaturesPair(){}
 
@@ -100,11 +87,11 @@ int FeaturesPair::set_polynomial(){
 }
 
 
-// void FeaturesPair::release_memory(){
-//     auto& maps = mapping.get_maps();
-//     maps.clear();
-//     prod_map_deriv_from_keys = {};
-// }
+void FeaturesPair::release_memory(){
+    auto& maps = mapping.get_maps();
+    maps.clear();
+    prod_map_deriv_from_keys = {};
+}
 
 
 void FeaturesPair::compute_features(
@@ -121,36 +108,8 @@ void FeaturesPair::compute_features(
     }
 }
 
-void FeaturesPair::compute_prod_antp_deriv(
-    const vector1d& antp,
-    const int type1,
-    vector1d& prod_antp_deriv
-){
-//    compute_products<double>(prod_deriv[type1], antp, prod_antp_deriv);
-}
-
-//
-//void FeaturesPair::compute_prod_features(
-//    const vector1d& features,
-//    const int type1,
-//    vector1d& values
-//){
-//    poly.compute_prod_features(features, type1, values);
-//}
-
-
 Maps& FeaturesPair::get_maps() { return mapping.get_maps(); }
 
-
-//MapFromVec& FeaturesPair::get_prod_map_deriv(const int type1){
-//    return prod_map_deriv_from_keys[type1];
-//}
-//
-//
-//MapFromVec& FeaturesPair::get_prod_features_map(const int type1){
-//    return poly.get_prod_features_map(type1);
-//}
-//
 const int FeaturesPair::get_n_variables() const {
     return n_variables;
 }

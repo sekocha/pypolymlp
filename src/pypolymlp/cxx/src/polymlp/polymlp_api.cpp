@@ -58,7 +58,7 @@ int PolymlpAPI::set_features(const feature_params& fp_){
 
     if (use_pair) {
         features_pair = FeaturesPair(fp);
-        //features_pair.release_memory();
+        features_pair.release_memory();
     }
     else {
         features = Features(fp, set_deriv);

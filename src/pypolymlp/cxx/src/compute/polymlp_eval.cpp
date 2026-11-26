@@ -184,9 +184,7 @@ void PolymlpEval::compute_sum_of_prod_antp(
                 antp[idx_i] += fn[ntp.n_id];
             }
         }
-        polymlp_api.compute_sum_of_prod_antp(
-            antp, types[i], prod_sum_e[i], prod_sum_f[i]
-        );
+        polymlp_api.compute_sum(antp, types[i], prod_sum_e[i], prod_sum_f[i]);
     }
 }
 /*******************************************************************************
