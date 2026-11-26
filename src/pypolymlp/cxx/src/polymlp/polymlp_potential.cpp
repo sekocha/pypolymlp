@@ -213,7 +213,7 @@ void Potential::compute_sum_of_prod_antp(
     compute_prod_antp_deriv(antp, type1, prod_antp_deriv);
 
     const auto& potential_model1 = potential_model[type1];
-    prod_sum_e = vector1d(potential_model1.size());
+    //prod_sum_e = vector1d(potential_model1.size());
     prod_sum_f = vector1d(potential_model1.size());
 
     int i = 0;
@@ -225,7 +225,7 @@ void Potential::compute_sum_of_prod_antp(
             sum_e += pterm.coeff_e * prod;
             sum_f += pterm.coeff_f * prod;
         }
-        prod_sum_e[i] = 0.5 * sum_e;
+        //prod_sum_e[i] = 0.5 * sum_e;
         prod_sum_f[i] = 0.5 * sum_f;
         ++i;
     }

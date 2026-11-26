@@ -28,17 +28,14 @@ int set_linear_features_pair(Maps& maps){
         const auto& types = maps.tp_to_types[ntp.tp];
         type1 = types[0];
         type2 = types[1];
+
         key = {ntp.global_id, type1};
         local_id = maps.ntp_global_to_iloc[key];
-        SingleTerm single = {1.0, vector1i({local_id})};
-        SingleFeature feature_local = {single};
-        maps.maps_type[type1].features.emplace_back(feature_local);
+        maps.maps_type[type1].features_pair.emplace_back(local_id);
         if (type1 != type2){
             key = {ntp.global_id, type2};
             local_id = maps.ntp_global_to_iloc[key];
-            single = {1.0, vector1i({local_id})};
-            feature_local = {single};
-            maps.maps_type[type2].features.emplace_back(feature_local);
+            maps.maps_type[type2].features_pair.emplace_back(local_id);
         }
     }
     return 0;

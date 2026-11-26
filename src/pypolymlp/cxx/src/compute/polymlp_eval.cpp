@@ -58,18 +58,23 @@ void PolymlpEval::eval_pair(
     vector2d prod_sum_e, prod_sum_f;
     compute_sum_of_prod_antp(types, neigh, prod_sum_e, prod_sum_f);
 
-    vector2d e_array(n_atom),fx_array(n_atom),fy_array(n_atom),fz_array(n_atom);
-    for (int i = 0; i < n_atom; ++i) {
-        int jsize = neigh.size(i);
-        e_array[i].resize(jsize);
-        fx_array[i].resize(jsize);
-        fy_array[i].resize(jsize);
-        fz_array[i].resize(jsize);
-    }
+    energy = 0.0;
+    forces.resize(n_atom);
+    for (int i = 0; i < n_atom; ++i) forces[i] = vector1d(3, 0.0);
+    stress = vector1d(6, 0.0);
 
-    #ifdef _OPENMP
-    #pragma omp parallel for schedule(guided) if (use_openmp)
-    #endif
+    //vector2d e_array(n_atom),fx_array(n_atom),fy_array(n_atom),fz_array(n_atom);
+    //for (int i = 0; i < n_atom; ++i) {
+    //    int jsize = neigh.size(i);
+    //    e_array[i].resize(jsize);
+    //    fx_array[i].resize(jsize);
+    //    fy_array[i].resize(jsize);
+    //    fz_array[i].resize(jsize);
+    //}
+
+    //#ifdef _OPENMP
+    //#pragma omp parallel for schedule(guided) if (use_openmp)
+    //#endif
     for (int i = 0; i < n_atom; ++i) {
         int type1, type2, tp;
         double dx, dy, dz, dis, e_ij, f_ij, fx, fy, fz;
@@ -110,16 +115,25 @@ void PolymlpEval::eval_pair(
             fy = f_ij * dy;
             fz = f_ij * dz;
 
-            e_array[i][jj] = e_ij;
-            fx_array[i][jj] = fx;
-            fy_array[i][jj] = fy;
-            fz_array[i][jj] = fz;
+            //e_array[i][jj] = e_ij;
+            //fx_array[i][jj] = fx;
+            //fy_array[i][jj] = fy;
+            //fz_array[i][jj] = fz;
+            energy += e_ij;
+            forces[i][0] += fx, forces[i][1] += fy, forces[i][2] += fz;
+            forces[j][0] -= fx, forces[j][1] -= fy, forces[j][2] -= fz;
+            stress[0] += dx * fx;
+            stress[1] += dy * fy;
+            stress[2] += dz * fz;
+            stress[3] += dx * fy;
+            stress[4] += dy * fz;
+            stress[5] += dz * fx;
         }
     }
-    collect_properties(
-        e_array, fx_array, fy_array, fz_array, neigh,
-        energy, forces, stress
-    );
+    //collect_properties(
+    //    e_array, fx_array, fy_array, fz_array, neigh,
+    //    energy, forces, stress
+    //);
 }
 
 void PolymlpEval::compute_sum_of_prod_antp(

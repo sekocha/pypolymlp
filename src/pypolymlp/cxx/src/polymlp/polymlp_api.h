@@ -15,8 +15,11 @@
 
 #include "polymlp_mapping.h"
 #include "polymlp_model_params.h"
+
 #include "polymlp_features.h"
+#include "polymlp_features_pair.h"
 #include "polymlp_potential.h"
+#include "polymlp_potential_pair.h"
 
 
 class PolymlpAPI {
@@ -24,10 +27,14 @@ class PolymlpAPI {
     feature_params fp;
     vector1d pot;
     int n_variables;
-    bool use_features, use_potential, use_model_params;
+    bool use_pair, use_features, use_potential, use_model_params;
 
     Features features;
     Potential pmodel;
+
+    FeaturesPair features_pair;
+    PotentialPair pmodel_pair;
+
     Mapping mapping;
     ModelParams modelp;
 

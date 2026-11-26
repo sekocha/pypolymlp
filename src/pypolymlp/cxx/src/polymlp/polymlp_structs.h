@@ -144,6 +144,7 @@ struct MapsType {
     std::vector<std::vector<ntpAttrCompact>> ntp_attrs_tp;
     std::vector<std::vector<nlmtpAttrCompact>> nlmtp_attrs_noconj_tp;
 
+    vector1i features_pair;
     MultipleFeatures features;
     std::vector<PolynomialTerm> polynomial;
 
