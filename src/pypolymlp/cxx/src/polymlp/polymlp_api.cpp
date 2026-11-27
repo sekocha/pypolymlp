@@ -256,7 +256,7 @@ int PolymlpAPI::convert_unit(
     const double energy_conv,
     const double length_conv,
     const double inv_length_conv){
-    /*
+
     for (auto& p: fp.params){
         p[0] *= inv_length_conv * inv_length_conv;
         p[1] *= length_conv;
@@ -264,7 +264,5 @@ int PolymlpAPI::convert_unit(
     fp.cutoff *= length_conv;
     pmodel = Potential(fp, pot);
     pmodel.convert_unit(energy_conv);
-    return 0;
-    */
     return 0;
 }

@@ -161,7 +161,7 @@ PYBIND11_MODULE(libmlpcpp, m) {
 
     m.def("get_fn",
         [](const double dis, const feature_params& fp, const vector2d& params){
-            vector1d fn, fn_d;
+            vector1d fn(params.size()), fn_d(params.size());
             get_fn_(dis, fp, params, fn, fn_d);
             return py::make_tuple(fn, fn_d);
         },

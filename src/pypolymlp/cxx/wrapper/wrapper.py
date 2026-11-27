@@ -88,7 +88,7 @@ class PolymlpCPPAPI:
 
     def compute_sum_of_prod_antp(self, antp: NDArray, type1: int):
         """Compute products from antp."""
-        prod_e, prod_f = self._api.compute_sum_of_prod_antp(antp, type1)
+        prod_e, prod_f = self._api.compute_sum(antp, type1)
         return np.array(prod_e), np.array(prod_f)
 
     def compute_sum_of_prod_anlmtp(self, anlmtp: NDArray, type1: int):
