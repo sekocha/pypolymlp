@@ -30,10 +30,11 @@ void LocalPair::pair(
 
     const auto& maps_type = maps.maps_type[type1];
     const auto& ntp_attrs = maps_type.ntp_attrs;
+    const auto& ntp_attrs1 = maps_type.ntp_attrs_tp;
 
     dn = vector1d(ntp_attrs.size(), 0.0);
     double dx, dy, dz;
-    vector1d fn;
+    vector1d fn(fp.params.size());
 
     auto [begin, end] = neigh.range(atom1);
     for (int k = begin; k < end; ++k) {
@@ -47,10 +48,11 @@ void LocalPair::pair(
         const int type2 = types[atom2];
         const int tp = type_pairs[type1][type2];
         const auto& params = tp_to_params[tp];
+
         get_fn_(dis, fp, params, fn);
-        for (const auto& ntp: ntp_attrs){
-            if (tp == ntp.tp)
-                dn[ntp.ilocal_id] += fn[ntp.n_id];
+        const auto& attrs = ntp_attrs1[tp];
+        for (const auto& ntp: attrs){
+            dn[ntp.ilocal_id] += fn[ntp.n_id];
         }
     }
 }
@@ -75,6 +77,7 @@ void LocalPair::pair_d(
 
     const auto& maps_type = maps.maps_type[type1];
     const auto& ntp_attrs = maps_type.ntp_attrs;
+    const auto& ntp_attrs1 = maps_type.ntp_attrs_tp;
 
     dn = vector1d(ntp_attrs.size(), 0.0);
     dn_dfx = dn_dfy = dn_dfz = vector2d(ntp_attrs.size(), vector1d(n_atom, 0.0));
@@ -82,7 +85,8 @@ void LocalPair::pair_d(
 
     int atom2, tp;
     double dis,dx,dy,dz,valx,valy,valz;
-    vector1d fn,fn_d;
+    vector1d fn(fp.params.size());
+    vector1d fn_d(fp.params.size());
 
     auto [begin, end] = neigh.range(atom1);
     for (int k = begin; k < end; ++k) {
@@ -96,11 +100,10 @@ void LocalPair::pair_d(
         const int type2 = types[atom2];
         const int tp = type_pairs[type1][type2];
         const auto& params = tp_to_params[tp];
-        get_fn_(dis, fp, params, fn, fn_d);
-        for (const auto& ntp: ntp_attrs){
-            if (tp != ntp.tp)
-                continue;
 
+        get_fn_(dis, fp, params, fn, fn_d);
+        const auto& attrs = ntp_attrs1[tp];
+        for (const auto& ntp: attrs){
             const int idx_i = ntp.ilocal_id;
             dn[idx_i] += fn[ntp.n_id];
             valx = fn_d[ntp.n_id] * dx / dis;

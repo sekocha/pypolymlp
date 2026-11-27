@@ -56,7 +56,7 @@ void PolymlpEval::eval_pair(
     const auto& tp_to_params = maps.tp_to_params;
 
     vector2d prod_sum_e, prod_sum_f;
-    compute_sum_of_prod_antp(types, neigh, prod_sum_e, prod_sum_f);
+    compute_sum(types, neigh, prod_sum_e, prod_sum_f);
 
     energy = 0.0;
     forces.resize(n_atom);
@@ -78,7 +78,8 @@ void PolymlpEval::eval_pair(
     for (int i = 0; i < n_atom; ++i) {
         int type1, type2, tp;
         double dx, dy, dz, dis, e_ij, f_ij, fx, fy, fz;
-        vector1d fn, fn_d;
+        vector1d fn(fp.params.size());
+        vector1d fn_d(fp.params.size());
 
         type1 = types[i];
         const auto& maps_type = maps.maps_type[type1];
@@ -136,7 +137,7 @@ void PolymlpEval::eval_pair(
     //);
 }
 
-void PolymlpEval::compute_sum_of_prod_antp(
+void PolymlpEval::compute_sum(
     const vector1i& types,
     NeighborHalf& neigh,
     vector2d& prod_sum_e,
@@ -229,7 +230,8 @@ void PolymlpEval::eval_gtinv(
         double dx, dy, dz, dis;
         double e_ij, fx, fy, fz;
         dc val, valx, valy, valz, d1;
-        vector1d fn, fn_d;
+        vector1d fn(fp.params.size());
+        vector1d fn_d(fp.params.size());
         vector1dc ylm, ylm_dx, ylm_dy, ylm_dz;
 
         type1 = types[i];
@@ -370,7 +372,8 @@ void PolymlpEval::compute_sum_of_prod_anlmtp(
     for (int i = 0; i < n_atom; ++i) {
         int type1, type2, tp;
         double dx, dy, dz, dis;
-        vector1d fn; vector1dc ylm; dc val;
+        vector1d fn(fp.params.size());
+        vector1dc ylm; dc val;
 
         type1 = types[i];
         const auto& maps_type = maps.maps_type[type1];

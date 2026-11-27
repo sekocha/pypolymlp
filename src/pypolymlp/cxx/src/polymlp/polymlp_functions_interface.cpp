@@ -14,28 +14,12 @@ void get_fn_(const double dis,
              vector1d& fn){
 
     double fc = cosine_cutoff_function(dis, fp.cutoff);
-
-    fn.resize(params.size());
-    if (fp.pair_type == "gaussian"){
-        for (size_t n = 0; n < params.size(); ++n){
-            fn[n] = gauss(dis, params[n][0], params[n][1]) * fc;
-        }
+    for (size_t n = 0; n < params.size(); ++n){
+        fn[n] = gauss(dis, params[n][0], params[n][1]) * fc;
     }
-}
-
-void get_fn_(const double dis,
-             const struct feature_params& fp,
-             vector1d& fn){
-
-    /*** deprecated ***/
-    double fc = cosine_cutoff_function(dis, fp.cutoff);
-
-    fn.resize(fp.params.size());
-    if (fp.pair_type == "gaussian"){
-        for (size_t n = 0; n < fp.params.size(); ++n){
-            fn[n] = gauss(dis, fp.params[n][0], fp.params[n][1]) * fc;
-        }
-    }
+    //if (fp.pair_type == "gaussian"){
+    //  fn.resize(params.size());
+    //}
 }
 
 void get_fn_(const double dis,
@@ -47,44 +31,17 @@ void get_fn_(const double dis,
     double fn_val, fn_dr_val;
     double fc, fc_dr;
     cosine_cutoff_function_d(dis, fp.cutoff, fc, fc_dr);
-    //const double fc = cosine_cutoff_function(dis, fp.cutoff);
-    //const double fc_dr = cosine_cutoff_function_d(dis, fp.cutoff);
 
-    fn.resize(params.size());
-    fn_dr.resize(params.size());
-    if (fp.pair_type == "gaussian"){
-        for (size_t n = 0; n < params.size(); ++n){
-            gauss_d(dis, params[n][0], params[n][1], fn_val, fn_dr_val);
-            fn[n] = fn_val * fc;
-            fn_dr[n] = fn_dr_val * fc + fn_val * fc_dr;
-        }
+    for (size_t n = 0; n < params.size(); ++n){
+        gauss_d(dis, params[n][0], params[n][1], fn_val, fn_dr_val);
+        fn[n] = fn_val * fc;
+        fn_dr[n] = fn_dr_val * fc + fn_val * fc_dr;
     }
+    //if (fp.pair_type == "gaussian"){
+    //  fn.resize(params.size());
+    //  fn_dr.resize(params.size());
+    //}
 }
-
-
-void get_fn_(const double dis,
-             const struct feature_params& fp,
-             vector1d& fn,
-             vector1d& fn_dr){
-
-    /*** deprecated ***/
-    double fn_val, fn_dr_val;
-    double fc, fc_dr;
-    cosine_cutoff_function_d(dis, fp.cutoff, fc, fc_dr);
-    //const double fc = cosine_cutoff_function(dis, fp.cutoff);
-    //const double fc_dr = cosine_cutoff_function_d(dis, fp.cutoff);
-
-    fn.resize(fp.params.size());
-    fn_dr.resize(fp.params.size());
-    if (fp.pair_type == "gaussian"){
-        for (size_t n = 0; n < fp.params.size(); ++n){
-            gauss_d(dis, fp.params[n][0], fp.params[n][1], fn_val, fn_dr_val);
-            fn[n] = fn_val * fc;
-            fn_dr[n] = fn_dr_val * fc + fn_val * fc_dr;
-        }
-    }
-}
-
 
 void get_ylm_(
     const double x,

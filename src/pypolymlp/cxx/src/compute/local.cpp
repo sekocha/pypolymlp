@@ -82,7 +82,7 @@ void Local::compute_anlmtp(
     int ylmkey;
     double dis, dx, dy, dz;
     dc val;
-    vector1d fn;
+    vector1d fn(fp.params.size());
     vector1dc ylm;
 
     auto [begin, end] = neigh.range(atom1);
@@ -143,7 +143,8 @@ void Local::compute_anlmtp_d(
     int atom2;
     double dx,dy,dz,dis;
     dc d1,val,valx,valy,valz;
-    vector1d fn(fp.params.size()), fn_d(fp.params.size());
+    vector1d fn(fp.params.size());
+    vector1d fn_d(fp.params.size());
     vector1dc ylm,ylm_dx,ylm_dy,ylm_dz;
 
     auto [begin, end] = neigh.range(atom1);

@@ -14,7 +14,7 @@
 #include "polymlp_model_params.h"
 
 
-//int set_linear_features_pair(Maps& maps);
+int set_linear_features_pair(Maps& maps);
 
 int set_linear_features_gtinv(
     const feature_params& fp,
