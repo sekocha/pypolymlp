@@ -246,10 +246,10 @@ PYBIND11_MODULE(libmlpcpp, m) {
             py::arg("anlmtp_ds"),
             py::arg("type1")
         )
-        .def("compute_sum_of_prod_antp",
+        .def("compute_sum",
             [](PolymlpAPI& self, const vector1d& antp, const int type1){
                 vector1d prod_sum_e, prod_sum_f;
-                self.compute_sum_of_prod_antp(antp, type1, prod_sum_e, prod_sum_f);
+                self.compute_sum(antp, type1, prod_sum_e, prod_sum_f);
                 return py::make_tuple(prod_sum_e, prod_sum_f);
             },
             py::arg("antp"),

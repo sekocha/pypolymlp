@@ -19,8 +19,6 @@
 class FeaturesPair {
 
     int n_type, n_variables;
-    vector1i feature_sizes;
-
     Mapping mapping;
     ModelParams modelp;
 

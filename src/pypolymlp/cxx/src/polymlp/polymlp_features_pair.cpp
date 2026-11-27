@@ -32,7 +32,7 @@ int FeaturesPair::set_linear_features_pair(){
         const int type2 = types[1];
 
         vector1i key = {ntp.global_id, type1};
-        const int local_id = maps.ntp_global_to_iloc[key];
+        int local_id = maps.ntp_global_to_iloc[key];
         maps.maps_type[type1].features_pair.emplace_back(local_id);
         if (type1 != type2){
             key = {ntp.global_id, type2};
@@ -40,12 +40,6 @@ int FeaturesPair::set_linear_features_pair(){
             maps.maps_type[type2].features_pair.emplace_back(local_id);
         }
     }
-
-    //for (int type1 = 0; type1 < n_type; ++type1){
-    //    const auto& features1 = maps.maps_type[type1].features_pair;
-    //    feature_sizes.emplace_back(features1.size());
-    //}
-
     return 0;
 }
 
@@ -90,7 +84,6 @@ int FeaturesPair::set_polynomial(){
 void FeaturesPair::release_memory(){
     auto& maps = mapping.get_maps();
     maps.clear();
-    prod_map_deriv_from_keys = {};
 }
 
 
@@ -103,7 +96,7 @@ void FeaturesPair::compute_features(
     const auto& features1 = maps.maps_type[type1].features_pair;
 
     feature_values = vector1d({});
-    for (const auto& local_id; features1){
+    for (int local_id: features1){
         feature_values.emplace_back(antp[local_id]);
     }
 }

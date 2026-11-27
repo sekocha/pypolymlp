@@ -12,15 +12,16 @@
 #include "polymlp_structs.h"
 #include "polymlp_features_pair.h"
 
-
-struct ForceTerm1 {
+struct Term1 {
     double coeff;
 };
-struct ForceTerm2 {
+
+struct Term2 {
     double coeff;
     int local_id1;
 };
-struct ForceTerm3 {
+
+struct Term3 {
     double coeff;
     int local_id1;
     int local_id2;
@@ -31,10 +32,11 @@ class PotentialPair {
     int n_type;
     FeaturesPair f_obj;
 
-    std::vector<std::vector<ForceTerm1>> force_terms1;
-    std::vector<std::vector<ForceTerm2>> force_terms2;
-    std::vector<std::vector<ForceTerm3>> force_terms3;
+    std::vector<std::vector<std::vector<Term1>>> force_terms1;
+    std::vector<std::vector<std::vector<Term2>>> force_terms2;
+    std::vector<std::vector<std::vector<Term3>>> force_terms3;
 
+    int resize_arrays();
     int set_force_terms(const vector1d& pot);
 
     public:
@@ -51,8 +53,7 @@ class PotentialPair {
         vector1d& prod_sum_f
     );
     void release_memory();
-
-//    int convert_unit(const double energy_conv);
+    int convert_unit(const double energy_conv);
 
 };
 

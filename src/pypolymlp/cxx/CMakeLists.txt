@@ -51,6 +51,7 @@ set(SRC_FILES
     src/polymlp/polymlp_api.cpp
     src/polymlp/polymlp_basis_function.cpp
     src/polymlp/polymlp_features.cpp
+    src/polymlp/polymlp_features_pair.cpp
     src/polymlp/polymlp_features_polynomial.cpp
     src/polymlp/polymlp_features_mapping_utils.cpp
     src/polymlp/polymlp_features_utils.cpp
@@ -61,6 +62,7 @@ set(SRC_FILES
     src/polymlp/polymlp_model_params.cpp
     src/polymlp/polymlp_model_params_gtinv.cpp
     src/polymlp/polymlp_model_params_polynomial.cpp
+    src/polymlp/polymlp_potential_pair.cpp
     src/polymlp/polymlp_potential.cpp
     src/polymlp/polymlp_products.cpp
     src/polymlp/polymlp_read_gtinv.cpp

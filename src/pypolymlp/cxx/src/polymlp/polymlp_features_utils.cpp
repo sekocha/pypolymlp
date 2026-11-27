@@ -19,7 +19,7 @@
 
 #include "polymlp_features_utils.h"
 
-
+/*
 int set_linear_features_pair(Maps& maps){
 
     int type1, type2, local_id;
@@ -40,6 +40,7 @@ int set_linear_features_pair(Maps& maps){
     }
     return 0;
 }
+*/
 
 
 int set_linear_features_gtinv(
